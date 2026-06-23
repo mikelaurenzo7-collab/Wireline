@@ -1,24 +1,28 @@
-/* Ametrine Precision Design Tokens Strategy — Professional Enterprise Standard (2026)
+/* Ametrine Precision Design Tokens — Management & Governance (Professional Enterprise Standard)
 
-Layered Architecture (Industry Best Practice):
-1. Primitive: Raw brand values (brand-colors.ts)
-2. Semantic: Purpose-driven tokens (--on-surface, --primary-container)
-3. Component: Usage-specific implementations
+CURRENT IMPLEMENTATION (Post-Audit & Purge):
+- Single Source of Truth: CSS Custom Properties in foundation.css + design-system.css :root (runtime authoritative).
+- Type Safety & DX: brand-colors.ts for scaling strategy notes and TypeScript alignment (values synchronized manually to CSS).
+- Consumption: Tailwind theme inline (index.css) + direct var() usage in components.
+- Formats: CSS vars (primary), TS constants (dev), documented for future JSON/DTCG export.
+- Theming: Light baseline with high-contrast AAA tokens; subtle tonal layering via color-mix().
+- Scaling: 4px mathematical base + fluid clamp() + semantic t-shirt sizes (perfected).
 
-Professional Tone Guidelines:
-- Clarity and precision above ornamentation.
-- Subtle depth via tonal layering and restrained elevation; avoid excessive glow or glassmorphism.
-- Typography: Hanken Grotesk for display (sharp, professional), Inter for body (highly legible).
-- All UI text and microcopy must be concise, purposeful, and professional.
+MANAGEMENT STRATEGY (Recommended & Partially Implemented):
+1. Governance: Design system owner (CTO/Design) approves all token changes. Changes documented in this file and committed with clear messages.
+2. Workflow: Designer proposes in Figma (Tokens Studio or Variables) → Dev implements in CSS/TS → Audit for AAA contrast, professional tone, and consistency → Merge to main.
+3. Versioning: Tokens versioned with design system releases. Breaking changes require migration notes.
+4. Documentation: This file + Storybook/MDX (future) as living spec. All tokens include usage examples and contrast notes.
+5. Tooling (Current vs. Ideal):
+   - Current: Manual sync (lean, low overhead for solo founder + small team).
+   - Ideal future: Style Dictionary or custom script to generate CSS, TS types, JSON (DTCG spec), and native theme files from a single source JSON/YAML.
+   - Dynamic contrast: APCA for perceptual validation in tooling; static AAA hex baseline enforced here.
 
-WCAG 2.2 AAA Compliance:
-- Normal text: minimum 7:1 contrast ratio.
-- Large text (≥24px or 19px bold): minimum 4.5:1.
-- Interactive targets: minimum 24×24px.
+PROFESSIONAL TONE & AAA ENFORCEMENT:
+- All token names and descriptions use precise, enterprise-appropriate language.
+- Contrast: Explicit AAA hex pairs maintained (see foundation.css). No low-contrast combinations permitted.
+- Bloat: Purged. System remains minimal and focused.
 
-Dynamic Contrast:
-- Static tokens achieve AAA baseline.
-- For advanced implementations, APCA (Advanced Perceptual Contrast Algorithm) is recommended for perceptual accuracy over simple luminance ratios.
-- Future: High-contrast mode support via additional semantic tokens.
+This establishes a scalable, auditable, professional token management foundation while keeping overhead appropriate for current stage. Future pipeline additions will build on this structure without disruption.
 
-This file is the authoritative reference. All changes must align with professional tone and AAA standards. */
+Last updated: Professional tone + AAA + management investigation pass. */
