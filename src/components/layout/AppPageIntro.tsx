@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -25,26 +25,53 @@ export default function AppPageIntro({
   className,
 }: AppPageIntroProps) {
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const priorFocusRef = useRef<HTMLElement | null>(null);
+
+  const closeActions = () => setMobileActionsOpen(false);
 
   useEffect(() => {
     if (!mobileActionsOpen) return;
+    priorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [mobileActionsOpen]);
+    const frame = requestAnimationFrame(() => closeButtonRef.current?.focus());
 
-  useEffect(() => {
-    if (!mobileActionsOpen) return;
-    closeButtonRef.current?.focus();
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMobileActionsOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeActions();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        sheetRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) || [],
+      ).filter((element) => !element.hasAttribute("hidden"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
+
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKey);
+      priorFocusRef.current?.focus();
+      priorFocusRef.current = null;
+    };
   }, [mobileActionsOpen]);
 
   return (
@@ -64,12 +91,15 @@ export default function AppPageIntro({
           <div className="mt-1 flex shrink-0 flex-wrap items-center gap-2 md:mt-0 md:justify-end">
             <div className="hidden flex-wrap items-center gap-3 md:flex">{actions}</div>
             <ShadButton
+              ref={triggerRef}
               type="button"
               disableAnimations
               variant="outline"
               size="icon"
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
+              aria-expanded={mobileActionsOpen}
+              aria-controls="app-page-actions"
               className="wl-control-icon touch-press md:hidden"
             >
               <MoreHorizontal className="h-5 w-5" />
@@ -85,33 +115,36 @@ export default function AppPageIntro({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.16 }}
               className="fixed inset-0 z-[200] bg-[color:var(--wl-focus)] md:hidden"
-              onClick={() => setMobileActionsOpen(false)}
+              onClick={closeActions}
               aria-hidden
             />
             <motion.div
+              id="app-page-actions"
               ref={sheetRef}
-              initial={{ y: "100%" }}
+              initial={reduceMotion ? false : { y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 360, damping: 32 }}
+              exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
+              transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 32 }}
               className="fixed bottom-0 left-0 right-0 z-[201] rounded-t-[var(--radius-xl)] border border-border bg-card pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(11,28,48,0.28)] md:hidden"
               role="dialog"
-              aria-label="Page actions"
+              aria-labelledby="app-page-actions-title"
               aria-modal="true"
+              tabIndex={-1}
             >
               <div className="flex justify-center py-3">
                 <div className="h-1 w-10 rounded-full bg-border" aria-hidden />
               </div>
               <div className="flex items-center justify-between px-4 pb-3">
-                <p className="wl-overline">Actions</p>
+                <p id="app-page-actions-title" className="wl-overline">Actions</p>
                 <ShadButton
                   ref={closeButtonRef}
                   type="button"
                   disableAnimations
                   variant="ghost"
                   size="icon"
-                  onClick={() => setMobileActionsOpen(false)}
+                  onClick={closeActions}
                   className="wl-control-icon touch-press"
                   aria-label="Close actions"
                 >
