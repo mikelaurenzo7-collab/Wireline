@@ -40,7 +40,7 @@
 }
 
 .workspace-btn-primary:focus-visible,
-workspace-btn-secondary:focus-visible {
+.workspace-btn-secondary:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
