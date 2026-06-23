@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Bot,
@@ -63,6 +63,8 @@ export default function WorkspaceShell({
 }) {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const isActive = (href: string) =>
     location.pathname === href || (href === "/studio" && location.pathname.startsWith("/studio"));
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
@@ -77,15 +79,28 @@ export default function WorkspaceShell({
     if (!drawerOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const firstFocusable = drawerRef.current?.querySelector<HTMLElement>("a[href], button:not([disabled])");
+    firstFocusable?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeDrawer();
+      menuButtonRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
     };
   }, [drawerOpen]);
 
   return (
     <div className={`wl-workspace-shell bg-background text-foreground ${appViewportClass}`}>
+      <a className="wl-skip-link" href="#workspace-main">Skip to content</a>
       {drawerOpen ? (
         <button
+          type="button"
           aria-label="Close navigation"
           className="fixed inset-0 z-40 bg-[color:var(--wl-focus)] lg:hidden"
           onClick={closeDrawer}
@@ -93,13 +108,17 @@ export default function WorkspaceShell({
       ) : null}
       <div className="mx-auto grid h-full min-h-0 w-full max-w-[1760px] overflow-hidden lg:grid-cols-[256px_minmax(0,1fr)]">
         <aside
-          className={`wl-stitch-sidebar wl-workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[256px] flex-col px-4 py-5 transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:translate-x-0 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
+          ref={drawerRef}
+          aria-label="Workspace navigation"
+          aria-modal={drawerOpen ? true : undefined}
+          role={drawerOpen ? "dialog" : undefined}
+          className={`wl-stitch-sidebar wl-workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:w-[256px] lg:translate-x-0 lg:shadow-none ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="flex shrink-0 items-center justify-between px-2">
             <Link
               to="/overview"
               onClick={closeDrawer}
-              className="flex min-w-0 items-center gap-2.5"
+              className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline-none"
               aria-label="Wireline overview"
             >
               <WirelineMark className="h-7 w-7 shrink-0 text-[24px] leading-none text-primary" />
@@ -113,9 +132,13 @@ export default function WorkspaceShell({
               </span>
             </Link>
             <button
+              type="button"
               aria-label="Close navigation"
               className="wl-control-icon lg:hidden"
-              onClick={closeDrawer}
+              onClick={() => {
+                closeDrawer();
+                menuButtonRef.current?.focus();
+              }}
             >
               <X size={18} />
             </button>
@@ -144,13 +167,17 @@ export default function WorkspaceShell({
         </aside>
 
         <main
+          id="workspace-main"
           data-wireline-route={location.pathname}
           className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-5 sm:px-7 sm:pb-6 lg:px-10 lg:pb-8 xl:px-12"
         >
           <header className="wl-workspace-header flex min-h-[72px] shrink-0 flex-col justify-center gap-3 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button
+                ref={menuButtonRef}
+                type="button"
                 aria-label="Open navigation"
+                aria-expanded={drawerOpen}
                 className="wl-control-icon lg:hidden"
                 onClick={() => setDrawerOpen(true)}
               >
@@ -161,7 +188,7 @@ export default function WorkspaceShell({
                 <h1 className="wl-app-page-title mt-1 truncate">{title}</h1>
               </div>
             </div>
-            {action ? <div className="wl-workspace-header-actions flex shrink-0 flex-wrap items-center gap-2">{action}</div> : null}
+            {action ? <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">{action}</div> : null}
           </header>
           <div
             className={`wl-workspace-content min-h-0 flex-1 ${
