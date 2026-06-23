@@ -77,6 +77,12 @@ export default function StripeBillingCard() {
   const [sub, setSub] = useState<SubscriptionState | null>(null);
   const [agentCount, setAgentCount] = useState<number>(0);
   const [stripeConfigured, setStripeConfigured] = useState(false);
+  const [balance, setBalance] = useState<{
+    balance_usd: number;
+    presets_usd: number[];
+    min_usd: number;
+    copy: { title: string; subtitle: string; reassurance: string };
+  } | null>(null);
   const [signupPlanInterest, setSignupPlanInterest] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -87,12 +93,16 @@ export default function StripeBillingCard() {
     setLoading(true);
     setError(null);
     try {
-      const [statusRes, plansRes] = await Promise.all([
+      const [statusRes, plansRes, balanceRes] = await Promise.all([
         authFetch("/api/billing/status").then((r) => r.json()),
         authFetch("/api/billing/plans").then((r) => r.json()),
+        authFetch("/api/billing/balance")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
       ]);
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
+      setBalance(balanceRes || null);
       setAgentCount(statusRes.agent_count ?? 0);
       const storedIntent = getStoredSignupIntent();
       setSignupPlanInterest(
@@ -249,7 +259,9 @@ export default function StripeBillingCard() {
         />
       )}
       {hasActive && <UsageMeter onUpgrade={openPortal} />}
-      {hasActive && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
+      {stripeConfigured && (
+        <ConversationBalanceCard busy={creditBusy} balance={balance} onBuy={startCreditCheckout} />
+      )}
       {error && (
         <div
           role="alert"
@@ -319,27 +331,48 @@ export default function StripeBillingCard() {
   );
 }
 
-function CreditTopUpCard({
+function ConversationBalanceCard({
   busy,
+  balance,
   onBuy,
 }: {
   busy: number | null;
+  balance: {
+    balance_usd: number;
+    presets_usd: number[];
+    min_usd: number;
+    copy: { title: string; subtitle: string; reassurance: string };
+  } | null;
   onBuy: (amountUsd: number) => void;
 }) {
+  const presets = balance?.presets_usd?.length ? balance.presets_usd : [5, 10, 25, 50];
+  const title = balance?.copy?.title || "Conversation Balance";
+  const subtitle =
+    balance?.copy?.subtitle ||
+    "Add $5 to start handling live conversations. Use it across voice, email, and text — you stay in control of the budget.";
+  const reassurance =
+    balance?.copy?.reassurance ||
+    "No subscription. No auto-reload. You approve every external action.";
+  const current = balance?.balance_usd ?? 0;
+
   return (
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
-      <div className="border-b border-border pb-5">
-        <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-          Add call credits
-        </h3>
-        <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          Most months your plan's minutes are plenty — credits are an optional safety net for the
-          occasional spike. They cover overage at your plan rate before it's invoiced; if you're
-          regularly over, upgrading your plan is the more economical move.
-        </p>
+      <div className="border-b border-border pb-5 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">{title}</h3>
+          <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">{subtitle}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
+            Available
+          </div>
+          <div className="font-semibold tracking-[-.02em] text-3xl text-foreground tabular-nums">
+            ${current.toFixed(2)}
+          </div>
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        {[25, 50, 100].map((a) => (
+        {presets.map((a) => (
           <ShadButton
             key={a}
             type="button"
@@ -359,7 +392,7 @@ function CreditTopUpCard({
         ))}
         <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
           <Shield className="w-3 h-3" />
-          Applied to overage automatically
+          {reassurance}
         </span>
       </div>
     </div>

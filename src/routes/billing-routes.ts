@@ -19,7 +19,21 @@ import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
-import { addCredit, reverseCredit } from "../lib/credit-wallet";
+import {
+  addCredit,
+  reverseCredit,
+  getCreditBalanceUsd,
+  getRecentLedger,
+} from "../lib/credit-wallet";
+import {
+  CONVERSATION_BALANCE_MIN_USD,
+  CONVERSATION_BALANCE_MAX_USD,
+  CONVERSATION_BALANCE_PRESETS_USD,
+  CONVERSATION_BALANCE_COPY,
+  estimateConversationCostUsd,
+  canStartLiveConversation,
+  type ConversationChannel,
+} from "../lib/conversation-balance";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -804,11 +818,13 @@ router.post(
   },
 );
 
-// Prepaid credit top-up — a one-time Stripe payment on the WEB. Credits absorb
-// voice overage (see credit-wallet + voice-usage). Deliberately web-only: the
-// iOS app stays read-only on billing to remain clear of Apple's IAP rules.
-const CREDIT_MIN_USD = 10;
-const CREDIT_MAX_USD = 1000;
+// Conversation Balance top-up — a one-time Stripe payment on the WEB. The
+// balance is the on-demand product for Personal: $0/mo, add $5 to go live. It
+// is the same prepaid USD wallet that absorbs voice overage (see credit-wallet
+// + voice-usage + conversation-balance). Deliberately web-only: the iOS app
+// stays read-only on billing to remain clear of Apple's IAP rules.
+const CREDIT_MIN_USD = CONVERSATION_BALANCE_MIN_USD;
+const CREDIT_MAX_USD = CONVERSATION_BALANCE_MAX_USD;
 
 router.post(
   "/billing/credit-checkout",
@@ -874,8 +890,8 @@ router.post(
               currency: "usd",
               unit_amount: amountUsd * 100,
               product_data: {
-                name: "Wireline call credits",
-                description: `$${amountUsd} prepaid credit applied to voice usage`,
+                name: "Wireline Conversation Balance",
+                description: `$${amountUsd} added to your Conversation Balance — spendable across voice, email, and text`,
               },
             },
           },
@@ -1169,6 +1185,96 @@ router.post(
       if (err instanceof AppError) throw err;
       log.error("/billing/extra-agents POST failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to update extra agents");
+    }
+  },
+);
+
+/**
+ * GET /billing/balance — the customer's Conversation Balance + recent activity.
+ *
+ * Powers the on-demand surface for Personal (no subscription required): current
+ * spendable balance, the top-up amounts we offer, and the recent ledger so the
+ * customer can see exactly what each conversation used. Mirrors the read-only
+ * /api/mobile/wallet shape but adds the product config the web top-up UI needs.
+ */
+router.get(
+  "/billing/balance",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [balanceUsd, ledger] = await Promise.all([
+        getCreditBalanceUsd(req.user.id),
+        getRecentLedger(req.user.id, 20),
+      ]);
+      res.json({
+        balance_usd: Number(balanceUsd.toFixed(2)),
+        presets_usd: [...CONVERSATION_BALANCE_PRESETS_USD],
+        min_usd: CONVERSATION_BALANCE_MIN_USD,
+        max_usd: CONVERSATION_BALANCE_MAX_USD,
+        copy: CONVERSATION_BALANCE_COPY,
+        ledger,
+        stripe_configured: stripeAvailable(),
+      });
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("/billing/balance failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to load Conversation Balance");
+    }
+  },
+);
+
+const VALID_CHANNELS: ConversationChannel[] = [
+  "email_draft",
+  "email_send",
+  "sms_send",
+  "voice_standard",
+  "voice_premium",
+];
+
+/**
+ * POST /billing/conversation-estimate — the lightweight pre-flight estimate.
+ *
+ * Returns "this may use up to $X" plus a hard pause cap, and whether the
+ * current balance covers the task. This is what lets us enforce a hard budget
+ * BEFORE a live conversation starts and pause it before a surprise overrun.
+ */
+router.post(
+  "/billing/conversation-estimate",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const channel = String(req.body?.channel || "") as ConversationChannel;
+      if (!VALID_CHANNELS.includes(channel)) {
+        return res.status(400).json({
+          code: "INVALID_CHANNEL",
+          error: `channel must be one of: ${VALID_CHANNELS.join(", ")}`,
+        });
+      }
+      const voiceMinutes =
+        req.body?.voice_minutes != null ? Number(req.body.voice_minutes) : undefined;
+      const messages = req.body?.messages != null ? Number(req.body.messages) : undefined;
+      if (
+        (voiceMinutes != null && (!Number.isFinite(voiceMinutes) || voiceMinutes < 0)) ||
+        (messages != null && (!Number.isFinite(messages) || messages < 0))
+      ) {
+        return res.status(400).json({
+          code: "INVALID_QUANTITY",
+          error: "voice_minutes and messages must be non-negative numbers.",
+        });
+      }
+
+      const estimate = estimateConversationCostUsd({ channel, voiceMinutes, messages });
+      const balanceUsd = await getCreditBalanceUsd(req.user.id);
+      res.json({
+        ...estimate,
+        balance_usd: Number(balanceUsd.toFixed(2)),
+        can_start: canStartLiveConversation(balanceUsd, estimate),
+        min_topup_usd: CONVERSATION_BALANCE_MIN_USD,
+      });
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("/billing/conversation-estimate failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to estimate conversation cost");
     }
   },
 );
