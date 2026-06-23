@@ -93,33 +93,29 @@ router.get("/", healthRateLimiter, async (_req, res) => {
 });
 router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, res) => {
   const report = evaluateLaunchReadiness();
-  res
-    .status(report.campaign_ready ? 200 : 503)
-    .json({
-      ok: report.campaign_ready,
-      overall_score: report.overall_score,
-      campaign_ready: report.campaign_ready,
-      capabilities: report.capabilities.map((capability) => ({
-        id: capability.id,
-        level: capability.level,
-      })),
-      timestamp: report.generated_at,
-    });
+  res.status(report.campaign_ready ? 200 : 503).json({
+    ok: report.campaign_ready,
+    overall_score: report.overall_score,
+    campaign_ready: report.campaign_ready,
+    capabilities: report.capabilities.map((capability) => ({
+      id: capability.id,
+      level: capability.level,
+    })),
+    timestamp: report.generated_at,
+  });
 });
 router.get("/ready", healthRateLimiter, requireMonitorToken, async (_req, res) => {
   const env = validateEnv(),
     db = await probeDatabase(),
     launch = evaluateLaunchReadiness(),
     ok = env.valid && db.ok && launch.campaign_ready;
-  res
-    .status(ok ? 200 : 503)
-    .json({
-      ok,
-      env: { ok: env.valid, invalid: env.errors.length, by_group: env.byGroup },
-      db: { ok: db.ok, latency_ms: db.latency_ms },
-      launch: { ok: launch.campaign_ready, overall_score: launch.overall_score },
-      timestamp: new Date().toISOString(),
-    });
+  res.status(ok ? 200 : 503).json({
+    ok,
+    env: { ok: env.valid, invalid: env.errors.length, by_group: env.byGroup },
+    db: { ok: db.ok, latency_ms: db.latency_ms },
+    launch: { ok: launch.campaign_ready, overall_score: launch.overall_score },
+    timestamp: new Date().toISOString(),
+  });
 });
 router.get(
   "/internal",
@@ -199,22 +195,20 @@ router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => 
     probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
   ]);
   const ok = voice.ok && reasoning.ok && (premium?.ok ?? true);
-  res
-    .status(ok ? 200 : 503)
-    .json({
-      ok,
-      total_latency_ms: Date.now() - started,
-      probes: {
-        voice_runtime: voice,
-        ...(premium ? { voice_premium: premium } : {}),
-        reasoning,
-        reasoning_fallback: {
-          ok: !!process.env.GEMINI_API_KEY,
-          latency_ms: 0,
-          model: GEMINI_STRUCTURED_FALLBACK_MODEL,
-          ...(process.env.GEMINI_API_KEY ? {} : { error: "GEMINI_API_KEY not configured" }),
-        },
+  res.status(ok ? 200 : 503).json({
+    ok,
+    total_latency_ms: Date.now() - started,
+    probes: {
+      voice_runtime: voice,
+      ...(premium ? { voice_premium: premium } : {}),
+      reasoning,
+      reasoning_fallback: {
+        ok: !!process.env.GEMINI_API_KEY,
+        latency_ms: 0,
+        model: GEMINI_STRUCTURED_FALLBACK_MODEL,
+        ...(process.env.GEMINI_API_KEY ? {} : { error: "GEMINI_API_KEY not configured" }),
       },
-    });
+    },
+  });
 });
 export default router;

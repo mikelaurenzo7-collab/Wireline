@@ -294,7 +294,7 @@ class OpenAICircuitBreaker {
     log.warn(
       `[ai-circuit-breaker] Failure recorded (#${this.failureCount}): ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
     if (this.state === "HALF_OPEN" || this.failureCount >= this.failureThreshold) {
       this.transitionTo("OPEN");
@@ -337,7 +337,7 @@ async function createWithFallbacks(
     }
   } else {
     log.info(
-      `[ai-runtime] Circuit breaker is ${circuitBreaker.getState()}. Bypassing OpenAI directly to Gemini fallback.`
+      `[ai-runtime] Circuit breaker is ${circuitBreaker.getState()}. Bypassing OpenAI directly to Gemini fallback.`,
     );
   }
 

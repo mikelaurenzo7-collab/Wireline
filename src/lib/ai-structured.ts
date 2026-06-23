@@ -121,9 +121,7 @@ export async function runCompletion(
     cacheCreate: response.usage?.cache_creation_input_tokens ?? 0,
   };
 }
-export async function runCompletionResilient(
-  opts: CompletionOptions,
-): Promise<{
+export async function runCompletionResilient(opts: CompletionOptions): Promise<{
   text: string;
   cacheRead: number;
   cacheCreate: number;

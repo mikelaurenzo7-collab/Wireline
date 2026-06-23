@@ -119,8 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!cancelled) setLoading(true);
       try {
-        const pathname =
-          typeof window === "undefined" ? "/" : window.location.pathname || "/";
+        const pathname = typeof window === "undefined" ? "/" : window.location.pathname || "/";
         if (shouldSkipSessionBootstrap(pathname)) return;
         await migrateLegacyLocalStorage();
         const hydrated = await fetchSessionUser();

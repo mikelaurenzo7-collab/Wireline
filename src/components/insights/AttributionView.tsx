@@ -53,7 +53,8 @@ export default function AttributionView({ days }: { days: number }) {
               <div key={`sr-attr-${r.source}-${i}`}>
                 <dt>Campaign: {r.source}</dt>
                 <dd>
-                  Calls: {calls}, Minutes: {Math.round((Number(r.total_seconds) || 0) / 60)}, Booked: {booked}, Qualified: {Number(r.qualified) || 0}, Conversion: {conv}%
+                  Calls: {calls}, Minutes: {Math.round((Number(r.total_seconds) || 0) / 60)},
+                  Booked: {booked}, Qualified: {Number(r.qualified) || 0}, Conversion: {conv}%
                 </dd>
               </div>
             );

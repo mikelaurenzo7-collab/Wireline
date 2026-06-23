@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowLeftRight, CheckCircle2, AlertCircle, Cloud, Settings, RefreshCcw } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeftRight,
+  CheckCircle2,
+  AlertCircle,
+  Cloud,
+  Settings,
+  RefreshCcw,
+} from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 export default function SalesforceIntegrationPage() {
@@ -17,7 +25,7 @@ export default function SalesforceIntegrationPage() {
             <div className="w-2 h-2 rounded-full bg-primary"></div>
             <span className="font-label-caps text-label-caps text-on-surface">Connected</span>
           </div>
-          <button 
+          <button
             className="px-4 py-2 border border-outline-variant rounded-lg font-body-sm text-body-sm hover:bg-surface-container-lowest transition-colors flex items-center gap-2"
             onClick={() => setSyncing(true)}
           >
@@ -28,7 +36,9 @@ export default function SalesforceIntegrationPage() {
       }
     >
       <div className="mb-8">
-        <p className="font-body-md text-body-md text-on-surface-variant">Configure data mapping and interaction synchronization for your agent.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Configure data mapping and interaction synchronization for your agent.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -117,23 +127,41 @@ export default function SalesforceIntegrationPage() {
             <div className="p-6 space-y-6">
               <div className="flex items-start gap-4">
                 <div className="mt-1">
-                  <input type="checkbox" defaultChecked className="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5" />
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5"
+                  />
                 </div>
                 <div>
-                  <h3 className="font-body-md text-body-md font-medium text-on-surface">Log Calls as Activities</h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Automatically create a Task in Salesforce when a call completes, linking it to the matched Contact or Lead.</p>
+                  <h3 className="font-body-md text-body-md font-medium text-on-surface">
+                    Log Calls as Activities
+                  </h3>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                    Automatically create a Task in Salesforce when a call completes, linking it to
+                    the matched Contact or Lead.
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
                 <div className="mt-1">
-                  <input type="checkbox" defaultChecked className="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5" />
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5"
+                  />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-body-md text-body-md font-medium text-on-surface">Attach Transcripts</h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 mb-3">Push the full conversation transcript to the CRM activity record.</p>
+                  <h3 className="font-body-md text-body-md font-medium text-on-surface">
+                    Attach Transcripts
+                  </h3>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 mb-3">
+                    Push the full conversation transcript to the CRM activity record.
+                  </p>
                   <div className="bg-surface p-4 rounded border border-outline-variant text-body-sm font-body-sm font-mono text-tertiary-container">
-                    [Agent] Hello, calling from Wireline...<br />
+                    [Agent] Hello, calling from Wireline...
+                    <br />
                     [Customer] Yes, I was interested in...
                   </div>
                 </div>
@@ -141,11 +169,18 @@ export default function SalesforceIntegrationPage() {
 
               <div className="flex items-start gap-4">
                 <div className="mt-1">
-                  <input type="checkbox" className="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5" />
+                  <input
+                    type="checkbox"
+                    className="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5"
+                  />
                 </div>
                 <div>
-                  <h3 className="font-body-md text-body-md font-medium text-on-surface">Attach Audio Recordings</h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Include a secure link to the audio recording in the activity description.</p>
+                  <h3 className="font-body-md text-body-md font-medium text-on-surface">
+                    Attach Audio Recordings
+                  </h3>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                    Include a secure link to the audio recording in the activity description.
+                  </p>
                 </div>
               </div>
             </div>
@@ -158,7 +193,7 @@ export default function SalesforceIntegrationPage() {
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 relative overflow-hidden">
             {/* Subtle ambient glow */}
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
-            
+
             <div className="flex items-center gap-4 mb-6 relative z-10">
               <div className="w-12 h-12 bg-[#00a1e0]/10 rounded-lg flex items-center justify-center border border-[#00a1e0]/20">
                 <Cloud className="text-[#00a1e0] w-6 h-6" />
@@ -191,15 +226,21 @@ export default function SalesforceIntegrationPage() {
 
           {/* Sync Log Summary */}
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6">
-            <h3 className="font-body-md text-body-md font-medium text-on-surface mb-4">Recent Activity</h3>
+            <h3 className="font-body-md text-body-md font-medium text-on-surface mb-4">
+              Recent Activity
+            </h3>
             <ul className="space-y-4">
               <li className="flex gap-3">
                 <div className="mt-1">
                   <CheckCircle2 className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="font-body-sm text-body-sm text-on-surface">Synced 45 Interactions</p>
-                  <p className="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">Today, 10:42 AM</p>
+                  <p className="font-body-sm text-body-sm text-on-surface">
+                    Synced 45 Interactions
+                  </p>
+                  <p className="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">
+                    Today, 10:42 AM
+                  </p>
                 </div>
               </li>
               <li className="flex gap-3">
@@ -208,7 +249,9 @@ export default function SalesforceIntegrationPage() {
                 </div>
                 <div>
                   <p className="font-body-sm text-body-sm text-on-surface">Updated Lead Mappings</p>
-                  <p className="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">Yesterday, 4:15 PM</p>
+                  <p className="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">
+                    Yesterday, 4:15 PM
+                  </p>
                 </div>
               </li>
               <li className="flex gap-3">
@@ -216,20 +259,31 @@ export default function SalesforceIntegrationPage() {
                   <AlertCircle className="w-4 h-4 text-error" />
                 </div>
                 <div>
-                  <p className="font-body-sm text-body-sm text-on-surface">Failed to sync 1 Interaction</p>
-                  <p className="font-body-sm text-body-sm text-error mt-1">Missing required field: Company</p>
-                  <p className="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">Yesterday, 2:30 PM</p>
+                  <p className="font-body-sm text-body-sm text-on-surface">
+                    Failed to sync 1 Interaction
+                  </p>
+                  <p className="font-body-sm text-body-sm text-error mt-1">
+                    Missing required field: Company
+                  </p>
+                  <p className="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">
+                    Yesterday, 2:30 PM
+                  </p>
                 </div>
               </li>
             </ul>
-            <button className="mt-4 text-primary font-body-sm text-body-sm hover:underline w-full text-left cursor-pointer">View full logs</button>
+            <button className="mt-4 text-primary font-body-sm text-body-sm hover:underline w-full text-left cursor-pointer">
+              View full logs
+            </button>
           </div>
         </div>
       </div>
 
       {/* Bottom Actions */}
       <div className="mt-8 pt-6 border-t border-outline-variant flex justify-end gap-4 pb-12">
-        <Link to="/actions" className="px-6 py-2 border border-outline-variant rounded-lg font-body-sm text-body-sm hover:bg-surface-container-lowest transition-colors cursor-pointer">
+        <Link
+          to="/actions"
+          className="px-6 py-2 border border-outline-variant rounded-lg font-body-sm text-body-sm hover:bg-surface-container-lowest transition-colors cursor-pointer"
+        >
           Cancel
         </Link>
         <button className="px-6 py-2 bg-primary text-on-primary rounded-lg font-body-sm text-body-sm hover:bg-primary/90 transition-colors shadow-[0px_10px_25px_-5px_rgba(69,30,187,0.3)] cursor-pointer">

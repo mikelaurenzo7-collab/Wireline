@@ -76,7 +76,8 @@ export const OPS_CHANNEL_EMPTY = {
   floor: {
     eyebrow: "Active calls",
     title: "No active callers",
-    description: "Active conversations stream here in real time – listen in, get callbacks, or take over.",
+    description:
+      "Active conversations stream here in real time – listen in, get callbacks, or take over.",
     actions: [
       { label: "View call history", to: "/phone" },
       { label: "Chat with assistant", to: "/agents", primary: true },
@@ -133,8 +134,7 @@ export const OPS_CHANNEL_EMPTY = {
   email: {
     eyebrow: "Email",
     title: "No threads yet",
-    description:
-      "Connect Gmail, Outlook, or Yahoo in Actions so assistants can triage and reply.",
+    description: "Connect Gmail, Outlook, or Yahoo in Actions so assistants can triage and reply.",
     actions: [
       { label: "Connect email", to: "/actions", primary: true },
       { label: "Ask Assistant", to: "/agents" },
@@ -160,15 +160,12 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No assistants to train yet",
     description:
       "Create your first assistant in Assistants, then return here for knowledge, voice, and flow.",
-    actions: [
-      { label: "Open Assistants", to: "/agents", primary: true },
-    ],
+    actions: [{ label: "Open Assistants", to: "/agents", primary: true }],
   },
   integrations: {
     eyebrow: "Email carriers",
     title: "No carriers linked",
-    description:
-      "Connect Gmail, Outlook, or Yahoo – assistants triage and reply from there.",
+    description: "Connect Gmail, Outlook, or Yahoo – assistants triage and reply from there.",
   },
   audit: {
     eyebrow: "Audit",
@@ -397,7 +394,8 @@ export const OPS_STUDIO_ASSISTS = [
   },
   {
     label: "Set the schedule",
-    prompt: "Help me set this assistant's business hours and an out-of-hours message for my timezone.",
+    prompt:
+      "Help me set this assistant's business hours and an out-of-hours message for my timezone.",
   },
   {
     label: "Pick the right tools",
@@ -409,7 +407,7 @@ export const OPS_STUDIO_ASSISTS = [
     prompt:
       "Give me a 60-second test-call script to verify this assistant's greeting, knowledge, and escalation handling.",
   },
- ] as const;
+] as const;
 
 export const OPS_STUDIO_ASSISTS_COPY = {
   eyebrow: "Assistant co-pilot",
@@ -688,7 +686,8 @@ export const OPS_INSIGHTS_EMPTY = {
   funnel: {
     eyebrow: "Conversion",
     title: "No funnel data yet",
-    description: "Your funnel populates as assistants handle calls – try a test call or outbound dial.",
+    description:
+      "Your funnel populates as assistants handle calls – try a test call or outbound dial.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Recaps", to: "/overview" },

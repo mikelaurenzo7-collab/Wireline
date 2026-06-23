@@ -53,8 +53,12 @@ export default function HeatmapView({ days }: { days: number }) {
             if (cell.count === 0) return null;
             return (
               <div key={`sr-heat-${i}`}>
-                <dt>{weekdays[cell.weekday]} at {cell.hour}:00</dt>
-                <dd>{cell.count} calls{cell.avg_score ? `, average score ${cell.avg_score}` : ""}</dd>
+                <dt>
+                  {weekdays[cell.weekday]} at {cell.hour}:00
+                </dt>
+                <dd>
+                  {cell.count} calls{cell.avg_score ? `, average score ${cell.avg_score}` : ""}
+                </dd>
               </div>
             );
           })}

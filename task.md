@@ -1,24 +1,6 @@
-- [x] Web Public Brand Assets Copying and Integration
-    - [x] Copy favicon.png to public/
-    - [x] Update index.html to reference favicon.png
-    - [x] Copy apple-touch-icon.png to public/
-    - [x] Copy og-image.png to public/
-- [x] App Store Screenshots and Widget Graphics Copying
-    - [x] Copy screenshot-1.png, screenshot-2.png, screenshot-3.png to marketing-kit/app-store/
-    - [x] Create marketing-kit/widgets/ directory
-    - [x] Copy widget assets (active-call-mobile.png, active-call-lock-screen.png, smart-route.png, dynamic-island-smart-route.png, voice-dashboard-widget.png) to marketing-kit/widgets/
-- [x] Native iOS App Icon Asset Catalog Overwrite
-    - [x] Overwrite ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png with premium app icon
-    - [x] Save marketing-kit/brand/app-icon-premium.png copy
-- [x] Marketing & Terminology Documentation Updates
-    - [x] Update marketing-kit/README.md with correct colors and terminology
-    - [x] Update marketing-kit/brand/GUIDELINES.md with correct colors and voice/positioning
-    - [x] Update marketing-kit/copy/copy-library.md with correct consumer-first phrasing and pricing
-- [x] Native Android Code Refactoring (Legacy "Lavender" Purge)
-    - [x] Rename/Refactor LavenderCard usages in WirelineAndroidApp.kt
-    - [x] Update BrandComponents.kt (remove LavenderCard, rename OperatorCard to AssistantCard)
-    - [x] Complete Android Jetpack Compose Navigation Refactoring (integrate rememberNavController() and NavHost)
-- [x] Run Integration Verification
-    - [x] Run design contract check (check-active-surface-drift.mjs)
-    - [x] Run unit tests (test:run)
-    - [x] Run production web build (build)
+- `[x]` Codify "Wireline Autonomous Director" skill in `.agents/skills/wireline-autonomous-director/SKILL.md`
+- `[x]` Expand `scripts/capture-prod-visual-qa.mjs` with 10 evolutionary focused mode targets
+- `[x]` Seed initial synchronized state ledger `artifacts/wireline-state-ledger.json`
+- `[x]` Terminate legacy schedules and register new 30-run scheduled loop with Evolutionary Execution Engine prompt
+- `[x]` Run code formatting and verification loops
+- `[x]` Perform final git stage, commit, and pre-push validation

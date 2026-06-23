@@ -484,7 +484,9 @@ function CustomAssistantCard() {
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Assistant</h3>
+        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">
+          Custom Assistant
+        </h3>
         <p className="text-xs text-foreground/70 leading-relaxed max-w-[200px]">
           Let Wireline Forge design a bespoke assistant for your exact use case.
         </p>

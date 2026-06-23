@@ -206,19 +206,17 @@ async function handleSendEmail(
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const description = `Email draft to ${action.payload.to || "recipient"}: ${action.payload.subject || "No subject"}`;
-  await drizzle
-    .insert(schema.followUpTasks)
-    .values({
-      userId,
-      agentId: action.agentId,
-      taskType: "send_email",
-      description,
-      priority: action.priority || "medium",
-      status: "pending",
-      sourceType: context.sourceType,
-      sourceId: context.sourceId,
-      targetChannel: "email",
-    });
+  await drizzle.insert(schema.followUpTasks).values({
+    userId,
+    agentId: action.agentId,
+    taskType: "send_email",
+    description,
+    priority: action.priority || "medium",
+    status: "pending",
+    sourceType: context.sourceType,
+    sourceId: context.sourceId,
+    targetChannel: "email",
+  });
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
@@ -239,19 +237,17 @@ async function handleDraftSendTextMessage(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle
-    .insert(schema.followUpTasks)
-    .values({
-      userId,
-      agentId: action.agentId,
-      taskType: "send_text_message",
-      description: `SMS draft to ${action.payload.to || "recipient"}`,
-      priority: action.priority || "medium",
-      status: "pending",
-      sourceType: context.sourceType,
-      sourceId: context.sourceId,
-      targetChannel: "sms",
-    });
+  await drizzle.insert(schema.followUpTasks).values({
+    userId,
+    agentId: action.agentId,
+    taskType: "send_text_message",
+    description: `SMS draft to ${action.payload.to || "recipient"}`,
+    priority: action.priority || "medium",
+    status: "pending",
+    sourceType: context.sourceType,
+    sourceId: context.sourceId,
+    targetChannel: "sms",
+  });
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
@@ -260,19 +256,17 @@ async function handleScheduleCalendar(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle
-    .insert(schema.followUpTasks)
-    .values({
-      userId,
-      agentId: action.agentId,
-      taskType: "schedule_calendar",
-      description: `Calendar request: ${action.payload.event_name || "Meeting"}`,
-      priority: action.priority || "medium",
-      status: "pending",
-      sourceType: context.sourceType,
-      sourceId: context.sourceId,
-      targetChannel: "calendar",
-    });
+  await drizzle.insert(schema.followUpTasks).values({
+    userId,
+    agentId: action.agentId,
+    taskType: "schedule_calendar",
+    description: `Calendar request: ${action.payload.event_name || "Meeting"}`,
+    priority: action.priority || "medium",
+    status: "pending",
+    sourceType: context.sourceType,
+    sourceId: context.sourceId,
+    targetChannel: "calendar",
+  });
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
@@ -290,19 +284,17 @@ async function handleCreateInternalTask(
   action: ActionItem,
   context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  await drizzle
-    .insert(schema.followUpTasks)
-    .values({
-      userId,
-      agentId: action.agentId,
-      taskType: "internal_task",
-      description: action.payload.description || action.reasoning || "Internal follow-up",
-      priority: action.priority || "medium",
-      status: "pending",
-      sourceType: context.sourceType,
-      sourceId: context.sourceId,
-      targetChannel: "manual",
-    });
+  await drizzle.insert(schema.followUpTasks).values({
+    userId,
+    agentId: action.agentId,
+    taskType: "internal_task",
+    description: action.payload.description || action.reasoning || "Internal follow-up",
+    priority: action.priority || "medium",
+    status: "pending",
+    sourceType: context.sourceType,
+    sourceId: context.sourceId,
+    targetChannel: "manual",
+  });
   await touchNavCounts(userId);
   return { success: true };
 }

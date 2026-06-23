@@ -65,25 +65,29 @@ router.post("/api/vapi-webhook", async (req, res) => {
   if (message.type === "transcript" || message.type === "conversation-update") {
     const transcriptText = (message.transcript || "").toLowerCase();
     const confidence = message.confidence ?? 1.0; // Fallback to 1.0 if not provided
-    
+
     const triggerWords = ["urgent", "cancel", "human", "supervisor", "escalate"];
-    const hasTriggerWord = triggerWords.some(word => transcriptText.includes(word));
+    const hasTriggerWord = triggerWords.some((word) => transcriptText.includes(word));
     const lowConfidence = confidence < 0.75;
-    
+
     if (hasTriggerWord || lowConfidence) {
       log.warn("Handoff Logic Engine Triggered", {
         agentId: agent.id,
         callId: callId(payload, message),
         reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
-        transcript: transcriptText
+        transcript: transcriptText,
       });
-      
-      sseBroadcaster.broadcast("handoff_requested", {
-        agentId: agent.id,
-        callId: callId(payload, message),
-        reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
-        transcript: transcriptText
-      }, agent.user_id);
+
+      sseBroadcaster.broadcast(
+        "handoff_requested",
+        {
+          agentId: agent.id,
+          callId: callId(payload, message),
+          reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
+          transcript: transcriptText,
+        },
+        agent.user_id,
+      );
     }
     return res.json({ received: true });
   }

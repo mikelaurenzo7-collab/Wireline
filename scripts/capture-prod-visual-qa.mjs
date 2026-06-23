@@ -229,8 +229,19 @@ try {
 
 let qaFocus = (process.env.WIRELINE_QA_FOCUS || "").trim().toLowerCase();
 if (!qaFocus || qaFocus === "auto") {
-  const focuses = ["onboarding", "create-assistant", "knowledge-base", "studio-compose", "billing-checkout"];
-  const turnMod = (currentTurn - 1) % 5;
+  const focuses = [
+    "onboarding",
+    "create-assistant",
+    "knowledge-base",
+    "studio-compose",
+    "billing-checkout",
+    "connections-actions",
+    "inbox-recaps",
+    "telemetry-performance",
+    "settings-team",
+    "mobile-responsive-smoke"
+  ];
+  const turnMod = (currentTurn - 1) % focuses.length;
   qaFocus = focuses[turnMod];
   console.log(`[Evolving QA] Turn ${currentTurn} detected. Auto-selecting focus: '${qaFocus}' (highest-leverage check)`);
 } else {
@@ -428,6 +439,170 @@ try {
       await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
     }
     await signupContext.close();
+  } else if (qaFocus === "connections-actions") {
+    console.log("Running connections and actions focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      // Navigate to /actions
+      await signupPage.goto(`${baseUrl}/actions`, { waitUntil: "domcontentloaded" });
+      await settle(signupPage);
+
+      // Toggle first tool row if available
+      const toolRow = signupPage.locator(".wl-stitch-tool-row").first();
+      if (await toolRow.isVisible().catch(() => false)) {
+        await toolRow.click();
+        await signupPage.waitForTimeout(1500);
+        console.log("Toggled an integration tool in Actions workspace successfully.");
+      } else {
+        issues.push({
+          viewport: desktop.name,
+          route: "/actions",
+          mode: "authenticated",
+          kind: "flow",
+          detail: "No interactive tool rows found under Actions.",
+        });
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-connections-actions`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    }
+    await signupContext.close();
+  } else if (qaFocus === "inbox-recaps") {
+    console.log("Running inbox and email recaps focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      // Navigate to /inbox
+      await signupPage.goto(`${baseUrl}/inbox`, { waitUntil: "domcontentloaded" });
+      await settle(signupPage);
+
+      const inboxHeader = signupPage.locator("h1:has-text('Inbox')").first();
+      if (!(await inboxHeader.isVisible().catch(() => false))) {
+        console.log("Inbox header not explicitly found; standardizing route check.");
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-inbox-recaps`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    }
+    await signupContext.close();
+  } else if (qaFocus === "telemetry-performance") {
+    console.log("Running performance telemetry audit QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      // Navigate to /overview to run performance collection
+      const startTime = Date.now();
+      await signupPage.goto(`${baseUrl}/overview`, { waitUntil: "load" });
+      const loadTimeMs = Date.now() - startTime;
+      console.log(`Page Load Telemetry: '/overview' loaded in ${loadTimeMs}ms`);
+
+      // Collect window.performance indicators
+      const performanceMetrics = await signupPage.evaluate(() => {
+        const t = window.performance.timing;
+        return {
+          domContentLoaded: t.domContentLoadedEventEnd - t.navigationStart,
+          loadComplete: t.loadEventEnd - t.navigationStart,
+          totalResources: window.performance.getEntriesByType("resource").length,
+        };
+      }).catch(() => ({ domContentLoaded: -1, loadComplete: -1, totalResources: -1 }));
+
+      console.log(`Metrics harvested:`, performanceMetrics);
+      if (performanceMetrics.loadComplete > 5000) {
+        issues.push({
+          viewport: desktop.name,
+          route: "/overview",
+          mode: "authenticated",
+          kind: "telemetry",
+          detail: `High latency detected! Page load took ${performanceMetrics.loadComplete}ms (threshold 5000ms).`,
+        });
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-telemetry-performance`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+    }
+    await signupContext.close();
+  } else if (qaFocus === "settings-team") {
+    console.log("Running team settings roster focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      // Navigate to /admin (where team is managed)
+      await signupPage.goto(`${baseUrl}/admin`, { waitUntil: "domcontentloaded" });
+      await settle(signupPage);
+
+      // Look for Team tab and click it if available
+      const teamTab = signupPage.locator("button:has-text('Team')").first();
+      if (await teamTab.isVisible().catch(() => false)) {
+        await teamTab.click();
+        await settle(signupPage);
+      }
+
+      const emailInput = signupPage.locator("input[placeholder*='colleague@']").first();
+      if (await emailInput.isVisible().catch(() => false)) {
+        await emailInput.fill("engineering.test@trywireline.com");
+        console.log("Populated the team roster invitation input successfully.");
+      } else {
+        issues.push({
+          viewport: desktop.name,
+          route: "/admin",
+          mode: "authenticated",
+          kind: "flow",
+          detail: "Team roster invitation fields are not visible.",
+        });
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-settings-team`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    }
+    await signupContext.close();
+  } else if (qaFocus === "mobile-responsive-smoke") {
+    console.log("Running mobile-responsive layout smoke checks...");
+    // Emulate iPhone viewport (390 x 844)
+    const mobileWidth = 390;
+    const mobileHeight = 844;
+    const mobileContext = await browser.newContext({ viewport: { width: mobileWidth, height: mobileHeight }, deviceScaleFactor: 2 });
+    const mobilePage = await mobileContext.newPage();
+    attachDiagnostics(mobilePage, "iphone", "public", issues);
+
+    // Visit public route and check for layout overflow
+    await mobilePage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+    await settle(mobilePage);
+
+    const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+    if (overflow) {
+      issues.push({
+        viewport: "iphone",
+        route: "/",
+        mode: "public",
+        kind: "layout",
+        detail: "Horizontal layout overflow detected on landing page under mobile widths.",
+      });
+    }
+
+    const prefix = path.join(outputDir, `iphone-mobile-responsive-smoke`);
+    await mobilePage.screenshot({ path: `${prefix}-viewport.png`, fullPage: false });
+    await mobilePage.screenshot({ path: `${prefix}-full.png`, fullPage: true });
+    await mobileContext.close();
   } else {
     console.log("Running complete multi-viewport standard visual QA sweep...");
     await captureMarketing(browser, desktop, issues);

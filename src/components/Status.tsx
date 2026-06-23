@@ -81,7 +81,11 @@ const STATE_META: Record<
   },
 };
 
-function presentationState(data: PublicHealth | null, loading: boolean, error: string | null): OverallState {
+function presentationState(
+  data: PublicHealth | null,
+  loading: boolean,
+  error: string | null,
+): OverallState {
   if (loading && !data) return "unknown";
   if (!data) return error ? "unknown" : "operational";
 
@@ -132,7 +136,8 @@ export default function Status() {
 
   const overall = presentationState(data, loading, error);
   const OverallIcon = STATE_META[overall].icon;
-  const fallbackCovering = data?.overall === "outage" && data.components.voice_fallback === "operational";
+  const fallbackCovering =
+    data?.overall === "outage" && data.components.voice_fallback === "operational";
 
   return (
     <>
@@ -160,8 +165,14 @@ export default function Status() {
                 <span className="text-eyebrow">Live system status</span>
               </div>
               <div className="flex items-start gap-4">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${STATE_META[overall].pill}`}>
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <OverallIcon className="h-6 w-6" strokeWidth={1.75} />}
+                <div
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${STATE_META[overall].pill}`}
+                >
+                  {loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <OverallIcon className="h-6 w-6" strokeWidth={1.75} />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h1 className="marketing-hero-title mb-1 text-3xl sm:text-4xl">
@@ -198,7 +209,8 @@ export default function Status() {
                   </p>
                   {fallbackCovering ? (
                     <p className="mt-2 text-[11px] leading-5 text-muted">
-                      A primary model probe is unavailable; Wireline&apos;s configured fallback remains available.
+                      A primary model probe is unavailable; Wireline&apos;s configured fallback
+                      remains available.
                     </p>
                   ) : null}
                   {error ? <p className="mt-2 text-[11px] text-muted">{error}</p> : null}
@@ -208,49 +220,62 @@ export default function Status() {
           </motion.div>
 
           <div className="mb-8 grid gap-3 sm:grid-cols-3">
-            {(Object.keys(COMPONENT_META) as Array<keyof PublicHealth["components"]>).map((key, idx) => {
-              const meta = COMPONENT_META[key];
-              const state = data?.components[key] ?? "unknown";
-              const stateMeta = STATE_META[state];
-              const Icon = meta.icon;
-              const StateIcon = stateMeta.icon;
-              return (
-                <motion.div
-                  key={key}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1 + idx * 0.05 }}
-                  className="marketing-panel relative overflow-hidden p-4"
-                  data-testid={`status-component-${key}`}
-                >
-                  <div aria-hidden="true" className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${stateMeta.bgGradient}`} />
-                  <div className="relative">
-                    <div className="mb-2.5 flex items-center justify-between">
-                      <Icon className="h-4 w-4 text-foreground/75" strokeWidth={1.75} />
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8.5px] font-semibold uppercase leading-none tracking-[0.22em] ${stateMeta.pill}`}>
-                        <StateIcon className="h-2.5 w-2.5" />
-                        {stateMeta.label}
-                      </span>
+            {(Object.keys(COMPONENT_META) as Array<keyof PublicHealth["components"]>).map(
+              (key, idx) => {
+                const meta = COMPONENT_META[key];
+                const state = data?.components[key] ?? "unknown";
+                const stateMeta = STATE_META[state];
+                const Icon = meta.icon;
+                const StateIcon = stateMeta.icon;
+                return (
+                  <motion.div
+                    key={key}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 + idx * 0.05 }}
+                    className="marketing-panel relative overflow-hidden p-4"
+                    data-testid={`status-component-${key}`}
+                  >
+                    <div
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${stateMeta.bgGradient}`}
+                    />
+                    <div className="relative">
+                      <div className="mb-2.5 flex items-center justify-between">
+                        <Icon className="h-4 w-4 text-foreground/75" strokeWidth={1.75} />
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8.5px] font-semibold uppercase leading-none tracking-[0.22em] ${stateMeta.pill}`}
+                        >
+                          <StateIcon className="h-2.5 w-2.5" />
+                          {stateMeta.label}
+                        </span>
+                      </div>
+                      <p className="mb-1 text-sm font-semibold text-foreground">{meta.label}</p>
+                      <p className="text-caption leading-relaxed">{meta.description}</p>
                     </div>
-                    <p className="mb-1 text-sm font-semibold text-foreground">{meta.label}</p>
-                    <p className="text-caption leading-relaxed">{meta.description}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              },
+            )}
           </div>
 
           <div className="marketing-panel-muted p-4 sm:p-5">
             <p className="text-eyebrow mb-2">How we measure</p>
             <p className="marketing-body">
-              Every 60 seconds, Wireline pings each production LLM tier with a 1-token probe. Operational means the model responded within timeout. Degraded means a layer is partially available or a fallback is covering a primary probe. Outage is reserved for a confirmed lack of serving paths. We never store, log, or render the content of these probes.
+              Every 60 seconds, Wireline pings each production LLM tier with a 1-token probe.
+              Operational means the model responded within timeout. Degraded means a layer is
+              partially available or a fallback is covering a primary probe. Outage is reserved for
+              a confirmed lack of serving paths. We never store, log, or render the content of these
+              probes.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[9.5px] uppercase tracking-[0.32em] text-muted/70">
               <span>Probe interval · 60s</span>
               <span className="text-muted/70">·</span>
               <span>Public cache · 60s</span>
               <span className="text-muted/70">·</span>
-              <Link to="/security" className="transition-colors hover:text-foreground">Security practices</Link>
+              <Link to="/security" className="transition-colors hover:text-foreground">
+                Security practices
+              </Link>
               <span className="text-muted/70">·</span>
               <a
                 href="https://twitter.com/intent/tweet?text=%40trywireline+status"

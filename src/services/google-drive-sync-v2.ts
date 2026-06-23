@@ -87,26 +87,22 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
     });
     await drizzle.transaction(async (tx) => {
       if (extracted.directives.length)
-        await tx
-          .insert(schema.directives)
-          .values(
-            extracted.directives.map((item) => ({
-              userId,
-              agentId,
-              content: item.content.slice(0, 2000),
-              priority: Math.max(1, Math.min(10, Number(item.priority) || 5)),
-            })),
-          );
+        await tx.insert(schema.directives).values(
+          extracted.directives.map((item) => ({
+            userId,
+            agentId,
+            content: item.content.slice(0, 2000),
+            priority: Math.max(1, Math.min(10, Number(item.priority) || 5)),
+          })),
+        );
       if (extracted.knowledge.length)
-        await tx
-          .insert(schema.knowledge)
-          .values(
-            extracted.knowledge.map((item) => ({
-              userId,
-              agentId,
-              content: item.content.slice(0, 4000),
-            })),
-          );
+        await tx.insert(schema.knowledge).values(
+          extracted.knowledge.map((item) => ({
+            userId,
+            agentId,
+            content: item.content.slice(0, 4000),
+          })),
+        );
     });
     ingestedCount++;
   }
