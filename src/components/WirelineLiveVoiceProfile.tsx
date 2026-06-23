@@ -75,9 +75,7 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
             Pick the live voice character
           </h3>
           <p className="mt-1 max-w-2xl text-[13px] leading-5 text-muted-foreground">
-            Role-tuned profiles deliver distinctive, context-aware voices for live browser and
-            mobile Grok realtime sessions. Phone routing keeps its current production voice until
-            Direct SIP is deliberately provisioned.
+            Role-tuned profiles create distinctive, context-aware voices for live browser and mobile conversations. Phone routing keeps its current production voice until Direct SIP is deliberately provisioned.
           </p>
         </div>
       </div>
