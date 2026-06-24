@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { ArrowRight, Cable, CircleAlert, CreditCard, LogOut, MonitorDown, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRight, Cable, CreditCard, LogOut, MonitorDown, ShieldCheck, UsersRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { Badge, Button } from "../components/atoms";
+import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -64,34 +66,49 @@ export default function SettingsPage() {
               <p className="studio-kicker">Account</p>
               <h2 className="wl-section-title mt-2 truncate">{displayName}</h2>
               {user?.email ? <p className="mt-1 text-sm text-muted-foreground">{user.email}</p> : null}
-              <p className="wl-page-copy mt-4">Your account is the control point for the assistants, connected systems, and people in this workspace.</p>
+              <p className="wl-page-copy mt-4">
+                Your account is the control point for the assistants, connected systems, and people in this workspace.
+              </p>
             </div>
             <div className="flex flex-col items-start gap-3 sm:items-end">
-              <span className="wl-stitch-status-pill">Secure session</span>
-              <button type="button" onClick={handleSignOut} disabled={signingOut} className="studio-secondary-button shrink-0">
-                <LogOut size={16} />
-                {signingOut ? "Signing out..." : "Sign out"}
-              </button>
+              <Badge variant="success">
+                <ShieldCheck aria-hidden="true" className="size-3.5" />
+                Secure session
+              </Badge>
+              <Button type="button" variant="secondary" size="sm" disabled={signingOut} onClick={handleSignOut}>
+                <LogOut aria-hidden="true" size={16} />
+                {signingOut ? "Signing out…" : "Sign out"}
+              </Button>
             </div>
           </div>
-          {error ? <p className="mt-5 flex items-center gap-2 text-sm text-destructive" role="alert"><CircleAlert size={16} /> {error}</p> : null}
+          {error ? (
+            <StatusNotice tone="destructive" className="mt-5" title="Sign-out did not complete.">
+              {error}
+            </StatusNotice>
+          ) : null}
         </section>
 
         <section>
           <div className="mb-4 max-w-2xl">
             <p className="studio-kicker">Workspace controls</p>
             <h2 className="wl-section-title mt-2">The controls that shape how Wireline works.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Keep the operating details, people, money, connected systems, and companion surfaces clear and intentionally scoped.</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Keep the operating details, people, money, connected systems, and companion surfaces clear and intentionally scoped.
+            </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {settingsDestinations.map(({ href, icon: Icon, label, description, action }) => (
               <Link key={href} to={href} className="studio-card wl-card-action group flex min-h-[210px] flex-col p-5">
-                <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary"><Icon size={19} /></span>
+                <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+                  <Icon aria-hidden="true" size={19} />
+                </span>
                 <div className="mt-7 flex-1">
                   <h3 className="wl-card-title text-[17px]">{label}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
                 </div>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">{action} <ArrowRight size={15} /></span>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                  {action} <ArrowRight aria-hidden="true" size={15} />
+                </span>
               </Link>
             ))}
           </div>
@@ -99,14 +116,20 @@ export default function SettingsPage() {
 
         <section className="studio-card border-primary/20 bg-secondary p-5 sm:p-6">
           <div className="flex gap-3">
-            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
+            <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
             <div>
               <p className="studio-kicker">Control by design</p>
               <h2 className="wl-card-title mt-2 text-[17px]">Only connect what the job needs.</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Wireline keeps billing, provider credentials, webhooks, and account-level changes on the server. A connected system should be useful, approved, and appropriately limited for the work at hand.</p>
-              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-primary">
-                <Link to="/security" className="inline-flex items-center gap-1.5 hover:text-[color:var(--wl-accent-hover)]">Security overview <ArrowRight size={14} /></Link>
-                <Link to="/support" className="inline-flex items-center gap-1.5 hover:text-[color:var(--wl-accent-hover)]">Get support <ArrowRight size={14} /></Link>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Wireline keeps billing, provider credentials, webhooks, and account-level changes on the server. A connected system should be useful, approved, and appropriately limited for the work at hand.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+                <Button asChild variant="link" className="h-auto px-0 text-sm">
+                  <Link to="/security">Security overview <ArrowRight aria-hidden="true" size={14} /></Link>
+                </Button>
+                <Button asChild variant="link" className="h-auto px-0 text-sm">
+                  <Link to="/support">Get support <ArrowRight aria-hidden="true" size={14} /></Link>
+                </Button>
               </div>
             </div>
           </div>
