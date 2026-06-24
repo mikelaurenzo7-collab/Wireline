@@ -41,6 +41,7 @@ src/components/
 | Molecule | `FormField` | Complete | Label, help, error, and described-by relationship |
 | Molecule | `SearchField` | Complete | Search affordance with predictable clear behavior |
 | Molecule | `MetricCard` | Complete | Operational metric with contextual trend |
+| Molecule | `StatusNotice` | Complete | Semantic inline feedback for service, warning, and account-action states |
 | Organism | `PageShell` | Registered | Responsive page anatomy and tabs |
 | Organism | `CommandBar` | Complete | Mounted workspace command palette with route-safe navigation and keyboard contract |
 
@@ -73,20 +74,26 @@ src/components/
 - The command registry is limited to current routes and supported assistant-creation flows; redirect-only and retired destinations are excluded.
 - Search owns selection and execute keys, the dialog owns its two-control Tab loop, and focus returns to the invoking element on close.
 
+### Overview and settings route shells
+
+- Overview adopts canonical actions, readiness badges, structured roster skeletons, and degraded-workspace feedback.
+- Settings adopts canonical session state, sign-out actions, and account-action error treatment.
+- Both routes use `StatusNotice`, establishing a shared inline feedback pattern rather than duplicating semantic surface classes.
+
 ## Adoption Order
 
 ### 1. New work — mandatory now
 
 - Import primitives from `@/components/atoms`.
-- Prefer FormField, SearchField, and MetricCard when the interaction matches.
+- Prefer FormField, SearchField, MetricCard, and StatusNotice when the interaction matches.
 - Import PageShell and CommandBar from `@/components/organisms` in new route-level work.
 
 ### 2. High-traffic migrations — next
 
-1. Page shells and route headers that still own duplicate action controls
-2. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
-3. Training and advanced configuration panels
-4. Admin and long-tail configuration panels
+1. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
+2. Training and advanced configuration panels
+3. Admin and long-tail configuration panels
+4. PageShell adoption where its responsive header or tabs replace duplicate route-specific behavior
 5. Visual QA and accessibility validation across desktop, laptop, and mobile viewport tiers
 
 ### 3. Deliberate exceptions
