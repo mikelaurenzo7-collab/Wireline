@@ -1,0 +1,14 @@
+/* REAL IMPLEMENTATION — Spatial Depth System v1.0 pushed live */
+:root {
+  --depth-base: 0 8px 32px rgb(0 245 255 / 0.2);
+  --depth-lift: 0 20px 60px rgb(255 0 255 / 0.3);
+}
+.workspace-panel {
+  backdrop-filter: blur(24px);
+  box-shadow: var(--depth-base);
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.workspace-panel:hover {
+  transform: translateY(-4px) rotateX(4deg);
+  box-shadow: var(--depth-lift);
+}
