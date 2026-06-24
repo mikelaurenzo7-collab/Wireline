@@ -1,0 +1,27 @@
+/* Direct Line needs a conversation measure, not an unrestricted dashboard width. */
+[data-wireline-route="/studio"] .scroll-viewport.px-4.py-6 {
+  width: min(100%, 56rem);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+[data-wireline-route="/studio"] .scroll-viewport.px-4.py-6 ~ .shrink-0 {
+  width: min(calc(100% - 2rem), 56rem);
+  margin-inline: auto;
+}
+
+[data-wireline-route="/studio"] .scroll-viewport.px-4.py-6 .flex.flex-col.items-center.justify-center {
+  min-height: min(26rem, 48vh);
+  padding-block: 2rem;
+}
+
+[data-wireline-route="/studio"] textarea[placeholder*="Message"] {
+  min-height: 7.5rem;
+}
+
+@media (max-width: 640px) {
+  [data-wireline-route="/studio"] .scroll-viewport.px-4.py-6,
+  [data-wireline-route="/studio"] .scroll-viewport.px-4.py-6 ~ .shrink-0 {
+    width: 100%;
+  }
+}

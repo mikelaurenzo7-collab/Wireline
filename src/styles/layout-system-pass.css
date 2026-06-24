@@ -1,0 +1,246 @@
+/* Workspace geometry pass: one route scroll owner, restrained navigation, and readable desktop density. */
+
+.wl-workspace-main {
+  background: var(--wl-page);
+}
+
+.wl-workspace-content {
+  scrollbar-gutter: stable;
+}
+
+.wl-workspace-content-inner > .h-full {
+  height: auto;
+  min-height: 100%;
+}
+
+.wl-workspace-sidebar {
+  background: color-mix(in srgb, var(--wl-surface) 96%, var(--wl-page));
+}
+
+.wl-stitch-sidebar-link {
+  min-height: 2.625rem;
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--wl-muted) 88%, var(--wl-on-surface));
+}
+
+.wl-stitch-sidebar-link:hover {
+  background: color-mix(in srgb, var(--wl-primary-container) 5%, var(--wl-surface));
+  color: var(--wl-on-surface);
+}
+
+.wl-stitch-sidebar-link[aria-current="page"] {
+  position: relative;
+  background: color-mix(in srgb, var(--wl-primary-container) 11%, var(--wl-surface));
+  color: var(--wl-primary-container);
+  font-weight: 650;
+}
+
+.wl-stitch-sidebar-link[aria-current="page"]::before {
+  display: block;
+  position: absolute;
+  left: -0.75rem;
+  width: 0.1875rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--wl-primary-container);
+  content: "";
+}
+
+.wl-workspace-header {
+  background: color-mix(in srgb, var(--wl-page) 94%, transparent);
+}
+
+.wl-workspace-content .studio-card {
+  border-radius: calc(var(--radius-xl) - 2px);
+}
+
+.wl-workspace-content .studio-card:not(.wl-card-action) {
+  box-shadow: 0 1px 1px rgba(21, 32, 56, 0.025);
+}
+
+.wl-route-section-heading {
+  font-family: var(--wl-font-display);
+  font-size: clamp(1.25rem, 1.05rem + 0.75vw, 1.75rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+.wl-route-copy {
+  max-width: 66ch;
+  color: var(--wl-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.wl-setup-surface {
+  display: grid;
+  gap: 1.25rem;
+  border: 1px solid var(--wl-line);
+  border-radius: var(--radius-xl);
+  background: var(--wl-surface);
+  padding: clamp(1.25rem, 1rem + 1vw, 2rem);
+}
+
+.wl-setup-surface__eyebrow {
+  font-family: var(--wl-font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wl-primary-container);
+}
+
+.wl-setup-surface__title {
+  font-family: var(--wl-font-display);
+  font-size: clamp(1.375rem, 1.15rem + .75vw, 1.9rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+/* Knowledge previously forced four independently scrolling columns into the desktop viewport. */
+[data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex.h-full {
+  height: auto;
+  min-height: 0;
+}
+
+[data-wireline-route="/knowledge"] .min-h-\[520px\] {
+  min-height: 19rem;
+}
+
+[data-wireline-route="/knowledge"] .wl-scroll {
+  overflow: visible;
+}
+
+[data-wireline-route="/knowledge"] .wl-scroll > * {
+  min-height: 0;
+}
+
+/* Inbox has no reason to imitate a modal when the account has no mail yet. */
+.wl-inbox-route > .grid.place-items-center {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card {
+  max-width: 46rem;
+  padding: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
+  text-align: left;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card > span {
+  margin-inline: 0;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card > .studio-kicker,
+.wl-inbox-route > .grid.place-items-center > .studio-card > h2,
+.wl-inbox-route > .grid.place-items-center > .studio-card > p {
+  text-align: left;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card > div {
+  justify-content: flex-start;
+}
+
+/* The public hero now carries one purposeful product proof card. */
+.marketing-hero {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wl-primary-container) 4%, var(--wl-page)), var(--wl-page) 72%);
+}
+
+.marketing-operating-model {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wl-primary-container) 20%, var(--wl-line));
+  border-radius: calc(var(--radius-xl) + 2px);
+  background: var(--wl-surface);
+  box-shadow: 0 24px 50px -38px color-mix(in srgb, var(--wl-primary-container) 52%, transparent), var(--wl-shadow-sm);
+}
+
+.marketing-operating-model__header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  border-bottom: 1px solid var(--wl-line);
+  padding: 1.25rem;
+}
+
+.marketing-operating-model__body {
+  display: grid;
+  gap: 0;
+  padding: 0.5rem 1.25rem;
+}
+
+.marketing-operating-model__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  border-bottom: 1px solid var(--wl-line);
+  padding: 0.9rem 0;
+  font-size: 0.8125rem;
+}
+
+.marketing-operating-model__row span {
+  color: var(--wl-muted);
+}
+
+.marketing-operating-model__row strong {
+  color: var(--wl-on-surface);
+  font-weight: 600;
+}
+
+.marketing-operating-model__outcome {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0 1.25rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--wl-primary-container) 16%, var(--wl-line));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--wl-primary-container) 7%, var(--wl-surface));
+  padding: 1rem;
+  color: var(--wl-primary-container);
+}
+
+.marketing-operating-model__outcome p:last-child {
+  color: var(--wl-on-surface);
+}
+
+.marketing-channel-card {
+  box-shadow: 0 1px 1px rgba(21, 32, 56, 0.02);
+}
+
+.marketing-channel-card:hover {
+  border-color: color-mix(in srgb, var(--wl-primary-container) 35%, var(--wl-line));
+}
+
+@media (min-width: 1280px) {
+  [data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex > .xl\:grid {
+    grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 0.9fr) minmax(250px, 1fr) minmax(360px, 1.25fr);
+    gap: 1rem;
+  }
+
+  [data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex > .xl\:grid > aside {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+  }
+
+  .marketing-operating-model {
+    transform: translateY(2px);
+  }
+}
+
+@media (max-width: 1023px) {
+  .wl-workspace-content-inner {
+    max-width: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .wl-workspace-content {
+    padding-right: 0.25rem;
+  }
+}

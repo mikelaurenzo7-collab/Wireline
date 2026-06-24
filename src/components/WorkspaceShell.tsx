@@ -42,7 +42,7 @@ function NavItem({
       onClick={onNavigate}
       className="wl-stitch-sidebar-link gap-3 px-3 py-2.5"
     >
-      <Icon size={18} strokeWidth={active ? 2.1 : 1.75} />
+      <Icon size={17} strokeWidth={active ? 2.1 : 1.75} />
       <span className="truncate normal-case tracking-normal">{label}</span>
     </Link>
   );
@@ -69,7 +69,6 @@ export default function WorkspaceShell({
     location.pathname === href || (href === "/studio" && location.pathname.startsWith("/studio"));
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
   const closeDrawer = () => setDrawerOpen(false);
-  const appViewportClass = "h-[100dvh] min-h-0 overflow-hidden";
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -98,7 +97,7 @@ export default function WorkspaceShell({
   }, [drawerOpen]);
 
   return (
-    <div className={`wl-workspace-shell bg-background text-foreground ${appViewportClass}`}>
+    <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
       <a className="wl-skip-link" href="#workspace-main">
         Skip to content
       </a>
@@ -106,17 +105,17 @@ export default function WorkspaceShell({
         <button
           type="button"
           aria-label="Close navigation"
-          className="fixed inset-0 z-40 bg-[color:var(--wl-focus)] lg:hidden"
+          className="fixed inset-0 z-40 bg-[color:color-mix(in_srgb,var(--foreground)_18%,transparent)] lg:hidden"
           onClick={closeDrawer}
         />
       ) : null}
-      <div className="mx-auto grid h-full min-h-0 w-full max-w-[1760px] overflow-hidden lg:grid-cols-[256px_minmax(0,1fr)]">
+      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[232px_minmax(0,1fr)]">
         <aside
           ref={drawerRef}
           aria-label="Workspace navigation"
           aria-modal={drawerOpen ? true : undefined}
           role={drawerOpen ? "dialog" : undefined}
-          className={`wl-stitch-sidebar wl-workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:w-[256px] lg:translate-x-0 lg:shadow-none ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
+          className={`wl-stitch-sidebar wl-workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col px-3 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:w-[232px] lg:translate-x-0 lg:px-3 lg:shadow-none ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="flex shrink-0 items-center justify-between px-2">
             <Link
@@ -125,13 +124,13 @@ export default function WorkspaceShell({
               className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline-none"
               aria-label="Wireline overview"
             >
-              <WirelineMark className="h-7 w-7 shrink-0 text-[24px] leading-none text-primary" />
+              <WirelineMark className="h-6 w-6 shrink-0 text-[22px] leading-none text-primary" />
               <span className="min-w-0">
-                <span className="block font-[var(--wl-font-display)] text-[22px] font-semibold leading-6 tracking-[-.03em] text-foreground">
+                <span className="block font-[var(--wl-font-display)] text-[20px] font-semibold leading-5 tracking-[-.03em] text-foreground">
                   Wireline
                 </span>
-                <span className="mt-1 block truncate font-mono text-[10px] font-medium lowercase tracking-[.06em] text-muted-foreground">
-                  personal + business assistants
+                <span className="mt-1 block truncate font-mono text-[9px] font-medium lowercase tracking-[.08em] text-muted-foreground">
+                  personal + business
                 </span>
               </span>
             </Link>
@@ -148,7 +147,7 @@ export default function WorkspaceShell({
             </button>
           </div>
 
-          <nav className="mt-8 flex flex-col gap-1" aria-label="Workspace">
+          <nav className="mt-7 flex flex-col gap-1" aria-label="Workspace">
             {primaryNavigation.map((item) => (
               <NavItem
                 key={item.href}
@@ -159,7 +158,7 @@ export default function WorkspaceShell({
             ))}
           </nav>
 
-          <nav className="mt-auto border-t border-border pt-5" aria-label="Account settings">
+          <nav className="mt-auto border-t border-border px-1 pt-4" aria-label="Account settings">
             <NavItem
               href="/settings"
               label="Settings"
@@ -173,9 +172,9 @@ export default function WorkspaceShell({
         <main
           id="workspace-main"
           data-wireline-route={location.pathname}
-          className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-5 sm:px-7 sm:pb-6 lg:px-10 lg:pb-8 xl:px-12"
+          className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 sm:px-6 sm:pb-5 lg:px-8 lg:pb-6 xl:px-10"
         >
-          <header className="wl-workspace-header flex min-h-[72px] shrink-0 flex-col justify-center gap-3 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <header className="wl-workspace-header flex min-h-[68px] shrink-0 flex-col justify-center gap-3 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 ref={menuButtonRef}
@@ -199,11 +198,13 @@ export default function WorkspaceShell({
             ) : null}
           </header>
           <div
-            className={`wl-workspace-content min-h-0 flex-1 ${
-              isStudioRoute ? "overflow-hidden" : "overflow-y-auto overscroll-contain"
+            className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${
+              isStudioRoute ? "overflow-hidden" : ""
             } ${contentClassName}`}
           >
-            {children}
+            <div className="wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col">
+              {children}
+            </div>
           </div>
         </main>
       </div>

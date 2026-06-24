@@ -1,57 +1,74 @@
-/* Precision Account Holder auth screen. Scoped to the existing AuthPortal structure. */
+/* Account entry surface. Scoped to the existing AuthPortal structure. */
 .wl-stitch-auth-shell {
   min-height: 100dvh;
-  background: var(--wl-page);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wl-primary-container) 3%, var(--wl-page)), var(--wl-page) 34rem);
 }
+
 .wl-stitch-auth-shell main {
-  padding: 48px 24px;
+  padding: clamp(2.5rem, 4vw, 4.5rem) 1.5rem;
 }
+
 .wl-stitch-auth-shell main > div {
-  max-width: 448px;
+  max-width: 27.5rem;
 }
+
 .wl-stitch-auth-shell main > div > .mb-6 > a:first-child {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-md);
+  font-family: var(--wl-font-display);
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
 }
+
 .wl-stitch-auth-shell main > div > .mb-6 {
-  margin-bottom: 32px;
+  margin-bottom: 1.5rem;
 }
+
 .wl-stitch-auth-shell main > div > .mb-6 .wl-stitch-headline {
-  font-size: 32px;
-  line-height: 40px;
-  letter-spacing: -0.02em;
+  margin-top: 1.125rem;
+  font-size: clamp(1.75rem, 1.5rem + 0.65vw, 2.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
 }
+
 .wl-stitch-auth-shell footer {
   display: none;
 }
+
 .wl-stitch-auth-card {
-  padding: 40px;
+  padding: clamp(1.5rem, 1.25rem + 1vw, 2.25rem);
   border-radius: var(--radius-xl);
-  background: var(--wl-surface);
   border: 1px solid var(--border);
-  box-shadow: 0 12px 32px -4px rgba(93, 63, 211, 0.08), 0 4px 12px rgba(93, 63, 211, 0.04);
+  background: var(--wl-surface);
+  box-shadow: 0 18px 42px -34px rgba(44, 27, 133, 0.38), 0 6px 14px rgba(21, 32, 56, 0.035);
 }
+
 .wl-stitch-oauth-btn {
-  min-height: 42px;
-  border-radius: var(--radius);
-  font-size: 16px;
+  min-height: 2.625rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
 }
+
 .wl-stitch-auth-divider {
   font-family: var(--wl-font-mono);
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
 }
+
 .wl-stitch-auth-shell .wl-stitch-auth-card + div {
-  margin-top: 24px;
+  margin-top: 1.25rem;
+  font-size: 0.8125rem;
 }
+
 @media (max-width: 639px) {
   .wl-stitch-auth-shell main {
-    padding: 32px 16px;
+    align-items: flex-start;
+    padding: 2rem 1rem;
   }
+
   .wl-stitch-auth-card {
-    padding: 24px;
-  }
-  .wl-stitch-auth-shell main > div > .mb-6 .wl-stitch-headline {
-    font-size: 24px;
-    line-height: 32px;
+    padding: 1.25rem;
   }
 }
