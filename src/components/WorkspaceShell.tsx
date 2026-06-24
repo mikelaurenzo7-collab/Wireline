@@ -65,8 +65,11 @@ export default function WorkspaceShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const isActive = (href: string) =>
-    location.pathname === href || (href === "/studio" && location.pathname.startsWith("/studio"));
+  const isActive = (href: string) => {
+    if (location.pathname === href) return true;
+    if (href === "/overview") return false;
+    return location.pathname.startsWith(`${href}/`);
+  };
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
   const closeDrawer = () => setDrawerOpen(false);
 
@@ -163,7 +166,7 @@ export default function WorkspaceShell({
               href="/settings"
               label="Settings"
               icon={Settings}
-              active={isActive("/settings")}
+              active={isActive("/settings") || location.pathname.startsWith("/admin")}
               onNavigate={closeDrawer}
             />
           </nav>
