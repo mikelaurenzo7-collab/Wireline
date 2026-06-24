@@ -114,10 +114,13 @@ export async function trackVoiceMinutes(opts: {
       .where(eq(schema.subscriptions.userId, userId))
       .limit(1);
 
-    const plan = planById(sub?.plan ?? null);
-    if (!plan) return; // no active paid plan → nothing to bill
+    const plan = planById(sub?.plan ?? "personal");
+    if (!plan) return;
 
-    const included = plan.voice_minutes_monthly;
+    // If they have no active subscription, they are on the free-to-build pay-as-you-go Personal path.
+    // Every minute is charged directly to their balance.
+    const isPayAsYouGo = !sub?.plan;
+    const included = isPayAsYouGo ? 0 : plan.voice_minutes_monthly;
     const newOverageMinutes = Math.max(0, newUsed - Math.max(included, previousUsed));
     if (newOverageMinutes <= 0) return;
 
@@ -130,7 +133,7 @@ export async function trackVoiceMinutes(opts: {
       if (covered > 0) return;
     }
 
-    if (sub?.stripeCustomerId) {
+    if (sub?.stripeCustomerId && !isPayAsYouGo) {
       await emitVoiceMinuteOverageEvent({
         customerId: sub.stripeCustomerId,
         minutes: newOverageMinutes,
@@ -172,10 +175,11 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
   ]);
 
   const used = Number(usageRow?.used ?? 0);
-  const plan = planById(sub?.plan ?? null);
-  const included = plan?.voice_minutes_monthly ?? 0;
+  const plan = planById(sub?.plan ?? "personal");
+  const isPayAsYouGo = !sub?.plan;
+  const included = isPayAsYouGo ? 0 : (plan?.voice_minutes_monthly ?? 0);
   const overage = Math.max(0, used - included);
-  const overageRate = plan?.overage_per_min_usd ?? 0;
+  const overageRate = plan?.overage_per_min_usd ?? 0.2;
 
   return {
     plan_id: plan?.id ?? null,

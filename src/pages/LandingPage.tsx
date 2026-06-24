@@ -17,7 +17,7 @@ export default function LandingPage() {
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Web, iOS, Android",
     description:
-      "A personal AI communications assistant that handles phone calls, messaging, scheduling, and hold times for you.",
+      "Personal assistants and business agents that handle phone calls, messaging, scheduling, and hold times under your rules.",
     offers: {
       "@type": "Offer",
       price: "0",
@@ -29,7 +29,7 @@ export default function LandingPage() {
     <>
       <PageMeta
         title="Wireline | AI Voice + Messaging"
-        description="Wireline handles the calls, messages, follow-ups, and hold music that interrupt your life and work."
+        description="Personal assistants and business agents that handle calls, messages, follow-ups, and hold time — for life and work."
         image="/og-image.png"
       />
       <script

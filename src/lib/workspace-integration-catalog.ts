@@ -9,6 +9,14 @@ export type WorkspaceIntegration = {
 
 export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
   {
+    id: "apple-shortcuts",
+    label: "Apple Siri & Shortcuts",
+    family: "Device integration",
+    detail: "Trigger assistants via iOS Intents, Action Button, and Lock Screen.",
+    capabilities: ["Ask Wireline", "Place calls", "Summarize recent", "Follow-ups"],
+    connection: "workspace",
+  },
+  {
     id: "google",
     label: "Google Workspace",
     family: "Workspace",

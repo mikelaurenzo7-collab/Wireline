@@ -13,11 +13,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, "..");
 const vercelPath = resolve(repoRoot, "vercel.json");
+const staticHtmlSources = ["index.html", "public/chatgpt-app-privacy.html", "public/legal/data-deletion.html"];
 
 function expectedCsp() {
   const tsxCli = join(repoRoot, "node_modules", "tsx", "dist", "cli.mjs");
@@ -51,8 +53,44 @@ function readVercelCsp() {
   return { config, cspHeader, cspValue: cspHeader?.value ?? null };
 }
 
+function hashSource(source) {
+  return `'sha256-${createHash("sha256").update(source).digest("base64")}'`;
+}
+
+function inlineBlocks(html, tagName) {
+  const normalized = html.replace(/\r\n/g, "\n");
+  const pattern =
+    tagName === "script" ? /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi : /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  return [...normalized.matchAll(pattern)].map((match) => match[1]);
+}
+
+function assertStaticInlineSourcesAllowed(csp) {
+  const missing = [];
+  for (const relativePath of staticHtmlSources) {
+    const html = readFileSync(resolve(repoRoot, relativePath), "utf8");
+    for (const block of inlineBlocks(html, "script")) {
+      const source = hashSource(block);
+      if (!csp.includes(source)) missing.push({ relativePath, tagName: "script", source });
+    }
+    for (const block of inlineBlocks(html, "style")) {
+      const source = hashSource(block);
+      if (!csp.includes(source)) missing.push({ relativePath, tagName: "style", source });
+    }
+  }
+
+  if (!missing.length) return;
+
+  console.error("check-csp-drift: static inline HTML source is not covered by buildCSP()\n");
+  for (const item of missing) {
+    console.error(`  ${item.relativePath} <${item.tagName}> requires ${item.source}`);
+  }
+  console.error("\nMove the block to an external asset or add the exact hash to src/lib/csp.ts.");
+  process.exit(1);
+}
+
 const write = process.argv.includes("--write");
 const expected = expectedCsp();
+assertStaticInlineSourcesAllowed(expected);
 const { config, cspHeader, cspValue } = readVercelCsp();
 
 if (!cspHeader) {

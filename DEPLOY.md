@@ -36,6 +36,33 @@ Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
 The repo requires **Node 22+** (`.nvmrc`, `package.json` `engines`, and
 `vercel.json` `build.env.NODE_VERSION`). In Vercel → wireline → Settings →
 General, set **Node.js Version** to **22.x** if the dashboard still shows 20.x.
+Vercel uses `package.json` `engines.node` during installs, so the repo-level
+`22.x` declaration is the source of truth until the dashboard setting is
+manually reconciled.
+
+### Release gate and preview migration policy
+
+Wireline merges must be held until the release gate is actionable. A deploy is
+not release-ready when GitHub Actions reports a startup failure before jobs
+materialize, has a blank workflow name, or exposes no job logs/steps; that state
+is an infrastructure/App integration blocker, not a trustworthy application
+build signal. In that case:
+
+1. Do **not** merge reliability, billing, auth, data, or migration-affecting PRs
+   on the assumption that the missing logs are harmless.
+2. Confirm the Vercel preview is `READY` and inspect runtime logs for the
+   affected environment.
+3. Confirm CodeQL/security checks that do materialize are green.
+4. Leave the PR open with the exact blocker and retry only after GitHub Actions
+   produces named jobs with readable logs, or after the infrastructure blocker
+   is explicitly accepted by the owner.
+
+Vercel previews must never apply migrations to a shared production database.
+The `vercel-build` script intentionally routes through `scripts/vercel-build.mjs`.
+That wrapper runs `npm run db:migrate` only when `VERCEL_ENV=production` or
+`WIRELINE_RUN_MIGRATIONS=true`; all preview builds should log that migrations
+were skipped before running the normal production build. Keep this wrapper wired
+in `package.json` and do not replace it with `npm run db:migrate && npm run build`.
 
 ---
 
@@ -150,6 +177,18 @@ the next callback if the production database role has DDL permission.
 **Stripe webhook fails**
 → Stripe Dashboard → Webhooks → confirm endpoint URL is
 `https://trywireline.com/api/stripe-webhook`.
+
+**GitHub Actions shows a blank workflow name, zero jobs, or missing logs**
+→ Treat it as a release-gate infrastructure blocker. Re-run after checking
+GitHub Actions/App installation health, repository Actions settings, and any
+third-party status checks. Do not merge blocked PRs until named jobs and logs
+are available, unless the owner explicitly accepts the infrastructure risk.
+
+**Vercel preview tries to run database migrations**
+→ Stop the merge. `package.json` must keep `"vercel-build":
+"node scripts/vercel-build.mjs"` and preview environments must leave
+`WIRELINE_RUN_MIGRATIONS` unset or `false`. Only production builds or explicit
+migration test runs may set it to `true`.
 
 **Preview build fails author-email check**
 → Already mitigated. If it returns: set

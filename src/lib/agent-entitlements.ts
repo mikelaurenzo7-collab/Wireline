@@ -1,6 +1,9 @@
+import { planById } from "./plan-catalog";
+
 export interface AgentEntitlementInput {
   isOwner: boolean;
   subscriptionStatus?: string | null;
+  planId?: string | null;
   maxAgents?: number | null;
   extraAgents?: number | null;
 }
@@ -24,7 +27,10 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
     };
   }
 
-  const planAgents = input.maxAgents ?? 3;
+  // Look up plan limits from the plan catalog. If they have no subscription plan,
+  // we default to the "personal" (Solo Agent) plan which permits 1 agent.
+  const plan = planById(input.planId);
+  const planAgents = plan ? plan.max_agents : 1;
   const purchasedExtras = input.extraAgents ?? 0;
   return {
     subscriptionStatus: input.subscriptionStatus || "active",

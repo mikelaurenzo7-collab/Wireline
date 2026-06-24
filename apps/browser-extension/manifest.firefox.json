@@ -1,0 +1,13 @@
+{
+  "sidebar_action": {
+    "default_title": "Wireline Companion",
+    "default_panel": "panel/index.html",
+    "open_at_install": false
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "companion@wireline.com",
+      "strict_min_version": "128.0"
+    }
+  }
+}

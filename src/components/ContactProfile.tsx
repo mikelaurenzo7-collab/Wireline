@@ -217,7 +217,7 @@ export default function ContactProfile() {
             label="Calls"
             value={String(data.stats.total_calls)}
             icon={Phone}
-            accent={BRAND.purple}
+            accent={BRAND.colors.primary}
             sparkData={callSpark.length >= 2 ? callSpark : undefined}
             gradientId={`${sparkUid}-calls`}
           />
@@ -225,7 +225,7 @@ export default function ContactProfile() {
             label="Minutes"
             value={String(data.stats.total_minutes)}
             icon={Clock}
-            accent={BRAND.purple}
+            accent={BRAND.colors.primary}
             sparkData={minuteSpark.length >= 2 ? minuteSpark : undefined}
             gradientId={`${sparkUid}-minutes`}
           />
@@ -233,14 +233,14 @@ export default function ContactProfile() {
             label="Avg Score"
             value={String(data.stats.avg_lead_score)}
             icon={Target}
-            accent={BRAND.purple}
+            accent={BRAND.colors.primary}
             gradientId={`${sparkUid}-score`}
           />
           <StatCard
             label="Spend"
             value={formatMoney(data.stats?.total_cost, 2)}
             icon={DollarSign}
-            accent={BRAND.purple}
+            accent={BRAND.colors.primary}
             gradientId={`${sparkUid}-spend`}
           />
         </div>

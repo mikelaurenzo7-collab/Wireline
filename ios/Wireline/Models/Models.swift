@@ -79,9 +79,11 @@ struct Agent: Codable, Identifiable {
     let archetype: String?
     let channels: [String]?
     let voiceId: String?
+    let isBusinessAgent: Bool?
     enum CodingKeys: String, CodingKey {
         case id, name, role, archetype, channels
         case voiceId = "voiceId"
+        case isBusinessAgent
     }
 }
 

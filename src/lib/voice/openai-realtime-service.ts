@@ -6,6 +6,7 @@ import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   buildOpenAIRealtimeInstructions,
   normalizeOpenAIRealtimeVoice,
+  type OpenAIRealtimeToolDefinition,
 } from "./openai-realtime-config";
 import { OPENAI_REALTIME_WIRELINE_TOOLS } from "./openai-realtime-tools";
 
@@ -16,14 +17,26 @@ export interface CreateOpenAIRealtimeClientSecretInput {
   agentName?: string | null;
   model?: string | null;
   voice?: string | null;
+  /** Overrides the standard Wireline runtime instructions for isolated previews. */
+  instructions?: string | null;
+  /** Defaults to Wireline runtime tools. Pass [] for a tool-free demo. */
+  tools?: OpenAIRealtimeToolDefinition[];
+  /** Tool-free demos must disable tool selection explicitly. */
+  toolChoice?: "auto" | "none";
+  /** Routes acquisition/demo sessions to a separately budgeted OpenAI key when configured. */
+  apiKeyPurpose?: "runtime" | "chatgpt_demo";
 }
 
-function getOpenAIApiKey(): string {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+function getOpenAIApiKey(purpose: CreateOpenAIRealtimeClientSecretInput["apiKeyPurpose"] = "runtime"): string {
+  const apiKey =
+    (purpose === "chatgpt_demo" ? process.env.OPENAI_API_KEY_CHATKIT?.trim() : "") ||
+    process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw AppError.fromHttpStatus(
       503,
-      "OpenAI Realtime is not configured. Add OPENAI_API_KEY in Vercel environment variables.",
+      purpose === "chatgpt_demo"
+        ? "ChatGPT voice preview is not configured. Add OPENAI_API_KEY_CHATKIT or OPENAI_API_KEY in Vercel."
+        : "OpenAI Realtime is not configured. Add OPENAI_API_KEY in Vercel environment variables.",
     );
   }
   return apiKey;
@@ -34,14 +47,15 @@ function safetyIdentifierForUser(userId: string): string {
 }
 
 export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClientSecretInput) {
+  const tools = input.tools ?? OPENAI_REALTIME_WIRELINE_TOOLS;
   return {
     session: {
       type: "realtime",
       model: input.model?.trim() || OPENAI_REALTIME_DEFAULT_MODEL,
       output_modalities: ["audio"],
-      instructions: buildOpenAIRealtimeInstructions(input.agentName),
-      tools: OPENAI_REALTIME_WIRELINE_TOOLS,
-      tool_choice: "auto",
+      instructions: input.instructions?.trim().slice(0, 16_000) || buildOpenAIRealtimeInstructions(input.agentName),
+      tools,
+      tool_choice: input.toolChoice || "auto",
       audio: {
         input: {
           format: {
@@ -66,6 +80,7 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
 export function getOpenAIRealtimeStatus() {
   return {
     configured: Boolean(process.env.OPENAI_API_KEY?.trim()),
+    chatgptDemoConfigured: Boolean(process.env.OPENAI_API_KEY_CHATKIT?.trim() || process.env.OPENAI_API_KEY?.trim()),
     defaultModel: OPENAI_REALTIME_DEFAULT_MODEL,
     defaultVoice: normalizeOpenAIRealtimeVoice(process.env.OPENAI_REALTIME_VOICE),
     deepgramFluxRecommended: true,
@@ -76,7 +91,8 @@ export function getOpenAIRealtimeStatus() {
 export async function createOpenAIRealtimeClientSecret(
   input: CreateOpenAIRealtimeClientSecretInput,
 ) {
-  const apiKey = getOpenAIApiKey();
+  const purpose = input.apiKeyPurpose || (input.userId.startsWith("guest:") ? "chatgpt_demo" : "runtime");
+  const apiKey = getOpenAIApiKey(purpose);
   const body = buildOpenAIRealtimeSessionConfig(input);
 
   try {
@@ -107,12 +123,13 @@ export async function createOpenAIRealtimeClientSecret(
     if (!response.ok) {
       log.warn("OpenAI Realtime client secret request failed", {
         userId: input.userId,
+        purpose,
         status: response.status,
         body: typeof text === "string" ? text.slice(0, 500) : undefined,
       });
       throw AppError.fromHttpStatus(
         response.status,
-        "OpenAI Realtime session could not be created. Check OPENAI_API_KEY, model access, and billing.",
+        "OpenAI Realtime session could not be created. Check OpenAI model access and billing.",
       );
     }
 
@@ -122,13 +139,15 @@ export async function createOpenAIRealtimeClientSecret(
         provider: "openai_realtime",
         model: body.session.model,
         voice: body.session.audio.output.voice,
-        tools: OPENAI_REALTIME_WIRELINE_TOOLS.map((tool) => tool.name),
+        tools: (input.tools ?? OPENAI_REALTIME_WIRELINE_TOOLS).map((tool) => tool.name),
+        purpose,
       },
     };
   } catch (error) {
     if (error instanceof AppError) throw error;
     log.error("OpenAI Realtime client secret request errored", {
       userId: input.userId,
+      purpose,
       error: getErrorMessage(error),
     });
     throw AppError.fromHttpStatus(502, "OpenAI Realtime session request failed.");

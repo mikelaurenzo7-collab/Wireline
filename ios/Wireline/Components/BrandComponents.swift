@@ -34,11 +34,9 @@ struct AssistantRow: View {
             Medallion(systemImage: icon(for: agent.archetype), size: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(agent.name).font(.headline).foregroundStyle(Brand.text)
-                if let role = agent.role {
-                    Text(role.replacingOccurrences(of: "_", with: " ").capitalized)
-                        .font(.caption)
-                        .foregroundStyle(Brand.text2)
-                }
+                Text(postureLabel(for: agent))
+                    .font(.caption)
+                    .foregroundStyle(Brand.text2)
             }
             Spacer()
             if let channels = agent.channels, !channels.isEmpty {
@@ -52,6 +50,14 @@ struct AssistantRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private func postureLabel(for agent: Agent) -> String {
+        if agent.isBusinessAgent == true { return "Business agent" }
+        if let role = agent.role {
+            return role.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+        return "Personal assistant"
     }
 
     private func icon(for archetype: String?) -> String {

@@ -55,8 +55,8 @@ function AccountCard({
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           {account.type === "personal"
-            ? "Single assistant, streamlined interface — your personal AI assistant."
-            : "Assistants Recaps — multiple assistants, Recaps, analytics, pipeline."}
+            ? "Personal assistants for everyday calls, scheduling, and follow-ups."
+            : "Personal assistants and business agents with recaps, analytics, and connected accounts."}
         </p>
       </div>
     </button>

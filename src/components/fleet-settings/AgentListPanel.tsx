@@ -13,6 +13,8 @@ import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { OPS_CHANNEL_EMPTY, WL_FLEET_CLASSES } from "../../lib/wireline-ops-design";
+import { PRODUCT_POSTURE, PRODUCT_VERSATILITY } from "../../lib/product-copy";
+import PostureBadge from "../ui/PostureBadge";
 
 interface Props {
   agents: any[];
@@ -62,8 +64,8 @@ export default function AgentListPanel({
           size="icon"
           disableAnimations
           onClick={onToggleCollapse}
-          title="Show agents"
-          aria-label="Show agent list"
+          title="Show roster"
+          aria-label="Show assistant and agent roster"
           className="w-9 h-9 rounded-md text-foreground/50 hover:text-foreground touch-press hover:scale-[1.05]"
         >
           <ChevronRight className="w-4 h-4" />
@@ -82,7 +84,7 @@ export default function AgentListPanel({
                 onFetchPerformance(agent.id);
               }}
               title={agent.name}
-              aria-label={`Select agent ${agent.name}`}
+              aria-label={`Select ${agent.name}`}
               className={cn(
                 "w-9 h-9 rounded-md shrink-0 touch-press hover:scale-[1.05]",
                 selectedAgent?.id === agent.id
@@ -112,11 +114,11 @@ export default function AgentListPanel({
       <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
           <p className="app-section-title mb-0.5">
-            {isPersonal ? "Personal · Assistant" : "Assistants · Agents"}
+            {PRODUCT_VERSATILITY.eyebrow}
           </p>
           <h2 className="font-display italic text-2xl text-foreground leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
-            {isPersonal ? "Your assistant" : "Your agents"}
+            {isPersonal ? "Your personal assistant" : "Personal assistants & business agents"}
           </h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -129,7 +131,7 @@ export default function AgentListPanel({
               disableAnimations
               onClick={onToggleCollapse}
               title="Collapse list"
-              aria-label="Collapse agent list"
+              aria-label="Collapse roster"
               className="hidden md:inline-flex w-7 h-7 rounded-md text-foreground/55 hover:text-foreground touch-press hover:scale-[1.05]"
             >
               <PanelLeftClose className="w-3.5 h-3.5" />
@@ -143,7 +145,7 @@ export default function AgentListPanel({
           {isLoading ? (
             <ClientRouteLoading
               icon={<Bot className="w-6 h-6" />}
-              label="Loading Assistants"
+              label="Loading roster"
               className="py-12"
             />
           ) : agents.length === 0 ? (
@@ -198,6 +200,11 @@ export default function AgentListPanel({
                       {agent.name}
                     </div>
                     <div className="flex items-center flex-wrap gap-1.5 mt-1">
+                      <PostureBadge
+                        isBusiness={Boolean(agent.is_business_agent)}
+                        compact
+                        className="text-[9px]"
+                      />
                       <RoleBadge role={agent.role} size="xs" />
                       <span className="wl-label tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-card-warm/80 border border-white/8 text-foreground/50 leading-none">
                         {agent.channel}
@@ -220,8 +227,8 @@ export default function AgentListPanel({
                     onDeleteAgent({ id: agent.id, name: agent.name });
                   }}
                   disabled={isDeletingAgent === agent.id}
-                  title="Delete agent"
-                  aria-label={`Delete agent ${agent.name}`}
+                  title="Remove from roster"
+                  aria-label={`Remove ${agent.name} from roster`}
                   className="mr-2 h-7 w-7 shrink-0 rounded-md text-foreground/55 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press hover:scale-[1.05]"
                 >
                   {isDeletingAgent === agent.id ? (

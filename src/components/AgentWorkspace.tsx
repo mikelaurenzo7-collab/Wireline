@@ -70,7 +70,7 @@ const WORKSPACE_TABS: {
   icon: typeof MessageSquare;
   help: string;
 }[] = [
-  { id: "chat", label: "Chat", icon: MessagesSquare, help: "Coach and direct this agent" },
+  { id: "chat", label: "Chat", icon: MessagesSquare, help: "Coach and direct this assistant" },
   {
     id: "training",
     label: "Training",
@@ -78,7 +78,7 @@ const WORKSPACE_TABS: {
     help: "Knowledge, voice, flow & test calls",
   },
   { id: "connectors", label: "Connectors", icon: Plug, help: "Capabilities & integrations" },
-  { id: "memory", label: "Memory", icon: Brain, help: "What this agent remembers" },
+  { id: "memory", label: "Memory", icon: Brain, help: "What this assistant remembers" },
 ];
 
 function isWorkspaceTab(v: string | null): v is WorkspaceTab {

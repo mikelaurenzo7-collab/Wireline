@@ -18,14 +18,34 @@ import { cn } from "../../lib/utils";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, SpendStat } from "./shared";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Switch } from "../ui/shadcn/Switch";
 
 import { BRAND } from "../../constants/brand-colors";
+
+type SpendStatus = {
+  period?: string;
+  month_to_date_usd?: number;
+  monthly_limit_usd?: number;
+  percent_used?: number;
+  hard_cap?: boolean;
+  enabled?: boolean;
+  warn_threshold_pct?: number;
+  hard_capped_now?: boolean;
+  alerts_fired?: Array<{ threshold_pct: number }>;
+};
+
+type SpendBudget = {
+  monthly_limit_usd?: number | string;
+  hard_cap?: boolean;
+  warn_threshold_pct?: number;
+  enabled?: boolean;
+};
 
 /* ─────────────────────────  Spend Budget Card  ─────────────────── */
 
 function SpendBudgetCard() {
-  const [status, setStatus] = useState<any>(null);
-  const [_budget, setBudget] = useState<any>(null);
+  const [status, setStatus] = useState<SpendStatus | null>(null);
+  const [_budget, setBudget] = useState<SpendBudget | null>(null);
   const [draft, setDraft] = useState<{
     monthly_limit_usd: string;
     warn_threshold_pct: number;
@@ -49,20 +69,19 @@ function SpendBudgetCard() {
         authFetch("/api/spend/status"),
         authFetch("/api/spend/budget"),
       ]);
-      const statusOut = await readApiJson<Record<string, unknown>>(statusRes);
-      const budgetOut = await readApiJson<{ budget?: Record<string, unknown> }>(budgetRes);
+      const statusOut = await readApiJson<SpendStatus>(statusRes);
+      const budgetOut = await readApiJson<{ budget?: SpendBudget }>(budgetRes);
       if (statusOut.ok === false) throw new Error(statusOut.error);
       if (budgetOut.ok === false) throw new Error(budgetOut.error);
       const s = statusOut.data;
-      const b = budgetOut.data;
+      const budgetData = budgetOut.data.budget;
       setStatus(s);
-      setBudget(b.budget);
-      const budgetData = b.budget as Record<string, unknown> | undefined;
+      setBudget(budgetData ?? null);
       setDraft({
         monthly_limit_usd: budgetData?.monthly_limit_usd
           ? String(budgetData.monthly_limit_usd)
           : "",
-        warn_threshold_pct: (budgetData?.warn_threshold_pct as number) ?? 80,
+        warn_threshold_pct: budgetData?.warn_threshold_pct ?? 80,
         hard_cap: !!budgetData?.hard_cap,
         enabled: budgetData?.enabled !== false,
       });
@@ -86,7 +105,7 @@ function SpendBudgetCard() {
         body: JSON.stringify({
           monthly_limit_usd: Number.isFinite(limit) ? limit : 0,
           warn_threshold_pct: draft.warn_threshold_pct,
-          hard_cap: false,
+          hard_cap: draft.hard_cap,
           enabled: draft.enabled,
         }),
       });
@@ -115,7 +134,11 @@ function SpendBudgetCard() {
   const warnPct = Number(status?.warn_threshold_pct || 80);
   const isOver = limit > 0 && used >= limit;
   const isWarn = limit > 0 && pct >= warnPct && !isOver;
-  const barColor = isOver ? BRAND.rose : isWarn ? BRAND.creamDeep : BRAND.purple;
+  const barColor = isOver
+    ? BRAND.colors.error
+    : isWarn
+      ? BRAND.colors.outlineVariant
+      : BRAND.colors.primary;
   const period = status?.period || "—";
 
   return (
@@ -132,9 +155,19 @@ function SpendBudgetCard() {
             </div>
           </div>
         </div>
-        {isWarn && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-xs">
-            <AlertTriangle className="w-3.5 h-3.5" /> Spend has crossed your warn threshold
+        {(isWarn || status?.hard_capped_now) && (
+          <div
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border",
+              status?.hard_capped_now
+                ? "bg-rose-500/10 border-rose-500/30 text-rose-500"
+                : "bg-brand/10 border-brand/30 text-brand",
+            )}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {status?.hard_capped_now
+              ? "Hard cap reached — outbound work is paused"
+              : "Spend has crossed your warn threshold"}
           </div>
         )}
       </div>
@@ -205,6 +238,21 @@ function SpendBudgetCard() {
           />
         </label>
       </div>
+
+      <label className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
+        <div>
+          <div className="text-sm text-foreground">Hard cap outbound work</div>
+          <div className="text-[11px] text-foreground/70 mt-1">
+            When enabled, Wireline blocks new outbound calls and messages after the monthly limit is
+            reached.
+          </div>
+        </div>
+        <Switch
+          checked={draft.hard_cap}
+          onCheckedChange={(checked) => setDraft({ ...draft, hard_cap: checked })}
+          aria-label="Enable hard spend cap"
+        />
+      </label>
 
       <div className="flex items-center justify-between gap-4 pt-1">
         <div className="text-[11px] text-foreground/70">
@@ -299,25 +347,25 @@ export default function AISpendView({ days }: { days: number }) {
               label="Total Spend"
               value={formatMoney(totals?.cost, 2)}
               icon={DollarSign}
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
             <SpendStat
               label="AI Calls"
               value={String(totals.calls)}
               icon={Brain}
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
             <SpendStat
               label="Avg / Call"
               value={formatMoney(totals?.avg_cost_per_call, 4)}
               icon={Receipt}
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
             <SpendStat
               label="Saved by Cache"
               value={formatMoney(totals?.cache_savings_usd, 2)}
               icon={Database}
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
           </div>
 

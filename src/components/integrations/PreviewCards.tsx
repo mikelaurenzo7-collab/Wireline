@@ -22,7 +22,7 @@ import { BRAND } from "../../constants/brand-colors";
 import "./preview-cards.css";
 
 /** Orbit / playbook chrome — brand purple; preview thumbnails keep vendor demo colors */
-const INTEGRATION_ORBIT_COLOR = BRAND.purple;
+const INTEGRATION_ORBIT_COLOR = BRAND.colors.primary;
 
 // ── Animated Preview Cards ────────────────────────────────────────────────────
 

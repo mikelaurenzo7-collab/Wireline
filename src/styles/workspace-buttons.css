@@ -1,4 +1,6 @@
-/* Precision Account Holder controls: compact, high-legibility, and source-aligned. */
+/* Workspace control aliases and structural utilities.
+ * Button geometry has one source of truth in precision-studio.css. */
+
 .workspace-btn-primary,
 .workspace-btn-secondary {
   display: inline-flex;
@@ -6,49 +8,57 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none !important;
-  transition: all 0.2s ease-in-out;
+  transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
 }
+
 .workspace-btn-primary {
   border: 1px solid var(--primary);
   background: var(--primary);
   color: var(--primary-foreground) !important;
+  box-shadow: 0 8px 18px -14px rgba(69, 30, 187, 0.68);
 }
+
 .workspace-btn-primary :where(svg, span, strong) {
   color: currentColor !important;
 }
+
 .workspace-btn-primary:hover:not(:disabled) {
   border-color: var(--wl-accent-hover);
   background: var(--wl-accent-hover);
 }
-.workspace-btn-primary:active:not(:disabled) {
-  transform: scale(0.98);
+
+.workspace-btn-primary:active:not(:disabled),
+.workspace-btn-secondary:active:not(:disabled) {
+  transform: translateY(1px);
 }
+
 .workspace-btn-primary:focus-visible,
 .workspace-btn-secondary:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
-.workspace-btn-primary:disabled {
+
+.workspace-btn-primary:disabled,
+.workspace-btn-secondary:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 0.48;
 }
+
 .workspace-btn-secondary {
   border: 1px solid var(--wl-line);
   background: var(--wl-surface);
   color: var(--wl-ink) !important;
 }
+
 .workspace-btn-secondary:hover:not(:disabled) {
   border-color: var(--wl-line-strong);
   background: var(--wl-surface-subtle);
-}
-.workspace-btn-secondary:active:not(:disabled) {
-  transform: scale(0.98);
 }
 
 .wl-stat-strip {
@@ -57,18 +67,20 @@
   align-items: center;
   gap: 8px 16px;
   border: 1px solid var(--wl-line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--wl-surface);
   padding: 12px 16px;
   font-size: 14px;
   color: var(--wl-muted);
 }
+
 .wl-stat-strip strong {
   color: var(--wl-ink);
   font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
+
 .wl-stat-strip .wl-dot {
   width: 3px;
   height: 3px;
@@ -76,23 +88,27 @@
   background: var(--wl-ink);
   opacity: 0.22;
 }
+
 .wl-surface {
   border: 1px solid var(--wl-line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--wl-surface);
 }
+
 .wl-surface-ghost {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--wl-surface-subtle);
 }
+
 .wl-segmented {
   display: grid;
   gap: 4px;
   border: 1px solid var(--wl-line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--wl-surface-subtle);
   padding: 4px;
 }
+
 .wl-segmented button {
   min-height: 32px;
   border: 0;
@@ -102,46 +118,52 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--wl-muted);
-  transition:
-    background-color 0.2s ease-in-out,
-    color 0.2s ease-in-out;
+  transition: background-color var(--transition-base), color var(--transition-base), box-shadow var(--transition-base);
 }
+
 .wl-segmented button[aria-selected="true"],
 .wl-segmented button.is-active {
   background: var(--wl-surface);
-  box-shadow: 0 1px 2px rgba(26, 60, 52, 0.05);
+  box-shadow: var(--wl-shadow-sm);
   color: var(--wl-ink);
 }
+
 .wl-page-lead {
   max-width: 42rem;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--wl-muted);
 }
+
 .wl-agent-select {
-  max-width: 13rem;
+  max-width: 15rem;
   min-height: 40px;
   border: 1px solid var(--wl-line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--wl-surface);
   padding: 8px 12px;
   font-size: 14px;
   font-weight: 500;
+  color: var(--wl-ink);
   outline: none;
 }
-.wl-agent-select:focus {
-  border: 2px solid var(--primary);
+
+.wl-agent-select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
-.wl-scroll,
-main .overflow-y-auto {
+
+.wl-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(26, 60, 52, 0.22) transparent;
+  scrollbar-color: rgba(69, 30, 187, 0.22) transparent;
 }
+
 .wl-scroll::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 .wl-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(26, 60, 52, 0.22);
+  background: rgba(69, 30, 187, 0.22);
 }

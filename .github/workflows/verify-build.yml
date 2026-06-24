@@ -26,5 +26,7 @@ jobs:
       # drift. Install from package.json until its full regeneration lands.
       - run: npm install
       - run: npm run active-surface:check
+      - run: node apps/browser-extension/scripts/build.mjs --check
+      - run: node apps/browser-extension/scripts/build.mjs
       - run: npm run build
       - run: node -e "process.env.VERCEL='1'; require('./dist/server.cjs'); console.log('server bundle imports')"

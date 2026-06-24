@@ -1,40 +1,64 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowRight, Headphones, PhoneOutgoing } from "lucide-react";
-import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
+import {
+  ArrowRight,
+  CalendarClock,
+  Check,
+  CircleDot,
+  Headphones,
+  MessageSquareText,
+  PhoneOutgoing,
+  ShieldCheck,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
+import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "AI Sales Agents that qualify and close",
+    eyebrow: "Sales conversations",
+    title: "Every qualified lead gets a next step.",
     description:
-      "Deploy fully customizable AI sales agents to automatically qualify inbound leads over phone, SMS, and email, schedule client meetings on your calendar, and write all logs directly to your CRM.",
-    eyebrow: "Outbound & Inbound Sales",
+      "Wireline gives your team an assistant that responds across phone, email, and text, qualifies the opportunity, and moves the right person toward a meeting—without losing the context.",
     icon: PhoneOutgoing,
-    bullets: [
-      "Engage and qualify leads instantly, 24/7",
-      "Sync records directly to Salesforce, HubSpot, or custom APIs",
-      "Customize campaign scripts, discount logic, and brand tone",
+    primary: { href: "/signup?posture=business", label: "Create a sales agent" },
+    secondary: { href: "/showcase", label: "Hear a demo" },
+    sequence: [
+      ["A lead reaches out", "Phone, email, or an opted-in text reply starts the conversation."],
+      ["Your agent qualifies", "It asks the questions you define, follows your positioning, and respects the guardrails."],
+      ["Your team gets momentum", "Qualified opportunities are booked, handed off, or captured with a clear next action."],
     ],
-    cta: { href: "/pricing", label: "See customized pricing & plans" },
-    secondary: { href: "/showcase", label: "Hear an interactive demo" },
+    capabilities: [
+      ["Fast lead response", "Reply to new inquiries while the prospect is still interested, then keep the conversation moving."],
+      ["SMS follow-up that earns a reply", "Run approved, opt-in outreach, nurture active opportunities, and revive stalled conversations without losing your brand voice."],
+      ["Appointments that show up", "Offer real availability, schedule the meeting, and send the right confirmation or reminder."],
+    ],
+    proof: "Your team spends time with qualified people—not a pile of unanswered inquiries.",
   },
   support: {
-    title: "Inbound Front Desk & Automated Receptionist",
+    eyebrow: "Customer coverage",
+    title: "A front desk that is ready when customers are.",
     description:
-      "Answer business lines instantly without wait times. Train your customizable receptionist agent on your company knowledge, products, and calendars to handle bookings and transfer warm transfers seamlessly.",
-    eyebrow: "Inbound Reception",
+      "Wireline becomes the reliable first response for your business: answer routine questions, collect the context that matters, schedule the next step, and bring a person in when the conversation needs one.",
     icon: Headphones,
-    bullets: [
-      "Answer FAQs, book appointments, and look up details in real-time",
-      "Route urgent inquiries or high-value clients directly to live reps",
-      "Deploy custom AI rules & guardrails for 100% brand-safe calls",
+    primary: { href: "/signup?posture=business", label: "Create a front desk agent" },
+    secondary: { href: "/showcase", label: "Hear a demo" },
+    sequence: [
+      ["A customer reaches out", "Your agent responds on the business line, inbox, or approved text thread."],
+      ["The issue gets context", "It follows your knowledge and policies to answer, triage, or ask the right next question."],
+      ["The right handoff happens", "Urgent cases reach your team; routine ones end with a complete answer, appointment, or follow-up."],
     ],
-    cta: { href: "/solutions/sales", label: "See sales agent solutions" },
-    secondary: { href: "/features", label: "Explore customizable features" },
+    capabilities: [
+      ["A dependable first response", "Cover after-hours questions, inbound calls, and common requests without making customers wait."],
+      ["Appointments and confirmations", "Find an available time, confirm the details, and keep the customer informed by text or email."],
+      ["Your policies, not generic scripts", "Give the agent approved language, service rules, escalation thresholds, and connected accounts."],
+    ],
+    proof: "Customers get a useful answer sooner. Your team only joins when its judgment matters.",
   },
 } as const;
 
 type SolutionKey = keyof typeof SOLUTIONS;
+type Solution = (typeof SOLUTIONS)[SolutionKey];
 
 export default function SolutionsPage() {
   const { wedge = "support" } = useParams<{ wedge: string }>();
@@ -43,66 +67,131 @@ export default function SolutionsPage() {
   const Icon = page.icon;
 
   return (
-    <>
+    <MarketingPageFrame mainClassName="!px-0 !pb-0 !pt-16">
       <PageMeta
         title={`${page.title} — Wireline`}
         description={page.description}
         path={`/solutions/${key}`}
       />
-      <div className="wl-stitch-gradient-radial min-h-screen bg-background text-foreground">
-        <PrecisionPublicHeader />
-        <main id="main-content" className="mx-auto max-w-4xl px-6 pb-20 pt-28 text-center">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1">
-            <Icon size={14} className="text-primary" />
-            <span className="wl-stitch-label">{page.eyebrow}</span>
-          </div>
-          <h1 className="wl-stitch-marketing-hero mx-auto mt-8 max-w-3xl text-balance">
-            {page.title}
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-            {page.description}
-          </p>
-          <ul className="mx-auto mt-10 max-w-md space-y-3 text-left text-[15px] text-muted-foreground">
-            {page.bullets.map((item) => (
-              <li key={item} className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link
-              to={page.cta.href}
-              className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold"
-            >
-              {page.cta.label}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to={page.secondary.href}
-              className="marketing-btn-secondary min-h-12 px-6 text-[15px] font-semibold"
-            >
-              {page.secondary.label}
-            </Link>
-          </div>
-        </main>
-        <footer className="border-t border-border bg-card px-6 py-8 text-center text-sm text-muted-foreground">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
-            <span className="font-bold text-primary">Wireline</span>
-            <div className="flex gap-6">
-              <Link to="/privacy" className="hover:text-foreground">
-                Privacy
+
+      <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
+        <div className="wl-measure mx-auto grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,.75fr)] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
+              <Icon size={14} className="text-primary" />
+              <span className="wl-overline text-foreground">{page.eyebrow}</span>
+            </div>
+            <h1 className="wl-page-title mt-6 max-w-[13ch] text-balance">{page.title}</h1>
+            <p className="mt-6 max-w-2xl text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
+              {page.description}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to={page.primary.href} className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+                {page.primary.label} <ArrowRight size={15} />
               </Link>
-              <Link to="/terms" className="hover:text-foreground">
-                Terms
-              </Link>
-              <Link to="/support" className="hover:text-foreground">
-                Support
+              <Link to={page.secondary.href} className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+                {page.secondary.label}
               </Link>
             </div>
           </div>
-        </footer>
+
+          <WorkflowPanel page={page} />
+        </div>
+      </section>
+
+      <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="max-w-2xl">
+          <p className="wl-overline text-primary">One clear operating flow</p>
+          <h2 className="wl-stitch-display mt-3 text-balance">The conversation moves. Your team stays in control.</h2>
+        </div>
+        <ol className="mt-10 grid gap-4 lg:grid-cols-3">
+          {page.sequence.map(([title, copy], index) => (
+            <li key={title} className="wl-stitch-card relative p-6 sm:p-7">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wl-accent-container)] font-mono text-[12px] font-semibold text-primary">
+                0{index + 1}
+              </span>
+              <h3 className="wl-section-title mt-5 text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">{title}</h3>
+              <p className="mt-3 text-[15px] leading-6 text-muted-foreground">{copy}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="border-y border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="wl-measure mx-auto grid gap-8 lg:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)] lg:items-end">
+          <div>
+            <p className="wl-overline">Built for useful business work</p>
+            <h2 className="wl-stitch-display mt-3 text-balance">The capabilities that make a conversation operational.</h2>
+            <p className="mt-4 max-w-lg text-[15px] leading-7 text-muted-foreground">
+              Start with a focused assignment. Expand into the next channel, connected account, or workflow only when it makes the outcome better.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {page.capabilities.map(([title, copy], index) => {
+              const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][index] as LucideIcon;
+              return (
+                <article key={title} className="wl-stitch-card bg-background p-5">
+                  <CapabilityIcon size={18} className="text-primary" />
+                  <h3 className="wl-card-title mt-4">{title}</h3>
+                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{copy}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="wl-stitch-card grid gap-6 border-primary/25 bg-[color:var(--wl-accent-container)] p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-2 text-primary">
+              <CircleDot size={16} />
+              <span className="wl-overline text-primary">The Wireline difference</span>
+            </div>
+            <p className="mt-4 text-[clamp(1.35rem,1.1rem+1vw,1.85rem)] font-semibold leading-[1.15] tracking-[-.035em] text-foreground">
+              {page.proof}
+            </p>
+          </div>
+          <Link to={page.primary.href} className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+            Build your agent <ArrowRight size={15} />
+          </Link>
+        </div>
+      </section>
+    </MarketingPageFrame>
+  );
+}
+
+function WorkflowPanel({ page }: { page: Solution }) {
+  return (
+    <aside className="wl-stitch-card overflow-hidden p-0">
+      <div className="border-b border-border bg-secondary px-5 py-4">
+        <div className="flex items-center gap-2">
+          <span className="grid size-8 place-items-center rounded-[var(--radius-md)] bg-card text-primary">
+            <Workflow size={16} />
+          </span>
+          <div>
+            <p className="wl-overline">Wireline flow</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">From first message to next step</p>
+          </div>
+        </div>
       </div>
-    </>
+      <div className="space-y-4 p-5">
+        {page.sequence.map(([title, copy], index) => (
+          <div key={title} className="flex gap-3">
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-primary/25 bg-[color:var(--wl-accent-container)] font-mono text-[10px] font-semibold text-primary">
+              {index + 1}
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{title}</p>
+              <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{copy}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-border px-5 py-4 text-[13px] leading-5 text-muted-foreground">
+        <Check size={15} className="mr-2 inline text-primary" />
+        You choose what the agent can say, access, and escalate.
+      </div>
+    </aside>
   );
 }

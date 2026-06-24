@@ -31,10 +31,10 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
 
   const confidenceAccent =
     enrichment?.research_confidence === "high"
-      ? BRAND.purple
+      ? BRAND.colors.primary
       : enrichment?.research_confidence === "medium"
-        ? BRAND.creamDeep
-        : BRAND.purple;
+        ? BRAND.colors.outlineVariant
+        : BRAND.colors.primary;
 
   return (
     <FormShell>

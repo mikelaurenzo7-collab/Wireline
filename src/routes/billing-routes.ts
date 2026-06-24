@@ -6,7 +6,6 @@ import * as schema from "../db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
-import { validateBody, spendBudgetSchema } from "../lib/api-validation";
 import { getErrorMessage } from "../lib/server-utils";
 import {
   stripe,
@@ -15,7 +14,6 @@ import {
   subscriptionCheckoutLineItems,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
-import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
@@ -102,6 +100,16 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               type: "stripe_session",
               id: session.id,
             });
+            // Reconcile pricing/activation: a credit top-up activates a pending account!
+            await drizzle
+              .update(schema.settings)
+              .set({ subscriptionStatus: "active", updatedAt: new Date() })
+              .where(
+                and(
+                  eq(schema.settings.userId, userId),
+                  eq(schema.settings.subscriptionStatus, "pending_activation"),
+                ),
+              );
           } else {
             log.warn("credit_topup session missing user id or amount", {
               sessionId: session.id,
@@ -283,87 +291,6 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       }
     }
     throw AppError.fromHttpStatus(500, "Webhook handler failed");
-  }
-});
-
-// ─── Spend budget ──────────────────────────────────────────────────────────
-
-router.put(
-  "/spend/budget",
-  authenticateUser,
-  validateBody(spendBudgetSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const limit = Number(req.body.monthly_limit_usd ?? 0);
-      const warn = Math.round(Number(req.body.warn_threshold_pct ?? 80));
-      const hardCap = false;
-      const enabled = req.body.enabled !== false;
-      if (!Number.isFinite(limit) || limit < 0)
-        throw AppError.fromHttpStatus(400, "monthly_limit_usd must be a non-negative number");
-      if (!Number.isInteger(warn) || warn < 1 || warn > 99)
-        throw AppError.fromHttpStatus(400, "warn_threshold_pct must be 1–99");
-
-      const [data] = (await drizzle
-        .insert(schema.spendBudgets)
-        .values({
-          userId: req.user.id,
-          monthlyLimitUsd: limit.toString(),
-          hardCap,
-          warnThresholdPct: warn,
-          enabled,
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: schema.spendBudgets.userId,
-          set: {
-            monthlyLimitUsd: limit.toString(),
-            hardCap,
-            warnThresholdPct: warn,
-            enabled,
-            updatedAt: new Date(),
-          },
-        })
-        .returning()) as any[];
-
-      clearBudgetCache(req.user.id);
-      res.json({ budget: data });
-    } catch (e: any) {
-      log.error("Failed to save budget", { error: getErrorMessage(e) });
-      throw AppError.fromHttpStatus(500, "Failed to save budget");
-    }
-  },
-);
-
-router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const snap = await getBudgetSnapshot(req.user.id, true);
-    const alerts = await drizzle
-      .select({
-        thresholdPct: schema.spendAlerts.thresholdPct,
-        firedAt: schema.spendAlerts.firedAt,
-      })
-      .from(schema.spendAlerts)
-      .where(
-        and(eq(schema.spendAlerts.userId, req.user.id), eq(schema.spendAlerts.period, snap.period)),
-      )
-      .orderBy(schema.spendAlerts.thresholdPct);
-
-    const limit = snap.budget?.monthly_limit_usd ? Number(snap.budget.monthly_limit_usd) : 0;
-    const pct = limit > 0 ? (snap.mtdCost / limit) * 100 : 0;
-    res.json({
-      period: snap.period,
-      month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
-      monthly_limit_usd: limit,
-      percent_used: Number(pct.toFixed(1)),
-      hard_cap: snap.budget?.hard_cap ?? false,
-      enabled: snap.budget?.enabled ?? true,
-      warn_threshold_pct: snap.budget?.warn_threshold_pct ?? 80,
-      hard_capped_now: false,
-      alerts_fired: alerts || [],
-    });
-  } catch (e: any) {
-    log.error("Failed to load spend status", { error: getErrorMessage(e) });
-    throw AppError.fromHttpStatus(500, "Failed to load spend status");
   }
 });
 

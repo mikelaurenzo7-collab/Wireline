@@ -1,272 +1,193 @@
+/* Foundation — canonical tokens, resets, and interaction behavior.
+ * Components should prefer semantic tokens; decorative effects are intentionally restrained. */
+
 :root {
-  /* Ametrine Precision — single source of truth tokens */
+  /* Canvas + surfaces */
   --wl-page: #f8f9ff;
-  --wl-surface-base: #f8f9ff;
   --wl-surface: #ffffff;
   --wl-surface-subtle: #eff4ff;
   --wl-surface-container: #e5eeff;
-  --wl-surface-hover: #dce9ff;
-  --wl-surface-variant: #d3e4fe;
-  --wl-surface-dim: #cbdbf5;
+  --wl-surface-strong: #dde3f0;
   --wl-ink: #0b1c30;
   --wl-on-surface: #0b1c30;
-  --wl-ink-soft: #484554;
-  --wl-muted: #484554;
-  --wl-outline: #797586;
-  --wl-line: #c9c4d7;
-  --wl-line-strong: #797586;
-  --wl-line-subtle: rgba(11, 28, 48, 0.06);
-  --wl-line-weak: rgba(11, 28, 48, 0.09);
+  --wl-on-surface-variant: #5f687b;
+  --wl-muted: #5f687b;
+
+  /* Action + accent */
   --wl-primary: #451ebb;
   --wl-primary-container: #5d3fd3;
-  --wl-primary-fixed: #e6deff;
-  --wl-primary-fixed-dim: #cabeff;
-  --wl-on-primary-fixed: #1c0062;
   --wl-accent: var(--wl-primary-container);
-  --wl-accent-hover: var(--wl-primary);
-  --wl-accent-deep: var(--wl-on-primary-fixed);
-  --wl-accent-foreground: #ffffff;
-  --wl-accent-container: #e6deff;
-  --wl-status-active: #2e7d32;
-  --wl-status-warning: #ed6c02;
-  --wl-status-error: #ba1a1a;
+  --wl-accent-hover: #451ebb;
+  --wl-accent-container: rgba(93, 63, 211, 0.1);
+  --wl-on-primary: #ffffff;
+
+  /* Structure */
+  --wl-line: #c9c4d7;
+  --wl-line-strong: #b9c0d0;
+  --wl-focus: rgba(17, 28, 50, 0.46);
+
+  /* Status */
+  --wl-success: #19703b;
+  --wl-warning: #995d08;
+  --wl-error: #c12a2a;
+  --wl-status-active: var(--wl-success);
+  --wl-status-warning: var(--wl-warning);
+  --wl-status-error: var(--wl-error);
+
+  /* Geometry */
+  --radius-sm: 0.25rem;
   --radius: 0.25rem;
-  --radius-sm: 0.125rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --wl-focus: rgba(93, 63, 211, 0.28);
+  --radius-xl: 1rem;
 
-  /* ── Responsive container system ──────────────────────────────────────
-     One ladder of widths frames the entire product so every surface lines
-     up — from a phone to a 5K display. Gutters scale fluidly with the
-     viewport; max-widths cap line length so ultrawide screens stay
-     composed instead of stretching edge to edge. box-sizing is border-box
-     globally, so padding is included in these caps (Tailwind-compatible). */
-  --wl-gutter: clamp(1rem, 4vw, 2.5rem);
-  --wl-container-narrow: 48rem; /* 768 — prose / focused forms */
-  --wl-container: 72rem; /* 1152 — default content column */
-  --wl-container-wide: 80rem; /* 1280 — marketing chrome / heroes */
-  --wl-container-full: 90rem; /* 1440 — dashboards / wide grids */
-  --wl-container-max: 96rem; /* 1536 — hard ceiling on the largest displays */
+  /* Type scale helpers */
+  --wl-text-base: 1rem;
+  --wl-text-sm: 0.875rem;
 
-  /* ── Fluid type scale ─────────────────────────────────────────────────
-     Each step interpolates with the viewport (clamp) so text breathes on
-     large desktops and stays legible on phones — no per-breakpoint
-     overrides needed. Min/max straddle the prior fixed sizes so existing
-     layouts read the same at ~1280px. */
-  --wl-text-xs: clamp(0.75rem, 0.73rem + 0.1vw, 0.8125rem); /* 12 → 13 */
-  --wl-text-sm: clamp(0.875rem, 0.85rem + 0.14vw, 0.9375rem); /* 14 → 15 */
-  --wl-text-base: clamp(1rem, 0.97rem + 0.18vw, 1.0625rem); /* 16 → 17 */
-  --wl-text-lg: clamp(1.125rem, 1.07rem + 0.28vw, 1.25rem); /* 18 → 20 */
-  --wl-text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem); /* 20 → 24 */
-  --wl-text-2xl: clamp(1.5rem, 1.32rem + 0.9vw, 2rem); /* 24 → 32 */
-  --wl-text-3xl: clamp(1.875rem, 1.55rem + 1.6vw, 2.75rem); /* 30 → 44 */
-  --wl-text-4xl: clamp(2.25rem, 1.78rem + 2.35vw, 3.5rem); /* 36 → 56 */
-  --wl-text-5xl: clamp(2.75rem, 1.95rem + 4vw, 4.5rem); /* 44 → 72 */
+  /* Interaction */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+  --hover-lift: translateY(-1px);
+  --active-press: scale(0.98);
+  --focus-ring: 2px solid var(--wl-accent);
 
-  /* ── Fluid space scale (section rhythm) ───────────────────────────── */
-  --wl-space-section: clamp(3rem, 2rem + 5vw, 6rem);
-  --wl-space-block: clamp(1.5rem, 1.1rem + 2vw, 2.5rem);
-  --background: var(--wl-page);
-  --foreground: var(--wl-on-surface);
-  --card: var(--wl-surface);
-  --card-foreground: var(--wl-on-surface);
-  --popover: var(--wl-surface);
-  --popover-foreground: var(--wl-on-surface);
-  --primary: var(--wl-primary);
-  --primary-container: var(--wl-primary-container);
-  --primary-foreground: var(--wl-accent-foreground);
-  --secondary: var(--wl-surface-subtle);
-  --secondary-foreground: var(--wl-on-surface);
-  --muted: var(--wl-surface-subtle);
-  --muted-foreground: var(--wl-muted);
-  --accent: var(--wl-primary-fixed);
-  --accent-foreground: var(--wl-on-surface);
-  --border: var(--wl-line);
-  --input: var(--wl-line);
-  --input-background: var(--wl-surface);
-  --ring: var(--wl-accent);
-  --destructive: var(--wl-status-error);
-  --destructive-foreground: #ffffff;
+  /* Elevation — tonal layering before shadow */
+  --wl-shadow-sm: 0 1px 2px rgba(17, 28, 50, 0.05);
+  --wl-shadow-md: 0 10px 24px -18px rgba(30, 41, 76, 0.28);
+  --wl-shadow-lg: 0 24px 52px -30px rgba(30, 41, 76, 0.36);
 }
 
-* { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html {
-  min-height: 100%;
-  background: var(--wl-page);
   color-scheme: light;
-  /* Reserve the scrollbar track so content doesn't reflow when it appears —
-     keeps centered containers from shifting between pages on desktop. */
-  scrollbar-gutter: stable;
-  -webkit-text-size-adjust: 100%;
-  /* WCAG 2.2 SC 2.4.11 — keep focused elements clear of sticky headers. */
-  scroll-padding-top: 5rem;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  min-height: 100dvh;
-  background: var(--wl-page);
+  font-family: var(--wl-font-sans, Inter, ui-sans-serif, system-ui, sans-serif);
   color: var(--wl-on-surface);
-  font-family: var(--wl-font-sans, Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-  font-synthesis: none;
-  font-kerning: normal;
+  background: var(--wl-page);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Long unbroken strings (URLs, tokens) must never force horizontal scroll. */
-p, li, dd, dt, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
-
-h1, h2, h3, h4 {
-  font-family: var(--wl-font-display, "Hanken Grotesk", "Inter", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--wl-on-surface);
-  /* Avoid orphans/awkward breaks in headings at every width. */
-  text-wrap: balance;
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
-button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
-a { color: inherit; }
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--wl-font-display, Inter, ui-sans-serif, system-ui, sans-serif);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
 
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  border-radius: var(--radius);
+}
+
+/* Do not assign a minimum box to ordinary text links. Full-size touch targets
+   are owned by their component primitives, preventing invisible layout drift. */
+button,
+[role="button"] {
+  min-height: 24px;
+  min-width: 24px;
+}
+
+::selection {
+  background: var(--wl-primary-container);
+  color: var(--wl-on-primary);
+}
+
+.wl-interactive {
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    color var(--transition-base),
+    transform var(--transition-fast);
+}
+
+.wl-interactive:hover:not(:disabled) {
+  transform: var(--hover-lift);
+}
+
+.wl-interactive:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.wl-interactive:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--wl-accent);
   outline-offset: 2px;
 }
 
-.studio-primary-button,
-.studio-secondary-button {
-  display: inline-flex;
-  min-height: 40px;
+.wl-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius);
-  background: transparent;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.2;
-  text-decoration: none;
-  transition: transform 0.2s ease-out, background-color 0.2s ease-out, border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+  padding: 1.5rem;
+  background: rgba(17, 28, 50, 0.56);
 }
 
-.studio-primary-button:active,
-.studio-secondary-button:active { transform: scale(0.98); }
-
-.studio-primary-button {
-  border: 1px solid var(--wl-accent);
-  background: var(--wl-accent);
-  color: #ffffff;
-  box-shadow: 0 1px 3px rgba(93, 63, 211, 0.16);
-}
-.studio-primary-button:hover {
-  border-color: var(--wl-accent-hover);
-  background: var(--wl-accent-hover);
-}
-.studio-secondary-button {
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--foreground);
-}
-.studio-secondary-button:hover { background: var(--secondary); }
-
-.studio-kicker {
-  display: block;
-  color: var(--wl-muted);
-  font-family: var(--wl-font-mono, "JetBrains Mono", monospace);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 16px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.wl-dialog {
+  width: min(100%, 30rem);
+  margin: 0;
+  border: 1px solid var(--wl-line);
+  border-radius: var(--radius-xl);
+  background: var(--card, var(--wl-surface));
+  color: var(--card-foreground, var(--wl-on-surface));
+  box-shadow: var(--wl-shadow-lg);
 }
 
-.studio-card {
-  padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--card);
-  box-shadow: 0 1px 3px rgba(93, 63, 211, 0.08);
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
-}
-.studio-card:active { transform: scale(0.98); }
-.studio-card-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.studio-card h2 { margin-top: 4px; font-size: 18px; line-height: 24px; }
-.studio-count {
-  display: grid;
-  min-width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--wl-accent-deep);
-  font-size: 11px;
-  font-weight: 600;
-}
-.studio-muted-copy {
-  margin: 16px 0;
-  color: var(--muted-foreground);
-  font-size: 14px;
-  line-height: 20px;
-}
-.studio-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
+@media (max-width: 639px) {
+  .wl-modal {
+    align-items: end;
+    padding: 0.75rem;
+  }
+
+  .wl-dialog {
+    width: 100%;
+  }
 }
 
-/* ── Canonical responsive containers ──────────────────────────────────────
-   The single way to constrain and center a content column. Replaces the
-   ad-hoc spread of max-w-5xl / 6xl / 7xl / [1080px] / [1200px] / [1680px]
-   so every section aligns to the same grid at any viewport. Fluid gutters
-   guarantee comfortable edge padding on phones and breathing room on 5K. */
-.wl-container,
-.wl-container-wide,
-.wl-container-full,
-.wl-container-narrow {
-  width: 100%;
-  margin-inline: auto;
-  padding-inline: var(--wl-gutter);
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-.wl-container-narrow { max-width: var(--wl-container-narrow); }
-.wl-container { max-width: var(--wl-container); }
-.wl-container-wide { max-width: var(--wl-container-wide); }
-.wl-container-full { max-width: var(--wl-container-full); }
-
-/* Vertical rhythm helper for stacked marketing sections. */
-.wl-section { padding-block: var(--wl-space-section); }
-
-/* Canonical content measure for the marketing frame, on-page nav, and footer.
-   These wrappers sit inside parents that already own horizontal padding, so
-   the measure adds only a centered max-width — capping line length and
-   keeping the whole site composed on ultrawide displays instead of sprawling
-   edge to edge. (Previously referenced app-wide but never defined.) */
-.wl-measure {
-  width: 100%;
-  margin-inline: auto;
-  max-width: var(--wl-container-wide);
-}
-
-/* ── Fluid type utilities (token-backed) ──────────────────────────────────
-   Prefer these over fixed text-[..px] on display/marketing copy so type
-   scales with the viewport. */
-.wl-fluid-xs { font-size: var(--wl-text-xs); }
-.wl-fluid-sm { font-size: var(--wl-text-sm); }
-.wl-fluid-base { font-size: var(--wl-text-base); }
-.wl-fluid-lg { font-size: var(--wl-text-lg); }
-.wl-fluid-xl { font-size: var(--wl-text-xl); }
-.wl-fluid-2xl { font-size: var(--wl-text-2xl); line-height: 1.2; }
-.wl-fluid-3xl { font-size: var(--wl-text-3xl); line-height: 1.15; }
-.wl-fluid-4xl { font-size: var(--wl-text-4xl); line-height: 1.08; }
-.wl-fluid-5xl { font-size: var(--wl-text-5xl); line-height: 1.04; }

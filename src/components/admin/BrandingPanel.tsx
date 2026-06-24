@@ -75,7 +75,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                   type="color"
                   aria-label="Primary color swatch"
                   className="brand-color-swatch w-11 h-11 rounded-md bg-transparent border-input cursor-pointer p-0"
-                  value={settings.primary_color || BRAND.purple}
+                  value={settings.primary_color || BRAND.colors.primary}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
                 <Input
@@ -83,7 +83,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                   type="text"
                   aria-label="Primary color hex value"
                   className="app-input-soft flex-1 py-3 h-auto font-mono"
-                  value={settings.primary_color || BRAND.purple}
+                  value={settings.primary_color || BRAND.colors.primary}
                   onChange={(e) => onUpdate({ ...settings, primary_color: e.target.value })}
                 />
               </div>

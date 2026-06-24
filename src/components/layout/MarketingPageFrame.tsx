@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import PrecisionPublicHeader from "../marketing/PrecisionPublicHeader";
-import type { PublicNavActive } from "../marketing/PublicSiteHeader";
 import MarketingFooter from "../marketing/MarketingFooter";
 import MarketingStickyCta from "../marketing/MarketingStickyCta";
 import { cn } from "../../lib/utils";
@@ -13,11 +12,9 @@ type MarketingSectionLink = {
 
 interface MarketingPageFrameProps {
   children: ReactNode;
-  /** Nav highlight for PublicSiteHeader */
-  active?: PublicNavActive;
   /** Fixed viewport (landing-style) vs scrollable long-form */
   scroll?: boolean;
-  /** Mobile bottom conversion bar */
+  /** Opt-in mobile bottom conversion bar. Public pages already carry in-flow CTAs. */
   stickyCta?: boolean;
   footer?: boolean;
   className?: string;
@@ -25,13 +22,11 @@ interface MarketingPageFrameProps {
   sectionLinks?: MarketingSectionLink[];
 }
 
-/**
- * Shared shell for public marketing pages — typography, nav, footer.
- */
+/** Shared shell for public marketing pages — fixed chrome, consistent rhythm, and one footer. */
 export default function MarketingPageFrame({
   children,
   scroll = true,
-  stickyCta = true,
+  stickyCta = false,
   footer = true,
   className,
   mainClassName,
@@ -43,7 +38,7 @@ export default function MarketingPageFrame({
   return (
     <div
       className={cn(
-        "marketing-surface relative bg-card text-foreground flex flex-col paper-texture",
+        "marketing-surface relative flex flex-col bg-background text-foreground",
         scroll ? "min-h-dvh" : "h-dvh max-h-dvh overflow-hidden",
         className,
       )}
@@ -54,22 +49,19 @@ export default function MarketingPageFrame({
         id="main-content"
         tabIndex={-1}
         className={cn(
-          "relative z-10 flex-1 min-h-0",
-          scroll ? "scroll-viewport" : "overflow-hidden flex flex-col",
+          "relative z-10 min-h-0 flex-1",
+          scroll ? "scroll-viewport" : "flex flex-col overflow-hidden",
           stickyCta && scroll && "marketing-has-sticky-cta",
           scroll
-            ? "px-5 py-8 md:py-12 lg:px-8 xl:px-12 2xl:px-16"
-            : "px-5 pb-4 lg:px-8 xl:px-12 lg:pb-6",
+            ? "px-5 pb-10 pt-24 md:px-8 md:pb-12 md:pt-28 lg:px-12 xl:px-16"
+            : "px-5 pb-4 pt-16 lg:px-8 lg:pb-6",
           mainClassName,
         )}
       >
-        {sectionLinks && sectionLinks.length > 0 && (
-          <div className="sticky top-0 z-20 -mx-5 mb-6 border-y border-ink/[0.08] bg-card/80 backdrop-blur-md px-5 py-2.5 md:-mx-8 md:px-8">
-            <nav
-              aria-label="On this page"
-              className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll"
-            >
-              <span className="shrink-0 wl-label text-foreground/60">On this page</span>
+        {sectionLinks && sectionLinks.length > 0 ? (
+          <div className="sticky top-16 z-20 -mx-5 mb-6 border-y border-border bg-[color:color-mix(in_srgb,var(--wl-page)_94%,transparent)] px-5 py-2.5 backdrop-blur-xl md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
+            <nav aria-label="On this page" className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll">
+              <span className="wl-overline shrink-0">On this page</span>
               {sectionLinks.map((link) => {
                 const active = activeSection === link.id;
                 return (
@@ -78,10 +70,10 @@ export default function MarketingPageFrame({
                     href={`#${link.id}`}
                     aria-current={active ? "location" : undefined}
                     className={cn(
-                      "touch-press shrink-0 rounded-md border px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors",
+                      "touch-press shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors",
                       active
-                        ? "border-brand/25 bg-brand/10 text-brand"
-                        : "border-white/8 bg-card/70 text-foreground/60 hover:border-brand/20 hover:text-foreground",
+                        ? "border-primary/25 bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/25 hover:text-foreground",
                     )}
                   >
                     {link.label}
@@ -90,14 +82,12 @@ export default function MarketingPageFrame({
               })}
             </nav>
           </div>
-        )}
+        ) : null}
         <div className={cn(scroll && "wl-measure")}>{children}</div>
       </main>
 
-      {footer && (
-        <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta && scroll} />
-      )}
-      {stickyCta && scroll && <MarketingStickyCta />}
+      {footer ? <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta && scroll} /> : null}
+      {stickyCta && scroll ? <MarketingStickyCta /> : null}
     </div>
   );
 }

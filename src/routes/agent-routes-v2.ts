@@ -28,6 +28,8 @@ import {
 } from "../lib/ai-models";
 import { listOpenRouterModelsForDirector } from "../lib/openrouter-models";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
+import { isOwnerEmail } from "../lib/auth-service";
+import { resolveAgentEntitlement } from "../lib/agent-entitlements";
 
 const router = Router();
 const roleArchetypes: Record<string, string> = {
@@ -248,12 +250,42 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const name = cleanText(req.body?.name, 100);
     const role = cleanText(req.body?.role, 80) || "scheduler";
+    const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
     const [{ count }] = await drizzle
       .select({ count: sql`count(*)` })
       .from(schema.agents)
       .where(eq(schema.agents.userId, req.user.id));
     const existing = Number(count || 0);
+
+    const isOwner = isOwnerEmail(req.user.email);
+    const [row] = await drizzle
+      .select({
+        planId: schema.subscriptions.plan,
+        subscriptionStatus: schema.settings.subscriptionStatus,
+        maxAgents: schema.settings.maxAgents,
+        extraAgents: schema.settings.extraAgents,
+      })
+      .from(schema.settings)
+      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+      .where(eq(schema.settings.userId, req.user.id))
+      .limit(1);
+
+    const entitlement = resolveAgentEntitlement({
+      isOwner,
+      subscriptionStatus: row?.subscriptionStatus,
+      planId: row?.planId,
+      maxAgents: row?.maxAgents,
+      extraAgents: row?.extraAgents,
+    });
+
+    if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
+      throw AppError.fromHttpStatus(
+        402,
+        `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
+      );
+    }
+
     const id = `agent-${randomUUID()}`;
     const enabledTools = getDefaultAgentTools(role);
     await drizzle.insert(schema.agents).values({
@@ -267,8 +299,16 @@ router.post(
       voiceProvider: "11labs",
       enabledTools,
       firstMessage: `Hi, this is ${name}. How can I help?`,
+      isBusinessAgent,
     });
-    res.status(201).json({ id, name, role, channel: "voice", enabledTools });
+    res.status(201).json({
+      id,
+      name,
+      role,
+      channel: "voice",
+      enabledTools,
+      is_business_agent: isBusinessAgent,
+    });
   },
 );
 

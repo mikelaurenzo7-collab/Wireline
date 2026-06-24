@@ -2,10 +2,10 @@ import { BRAND } from "../constants/brand-colors";
 
 /** Brand-only card tints — purple/cream family for in-app help + marketing cards. */
 export const CONTACT_AGENT_TINTS = {
-  primary: BRAND.purple,
-  deep: BRAND.purpleDeep,
-  muted: BRAND.purpleMuted,
-  cream: BRAND.creamDeep,
+  primary: BRAND.colors.primary,
+  deep: BRAND.colors.primaryVariant,
+  muted: BRAND.colors.onSurfaceMuted,
+  cream: BRAND.colors.outlineVariant,
 } as const;
 
 /**

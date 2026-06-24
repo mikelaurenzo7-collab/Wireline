@@ -2,7 +2,8 @@ import { randomBytes } from "node:crypto";
 
 export const INLINE_SCRIPT_HASHES = [
   "'sha256-LTkUOuO/95lht1SHJYGSEJ8IcO6rX2Pf7vdiXrzQWq4='",
-  "'sha256-Vcsf9wxY50I2SDxzI15Jg/dr+K5+UQ99CH+PegNnoCo='",
+  "'sha256-kTY1HnUazojUb0LNV4fUizRffDRSWBvlaCzwIMTcejs='",
+  "'sha256-FFaX0AQ7Esa2ADmOuyoSgiUiumQC1xnh9FYjb5iCbvI='",
 ] as const;
 
 export const MARKETING_SCRIPT_SRCS = [
@@ -43,8 +44,14 @@ export function buildConnectSrcs(isDev: boolean = false): string {
 export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'"): string {
   const inlineHashes = INLINE_SCRIPT_HASHES.join(" ");
   const marketingSrcs = MARKETING_SCRIPT_SRCS.join(" ");
-  const scriptSrc = isDev ? "'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io" : nonce ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs}` : `'self' ${inlineHashes} ${marketingSrcs}`;
-  const styleSrcElem = isDev ? "'self' 'unsafe-inline' https://fonts.googleapis.com" : "'self' https://fonts.googleapis.com";
+  const scriptSrc = isDev
+    ? "'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io"
+    : nonce
+      ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs}`
+      : `'self' ${inlineHashes} ${marketingSrcs}`;
+  const styleSrcElem = isDev
+    ? "'self' 'unsafe-inline' https://fonts.googleapis.com"
+    : "'self' https://fonts.googleapis.com";
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,

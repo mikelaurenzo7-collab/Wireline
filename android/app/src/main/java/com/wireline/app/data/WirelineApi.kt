@@ -51,13 +51,18 @@ class WirelineApi(context: Context) {
     suspend fun wallet(): WalletResponse = get("/api/mobile/wallet")
 
     /** Creates an owned assistant through the same production contract as web Studio. */
-    suspend fun createAssistant(name: String, role: String = "scheduler"): Agent {
+    suspend fun createAssistant(
+        name: String,
+        role: String = "scheduler",
+        isBusinessAgent: Boolean = false,
+    ): Agent {
         return post(
             "/api/agents",
             JSONObject()
                 .put("name", name)
                 .put("role", role)
-                .put("deferPhoneProvision", true),
+                .put("deferPhoneProvision", true)
+                .put("is_business_agent", isBusinessAgent),
         )
     }
 

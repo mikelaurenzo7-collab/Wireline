@@ -1,9 +1,9 @@
 /**
  * src/lib/spend-guards.ts
  *
- * Claude spend tracking + budget webhooks. Request blocking caps were removed —
- * tenant overages are billed via Stripe (voice minutes, add-ons). Middleware
- * here is a no-op pass-through; evaluateSpend still fires warn/exceeded webhooks.
+ * Per-user spend tracking, customer-selected hard caps, and spend webhooks.
+ * A hard cap is enforced before new outbound voice work begins; it deliberately
+ * does not terminate an in-flight conversation mid-sentence.
  */
 
 import type { Request, Response, NextFunction } from "express";
@@ -12,10 +12,6 @@ import * as schema from "../db/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
 import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator";
 import { getErrorMessage } from "./server-utils";
-
-// ──────────────────────────────────────────────────────────────────────
-//  PER-USER monthly hard-cap
-// ──────────────────────────────────────────────────────────────────────
 
 interface BudgetRow {
   monthly_limit_usd: number;
@@ -38,10 +34,10 @@ interface BudgetCacheEntry {
 }
 
 const budgetCache = new Map<string, BudgetCacheEntry>();
-const BUDGET_CACHE_TTL_MS = 60 * 1000; // 1 minute is plenty for the hot path
+const BUDGET_CACHE_TTL_MS = 60 * 1000;
 
 function currentPeriod(now = new Date()): string {
-  return now.toISOString().slice(0, 7); // YYYY-MM
+  return now.toISOString().slice(0, 7);
 }
 
 function periodStartIso(period: string): Date {
@@ -114,20 +110,14 @@ export async function getBudgetSnapshot(
 
 function bumpBudgetCache(userId: string, deltaUsd: number) {
   const cached = budgetCache.get(userId);
-  if (!cached) return;
-  const period = currentPeriod();
-  if (cached.period !== period) return;
+  if (!cached || cached.period !== currentPeriod()) return;
   cached.mtdCost += deltaUsd;
 }
 
 import { dispatchWebhook, type WebhookEvent } from "./webhook-helpers";
 import { SentryEvents } from "./sentry-events";
 
-/**
- * Fire spend.warning / spend.exceeded webhooks when thresholds cross.
- * Debounced via wireline_spend_alerts(unique user_id+period+threshold) —
- * each threshold fires at most once per period.
- */
+/** Fire spend.warning / spend.exceeded webhooks when thresholds cross. */
 export async function evaluateSpend(userId: string, deltaUsd: number) {
   try {
     bumpBudgetCache(userId, deltaUsd);
@@ -143,34 +133,27 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
     if (pct >= 100) thresholdsToFire.push({ pct: 100, event: "spend.exceeded" });
     if (pct >= warnPct) thresholdsToFire.push({ pct: warnPct, event: "spend.warning" });
 
-    for (const t of thresholdsToFire) {
-      // Debounce: insert (user, period, threshold) — duplicate row => already fired.
+    for (const threshold of thresholdsToFire) {
       try {
         await drizzle
           .insert(schema.spendAlerts)
-          .values({ userId: userId, period: snap.period, thresholdPct: t.pct });
+          .values({ userId, period: snap.period, thresholdPct: threshold.pct });
       } catch {
-        // unique-violation or insert error → skip silently
         continue;
       }
 
-      await dispatchWebhook(userId, t.event, {
+      await dispatchWebhook(userId, threshold.event, {
         period: snap.period,
         month_to_date_usd: mtdCostUsd,
         monthly_limit_usd: limit,
-        threshold_pct: t.pct,
+        threshold_pct: threshold.pct,
         percent_used: Number(pct.toFixed(1)),
         hard_cap: snap.budget.hard_cap,
         at: new Date().toISOString(),
       });
 
-      // Track budget thresholds in Sentry
-      if (t.event === "spend.exceeded") {
-        SentryEvents.budgetExceeded({
-          user_id: userId,
-          spent: mtdCostUsd,
-          budget: limit,
-        });
+      if (threshold.event === "spend.exceeded") {
+        SentryEvents.budgetExceeded({ user_id: userId, spent: mtdCostUsd, budget: limit });
       }
     }
   } catch (err) {
@@ -179,11 +162,6 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
 }
 
 type AuthedRequest = Request & { user?: { id?: string } };
-
-/** Legacy mount point — spend is never blocked; overages bill through Stripe. */
-export async function enforceSpendCap(_req: AuthedRequest, _res: Response, next: NextFunction) {
-  next();
-}
 
 /** True when a tenant has enabled hard_cap and month-to-date spend meets/exceeds limit. */
 export async function isHardSpendCapExceeded(userId: string): Promise<boolean> {
@@ -194,11 +172,43 @@ export async function isHardSpendCapExceeded(userId: string): Promise<boolean> {
   return snap.mtdCost >= limit;
 }
 
-// ──────────────────────────────────────────────────────────────────────
-//  SYSTEM-WIDE 24-hour accumulator cap
-// ──────────────────────────────────────────────────────────────────────
+/**
+ * Cost-sensitive routes call this before starting new work. The guard stops a
+ * new outbound task once an account holder's chosen cap is exhausted. It does
+ * not interrupt an active conversation; stopping mid-call would create a worse
+ * customer outcome and an unpredictable partial task.
+ */
+export async function enforceSpendCap(req: AuthedRequest, res: Response, next: NextFunction) {
+  const userId = req.user?.id;
+  if (!userId) return next();
 
-/** Ops telemetry only — optional alert threshold (USD / rolling 24h). Not enforced. */
+  try {
+    const snap = await getBudgetSnapshot(userId);
+    const budget = snap.budget;
+    if (!budget?.enabled || !budget.hard_cap || !(budget.monthly_limit_usd > 0)) {
+      return next();
+    }
+
+    if (snap.mtdCost < budget.monthly_limit_usd) return next();
+
+    return res.status(402).json({
+      code: "SPEND_CAP_REACHED",
+      error: "Your monthly hard cap has been reached. Increase or disable the cap to start new live work.",
+      period: snap.period,
+      month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
+      monthly_limit_usd: budget.monthly_limit_usd,
+      hard_cap: true,
+    });
+  } catch (err) {
+    log.error("enforceSpendCap could not verify budget", { userId, error: getErrorMessage(err) });
+    return res.status(503).json({
+      code: "SPEND_GUARD_UNAVAILABLE",
+      error: "Wireline could not verify your spend guard. New live work is paused until the check recovers.",
+    });
+  }
+}
+
+/** Ops telemetry only — optional alert threshold (USD / rolling 24h). */
 const CLAUDE_DAILY_ALERT_USD = Math.max(
   0,
   Number(process.env.CLAUDE_DAILY_ALERT_USD ?? process.env.CLAUDE_MONTHLY_BUDGET_USD ?? 0) * 0.01,
@@ -207,9 +217,7 @@ const CLAUDE_DAILY_ALERT_USD = Math.max(
 /** @deprecated Blocking removed — kept for tests/metrics that referenced the old 1% valve. */
 export const DAILY_SPEND_LIMIT_USD = 0;
 
-/**
- * Call this after every Claude API round trip to track cumulative 24h spend.
- */
+/** Call this after every Claude API round trip to track cumulative 24h spend. */
 export function recordDailySpend(usd: number): void {
   void recordDailySpendUsd(usd)
     .then(() => getDailySpendUsd())
@@ -222,11 +230,11 @@ export function recordDailySpend(usd: number): void {
       }
     })
     .catch(() => {
-      /* telemetry only — never surface a rejection */
+      /* telemetry only */
     });
 }
 
-/** Legacy mount point — Assistants-wide daily cap removed; usage bills per tenant. */
+/** Legacy mount point — Assistants-wide daily cap remains telemetry-only. */
 export async function enforce24hSpendCap(_req: Request, _res: Response, next: NextFunction) {
   next();
 }

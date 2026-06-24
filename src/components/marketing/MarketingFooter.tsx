@@ -1,18 +1,18 @@
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
-const TRUST = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
-
-const LINKS = [
+const PRODUCT_LINKS = [
   { to: "/for/personal", label: "For you" },
-  { to: "/solutions/support", label: "For business" },
+  { to: "/solutions/sales", label: "For business" },
+  { to: "/features", label: "Voice, email & text" },
   { to: "/pricing", label: "Pricing" },
-  { to: "/compare", label: "Why Wireline" },
+] as const;
+
+const RESOURCE_LINKS = [
   { to: "/showcase", label: "Demos" },
-  { to: "/about", label: "About" },
-  { to: "/status", label: "Status" },
   { to: "/security", label: "Security" },
   { to: "/support", label: "Support" },
+  { to: "/status", label: "Status" },
 ] as const;
 
 type Props = {
@@ -30,51 +30,55 @@ export default function MarketingFooter({
     <footer
       className={cn(
         "relative z-10 shrink-0 border-t border-border bg-background",
-        compact ? "px-4 py-3" : "px-5 py-4 lg:px-8 xl:px-12 2xl:px-16",
+        compact ? "px-5 py-6" : "px-5 py-9 sm:px-6 lg:px-8 xl:px-12 2xl:px-16",
         aboveStickyCta && "marketing-footer-above-sticky",
         className,
       )}
     >
-      <div className="wl-measure space-y-3 text-center">
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {TRUST.map((label) => (
-            <span
-              key={label}
-              className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
-            >
-              {label}
-            </span>
-          ))}
+      <div className="wl-measure mx-auto">
+        <div className="grid gap-8 sm:grid-cols-[minmax(0,1.25fr)_auto_auto] sm:items-start sm:gap-12">
+          <div className="max-w-sm">
+            <p className="wl-overline">Wireline</p>
+            <p className="mt-3 text-[15px] leading-6 text-muted-foreground">
+              An assistant for your life or an operating line for your business—voice, email, and text working from the same brief.
+            </p>
+          </div>
+          <nav aria-label="Product" className="flex flex-col items-start gap-1">
+            <p className="wl-overline mb-1">Product</p>
+            {PRODUCT_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <nav aria-label="Resources" className="flex flex-col items-start gap-1">
+            <p className="wl-overline mb-1">Resources</p>
+            {RESOURCE_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <nav
-          className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-caption font-medium"
-          aria-label="Footer"
-        >
-          {LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground"
-            >
-              {link.label}
+        <div className="mt-8 flex flex-col gap-3 border-t border-border pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>Clear rules. Useful outcomes. No conversation left to chase.</span>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy
             </Link>
-          ))}
-          <Link
-            to="/privacy"
-            className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground"
-          >
-            Privacy
-          </Link>
-          <Link
-            to="/terms"
-            className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground"
-          >
-            Terms
-          </Link>
-        </nav>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Start with the plan that fits your call volume. Change or cancel anytime.
-        </p>
+            <Link to="/terms" className="hover:text-foreground">
+              Terms
+            </Link>
+          </div>
+        </div>
       </div>
     </footer>
   );

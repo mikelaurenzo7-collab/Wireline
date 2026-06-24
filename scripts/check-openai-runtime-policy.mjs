@@ -19,9 +19,9 @@ if (!models.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"')) fail("managed v
 if (!models.includes("VAPI_DEFAULT_FALLBACK_MODELS")) fail("managed voice does not carry Gemini fallback models");
 if (!models.includes('provider === "openrouter" && isOpenRouterModelId(model)')) fail("OpenRouter model validation is missing");
 if (!models.includes('return { provider: "openrouter", model, userSelected: true }')) fail("OpenRouter selections are not preserved exactly");
-if (!registry.includes('item("deepgram-flux"')) fail("Deepgram Flux is not registered as production voice transcription");
-if (!registry.includes('item("elevenlabs"')) fail("ElevenLabs is not registered as production voice synthesis");
-if (!registry.includes('item("openai-realtime"')) fail("OpenAI Realtime optional web/mobile mode is not registered");
+if (!/item\(\s*["']deepgram-flux["']/.test(registry)) fail("Deepgram Flux is not registered as production voice transcription");
+if (!/item\(\s*["']elevenlabs["']/.test(registry)) fail("ElevenLabs is not registered as production voice synthesis");
+if (!/item\(\s*["']openai-realtime["']/.test(registry)) fail("OpenAI Realtime optional web/mobile mode is not registered");
 if (!migration.includes("voice_llm_provider SET DEFAULT 'openai'")) fail("tenant migration does not default managed voice to OpenAI");
 const legacyFiles = ["claude-brain.ts", "claude-client.ts", "claude-models.ts", "claude-structured.ts", "claude-audit.ts", "claude-tools.ts", "claude-recipes.ts", "claude-response-helpers.ts", "claude-supervisor-tools.ts"];
 const remaining = legacyFiles.filter((file) => existsSync(resolve(root, "src/lib", file)));

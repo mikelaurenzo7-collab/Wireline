@@ -55,7 +55,7 @@ export default function OnboardingFlow() {
 
   return (
     <>
-      <PageMeta title="Setup your Assistant — Wireline" noIndex />
+      <PageMeta title="Set up your personal assistant — Wireline" noIndex />
       <div className="min-h-screen bg-background paper-texture flex flex-col items-center justify-center p-6 text-foreground relative overflow-hidden">
         <div className="w-full max-w-md relative z-10">
           <div className="mb-10 flex flex-col items-center justify-center">
@@ -90,8 +90,8 @@ export default function OnboardingFlow() {
                   </div>
                   <h1 className="font-display text-2xl font-semibold mb-2">Link your phone</h1>
                   <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-                    Wireline is your personal assistant. We'll text this number when you have an
-                    incoming caller or task update.
+                    Wireline starts with personal assistants for your day. Add business agents later
+                    when work needs a professional line. We will text this number for caller and task updates.
                   </p>
                   <form onSubmit={handleSendCode} className="space-y-6">
                     <div className="space-y-2">

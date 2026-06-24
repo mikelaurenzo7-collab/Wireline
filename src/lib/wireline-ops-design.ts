@@ -35,8 +35,8 @@ export const WL_OPS_CLASSES = {
 /** Sentiment chart – active green positive; Ametrine primary neutral; rose negative */
 export const OPS_SENTIMENT_COLORS = {
   positive: WL_BRAND.accentHex,
-  neutral: BRAND.teal,
-  negative: BRAND.rose,
+  neutral: BRAND.colors.outline,
+  negative: BRAND.colors.error,
 } as const;
 
 export const OPS_PULSE_METRICS = {
@@ -80,20 +80,21 @@ export const OPS_CHANNEL_EMPTY = {
       "Active conversations stream here in real time – listen in, get callbacks, or take over.",
     actions: [
       { label: "View call history", to: "/phone" },
-      { label: "Chat with assistant", to: "/agents", primary: true },
+      { label: "Open roster", to: "/agents", primary: true },
     ],
   },
   fleetRail: {
-    eyebrow: "Assistants",
-    title: "No assistants deployed",
-    description: "Deploy an assistant to see availability and assignments.",
-    actions: [{ label: "Deploy assistant", to: "/agents", primary: true }],
+    eyebrow: "Full versatility",
+    title: "No personal assistants or business agents yet",
+    description:
+      "Create a personal assistant or business agent to see availability and assignments.",
+    actions: [{ label: "Open roster", to: "/agents", primary: true }],
   },
   fleetAgents: {
-    eyebrow: "Assistants",
-    title: "No assistants yet",
+    eyebrow: "Full versatility",
+    title: "No roster yet",
     description:
-      "Create your first AI assistant below – it will answer calls, book appointments, and follow up for you.",
+      "Create a personal assistant for everyday calls or a business agent for your company line — voice, email, and text under your rules.",
   },
   agentRecall: {
     eyebrow: "Recall",
@@ -110,7 +111,7 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Call history",
     title: "No calls yet",
     description:
-      "When your assistants handle calls, recaps and analytics appear here. Configure a number in Settings to go live.",
+      "When your personal assistants and business agents handle calls, recaps and analytics appear here. Configure a number in Settings to go live.",
     actions: [
       { label: "Configure a number", to: "/settings", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
@@ -276,10 +277,10 @@ export const OPS_TRAINING_PANEL = {
 /** Triage panel accent rails – Ametrine Purple + status tokens */
 export const OPS_TRIAGE_ACCENTS = {
   hotLeads: WL_BRAND.accentHex,
-  openTasks: BRAND.tealBright,
-  escalations: BRAND.rose,
-  compliance: BRAND.rose,
-  knowledgeGaps: BRAND.teal,
+  openTasks: BRAND.colors.primary,
+  escalations: BRAND.colors.error,
+  compliance: BRAND.colors.error,
+  knowledgeGaps: BRAND.colors.outline,
 } as const;
 
 /** Triage panel empty states – Recaps `?tab=triage` widget columns */
