@@ -1,11 +1,21 @@
 /* Workspace geometry pass: one route scroll owner, restrained navigation, and readable desktop density. */
 
+.wl-workspace-shell {
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--wl-primary-container) 7%, transparent), transparent 31rem),
+    var(--wl-page);
+}
+
 .wl-workspace-main {
-  background: var(--wl-page);
+  background: transparent;
 }
 
 .wl-workspace-content {
   scrollbar-gutter: stable;
+}
+
+.wl-workspace-content-inner {
+  container-type: inline-size;
 }
 
 .wl-workspace-content-inner > .h-full {
@@ -14,7 +24,7 @@
 }
 
 .wl-workspace-sidebar {
-  background: color-mix(in srgb, var(--wl-surface) 96%, var(--wl-page));
+  background: color-mix(in srgb, var(--wl-surface) 97%, var(--wl-page));
 }
 
 .wl-stitch-sidebar-link {
@@ -47,15 +57,37 @@
 }
 
 .wl-workspace-header {
-  background: color-mix(in srgb, var(--wl-page) 94%, transparent);
+  background: color-mix(in srgb, var(--wl-page) 86%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.wl-workspace-header .wl-app-page-title {
+  text-wrap: balance;
+}
+
+.wl-workspace-header-actions {
+  max-width: 100%;
+}
+
+.wl-workspace-header-actions :is(.studio-primary-button, .studio-secondary-button) {
+  min-height: 2.375rem;
 }
 
 .wl-workspace-content .studio-card {
+  border-color: color-mix(in srgb, var(--wl-line) 82%, transparent);
   border-radius: calc(var(--radius-xl) - 2px);
 }
 
 .wl-workspace-content .studio-card:not(.wl-card-action) {
   box-shadow: 0 1px 1px rgba(21, 32, 56, 0.025);
+}
+
+.wl-workspace-content :is(.studio-card, .wl-setup-surface) :is(h2, h3) {
+  text-wrap: balance;
+}
+
+.wl-workspace-content :is(.studio-card, .wl-setup-surface) p {
+  text-wrap: pretty;
 }
 
 .wl-route-section-heading {
@@ -234,8 +266,28 @@
 }
 
 @media (max-width: 1023px) {
+  .wl-workspace-shell {
+    background: var(--wl-page);
+  }
+
   .wl-workspace-content-inner {
     max-width: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .wl-workspace-header {
+    min-height: auto;
+  }
+
+  .wl-workspace-header-actions,
+  .wl-workspace-header-actions > *,
+  .wl-workspace-header-actions :is(.studio-primary-button, .studio-secondary-button) {
+    width: 100%;
+  }
+
+  .wl-workspace-content .studio-card {
+    border-radius: var(--radius-lg);
   }
 }
 
