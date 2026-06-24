@@ -1,16 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- agent-config + overview rows aren't shared as client types yet. */
-/**
- * AgentMemoryPanel — the "Memory" tab inside an agent's chat workspace.
- */
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
-import { Brain, Sparkles, Phone, ShieldAlert, Trash2, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Brain, Phone, ShieldAlert, Sparkles, Trash2 } from "lucide-react";
+
 import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
-import ClientRouteLoading from "./layout/ClientRouteLoading";
-import { ShadButton } from "./ui/shadcn/ShadButton";
-import { EmptyState } from "./ui/EmptyState";
 import { OPS_CHANNEL_EMPTY } from "../lib/wireline-ops-design";
+import { Badge, Button, EmptyState, Skeleton } from "./atoms";
+import { StatusNotice } from "./molecules";
 
 interface AgentMemoryPanelProps {
   agentId: string;
@@ -28,20 +24,25 @@ interface RecentCall {
   createdAt: string | null;
 }
 
-const SENTIMENT_TONE: Record<string, string> = {
-  positive: "text-brand bg-brand/10 border-brand/30",
-  neutral: "text-muted bg-black/5 border-border",
-  negative: "text-rose-700 bg-rose-500/10 border-rose-500/30",
-};
+function MemoryLoadingState() {
+  return (
+    <div className="space-y-4 p-4" aria-busy="true" aria-live="polite">
+      <Skeleton shape="surface" className="h-24 w-full" />
+      <Skeleton shape="surface" className="h-28 w-full" />
+      <Skeleton shape="surface" className="h-40 w-full" />
+    </div>
+  );
+}
 
-export default function AgentMemoryPanel({
-  agentId,
-  agentName,
-  messageCount,
-  onClearMemory,
-  onOpenTraining,
-}: AgentMemoryPanelProps) {
+function sentimentVariant(value: string | null) {
+  if (value?.toLowerCase() === "positive") return "success" as const;
+  if (value?.toLowerCase() === "negative") return "destructive" as const;
+  return "default" as const;
+}
+
+export default function AgentMemoryPanel({ agentId, agentName, messageCount, onClearMemory, onOpenTraining }: AgentMemoryPanelProps) {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [recentCalls, setRecentCalls] = useState<RecentCall[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [directives, setDirectives] = useState<any[]>([]);
@@ -50,211 +51,86 @@ export default function AgentMemoryPanel({
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    Promise.all([
-      authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/overview`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-      authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-    ]).then(([overview, config]) => {
-      if (!active) return;
-      setRecentCalls(Array.isArray(overview?.recentCalls) ? overview.recentCalls : []);
-      setLessons(Array.isArray(config?.lessons) ? config.lessons : []);
-      setDirectives(Array.isArray(config?.directives) ? config.directives : []);
-      setKnowledge(Array.isArray(config?.knowledge) ? config.knowledge : []);
-      setPersonality(config?.personality || "");
-      setLoading(false);
-    });
-    return () => {
-      active = false;
+    const load = async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const [overviewResponse, configResponse] = await Promise.all([
+          authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/overview`),
+          authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`),
+        ]);
+        if (!active) return;
+        if (!overviewResponse.ok || !configResponse.ok) throw new Error("Memory context could not be loaded.");
+
+        const [overview, config] = await Promise.all([overviewResponse.json(), configResponse.json()]);
+        if (!active) return;
+        setRecentCalls(Array.isArray(overview?.recentCalls) ? overview.recentCalls : []);
+        setLessons(Array.isArray(config?.lessons) ? config.lessons : []);
+        setDirectives(Array.isArray(config?.directives) ? config.directives : []);
+        setKnowledge(Array.isArray(config?.knowledge) ? config.knowledge : []);
+        setPersonality(config?.personality || "");
+      } catch (error) {
+        if (active) setLoadError(error instanceof Error ? error.message : "Memory context could not be loaded.");
+      } finally {
+        if (active) setLoading(false);
+      }
     };
+    void load();
+    return () => { active = false; };
   }, [agentId]);
 
-  if (loading) {
-    return (
-      <ClientRouteLoading
-        icon={<Brain className="w-6 h-6" />}
-        label="Loading memory"
-        className="py-16"
-      />
-    );
-  }
+  if (loading) return <MemoryLoadingState />;
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
-      <section className="rounded-md wl-panel-elevated border border-border p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-md wl-panel border border-brand/30 text-brand flex items-center justify-center shrink-0">
-              <Brain className="w-4 h-4" />
-            </div>
+    <div className="h-full space-y-4 overflow-y-auto p-4">
+      {loadError ? <StatusNotice tone="destructive" title="Memory context is unavailable">{loadError}</StatusNotice> : null}
+
+      <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-primary/10 text-primary"><Brain className="size-5" /></span>
             <div className="min-w-0">
-              <h3 className="font-display italic text-xl text-foreground leading-tight">
-                What {agentName} remembers
-              </h3>
-              <p className="wl-label text-foreground/55">Carried between every call</p>
+              <p className="text-eyebrow">Assistant context</p>
+              <h3 className="mt-1 text-xl font-semibold tracking-[-.025em] text-foreground">What {agentName} can reference</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">Wireline separates active conversation context, call-derived recall, and the rules and facts you configure for this assistant.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="rounded-md wl-panel border border-border p-4">
+      <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md wl-panel border border-brand/30 text-brand flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4" />
-            </div>
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-primary/10 text-primary"><Sparkles className="size-4" /></span>
             <div>
-              <h4 className="font-display italic text-lg text-foreground leading-none">
-                Persistent thread
-              </h4>
-              <p className="wl-label text-foreground/55 mt-0.5">
-                {messageCount} message{messageCount === 1 ? "" : "s"} · the thread is the memory
-              </p>
+              <h4 className="font-semibold text-foreground">Conversation thread</h4>
+              <p className="mt-1 text-sm text-muted-foreground">{messageCount} message{messageCount === 1 ? "" : "s"} available in this assistant’s current thread.</p>
             </div>
           </div>
-          {messageCount > 0 && (
-            <ShadButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              disableAnimations
-              onClick={onClearMemory}
-              className="shrink-0 min-h-9 wl-label-muted hover:text-rose-600 hover:bg-rose-500/8"
-              title="Clear this agent's memory thread"
-            >
-              <Trash2 className="w-3 h-3" />
-              Clear memory
-            </ShadButton>
-          )}
+          {messageCount > 0 ? <Button type="button" variant="ghost" size="sm" onClick={onClearMemory}><Trash2 className="size-4" /> Clear thread</Button> : null}
         </div>
-        <p className="mt-3 text-[12px] text-muted leading-relaxed">
-          Everything you discuss in the Chat tab persists here and is read back to {agentName} on
-          every call, alongside the recent calls and learned patterns below.
-        </p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">Clearing this thread removes the stored conversation context. It does not delete configured rules, knowledge, or historical call records.</p>
       </section>
 
-      <section className="rounded-md wl-panel border border-border p-4">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-8 h-8 rounded-md wl-panel border border-brand/30 text-brand flex items-center justify-center shrink-0">
-            <Phone className="w-4 h-4" />
-          </div>
+      <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
+        <div className="flex items-center gap-3">
+          <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-primary/10 text-primary"><Phone className="size-4" /></span>
           <div>
-            <h4 className="font-display italic text-lg text-foreground leading-none">
-              Recent calls it recalls
-            </h4>
-            <p className="wl-label text-foreground/55 mt-0.5">
-              Last {recentCalls.length || "few"} conversations
-            </p>
+            <h4 className="font-semibold text-foreground">Recent call recall</h4>
+            <p className="mt-1 text-sm text-muted-foreground">Summaries from the most recent conversations available to this workspace.</p>
           </div>
         </div>
-        {recentCalls.length === 0 ? (
-          <EmptyState
-            icon={Phone}
-            eyebrow={OPS_CHANNEL_EMPTY.agentRecall.eyebrow}
-            title={OPS_CHANNEL_EMPTY.agentRecall.title}
-            description={`Once ${agentName} takes calls, conversation summaries appear here as recall context.`}
-            density="compact"
-            withHalo={false}
-            className="py-4"
-          />
-        ) : (
-          <div className="space-y-2">
-            {recentCalls.map((c, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="rounded-md bg-black/[0.03] border border-border p-3"
-              >
-                <p className="text-[13px] text-foreground/90 leading-relaxed">
-                  {c.summary || "Call handled — no summary captured."}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  {c.intent && (
-                    <span className="px-2 py-0.5 rounded-full wl-label border border-brand/30 bg-brand/8 text-brand">
-                      {c.intent}
-                    </span>
-                  )}
-                  {c.sentiment && (
-                    <span
-                      className={`px-2 py-0.5 rounded-full wl-label border ${
-                        SENTIMENT_TONE[c.sentiment.toLowerCase()] || SENTIMENT_TONE.neutral
-                      }`}
-                    >
-                      {c.sentiment}
-                    </span>
-                  )}
-                  {c.createdAt && (
-                    <span className="wl-label-muted/60 ml-auto">{formatDate(c.createdAt)}</span>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+        {recentCalls.length ? <div className="mt-4 space-y-3">{recentCalls.map((call, index) => <article key={`${call.createdAt || "call"}-${index}`} className="rounded-[var(--radius-md)] border border-border bg-[var(--wl-surface-subtle)] p-3"><p className="text-sm leading-6 text-foreground">{call.summary || "Call handled — no summary was captured."}</p><div className="mt-3 flex flex-wrap items-center gap-2">{call.intent ? <Badge variant="info">{call.intent}</Badge> : null}{call.sentiment ? <Badge variant={sentimentVariant(call.sentiment)}>{call.sentiment}</Badge> : null}{call.outcome ? <Badge variant="outline">{call.outcome}</Badge> : null}{call.createdAt ? <span className="ml-auto text-xs text-muted-foreground">{formatDate(call.createdAt)}</span> : null}</div></article>)}</div> : <EmptyState icon={<Phone className="size-5" />} eyebrow={OPS_CHANNEL_EMPTY.agentRecall.eyebrow} title={OPS_CHANNEL_EMPTY.agentRecall.title} description={`Once ${agentName} takes calls, conversation summaries appear here as recall context.`} density="compact" />}
       </section>
 
-      {lessons.length > 0 && (
-        <section className="rounded-md wl-panel border border-border p-4">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8 h-8 rounded-md bg-brand flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2.5} />
-            </div>
-            <div>
-              <h4 className="font-display italic text-lg text-foreground leading-none">
-                Patterns learned from calls
-              </h4>
-              <p className="wl-label text-brand mt-0.5">Auto-calibration</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {lessons.map((lesson) => (
-              <div key={lesson.id} className="rounded-md bg-brand/8 border border-brand/20 p-3">
-                <p className="text-[13px] text-foreground/90 leading-relaxed">{lesson.lesson}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {lessons.length ? <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-primary/10 text-primary"><Sparkles className="size-4" /></span><div><h4 className="font-semibold text-foreground">Patterns learned from calls</h4><p className="mt-1 text-sm text-muted-foreground">Derived observations, shown separately from your configured instructions.</p></div></div><div className="mt-4 grid gap-3 md:grid-cols-2">{lessons.map((lesson) => <p key={lesson.id} className="rounded-[var(--radius-md)] border border-[var(--wl-info-border)] bg-[var(--wl-info-surface)] p-3 text-sm leading-6 text-foreground">{lesson.lesson}</p>)}</div></section> : null}
 
-      <section className="rounded-md wl-panel border border-border p-4">
+      <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md wl-panel border border-rose-500/30 text-rose-500 flex items-center justify-center shrink-0">
-              <ShieldAlert className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="font-display italic text-lg text-foreground leading-none">
-                Rules, facts &amp; personality
-              </h4>
-              <p className="wl-label text-foreground/55 mt-0.5">
-                {directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length}{" "}
-                fact{knowledge.length === 1 ? "" : "s"}
-              </p>
-            </div>
-          </div>
-          <ShadButton
-            type="button"
-            variant="ghost"
-            size="sm"
-            disableAnimations
-            onClick={onOpenTraining}
-            className="shrink-0 min-h-9 wl-label text-brand hover:bg-brand/10"
-          >
-            <ArrowUpRight className="w-3 h-3" />
-            <span className="hidden sm:inline">Manage in Training</span>
-            <span className="sm:hidden">Train</span>
-          </ShadButton>
+          <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-[var(--wl-warning-surface)] text-[var(--wl-warning)]"><ShieldAlert className="size-4" /></span><div><h4 className="font-semibold text-foreground">Configured rules, facts, and personality</h4><p className="mt-1 text-sm text-muted-foreground">{directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length} fact{knowledge.length === 1 ? "" : "s"}</p></div></div>
+          <Button type="button" variant="secondary" size="sm" onClick={onOpenTraining}><ArrowUpRight className="size-4" /> Manage in Training</Button>
         </div>
-        {personality && (
-          <p className="mt-3 font-display italic text-base text-foreground/90 leading-snug">
-            “{personality}”
-          </p>
-        )}
+        {personality ? <p className="mt-4 rounded-[var(--radius-md)] bg-[var(--wl-surface-subtle)] p-3 text-sm leading-6 text-foreground">{personality}</p> : <p className="mt-3 text-sm leading-6 text-muted-foreground">No personality guidance is configured yet.</p>}
       </section>
     </div>
   );
