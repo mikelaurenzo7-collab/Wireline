@@ -1,18 +1,19 @@
-import { cn } from "../../../lib/utils";
+import * as React from "react";
+import { Skeleton as CanonicalSkeleton, type SkeletonProps as CanonicalSkeletonProps } from "../../atoms/Skeleton";
 
-/** Neutral loading primitive — monochrome shimmer, shared across surfaces. */
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export interface SkeletonProps extends Omit<CanonicalSkeletonProps, "shape"> {}
+
+function Skeleton({ className, ...props }: SkeletonProps) {
   return (
-    <div
+    <CanonicalSkeleton
       role="status"
       aria-busy="true"
       aria-live="polite"
-      aria-label="Loading…"
-      className={cn("relative overflow-hidden rounded-md bg-foreground/[0.06]", className)}
+      aria-label="Loading"
+      aria-hidden={undefined}
+      className={className}
       {...props}
-    >
-      <div className="skeleton-shimmer absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-foreground/[0.04] to-transparent" />
-    </div>
+    />
   );
 }
 
