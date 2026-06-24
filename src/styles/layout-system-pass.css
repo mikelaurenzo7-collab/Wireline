@@ -145,6 +145,77 @@
   justify-content: flex-start;
 }
 
+/* The public hero now carries one purposeful product proof card. */
+.marketing-hero {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wl-primary-container) 4%, var(--wl-page)), var(--wl-page) 72%);
+}
+
+.marketing-operating-model {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wl-primary-container) 20%, var(--wl-line));
+  border-radius: calc(var(--radius-xl) + 2px);
+  background: var(--wl-surface);
+  box-shadow: 0 24px 50px -38px color-mix(in srgb, var(--wl-primary-container) 52%, transparent), var(--wl-shadow-sm);
+}
+
+.marketing-operating-model__header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  border-bottom: 1px solid var(--wl-line);
+  padding: 1.25rem;
+}
+
+.marketing-operating-model__body {
+  display: grid;
+  gap: 0;
+  padding: 0.5rem 1.25rem;
+}
+
+.marketing-operating-model__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  border-bottom: 1px solid var(--wl-line);
+  padding: 0.9rem 0;
+  font-size: 0.8125rem;
+}
+
+.marketing-operating-model__row span {
+  color: var(--wl-muted);
+}
+
+.marketing-operating-model__row strong {
+  color: var(--wl-on-surface);
+  font-weight: 600;
+}
+
+.marketing-operating-model__outcome {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0 1.25rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--wl-primary-container) 16%, var(--wl-line));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--wl-primary-container) 7%, var(--wl-surface));
+  padding: 1rem;
+  color: var(--wl-primary-container);
+}
+
+.marketing-operating-model__outcome p:last-child {
+  color: var(--wl-on-surface);
+}
+
+.marketing-channel-card {
+  box-shadow: 0 1px 1px rgba(21, 32, 56, 0.02);
+}
+
+.marketing-channel-card:hover {
+  border-color: color-mix(in srgb, var(--wl-primary-container) 35%, var(--wl-line));
+}
+
 @media (min-width: 1280px) {
   [data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex > .xl\:grid {
     grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 0.9fr) minmax(250px, 1fr) minmax(360px, 1.25fr);
@@ -155,6 +226,10 @@
     position: sticky;
     top: 1rem;
     align-self: start;
+  }
+
+  .marketing-operating-model {
+    transform: translateY(2px);
   }
 }
 
