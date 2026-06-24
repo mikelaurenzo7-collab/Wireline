@@ -27,19 +27,25 @@ const AUTH_MIDDLEWARE = [
 ];
 
 const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
-  { pattern: /^\/(?:api\/)?stripe-webhook$/, reason: "Stripe signature verification + idempotency" },
+  {
+    pattern: /^\/(?:api\/)?stripe-webhook$/,
+    reason: "Stripe signature verification + idempotency",
+  },
   { pattern: /^\/api\/twilio-webhook\//, reason: "Twilio signature validation + rate limit" },
   { pattern: /^\/api\/webhooks\/meta\//, reason: "Meta HMAC-SHA256 signature + rate limit" },
   { pattern: /^\/api\/webhooks\/elevenlabs/, reason: "ElevenLabs HMAC-SHA256 signature" },
   { pattern: /^\/api\/vapi\//, reason: "Vapi tool/webhook signature verification" },
+  { pattern: /^\/api\/vapi-webhook$/, reason: "Vapi signature validation + agent-scoped routing" },
   { pattern: /^\/api\/escalate$/, reason: "Vapi X-Vapi-Secret (timing-safe) + rate limit" },
   {
     pattern: /^\/api\/admin\/sync-vapi-knowledge$/,
     reason: "Owner email OR X-Migration-Token (timing-safe), enforced in handler",
   },
   {
-    pattern: /^\/api\/admin\/(operating-cockpit|tenant-economics|launch-readiness|economics-at-risk-count|trust-pack\/soc2)$/,
-    reason: "Owner email OR X-Migration-Token (timing-safe), enforced in handler via authorizeMigration",
+    pattern:
+      /^\/api\/admin\/(operating-cockpit|tenant-economics|launch-readiness|economics-at-risk-count|trust-pack\/soc2)$/,
+    reason:
+      "Owner email OR X-Migration-Token (timing-safe), enforced in handler via authorizeMigration",
   },
   {
     pattern: /^\/api\/integrations\/certified$/,
@@ -49,19 +55,28 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     pattern: /^\/api\/daily-brief\/schedule$/,
     reason: "Vercel cron; Bearer CRON_SECRET (timing-safe)",
   },
-  { pattern: /^\/(?:api\/intake\/)?leads?$/, reason: "API-key auth via X-Wireline-Key + rate limit" },
+  {
+    pattern: /^\/(?:api\/intake\/)?leads?$/,
+    reason: "API-key auth via X-Wireline-Key + rate limit",
+  },
   { pattern: /^\/api\/oauth\//, reason: "OAuth initiation/callback (state-validated)" },
   { pattern: /^\/api\/auth\//, reason: "Signup/login/refresh (public by definition)" },
   {
     pattern: /^\/api\/email\/unsubscribe$/,
     reason: "CAN-SPAM one-click unsubscribe; token-scoped + rate-limited",
   },
-  { pattern: /^\/(?:api\/)?health(\/|$)/, reason: "Liveness/readiness probes; rate-limited, no PII" },
+  {
+    pattern: /^\/(?:api\/)?health(\/|$)/,
+    reason: "Liveness/readiness probes; rate-limited, no PII",
+  },
   { pattern: /^\/api\/public\//, reason: "Aggregated, no-PII marketing counters; rate-limited" },
   { pattern: /^\/(?:api\/)?billing\/plans$/, reason: "Public plan/price comparison table" },
   { pattern: /^\/(?:api\/quotas\/)?plans$/, reason: "Public plan limits comparison table" },
   { pattern: /^\/api\/agents\/roles$/, reason: "Static role reference enum; no tenant data" },
-  { pattern: /^\/(?:api\/)?openapi\.json$/, reason: "Public OpenAPI spec; rate-limited + CDN cached" },
+  {
+    pattern: /^\/(?:api\/)?openapi\.json$/,
+    reason: "Public OpenAPI spec; rate-limited + CDN cached",
+  },
   { pattern: /^\/api\/support\/ticket$/, reason: "Public support form; rate-limited + validated" },
   { pattern: /^\/api\/contact$/, reason: "Public marketing contact form; rate-limited" },
   {
@@ -99,7 +114,7 @@ function allowlistReason(fullPath: string): string | null {
 function parseMountTable(): Map<string, string> {
   const registry = fs.readFileSync(ROUTE_REGISTRY_FILE, "utf8");
   const variableToFile = new Map<string, string>();
-  const importRe = /import\s+(\w+)\s+from\s+["']\.\.\/routes\/([\w-]+)["']/g;
+  const importRe = /import\s+(\w+)\s+from\s+["']\.\.\/routes\/([\w/-]+)["']/g;
   let match: RegExpExecArray | null;
 
   while ((match = importRe.exec(registry)) !== null) {
@@ -132,8 +147,11 @@ function resolveFullPath(base: string, rawPath: string): string {
 function scanFile(filePath: string, mountBase: string): RouteEntry[] {
   const content = fs.readFileSync(filePath, "utf8");
   const file = path.basename(filePath);
-  const routerAuth = new RegExp(`router\\.use\\(\\s*(?:${AUTH_MIDDLEWARE.join("|")})`).test(content);
-  const routeRe = /router\.(get|post|put|patch|delete)\s*\(\s*["'`]([^"'`]+)["'`]([\s\S]*?)(?:async\s*\(|\(\s*(?:_?req|_)\b|\bfunction\b)/g;
+  const routerAuth = new RegExp(`router\\.use\\(\\s*(?:${AUTH_MIDDLEWARE.join("|")})`).test(
+    content,
+  );
+  const routeRe =
+    /router\.(get|post|put|patch|delete)\s*\(\s*["'`]([^"'`]+)["'`]([\s\S]*?)(?:async\s*\(|\(\s*(?:_?req|_)\b|\bfunction\b)/g;
   const entries: RouteEntry[] = [];
   let match: RegExpExecArray | null;
 
@@ -157,11 +175,24 @@ function scanFile(filePath: string, mountBase: string): RouteEntry[] {
   return entries;
 }
 
+function resolveRouteFile(file: string): string {
+  const direct = path.join(ROUTES_DIR, `${file}.ts`);
+  if (fs.existsSync(direct)) return direct;
+  return path.join(ROUTES_DIR, file, "index.ts");
+}
+
 function main() {
   const mountTable = parseMountTable();
   const entries = [...mountTable.entries()]
-    .flatMap(([file, mountBase]) => scanFile(path.join(ROUTES_DIR, `${file}.ts`), mountBase))
-    .filter((entry, index, all) => all.findIndex((candidate) => `${candidate.file}:${candidate.method}:${candidate.fullPath}` === `${entry.file}:${entry.method}:${entry.fullPath}`) === index)
+    .flatMap(([file, mountBase]) => scanFile(resolveRouteFile(file), mountBase))
+    .filter(
+      (entry, index, all) =>
+        all.findIndex(
+          (candidate) =>
+            `${candidate.file}:${candidate.method}:${candidate.fullPath}` ===
+            `${entry.file}:${entry.method}:${entry.fullPath}`,
+        ) === index,
+    )
     .sort((a, b) => a.file.localeCompare(b.file) || a.fullPath.localeCompare(b.fullPath));
 
   const isProtected = (entry: RouteEntry) => entry.hasInlineAuth || entry.hasRouterAuth;
@@ -169,18 +200,25 @@ function main() {
 
   let markdown = "# Wireline Authorization Matrix (Auto-Generated)\n\n";
   markdown += "> Generated by `scripts/generate-authz-matrix.ts`. Do not edit by hand.\n\n";
-  markdown += "**Source:** canonical production route registry (`src/server/register-api-routes.ts`)\n\n";
+  markdown +=
+    "**Source:** canonical production route registry (`src/server/register-api-routes.ts`)\n\n";
   markdown += `**Routes scanned:** ${entries.length}  \n`;
   markdown += `**Protected:** ${entries.filter(isProtected).length}  \n`;
   markdown += `**Public (allowlisted):** ${entries.filter((entry) => !isProtected(entry) && entry.allowReason).length}  \n`;
   markdown += `**Violations:** ${violations.length}\n\n`;
-  markdown += "## Public Allowlist (explicit security decisions)\n\n| Path | Reason |\n|------|--------|\n";
+  markdown +=
+    "## Public Allowlist (explicit security decisions)\n\n| Path | Reason |\n|------|--------|\n";
   for (const entry of entries.filter((item) => !isProtected(item) && item.allowReason)) {
     markdown += `| \`${entry.method} ${entry.fullPath}\` | ${entry.allowReason} |\n`;
   }
-  markdown += "\n## Full Matrix\n\n| File | Method | Path | Auth | RBAC | Public | Status |\n|------|--------|------|------|------|--------|--------|\n";
+  markdown +=
+    "\n## Full Matrix\n\n| File | Method | Path | Auth | RBAC | Public | Status |\n|------|--------|------|------|------|--------|--------|\n";
   for (const entry of entries) {
-    const status = isProtected(entry) ? "Protected" : entry.allowReason ? "Public (allowlisted)" : "MISSING AUTH";
+    const status = isProtected(entry)
+      ? "Protected"
+      : entry.allowReason
+        ? "Public (allowlisted)"
+        : "MISSING AUTH";
     const auth = entry.hasInlineAuth ? "inline" : entry.hasRouterAuth ? "router" : "—";
     markdown += `| ${entry.file} | ${entry.method} | \`${entry.fullPath}\` | ${auth} | ${entry.hasRequirePermission ? "yes" : "—"} | ${entry.allowReason ? "yes" : "—"} | ${status} |\n`;
   }
@@ -188,12 +226,18 @@ function main() {
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, markdown, "utf8");
   console.log(`AuthZ matrix written to ${path.relative(REPO_ROOT, OUTPUT_FILE)}`);
-  console.log(`  scanned=${entries.length} protected=${entries.filter(isProtected).length} public=${entries.filter((entry) => !isProtected(entry) && entry.allowReason).length} violations=${violations.length}`);
+  console.log(
+    `  scanned=${entries.length} protected=${entries.filter(isProtected).length} public=${entries.filter((entry) => !isProtected(entry) && entry.allowReason).length} violations=${violations.length}`,
+  );
 
   if (violations.length) {
-    console.error("\nDefault-deny violation(s) — mounted route(s) with neither auth nor allowlist entry:");
+    console.error(
+      "\nDefault-deny violation(s) — mounted route(s) with neither auth nor allowlist entry:",
+    );
     for (const violation of violations) {
-      console.error(`   ${violation.file}:${violation.line}  ${violation.method} ${violation.fullPath}`);
+      console.error(
+        `   ${violation.file}:${violation.line}  ${violation.method} ${violation.fullPath}`,
+      );
     }
     process.exit(1);
   }

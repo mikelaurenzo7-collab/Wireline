@@ -18,7 +18,7 @@ const primaryNavigation = [
   { href: "/agents", label: "Assistants & agents", icon: Bot },
   { href: "/studio", label: "Studio", icon: PenLine },
   { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/actions", label: "Actions", icon: Cable },
+  { href: "/actions", label: "Connections", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
 
@@ -109,13 +109,13 @@ export default function WorkspaceShell({
           onClick={closeDrawer}
         />
       ) : null}
-      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[232px_minmax(0,1fr)]">
+      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[256px_minmax(0,1fr)]">
         <aside
           ref={drawerRef}
           aria-label="Workspace navigation"
           aria-modal={drawerOpen ? true : undefined}
           role={drawerOpen ? "dialog" : undefined}
-          className={`wl-stitch-sidebar wl-workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col px-3 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:w-[232px] lg:translate-x-0 lg:px-3 lg:shadow-none ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
+          className={`wl-stitch-sidebar wl-workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[256px] flex-col px-3 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:w-[256px] lg:translate-x-0 lg:px-3 lg:shadow-none ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="flex shrink-0 items-center justify-between px-2">
             <Link

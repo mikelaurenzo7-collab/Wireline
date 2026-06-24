@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
 import { eq } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { auditLogger, drizzle, log } from "../lib/server-context";
@@ -96,7 +96,10 @@ router.post(
 
       const appUrl = resolveCanonicalAppUrl();
       if ("error" in appUrl) {
-        return res.status(503).json({ error: "Billing is unavailable because APP_URL is not configured." });
+        return res.status(503).json({
+          code: "APP_URL_NOT_CONFIGURED",
+          error: "Billing is unavailable because APP_URL is not configured.",
+        });
       }
 
       const creditMeta = {

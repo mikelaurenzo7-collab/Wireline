@@ -3,26 +3,26 @@
 
 :root {
   /* Canvas + surfaces */
-  --wl-page: #fafbff;
+  --wl-page: #f8f9ff;
   --wl-surface: #ffffff;
-  --wl-surface-subtle: #f3f5fb;
-  --wl-surface-container: #e9edf7;
+  --wl-surface-subtle: #eff4ff;
+  --wl-surface-container: #e5eeff;
   --wl-surface-strong: #dde3f0;
-  --wl-ink: #111c32;
-  --wl-on-surface: #111c32;
+  --wl-ink: #0b1c30;
+  --wl-on-surface: #0b1c30;
   --wl-on-surface-variant: #5f687b;
   --wl-muted: #5f687b;
 
   /* Action + accent */
-  --wl-primary: #4e2cb8;
-  --wl-primary-container: #5b3bd1;
+  --wl-primary: #451ebb;
+  --wl-primary-container: #5d3fd3;
   --wl-accent: var(--wl-primary-container);
-  --wl-accent-hover: #4824af;
-  --wl-accent-container: rgba(91, 59, 209, 0.1);
+  --wl-accent-hover: #451ebb;
+  --wl-accent-container: rgba(93, 63, 211, 0.1);
   --wl-on-primary: #ffffff;
 
   /* Structure */
-  --wl-line: #d7dce7;
+  --wl-line: #c9c4d7;
   --wl-line-strong: #b9c0d0;
   --wl-focus: rgba(17, 28, 50, 0.46);
 
@@ -35,10 +35,10 @@
   --wl-status-error: var(--wl-error);
 
   /* Geometry */
-  --radius-sm: 0.375rem;
-  --radius: 0.5rem;
-  --radius-md: 0.625rem;
-  --radius-lg: 0.75rem;
+  --radius-sm: 0.25rem;
+  --radius: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
   --radius-xl: 1rem;
 
   /* Type scale helpers */
@@ -50,7 +50,7 @@
   --transition-base: 200ms ease;
   --transition-slow: 300ms ease;
   --hover-lift: translateY(-1px);
-  --active-press: translateY(1px);
+  --active-press: scale(0.98);
   --focus-ring: 2px solid var(--wl-accent);
 
   /* Elevation — tonal layering before shadow */
@@ -131,7 +131,7 @@ button,
 }
 
 .wl-interactive:active:not(:disabled) {
-  transform: var(--active-press);
+  transform: scale(0.98);
 }
 
 .wl-interactive:focus-visible,

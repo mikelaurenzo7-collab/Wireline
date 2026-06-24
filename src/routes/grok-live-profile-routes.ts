@@ -58,52 +58,74 @@ async function loadProfile(userId: string, agentId: string) {
   };
 }
 
-router.get("/api/voice/live/profile", authenticateUser, limiter, async (req: AuthenticatedRequest, res) => {
-  const agentId = typeof req.query.agentId === "string" ? req.query.agentId.slice(0, 200) : "";
-  if (!agentId) return res.status(400).json({ error: "agentId is required" });
-  const selected = await loadProfile(req.user.id, agentId);
-  if (!selected) return res.status(404).json({ error: "Assistant not found" });
-  res.setHeader("Cache-Control", "no-store");
-  res.json({
-    profile: selected.profile,
-    profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    customVoiceConfigured: selected.customVoiceConfigured,
-  });
-});
+router.get(
+  "/api/voice/live/profile",
+  authenticateUser,
+  limiter,
+  async (req: AuthenticatedRequest, res) => {
+    const agentId = typeof req.query.agentId === "string" ? req.query.agentId.slice(0, 200) : "";
+    if (!agentId)
+      return res.status(400).json({ error: "agentId is required", code: "AGENT_ID_REQUIRED" });
+    const selected = await loadProfile(req.user.id, agentId);
+    if (!selected)
+      return res.status(404).json({ error: "Assistant not found", code: "ASSISTANT_NOT_FOUND" });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      profile: selected.profile,
+      profiles: WIRELINE_LIVE_VOICE_PROFILES,
+      customVoiceConfigured: selected.customVoiceConfigured,
+    });
+  },
+);
 
-router.patch("/api/voice/live/profile", authenticateUser, limiter, validateBody(profileSchema), async (req: AuthenticatedRequest, res) => {
-  const selected = await loadProfile(req.user.id, req.body.agentId);
-  if (!selected) return res.status(404).json({ error: "Assistant not found" });
-  const profile = req.body.profile as WirelineVoiceProfile;
-  await drizzle
-    .update(schema.agents)
-    .set({
-      businessVariables: {
-        ...asRecord(selected.agent.businessVariables),
-        wirelineLiveVoiceProfile: profile,
-        wirelineLiveCustomVoice: false,
-        grokVoiceId: resolveWirelineGrokVoice(selected.agent.role, profile),
-      },
-    })
-    .where(and(eq(schema.agents.id, req.body.agentId), eq(schema.agents.userId, req.user.id)));
-  res.json({ profile, profiles: WIRELINE_LIVE_VOICE_PROFILES, customVoiceConfigured: false });
-});
+router.patch(
+  "/api/voice/live/profile",
+  authenticateUser,
+  limiter,
+  validateBody(profileSchema),
+  async (req: AuthenticatedRequest, res) => {
+    const selected = await loadProfile(req.user.id, req.body.agentId);
+    if (!selected)
+      return res.status(404).json({ error: "Assistant not found", code: "ASSISTANT_NOT_FOUND" });
+    const profile = req.body.profile as WirelineVoiceProfile;
+    await drizzle
+      .update(schema.agents)
+      .set({
+        businessVariables: {
+          ...asRecord(selected.agent.businessVariables),
+          wirelineLiveVoiceProfile: profile,
+          wirelineLiveCustomVoice: false,
+          grokVoiceId: resolveWirelineGrokVoice(selected.agent.role, profile),
+        },
+      })
+      .where(and(eq(schema.agents.id, req.body.agentId), eq(schema.agents.userId, req.user.id)));
+    res.json({ profile, profiles: WIRELINE_LIVE_VOICE_PROFILES, customVoiceConfigured: false });
+  },
+);
 
-router.patch("/api/voice/live/custom", authenticateUser, limiter, validateBody(customVoiceSchema), async (req: AuthenticatedRequest, res) => {
-  const selected = await loadProfile(req.user.id, req.body.agentId);
-  if (!selected) return res.status(404).json({ error: "Assistant not found" });
-  const customVoiceId = req.body.customVoiceId;
-  await drizzle
-    .update(schema.agents)
-    .set({
-      businessVariables: {
-        ...asRecord(selected.agent.businessVariables),
-        wirelineLiveCustomVoice: Boolean(customVoiceId),
-        grokVoiceId: customVoiceId || resolveWirelineGrokVoice(selected.agent.role, selected.profile),
-      },
-    })
-    .where(and(eq(schema.agents.id, req.body.agentId), eq(schema.agents.userId, req.user.id)));
-  res.json({ customVoiceConfigured: Boolean(customVoiceId) });
-});
+router.patch(
+  "/api/voice/live/custom",
+  authenticateUser,
+  limiter,
+  validateBody(customVoiceSchema),
+  async (req: AuthenticatedRequest, res) => {
+    const selected = await loadProfile(req.user.id, req.body.agentId);
+    if (!selected)
+      return res.status(404).json({ error: "Assistant not found", code: "ASSISTANT_NOT_FOUND" });
+    const customVoiceId = req.body.customVoiceId;
+    await drizzle
+      .update(schema.agents)
+      .set({
+        businessVariables: {
+          ...asRecord(selected.agent.businessVariables),
+          wirelineLiveCustomVoice: Boolean(customVoiceId),
+          grokVoiceId:
+            customVoiceId || resolveWirelineGrokVoice(selected.agent.role, selected.profile),
+        },
+      })
+      .where(and(eq(schema.agents.id, req.body.agentId), eq(schema.agents.userId, req.user.id)));
+    res.json({ customVoiceConfigured: Boolean(customVoiceId) });
+  },
+);
 
 export default router;

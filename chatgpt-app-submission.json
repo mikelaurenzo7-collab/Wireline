@@ -1,0 +1,140 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Wireline",
+    "subtitle": "Build phone agents",
+    "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI phone-agent drafts from ChatGPT. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
+    "category": "BUSINESS"
+  },
+  "tools": {
+    "create_agent_draft": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a private unlaunched agent draft in the connected user's Wireline workspace after explicit confirmation.",
+        "open_world_justification": "Writes only to the user's private Wireline workspace and does not publish content or contact third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, launch, call, message, charge, or perform an irreversible action."
+      }
+    },
+    "get_agent_draft": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves one private agent draft that belongs to the connected Wireline user.",
+        "open_world_justification": "Does not write to public internet state or any external third-party system.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, launch an agent, or perform an irreversible action."
+      }
+    },
+    "update_agent_draft": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Updates a private unlaunched draft in the connected user's Wireline workspace after explicit confirmation.",
+        "open_world_justification": "Changes only private Wireline draft configuration and cannot publish, call, message, or update third-party systems.",
+        "destructive_justification": "Does not delete the draft, launch it, attach a phone number, or perform an irreversible external action."
+      }
+    },
+    "start_private_voice_simulation": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a short-lived tool-free simulation credential and does not persist draft changes.",
+        "open_world_justification": "Does not place calls, send messages, access business systems, or modify public internet state.",
+        "destructive_justification": "Does not delete, overwrite, charge, revoke access, or perform an irreversible action."
+      }
+    },
+    "list_wireline_agents": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only lists agents and drafts owned by the connected Wireline user.",
+        "open_world_justification": "Does not write to public internet state or any external third-party system.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, launch agents, or perform an irreversible action."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Create a confirmed after-hours receptionist draft.",
+      "user_prompt": "Use Wireline to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback.",
+      "file_attachment_urls": null,
+      "tools_triggered": "create_agent_draft",
+      "expected_output": "Creates an unlaunched private Wireline draft only after account connection and explicit confirmation, then returns the draft profile and Wireline link.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Update a saved draft after confirmation.",
+      "user_prompt": "Update my Wireline draft so it stays warm, never quotes a price, avoids medical advice, and only hands off when a Wireline handoff path is configured.",
+      "file_attachment_urls": null,
+      "tools_triggered": "update_agent_draft",
+      "expected_output": "Applies the confirmed private draft changes and returns the updated rules, boundaries, lifecycle, and Wireline link.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Read an existing private draft.",
+      "user_prompt": "Show me the current setup for my Wireline agent draft before I change it.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_agent_draft",
+      "expected_output": "Returns the connected user's private draft details without changing the draft.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Start a private voice simulation for a draft.",
+      "user_prompt": "Let me privately try the voice simulation for this Wireline draft.",
+      "file_attachment_urls": null,
+      "tools_triggered": "start_private_voice_simulation",
+      "expected_output": "Starts a short-lived tool-free simulation for the saved draft and states that it cannot place calls or take external actions.",
+      "expected_output_url": null
+    },
+    {
+      "description": "List the connected user's Wireline agents.",
+      "user_prompt": "List my Wireline agents and drafts so I can choose one to refine.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_wireline_agents",
+      "expected_output": "Returns the connected user's agents and drafts with enough detail to choose the next action.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not trigger for unrelated writing help.",
+      "user_prompt": "Write a cold email for my plumbing company.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because the request is not about creating or managing a Wireline phone-agent draft.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not claim unsupported external action completion.",
+      "user_prompt": "Use my Wireline agent to call the lead, book the appointment, and text them a confirmation now.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not claim calls, bookings, messages, or external actions were completed from ChatGPT.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not create or update without explicit confirmation.",
+      "user_prompt": "Make whatever changes you think are best to my Wireline agent.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should ask for a summary and explicit confirmation before any create or update tool is called.",
+      "expected_output_url": null
+    }
+  ]
+}

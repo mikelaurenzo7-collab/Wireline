@@ -114,10 +114,16 @@ function defaultRules(agentRole: AgentRole): string[] {
     "Capture a concise next step when the request cannot be completed in the conversation.",
   ];
   if (agentRole === "scheduler") {
-    return [...shared, "Do not confirm an appointment until the connected scheduling policy explicitly permits it."];
+    return [
+      ...shared,
+      "Do not confirm an appointment until the connected scheduling policy explicitly permits it.",
+    ];
   }
   if (agentRole === "sales") {
-    return [...shared, "Qualify fit before recommending a next step and do not make pricing commitments."];
+    return [
+      ...shared,
+      "Qualify fit before recommending a next step and do not make pricing commitments.",
+    ];
   }
   return shared;
 }
@@ -159,16 +165,17 @@ export function normalizeAgentCustomization(
 }
 
 export function isAgentCustomizationProfile(value: unknown): value is AgentCustomizationProfile {
-  const profile = value && typeof value === "object" ? (value as Partial<AgentCustomizationProfile>) : null;
+  const profile =
+    value && typeof value === "object" ? (value as Partial<AgentCustomizationProfile>) : null;
   return Boolean(
     profile &&
-      profile.version === AGENT_CUSTOMIZATION_VERSION &&
-      profile.identity &&
-      typeof profile.identity.name === "string" &&
-      profile.mission &&
-      typeof profile.mission.primaryGoal === "string" &&
-      profile.behavior &&
-      Array.isArray(profile.behavior.rules),
+    profile.version === AGENT_CUSTOMIZATION_VERSION &&
+    profile.identity &&
+    typeof profile.identity.name === "string" &&
+    profile.mission &&
+    typeof profile.mission.primaryGoal === "string" &&
+    profile.behavior &&
+    Array.isArray(profile.behavior.rules),
   );
 }
 
@@ -187,7 +194,8 @@ export function compileAgentRuntimeInstructions(profile: AgentCustomizationProfi
   const success = profile.mission.successCriteria.length
     ? profile.mission.successCriteria.map((item) => `- ${item}`).join("\n")
     : "- Leave the person with one clear next step.";
-  const knowledge = profile.knowledge.summary || "No account-holder knowledge summary has been added yet.";
+  const knowledge =
+    profile.knowledge.summary || "No account-holder knowledge summary has been added yet.";
   const escalation =
     profile.behavior.escalationPolicy === "handoff_when_configured"
       ? "Escalate to a human only when a configured handoff path is available; otherwise take a concise message."
@@ -216,6 +224,7 @@ export function compileAgentRuntimeInstructions(profile: AgentCustomizationProfi
     "",
     "# Action boundary",
     `The account holder intends for this agent to support: ${actions}`,
+    "No external action is assumed to be available unless it is configured and approved in Wireline.",
     "Never claim an appointment was booked, a message was sent, a call was transferred, a payment was taken, or any external action was completed unless the configured tool returned a successful result in the current conversation.",
     "",
     "# Escalation",
@@ -229,7 +238,9 @@ export function compileAgentRuntimeInstructions(profile: AgentCustomizationProfi
   ].join("\n");
 }
 
-export function profileToBusinessVariables(profile: AgentCustomizationProfile): Record<string, unknown> {
+export function profileToBusinessVariables(
+  profile: AgentCustomizationProfile,
+): Record<string, unknown> {
   return {
     customizationVersion: profile.version,
     source: profile.source,
