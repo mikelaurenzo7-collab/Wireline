@@ -29,6 +29,7 @@ function assertExcludes(relativePath, expression, message) {
 const canonicalAtoms = [
   "src/components/atoms/Button.tsx",
   "src/components/atoms/Badge.tsx",
+  "src/components/atoms/Dialog.tsx",
   "src/components/atoms/Input.tsx",
   "src/components/atoms/NativeSelect.tsx",
   "src/components/atoms/Skeleton.tsx",
@@ -143,6 +144,26 @@ assertIncludes(
   "src/components/atoms/Skeleton.tsx",
   /surface: "rounded-\[var\(--radius-lg\)\]"/,
   "must provide a rounded surface-loading shape.",
+);
+assertIncludes(
+  "src/components/atoms/Dialog.tsx",
+  /drawer:/,
+  "must provide a named drawer presentation for mobile blocking surfaces.",
+);
+assertIncludes(
+  "src/components/atoms/Dialog.tsx",
+  /safe-area-inset-bottom/,
+  "must reserve bottom safe-area space in the mobile drawer presentation.",
+);
+assertIncludes(
+  "src/components/layout/ClientToolbar.tsx",
+  /presentation="drawer"/,
+  "must use the canonical Dialog drawer for mobile page actions.",
+);
+assertExcludes(
+  "src/components/layout/ClientToolbar.tsx",
+  /window\.addEventListener|fixed inset-0 z-\[80\]|ShadButton/,
+  "must not restore a hand-rolled mobile action overlay.",
 );
 assertIncludes(
   "src/pages/AgentsPage.tsx",
