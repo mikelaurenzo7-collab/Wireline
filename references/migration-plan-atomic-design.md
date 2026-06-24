@@ -86,6 +86,12 @@ src/components/
 - Knowledge uses canonical NativeSelect, Input, Textarea, Button, FormField, Skeleton, EmptyState, Badge, and StatusNotice patterns across its mobile selector, editor, panel loading states, and source freshness treatment.
 - Source management remains explicitly staged: the panel now communicates preview-state truthfully instead of implying fully wired actions that do not exist yet.
 
+### Billing, team, and client surfaces
+
+- Billing now uses canonical back-navigation and an inline informational notice instead of a bespoke receipt card treatment.
+- Team uses canonical back-navigation, roster status badges, an RBAC notice, and a shared invite form built from Input, NativeSelect, Button, and FormField.
+- Client apps uses canonical readiness badges, link actions, and a shared privacy notice instead of custom pills and banner styling.
+
 ## Adoption Order
 
 ### 1. New work — mandatory now
@@ -97,10 +103,10 @@ src/components/
 ### 2. High-traffic migrations — next
 
 1. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
-2. Admin and long-tail configuration panels
-3. PageShell adoption where its responsive header or tabs replace duplicate route-specific behavior
-4. Visual QA and accessibility validation across desktop, laptop, and mobile viewport tiers
-5. Compatibility-export cleanup after repository-wide imports converge
+2. PageShell adoption where its responsive header or tabs replace duplicate route-specific behavior
+3. Visual QA and accessibility validation across desktop, laptop, and mobile viewport tiers
+4. Compatibility-export cleanup after repository-wide imports converge
+5. Deprecated internal/founder surfaces only when they still materially affect shipping routes
 
 ### 3. Deliberate exceptions
 
@@ -119,7 +125,8 @@ src/components/
 - semantic feedback tokens are present;
 - high-traffic consumer adoption remains real rather than aspirational;
 - the mounted command palette stays keyboard-correct and route-accurate;
-- Studio and Knowledge configuration surfaces stay on canonical fields, selectors, and notices.
+- Studio and Knowledge configuration surfaces stay on canonical fields, selectors, and notices;
+- Billing, Team, and Client Apps stay on canonical settings/admin controls and notices.
 
 The guardrail grows after each adoption wave. Turning every legacy import into a hard failure before its route is safely migrated creates false urgency and encourages unsafe bulk rewrites.
 
