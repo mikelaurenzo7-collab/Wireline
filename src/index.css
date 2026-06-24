@@ -13,14 +13,15 @@
 @import "./styles/precision-auth.css";
 
 /* ============================================
-   TAILWIND v4 THEME SYNC
+   WIRELINE DESIGN SYSTEM - TAILWIND v4
    
-   Strategy: Map internal --wl-* design tokens into Tailwind's theme
-   using @theme inline so that both custom components and
-   Tailwind utilities stay perfectly synchronized.
-   
-   This is the recommended modern approach in Tailwind v4.
+   Strategy:
+   - Custom design tokens live in :root as --wl-*
+   - @theme inline maps them into Tailwind's theme for full sync
+   - Native CSS nesting used for component styles (v4 best practice)
+   - Typography plugin configured via @plugin directive
    ============================================ */
+
 :root {
   --wl-font-display: "Hanken Grotesk", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --wl-font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -60,6 +61,19 @@
   --input: var(--wl-line);
   --ring: rgba(91, 59, 209, 0.28);
   --wl-surface-2: var(--wl-surface-container);
+
+  /* Spacing tokens (for future deeper @theme sync) */
+  --wl-spacing-xs: 0.25rem;
+  --wl-spacing-sm: 0.5rem;
+  --wl-spacing-md: 1rem;
+  --wl-spacing-lg: 1.5rem;
+  --wl-spacing-xl: 2rem;
+
+  /* Radius tokens */
+  --wl-radius-sm: 0.375rem;
+  --wl-radius-md: 0.5rem;
+  --wl-radius-lg: 0.75rem;
+  --wl-radius-xl: 1rem;
 }
 
 @theme inline {
@@ -90,15 +104,29 @@
   --color-input: var(--wl-line);
   --color-ring: rgba(91, 59, 209, 0.28);
 
-  /* Extended Semantic Tokens for deeper sync */
+  /* Extended Semantic Tokens */
   --color-surface: var(--wl-surface);
   --color-surface-subtle: var(--wl-surface-subtle);
   --color-surface-container: var(--wl-surface-container);
   --color-line: var(--wl-line);
   --color-line-strong: var(--wl-line-strong);
+
+  /* Spacing & Radius (for deeper Tailwind integration) */
+  --spacing-wl-xs: var(--wl-spacing-xs);
+  --spacing-wl-sm: var(--wl-spacing-sm);
+  --spacing-wl-md: var(--wl-spacing-md);
+  --spacing-wl-lg: var(--wl-spacing-lg);
+  --spacing-wl-xl: var(--wl-spacing-xl);
+
+  --radius-wl-sm: var(--wl-radius-sm);
+  --radius-wl-md: var(--wl-radius-md);
+  --radius-wl-lg: var(--wl-radius-lg);
+  --radius-wl-xl: var(--wl-radius-xl);
 }
 
-/* Prose plugin configuration remains here */
+/* ============================================
+   TYPOGRAPHY PLUGIN + PROSE CUSTOMIZATION
+   ============================================ */
 @plugin "@tailwindcss/typography" {
   --tw-prose-body: var(--wl-on-surface);
   --tw-prose-headings: var(--wl-on-surface);
@@ -157,26 +185,32 @@
   font-feature-settings: "tnum";
 }
 
+/* ============================================
+   BASE + COMPONENT STYLES (using native CSS nesting)
+   ============================================ */
+
 body {
   background: var(--wl-page);
   color: var(--foreground);
 }
 
+/* Panels & Cards */
 .wl-panel,
 .wl-surface-card {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--card);
   box-shadow: var(--wl-shadow-sm);
+
+  &-elevated {
+    border: 1px solid var(--wl-line);
+    border-radius: var(--radius-xl);
+    background: var(--wl-surface);
+    box-shadow: var(--wl-shadow-md);
+  }
 }
 
-.wl-panel-elevated {
-  border: 1px solid var(--wl-line);
-  border-radius: var(--radius-xl);
-  background: var(--wl-surface);
-  box-shadow: var(--wl-shadow-md);
-}
-
+/* Buttons - Refactored with nesting */
 .wl-btn {
   display: inline-flex;
   min-height: 2.5rem;
@@ -191,35 +225,36 @@ body {
   line-height: 1.1;
   text-decoration: none;
   transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &-primary {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: 0 8px 18px -15px rgba(67, 35, 177, 0.58);
+
+    &:hover:not(:disabled) {
+      border-color: var(--wl-accent-hover);
+      background: var(--wl-accent-hover);
+    }
+  }
+
+  &-secondary {
+    border-color: var(--border);
+    background: var(--card);
+    color: var(--foreground);
+
+    &:hover:not(:disabled) {
+      border-color: var(--wl-line-strong);
+      background: var(--secondary);
+    }
+  }
 }
 
-.wl-btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.wl-btn-primary {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--primary-foreground);
-  box-shadow: 0 8px 18px -15px rgba(67, 35, 177, 0.58);
-}
-
-.wl-btn-primary:hover:not(:disabled) {
-  border-color: var(--wl-accent-hover);
-  background: var(--wl-accent-hover);
-}
-
-.wl-btn-secondary {
-  border-color: var(--border);
-  background: var(--card);
-  color: var(--foreground);
-}
-
-.wl-btn-secondary:hover:not(:disabled) {
-  border-color: var(--wl-line-strong);
-  background: var(--secondary);
-}
-
+/* Modal & Dialog */
 .wl-modal {
   position: fixed;
   inset: 0;
@@ -240,6 +275,7 @@ body {
   box-shadow: var(--wl-shadow-lg);
 }
 
+/* Context labels & micro text */
 .wl-stitch-label,
 .wl-pro-eyebrow,
 .wl-page-context,
@@ -269,6 +305,7 @@ body {
   box-shadow: 0 0 0 4px var(--wl-accent-container);
 }
 
+/* Titles */
 .wl-workspace-title,
 .wl-pro-title {
   font-family: var(--wl-font-display);
@@ -279,6 +316,7 @@ body {
   color: var(--foreground);
 }
 
+/* Empty states */
 .wl-body-caption,
 .wl-inline-empty,
 .wl-inline-empty__label {
@@ -292,18 +330,19 @@ body {
   border-radius: var(--radius-lg);
   padding: 1rem;
   background: var(--wl-surface-subtle);
+
+  &__label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-family: var(--wl-font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 }
 
-.wl-inline-empty__label {
-  display: block;
-  margin-bottom: 0.375rem;
-  font-family: var(--wl-font-mono);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
+/* Banner */
 .wl-banner {
   display: flex;
   align-items: center;
@@ -314,13 +353,13 @@ body {
   padding: 0.875rem 1rem;
   background: var(--card);
   color: var(--foreground);
-}
 
-.wl-banner__body {
-  display: inline-flex;
-  min-width: 0;
-  align-items: flex-start;
-  gap: 0.625rem;
-  font-size: 0.875rem;
-  line-height: 1.55;
+  &__body {
+    display: inline-flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
 }
