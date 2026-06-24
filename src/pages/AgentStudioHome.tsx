@@ -1,6 +1,8 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Loader2, WandSparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button, Input, NativeSelect, Textarea } from "../components/atoms";
+import { FormField } from "../components/molecules";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
@@ -23,7 +25,7 @@ type Role = (typeof roles)[number][0];
 export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { agents, loading, refresh } = useAgents();
+  const { loading, refresh } = useAgents();
   const wantsBusinessAgent = params.get("posture") === "business";
   const [browserContext] = useState(readBrowserCompanionContext);
   const browserBrief = browserCompanionBrief(browserContext);
@@ -136,8 +138,6 @@ export default function AgentStudioHome() {
 
   return (
     <>
-      {/* Bind the studio to the dynamic viewport so the composer stays pinned
-          above the mobile browser chrome instead of falling below the fold. */}
       <div className="h-[100dvh] min-h-0 overflow-hidden">
         <StudioWorkspaceV2 />
       </div>
@@ -163,18 +163,12 @@ export default function AgentStudioHome() {
                     ? PRODUCT_POSTURE.business.createCta
                     : PRODUCT_POSTURE.personal.createCta}
                 </p>
-                <h2
-                  id="create-assistant-title"
-                  className="mt-1 text-xl font-semibold tracking-[-.04em]"
-                >
+                <h2 id="create-assistant-title" className="mt-1 text-xl font-semibold tracking-[-.04em]">
                   {wantsBusinessAgent
                     ? "Give your business agent one clear job."
                     : "Start with one useful call."}
                 </h2>
-                <p
-                  id="create-assistant-description"
-                  className="mt-2 text-sm leading-5 text-muted-foreground"
-                >
+                <p id="create-assistant-description" className="mt-2 text-sm leading-5 text-muted-foreground">
                   {wantsBusinessAgent
                     ? "Name the agent, describe how it should represent your business, and refine policies in Studio."
                     : "Name the help you want and teach the details in Studio."}
@@ -185,42 +179,50 @@ export default function AgentStudioHome() {
                   </p>
                 ) : null}
               </div>
-              <button
-                type="button"
-                onClick={close}
-                className="grid h-8 w-8 place-items-center rounded-md hover:bg-muted"
-                aria-label="Close"
-              >
-                <X size={16} />
-              </button>
+              <Button type="button" variant="ghost" size="icon" onClick={close} aria-label="Close create assistant dialog" className="shrink-0">
+                <X aria-hidden="true" size={16} />
+              </Button>
             </div>
-            <label className="mt-5 block text-xs font-semibold">
-              Name
-              <input
+
+            <FormField className="mt-5" label="Name" htmlFor="create-assistant-name" required>
+              <Input
+                id="create-assistant-name"
                 ref={nameRef}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="Casey"
-                className="wl-stitch-input mt-1.5"
+                autoComplete="off"
+                required
               />
-            </label>
-            <label className="mt-4 block text-xs font-semibold">
-              What kind of help?
-              <select
+            </FormField>
+
+            <FormField
+              className="mt-4"
+              label="What kind of help?"
+              htmlFor="create-assistant-role"
+              description="Choose the closest starting point. Studio remains the place to refine the work."
+            >
+              <NativeSelect
+                id="create-assistant-role"
                 value={role}
                 onChange={(event) => setRole(event.target.value as Role)}
-                className="wl-stitch-input mt-1.5"
               >
                 {roles.map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="mt-4 block text-xs font-semibold">
-              First brief
-              <textarea
+              </NativeSelect>
+            </FormField>
+
+            <FormField
+              className="mt-4"
+              label="First brief"
+              htmlFor="create-assistant-brief"
+              description="Give the assistant the job, boundaries, and outcome that matter first."
+            >
+              <Textarea
+                id="create-assistant-brief"
                 value={brief}
                 onChange={(event) => setBrief(event.target.value)}
                 placeholder={
@@ -228,25 +230,15 @@ export default function AgentStudioHome() {
                     ? "Answer inbound calls, capture caller details, and book consultations during business hours."
                     : "Call my pharmacy, wait on hold, and text me when my prescription is ready."
                 }
-                className="wl-stitch-input mt-1.5 min-h-[96px] resize-none"
+                resize="none"
               />
-            </label>
-            {error ? (
-              <p className="mt-3 text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-            <button
-              disabled={!name.trim() || creating}
-              className="studio-primary-button mt-5 w-full justify-center disabled:opacity-40"
-            >
-              {creating ? (
-                <Loader2 className="animate-spin" size={16} />
-              ) : (
-                <WandSparkles size={16} />
-              )}
+            </FormField>
+
+            {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
+            <Button type="submit" disabled={!name.trim() || creating} className="mt-5 w-full justify-center">
+              {creating ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <WandSparkles aria-hidden="true" size={16} />}
               Create and open Studio
-            </button>
+            </Button>
           </form>
         </div>
       ) : null}

@@ -8,9 +8,9 @@ export const metricCardVariants = cva("wl-panel flex min-w-0 flex-col gap-3 roun
   variants: {
     tone: {
       default: "border-border bg-card",
-      positive: "border-emerald-500/20 bg-emerald-500/5",
-      warning: "border-amber-500/20 bg-amber-500/5",
-      danger: "border-destructive/20 bg-destructive/5",
+      positive: "border-[var(--wl-success-border)] bg-[var(--wl-success-surface)]",
+      warning: "border-[var(--wl-warning-border)] bg-[var(--wl-warning-surface)]",
+      danger: "border-[var(--wl-error-border)] bg-[var(--wl-error-surface)]",
     },
   },
   defaultVariants: {
@@ -40,32 +40,31 @@ export function MetricCard({
   ...props
 }: MetricCardProps) {
   const TrendIcon = trend === "up" ? ArrowUpRight : trend === "down" ? ArrowDownRight : Minus;
+  const trendClass =
+    trend === "up"
+      ? "text-[var(--wl-success)]"
+      : trend === "down"
+        ? "text-[var(--wl-error)]"
+        : "text-muted-foreground";
 
   return (
     <section data-slot="metric-card" className={cn(metricCardVariants({ tone }), className)} {...props}>
       <div className="flex min-w-0 items-start justify-between gap-3">
         <p className="min-w-0 text-sm font-medium text-muted-foreground">{label}</p>
-        {icon && <span className="shrink-0 text-muted-foreground">{icon}</span>}
+        {icon ? <span className="shrink-0 text-muted-foreground">{icon}</span> : null}
       </div>
       <div className="flex min-w-0 items-end justify-between gap-3">
         <output className="min-w-0 truncate text-2xl font-semibold tracking-tight text-foreground">
           {value}
         </output>
-        {delta && (
-          <span
-            className={cn(
-              "inline-flex shrink-0 items-center gap-1 text-xs font-medium",
-              trend === "up" && "text-emerald-700 dark:text-emerald-300",
-              trend === "down" && "text-destructive",
-              trend === "neutral" && "text-muted-foreground",
-            )}
-          >
+        {delta ? (
+          <span className={cn("inline-flex shrink-0 items-center gap-1 text-xs font-medium", trendClass)}>
             <TrendIcon aria-hidden="true" className="h-3.5 w-3.5" />
             {delta}
           </span>
-        )}
+        ) : null}
       </div>
-      {footer && <div className="border-t border-border pt-3 text-xs text-muted-foreground">{footer}</div>}
+      {footer ? <div className="border-t border-border pt-3 text-xs text-muted-foreground">{footer}</div> : null}
     </section>
   );
 }
