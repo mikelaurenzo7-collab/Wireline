@@ -1,9 +1,17 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useState } from "react";
 import { MoreHorizontal, X } from "lucide-react";
+
 import { cn } from "../../lib/utils";
-import { ShadButton } from "../ui/shadcn/ShadButton";
+import {
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "../atoms";
 
 interface AppPageIntroProps {
   eyebrow?: string;
@@ -15,7 +23,7 @@ interface AppPageIntroProps {
 
 /**
  * In-app page header when a route does not use WorkspaceShell.
- * Mobile actions remain available without turning the title area into a crowded toolbar.
+ * Desktop exposes actions inline; mobile uses the canonical Dialog drawer instead of a bespoke sheet.
  */
 export default function AppPageIntro({
   eyebrow,
@@ -25,57 +33,9 @@ export default function AppPageIntro({
   className,
 }: AppPageIntroProps) {
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const priorFocusRef = useRef<HTMLElement | null>(null);
-
-  const closeActions = () => setMobileActionsOpen(false);
-
-  useEffect(() => {
-    if (!mobileActionsOpen) return;
-    priorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const frame = requestAnimationFrame(() => closeButtonRef.current?.focus());
-
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeActions();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = Array.from(
-        sheetRef.current?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ) || [],
-      ).filter((element) => !element.hasAttribute("hidden"));
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return () => {
-      cancelAnimationFrame(frame);
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKey);
-      priorFocusRef.current?.focus();
-      priorFocusRef.current = null;
-    };
-  }, [mobileActionsOpen]);
 
   return (
-    <>
+    <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
       <div
         className={cn(
           "flex flex-col justify-between gap-4 border-b border-border pb-5 md:flex-row md:items-start md:pb-8",
@@ -90,74 +50,50 @@ export default function AppPageIntro({
         {actions ? (
           <div className="mt-1 flex shrink-0 flex-wrap items-center gap-2 md:mt-0 md:justify-end">
             <div className="hidden flex-wrap items-center gap-3 md:flex">{actions}</div>
-            <ShadButton
-              ref={triggerRef}
-              type="button"
-              disableAnimations
-              variant="outline"
-              size="icon"
-              onClick={() => setMobileActionsOpen(true)}
-              aria-label="Page actions"
-              aria-expanded={mobileActionsOpen}
-              aria-controls="app-page-actions"
-              className="wl-control-icon touch-press md:hidden"
-            >
-              <MoreHorizontal className="h-5 w-5" />
-            </ShadButton>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Open page actions"
+                aria-controls="wireline-page-actions"
+                className="md:hidden"
+              >
+                <MoreHorizontal className="size-5" aria-hidden="true" />
+              </Button>
+            </DialogTrigger>
           </div>
         ) : null}
       </div>
 
-      <AnimatePresence>
-        {mobileActionsOpen && actions ? (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={reduceMotion ? { duration: 0 } : { duration: 0.16 }}
-              className="fixed inset-0 z-[200] bg-[color:var(--wl-focus)] md:hidden"
-              onClick={closeActions}
-              aria-hidden
-            />
-            <motion.div
-              id="app-page-actions"
-              ref={sheetRef}
-              initial={reduceMotion ? false : { y: "100%" }}
-              animate={{ y: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
-              transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] rounded-t-[var(--radius-xl)] border border-border bg-card pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(11,28,48,0.28)] md:hidden"
-              role="dialog"
-              aria-labelledby="app-page-actions-title"
-              aria-modal="true"
-              tabIndex={-1}
-            >
-              <div className="flex justify-center py-3">
-                <div className="h-1 w-10 rounded-full bg-border" aria-hidden />
-              </div>
-              <div className="flex items-center justify-between px-4 pb-3">
-                <p id="app-page-actions-title" className="wl-overline">Actions</p>
-                <ShadButton
-                  ref={closeButtonRef}
-                  type="button"
-                  disableAnimations
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeActions}
-                  className="wl-control-icon touch-press"
-                  aria-label="Close actions"
-                >
-                  <X className="h-4 w-4" />
-                </ShadButton>
-              </div>
-              <div className="flex flex-col gap-2 px-4 pb-4 [&_a]:min-h-[48px] [&_button]:min-h-[48px]">
-                {actions}
-              </div>
-            </motion.div>
-          </>
-        ) : null}
-      </AnimatePresence>
-    </>
+      {actions ? (
+        <DialogContent
+          id="wireline-page-actions"
+          presentation="drawer"
+          showClose={false}
+          aria-label="Page actions"
+          overlayClassName="bg-[rgba(11,28,48,0.42)]"
+          className="md:hidden"
+        >
+          <DialogTitle className="sr-only">Page actions</DialogTitle>
+          <DialogDescription className="sr-only">
+            Actions available for the current page.
+          </DialogDescription>
+
+          <div className="mx-auto w-full max-w-lg px-4 pb-4 pt-3">
+            <div aria-hidden="true" className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <p className="wl-overline">Actions</p>
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" size="icon" aria-label="Close page actions">
+                  <X className="size-5" aria-hidden="true" />
+                </Button>
+              </DialogClose>
+            </div>
+            <div className="flex flex-col gap-2 [&_a]:min-h-[48px] [&_button]:min-h-[48px]">{actions}</div>
+          </div>
+        </DialogContent>
+      ) : null}
+    </Dialog>
   );
 }
