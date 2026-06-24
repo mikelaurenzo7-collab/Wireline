@@ -11,6 +11,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
+import { IconButton } from "./atoms/IconButton";
 import WirelineMark from "./brand/WirelineMark";
 
 const primaryNavigation = [
@@ -137,17 +138,19 @@ export default function WorkspaceShell({
                 </span>
               </span>
             </Link>
-            <button
+            <IconButton
               type="button"
-              aria-label="Close navigation"
-              className="wl-control-icon lg:hidden"
+              label="Close navigation"
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
               onClick={() => {
                 closeDrawer();
                 menuButtonRef.current?.focus();
               }}
             >
-              <X size={18} />
-            </button>
+              <X aria-hidden="true" size={18} />
+            </IconButton>
           </div>
 
           <nav className="mt-7 flex flex-col gap-1" aria-label="Workspace">
@@ -179,16 +182,18 @@ export default function WorkspaceShell({
         >
           <header className="wl-workspace-header flex min-h-[68px] shrink-0 flex-col justify-center gap-3 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <button
+              <IconButton
                 ref={menuButtonRef}
                 type="button"
-                aria-label="Open navigation"
+                label="Open navigation"
+                variant="ghost"
+                size="sm"
                 aria-expanded={drawerOpen}
-                className="wl-control-icon lg:hidden"
+                className="lg:hidden"
                 onClick={() => setDrawerOpen(true)}
               >
-                <Menu size={18} />
-              </button>
+                <Menu aria-hidden="true" size={18} />
+              </IconButton>
               <div className="min-w-0">
                 {eyebrow ? <p className="wl-overline">{eyebrow}</p> : null}
                 <h1 className="wl-app-page-title mt-1 truncate">{title}</h1>
