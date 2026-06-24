@@ -35,9 +35,22 @@ const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 
+function RouteLoading() {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#F8F9FF] z-[9999]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-full border-4 border-[#C9C4D7] border-t-[#5D3FD3] animate-spin" />
+        <span className="text-[13px] font-medium text-muted-foreground font-sans tracking-wide">
+          Loading Wireline...
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function AppRouter() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/features" element={<Features />} />

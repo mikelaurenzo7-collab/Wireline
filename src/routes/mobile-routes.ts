@@ -92,6 +92,7 @@ router.get(
       const entitlement = resolveAgentEntitlement({
         isOwner,
         subscriptionStatus: row?.subscriptionStatus,
+        planId: row?.planId,
         maxAgents: row?.maxAgents,
         extraAgents: row?.extraAgents,
       });

@@ -35,8 +35,8 @@ export const WL_OPS_CLASSES = {
 /** Sentiment chart – active green positive; Ametrine primary neutral; rose negative */
 export const OPS_SENTIMENT_COLORS = {
   positive: WL_BRAND.accentHex,
-  neutral: BRAND.teal,
-  negative: BRAND.rose,
+  neutral: BRAND.colors.outline,
+  negative: BRAND.colors.error,
 } as const;
 
 export const OPS_PULSE_METRICS = {
@@ -86,7 +86,8 @@ export const OPS_CHANNEL_EMPTY = {
   fleetRail: {
     eyebrow: "Full versatility",
     title: "No personal assistants or business agents yet",
-    description: "Create a personal assistant or business agent to see availability and assignments.",
+    description:
+      "Create a personal assistant or business agent to see availability and assignments.",
     actions: [{ label: "Open roster", to: "/agents", primary: true }],
   },
   fleetAgents: {
@@ -276,10 +277,10 @@ export const OPS_TRAINING_PANEL = {
 /** Triage panel accent rails – Ametrine Purple + status tokens */
 export const OPS_TRIAGE_ACCENTS = {
   hotLeads: WL_BRAND.accentHex,
-  openTasks: BRAND.tealBright,
-  escalations: BRAND.rose,
-  compliance: BRAND.rose,
-  knowledgeGaps: BRAND.teal,
+  openTasks: BRAND.colors.primary,
+  escalations: BRAND.colors.error,
+  compliance: BRAND.colors.error,
+  knowledgeGaps: BRAND.colors.outline,
 } as const;
 
 /** Triage panel empty states – Recaps `?tab=triage` widget columns */

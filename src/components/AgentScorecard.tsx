@@ -15,7 +15,7 @@ import { cn } from "../lib/utils";
 import { formatPercent, safeFixed, formatInt } from "../lib/safe-number";
 import { BRAND } from "../constants/brand-colors";
 
-const SCORECARD_BRAND = BRAND.purple;
+const SCORECARD_BRAND = BRAND.colors.primary;
 
 type MetricFormat = "percent" | "number" | "seconds" | "score";
 

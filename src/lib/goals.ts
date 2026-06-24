@@ -59,28 +59,28 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     label: "Calls handled",
     unit: "calls",
     description: "Total inbound and outbound calls your Assistants completes this month.",
-    accent: BRAND.purple,
+    accent: BRAND.colors.primary,
   },
   {
     id: "appointments_booked",
     label: "Appointments booked",
     unit: "appointments",
     description: "Appointments your agents schedule this month.",
-    accent: BRAND.purple,
+    accent: BRAND.colors.primary,
   },
   {
     id: "qualified_leads",
     label: "Qualified leads",
     unit: "leads",
     description: `Calls that scored ${QUALIFIED_LEAD_SCORE} or higher on lead intent this month.`,
-    accent: BRAND.purple,
+    accent: BRAND.colors.primary,
   },
   {
     id: "voice_minutes",
     label: "Voice minutes",
     unit: "minutes",
     description: "Total connected talk time across the Assistants this month.",
-    accent: BRAND.purpleMuted,
+    accent: BRAND.colors.onSurfaceMuted,
   },
 ];
 

@@ -33,6 +33,7 @@ interface Plan {
   overage_per_min_usd?: number;
   features: string[];
   configured: boolean;
+  public?: boolean;
 }
 
 interface SubscriptionState {
@@ -56,11 +57,11 @@ const PLAN_ICONS: Record<string, any> = {
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
-  personal: BRAND.purple,
-  "personal-plus": BRAND.purple,
-  "business-starter": BRAND.purple,
-  starter: BRAND.purple,
-  scale: BRAND.purple,
+  personal: BRAND.colors.primary,
+  "personal-plus": BRAND.colors.primary,
+  "business-starter": BRAND.colors.primary,
+  starter: BRAND.colors.primary,
+  scale: BRAND.colors.primary,
 };
 
 // Conversion-tracking values (USD/mo). Mirror current consumer-pivot prices
@@ -384,105 +385,108 @@ function PlanPicker({
         <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Choose a plan</h3>
         <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           {PRODUCT_VERSATILITY.short} Start with personal assistants on a Conversation Balance, then
-          add a business plan when you need numbers, routing, and team tools. Stripe-secured. Cancel anytime.
+          add a business plan when you need numbers, routing, and team tools. Stripe-secured. Cancel
+          anytime.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 stagger-children">
-        {plans.map((plan) => {
-          const Icon = PLAN_ICONS[plan.id] || Building2;
-          const accent = PLAN_ACCENTS[plan.id] || BRAND.purple;
-          const isBusy = busy === plan.id;
-          const isSignupMatch = signupPlanInterest === plan.id;
-          return (
-            <motion.div
-              key={plan.id}
-              whileHover={{ y: -4 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className={cn(
-                "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
-                isSignupMatch
-                  ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
-                  : "border-border hover:border-[color:var(--wl-line-strong)]",
-              )}
-              data-accent={accent}
-            >
-              {!isSignupMatch && plan.id === "business-starter" && (
-                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
-                  Best entry
-                </div>
-              )}
-              {!isSignupMatch && plan.id === "starter" && (
-                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
-                  Most popular
-                </div>
-              )}
-              {isSignupMatch && (
-                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
-                  Matched from visit
-                </div>
-              )}
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
-                  <Icon className="w-6 h-6 wl-accent-text" />
-                </div>
-                <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                  {plan.max_agents} {plan.max_agents === 1 ? "slot" : "slots"}
-                </span>
-              </div>
-              <div>
-                <h4 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-                  {plan.name}
-                </h4>
-                <div className="mt-1.5 flex items-baseline gap-1">
-                  <span className="font-semibold tracking-[-.02em] text-4xl text-foreground">
-                    ${plan.price_usd_monthly.toLocaleString()}
-                  </span>
-                  <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                    /mo
-                  </span>
-                </div>
-              </div>
-              <ul className="space-y-2 flex-1">
-                {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-start gap-2 text-caption">
-                    <Check
-                      className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text"
-                      strokeWidth={2.5}
-                    />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <ShadButton
-                type="button"
-                disableAnimations
-                variant="outline"
-                onClick={() => onSelectPlan(plan.id)}
-                disabled={isBusy || !plan.configured}
+        {plans
+          .filter((p) => p.public !== false)
+          .map((plan) => {
+            const Icon = PLAN_ICONS[plan.id] || Building2;
+            const accent = PLAN_ACCENTS[plan.id] || BRAND.colors.primary;
+            const isBusy = busy === plan.id;
+            const isSignupMatch = signupPlanInterest === plan.id;
+            return (
+              <motion.div
+                key={plan.id}
+                whileHover={{ y: -4 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
-                  "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wl-line-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
-                  !isBusy && plan.configured && "wl-accent-subscribe",
+                  "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
+                  isSignupMatch
+                    ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
+                    : "border-border hover:border-[color:var(--wl-line-strong)]",
                 )}
+                data-accent={accent}
               >
-                {isBusy ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : plan.configured ? (
-                  <>
-                    Subscribe <ArrowRight className="w-3 h-3" />
-                  </>
-                ) : (
-                  "Contact sales"
+                {!isSignupMatch && plan.id === "business-starter" && (
+                  <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                    Best entry
+                  </div>
                 )}
-              </ShadButton>
-              {!plan.configured && (
-                <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
-                  Stripe price pending — contact us to start on this tier
-                </p>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
-            </motion.div>
-          );
-        })}
+                {!isSignupMatch && plan.id === "starter" && (
+                  <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                    Most popular
+                  </div>
+                )}
+                {isSignupMatch && (
+                  <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                    Matched from visit
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
+                    <Icon className="w-6 h-6 wl-accent-text" />
+                  </div>
+                  <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                    {plan.max_agents} {plan.max_agents === 1 ? "slot" : "slots"}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
+                    {plan.name}
+                  </h4>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="font-semibold tracking-[-.02em] text-4xl text-foreground">
+                      ${plan.price_usd_monthly.toLocaleString()}
+                    </span>
+                    <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                      /mo
+                    </span>
+                  </div>
+                </div>
+                <ul className="space-y-2 flex-1">
+                  {plan.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-caption">
+                      <Check
+                        className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text"
+                        strokeWidth={2.5}
+                      />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <ShadButton
+                  type="button"
+                  disableAnimations
+                  variant="outline"
+                  onClick={() => onSelectPlan(plan.id)}
+                  disabled={isBusy || !plan.configured}
+                  className={cn(
+                    "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wl-line-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
+                    !isBusy && plan.configured && "wl-accent-subscribe",
+                  )}
+                >
+                  {isBusy ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : plan.configured ? (
+                    <>
+                      Subscribe <ArrowRight className="w-3 h-3" />
+                    </>
+                  ) : (
+                    "Contact sales"
+                  )}
+                </ShadButton>
+                {!plan.configured && (
+                  <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+                    Stripe price pending — contact us to start on this tier
+                  </p>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
+              </motion.div>
+            );
+          })}
       </div>
     </div>
   );
@@ -499,7 +503,7 @@ function ActiveSubCard({
   busy: boolean;
   onPortal: () => void;
 }) {
-  const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.purple;
+  const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
   const daysLeft = renews

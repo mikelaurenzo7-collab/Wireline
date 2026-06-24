@@ -5,7 +5,7 @@ const OverviewPage = lazy(() => import("../pages/OverviewPage"));
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
 const AgentsPage = lazy(() => import("../pages/AgentsPage"));
 const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
-const ConnectionsPage = lazy(() => import("../pages/ActionsPage"));
+const ActionsPage = lazy(() => import("../pages/ActionsPage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
@@ -19,10 +19,10 @@ const loading = (
   </div>
 );
 
-function LegacyActionsRedirect() {
+function LegacyConnectionsRedirect() {
   const location = useLocation();
-  const suffix = location.pathname.replace(/^\/actions/, "");
-  return <Navigate to={`/connections${suffix}${location.search}`} replace />;
+  const suffix = location.pathname.replace(/^\/connections/, "");
+  return <Navigate to={`/actions${suffix}${location.search}`} replace />;
 }
 
 export default function AppRoutes() {
@@ -35,10 +35,10 @@ export default function AppRoutes() {
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
-        <Route path="/connections" element={<ConnectionsPage />} />
-        <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
-        <Route path="/actions" element={<LegacyActionsRedirect />} />
-        <Route path="/actions/*" element={<LegacyActionsRedirect />} />
+        <Route path="/actions" element={<ActionsPage />} />
+        <Route path="/actions/salesforce" element={<SalesforceIntegrationPage />} />
+        <Route path="/connections" element={<LegacyConnectionsRedirect />} />
+        <Route path="/connections/*" element={<LegacyConnectionsRedirect />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<Navigate to="/inbox" replace />} />
         <Route path="/ops" element={<Navigate to="/studio" replace />} />

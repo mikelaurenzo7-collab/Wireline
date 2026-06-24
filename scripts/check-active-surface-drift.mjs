@@ -90,7 +90,7 @@ const overview = read("src/pages/OverviewPage.tsx");
 requirePatterns("src/pages/OverviewPage.tsx", overview, [
   [/useAgents\(\)/, "must render real assistant state rather than mock dashboard data"],
   [/Create an assistant/, "must preserve a direct first-assistant action"],
-  [/Connect your tools/, "must connect overview to real integration setup"],
+  [/Connect useful actions|Connect your tools/, "must connect overview to real integration setup"],
 ]);
 
 const iosTheme = read("ios/Wireline/Theme/WirelineTheme.swift");

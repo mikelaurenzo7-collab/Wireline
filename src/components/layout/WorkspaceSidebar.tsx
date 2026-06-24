@@ -10,6 +10,7 @@
  */
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { authFetch } from "../../lib/api";
 import {
   LayoutDashboard,
   Users,
@@ -48,6 +49,25 @@ export default function WorkspaceSidebar({
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { accountType } = useAccount();
+  const [planName, setPlanName] = useState<string>("Personal");
+
+  useEffect(() => {
+    let cancelled = false;
+    authFetch("/api/billing/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        if (data.subscription?.plan_name) {
+          setPlanName(data.subscription.plan_name);
+        } else {
+          setPlanName("Personal");
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Phase 1: Default to collapsed (user preference: "I’ve never liked a full sidebar")
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -97,7 +117,7 @@ export default function WorkspaceSidebar({
       <aside
         aria-label="Workspace navigation"
         className={cn(
-          "hidden md:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-white/[0.08] bg-[#F8F9FF] dark:bg-[#0a0a0f] transition-[width] duration-200 ease-out",
+          "hidden md:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-[#C9C4D7] bg-[#F0F3FF] transition-[width] duration-200 ease-out",
           className,
         )}
         style={{ width: `${railWidth}px` }}
@@ -105,25 +125,31 @@ export default function WorkspaceSidebar({
         data-collapsed={isCollapsed}
       >
         {/* Top Logo / Collapse Toggle — flawless edge alignment */}
-        <div className="flex items-center justify-between px-3 h-16 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between px-3 h-16 border-b border-[#C9C4D7]">
           <Link to="/overview" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center overflow-hidden">
               <WirelineMark className="w-4 h-4 text-white" strokeWidth={140} />
             </div>
             {!isCollapsed && (
               <div>
-                <div className="font-semibold text-[17px] tracking-[-0.3px] text-on-surface">Wireline</div>
-                <div className="text-[10px] text-on-surface-variant -mt-0.5">Enterprise</div>
+                <div className="font-semibold text-[17px] tracking-[-0.3px] text-on-surface">
+                  Wireline
+                </div>
+                <div className="text-[10px] text-on-surface-variant -mt-0.5">{planName}</div>
               </div>
             )}
           </Link>
 
           <button
             onClick={toggleCollapsed}
-            className="p-1.5 rounded-md hover:bg-white/[0.08] text-white/60 hover:text-white transition-colors"
+            className="p-1.5 rounded-md hover:bg-black/[0.04] text-on-surface-variant hover:text-on-surface transition-colors"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
           </button>
         </div>
 
@@ -150,22 +176,28 @@ export default function WorkspaceSidebar({
                       to={item.path}
                       className={cn(
                         "group flex items-center gap-3 px-3 py-[9px] rounded-md transition-all duration-150",
-                        "hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                        "hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                         active
                           ? "bg-primary/10 text-primary font-medium border-l-3 border-primary -ml-[1px] pl-[11px]"
                           : "text-on-surface hover:text-on-surface",
-                        isCollapsed && "justify-center px-2"
+                        isCollapsed && "justify-center px-2",
                       )}
                       aria-current={active ? "page" : undefined}
                     >
                       <Icon
                         className={cn(
                           "w-4 h-4 shrink-0 transition-colors",
-                          active ? "text-primary" : "text-on-surface-variant group-hover:text-on-surface"
+                          active
+                            ? "text-primary"
+                            : "text-on-surface-variant group-hover:text-on-surface",
                         )}
                         strokeWidth={active ? 2.5 : 2}
                       />
-                      {!isCollapsed && <span className="truncate text-[13.5px] tracking-[-0.1px]">{item.label}</span>}
+                      {!isCollapsed && (
+                        <span className="truncate text-[13.5px] tracking-[-0.1px]">
+                          {item.label}
+                        </span>
+                      )}
 
                       {!isCollapsed && badge > 0 && (
                         <span className="ml-auto min-w-[18px] h-[17px] px-1.5 rounded-full bg-error/10 text-error text-[10px] font-mono flex items-center justify-center">
@@ -183,7 +215,9 @@ export default function WorkspaceSidebar({
                         {badge > 0 && ` (${badge})`}
                       </TooltipContent>
                     </Tooltip>
-                  ) : linkContent;
+                  ) : (
+                    linkContent
+                  );
                 })}
               </div>
             </div>
@@ -191,12 +225,12 @@ export default function WorkspaceSidebar({
         </nav>
 
         {/* Bottom */}
-        <div className="shrink-0 border-t border-white/[0.08] px-2 py-3 space-y-1">
+        <div className="shrink-0 border-t border-[#C9C4D7] px-2 py-3 space-y-1">
           <Link
             to="/help"
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-white/[0.06] text-sm",
-              isCollapsed && "justify-center px-2"
+              "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-black/[0.04] text-sm",
+              isCollapsed && "justify-center px-2",
             )}
           >
             <LifeBuoy className="w-4 h-4" />
@@ -207,8 +241,8 @@ export default function WorkspaceSidebar({
             <Link
               to="/founder"
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-white/[0.06] text-sm",
-                isCollapsed && "justify-center px-2"
+                "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-black/[0.04] text-sm",
+                isCollapsed && "justify-center px-2",
               )}
             >
               <Crown className="w-4 h-4" />
@@ -220,7 +254,7 @@ export default function WorkspaceSidebar({
             onClick={signOut}
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-error/5 hover:text-error text-sm text-left",
-              isCollapsed && "justify-center px-2"
+              isCollapsed && "justify-center px-2",
             )}
           >
             <LogOut className="w-4 h-4" />

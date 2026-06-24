@@ -198,7 +198,11 @@ export function renderDailyBriefEmail(
   const actions: string[] = brief.action_items || [];
 
   const moodColor =
-    mood === "positive" ? BRAND.purple : mood === "concerning" ? BRAND.rose : BRAND.purpleMuted;
+    mood === "positive"
+      ? BRAND.colors.primary
+      : mood === "concerning"
+        ? BRAND.colors.error
+        : BRAND.colors.onSurfaceMuted;
   const fmtPct = (n: any) => {
     const v = Number(n || 0);
     const sign = v >= 0 ? "+" : "";
@@ -212,11 +216,11 @@ export function renderDailyBriefEmail(
     body { margin:0; padding:0; background-color:#0a0a0a; color:#f4f4f5; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
     .wrap { max-width:600px; margin:0 auto; padding:40px 20px; }
     .brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
-    .brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, ${BRAND.purple}, ${BRAND.purpleMid}); display: inline-block; vertical-align: middle; }
+    .brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, ${BRAND.colors.primary}, ${BRAND.colors.primaryMid}); display: inline-block; vertical-align: middle; }
     .brand-name { font-size: 20px; font-weight: 700; font-style: italic; letter-spacing: -0.02em; color: #fff; vertical-align: middle; display: inline-block; margin-left: 12px; }
     .card { background:#121214; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:32px; margin-bottom:24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
     .card-hero { background: linear-gradient(180deg, #18181b 0%, #121214 100%); position: relative; overflow: hidden; }
-    .card-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, ${BRAND.purple}, ${BRAND.purpleMuted}); }
+    .card-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, ${BRAND.colors.primary}, ${BRAND.colors.onSurfaceMuted}); }
     .label { font-size:10px; font-weight: 600; letter-spacing:0.3em; text-transform:uppercase; color:#a1a1aa; margin:0 0 16px; }
     h1 { font-size:28px; line-height:1.2; margin:0 0 12px; color:#fff; font-weight:600; letter-spacing:-0.02em; font-style: italic; }
     h2 { font-size:12px; font-weight: 700; letter-spacing:0.2em; text-transform:uppercase; color:${moodColor}; margin:0 0 20px; display: inline-block; padding: 4px 10px; background: ${moodColor}15; border-radius: 99px; border: 1px solid ${moodColor}30; }
@@ -225,14 +229,14 @@ export function renderDailyBriefEmail(
     .stat { display:table-cell; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 12px; text-align:center; vertical-align:top; }
     .stat .v { font-size:24px; font-weight:600; color:#fff; line-height:1; font-style: italic; }
     .stat .l { font-size:10px; font-weight: 600; letter-spacing:0.2em; text-transform:uppercase; color:#71717a; margin-top:8px; }
-    .delta-pos { color:${BRAND.purple}; }
+    .delta-pos { color:${BRAND.colors.primary}; }
     .delta-neg { color:#f43f5e; }
     ul { padding:0; margin:0; list-style:none; }
     li { background:rgba(255,255,255,0.02); border-left:3px solid ${moodColor}; border-radius:8px; padding:14px 16px; margin-bottom:12px; font-size:15px; line-height:1.6; color:#e4e4e7; border: 1px solid rgba(255,255,255,0.05); border-left-width: 3px; }
     li.warn { border-left-color:#fbbf24; }
     li.action { border-left-color:#38bdf8; }
     .footer { text-align:center; color:#71717a; font-size:12px; padding:32px 0; line-height: 1.6; }
-    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:${BRAND.purple}; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid ${BRAND.purpleMid}; }
+    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:${BRAND.colors.primary}; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid ${BRAND.colors.primaryMid}; }
   `;
 
   const stat = (label: string, value: string, delta?: number | null) => `

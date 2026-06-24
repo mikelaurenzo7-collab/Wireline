@@ -211,8 +211,8 @@ export function SpendStat({
 
 export function qaColor(score: number) {
   if (score >= 90) return WL_BRAND.accentHex;
-  if (score >= 75) return BRAND.purple;
-  if (score >= 60) return BRAND.purpleMuted;
-  if (score >= 40) return BRAND.rose;
-  return BRAND.rose;
+  if (score >= 75) return BRAND.colors.primary;
+  if (score >= 60) return BRAND.colors.onSurfaceMuted;
+  if (score >= 40) return BRAND.colors.error;
+  return BRAND.colors.error;
 }

@@ -11,10 +11,14 @@ import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 
 const router = Router();
 
-const outcomeSchema = z.object({
-  status: z.enum(["open", "waiting", "escalated", "booked", "resolved"]),
-  handoff: z.boolean().optional().default(false),
-});
+const outcomeSchema = z
+  .object({
+    status: z.enum(["open", "waiting", "escalated", "booked", "resolved"]),
+    handoff: z.boolean().optional().default(false),
+  })
+  .refine((data) => !data.handoff || data.status === "escalated", {
+    message: "Handoff requires status escalated.",
+  });
 
 /**
  * Outcome Center action for an email thread. Status is intentionally explicit:
@@ -28,7 +32,8 @@ router.patch(
   validateBody(outcomeSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { status, handoff } = req.body;
+      const { status: requestedStatus, handoff } = req.body;
+      const status = handoff ? "escalated" : requestedStatus;
       const [thread] = await drizzle
         .select({
           id: schema.emailThreads.id,
@@ -38,54 +43,65 @@ router.patch(
           agentId: schema.emailThreads.agentId,
         })
         .from(schema.emailThreads)
-        .where(and(eq(schema.emailThreads.id, req.params.id), eq(schema.emailThreads.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.emailThreads.id, req.params.id),
+            eq(schema.emailThreads.userId, req.user.id),
+          ),
+        )
         .limit(1);
 
       if (!thread) throw AppError.fromHttpStatus(404, "Email conversation not found.");
 
-      const [updated] = await drizzle
-        .update(schema.emailThreads)
-        .set({ status })
-        .where(and(eq(schema.emailThreads.id, thread.id), eq(schema.emailThreads.userId, req.user.id)))
-        .returning();
-
-      let handoffTaskId: string | null = null;
-      if (handoff) {
-        const [existing] = await drizzle
-          .select({ id: schema.followUpTasks.id })
-          .from(schema.followUpTasks)
+      const { updated, handoffTaskId } = await drizzle.transaction(async (tx) => {
+        const [nextThread] = await tx
+          .update(schema.emailThreads)
+          .set({ status })
           .where(
-            and(
-              eq(schema.followUpTasks.userId, req.user.id),
-              eq(schema.followUpTasks.sourceType, "email_thread"),
-              eq(schema.followUpTasks.sourceId, thread.id),
-              inArray(schema.followUpTasks.status, ["pending", "in_progress"]),
-            ),
+            and(eq(schema.emailThreads.id, thread.id), eq(schema.emailThreads.userId, req.user.id)),
           )
-          .limit(1);
+          .returning();
 
-        if (existing) {
-          handoffTaskId = existing.id;
-        } else {
-          const [task] = await drizzle
-            .insert(schema.followUpTasks)
-            .values({
-              userId: req.user.id,
-              sourceType: "email_thread",
-              sourceId: thread.id,
-              targetChannel: "manual",
-              agentId: thread.agentId,
-              customerInfo: { email: thread.customerEmail },
-              payload: { thread_id: thread.id, status: "escalated" },
-              taskType: "human_handoff",
-              description: `Review email conversation: ${thread.subject || "Untitled conversation"}`,
-              priority: "high",
-              status: "pending",
-            })
-            .returning({ id: schema.followUpTasks.id });
-          handoffTaskId = task?.id ?? null;
+        let nextHandoffTaskId: string | null = null;
+        if (handoff) {
+          const [existing] = await tx
+            .select({ id: schema.followUpTasks.id })
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.userId, req.user.id),
+                eq(schema.followUpTasks.sourceType, "email_thread"),
+                eq(schema.followUpTasks.sourceId, thread.id),
+                inArray(schema.followUpTasks.status, ["pending", "in_progress"]),
+              ),
+            )
+            .limit(1);
+
+          if (existing) {
+            nextHandoffTaskId = existing.id;
+          } else {
+            const [task] = await tx
+              .insert(schema.followUpTasks)
+              .values({
+                userId: req.user.id,
+                sourceType: "email_thread",
+                sourceId: thread.id,
+                targetChannel: "manual",
+                agentId: thread.agentId,
+                customerInfo: { email: thread.customerEmail },
+                payload: { thread_id: thread.id, status: "escalated" },
+                taskType: "human_handoff",
+                description: `Review email conversation: ${thread.subject || "Untitled conversation"}`,
+                priority: "high",
+                status: "pending",
+              })
+              .returning({ id: schema.followUpTasks.id });
+            nextHandoffTaskId = task?.id ?? null;
+          }
         }
-      }
+
+        return { updated: nextThread, handoffTaskId: nextHandoffTaskId };
+      });
 
       res.json({
         thread: mapObjectToSnake(updated),
@@ -114,7 +130,12 @@ router.get(
           lastMessageAt: schema.emailThreads.lastMessageAt,
         })
         .from(schema.emailThreads)
-        .where(and(eq(schema.emailThreads.id, req.params.id), eq(schema.emailThreads.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.emailThreads.id, req.params.id),
+            eq(schema.emailThreads.userId, req.user.id),
+          ),
+        )
         .limit(1);
       if (!thread) throw AppError.fromHttpStatus(404, "Email conversation not found.");
 
@@ -126,7 +147,12 @@ router.get(
           createdAt: schema.emailMessages.createdAt,
         })
         .from(schema.emailMessages)
-        .where(and(eq(schema.emailMessages.threadId, thread.id), eq(schema.emailMessages.userId, req.user.id)))
+        .where(
+          and(
+            eq(schema.emailMessages.threadId, thread.id),
+            eq(schema.emailMessages.userId, req.user.id),
+          ),
+        )
         .orderBy(schema.emailMessages.createdAt);
 
       const [handoff] = await drizzle

@@ -18,7 +18,7 @@ const primaryNavigation = [
   { href: "/agents", label: "Assistants & agents", icon: Bot },
   { href: "/studio", label: "Studio", icon: PenLine },
   { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/connections", label: "Connections", icon: Cable },
+  { href: "/actions", label: "Actions", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
 
@@ -79,7 +79,9 @@ export default function WorkspaceShell({
     if (!drawerOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const firstFocusable = drawerRef.current?.querySelector<HTMLElement>("a[href], button:not([disabled])");
+    const firstFocusable = drawerRef.current?.querySelector<HTMLElement>(
+      "a[href], button:not([disabled])",
+    );
     firstFocusable?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -97,7 +99,9 @@ export default function WorkspaceShell({
 
   return (
     <div className={`wl-workspace-shell bg-background text-foreground ${appViewportClass}`}>
-      <a className="wl-skip-link" href="#workspace-main">Skip to content</a>
+      <a className="wl-skip-link" href="#workspace-main">
+        Skip to content
+      </a>
       {drawerOpen ? (
         <button
           type="button"
@@ -188,7 +192,11 @@ export default function WorkspaceShell({
                 <h1 className="wl-app-page-title mt-1 truncate">{title}</h1>
               </div>
             </div>
-            {action ? <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">{action}</div> : null}
+            {action ? (
+              <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                {action}
+              </div>
+            ) : null}
           </header>
           <div
             className={`wl-workspace-content min-h-0 flex-1 ${

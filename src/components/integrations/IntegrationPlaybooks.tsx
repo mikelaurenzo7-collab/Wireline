@@ -108,7 +108,7 @@ export function IntegrationPlaybookPanel({
 
         <IntegrationCapabilityPanel
           integration={activeKey}
-          accentColor={BRAND.purple}
+          accentColor={BRAND.colors.primary}
           connected={isConnected}
           enabledTools={selectedToolNames}
           onToggleTool={onToggleTool}

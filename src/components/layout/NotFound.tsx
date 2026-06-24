@@ -87,7 +87,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Home}
               label="Home"
               hint="Back to landing"
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
             <a
               href="tel:+16305811834"
@@ -106,7 +106,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Compass}
               label="Pricing"
               hint="4 plans, free trial"
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
           </>
         ) : (
@@ -116,28 +116,28 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               icon={Home}
               label="Studio"
               hint="Build & tune agents"
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
             <NotFoundCard
               to="/chat"
               icon={MessageSquare}
               label="Chat"
               hint="Assistant & agents"
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
             <NotFoundCard
               to="/ops"
               icon={LayoutGrid}
               label="Recaps"
               hint="Mission control"
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
             <NotFoundCard
               to="/phone"
               icon={Phone}
               label="Phone"
               hint="History & outbound"
-              accent={BRAND.purple}
+              accent={BRAND.colors.primary}
             />
           </>
         )}

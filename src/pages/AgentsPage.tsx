@@ -1,17 +1,14 @@
 import { Link } from "react-router-dom";
-import {
-  Bot,
-  CircleAlert,
-  MessageSquare,
-  Phone,
-  Plus,
-  Wrench,
-  Zap,
-} from "lucide-react";
+import { Bot, CircleAlert, MessageSquare, Phone, Plus, Wrench, Zap } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
-import { PRODUCT_POSTURE, PRODUCT_VERSATILITY, rosterSummary } from "../lib/product-copy";
+import {
+  formatAgentRoleLabel,
+  PRODUCT_POSTURE,
+  PRODUCT_VERSATILITY,
+  rosterSummary,
+} from "../lib/product-copy";
 
 const ROLE_HINT: Record<string, string> = {
   sales: "Follows up with leads, books meetings, and keeps useful conversations moving.",
@@ -20,10 +17,6 @@ const ROLE_HINT: Record<string, string> = {
   receptionist: "Handles incoming calls and captures the details you need.",
   custom: "Handles the calls, messages, and tasks you describe in Studio.",
 };
-
-function roleLabel(role?: string | null) {
-  return role?.replace(/_/g, " ") || "Assistant";
-}
 
 function agentHint(agent: WorkspaceAgentSummary) {
   return ROLE_HINT[agent.role || "custom"] || ROLE_HINT.custom;
@@ -63,7 +56,10 @@ function LoadingRoster() {
       aria-label="Loading roster"
     >
       {Array.from({ length: 8 }, (_, index) => (
-        <div key={index} className="h-[236px] rounded-[var(--radius-lg)] border border-border bg-card p-5">
+        <div
+          key={index}
+          className="h-[236px] rounded-[var(--radius-lg)] border border-border bg-card p-5"
+        >
           <div className="flex items-start justify-between">
             <div className="h-11 w-11 animate-pulse rounded-[var(--radius-lg)] bg-muted" />
             <div className="h-6 w-14 animate-pulse rounded bg-muted" />
@@ -104,7 +100,7 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
         {agent.name}
       </h2>
       <p className="mt-1 inline-flex items-center gap-2 font-mono text-[11px] capitalize tracking-[.02em] text-muted-foreground">
-        <span>{roleLabel(agent.role)}</span>
+        <span>{formatAgentRoleLabel(agent.role)}</span>
         <ChannelIcon size={13} />
         <span>{channel}</span>
       </p>

@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { STRIPE_PLANS, planById, VOICE_VARIABLE_COST_PER_MIN_USD } from "./plan-catalog";
 
 describe("plan-catalog", () => {
-  it("keeps Everyday personal-first and affordable", () => {
+  it("keeps legacy personal plans for existing subscribers only", () => {
     const personal = planById("personal");
-    expect(personal?.name).toBe("Solo Agent");
+    expect(personal?.name).toBe("Legacy Solo Agent");
+    expect(personal?.public).toBe(false);
     expect(personal?.price_usd_monthly).toBe(7);
     expect(personal?.voice_minutes_monthly).toBe(60);
     expect(personal?.extra_agent_price_usd).toBe(7);

@@ -527,7 +527,7 @@ function CallDetail({
 
   const qaColor = (score: number) => {
     const brand = resolveBrandAccent();
-    return score >= 60 ? brand : score >= 40 ? BRAND.purpleMuted : BRAND.rose;
+    return score >= 60 ? brand : score >= 40 ? BRAND.colors.onSurfaceMuted : BRAND.colors.error;
   };
 
   return (

@@ -26,6 +26,12 @@ export const PRODUCT_POSTURE = {
   },
 } as const;
 
+export function formatAgentRoleLabel(role?: string | null): string {
+  return (role || "assistant")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export function rosterSummary(personalCount: number, businessCount: number): string {
   const parts: string[] = [];
   if (personalCount > 0) {

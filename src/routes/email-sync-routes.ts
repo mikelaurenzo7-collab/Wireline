@@ -39,15 +39,24 @@ router.post(
       // mailbox enabled through a broader Google or Microsoft connection is
       // not incorrectly reported as disconnected.
       const [mailAccounts, calendarAccounts] = await Promise.all([
-        drizzle.select({ id: schema.emailAccounts.id }).from(schema.emailAccounts).where(eq(schema.emailAccounts.userId, req.user.id)).limit(1),
-        drizzle.select({ id: schema.calendarAccounts.id }).from(schema.calendarAccounts).where(eq(schema.calendarAccounts.userId, req.user.id)).limit(1),
+        drizzle
+          .select({ id: schema.emailAccounts.id })
+          .from(schema.emailAccounts)
+          .where(eq(schema.emailAccounts.userId, req.user.id))
+          .limit(1),
+        drizzle
+          .select({ id: schema.calendarAccounts.id })
+          .from(schema.calendarAccounts)
+          .where(eq(schema.calendarAccounts.userId, req.user.id))
+          .limit(1),
       ]);
 
       if (mailAccounts.length === 0 && calendarAccounts.length === 0) {
         return res.status(400).json({
           ok: false,
           code: "EMAIL_ACCOUNT_NOT_CONNECTED",
-          error: "No email account is connected. Connect Gmail, Outlook, or iCloud in Connections to refresh this inbox.",
+          error:
+            "No email account is connected. Connect Gmail, Outlook, or iCloud in Connections to refresh this inbox.",
         });
       }
 
@@ -76,50 +85,69 @@ router.post(
         lastMessageAt: message.receivedAt,
       }));
 
-      const threadDbIdByExternalId = new Map<string, string>();
-      if (threadRows.length > 0) {
-        const threads = await drizzle
-          .insert(schema.emailThreads)
-          .values(threadRows)
-          .onConflictDoUpdate({
-            target: schema.emailThreads.threadId,
-            set: {
-              subject: sql`excluded.subject`,
-              customerEmail: sql`excluded.customer_email`,
-              summary: sql`excluded.summary`,
-              lastMessageAt: sql`excluded.last_message_at`,
-            },
-          })
-          .returning({ id: schema.emailThreads.id, threadId: schema.emailThreads.threadId });
-
-        for (const thread of threads) {
-          if (thread.threadId) threadDbIdByExternalId.set(thread.threadId, thread.id);
-        }
-      }
-
-      // Keep a durable per-message record so the outcome center can display
-      // actual synced conversation context rather than only a thread card.
       const messageRows = messages.flatMap((message) => {
-        const threadDbId = threadDbIdByExternalId.get(message.threadId || message.messageId);
-        if (!threadDbId || !message.messageId) return [];
-        return [{
-          userId: req.user.id,
-          threadId: threadDbId,
-          googleMessageId: message.messageId,
-          role: "user",
-          content: message.snippet || "No preview was supplied by the connected mailbox.",
-          createdAt: message.receivedAt,
-        }];
+        const externalThreadId = message.threadId || message.messageId;
+        if (!externalThreadId || !message.messageId) return [];
+        return [
+          {
+            externalThreadId,
+            userId: req.user.id,
+            googleMessageId: message.messageId,
+            role: "user" as const,
+            content: message.snippet || "No preview was supplied by the connected mailbox.",
+            createdAt: message.receivedAt,
+          },
+        ];
       });
 
       let messagesSaved = 0;
-      if (messageRows.length > 0) {
-        const saved = await drizzle
-          .insert(schema.emailMessages)
-          .values(messageRows)
-          .onConflictDoNothing({ target: schema.emailMessages.googleMessageId })
-          .returning({ id: schema.emailMessages.id });
-        messagesSaved = saved.length;
+      if (threadRows.length > 0 || messageRows.length > 0) {
+        messagesSaved = await drizzle.transaction(async (tx) => {
+          const threadDbIdByExternalId = new Map<string, string>();
+          if (threadRows.length > 0) {
+            const threads = await tx
+              .insert(schema.emailThreads)
+              .values(threadRows)
+              .onConflictDoUpdate({
+                target: schema.emailThreads.threadId,
+                set: {
+                  subject: sql`excluded.subject`,
+                  customerEmail: sql`excluded.customer_email`,
+                  summary: sql`excluded.summary`,
+                  lastMessageAt: sql`excluded.last_message_at`,
+                },
+              })
+              .returning({ id: schema.emailThreads.id, threadId: schema.emailThreads.threadId });
+
+            for (const thread of threads) {
+              if (thread.threadId) threadDbIdByExternalId.set(thread.threadId, thread.id);
+            }
+          }
+
+          const persistedMessageRows = messageRows.flatMap((row) => {
+            const threadDbId = threadDbIdByExternalId.get(row.externalThreadId);
+            if (!threadDbId) return [];
+            return [
+              {
+                userId: row.userId,
+                threadId: threadDbId,
+                googleMessageId: row.googleMessageId,
+                role: row.role,
+                content: row.content,
+                createdAt: row.createdAt,
+              },
+            ];
+          });
+
+          if (persistedMessageRows.length === 0) return 0;
+
+          const saved = await tx
+            .insert(schema.emailMessages)
+            .values(persistedMessageRows)
+            .onConflictDoNothing({ target: schema.emailMessages.googleMessageId })
+            .returning({ id: schema.emailMessages.id });
+          return saved.length;
+        });
       }
 
       if (threadRows.length > 0 || messagesSaved > 0) touchNavCounts(req.user.id);

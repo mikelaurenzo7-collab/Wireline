@@ -12,9 +12,8 @@ import {
 } from "lucide-react";
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
+import { CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
 import { PageMeta } from "../lib/page-meta";
-
-const BALANCE_PRESETS = [5, 10, 25, 50] as const;
 
 const PERSONAL_FEATURES = [
   "Build and test personal assistants for free",
@@ -134,13 +133,21 @@ export default function Pricing() {
               Build free. Add $5 when you are ready to go live.
             </h1>
             <p className="mx-auto mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
-              Personal assistants are free to create and test. Add Conversation Balance before live work, then add a business plan when you need numbers, routing, and a shared team workspace.
+              Personal assistants are free to create and test. Add Conversation Balance before live
+              work, then add a business plan when you need numbers, routing, and a shared team
+              workspace.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+              <Link
+                to="/signup"
+                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+              >
                 Create your assistant
               </Link>
-              <Link to="/showcase" className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+              <Link
+                to="/showcase"
+                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+              >
                 <Play size={15} /> Hear a demo
               </Link>
             </div>
@@ -160,30 +167,38 @@ export default function Pricing() {
                   <span className="wl-overline">/ month</span>
                 </div>
                 <p className="mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
-                  No personal subscription. Add Conversation Balance only when you are ready to move from testing into live work.
+                  No personal subscription. Add Conversation Balance only when you are ready to move
+                  from testing into live work.
                 </p>
 
                 <div className="mt-7">
                   <p className="wl-overline mb-3">Add Conversation Balance</p>
                   <div className="flex flex-wrap gap-2">
-                    {BALANCE_PRESETS.map((amount, index) => (
+                    {CONVERSATION_BALANCE_PRESETS_USD.map((amount, index) => (
                       <span
                         key={amount}
                         className={
                           "inline-flex min-w-[64px] items-center justify-center rounded-full border px-4 py-2 text-[15px] font-semibold tabular-nums " +
-                          (index === 0 ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-card text-foreground")
+                          (index === 0
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-border bg-card text-foreground")
                         }
                       >
                         ${amount}
                       </span>
                     ))}
                   </div>
-                  <p className="mt-3 text-[12px] text-muted-foreground">Start at $5. Add more only when it makes sense for you.</p>
+                  <p className="mt-3 text-[12px] text-muted-foreground">
+                    Start at $5. Add more only when it makes sense for you.
+                  </p>
                 </div>
 
                 <ul className="mt-7 space-y-2.5">
                   {PERSONAL_FEATURES.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-[14px] leading-6 text-foreground">
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2.5 text-[14px] leading-6 text-foreground"
+                    >
                       <Check size={16} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
                       <span>{feature}</span>
                     </li>
@@ -191,7 +206,10 @@ export default function Pricing() {
                 </ul>
 
                 <div className="mt-8">
-                  <Link to="/signup" className="marketing-btn-primary w-full justify-center px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[.05em] sm:w-auto">
+                  <Link
+                    to="/signup"
+                    className="marketing-btn-primary w-full justify-center px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[.05em] sm:w-auto"
+                  >
                     Start free <ArrowRight size={14} />
                   </Link>
                 </div>
@@ -225,7 +243,8 @@ export default function Pricing() {
                 Add the operating system when your team needs it.
               </h2>
               <p className="mx-auto mt-4 max-w-[600px] text-[15px] leading-7 text-muted-foreground">
-                Shared inboxes, professional lines, integrations, and routing for teams — with the same direct control over when live work is funded.
+                Shared inboxes, professional lines, integrations, and routing for teams — with the
+                same direct control over when live work is funded.
               </p>
             </div>
 
@@ -233,9 +252,14 @@ export default function Pricing() {
               {BUSINESS_TIERS.map((tier) => (
                 <article
                   key={tier.name}
-                  className={"wl-stitch-card relative flex flex-col p-6 " + (tier.featured ? "border-primary/40 ring-1 ring-primary/20" : "")}
+                  className={
+                    "wl-stitch-card relative flex flex-col p-6 " +
+                    (tier.featured ? "border-primary/40 ring-1 ring-primary/20" : "")
+                  }
                 >
-                  {tier.featured ? <span className="wl-stitch-status-pill absolute right-4 top-4">Popular</span> : null}
+                  {tier.featured ? (
+                    <span className="wl-stitch-status-pill absolute right-4 top-4">Popular</span>
+                  ) : null}
                   <h3 className="wl-card-title text-lg">{tier.name}</h3>
                   <div className="mt-4 flex items-baseline gap-2">
                     <span className="wl-metric-value text-[2rem]">{tier.price}</span>
@@ -244,8 +268,15 @@ export default function Pricing() {
                   <p className="mt-3 text-[13px] leading-6 text-muted-foreground">{tier.blurb}</p>
                   <ul className="mt-5 flex-1 space-y-2.5">
                     {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-[13px] leading-6 text-foreground">
-                        <Check size={15} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
+                      <li
+                        key={feature}
+                        className="flex items-start gap-2.5 text-[13px] leading-6 text-foreground"
+                      >
+                        <Check
+                          size={15}
+                          className="mt-0.5 shrink-0 text-primary"
+                          strokeWidth={2.5}
+                        />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -253,7 +284,10 @@ export default function Pricing() {
                   <div className="mt-7">
                     <Link
                       to={tier.cta.to}
-                      className={(tier.featured ? "marketing-btn-primary" : "marketing-btn-secondary") + " w-full justify-center px-5 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"}
+                      className={
+                        (tier.featured ? "marketing-btn-primary" : "marketing-btn-secondary") +
+                        " w-full justify-center px-5 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
+                      }
                     >
                       {tier.cta.label} <ArrowRight size={14} />
                     </Link>
@@ -280,9 +314,13 @@ export default function Pricing() {
             </div>
             <div className="mt-10 flex flex-col items-center gap-4 text-center">
               <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
-                <ShieldCheck size={15} className="text-primary" /> Stripe-secured payments · Cancel any time · You stay in control
+                <ShieldCheck size={15} className="text-primary" /> Stripe-secured payments · Cancel
+                any time · You stay in control
               </p>
-              <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+              <Link
+                to="/signup"
+                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+              >
                 Create your assistant <ArrowRight size={14} />
               </Link>
             </div>
