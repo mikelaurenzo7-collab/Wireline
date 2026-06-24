@@ -12,7 +12,7 @@ export default function ActionsPage() {
     <WorkspaceShell
       eyebrow="Workspace"
       title="Connections"
-      contentClassName="pt-5"
+      contentClassName="py-6"
       action={
         <div className="flex flex-wrap items-center gap-2">
           <Link to={studioHref} className="studio-secondary-button text-sm">
