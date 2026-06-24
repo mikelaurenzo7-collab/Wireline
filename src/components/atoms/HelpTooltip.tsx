@@ -32,11 +32,14 @@ export function HelpTooltip({
   className,
   triggerClassName,
 }: HelpTooltipProps) {
+  const tooltipId = React.useId();
+
   return (
     <span className="group relative inline-flex">
       <button
         type="button"
         aria-label={label}
+        aria-describedby={tooltipId}
         className={cn(
           "inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           triggerClassName,
@@ -44,7 +47,12 @@ export function HelpTooltip({
       >
         <HelpCircle aria-hidden="true" className="h-3.5 w-3.5" />
       </button>
-      <span role="tooltip" data-slot="help-tooltip" className={cn(helpTooltipVariants({ align }), className)}>
+      <span
+        id={tooltipId}
+        role="tooltip"
+        data-slot="help-tooltip"
+        className={cn(helpTooltipVariants({ align }), className)}
+      >
         {content}
       </span>
     </span>
