@@ -44,6 +44,21 @@ for (const atom of canonicalAtoms) {
 }
 
 assertIncludes(
+  "src/components/molecules/StatusNotice.tsx",
+  /\bcva\(/,
+  "must expose semantic inline feedback through cva variants.",
+);
+assertIncludes(
+  "src/components/molecules/StatusNotice.tsx",
+  /data-slot="status-notice"/,
+  "must expose a stable inline-feedback slot.",
+);
+assertIncludes(
+  "src/components/molecules/index.ts",
+  /StatusNotice/,
+  "must export the canonical inline-feedback molecule.",
+);
+assertIncludes(
   "src/components/ui/shadcn/ShadButton.tsx",
   /from "\.\.\/\.\.\/atoms\/Button"/,
   "must remain a compatibility re-export of the canonical Button atom.",
@@ -147,6 +162,21 @@ assertIncludes(
   "src/components/ActionsWorkspace.tsx",
   /NativeSelect/,
   "must use the canonical select for permissions workspace agent choice.",
+);
+assertIncludes(
+  "src/pages/OverviewPage.tsx",
+  /StatusNotice/,
+  "must use the canonical status notice for degraded workspace state.",
+);
+assertIncludes(
+  "src/pages/OverviewPage.tsx",
+  /RosterLoading/,
+  "must use a structured roster-loading pattern.",
+);
+assertIncludes(
+  "src/pages/SettingsPage.tsx",
+  /StatusNotice/,
+  "must use the canonical status notice for account-action failures.",
 );
 assertExcludes(
   "src/components/atoms/Badge.tsx",
