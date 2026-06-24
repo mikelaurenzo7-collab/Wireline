@@ -33,6 +33,9 @@ const links = [
   },
 ] as const;
 
+const mobileControlClassName =
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-border bg-[var(--wl-surface)] text-foreground shadow-[var(--wl-shadow-sm)] transition-[background-color,border-color,color,transform] hover:border-primary/35 hover:bg-[var(--wl-surface-subtle)] hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
+
 export default function PrecisionPublicHeader() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -92,7 +95,7 @@ export default function PrecisionPublicHeader() {
           <DialogTrigger asChild>
             <button
               type="button"
-              className="wl-control-icon h-11 w-11 md:hidden"
+              className={`${mobileControlClassName} md:hidden`}
               aria-label={open ? "Close navigation" : "Open navigation"}
               aria-expanded={open}
               aria-controls="wireline-mobile-navigation"
@@ -121,7 +124,7 @@ export default function PrecisionPublicHeader() {
             <DialogClose asChild>
               <button
                 type="button"
-                className="wl-control-icon h-11 w-11"
+                className={mobileControlClassName}
                 aria-label="Close navigation"
               >
                 <X size={20} aria-hidden="true" />
