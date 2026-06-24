@@ -6,6 +6,16 @@
   --wireline-color-border-default: #C9C4D7;
   --wireline-color-border-strong: #B9C0D0;
   --wireline-color-canvas-default: #F8F9FF;
+  --wireline-color-feedback-error-border: #EDB4B4;
+  --wireline-color-feedback-error-surface: #FFF0F0;
+  --wireline-color-feedback-info-border: #B9CFF2;
+  --wireline-color-feedback-info-surface: #EDF4FF;
+  --wireline-color-feedback-success-border: #A9D9B8;
+  --wireline-color-feedback-success-surface: #EAF6ED;
+  --wireline-color-feedback-warning-border: #E7C785;
+  --wireline-color-feedback-warning-surface: #FFF4E0;
+  --wireline-color-focus-default: #451EBB;
+  --wireline-color-overlay-scrim: rgba(11, 28, 48, 0.56);
   --wireline-color-status-error: #C12A2A;
   --wireline-color-status-info: #315D9F;
   --wireline-color-status-success: #19703B;
@@ -17,12 +27,21 @@
   --wireline-color-text-onAction: #FFFFFF;
   --wireline-color-text-primary: #0B1C30;
   --wireline-color-text-secondary: #5F687B;
+  --wireline-elevation-lg: 0 24px 52px -30px rgba(30, 41, 76, 0.36);
+  --wireline-elevation-md: 0 10px 24px -18px rgba(30, 41, 76, 0.28);
+  --wireline-elevation-sm: 0 1px 2px rgba(17, 28, 50, 0.05);
   --wireline-font-family-body: Inter;
   --wireline-font-family-display: Hanken Grotesk;
   --wireline-font-family-mono: JetBrains Mono;
+  --wireline-interaction-focus-offset: 2px;
+  --wireline-interaction-focus-width: 2px;
+  --wireline-interaction-target-comfortable: 44px;
+  --wireline-interaction-target-minimum: 24px;
   --wireline-motion-duration-fast: 120ms;
   --wireline-motion-duration-slow: 300ms;
   --wireline-motion-duration-standard: 200ms;
+  --wireline-motion-easing-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --wireline-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --wireline-motion-press: 0.98;
   --wireline-radius-lg: 8px;
   --wireline-radius-md: 6px;
@@ -36,4 +55,5 @@
   --wireline-space-300: 24px;
   --wireline-space-400: 32px;
   --wireline-space-600: 48px;
+  --wireline-space-800: 64px;
 }

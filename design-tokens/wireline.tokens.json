@@ -3,66 +3,278 @@
   "$description": "Wireline semantic design tokens. This file is the platform-neutral source for generated web and future native outputs.",
   "color": {
     "canvas": {
-      "default": { "$type": "color", "$value": "#F8F9FF" }
+      "default": {
+        "$type": "color",
+        "$value": "#F8F9FF"
+      }
     },
     "surface": {
-      "default": { "$type": "color", "$value": "#FFFFFF" },
-      "subtle": { "$type": "color", "$value": "#EFF4FF" },
-      "container": { "$type": "color", "$value": "#E5EEFF" },
-      "strong": { "$type": "color", "$value": "#DDE3F0" }
+      "default": {
+        "$type": "color",
+        "$value": "#FFFFFF"
+      },
+      "subtle": {
+        "$type": "color",
+        "$value": "#EFF4FF"
+      },
+      "container": {
+        "$type": "color",
+        "$value": "#E5EEFF"
+      },
+      "strong": {
+        "$type": "color",
+        "$value": "#DDE3F0"
+      }
     },
     "text": {
-      "primary": { "$type": "color", "$value": "#0B1C30" },
-      "secondary": { "$type": "color", "$value": "#5F687B" },
-      "onAction": { "$type": "color", "$value": "#FFFFFF" }
+      "primary": {
+        "$type": "color",
+        "$value": "#0B1C30"
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "#5F687B"
+      },
+      "onAction": {
+        "$type": "color",
+        "$value": "#FFFFFF"
+      }
     },
     "action": {
       "primary": {
-        "default": { "$type": "color", "$value": "#5D3FD3" },
-        "pressed": { "$type": "color", "$value": "#451EBB" },
-        "container": { "$type": "color", "$value": "rgba(93, 63, 211, 0.10)" }
+        "default": {
+          "$type": "color",
+          "$value": "#5D3FD3"
+        },
+        "pressed": {
+          "$type": "color",
+          "$value": "#451EBB"
+        },
+        "container": {
+          "$type": "color",
+          "$value": "rgba(93, 63, 211, 0.10)"
+        }
       }
     },
     "border": {
-      "default": { "$type": "color", "$value": "#C9C4D7" },
-      "strong": { "$type": "color", "$value": "#B9C0D0" }
+      "default": {
+        "$type": "color",
+        "$value": "#C9C4D7"
+      },
+      "strong": {
+        "$type": "color",
+        "$value": "#B9C0D0"
+      }
+    },
+    "focus": {
+      "default": {
+        "$type": "color",
+        "$value": "#451EBB"
+      }
+    },
+    "overlay": {
+      "scrim": {
+        "$type": "color",
+        "$value": "rgba(11, 28, 48, 0.56)"
+      }
     },
     "status": {
-      "success": { "$type": "color", "$value": "#19703B" },
-      "warning": { "$type": "color", "$value": "#995D08" },
-      "error": { "$type": "color", "$value": "#C12A2A" },
-      "info": { "$type": "color", "$value": "#315D9F" }
+      "success": {
+        "$type": "color",
+        "$value": "#19703B"
+      },
+      "warning": {
+        "$type": "color",
+        "$value": "#995D08"
+      },
+      "error": {
+        "$type": "color",
+        "$value": "#C12A2A"
+      },
+      "info": {
+        "$type": "color",
+        "$value": "#315D9F"
+      }
+    },
+    "feedback": {
+      "success": {
+        "surface": {
+          "$type": "color",
+          "$value": "#EAF6ED"
+        },
+        "border": {
+          "$type": "color",
+          "$value": "#A9D9B8"
+        }
+      },
+      "warning": {
+        "surface": {
+          "$type": "color",
+          "$value": "#FFF4E0"
+        },
+        "border": {
+          "$type": "color",
+          "$value": "#E7C785"
+        }
+      },
+      "error": {
+        "surface": {
+          "$type": "color",
+          "$value": "#FFF0F0"
+        },
+        "border": {
+          "$type": "color",
+          "$value": "#EDB4B4"
+        }
+      },
+      "info": {
+        "surface": {
+          "$type": "color",
+          "$value": "#EDF4FF"
+        },
+        "border": {
+          "$type": "color",
+          "$value": "#B9CFF2"
+        }
+      }
     }
   },
   "space": {
-    "050": { "$type": "dimension", "$value": "4px" },
-    "100": { "$type": "dimension", "$value": "8px" },
-    "150": { "$type": "dimension", "$value": "12px" },
-    "200": { "$type": "dimension", "$value": "16px" },
-    "300": { "$type": "dimension", "$value": "24px" },
-    "400": { "$type": "dimension", "$value": "32px" },
-    "600": { "$type": "dimension", "$value": "48px" }
+    "050": {
+      "$type": "dimension",
+      "$value": "4px"
+    },
+    "100": {
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "150": {
+      "$type": "dimension",
+      "$value": "12px"
+    },
+    "200": {
+      "$type": "dimension",
+      "$value": "16px"
+    },
+    "300": {
+      "$type": "dimension",
+      "$value": "24px"
+    },
+    "400": {
+      "$type": "dimension",
+      "$value": "32px"
+    },
+    "600": {
+      "$type": "dimension",
+      "$value": "48px"
+    },
+    "800": {
+      "$type": "dimension",
+      "$value": "64px"
+    }
   },
   "radius": {
-    "sm": { "$type": "dimension", "$value": "4px" },
-    "md": { "$type": "dimension", "$value": "6px" },
-    "lg": { "$type": "dimension", "$value": "8px" },
-    "xl": { "$type": "dimension", "$value": "16px" },
-    "pill": { "$type": "dimension", "$value": "999px" }
+    "sm": {
+      "$type": "dimension",
+      "$value": "4px"
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": "6px"
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "xl": {
+      "$type": "dimension",
+      "$value": "16px"
+    },
+    "pill": {
+      "$type": "dimension",
+      "$value": "999px"
+    }
+  },
+  "elevation": {
+    "sm": {
+      "$type": "shadow",
+      "$value": "0 1px 2px rgba(17, 28, 50, 0.05)"
+    },
+    "md": {
+      "$type": "shadow",
+      "$value": "0 10px 24px -18px rgba(30, 41, 76, 0.28)"
+    },
+    "lg": {
+      "$type": "shadow",
+      "$value": "0 24px 52px -30px rgba(30, 41, 76, 0.36)"
+    }
   },
   "motion": {
     "duration": {
-      "fast": { "$type": "duration", "$value": "120ms" },
-      "standard": { "$type": "duration", "$value": "200ms" },
-      "slow": { "$type": "duration", "$value": "300ms" }
+      "fast": {
+        "$type": "duration",
+        "$value": "120ms"
+      },
+      "standard": {
+        "$type": "duration",
+        "$value": "200ms"
+      },
+      "slow": {
+        "$type": "duration",
+        "$value": "300ms"
+      }
     },
-    "press": { "$type": "number", "$value": 0.98 }
+    "easing": {
+      "standard": {
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      "emphasized": {
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.16, 1, 0.3, 1)"
+      }
+    },
+    "press": {
+      "$type": "number",
+      "$value": 0.98
+    }
+  },
+  "interaction": {
+    "target": {
+      "minimum": {
+        "$type": "dimension",
+        "$value": "24px"
+      },
+      "comfortable": {
+        "$type": "dimension",
+        "$value": "44px"
+      }
+    },
+    "focus": {
+      "width": {
+        "$type": "dimension",
+        "$value": "2px"
+      },
+      "offset": {
+        "$type": "dimension",
+        "$value": "2px"
+      }
+    }
   },
   "font": {
     "family": {
-      "display": { "$type": "fontFamily", "$value": "Hanken Grotesk" },
-      "body": { "$type": "fontFamily", "$value": "Inter" },
-      "mono": { "$type": "fontFamily", "$value": "JetBrains Mono" }
+      "display": {
+        "$type": "fontFamily",
+        "$value": "Hanken Grotesk"
+      },
+      "body": {
+        "$type": "fontFamily",
+        "$value": "Inter"
+      },
+      "mono": {
+        "$type": "fontFamily",
+        "$value": "JetBrains Mono"
+      }
     }
   }
 }

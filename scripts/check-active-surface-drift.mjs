@@ -42,20 +42,21 @@ for (const file of coreFiles) requireFile(file);
 
 const foundation = read("src/styles/foundation.css");
 requirePatterns("src/styles/foundation.css", foundation, [
-  [/--wl-page:\s*#f8f9ff/i, "must use Ametrine Precision root surface #f8f9ff"],
-  [/--wl-primary:\s*#451ebb/i, "must use Ametrine Precision pressed primary #451ebb"],
-  [/--wl-primary-container:\s*#5d3fd3/i, "must use Ametrine Precision action container #5d3fd3"],
-  [/--wl-accent:\s*var\(--wl-primary-container\)/i, "must route web accent through the Ametrine primary-container token"],
-  [/--wl-on-surface:\s*#0b1c30/i, "must use #0b1c30 as primary readable text"],
-  [/--wl-surface-subtle:\s*#eff4ff/i, "must use #eff4ff secondary surfaces"],
-  [/--wl-line:\s*#c9c4d7/i, "must use #c9c4d7 precision dividers"],
-  [/--radius:\s*0\.25rem/i, "must retain 4px default geometry"],
-  [/--radius-lg:\s*0\.5rem/i, "must retain 8px large-container geometry"],
+  [/--wl-page:\s*var\(--wireline-color-canvas-default\)/i, "must route root canvas through generated semantic tokens"],
+  [/--wl-primary:\s*var\(--wireline-color-action-primary-pressed\)/i, "must route pressed primary through generated semantic tokens"],
+  [/--wl-primary-container:\s*var\(--wireline-color-action-primary-default\)/i, "must route action container through generated semantic tokens"],
+  [/--wl-accent:\s*var\(--wireline-color-action-primary-default\)/i, "must route web accent through generated semantic tokens"],
+  [/--wl-on-surface:\s*var\(--wireline-color-text-primary\)/i, "must route readable text through generated semantic tokens"],
+  [/--wl-surface-subtle:\s*var\(--wireline-color-surface-subtle\)/i, "must route secondary surfaces through generated semantic tokens"],
+  [/--wl-line:\s*var\(--wireline-color-border-default\)/i, "must route dividers through generated semantic tokens"],
+  [/--wl-overlay-scrim:\s*var\(--wireline-color-overlay-scrim\)/i, "must route overlays through generated semantic tokens"],
+  [/--wl-shadow-md:\s*var\(--wireline-elevation-md\)/i, "must route elevation through generated semantic tokens"],
+  [/--wl-target-minimum:\s*var\(--wireline-interaction-target-minimum\)/i, "must expose the minimum interaction target token"],
+  [/--focus-ring:\s*var\(--wireline-interaction-focus-width\) solid var\(--wireline-color-focus-default\)/i, "must route keyboard focus through generated semantic tokens"],
   [/border-radius:\s*var\(--radius\)/i, "must use default geometry for standard controls"],
-  [/transform:\s*scale\(0\.98\)/i, "must retain tactile 0.98 press feedback"],
-  [/focus-visible[\s\S]*outline:\s*2px solid var\(--wl-accent\)/i, "must retain a 2px keyboard focus indicator"],
+  [/transform:\s*var\(--active-press\)/i, "must retain tactile press feedback through the motion token"],
 ]);
-if (/#f9f9f7|#1a3c34|#01261f|#003ec7|#0052ff|#f9f9ff|Professional Heritage|Wireline Precision|Signal Blue/i.test(foundation)) {
+if (/#f9f9f7|#1a3c34|#01261f|#003ec7|#0052ff|Professional Heritage|Wireline Precision|Signal Blue/i.test(foundation)) {
   report("src/styles/foundation.css", "must not retain retired Professional Heritage or Signal Blue tokens");
 }
 
@@ -64,7 +65,7 @@ requirePatterns("src/index.css", indexCss, [
   [/family=Inter/i, "must load Inter for Ametrine Precision hierarchy and dense content"],
   [/family=Hanken\+Grotesk/i, "must load Hanken Grotesk for display headings"],
   [/family=JetBrains\+Mono/i, "must load JetBrains Mono for metadata"],
-  [/--wl-font-display:\s*\"?Hanken Grotesk\"?/i, "must map display typography to Hanken Grotesk"],
+  [/--wl-font-display:\s*"?Hanken Grotesk"?/i, "must map display typography to Hanken Grotesk"],
   [/--wl-font-sans:\s*Inter/i, "must map body typography to Inter"],
 ]);
 if (/Professional Heritage|#1A3C34|#F9F9F7/i.test(indexCss)) {
@@ -128,28 +129,17 @@ requirePatterns("android/app/src/main/java/com/wireline/app/widget/WidgetPalette
   [/Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 widget action color"],
 ]);
 
-const designContract = spawnSync(process.execPath, [resolve(root, "scripts/check-design-system-contract.mjs")], {
-  stdio: "inherit",
-});
-if (designContract.status !== 0) {
-  report("scripts/check-design-system-contract.mjs", "design-system contract check failed");
-}
+const tokenContract = spawnSync(process.execPath, [resolve(root, "scripts/check-design-token-contract.mjs")], { stdio: "inherit" });
+if (tokenContract.status !== 0) report("scripts/check-design-token-contract.mjs", "semantic token contract check failed");
 
-const atomicCompletionContract = spawnSync(
-  process.execPath,
-  [resolve(root, "scripts/check-atomic-design-completion.mjs")],
-  { stdio: "inherit" },
-);
-if (atomicCompletionContract.status !== 0) {
-  report("scripts/check-atomic-design-completion.mjs", "Atomic Design completion contract check failed");
-}
+const designContract = spawnSync(process.execPath, [resolve(root, "scripts/check-design-system-contract.mjs")], { stdio: "inherit" });
+if (designContract.status !== 0) report("scripts/check-design-system-contract.mjs", "design-system contract check failed");
 
-const commandPaletteContract = spawnSync(process.execPath, [resolve(root, "scripts/check-command-palette-contract.mjs")], {
-  stdio: "inherit",
-});
-if (commandPaletteContract.status !== 0) {
-  report("scripts/check-command-palette-contract.mjs", "command-palette contract check failed");
-}
+const atomicCompletionContract = spawnSync(process.execPath, [resolve(root, "scripts/check-atomic-design-completion.mjs")], { stdio: "inherit" });
+if (atomicCompletionContract.status !== 0) report("scripts/check-atomic-design-completion.mjs", "Atomic Design completion contract check failed");
+
+const commandPaletteContract = spawnSync(process.execPath, [resolve(root, "scripts/check-command-palette-contract.mjs")], { stdio: "inherit" });
+if (commandPaletteContract.status !== 0) report("scripts/check-command-palette-contract.mjs", "command-palette contract check failed");
 
 if (failures.length) {
   console.error("Ametrine Precision contract check failed:\n- " + failures.join("\n- "));

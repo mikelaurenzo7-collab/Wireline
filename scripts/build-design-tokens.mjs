@@ -30,9 +30,17 @@ const requiredPaths = [
   "color.action.primary.default",
   "color.action.primary.pressed",
   "color.border.default",
+  "color.focus.default",
+  "color.overlay.scrim",
+  "color.feedback.success.surface",
+  "color.feedback.error.border",
+  "elevation.md",
+  "motion.duration.fast",
+  "motion.easing.standard",
+  "interaction.target.minimum",
+  "interaction.focus.width",
   "space.100",
   "radius.lg",
-  "motion.duration.fast",
 ];
 
 for (const path of requiredPaths) {
@@ -41,6 +49,7 @@ for (const path of requiredPaths) {
 
 const cssVariableName = (path) => `--wireline-${path.replaceAll(".", "-")}`;
 const orderedEntries = Object.entries(values).sort(([left], [right]) => left.localeCompare(right));
+const orderedValues = Object.fromEntries(orderedEntries);
 const css = [
   "/* Generated from design-tokens/wireline.tokens.json. Do not edit by hand. */",
   ":root {",
@@ -51,7 +60,7 @@ const css = [
 
 const ts = [
   "/* Generated from design-tokens/wireline.tokens.json. Do not edit by hand. */",
-  `export const wirelineTokenValues = ${JSON.stringify(values, null, 2)} as const;`,
+  `export const wirelineTokenValues = ${JSON.stringify(orderedValues, null, 2)} as const;`,
   "",
   "export type WirelineTokenPath = keyof typeof wirelineTokenValues;",
   "",
