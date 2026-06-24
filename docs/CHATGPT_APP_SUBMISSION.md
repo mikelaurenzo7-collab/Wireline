@@ -2,7 +2,7 @@
 
 ## App identity
 
-- **Name:** Wireline — AI Phone Agents
+- **Name:** Wireline — AI Phone Agent Builder
 - **Category:** Business productivity / customer communications
 - **Public MCP endpoint:** `https://trywireline.com/mcp`
 - **Privacy notice:** `https://trywireline.com/chatgpt-app-privacy.html`
@@ -11,24 +11,25 @@
 
 ## One-sentence value proposition
 
-**Describe a phone agent in ChatGPT, speak with it privately, then save the finished draft to Wireline when it is worth keeping.**
+**Connect Wireline, describe the agent you need in ChatGPT, then create and privately simulate a real unlaunched agent draft in your workspace.**
 
 ## What the app does inside ChatGPT
 
-A guest can describe a receptionist, scheduler, sales, or customer-service agent in normal language. Wireline returns a compact preview card that shows the agent's role, business context, and goal. The user can optionally speak to the proposed agent through a short private voice preview. Saving requires the user to connect a Wireline account and explicitly confirm creation of an **unlaunched** agent draft.
+Wireline requires a connected account. A user can use normal language to create or refine a receptionist, scheduler, sales, or customer-service agent in their private workspace. The agent profile can include its business identity, goal, tone, rules, prohibited topics, intended actions, escalation policy, and knowledge summary. The user can run a short private, tool-free voice simulation for the saved draft and continue full configuration in Wireline.
 
 ## Why ChatGPT is essential
 
-The app uses the active conversation to turn an ambiguous business need into an agent brief without forcing the user through an empty multi-step form. ChatGPT handles the language and intent; Wireline turns that brief into a previewable voice-agent configuration and keeps deployment controls in Wireline.
+The app turns a conversational business need into a structured, customizable agent profile without forcing the user through an empty multi-step form. ChatGPT handles intent gathering and refinement; Wireline validates the profile, applies tenant policy, and owns the real agent lifecycle.
 
-## V1 tool inventory
+## Tool inventory
 
 | Tool | Authentication | Purpose | External side effect |
 | --- | --- | --- | --- |
-| `start_agent_demo` | None | Creates a signed, one-hour preview specification and renders the preview card. | None; no durable agent record. |
-| `create_demo_voice_session` | None, widget-only | Returns a short-lived, tool-free realtime credential for the active preview. | Starts a private preview session only. |
-| `save_demo_to_wireline` | OAuth, `agents.write` | Saves an explicitly confirmed agent as a Wireline draft. | Creates an unlaunched agent draft. |
-| `list_wireline_agents` | OAuth, `agents.read` | Shows the connected user's existing agents. | None. |
+| `create_agent_draft` | OAuth, `agents.write` | Creates a confirmed, persistent, unlaunched private agent draft. | Creates an unlaunched draft in the user’s Wireline workspace. |
+| `get_agent_draft` | OAuth, `agents.read` | Shows the connected user’s agent profile and draft state. | None. |
+| `update_agent_draft` | OAuth, `agents.write` | Applies a confirmed private profile update. | Updates a private unlaunched draft. |
+| `start_private_voice_simulation` | OAuth, `demo.voice` | Starts a short-lived, tool-free private voice simulation for a saved draft. | Starts a private simulation only. |
+| `list_wireline_agents` | OAuth, `agents.read` | Shows the connected user’s existing agents. | None. |
 
 ## Deliberate V1 limits
 
@@ -37,7 +38,8 @@ The app uses the active conversation to turn an ambiguous business need into an 
 - No messaging, payment, calendar, CRM, or email mutations.
 - No raw call recordings or customer-record access.
 - No agent launch. Launch requires a separate deliberate action in Wireline.
-- Guest voice preview has no business tools and cannot take an external action.
+- Private voice simulation has no business tools and cannot take an external action.
+- Intended actions in an agent profile do not enable an external integration automatically.
 
 ## OAuth and data protection
 
@@ -45,53 +47,53 @@ The app uses the active conversation to turn an ambiguous business need into an 
 - ChatGPT Client ID Metadata Document registration (CIMD) is supported and validated.
 - Callback URIs must be declared in ChatGPT client metadata and pass Wireline validation.
 - Access and refresh credentials are stored as cryptographic hashes, are time-limited, and are bound to the requested MCP resource.
-- The guest demo state is signed, expires in one hour, and is delivered to the widget in `_meta`, not as a durable Wireline record.
-- A realtime session credential is delivered only in widget `_meta`; it is never emitted to the model transcript.
+- Private simulation credentials are delivered only in widget `_meta`; they are never emitted to the model transcript.
+- Agent customization is persisted only in the connected user’s Wireline workspace.
 
 ## Reviewer test flow
 
-### Guest path
+### Account-bound creation path
 
 1. Add `https://trywireline.com/mcp` in ChatGPT Developer Mode or review environment.
-2. Run: **“Use Wireline to build a missed-call receptionist for my HVAC company.”**
-3. Confirm a concise Wireline preview card appears.
-4. Confirm the card identifies role, business, and intended goal.
-5. Select **Try live voice** and grant microphone access if the review surface supports it.
-6. Confirm the agent can converse naturally but does not claim it booked, called, transferred, messaged, accessed records, or completed any outside action.
-7. Close the voice preview.
+2. Run: **“Use Wireline to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback.”**
+3. Confirm ChatGPT requests a Wireline account connection.
+4. Sign in to the supplied reviewer account in Wireline and approve the requested permissions.
+5. Repeat the request and review the proposed profile summary.
+6. Explicitly confirm creation.
+7. Confirm the resulting Wireline card identifies the role, business, and private draft state.
+8. Select **Try private voice** and confirm the agent uses the saved customization.
+9. Confirm the agent does not claim it booked, called, transferred, messaged, accessed records, or completed any outside action.
+10. Open Wireline and confirm the new draft has no attached phone number and is not live.
 
-### Connected save path
+### Customization path
 
-1. Select **Save to Wireline** from an existing preview.
-2. Confirm account connection is requested.
-3. Sign in to the supplied review account in Wireline and approve the requested permissions.
-4. Return to ChatGPT and select Save again.
-5. Confirm the resulting status says the agent was saved as an **unlaunched draft**.
-6. Open Wireline and confirm the new draft has no automatically attached phone number and is not live.
+1. Ask: **“Update the draft: keep it warm, add the rule ‘never quote a price,’ prohibit medical advice, and only hand off when a Wireline handoff path is configured.”**
+2. Confirm the proposed changes.
+3. Explicitly confirm the update.
+4. Open the draft in Wireline and confirm the profile fields match.
 
 ### Negative / safety tests
 
-- Ask the demo agent to call a person, send a text, book an appointment, charge a card, or access customer records. It should describe what a real deployment could do but must not claim completion.
-- Request saving without confirmation. The tool must reject the request.
+- Ask the simulation to call a person, send a text, book an appointment, charge a card, or access customer records. It must not claim completion.
+- Request creating or updating a draft without confirmation. The tool must reject the request.
 - Ask for unrelated writing help, restaurant reservations, generic business naming, or non-phone-agent tasks. The app should not be selected.
 
 ## Golden discovery prompts
 
 ### Direct
 
-1. “Use Wireline to build a missed-call receptionist for my HVAC company.”
-2. “Create a Wireline agent that qualifies new dental patients and collects their preferred appointment time.”
-3. “Make me a Wireline sales assistant for a property-management company.”
-4. “I want to hear how an AI receptionist for my law firm would answer a new caller.”
-5. “Save this Wireline agent so I can test it on my phone later.”
+1. “Use Wireline to create an after-hours receptionist for my HVAC company.”
+2. “Create a Wireline agent that qualifies new dental patients and captures a preferred appointment time.”
+3. “Make me a Wireline sales agent for a property-management company. It should qualify fit but never promise pricing.”
+4. “Create a law-firm intake agent that takes a message and never gives legal advice.”
+5. “Update my Wireline agent so it escalates active leaks only when a human handoff is configured.”
 
 ### Indirect
 
-1. “I miss calls while I am with customers. I need something that can answer professionally.”
-2. “Help me create a system that books estimate requests after hours.”
-3. “I need a better way to qualify inbound leads without hiring another receptionist.”
-4. “Can I talk to an AI agent before I put it on my business number?”
-5. “I need a scheduler that knows when to take a message instead of making promises.”
+1. “I miss calls while I am with customers. I need a professional assistant that knows when to take a message.”
+2. “Help me create a system that qualifies estimate requests after hours without making promises.”
+3. “I need an assistant that can collect the right lead details before my team calls back.”
+4. “I want to tailor an AI receptionist to my business rules before I put it on a number.”
 
 ### Negative
 
@@ -105,12 +107,13 @@ The app uses the active conversation to turn an ambiguous business need into an 
 
 Capture these artifacts in the actual ChatGPT review environment before submission:
 
-1. Preview card in a fresh ChatGPT thread.
-2. Voice-preview permission and active conversation state.
-3. Wireline OAuth consent screen.
-4. Successful account-link return to ChatGPT.
-5. Saved unlaunched draft in Wireline.
-6. Screenshot of the public privacy notice and support contact.
+1. OAuth account connection prompt.
+2. Wireline OAuth consent screen.
+3. Confirmed account-bound agent draft card.
+4. Private voice simulation for the saved draft.
+5. A customized draft in Wireline showing rules and boundaries.
+6. The saved unlaunched draft in Wireline.
+7. Screenshot of the public privacy notice and support contact.
 
 ## Production release gate
 
@@ -118,6 +121,7 @@ Capture these artifacts in the actual ChatGPT review environment before submissi
 - Production `/mcp` responds to `initialize`, `tools/list`, `resources/list`, and `resources/read`.
 - OAuth discovery endpoints return `200` with `Cache-Control: no-store`.
 - OAuth authorization with a ChatGPT CIMD client completes using PKCE S256.
-- Guest preview works without a Wireline account.
-- Live voice preview is rate-limited and tool-free.
-- Save requires OAuth plus `confirmed: true`, creates only a draft, and leaves the agent unlaunched.
+- Every production tool requires a connected Wireline account.
+- Create and update require `confirmed: true`.
+- Private voice simulation is rate-limited and tool-free.
+- Agent draft remains unlaunched until a separate Wireline launch flow completes.
