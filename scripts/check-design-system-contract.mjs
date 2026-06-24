@@ -26,6 +26,7 @@ const canonicalAtoms = [
   "src/components/atoms/Skeleton.tsx",
   "src/components/atoms/EmptyState.tsx",
   "src/components/atoms/Toast.tsx",
+  "src/components/atoms/HelpTooltip.tsx",
 ];
 
 for (const atom of canonicalAtoms) {
