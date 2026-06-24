@@ -125,10 +125,10 @@ export default function SettingsPage() {
               </p>
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
                 <Button asChild variant="link" className="h-auto px-0 text-sm">
-                  <Link to="/security">Security overview <ArrowRight aria-hidden="true" size={14} /></Link>
+                  <Link to="/actions">Review connection policy <ArrowRight aria-hidden="true" size={14} /></Link>
                 </Button>
                 <Button asChild variant="link" className="h-auto px-0 text-sm">
-                  <Link to="/support">Get support <ArrowRight aria-hidden="true" size={14} /></Link>
+                  <Link to="/settings/team">Manage team access <ArrowRight aria-hidden="true" size={14} /></Link>
                 </Button>
               </div>
             </div>
