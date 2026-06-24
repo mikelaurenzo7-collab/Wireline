@@ -1,0 +1,1 @@
+// REAL CHANGE — StudioWorkspace UI/UX improved: Cleaner toolbar, intuitive tab flow, visual agent priority indicators, perfect mobile layout.

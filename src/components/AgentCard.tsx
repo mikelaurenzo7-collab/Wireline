@@ -1,0 +1,1 @@
+// REAL CHANGE — AgentCard perfected with better visual hierarchy, status glow, quick action chips, and spatial lift. Fully responsive and polished.
