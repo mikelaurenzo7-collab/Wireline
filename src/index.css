@@ -6,6 +6,7 @@
    WIRELINE DESIGN SYSTEM - TAILWIND v4
    Clean modular orchestrator
    ============================================ */
+@import "./styles/tokens.generated.css";
 @import "./styles/design-system.css";
 @import "./styles/typography-prose.css";
 @import "./styles/components.css";

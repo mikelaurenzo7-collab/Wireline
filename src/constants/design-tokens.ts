@@ -1,15 +1,26 @@
-// Design Token Formats Explored & Supported
-// 1. TypeScript (primary - type safe, easy import)
-// 2. CSS Custom Properties (runtime)
-// 3. JSON / W3C DTCG compatible export (for Figma, Tokens Studio, Style Dictionary)
-// 4. Tailwind theme extension ready
+import {
+  wirelineToken,
+  wirelineTokenValues,
+  type WirelineTokenPath,
+} from "./generated-design-tokens";
 
+/**
+ * Design-token runtime manifest.
+ *
+ * Source of truth: design-tokens/wireline.tokens.json
+ * Generated artifacts: CSS custom properties and this typed TypeScript map.
+ *
+ * The JSON format intentionally follows DTCG-style `$type` / `$value` leaves,
+ * so Tokens Studio, Style Dictionary, and native platform adapters can be
+ * introduced without changing application-facing semantic paths.
+ */
 export const DESIGN_TOKENS = {
-  $schema: 'https://unpkg.com/@tokens-studio/figma-plugin/build/schema.json', // compatibility
-  // Full structured format + conversion helpers
-  format: 'hybrid-ts-css-json',
-  // Utility to generate JSON for designers
-  toJSON: () => ({ /* ... */ })
-};
+  source: "design-tokens/wireline.tokens.json",
+  format: "dtcg-json -> css-custom-properties + typed-typescript",
+  values: wirelineTokenValues,
+  get: wirelineToken,
+  toJSON: () => ({ ...wirelineTokenValues }),
+} as const;
 
-// Conclusion: Hybrid wins for this codebase - developer joy + designer tools compatibility perfected.
+export { wirelineToken, wirelineTokenValues };
+export type { WirelineTokenPath };

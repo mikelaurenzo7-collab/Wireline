@@ -1,0 +1,68 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "$description": "Wireline semantic design tokens. This file is the platform-neutral source for generated web and future native outputs.",
+  "color": {
+    "canvas": {
+      "default": { "$type": "color", "$value": "#F8F9FF" }
+    },
+    "surface": {
+      "default": { "$type": "color", "$value": "#FFFFFF" },
+      "subtle": { "$type": "color", "$value": "#EFF4FF" },
+      "container": { "$type": "color", "$value": "#E5EEFF" },
+      "strong": { "$type": "color", "$value": "#DDE3F0" }
+    },
+    "text": {
+      "primary": { "$type": "color", "$value": "#0B1C30" },
+      "secondary": { "$type": "color", "$value": "#5F687B" },
+      "onAction": { "$type": "color", "$value": "#FFFFFF" }
+    },
+    "action": {
+      "primary": {
+        "default": { "$type": "color", "$value": "#5D3FD3" },
+        "pressed": { "$type": "color", "$value": "#451EBB" },
+        "container": { "$type": "color", "$value": "rgba(93, 63, 211, 0.10)" }
+      }
+    },
+    "border": {
+      "default": { "$type": "color", "$value": "#C9C4D7" },
+      "strong": { "$type": "color", "$value": "#B9C0D0" }
+    },
+    "status": {
+      "success": { "$type": "color", "$value": "#19703B" },
+      "warning": { "$type": "color", "$value": "#995D08" },
+      "error": { "$type": "color", "$value": "#C12A2A" },
+      "info": { "$type": "color", "$value": "#315D9F" }
+    }
+  },
+  "space": {
+    "050": { "$type": "dimension", "$value": "4px" },
+    "100": { "$type": "dimension", "$value": "8px" },
+    "150": { "$type": "dimension", "$value": "12px" },
+    "200": { "$type": "dimension", "$value": "16px" },
+    "300": { "$type": "dimension", "$value": "24px" },
+    "400": { "$type": "dimension", "$value": "32px" },
+    "600": { "$type": "dimension", "$value": "48px" }
+  },
+  "radius": {
+    "sm": { "$type": "dimension", "$value": "4px" },
+    "md": { "$type": "dimension", "$value": "6px" },
+    "lg": { "$type": "dimension", "$value": "8px" },
+    "xl": { "$type": "dimension", "$value": "16px" },
+    "pill": { "$type": "dimension", "$value": "999px" }
+  },
+  "motion": {
+    "duration": {
+      "fast": { "$type": "duration", "$value": "120ms" },
+      "standard": { "$type": "duration", "$value": "200ms" },
+      "slow": { "$type": "duration", "$value": "300ms" }
+    },
+    "press": { "$type": "number", "$value": 0.98 }
+  },
+  "font": {
+    "family": {
+      "display": { "$type": "fontFamily", "$value": "Hanken Grotesk" },
+      "body": { "$type": "fontFamily", "$value": "Inter" },
+      "mono": { "$type": "fontFamily", "$value": "JetBrains Mono" }
+    }
+  }
+}
