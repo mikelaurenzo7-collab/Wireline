@@ -39,6 +39,8 @@ interface PageMetaProps {
 const BRAND_SUFFIX = " · Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
+const DEFAULT_TITLE = "Wireline — Personal & Business AI Assistants";
+const DEFAULT_DESCRIPTION = "AI assistants for voice, email, and text conversations—under your rules.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
@@ -97,13 +99,14 @@ export function PageMeta({
     ? /\bWireline\b/i.test(title)
       ? title
       : `${title}${BRAND_SUFFIX}`
-    : "Wireline — AI Voice & Email Agents for Every Business";
+    : DEFAULT_TITLE;
+  const resolvedDescription = description || DEFAULT_DESCRIPTION;
   const canonicalUrl = path ? `${SITE_URL}${path}` : undefined;
   const ogImage = image || DEFAULT_OG_IMAGE;
 
   useEffect(() => {
     document.title = fullTitle;
-    setMeta("name", "description", description || null);
+    setMeta("name", "description", resolvedDescription);
     setMeta(
       "name",
       "robots",
@@ -111,17 +114,17 @@ export function PageMeta({
     );
     setCanonical(canonicalUrl || null);
     setMeta("property", "og:title", fullTitle);
-    setMeta("property", "og:description", description || null);
+    setMeta("property", "og:description", resolvedDescription);
     setMeta("property", "og:url", canonicalUrl || null);
     setMeta("property", "og:image", ogImage);
     setMeta("property", "og:type", "website");
     setMeta("property", "og:site_name", "Wireline");
     setMeta("name", "twitter:card", "summary_large_image");
     setMeta("name", "twitter:title", fullTitle);
-    setMeta("name", "twitter:description", description || null);
+    setMeta("name", "twitter:description", resolvedDescription);
     setMeta("name", "twitter:image", ogImage);
     setStructuredData(structuredData);
-  }, [canonicalUrl, description, fullTitle, noIndex, ogImage, structuredData]);
+  }, [canonicalUrl, fullTitle, noIndex, ogImage, resolvedDescription, structuredData]);
 
   return null;
 }
