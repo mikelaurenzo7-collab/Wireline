@@ -32,50 +32,37 @@ import metaWebhookRouter from "../routes/meta-webhook-routes";
 /**
  * Canonical API route order.
  *
- * Express resolves in registration order, so specific endpoints must appear
- * before broad routers that share their prefixes. Keep all route composition
- * here; the bootstrap owns only middleware, lifecycle, and error handling.
+ * Express resolves routes in registration order. This module preserves the
+ * established production precedence while making it explicit and reviewable.
  */
 export function registerApiRoutes(app: Express): void {
   app.use("/api/health", healthRouter);
-
-  // Voice and webhook endpoints own their explicit paths and raw-body handling.
   app.use(openaiRealtimeRouter);
   app.use(grokVoiceRouter);
+  app.use(authOAuthRouter);
+  app.use(authRouter);
+  app.use(oauthRouter);
+  app.use(agentRouter);
+  app.use("/api/qa", qaRouter);
   app.use(vapiRouter);
   app.use(voicesRouter);
   app.use(pronunciationRouter);
   app.use(elevenlabsWebhookRouter);
-  app.use(metaWebhookRouter);
-
-  // Identity must precede all tenant-scoped operational routes.
-  app.use(authOAuthRouter);
-  app.use(authRouter);
-  app.use(oauthRouter);
-
-  // Agent lifecycle and supporting workspace operations.
-  app.use(agentRouter);
-  app.use("/api/qa", qaRouter);
   app.use(accountRouter);
   app.use(settingsRouter);
   app.use(carrierRouter);
   app.use(teamRouter);
-  app.use(workspaceKnowledgeRouter);
-
-  // Mail-specific live routes stay ahead of the historic aggregate router.
-  app.use(emailOutcomeRouter);
-  app.use(emailSyncRouter);
-  app.use(icloudMailRouter);
-  app.use(emailUnsubscribeRouter);
-  app.use(emailRouter);
-  app.use(calendarRouter);
-
-  // Billing and quotas are intentionally grouped after identity.
   app.use(spendControlRouter);
   app.use(conversationBalanceRouter);
+  app.use(emailOutcomeRouter);
+  app.use(emailSyncRouter);
   app.use(subscriptionCheckoutGuardRouter);
   app.use("/api", billingRouter);
-
-  // Public/runtime integrations are intentionally last among feature routers.
+  app.use(emailRouter);
+  app.use(calendarRouter);
+  app.use(workspaceKnowledgeRouter);
+  app.use(icloudMailRouter);
+  app.use(emailUnsubscribeRouter);
+  app.use(metaWebhookRouter);
   app.use(marketingRuntimeRouter);
 }
