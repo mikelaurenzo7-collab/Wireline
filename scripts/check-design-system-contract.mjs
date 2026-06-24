@@ -70,8 +70,13 @@ assertIncludes(
 );
 assertIncludes(
   "src/components/atoms/HelpTooltip.tsx",
-  /export const helpTooltipVariants/,
-  "must expose the tooltip variants named by the atom barrel.",
+  /TooltipTrigger/,
+  "must use the canonical Radix tooltip trigger.",
+);
+assertIncludes(
+  "src/components/HelpTooltip.tsx",
+  /from "\.\/atoms\/HelpTooltip"/,
+  "must route the legacy help tooltip through the canonical atom.",
 );
 assertIncludes(
   "src/components/atoms/index.ts",
@@ -105,6 +110,11 @@ assertIncludes(
 );
 assertIncludes(
   "src/components/atoms/Skeleton.tsx",
+  /control: "rounded-\[var\(--radius-md\)\]"/,
+  "must provide a compact control-loading shape.",
+);
+assertIncludes(
+  "src/components/atoms/Skeleton.tsx",
   /surface: "rounded-\[var\(--radius-lg\)\]"/,
   "must provide a rounded surface-loading shape.",
 );
@@ -127,6 +137,16 @@ assertIncludes(
   "src/pages/AgentStudioHome.tsx",
   /NativeSelect/,
   "must use native select semantics for simple create-agent role choice.",
+);
+assertIncludes(
+  "src/pages/KnowledgePage.tsx",
+  /NativeSelect/,
+  "must use the canonical select for workspace-level agent choice.",
+);
+assertIncludes(
+  "src/components/ActionsWorkspace.tsx",
+  /NativeSelect/,
+  "must use the canonical select for permissions workspace agent choice.",
 );
 assertExcludes(
   "src/components/atoms/Badge.tsx",

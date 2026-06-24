@@ -19,7 +19,7 @@ src/components/
 
 ### Non-negotiable rules
 
-1. **One canonical primitive per interaction.** Button, Input, Textarea, NativeSelect, Badge, Skeleton, and HelpTooltip live in `atoms/`. Legacy paths re-export the atom; they do not fork it.
+1. **One canonical primitive per interaction.** Button, Input, Textarea, NativeSelect, Badge, Skeleton, and HelpTooltip live in `atoms/`. Legacy paths re-export or adapt to the atom; they do not fork behavior.
 2. **Variants live in `cva`.** Semantic options are typed, discoverable, and testable. Call-site `className` is for layout or a local exception, not for reimplementing a variant.
 3. **Accessibility is part of the component contract.** Focus visibility, keyboard operation, invalid states, labels, descriptions, and screen-reader status are default behavior.
 4. **Migration is additive first.** New and materially changed surfaces import canonical atoms. Legacy surfaces migrate when adjacent work makes the change low-risk.
@@ -34,10 +34,10 @@ src/components/
 | Atom | `Textarea` | Complete | Long-form text input, resize, and invalid semantics |
 | Atom | `NativeSelect` | Complete | Simple, native keyboard-selectable choices |
 | Atom | `Badge` | Complete | Semantic status and metadata treatment |
-| Atom | `Skeleton` | Complete | Text, circle, and surface loading affordances |
+| Atom | `Skeleton` | Complete | Text, circle, control, and surface loading affordances |
 | Atom | `EmptyState` | Complete | Empty-result framing |
 | Atom | `Toast` | Complete | Notification tone and live-region semantics |
-| Atom | `HelpTooltip` | Transitional | Contextual help; Radix migration remains a focused follow-up |
+| Atom | `HelpTooltip` | Complete | Radix-backed contextual help, focus, placement, and semantic trigger behavior |
 | Molecule | `FormField` | Complete | Label, help, error, and described-by relationship |
 | Molecule | `SearchField` | Complete | Search affordance with predictable clear behavior |
 | Molecule | `MetricCard` | Complete | Operational metric with contextual trend |
@@ -48,18 +48,24 @@ src/components/
 
 ### Primitive compatibility closure
 
-- `ShadButton`, `Input`, `Badge`, `Skeleton`, and `Textarea` now delegate to canonical atoms where the interaction is equivalent.
+- `ShadButton`, Input, Badge, Skeleton, and Textarea delegate to canonical atoms where the interaction is equivalent.
+- The legacy HelpTooltip preserves its public API while delegating to the canonical Radix-backed atom.
 - Source-root aliases support both the historic `@/src/...` and concise `@/...` forms without root-level shims.
 
 ### Operational feedback and roster
 
-- Foundation now defines semantic foreground, surface, and border tokens for success, warning, error, and info states.
+- Foundation defines semantic foreground, surface, and border tokens for success, warning, error, and info states.
 - Assistants uses canonical Button, Badge, Skeleton, and MetricCard patterns for creation, readiness, loading, and roster summaries.
 
 ### Inbox and create-agent workflow
 
 - Inbox uses canonical SearchField, Badge, Button, EmptyState, and Skeleton patterns while retaining its existing API lifecycle and outcome controls.
 - Studio’s create-agent dialog uses FormField, Input, Textarea, NativeSelect, and Button without changing agent creation, browser-context prefill, or training extraction behavior.
+
+### Connections and knowledge
+
+- Connections uses canonical Button, Badge, NativeSelect, EmptyState, and Skeleton patterns around its domain-specific permission rows.
+- Knowledge uses canonical EmptyState, Button, and NativeSelect patterns for its first-run and agent-context states.
 
 ## Adoption Order
 
@@ -71,10 +77,10 @@ src/components/
 
 ### 2. High-traffic migrations — next
 
-1. Connections and Knowledge route actions, setup states, and configuration forms
-2. Command palette / command bar
-3. Page shells and route headers that still own duplicate action controls
-4. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
+1. Command palette / command bar
+2. Page shells and route headers that still own duplicate action controls
+3. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
+4. Training and advanced configuration panels
 5. Admin and long-tail configuration panels
 
 ### 3. Deliberate exceptions

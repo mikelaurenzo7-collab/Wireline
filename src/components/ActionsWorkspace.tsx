@@ -5,6 +5,7 @@ import { authFetch, safeJson } from "../lib/api";
 import { useAgents } from "../contexts/AgentsContext";
 import { AGENT_TOOL_CATALOG, type AgentToolName } from "../lib/agent-capabilities";
 import { WORKSPACE_INTEGRATION_CATALOG } from "../lib/workspace-integration-catalog";
+import { Badge, Button, EmptyState, NativeSelect, Skeleton } from "./atoms";
 
 type ConnectionStatus = Record<string, { connected?: boolean }>;
 type Tool = (typeof AGENT_TOOL_CATALOG)[number];
@@ -108,7 +109,7 @@ function ToolGroup({
           <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-md)] bg-muted text-muted-foreground"><CircleDot size={16} /></span>
           <h3 className="wl-card-title text-base">{title}</h3>
         </div>
-        <span className="wl-overline shrink-0 text-[10px]">{activeCount} on</span>
+        <Badge variant="info" className="shrink-0 text-[10px] uppercase tracking-[.06em]">{activeCount} on</Badge>
       </header>
       <div className="mt-4 space-y-1">
         {tools.map((tool) => {
@@ -123,7 +124,7 @@ function ToolGroup({
               onClick={() => onToggle(tool.name)}
               className="wl-stitch-tool-row flex w-full items-start gap-3 rounded-[var(--radius-md)] px-2 py-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className={`wl-stitch-tool-check mt-0.5 ${active ? "text-primary-foreground" : ""}`} aria-hidden>
+              <span className={`wl-stitch-tool-check mt-0.5 ${active ? "text-primary-foreground" : ""}`} aria-hidden="true">
                 {active ? <Check size={11} strokeWidth={3} /> : null}
               </span>
               <span className="min-w-0">
@@ -142,12 +143,17 @@ function LoadingPermissions() {
   return (
     <div className="flex h-full min-h-0 flex-col" aria-busy="true" aria-label="Loading assistant permissions">
       <div className="mb-5 flex items-end justify-between gap-3">
-        <div className="space-y-3"><div className="h-3 w-28 animate-pulse rounded bg-muted" /><div className="h-7 w-72 max-w-[65vw] animate-pulse rounded bg-muted" /></div>
-        <div className="h-10 w-44 animate-pulse rounded-[var(--radius-md)] bg-muted" />
+        <div className="space-y-3">
+          <Skeleton shape="text" className="h-3 w-28" />
+          <Skeleton shape="text" className="h-7 w-72 max-w-[65vw]" />
+        </div>
+        <Skeleton shape="control" className="h-10 w-44" />
       </div>
       <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,.75fr)] lg:gap-6">
-        <div className="space-y-5">{Array.from({ length: 3 }, (_, index) => <div key={index} className="studio-card h-[176px] animate-pulse bg-muted/50" />)}</div>
-        <div className="studio-card h-[320px] animate-pulse bg-muted/50" />
+        <div className="space-y-5">
+          {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} shape="surface" className="h-[176px] w-full" />)}
+        </div>
+        <Skeleton shape="surface" className="h-[320px] w-full" />
       </div>
     </div>
   );
@@ -242,16 +248,19 @@ export default function ActionsWorkspace() {
   if (!agents.length) {
     return (
       <div className="grid h-full min-h-[520px] place-items-center py-8">
-        <section className="studio-card w-full max-w-[560px] px-8 py-12 text-center sm:px-10">
-          <span className="mx-auto grid size-16 place-items-center rounded-[var(--radius-xl)] bg-muted text-primary"><Sparkles size={29} /></span>
-          <p className="studio-kicker mt-7">Action permissions</p>
-          <h2 className="wl-section-title mt-2 text-[clamp(1.5rem,1.25rem+1vw,2rem)]">Create the assistant before you give it actions.</h2>
-          <p className="mx-auto mt-3 max-w-md text-[16px] leading-6 text-muted-foreground">Start with one useful job. In Studio, you can decide what the assistant should know, which actions it can take, and where it must ask you first.</p>
-          <Link to="/studio?create=1" className="studio-primary-button mt-7">Create an assistant</Link>
-        </section>
+        <EmptyState
+          density="default"
+          className="studio-card w-full max-w-[560px] px-8 py-12 sm:px-10"
+          icon={<Sparkles size={29} />}
+          title="Create the assistant before you give it actions."
+          description="Start with one useful job. In Studio, you can decide what the assistant should know, which actions it can take, and where it must ask you first."
+          action={<Button asChild><Link to="/studio?create=1">Create an assistant</Link></Button>}
+        />
       </div>
     );
   }
+
+  const noticeVariant = saveState === "error" ? "destructive" : "warning";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -260,18 +269,18 @@ export default function ActionsWorkspace() {
           <p className="studio-kicker">Assistant permissions</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h2 className="wl-section-title">Choose how {selectedAgent?.name || "this assistant"} can help.</h2>
-            {!loading ? <span className="wl-stitch-status-pill">{enabledTools.length} enabled</span> : null}
+            {!loading ? <Badge variant="info" className="text-[10px] uppercase tracking-[.06em]">{enabledTools.length} enabled</Badge> : null}
           </div>
           <p className="mt-2 max-w-2xl text-[14px] leading-6 text-muted-foreground">Turn on only the actions this assistant should take. You can change the scope whenever the role changes.</p>
         </div>
-        <select value={agentId} onChange={(event) => chooseAgent(event.target.value)} className="wl-agent-select max-w-[240px]" aria-label="Choose assistant or agent">
+        <NativeSelect value={agentId} onChange={(event) => chooseAgent(event.target.value)} className="max-w-[240px]" aria-label="Choose assistant or agent">
           {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
-        </select>
+        </NativeSelect>
       </div>
 
       {notice ? (
-        <div className={`mb-5 flex items-start gap-3 rounded-[var(--radius-lg)] border px-4 py-3 text-sm ${saveState === "error" ? "border-destructive/25 bg-destructive/5 text-foreground" : "border-[color:color-mix(in_srgb,var(--wl-status-warning)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-warning)_8%,var(--card))] text-foreground"}`} role={saveState === "error" ? "alert" : "status"}>
-          <CircleAlert className={`mt-0.5 size-4 shrink-0 ${saveState === "error" ? "text-destructive" : "text-[var(--wl-status-warning)]"}`} />
+        <div className={`mb-5 flex items-start gap-3 rounded-[var(--radius-lg)] border px-4 py-3 text-sm text-foreground ${saveState === "error" ? "border-[var(--wl-error-border)] bg-[var(--wl-error-surface)]" : "border-[var(--wl-warning-border)] bg-[var(--wl-warning-surface)]"}`} role={saveState === "error" ? "alert" : "status"}>
+          <CircleAlert className={`mt-0.5 size-4 shrink-0 ${saveState === "error" ? "text-[var(--wl-error)]" : "text-[var(--wl-warning)]"}`} />
           <p>{notice}</p>
         </div>
       ) : null}
@@ -280,7 +289,7 @@ export default function ActionsWorkspace() {
         <section className="wl-scroll min-h-0 overflow-y-auto pr-0.5">
           <div className="space-y-5">
             {loading ? (
-              Array.from({ length: 3 }, (_, index) => <div key={index} className="studio-card h-[176px] animate-pulse bg-muted/50" />)
+              Array.from({ length: 3 }, (_, index) => <Skeleton key={index} shape="surface" className="h-[176px] w-full" />)
             ) : (
               Object.entries(everydayGroups).map(([group, tools]) => <ToolGroup key={group} title={GROUP_LABELS[group] || group} tools={tools} enabled={enabledTools} disabled={saveState === "saving"} onToggle={toggle} />)
             )}
@@ -307,18 +316,21 @@ export default function ActionsWorkspace() {
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {
               const connected = integration.connection === "google" ? connections.google?.connected : integration.connection === "microsoft" ? connections.microsoft?.connected : false;
               const state = connected ? "Connected" : integration.connection === "workspace" ? "Available" : "Connect";
+              const stateVariant = connected ? "success" : integration.connection === "workspace" ? "info" : "default";
               return (
                 <article className="studio-card flex min-h-[82px] items-center justify-between gap-3 p-4" key={integration.id}>
                   <div className="min-w-0">
                     <h3 className="wl-card-title">{integration.label}</h3>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">{integration.detail}</p>
                   </div>
-                  <span className={connected ? "wl-stitch-status-pill" : "inline-flex shrink-0 rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-muted-foreground"}>{state}</span>
+                  <Badge variant={stateVariant} className="shrink-0 text-[10px] uppercase tracking-[.06em]">{state}</Badge>
                 </article>
               );
             })}
           </div>
-          <Link to="/connections" className="studio-secondary-button mt-4 w-full text-sm">Manage connections</Link>
+          <Button asChild variant="secondary" className="mt-4 w-full">
+            <Link to="/actions">Manage connections</Link>
+          </Button>
         </aside>
       </div>
     </div>
