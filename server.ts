@@ -55,7 +55,9 @@ app.use(
     credentials: true,
   }),
 );
-app.use(installWebhookBodyParsers);
+
+// Must run before global JSON parsing so signed vendor payloads retain raw bytes.
+installWebhookBodyParsers(app);
 app.use(express.json({ limit: "6mb" }));
 app.use(assertSameOrigin);
 app.use((req, res, next) => {
