@@ -38,7 +38,7 @@ const WORKSPACE_MOVES = [
     label: "Open knowledge",
   },
   {
-    href: "/connections",
+    href: "/actions",
     icon: Cable,
     title: "Connect useful actions",
     body: "Bring in calendars, inboxes, and systems only when they make a real job easier to complete.",
@@ -100,7 +100,7 @@ export default function OverviewPage() {
             <div>
               <p className="studio-kicker">Workspace status</p>
               <div className="mt-5 flex items-end gap-2">
-                <span className="wl-metric-value">{loading ? "—" : agents.length}</span>
+                <span className="wl-metric-value">{loading ? "-" : agents.length}</span>
                 <span className="pb-0.5 text-sm text-muted-foreground">
                   {agents.length === 1 ? "assistant" : "assistants"}
                 </span>
@@ -233,7 +233,7 @@ export default function OverviewPage() {
 
           {loading ? (
             <div className="grid min-h-[190px] place-items-center text-sm text-muted-foreground">
-              Loading roster…
+              Loading roster...
             </div>
           ) : hasAgents ? (
             <div className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

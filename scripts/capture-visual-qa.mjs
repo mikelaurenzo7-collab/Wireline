@@ -27,42 +27,64 @@ const marketingRoutes = [
   "/signup",
 ];
 
-const authenticatedRoutes = ["/agents", "/integrations", "/training", "/settings", "/help"];
+const authenticatedRoutes = [
+  "/overview",
+  "/agents",
+  "/studio",
+  "/studio?create=1",
+  "/knowledge",
+  "/actions",
+  "/actions/salesforce",
+  "/inbox",
+  "/settings",
+  "/settings/billing",
+  "/settings/team",
+  "/admin",
+  "/admin?tab=subscription",
+  "/admin?tab=team",
+  "/admin?tab=branding",
+  "/admin?tab=carrier",
+];
 
 const viewports = [
   { name: "desktop", width: 1440, height: 1100, isMobile: false, hasTouch: false },
   { name: "laptop", width: 1280, height: 900, isMobile: false, hasTouch: false },
+  { name: "tablet", width: 834, height: 1112, isMobile: true, hasTouch: true },
   { name: "mobile", width: 390, height: 844, isMobile: true, hasTouch: true },
 ];
 
 function fileName(route) {
   if (route === "/") return "home";
-  return route.replace(/^\//, "").replace(/[^a-z0-9]+/gi, "-") || "home";
+  return route.replace(/^\//, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "home";
 }
 
 async function settle(page) {
   await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => {});
-  await page.waitForTimeout(350);
+  await page.waitForTimeout(450);
 }
 
 async function captureRoute(page, viewportName, route, issues) {
   const response = await page.goto(`${baseUrl}${route}`, { waitUntil: "domcontentloaded", timeout: 45_000 });
   await settle(page);
   const status = response?.status() ?? null;
+  const finalUrl = page.url();
   if (status && status >= 400) issues.push({ viewport: viewportName, route, kind: "http", detail: String(status) });
+  if (!finalUrl.startsWith(`${baseUrl}${route.split("?")[0]}`)) {
+    issues.push({ viewport: viewportName, route, kind: "redirect", detail: finalUrl });
+  }
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
   await page.screenshot({ path: file, fullPage: true, animations: "disabled" });
 }
 
 async function signIn(page, viewportName, issues) {
   if (!email || !password) return false;
-  await page.goto(`${baseUrl}/signin?redirect=%2Fagents`, { waitUntil: "domcontentloaded", timeout: 45_000 });
+  await page.goto(`${baseUrl}/signin?redirect=%2Foverview`, { waitUntil: "domcontentloaded", timeout: 45_000 });
   await settle(page);
   try {
     await page.locator("#auth-email").fill(email);
     await page.locator("#auth-password").fill(password);
     await page.locator('form button[type="submit"]').click();
-    await page.waitForURL(/\/agents(?:\?|$)/, { timeout: 25_000 });
+    await page.waitForURL(/\/overview(?:\?|$)/, { timeout: 25_000 });
     await settle(page);
     return true;
   } catch (error) {
@@ -89,7 +111,7 @@ try {
     });
     page.on("requestfailed", (request) => {
       const failure = request.failure();
-      if (failure?.errorText) issues.push({ viewport: viewport.name, route: page.url(), kind: "request", detail: `${request.url()} — ${failure.errorText}` });
+      if (failure?.errorText) issues.push({ viewport: viewport.name, route: page.url(), kind: "request", detail: `${request.url()} - ${failure.errorText}` });
     });
 
     for (const route of marketingRoutes) await captureRoute(page, viewport.name, route, issues);

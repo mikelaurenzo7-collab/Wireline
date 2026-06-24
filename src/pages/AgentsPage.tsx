@@ -98,7 +98,7 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           <Wrench size={15} />
           Open Studio
         </Link>
-        <Link to={`/connections?agent=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link to={`/actions?agent=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <Zap size={15} />
           Connections
         </Link>
