@@ -37,6 +37,11 @@ export class AppError extends Error {
     this.details = details;
   }
 
+  /** Compatibility alias for integrations that use an HTTP-style statusCode property. */
+  get statusCode(): number {
+    return this.status;
+  }
+
   /* ── Common factory methods ──────────────────────────────────────── */
 
   static badRequest(message: string, details?: Record<string, unknown>) {
@@ -161,9 +166,8 @@ export function formatErrorResponse(
  * to the standard `{ error, code, requestId }` response shape.
  *
  *   router.get("/api/thing", authenticateUser, asyncHandler(async (req, res) => {
- *     const thing = await load(req.params.id);
- *     if (!thing) throw AppError.notFound("Thing not found");
- *     res.json(thing);
+ *     if (!req.user) throw AppError.unauthorized();
+ *     res.json({ ok: true });
  *   }));
  */
 export function asyncHandler<Req extends Request = Request, Res extends Response = Response>(
