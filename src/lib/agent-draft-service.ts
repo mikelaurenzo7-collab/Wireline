@@ -3,7 +3,6 @@ import { randomBytes } from "node:crypto";
 import * as schema from "../db/schema";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { AppError } from "./api-error";
-import { getDefaultAgentTools } from "./agent-capabilities";
 import {
   normalizeAgentCustomization,
   compileAgentRuntimeInstructions,
@@ -152,7 +151,10 @@ export async function createAgentDraft(
       archetype: ROLE_ARCHETYPES[profile.identity.role],
       voiceId: pickRotatedVoiceId(existingCount),
       voiceProvider: "openai",
-      enabledTools: getDefaultAgentTools(profile.identity.role),
+      // A draft records intended actions in its customization profile, but it
+      // never receives external tools until the user configures and enables
+      // them explicitly in Wireline.
+      enabledTools: [],
       firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
       personalityVibe: profile.identity.tone,
       isBusinessAgent: profile.identity.businessName !== "Your business",
