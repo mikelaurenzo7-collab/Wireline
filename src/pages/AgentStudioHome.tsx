@@ -4,6 +4,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
+import {
+  browserCompanionBrief,
+  clearBrowserCompanionHash,
+  readBrowserCompanionContext,
+} from "../lib/browser-companion-context";
 import { PRODUCT_POSTURE } from "../lib/product-copy";
 
 const roles = [
@@ -20,6 +25,8 @@ export default function AgentStudioHome() {
   const navigate = useNavigate();
   const { agents, loading, refresh } = useAgents();
   const wantsBusinessAgent = params.get("posture") === "business";
+  const [browserContext] = useState(readBrowserCompanionContext);
+  const browserBrief = browserCompanionBrief(browserContext);
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("scheduler");
@@ -33,6 +40,13 @@ export default function AgentStudioHome() {
   useEffect(() => {
     if (!loading && params.get("create") === "1") setShowCreate(true);
   }, [loading, params]);
+
+  useEffect(() => {
+    if (!browserBrief) return;
+    setBrief((current) => current || browserBrief);
+    setShowCreate(true);
+    clearBrowserCompanionHash();
+  }, [browserBrief]);
 
   useEffect(() => {
     if (wantsBusinessAgent) setRole("receptionist");
@@ -165,6 +179,11 @@ export default function AgentStudioHome() {
                     ? "Name the agent, describe how it should represent your business, and refine policies in Studio."
                     : "Name the help you want and teach the details in Studio."}
                 </p>
+                {browserBrief ? (
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    Browser context has been added to the first brief as reference. Review it before creating your assistant.
+                  </p>
+                ) : null}
               </div>
               <button
                 type="button"

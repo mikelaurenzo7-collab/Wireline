@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wireline Companion</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="panel-shell">
+      <header class="panel-header">
+        <div class="wordmark" aria-label="Wireline">WIRELINE</div>
+        <p>Bring the context you choose into Studio.</p>
+      </header>
+
+      <section class="context-card" aria-labelledby="page-context-title">
+        <div class="section-heading">
+          <span>Current page</span>
+          <button id="refresh-context" class="quiet-button" type="button">Refresh</button>
+        </div>
+        <h1 id="page-context-title">Loading page context…</h1>
+        <p id="page-host" class="muted">Only this tab is inspected when you ask.</p>
+        <p id="selection-preview" class="selection-preview" hidden></p>
+      </section>
+
+      <form id="handoff-form" class="handoff-form">
+        <label for="request">What should Wireline help with?</label>
+        <textarea
+          id="request"
+          rows="5"
+          maxlength="800"
+          placeholder="Example: build an assistant brief that can answer questions about this service and collect the information I need."
+        ></textarea>
+        <p class="privacy-note">Your page title, URL, description, and explicit selection are included only when you choose <strong>Bring into Studio</strong>.</p>
+        <button id="handoff-button" class="primary-button" type="submit">Bring into Studio</button>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </form>
+
+      <footer class="panel-footer">
+        <button id="open-workspace" class="text-button" type="button">Open Wireline workspace</button>
+        <span aria-hidden="true">·</span>
+        <a href="https://trywireline.com/privacy" target="_blank" rel="noreferrer">Privacy</a>
+      </footer>
+    </main>
+    <script type="module" src="./panel.js"></script>
+  </body>
+</html>

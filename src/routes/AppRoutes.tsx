@@ -10,6 +10,7 @@ const EmailPage = lazy(() => import("../pages/EmailPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
+const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 
@@ -46,6 +47,7 @@ export default function AppRoutes() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingSettings />} />
         <Route path="/settings/team" element={<TeamSettings />} />
+        <Route path="/settings/apps" element={<ClientAppsPage />} />
         <Route path="/admin" element={<AdminSettings />} />
         <Route path="/admin/*" element={<AdminSettings />} />
         <Route path="/help" element={<Navigate to="/overview" replace />} />

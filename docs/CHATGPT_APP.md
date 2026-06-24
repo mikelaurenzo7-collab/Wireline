@@ -88,10 +88,21 @@ OPENAI_API_KEY=
 
 Use Client Identifier Metadata Document (CIMD) registration. Do not configure Dynamic Client Registration or OIDC for V1. The exact production registration is recorded in `docs/CHATGPT_APP_DASHBOARD_CONFIG.md`.
 
+## Release verification
+
+Run the public, unauthenticated protocol probe against the deployed environment:
+
+```bash
+node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
+```
+
+The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization, the full tool inventory, the account-bound widget resource, and the widget’s explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
+
 ## Private rollout and App Directory readiness
 
-1. Test OAuth with a real Wireline account.
-2. Create a reviewer account with sample agents, a stable password, and no MFA.
-3. Exercise create, update, private simulation, list, and negative safety prompts from `docs/CHATGPT_APP_SUBMISSION.md`.
-4. Capture evidence of OAuth, draft creation, customization, simulation, and the unlaunched state.
-5. Submit the account-bound version for review only after production checks pass.
+1. Run the release probe against production.
+2. Test OAuth with a real Wireline account.
+3. Create a reviewer account with sample agents, a stable password, and no MFA.
+4. Exercise create, update, private simulation, list, and negative safety prompts from `docs/CHATGPT_APP_SUBMISSION.md`.
+5. Capture evidence of OAuth, draft creation, customization, simulation, and the unlaunched state.
+6. Submit the account-bound version for review only after production checks pass.
