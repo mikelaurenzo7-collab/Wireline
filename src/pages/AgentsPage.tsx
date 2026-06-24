@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Bot, CircleAlert, MessageSquare, Phone, Plus, Wrench, Zap } from "lucide-react";
+import { Badge, Button, Skeleton } from "../components/atoms";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { MetricCard } from "../components/molecules";
 import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import {
@@ -33,13 +35,15 @@ function EmptyRoster() {
         <h2 className="wl-setup-surface__title mt-2">{PRODUCT_VERSATILITY.tagline}</h2>
         <p className="wl-route-copy mt-3">{PRODUCT_POSTURE.personal.emptyBody}</p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <Link to="/studio?create=1" className="studio-primary-button text-sm">
-            <Plus size={16} />
-            {PRODUCT_POSTURE.personal.createCta}
-          </Link>
-          <Link to="/studio?create=1&posture=business" className="studio-secondary-button text-sm">
-            {PRODUCT_POSTURE.business.createCta}
-          </Link>
+          <Button asChild>
+            <Link to="/studio?create=1">
+              <Plus aria-hidden="true" size={16} />
+              {PRODUCT_POSTURE.personal.createCta}
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to="/studio?create=1&posture=business">{PRODUCT_POSTURE.business.createCta}</Link>
+          </Button>
         </div>
       </div>
     </section>
@@ -48,17 +52,21 @@ function EmptyRoster() {
 
 function LoadingRoster() {
   return (
-    <section className="grid grid-cols-1 gap-4 pb-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-label="Loading roster">
+    <section
+      className="grid grid-cols-1 gap-4 pb-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+      aria-label="Loading roster"
+      aria-busy="true"
+    >
       {Array.from({ length: 8 }, (_, index) => (
-        <div key={index} className="h-[216px] rounded-[var(--radius-xl)] border border-border bg-card p-5">
+        <div key={index} className="rounded-[var(--radius-xl)] border border-border bg-card p-5">
           <div className="flex items-start justify-between">
-            <div className="h-10 w-10 animate-pulse rounded-[var(--radius-md)] bg-muted" />
-            <div className="h-6 w-14 animate-pulse rounded bg-muted" />
+            <Skeleton shape="circle" className="size-10" />
+            <Skeleton shape="text" className="h-6 w-14" />
           </div>
-          <div className="mt-5 h-5 w-2/3 animate-pulse rounded bg-muted" />
-          <div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-muted" />
-          <div className="mt-6 h-4 w-full animate-pulse rounded bg-muted" />
-          <div className="mt-2 h-4 w-4/5 animate-pulse rounded bg-muted" />
+          <Skeleton shape="text" className="mt-5 h-5 w-2/3" />
+          <Skeleton shape="text" className="mt-3 h-4 w-1/2" />
+          <Skeleton shape="text" className="mt-6 h-4 w-full" />
+          <Skeleton shape="text" className="mt-2 h-4 w-4/5" />
         </div>
       ))}
     </section>
@@ -78,10 +86,10 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
         </span>
         <div className="flex flex-wrap justify-end gap-1.5">
           <PostureBadge isBusiness={Boolean(agent.is_business_agent)} />
-          <span className="wl-stitch-status-pill">
-            <span className="wl-stitch-status-dot" aria-hidden />
+          <Badge variant="success">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
             Ready
-          </span>
+          </Badge>
         </div>
       </div>
       <h2 className="mt-4 font-[var(--wl-font-display)] text-[19px] font-semibold leading-6 tracking-[-.02em] text-foreground">
@@ -93,27 +101,21 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
         <span>{channel}</span>
       </p>
       <p className="mt-3 line-clamp-2 flex-1 text-sm leading-5 text-muted-foreground">{agentHint(agent)}</p>
-      <div className="mt-4 flex items-center justify-between border-t border-border pt-3.5">
-        <Link to={`/studio?agent=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]">
-          <Wrench size={15} />
-          Open Studio
-        </Link>
-        <Link to={`/actions?agent=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <Zap size={15} />
-          Connections
-        </Link>
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3.5">
+        <Button asChild variant="link" className="h-auto px-0 text-sm">
+          <Link to={`/studio?agent=${encodeURIComponent(agent.id)}`}>
+            <Wrench aria-hidden="true" size={15} />
+            Open Studio
+          </Link>
+        </Button>
+        <Button asChild variant="link" className="h-auto px-0 text-sm text-muted-foreground hover:text-foreground">
+          <Link to={`/actions?agent=${encodeURIComponent(agent.id)}`}>
+            <Zap aria-hidden="true" size={15} />
+            Connections
+          </Link>
+        </Button>
       </div>
     </article>
-  );
-}
-
-function SetupNote({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div className="studio-card px-5 py-4">
-      <p className="studio-kicker">{label}</p>
-      <strong className="mt-2 block font-[var(--wl-font-display)] text-[22px] font-semibold leading-6 tracking-[-.03em] text-foreground">{value}</strong>
-      <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
-    </div>
   );
 }
 
@@ -136,10 +138,12 @@ function RosterSection({
           <p className="studio-kicker">{title}</p>
           <h2 className="wl-route-section-heading mt-1">{agents.length} ready</h2>
         </div>
-        <Link to={createHref} className="studio-secondary-button text-sm">
-          <Plus size={14} />
-          {createLabel}
-        </Link>
+        <Button asChild variant="secondary" size="sm">
+          <Link to={createHref}>
+            <Plus aria-hidden="true" size={14} />
+            {createLabel}
+          </Link>
+        </Button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {agents.map((agent) => <RosterCard key={agent.id} agent={agent} />)}
@@ -159,27 +163,29 @@ export default function AgentsPage() {
       title="Personal assistants & business agents"
       contentClassName="py-6"
       action={
-        <Link to="/studio?create=1" className="studio-primary-button text-sm">
-          <Plus size={16} />
-          Create an assistant
-        </Link>
+        <Button asChild size="sm">
+          <Link to="/studio?create=1">
+            <Plus aria-hidden="true" size={16} />
+            Create an assistant
+          </Link>
+        </Button>
       }
     >
       <div className="flex w-full flex-col gap-6 pb-8">
         {degraded ? (
-          <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[color:color-mix(in_srgb,var(--wl-status-error)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-error)_8%,var(--card))] px-4 py-4 text-foreground">
-            <CircleAlert size={18} className="mt-0.5 shrink-0 text-[var(--wl-status-error)]" />
+          <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--wl-error-border)] bg-[var(--wl-error-surface)] px-4 py-4 text-foreground" role="alert">
+            <CircleAlert size={18} className="mt-0.5 shrink-0 text-[var(--wl-error)]" />
             <div>
-              <p className="font-semibold text-[var(--wl-status-error)]">We cannot load your roster right now</p>
+              <p className="font-semibold text-[var(--wl-error)]">We cannot load your roster right now</p>
               <p className="mt-1 text-sm leading-5 text-muted-foreground">Your saved setup is safe. Please try again in a moment.</p>
             </div>
           </div>
         ) : null}
         {!loading && agents.length ? (
           <section className="grid gap-4 md:grid-cols-3">
-            <SetupNote label="Roster" value={String(agents.length)} detail={rosterSummary(personalAgents.length, businessAgents.length)} />
-            <SetupNote label="Personal assistants" value={String(personalAgents.length)} detail="Everyday calls, scheduling, and follow-ups" />
-            <SetupNote label="Business agents" value={String(businessAgents.length)} detail="Professional lines, policies, and connected accounts" />
+            <MetricCard label="Roster" value={String(agents.length)} footer={rosterSummary(personalAgents.length, businessAgents.length)} />
+            <MetricCard label="Personal assistants" value={String(personalAgents.length)} footer="Everyday calls, scheduling, and follow-ups" />
+            <MetricCard label="Business agents" value={String(businessAgents.length)} footer="Professional lines, policies, and connected accounts" />
           </section>
         ) : null}
         {!loading && !agents.length ? <EmptyRoster /> : null}
