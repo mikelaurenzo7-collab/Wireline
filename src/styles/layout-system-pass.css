@@ -117,6 +117,34 @@
   min-height: 0;
 }
 
+/* Inbox has no reason to imitate a modal when the account has no mail yet. */
+.wl-inbox-route > .grid.place-items-center {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card {
+  max-width: 46rem;
+  padding: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
+  text-align: left;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card > span {
+  margin-inline: 0;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card > .studio-kicker,
+.wl-inbox-route > .grid.place-items-center > .studio-card > h2,
+.wl-inbox-route > .grid.place-items-center > .studio-card > p {
+  text-align: left;
+}
+
+.wl-inbox-route > .grid.place-items-center > .studio-card > div {
+  justify-content: flex-start;
+}
+
 @media (min-width: 1280px) {
   [data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex > .xl\:grid {
     grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 0.9fr) minmax(250px, 1fr) minmax(360px, 1.25fr);
