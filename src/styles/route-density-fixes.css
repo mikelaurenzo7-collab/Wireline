@@ -1,3 +1,5 @@
+@import "./studio-direct-line.css";
+
 /* Route-level repairs for the dense operational surfaces. */
 
 [data-wireline-route="/actions"] .wl-workspace-content-inner > .flex.h-full,
