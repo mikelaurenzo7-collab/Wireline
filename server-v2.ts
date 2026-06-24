@@ -32,6 +32,7 @@ import subscriptionCheckoutGuardRouter from "./src/routes/subscription-checkout-
 import conversationBalanceRouter from "./src/routes/conversation-balance-routes";
 import spendControlRouter from "./src/routes/spend-control-routes";
 import emailOutcomeRouter from "./src/routes/email-outcome-routes";
+import emailSyncRouter from "./src/routes/email-sync-routes";
 import accountRouter from "./src/routes/account-routes";
 import settingsRouter from "./src/routes/settings-routes";
 import carrierRouter from "./src/routes/carrier-routes";
@@ -80,6 +81,7 @@ app.use(teamRouter);
 app.use(spendControlRouter);
 app.use(conversationBalanceRouter);
 app.use(emailOutcomeRouter);
+app.use(emailSyncRouter);
 app.use(subscriptionCheckoutGuardRouter);
 app.use("/api", billingRouter);
 app.use(emailRouter);
