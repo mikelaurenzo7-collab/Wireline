@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ArrowRight, Cable, CircleAlert, CreditCard, LogOut, MonitorDown, ShieldCheck, UsersRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { Badge } from "../components/atoms/Badge";
+import { Button } from "../components/atoms/Button";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -67,11 +69,11 @@ export default function SettingsPage() {
               <p className="wl-page-copy mt-4">Your account is the control point for the assistants, connected systems, and people in this workspace.</p>
             </div>
             <div className="flex flex-col items-start gap-3 sm:items-end">
-              <span className="wl-stitch-status-pill">Secure session</span>
-              <button type="button" onClick={handleSignOut} disabled={signingOut} className="studio-secondary-button shrink-0">
-                <LogOut size={16} />
-                {signingOut ? "Signing out..." : "Sign out"}
-              </button>
+              <Badge tone="success">Secure session</Badge>
+              <Button type="button" variant="secondary" loading={signingOut} onClick={handleSignOut} className="shrink-0">
+                <LogOut aria-hidden="true" size={16} />
+                Sign out
+              </Button>
             </div>
           </div>
           {error ? <p className="mt-5 flex items-center gap-2 text-sm text-destructive" role="alert"><CircleAlert size={16} /> {error}</p> : null}
