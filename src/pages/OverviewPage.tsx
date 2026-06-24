@@ -4,7 +4,6 @@ import {
   Briefcase,
   Cable,
   CheckCircle2,
-  CircleAlert,
   FileText,
   Inbox,
   Plus,
@@ -12,6 +11,8 @@ import {
   User,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Badge, Button, Skeleton } from "../components/atoms";
+import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents } from "../contexts/AgentsContext";
@@ -46,6 +47,24 @@ const WORKSPACE_MOVES = [
   },
 ] as const;
 
+function RosterLoading() {
+  return (
+    <div className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-busy="true" aria-label="Loading roster">
+      {Array.from({ length: 4 }, (_, index) => (
+        <div key={index} className="studio-card min-h-[190px] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <Skeleton shape="circle" className="size-9" />
+            <Skeleton shape="text" className="h-3 w-12" />
+          </div>
+          <Skeleton shape="text" className="mt-5 h-5 w-3/4" />
+          <Skeleton shape="text" className="mt-2 h-4 w-1/2" />
+          <Skeleton shape="text" className="mt-6 h-4 w-24" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function OverviewPage() {
   const { agents, loading, degraded } = useAgents();
   const personalCount = agents.filter((agent) => !agent.is_business_agent).length;
@@ -57,10 +76,12 @@ export default function OverviewPage() {
       title="Overview"
       eyebrow="Workspace"
       action={
-        <Link to="/studio?create=1" className="studio-primary-button text-sm">
-          <Plus size={16} />
-          New assistant
-        </Link>
+        <Button asChild size="sm">
+          <Link to="/studio?create=1">
+            <Plus aria-hidden="true" size={16} />
+            New assistant
+          </Link>
+        </Button>
       }
       contentClassName="py-6"
     >
@@ -81,18 +102,17 @@ export default function OverviewPage() {
               </p>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                to={hasAgents ? "/inbox" : "/studio?create=1"}
-                className="studio-primary-button text-sm"
-              >
-                {hasAgents ? "Review inbox" : "Create an assistant"} <ArrowRight size={16} />
-              </Link>
-              <Link
-                to={hasAgents ? "/agents" : "/studio?create=1&posture=business"}
-                className="studio-secondary-button text-sm"
-              >
-                {hasAgents ? "Manage assistants" : "Create a business agent"}
-              </Link>
+              <Button asChild>
+                <Link to={hasAgents ? "/inbox" : "/studio?create=1"}>
+                  {hasAgents ? "Review inbox" : "Create an assistant"}
+                  <ArrowRight aria-hidden="true" size={16} />
+                </Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link to={hasAgents ? "/agents" : "/studio?create=1&posture=business"}>
+                  {hasAgents ? "Manage assistants" : "Create a business agent"}
+                </Link>
+              </Button>
             </div>
           </div>
 
@@ -100,7 +120,7 @@ export default function OverviewPage() {
             <div>
               <p className="studio-kicker">Workspace status</p>
               <div className="mt-5 flex items-end gap-2">
-                <span className="wl-metric-value">{loading ? "-" : agents.length}</span>
+                <span className="wl-metric-value">{loading ? "–" : agents.length}</span>
                 <span className="pb-0.5 text-sm text-muted-foreground">
                   {agents.length === 1 ? "assistant" : "assistants"}
                 </span>
@@ -114,37 +134,29 @@ export default function OverviewPage() {
               </p>
             </div>
             <div className="mt-6 border-t border-border pt-4">
-              <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                {degraded ? (
-                  <CircleAlert size={16} className="text-[var(--wl-status-warning)]" />
-                ) : (
-                  <CheckCircle2 size={16} className="text-primary" />
-                )}
-                {degraded
-                  ? "Needs a quick check"
-                  : hasAgents
-                    ? "Ready for refinement"
-                    : "Ready to begin"}
-              </p>
+              {degraded ? (
+                <Badge variant="warning">Needs a quick check</Badge>
+              ) : (
+                <Badge variant="success">
+                  <CheckCircle2 aria-hidden="true" className="size-3.5" />
+                  {hasAgents ? "Ready for refinement" : "Ready to begin"}
+                </Badge>
+              )}
             </div>
           </aside>
         </section>
 
         {degraded ? (
-          <section className="flex items-start gap-3 rounded-[var(--radius-xl)] border border-[color:color-mix(in_srgb,var(--wl-status-warning)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-warning)_8%,var(--card))] px-4 py-4 text-sm text-foreground">
-            <CircleAlert className="mt-0.5 size-4 shrink-0 text-[var(--wl-status-warning)]" />
-            <p>
-              Workspace status is partially unavailable. Any roster details shown here may be stale
-              until the affected connection recovers.
-            </p>
-          </section>
+          <StatusNotice tone="warning" title="Workspace status is partially unavailable.">
+            Any roster details shown here may be stale until the affected connection recovers.
+          </StatusNotice>
         ) : null}
 
         {!loading && !agents.length ? (
           <section className="grid gap-4 md:grid-cols-2">
             <article className="studio-card flex min-h-[232px] flex-col p-6">
               <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                <User size={19} />
+                <User aria-hidden="true" size={19} />
               </span>
               <h2 className="wl-section-title mt-5 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
                 {PRODUCT_POSTURE.personal.createCta}
@@ -152,13 +164,13 @@ export default function OverviewPage() {
               <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">
                 {PRODUCT_POSTURE.personal.emptyBody}
               </p>
-              <Link to="/studio?create=1" className="studio-secondary-button mt-6 w-fit text-sm">
-                Start personal
-              </Link>
+              <Button asChild variant="secondary" size="sm" className="mt-6 w-fit">
+                <Link to="/studio?create=1">Start personal</Link>
+              </Button>
             </article>
             <article className="studio-card flex min-h-[232px] flex-col p-6">
               <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                <Briefcase size={19} />
+                <Briefcase aria-hidden="true" size={19} />
               </span>
               <h2 className="wl-section-title mt-5 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
                 {PRODUCT_POSTURE.business.createCta}
@@ -166,12 +178,9 @@ export default function OverviewPage() {
               <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">
                 {PRODUCT_POSTURE.business.emptyBody}
               </p>
-              <Link
-                to="/studio?create=1&posture=business"
-                className="studio-secondary-button mt-6 w-fit text-sm"
-              >
-                Start business
-              </Link>
+              <Button asChild variant="secondary" size="sm" className="mt-6 w-fit">
+                <Link to="/studio?create=1&posture=business">Start business</Link>
+              </Button>
             </article>
           </section>
         ) : null}
@@ -183,12 +192,9 @@ export default function OverviewPage() {
               <h2 className="wl-section-title mt-2">The three places that keep work useful.</h2>
             </div>
             {hasAgents ? (
-              <Link
-                to="/agents"
-                className="text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]"
-              >
-                View assistants <ArrowRight className="ml-1 inline size-4" />
-              </Link>
+              <Button asChild variant="link" className="h-auto px-0 text-sm">
+                <Link to="/agents">View assistants <ArrowRight aria-hidden="true" className="size-4" /></Link>
+              </Button>
             ) : null}
           </div>
           <div className="grid gap-4 xl:grid-cols-3">
@@ -198,11 +204,11 @@ export default function OverviewPage() {
                 to={href}
                 className="studio-card wl-card-action group flex min-h-[198px] flex-col p-5 text-left"
               >
-                <Icon className="size-5 text-primary" />
+                <Icon aria-hidden="true" className="size-5 text-primary" />
                 <h3 className="wl-card-title mt-5 text-[17px]">{title}</h3>
                 <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{body}</p>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                  {label} <ArrowRight size={15} />
+                  {label} <ArrowRight aria-hidden="true" size={15} />
                 </span>
               </Link>
             ))}
@@ -218,23 +224,19 @@ export default function OverviewPage() {
               </h2>
               {!hasAgents ? (
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  {PRODUCT_VERSATILITY.tagline} Start personal, then add business agents when the
-                  work needs a professional line.
+                  {PRODUCT_VERSATILITY.tagline} Start personal, then add business agents when the work needs a professional line.
                 </p>
               ) : null}
             </div>
-            <Link
-              to={hasAgents ? "/agents" : "/studio?create=1"}
-              className="studio-secondary-button text-sm"
-            >
-              {hasAgents ? "Manage assistants" : "Create an assistant"}
-            </Link>
+            <Button asChild variant="secondary" size="sm">
+              <Link to={hasAgents ? "/agents" : "/studio?create=1"}>
+                {hasAgents ? "Manage assistants" : "Create an assistant"}
+              </Link>
+            </Button>
           </div>
 
           {loading ? (
-            <div className="grid min-h-[190px] place-items-center text-sm text-muted-foreground">
-              Loading roster...
-            </div>
+            <RosterLoading />
           ) : hasAgents ? (
             <div className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {agents.slice(0, 8).map((agent) => (
@@ -245,7 +247,7 @@ export default function OverviewPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                      <Bot size={18} />
+                      <Bot aria-hidden="true" size={18} />
                     </span>
                     <div className="flex flex-col items-end gap-1.5">
                       <span className="wl-overline text-[10px]">{agent.channel || "voice"}</span>
@@ -253,21 +255,18 @@ export default function OverviewPage() {
                     </div>
                   </div>
                   <h3 className="wl-card-title mt-5">{agent.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {formatAgentRoleLabel(agent.role)}
-                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{formatAgentRoleLabel(agent.role)}</p>
                   <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                    Open Studio <ArrowRight size={15} />
+                    Open Studio <ArrowRight aria-hidden="true" size={15} />
                   </span>
                 </Link>
               ))}
             </div>
           ) : (
             <div className="flex min-h-[190px] flex-col items-start justify-center gap-3 py-8">
-              <Sparkles className="size-6 text-primary" />
+              <Sparkles aria-hidden="true" className="size-6 text-primary" />
               <p className="max-w-lg text-sm leading-6 text-muted-foreground">
-                Choose the first job, add what the assistant needs to know, and only then connect
-                the actions it should be allowed to take.
+                Choose the first job, add what the assistant needs to know, and only then connect the actions it should be allowed to take.
               </p>
             </div>
           )}
