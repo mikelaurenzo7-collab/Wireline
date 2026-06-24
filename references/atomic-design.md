@@ -1,73 +1,80 @@
 # Atomic Design Principles for Wireline
 
-## Philosophy
-We follow Atomic Design methodology to build a scalable, consistent, and maintainable design system.
+Atomic Design is a **composition discipline** for Wireline’s product UI. It helps the application stay coherent as Studio, Assistants, Knowledge, Actions, Inbox, Settings, mobile-adjacent surfaces, and future products grow.
 
-## Levels
+It is not a mandate to force every wrapper into a named taxonomy or to build generic abstractions before a pattern has proven itself.
+
+For the executable roadmap, ownership model, and completion criteria, see [migration-plan-atomic-design.md](./migration-plan-atomic-design.md).
+
+## Layers
 
 ### Atoms
-The most basic building blocks. These are pure, reusable primitives with no business logic.
 
-**Examples:** Button, Badge, Input, Toast, Skeleton, EmptyState, HelpTooltip, Divider
+Small, business-agnostic components with finite visual and interaction variants.
+
+**Examples:** Button, IconButton, Badge, Skeleton, EmptyState, HelpTooltip.
 
 **Rules:**
-- Must be self-contained
-- Should accept props for customization but remain simple
-- Styling lives primarily in `src/styles/components.css` (or dedicated atom styles)
+
+- Use semantic tokens and CVA when a component exposes finite variants.
+- Keep asynchronous, disabled, focus, and accessible-name behavior inside the primitive.
+- Do not embed product-domain or API logic.
+- Do not rely on hover-only information.
 
 ### Molecules
-Combinations of atoms that form a functional unit.
 
-**Examples:** SearchInput (Input + Button), FormField (Label + Input + error), MetricCard (Badge + number + label)
+Small, purposeful combinations of atoms that solve a repeated interaction problem.
+
+**Examples:** FormField, SearchField, MetricCard, filter controls, confirmation actions.
 
 **Rules:**
-- Molecules compose only Atoms (never other Molecules or Organisms)
-- They solve one clear UI problem
+
+- Compose atoms and minimal local layout.
+- Own a single, clear UI job.
+- Do not aggregate unrelated data loading or product permissions.
 
 ### Organisms
-Complex, standalone sections of the interface.
 
-**Examples:** Navbar, CommandBar, AgentCard, DataTable, Sidebar
+Substantial reusable operational patterns or sections of the product.
+
+**Examples:** WorkspaceShell, DataTable, ListDetailShell, command surfaces, page toolbars.
 
 **Rules:**
-- Organisms can use Molecules + Atoms
-- They represent meaningful sections of the product
-- Keep them focused — avoid god components
 
-### Templates
-Page-level structures without real content. These are wireframes/skeletons.
+- Compose atoms and molecules.
+- Keep the interaction contract explicit, particularly responsive and keyboard behavior.
+- Prefer semantic HTML. A `table` is not a `grid` unless the full grid keyboard contract is implemented.
 
-**Examples:** DashboardTemplate, WorkspaceTemplate, SettingsTemplate
+### Features and pages
 
-### Pages
-Specific instances of Templates with real data and content.
+Feature folders own business data, API calls, route concerns, and the composition of lower UI layers.
 
-## Composition Rules (Strict)
+A page may use an atom directly where no reusable molecule is justified. Do not create indirection solely to comply with a hierarchy.
 
-- **Atoms** → used by Molecules, Organisms, and Pages
-- **Molecules** → used by Organisms and Pages
-- **Organisms** → used by Pages and Templates
-- Never skip levels (e.g., a Page should not directly import an Atom if a Molecule exists for that purpose)
+## Styling rules
 
-## Folder Structure
+- `src/styles/foundation.css` owns semantic tokens, reset behavior, and global interaction guardrails.
+- Tailwind utilities own layout and local composition.
+- CVA owns finite visual choices.
+- Existing `src/components/ui/shadcn/` primitives remain supported during transition; do not fork their behavior casually.
+- New global "pass" stylesheets are prohibited. New feature-specific styles must be scoped and justified.
 
-```
+## Folder structure
+
+```text
 src/components/
-├── atoms/        # Pure primitives
-├── molecules/    # Functional combinations of atoms
-├── organisms/    # Complex UI sections
-├── templates/    # Page skeletons
-└── pages/        # Actual screens (or keep in routes/pages)
+├── atoms/        # Business-agnostic primitives
+├── molecules/    # Repeated, focused combinations
+├── organisms/    # Reusable operational patterns
+├── layout/       # Product shell and responsive layout contracts
+├── ui/shadcn/    # Existing supported primitive layer during transition
+└── features/     # Domain-specific UI as it is progressively extracted
 ```
 
-## Migration Strategy
-- Gradually extract primitives into atoms/
-- Create molecules only when clear composition patterns emerge
-- Update existing components incrementally
-- Keep backward compatibility during transition
+## Migration strategy
 
-## Benefits for Wireline
-- Extreme reusability across agent dashboards and workflows
-- Consistent robofuturistic aesthetic
-- Faster feature development
-- Easier maintenance and scaling
+1. Strengthen primitive contracts and semantic tokens.
+2. Extract only proven repeated patterns.
+3. Migrate high-traffic surfaces before low-frequency or legacy screens.
+4. Keep compatibility boundaries intentional and temporary.
+5. Verify each shared component across keyboard use, loading, error, empty, mobile, laptop, and wide desktop states.
