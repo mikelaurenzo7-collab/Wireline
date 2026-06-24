@@ -3,7 +3,7 @@ export { Button, buttonVariants, type ButtonProps } from "./Button";
 export { EmptyState, emptyStateVariants, type EmptyStateProps } from "./EmptyState";
 export {
   HelpTooltip,
-  helpTooltipContentVariants,
+  helpTooltipVariants,
   type HelpTooltipProps,
 } from "./HelpTooltip";
 export { Input, inputVariants, type InputProps } from "./Input";
