@@ -1,17 +1,14 @@
 /**
- * Barrel re-export for the shadcn/ui primitive layer.
+ * Compatibility exports for legacy shadcn/ui import paths.
  *
- * This is the **canonical** UI layer for Wireline. Pages and feature
- * components should compose primitives from here rather than rolling their
- * own `<button>` / `<input>` / modal / tabs / etc. Combined with the
- * Rich Cream + Purple tokens in `src/index.css` (`--background`, `--primary`,
- * `--card`, `--ring`, …), this guarantees:
+ * Canonical reusable primitives live in `src/components/atoms` and canonical
+ * interaction combinations live in `src/components/molecules`. This barrel
+ * remains intentionally stable while domain surfaces migrate incrementally;
+ * it must re-export canonical equivalents where the interaction contract is
+ * shared instead of becoming a second design-system implementation.
  *
- *   - Theme/dark-mode flips work everywhere (tokens, not literals)
- *   - Focus rings, hover states, and disabled states stay consistent
- *   - Radius/shape stays sharp via the global `border-radius: 0` reset
- *
- * See `DESIGN.md` for the full guidance.
+ * Use this layer only for genuinely composable Radix primitives that do not
+ * have an equivalent canonical atom or molecule yet.
  */
 export { ShadButton, buttonVariants } from "./ShadButton";
 export type { ShadButtonProps } from "./ShadButton";
