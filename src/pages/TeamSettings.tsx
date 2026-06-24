@@ -5,7 +5,6 @@ import {
   ChevronDown,
   Mail,
   Plus,
-  ShieldAlert,
   ShieldCheck,
   UserPlus,
   X,
@@ -61,7 +60,6 @@ const mockTeam: TeamMember[] = [
   },
 ];
 
-const roleOptions: Role[] = ["Admin", "Member", "Viewer"];
 const inviteRoleOptions: Array<Role | "Manager"> = ["Admin", "Manager", "Member", "Viewer"];
 
 export default function TeamSettings() {
@@ -198,7 +196,7 @@ export default function TeamSettings() {
                   />
                 </FormField>
                 <FormField label="Role assignment" description="Managers are represented as a planned role in this preview state.">
-                  <NativeSelect value={inviteRole} onChange={(e) => setInviteRole(e.target.value as Role | "Manager")}> 
+                  <NativeSelect value={inviteRole} onChange={(e) => setInviteRole(e.target.value as Role | "Manager")}>
                     {inviteRoleOptions.map((role) => (
                       <option key={role} value={role}>
                         {role}
