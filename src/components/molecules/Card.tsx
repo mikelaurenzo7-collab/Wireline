@@ -66,8 +66,12 @@ const CardHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement
 );
 CardHeader.displayName = "CardHeader";
 
-const CardTitle = ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h3 data-slot="card-title" className={cn("font-semibold leading-none tracking-tight", className)} {...props} />
+/**
+ * Intentionally remains a div: consumers choose their own heading level and
+ * the compatibility implementation historically rendered a div here.
+ */
+const CardTitle = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div data-slot="card-title" className={cn("font-semibold leading-none tracking-tight", className)} {...props} />
 );
 CardTitle.displayName = "CardTitle";
 
