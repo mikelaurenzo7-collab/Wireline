@@ -15,3 +15,4 @@ if (shouldMigrate) {
 }
 
 run("npm", ["run", "build"]);
+run("npx", ["esbuild", "src/routes/chatgpt-mcp-routes.ts", "--platform=node", "--bundle", "--format=cjs", "--outfile=dist/chatgpt-mcp.cjs"]);
