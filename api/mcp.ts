@@ -1,9 +1,9 @@
 import { createRequire } from "node:module";
-import express from "express";
+import express, { type Router } from "express";
 import { AppError, formatErrorResponse } from "../src/lib/api-error";
 
 const require = createRequire(import.meta.url);
-const mcpBundle = require("../dist/chatgpt-mcp.cjs") as { default?: express.Router } | express.Router;
+const mcpBundle = require("../dist/chatgpt-mcp.cjs") as { default?: Router } | Router;
 const chatgptMcpRouter = "default" in mcpBundle ? mcpBundle.default : mcpBundle;
 
 const app = express();
