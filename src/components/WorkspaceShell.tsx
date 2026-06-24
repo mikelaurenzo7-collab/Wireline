@@ -8,9 +8,11 @@ import {
   LayoutDashboard,
   Menu,
   PenLine,
+  Search,
   Settings,
   X,
 } from "lucide-react";
+import { Button } from "./atoms";
 import WirelineMark from "./brand/WirelineMark";
 
 const primaryNavigation = [
@@ -98,6 +100,10 @@ export default function WorkspaceShell({
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [drawerOpen]);
+
+  function openCommandPalette() {
+    window.dispatchEvent(new Event("wireline:open-command-bar"));
+  }
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
@@ -194,11 +200,20 @@ export default function WorkspaceShell({
                 <h1 className="wl-app-page-title mt-1 truncate">{title}</h1>
               </div>
             </div>
-            {action ? (
-              <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                {action}
-              </div>
-            ) : null}
+            <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Open command palette"
+                title="Open command palette"
+                onClick={openCommandPalette}
+                className="size-9 min-h-9 min-w-9 text-muted-foreground hover:text-foreground"
+              >
+                <Search aria-hidden="true" className="size-4" />
+              </Button>
+              {action}
+            </div>
           </header>
           <div
             className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${

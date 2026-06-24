@@ -42,7 +42,7 @@ src/components/
 | Molecule | `SearchField` | Complete | Search affordance with predictable clear behavior |
 | Molecule | `MetricCard` | Complete | Operational metric with contextual trend |
 | Organism | `PageShell` | Registered | Responsive page anatomy and tabs |
-| Organism | `CommandBar` | Registered | Global navigation and command entry |
+| Organism | `CommandBar` | Complete | Mounted workspace command palette with route-safe navigation and keyboard contract |
 
 ## Completed Adoption Waves
 
@@ -67,6 +67,12 @@ src/components/
 - Connections uses canonical Button, Badge, NativeSelect, EmptyState, and Skeleton patterns around its domain-specific permission rows.
 - Knowledge uses canonical EmptyState, Button, and NativeSelect patterns for its first-run and agent-context states.
 
+### Command palette and workspace shell
+
+- CommandBar is mounted once for authenticated workspace routes and is available from every workspace header as well as `⌘/Ctrl+K`.
+- The command registry is limited to current routes and supported assistant-creation flows; redirect-only and retired destinations are excluded.
+- Search owns selection and execute keys, the dialog owns its two-control Tab loop, and focus returns to the invoking element on close.
+
 ## Adoption Order
 
 ### 1. New work — mandatory now
@@ -77,11 +83,11 @@ src/components/
 
 ### 2. High-traffic migrations — next
 
-1. Command palette / command bar
-2. Page shells and route headers that still own duplicate action controls
-3. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
-4. Training and advanced configuration panels
-5. Admin and long-tail configuration panels
+1. Page shells and route headers that still own duplicate action controls
+2. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
+3. Training and advanced configuration panels
+4. Admin and long-tail configuration panels
+5. Visual QA and accessibility validation across desktop, laptop, and mobile viewport tiers
 
 ### 3. Deliberate exceptions
 
@@ -98,7 +104,8 @@ src/components/
 - legacy compatibility paths route to canonical atoms;
 - source-root alias and public barrel contracts remain valid;
 - semantic feedback tokens are present;
-- high-traffic consumer adoption remains real rather than aspirational.
+- high-traffic consumer adoption remains real rather than aspirational;
+- the mounted command palette stays keyboard-correct and route-accurate.
 
 The guardrail grows after each adoption wave. Turning every legacy import into a hard failure before its route is safely migrated creates false urgency and encourages unsafe bulk rewrites.
 
