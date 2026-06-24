@@ -2,16 +2,16 @@
 
 ## Decision
 
-Wireline will use a pragmatic atomic design system, not a folder taxonomy for its own sake. The purpose is to create **one canonical implementation** for recurring interaction patterns while retaining stable compatibility import paths during the transition.
+Wireline uses a pragmatic atomic design system, not a folder taxonomy for its own sake. The purpose is to create **one canonical implementation** for recurring interaction patterns while retaining stable compatibility import paths during the transition.
 
 The previous migration created the initial `atoms/` directory and documented the intended hierarchy. This document is the execution contract for completing it safely.
 
 ## Current Architecture
 
-```
+```text
 src/components/
-├── atoms/       # canonical primitives and their variants
-├── molecules/   # reusable combinations with a single interaction purpose
+├── atoms/       # canonical primitives and finite visual variants
+├── molecules/   # reusable combinations with one interaction purpose
 ├── organisms/   # route-level interface sections
 ├── ui/shadcn/   # compatibility import paths during migration
 └── …            # established product/domain components
@@ -19,75 +19,97 @@ src/components/
 
 ### Non-negotiable rules
 
-1. **One canonical primitive per interaction.** `Button`, `Input`, `Badge`, and `HelpTooltip` live in `atoms/`. Legacy paths re-export the atom; they do not fork it.
+1. **One canonical primitive per interaction.** Button, Input, Textarea, NativeSelect, Badge, Skeleton, and HelpTooltip live in `atoms/`. Legacy paths re-export the atom; they do not fork it.
 2. **Variants live in `cva`.** Semantic options are typed, discoverable, and testable. Call-site `className` is for layout or a local exception, not for reimplementing a variant.
-3. **Accessibility is part of the component contract.** Focus visibility, keyboard operation, invalid states, and screen-reader labeling are default behavior.
-4. **Migration is additive first.** New and materially changed surfaces import canonical atoms. Legacy surfaces migrate only when adjacent work makes the change low-risk.
+3. **Accessibility is part of the component contract.** Focus visibility, keyboard operation, invalid states, labels, descriptions, and screen-reader status are default behavior.
+4. **Migration is additive first.** New and materially changed surfaces import canonical atoms. Legacy surfaces migrate when adjacent work makes the change low-risk.
 5. **Do not create abstractions without repeated evidence.** A molecule must solve a recurring interaction problem, not merely wrap markup.
 
 ## Canonical Inventory
 
 | Layer | Canonical component | Status | Primary responsibility |
 | --- | --- | --- | --- |
-| Atom | `Button` | Complete | Semantic action variants, `asChild`, focus and disabled states |
+| Atom | `Button` | Complete | Semantic actions, `asChild`, focus and disabled states |
 | Atom | `Input` | Complete | Typed state variants and invalid semantics |
-| Atom | `Badge` | Complete | Status and metadata treatment |
-| Atom | `Skeleton` | Complete | Loading affordance variants |
+| Atom | `Textarea` | Complete | Long-form text input, resize, and invalid semantics |
+| Atom | `NativeSelect` | Complete | Simple, native keyboard-selectable choices |
+| Atom | `Badge` | Complete | Semantic status and metadata treatment |
+| Atom | `Skeleton` | Complete | Text, circle, and surface loading affordances |
 | Atom | `EmptyState` | Complete | Empty-result framing |
 | Atom | `Toast` | Complete | Notification tone and live-region semantics |
-| Atom | `HelpTooltip` | Transitional | Contextual help; migrate to canonical Radix implementation next |
+| Atom | `HelpTooltip` | Transitional | Contextual help; Radix migration remains a focused follow-up |
 | Molecule | `FormField` | Complete | Label, help, error, and described-by relationship |
 | Molecule | `SearchField` | Complete | Search affordance with predictable clear behavior |
 | Molecule | `MetricCard` | Complete | Operational metric with contextual trend |
 | Organism | `PageShell` | Registered | Responsive page anatomy and tabs |
 | Organism | `CommandBar` | Registered | Global navigation and command entry |
 
+## Completed Adoption Waves
+
+### Primitive compatibility closure
+
+- `ShadButton`, `Input`, `Badge`, `Skeleton`, and `Textarea` now delegate to canonical atoms where the interaction is equivalent.
+- Source-root aliases support both the historic `@/src/...` and concise `@/...` forms without root-level shims.
+
+### Operational feedback and roster
+
+- Foundation now defines semantic foreground, surface, and border tokens for success, warning, error, and info states.
+- Assistants uses canonical Button, Badge, Skeleton, and MetricCard patterns for creation, readiness, loading, and roster summaries.
+
+### Inbox and create-agent workflow
+
+- Inbox uses canonical SearchField, Badge, Button, EmptyState, and Skeleton patterns while retaining its existing API lifecycle and outcome controls.
+- Studio’s create-agent dialog uses FormField, Input, Textarea, NativeSelect, and Button without changing agent creation, browser-context prefill, or training extraction behavior.
+
 ## Adoption Order
 
 ### 1. New work — mandatory now
 
 - Import primitives from `@/components/atoms`.
-- Prefer `FormField`, `SearchField`, and `MetricCard` when the interaction matches.
-- Import `PageShell` and `CommandBar` from `@/components/organisms` in new route-level work.
+- Prefer FormField, SearchField, and MetricCard when the interaction matches.
+- Import PageShell and CommandBar from `@/components/organisms` in new route-level work.
 
 ### 2. High-traffic migrations — next
 
-1. Command palette / command bar
-2. Page shells and route headers
-3. Agent Studio forms, cards, and empty states
-4. Inbox, conversation, and data-heavy surfaces
+1. Connections and Knowledge route actions, setup states, and configuration forms
+2. Command palette / command bar
+3. Page shells and route headers that still own duplicate action controls
+4. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
 5. Admin and long-tail configuration panels
 
 ### 3. Deliberate exceptions
 
 - Domain components may keep local layout classes.
-- A third-party primitive can remain in `ui/shadcn` only when it is not yet a Wireline canonical atom.
+- Radix Select may remain in `ui/shadcn` when a non-native, composable selection pattern is genuinely required.
 - Visual experiments belong behind isolated components, not extra global CSS utility families.
+- A generic DataTable or ListDetailShell is deferred until two live consumers share the same keyboard and responsive contract.
 
 ## Quality Gate
 
-`npm run design:contract` validates the migration invariants:
+`npm run design:contract` validates migration invariants:
 
-- canonical high-value atoms use `cva`;
-- atoms expose stable `data-slot` hooks;
-- legacy Button and Input paths are compatibility re-exports.
+- canonical high-value atoms use `cva` and expose stable `data-slot` hooks;
+- legacy compatibility paths route to canonical atoms;
+- source-root alias and public barrel contracts remain valid;
+- semantic feedback tokens are present;
+- high-traffic consumer adoption remains real rather than aspirational.
 
-This is intentionally narrow at first. Broaden the guardrail only after each adoption wave lands; turning all existing imports into a hard failure before they are migrated creates false urgency and encourages unsafe bulk rewrites.
+The guardrail grows after each adoption wave. Turning every legacy import into a hard failure before its route is safely migrated creates false urgency and encourages unsafe bulk rewrites.
 
 ## Definition of Done
 
 The migration is complete when:
 
 - all repeated app-wide interactions have one canonical atom or molecule;
-- no two live implementations define the same Button/Input/Badge/Tooltip behavior;
-- all changed routes use the canonical entry points;
+- no two live implementations define the same Button, Input, Textarea, Badge, Skeleton, or Tooltip behavior;
+- all changed routes use canonical entry points;
 - targeted visual QA covers desktop, laptop, and mobile widths;
 - keyboard and screen-reader behavior are validated for dialogs, menus, tabs, forms, and destructive actions;
 - `design:contract`, type checking, tests, build, and visual QA pass.
 
 ## Governance
 
-- Every new component PR must declare its layer: atom, molecule, organism, or domain component.
+- Every new component PR declares its layer: atom, molecule, organism, or domain component.
 - A new variant requires an explicit semantic use case; do not add variants for one-off colors or spacing.
 - Compatibility exports are removed only after repository-wide import migration and a release window.
 - Design-system changes require at least one consumer adoption in the same pull request.
