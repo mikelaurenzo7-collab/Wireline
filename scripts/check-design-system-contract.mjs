@@ -164,6 +164,26 @@ assertIncludes(
   "must use the canonical select for permissions workspace agent choice.",
 );
 assertIncludes(
+  "src/components/ActionsWorkspace.tsx",
+  /StatusNotice/,
+  "must use canonical notices for permission persistence feedback.",
+);
+assertIncludes(
+  "src/components/ActionsWorkspace.tsx",
+  /Permissions saved\./,
+  "must provide an explicit permission-save confirmation.",
+);
+assertIncludes(
+  "src/components/ActionsWorkspace.tsx",
+  /Saving permission changes/,
+  "must provide an explicit saving state while persistence is active.",
+);
+assertExcludes(
+  "src/components/ActionsWorkspace.tsx",
+  /CircleAlert/,
+  "must not retain bespoke permission error notice markup.",
+);
+assertIncludes(
   "src/pages/OverviewPage.tsx",
   /StatusNotice/,
   "must use the canonical status notice for degraded workspace state.",

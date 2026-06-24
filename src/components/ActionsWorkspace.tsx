@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Check, CircleAlert, CircleDot, Loader2, Sparkles } from "lucide-react";
+import { Check, CircleDot, Loader2, Sparkles } from "lucide-react";
 import { authFetch, safeJson } from "../lib/api";
 import { useAgents } from "../contexts/AgentsContext";
 import { AGENT_TOOL_CATALOG, type AgentToolName } from "../lib/agent-capabilities";
 import { WORKSPACE_INTEGRATION_CATALOG } from "../lib/workspace-integration-catalog";
 import { Badge, Button, EmptyState, NativeSelect, Skeleton } from "./atoms";
+import { StatusNotice } from "./molecules";
 
 type ConnectionStatus = Record<string, { connected?: boolean }>;
 type Tool = (typeof AGENT_TOOL_CATALOG)[number];
@@ -106,10 +107,14 @@ function ToolGroup({
     <section className="studio-card p-5">
       <header className="flex items-center justify-between gap-3 border-b border-border pb-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-md)] bg-muted text-muted-foreground"><CircleDot size={16} /></span>
+          <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-md)] bg-muted text-muted-foreground">
+            <CircleDot size={16} />
+          </span>
           <h3 className="wl-card-title text-base">{title}</h3>
         </div>
-        <Badge variant="info" className="shrink-0 text-[10px] uppercase tracking-[.06em]">{activeCount} on</Badge>
+        <Badge variant="info" className="shrink-0 text-[10px] uppercase tracking-[.06em]">
+          {activeCount} on
+        </Badge>
       </header>
       <div className="mt-4 space-y-1">
         {tools.map((tool) => {
@@ -260,7 +265,8 @@ export default function ActionsWorkspace() {
     );
   }
 
-  const noticeVariant = saveState === "error" ? "destructive" : "warning";
+  const noticeTone = saveState === "error" ? "destructive" : "warning";
+  const noticeTitle = saveState === "error" ? "Permissions were not saved." : "Permissions need attention.";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -279,10 +285,14 @@ export default function ActionsWorkspace() {
       </div>
 
       {notice ? (
-        <div className={`mb-5 flex items-start gap-3 rounded-[var(--radius-lg)] border px-4 py-3 text-sm text-foreground ${saveState === "error" ? "border-[var(--wl-error-border)] bg-[var(--wl-error-surface)]" : "border-[var(--wl-warning-border)] bg-[var(--wl-warning-surface)]"}`} role={saveState === "error" ? "alert" : "status"}>
-          <CircleAlert className={`mt-0.5 size-4 shrink-0 ${saveState === "error" ? "text-[var(--wl-error)]" : "text-[var(--wl-warning)]"}`} />
-          <p>{notice}</p>
-        </div>
+        <StatusNotice className="mb-5" tone={noticeTone} title={noticeTitle}>
+          {notice}
+        </StatusNotice>
+      ) : null}
+      {saveState === "saved" ? (
+        <StatusNotice className="mb-5" tone="success" title="Permissions saved.">
+          {selectedAgent?.name || "This assistant"} can now use the selected actions.
+        </StatusNotice>
       ) : null}
 
       <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,.75fr)] lg:gap-6">
@@ -304,7 +314,7 @@ export default function ActionsWorkspace() {
             </details>
           ) : null}
           <p className="mt-4 inline-flex min-h-5 items-center gap-2 wl-overline" role="status" aria-live="polite">
-            {saveState === "saving" ? <><Loader2 size={14} className="animate-spin" /> Saving changes</> : saveState === "saved" ? <><Check size={14} className="text-primary" /> Changes saved</> : ""}
+            {saveState === "saving" ? <><Loader2 size={14} className="animate-spin" /> Saving permission changes</> : ""}
           </p>
         </section>
 
