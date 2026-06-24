@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   ChevronDown,
   Mail,
   Plus,
-  ShieldAlert,
   ShieldCheck,
   UserPlus,
   X,
 } from "lucide-react";
+
+import { Badge, Button, Input, NativeSelect } from "../components/atoms";
+import { FormField, StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 type Role = "Owner" | "Admin" | "Member" | "Viewer";
@@ -58,16 +60,19 @@ const mockTeam: TeamMember[] = [
   },
 ];
 
+const inviteRoleOptions: Array<Role | "Manager"> = ["Admin", "Manager", "Member", "Viewer"];
+
 export default function TeamSettings() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<Role | "Manager">("Admin");
 
-  const handleInvite = (e: React.FormEvent) => {
+  const handleInvite = (e: FormEvent) => {
     e.preventDefault();
     if (inviteEmail) {
-      // Stub: send invite
       setIsInviteOpen(false);
       setInviteEmail("");
+      setInviteRole("Admin");
     }
   };
 
@@ -77,43 +82,41 @@ export default function TeamSettings() {
       title="Team & roster"
       contentClassName="pt-6"
       action={
-        <Link to="/settings" className="studio-secondary-button">
-          <ArrowLeft size={16} />
-          Back to settings
-        </Link>
+        <Button asChild variant="secondary" size="sm">
+          <Link to="/settings">
+            <ArrowLeft size={16} />
+            Back to settings
+          </Link>
+        </Button>
       }
     >
       <div className="min-h-0 flex-1 pb-12">
         <div className="mx-auto max-w-[920px] space-y-8">
-          {/* Top Info Card */}
           <div className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[color:var(--wl-line-strong)] bg-[#F8F9FF] px-2.5 py-1 text-xs font-medium text-[color:var(--wl-brand-primary)]">
+              <Badge variant="info">
                 <ShieldCheck size={14} />
-                Business Workspace
-              </div>
-              <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">
+                Business workspace
+              </Badge>
+              <h2 className="mt-3 text-[20px] font-semibold tracking-[-.01em] text-foreground">
                 Manage your business roster
               </h2>
               <p className="mt-1 text-[14px] text-muted-foreground">
                 Provision seats, assign roles, and control access to your automated business agents.
               </p>
             </div>
-            <button
-              onClick={() => setIsInviteOpen(true)}
-              className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[color:var(--wl-brand-primary)] px-4 text-sm font-medium text-white transition-all hover:bg-[color:var(--wl-brand-primary-press)] hover:shadow-md active:scale-[0.98]"
-            >
+            <Button type="button" onClick={() => setIsInviteOpen(true)}>
               <UserPlus size={16} />
               Invite Member
-            </button>
+            </Button>
           </div>
 
-          {/* Roster Table */}
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-            <div className="border-b border-border bg-muted/40 px-6 py-4">
-              <h3 className="font-semibold text-foreground">
-                Active Members ({mockTeam.filter((m) => m.status === "Active").length})
-              </h3>
+            <div className="flex items-center justify-between border-b border-border bg-muted/40 px-6 py-4">
+              <h3 className="font-semibold text-foreground">Workspace roster</h3>
+              <Badge variant="outline">
+                {mockTeam.filter((member) => member.status === "Active").length} active
+              </Badge>
             </div>
 
             <div className="divide-y divide-border">
@@ -130,9 +133,7 @@ export default function TeamSettings() {
                       <p className="text-sm font-medium text-foreground">
                         {member.name}{" "}
                         {member.role === "Owner" && (
-                          <span className="ml-2 text-xs font-normal text-muted-foreground">
-                            (You)
-                          </span>
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">(You)</span>
                         )}
                       </p>
                       <p className="text-[13px] text-muted-foreground">{member.email}</p>
@@ -141,19 +142,17 @@ export default function TeamSettings() {
 
                   <div className="flex items-center gap-4">
                     {member.status === "Pending" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                      <Badge variant="warning">
                         <Mail size={12} />
                         Invited
-                      </span>
+                      </Badge>
+                    ) : member.role === "Owner" ? (
+                      <Badge variant="success">Owner</Badge>
                     ) : (
-                      <div className="relative group">
-                        <button className="inline-flex h-8 items-center gap-2 rounded-md border border-transparent bg-transparent px-3 text-sm font-medium text-foreground transition-colors hover:border-border hover:bg-muted active:scale-[0.98]">
-                          {member.role}
-                          {member.role !== "Owner" && (
-                            <ChevronDown size={14} className="text-muted-foreground" />
-                          )}
-                        </button>
-                      </div>
+                      <Button type="button" variant="ghost" size="sm" className="px-3">
+                        {member.role}
+                        <ChevronDown size={14} className="text-muted-foreground" />
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -161,79 +160,59 @@ export default function TeamSettings() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-[color:var(--wl-line-strong)] bg-[#F8F9FF] p-5">
-            <div className="flex items-start gap-3">
-              <ShieldAlert className="mt-0.5 text-[color:var(--wl-brand-primary)]" size={18} />
-              <div>
-                <h4 className="text-sm font-medium text-[color:var(--wl-brand-primary)]">
-                  Role-based Access Control (RBAC) Active
-                </h4>
-                <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                  Your business agents contain sensitive client data and routing protocols. Ensure
-                  you only provision <strong>Admin</strong> or <strong>Manager</strong> access to
-                  trusted operational leaders.
-                </p>
-              </div>
-            </div>
-          </div>
+          <StatusNotice tone="warning" title="Role-based access control is active.">
+            Your business agents may handle sensitive client data and routing policies. Provision elevated access only to trusted operators who should be able to manage those workflows.
+          </StatusNotice>
         </div>
       </div>
 
-      {/* Invite Modal (Overlay) */}
       {isInviteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="w-full max-w-md animate-in fade-in zoom-in-95 rounded-xl border border-border bg-card p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-semibold text-foreground">Invite to Workspace</h3>
-              <button
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Invite to workspace</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Choose an email and assign the right level of access.</p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setIsInviteOpen(false)}
-                className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                aria-label="Close invite dialog"
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             <form onSubmit={handleInvite}>
               <div className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Email address
-                  </label>
-                  <input
+                <FormField label="Email address" required>
+                  <Input
                     type="email"
                     required
                     placeholder="colleague@company.com"
-                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:border-[color:var(--wl-brand-primary)] focus:outline-none focus:ring-1 focus:ring-[color:var(--wl-brand-primary)]"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                   />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Role assignment
-                  </label>
-                  <select className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:border-[color:var(--wl-brand-primary)] focus:outline-none focus:ring-1 focus:ring-[color:var(--wl-brand-primary)]">
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Member">Member</option>
-                    <option value="Viewer">Viewer</option>
-                  </select>
-                </div>
+                </FormField>
+                <FormField label="Role assignment" description="Managers are represented as a planned role in this preview state.">
+                  <NativeSelect value={inviteRole} onChange={(e) => setInviteRole(e.target.value as Role | "Manager")}>
+                    {inviteRoleOptions.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </FormField>
               </div>
               <div className="mt-8 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsInviteOpen(false)}
-                  className="h-10 rounded-md px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Button type="button" variant="secondary" onClick={() => setIsInviteOpen(false)}>
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[color:var(--wl-brand-primary)] px-4 text-sm font-medium text-white transition-all hover:bg-[color:var(--wl-brand-primary-press)] active:scale-[0.98]"
-                >
+                </Button>
+                <Button type="submit">
                   <Plus size={16} />
                   Send Invitation
-                </button>
+                </Button>
               </div>
             </form>
           </div>

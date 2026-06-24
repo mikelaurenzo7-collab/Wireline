@@ -208,6 +208,41 @@ assertIncludes(
   /Textarea/,
   "must use the canonical textarea for long-form knowledge entries.",
 );
+assertIncludes(
+  "src/pages/BillingSettings.tsx",
+  /Button asChild/,
+  "must use the canonical back action in billing settings.",
+);
+assertIncludes(
+  "src/pages/BillingSettings.tsx",
+  /StatusNotice/,
+  "must use the canonical billing information notice.",
+);
+assertIncludes(
+  "src/pages/ClientAppsPage.tsx",
+  /Badge variant=/,
+  "must use canonical status badges for client-surface readiness.",
+);
+assertIncludes(
+  "src/pages/ClientAppsPage.tsx",
+  /StatusNotice/,
+  "must use the canonical privacy notice surface.",
+);
+assertIncludes(
+  "src/pages/TeamSettings.tsx",
+  /FormField/,
+  "must use canonical form fields in the invite workflow.",
+);
+assertIncludes(
+  "src/pages/TeamSettings.tsx",
+  /NativeSelect/,
+  "must use the canonical select for invite role assignment.",
+);
+assertIncludes(
+  "src/pages/TeamSettings.tsx",
+  /StatusNotice/,
+  "must use the canonical RBAC notice.",
+);
 assertExcludes(
   "src/pages/SettingsPage.tsx",
   /to="\/(security|support)"/,

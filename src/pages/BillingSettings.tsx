@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, CreditCard, Receipt, ShieldCheck } from "lucide-react";
+
+import { Button } from "../components/atoms";
+import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import StripeBillingCard from "../components/StripeBillingCard";
 import ConversationBalanceCard from "../components/ConversationBalanceCard";
@@ -12,10 +15,12 @@ export default function BillingSettings() {
       title="Billing & plans"
       contentClassName="pt-6"
       action={
-        <Link to="/settings" className="studio-secondary-button">
-          <ArrowLeft size={16} />
-          Back to Settings
-        </Link>
+        <Button asChild variant="secondary" size="sm">
+          <Link to="/settings">
+            <ArrowLeft size={16} />
+            Back to Settings
+          </Link>
+        </Button>
       }
     >
       <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-6 pb-6">
@@ -27,9 +32,7 @@ export default function BillingSettings() {
                 <ShieldCheck className="size-4" />
                 Payments
               </div>
-              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-                PCI DSS via Stripe
-              </p>
+              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">PCI DSS via Stripe</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Subscriptions and Conversation Balance top-ups are vaulted by Stripe.
               </p>
@@ -39,9 +42,7 @@ export default function BillingSettings() {
                 <CreditCard className="size-4 text-primary" />
                 Personal assistants
               </div>
-              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-                Pay as you go
-              </p>
+              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">Pay as you go</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Free to build. Add balance only when you want live conversations handled.
               </p>
@@ -51,9 +52,7 @@ export default function BillingSettings() {
                 <Receipt className="size-4 text-primary" />
                 Business agents
               </div>
-              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-                Monthly plans
-              </p>
+              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">Monthly plans</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Numbers, routing, and team tools — upgrade or cancel anytime in the Stripe portal.
               </p>
@@ -73,16 +72,9 @@ export default function BillingSettings() {
           <StripeBillingCard />
         </section>
 
-        <section className="studio-card">
-          <h3 className="flex items-center gap-2 font-[var(--wl-font-display)] text-base font-semibold text-foreground">
-            <Receipt className="size-4 text-primary" />
-            Invoices & receipts
-          </h3>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Past invoices and usage receipts are available in the secure Stripe billing portal. Update
-            payment methods, download PDFs, or change your plan without leaving Wireline.
-          </p>
-        </section>
+        <StatusNotice tone="info" title="Invoices & receipts">
+          Past invoices and usage receipts are available in the secure Stripe billing portal. Update payment methods, download PDFs, or change your plan without leaving Wireline.
+        </StatusNotice>
       </div>
     </WorkspaceShell>
   );
