@@ -20,7 +20,7 @@ const settingsDestinations = [
     action: "Manage team",
   },
   {
-    href: "/connections",
+    href: "/actions",
     icon: Cable,
     label: "Connections",
     description: "Review the accounts and tools your assistants are allowed to use.",
@@ -63,7 +63,7 @@ export default function SettingsPage() {
               <span className="wl-stitch-status-pill">Secure session</span>
               <button type="button" onClick={handleSignOut} disabled={signingOut} className="studio-secondary-button shrink-0">
                 <LogOut size={16} />
-                {signingOut ? "Signing out…" : "Sign out"}
+                {signingOut ? "Signing out..." : "Sign out"}
               </button>
             </div>
           </div>
@@ -74,7 +74,7 @@ export default function SettingsPage() {
           <div className="mb-4 max-w-2xl">
             <p className="studio-kicker">Workspace controls</p>
             <h2 className="wl-section-title mt-2">The controls that shape how Wireline works.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Keep the operating details—people, money, and connected systems—clear and intentionally scoped.</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Keep the operating details, people, money, and connected systems clear and intentionally scoped.</p>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {settingsDestinations.map(({ href, icon: Icon, label, description, action }) => (
