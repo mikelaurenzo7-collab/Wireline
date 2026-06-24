@@ -1,56 +1,54 @@
-/*
- * Wireline Design Tokens — TypeScript manifest and strategy layer.
- *
- * Role in token management:
- * - Authoritative reference for token categories, scaling strategy, and usage guidance.
- * - TypeScript DX layer paired with the live CSS custom property runtime.
- * - Foundation for future export pipelines such as DTCG JSON or Style Dictionary.
- *
- * Governance:
- * - Keep this manifest aligned with the CSS runtime token layer.
- * - Prefer semantic naming, strong contrast, and restrained operator-grade surfaces.
- * - When runtime values change, update this manifest so the repo does not drift.
- */
+import { wirelineTokenValues as token } from "./generated-design-tokens";
 
+/*
+ * Wireline Design Tokens — compatibility manifest and strategy layer.
+ *
+ * Source of truth: design-tokens/wireline.tokens.json
+ * Generated runtime artifacts: src/styles/tokens.generated.css and
+ * src/constants/generated-design-tokens.ts.
+ *
+ * This compatibility object intentionally retains existing imports while
+ * redirecting color decisions to stable semantic token paths.
+ */
 export const BRAND = {
   colors: {
-    primary: "#5D3FD3",
-    primaryVariant: "#451EBB",
-    onPrimary: "#FFFFFF",
+    primary: token["color.action.primary.default"],
+    primaryVariant: token["color.action.primary.pressed"],
+    onPrimary: token["color.text.onAction"],
 
-    surface: "#FFFFFF",
-    surfaceContainerLowest: "#FFFFFF",
-    surfaceContainerLow: "#F1F5F9",
-    surfaceContainer: "#E5EEFF",
-    surfaceContainerHigh: "#DCE9FF",
-    surfaceContainerHighest: "#D3E4FE",
+    surface: token["color.surface.default"],
+    surfaceContainerLowest: token["color.surface.default"],
+    surfaceContainerLow: token["color.surface.subtle"],
+    surfaceContainer: token["color.surface.container"],
+    surfaceContainerHigh: token["color.surface.strong"],
+    surfaceContainerHighest: token["color.surface.strong"],
 
-    onSurface: "#0F172A",
-    onSurfaceVariant: "#334155",
-    onSurfaceMuted: "#475569",
+    onSurface: token["color.text.primary"],
+    onSurfaceVariant: token["color.text.secondary"],
+    onSurfaceMuted: token["color.text.secondary"],
 
-    outline: "#94A3B8",
-    outlineVariant: "#CBD5E1",
-    line: "#CBD5E1",
+    outline: token["color.border.strong"],
+    outlineVariant: token["color.border.default"],
+    line: token["color.border.default"],
 
-    success: "#166534",
-    warning: "#854D0E",
-    error: "#991B1B",
+    success: token["color.status.success"],
+    warning: token["color.status.warning"],
+    error: token["color.status.error"],
   },
 
   spacing: {
-    base: "4px",
-    scale: "multiplicative + fluid clamp()",
+    base: token["space.050"],
+    scale: "semantic 4px rhythm with fluid layout allowances",
     strategy:
-      "Strict 4px rhythm with fluid scaling for layout, typography, and responsive spacing.",
-    component: "16px | 24px",
+      "Strict semantic spacing steps with fluid layout only where a route needs responsive breathing room.",
+    component: `${token["space.200"]} | ${token["space.300"]}`,
     section: "clamp(3rem, 2rem + 5vw, 6rem)",
   },
 
   typography: {
-    display: "Hanken Grotesk — sharp display typography for Wireline headings",
-    body: "Inter — neutral, highly legible interface copy",
-    mono: "JetBrains Mono — metadata, status, and technical labels",
+    display: `${token["font.family.display"]} — sharp display typography for Wireline headings`,
+    body: `${token["font.family.body"]} — neutral, highly legible interface copy`,
+    mono: `${token["font.family.mono"]} — metadata, status, and technical labels`,
     scale: "Fluid modular steps with clamp() for responsive hierarchy",
     headingStrategy:
       "Short, single-layer headings only. Concise and purposeful across the app shell.",
@@ -65,19 +63,19 @@ export const BRAND = {
   },
 
   radius: {
-    base: "4px",
-    sm: "4px",
-    md: "8px",
-    lg: "12px",
-    xl: "16px",
-    pill: "999px",
-    note: "AGENTS.md: 4px inputs/controls, 8px standard cards/buttons, 12px larger modals/panels. Pills for status and avatars only.",
+    base: token["radius.sm"],
+    sm: token["radius.sm"],
+    md: token["radius.lg"],
+    lg: token["radius.xl"],
+    xl: token["radius.xl"],
+    pill: token["radius.pill"],
+    note: "4px inputs/controls, 8px standard cards/buttons, 16px larger panels. Pills remain reserved for status and avatars.",
   },
 
   accessibility: {
-    contrastStandard: "WCAG 2.2 AAA (7:1 normal, 4.5:1 large)",
+    contrastStandard: "WCAG 2.2 AA minimum; target AAA where content and brand constraints permit.",
     dynamicApproach: "Static high-contrast baseline with room for future perceptual tooling.",
-    targetSize: "Minimum 24×24px for interactive elements",
+    targetSize: "Minimum 24×24px for compact controls; 44px target for primary touch actions.",
     reducedMotion: "Respect prefers-reduced-motion globally",
   },
 
@@ -87,9 +85,9 @@ export const BRAND = {
   },
 
   governance:
-    "Changes require review against Wireline brand direction, accessibility, and runtime consistency.",
+    "Changes require a semantic-token review, accessibility validation, generated artifact refresh, and consumer adoption in the same pull request.",
   pipeline:
-    "Current: manual sync. Future: shared token source with generated CSS, TS, and design-tool outputs.",
+    "DTCG-style JSON source -> dependency-free generator -> CSS custom properties and typed TypeScript. Native adapters follow once their consumers are active.",
 } as const;
 
 export type BrandTokenCategory = keyof typeof BRAND;
