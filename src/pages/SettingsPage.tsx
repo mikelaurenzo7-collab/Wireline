@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Cable, CircleAlert, CreditCard, LogOut, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRight, Cable, CircleAlert, CreditCard, LogOut, MonitorDown, ShieldCheck, UsersRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,6 +25,13 @@ const settingsDestinations = [
     label: "Connections",
     description: "Review the accounts and tools your assistants are allowed to use.",
     action: "Review connections",
+  },
+  {
+    href: "/settings/apps",
+    icon: MonitorDown,
+    label: "Wireline everywhere",
+    description: "Access the browser companion, native apps, and ChatGPT connection from one clear place.",
+    action: "View client apps",
   },
 ] as const;
 
@@ -74,9 +81,9 @@ export default function SettingsPage() {
           <div className="mb-4 max-w-2xl">
             <p className="studio-kicker">Workspace controls</p>
             <h2 className="wl-section-title mt-2">The controls that shape how Wireline works.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Keep the operating details, people, money, and connected systems clear and intentionally scoped.</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Keep the operating details, people, money, connected systems, and companion surfaces clear and intentionally scoped.</p>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {settingsDestinations.map(({ href, icon: Icon, label, description, action }) => (
               <Link key={href} to={href} className="studio-card wl-card-action group flex min-h-[210px] flex-col p-5">
                 <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary"><Icon size={19} /></span>
