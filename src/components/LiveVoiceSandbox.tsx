@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { AudioLines, Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
+
 import { authFetch } from "../lib/api";
+import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
 type Session = { token: string; endpoint: string; session: Record<string, unknown>; greeting: string };
 type Line = { id: string; role: "You" | "Assistant"; text: string };
+
+type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
 const RATE = 24_000;
 const STREAM_CHUNK_SAMPLES = 2_400;
@@ -47,8 +51,17 @@ function decodePcm(input: string) {
   return new Int16Array(bytes.buffer);
 }
 
+function voiceActivity(state: VoiceState) {
+  if (state === "error") return { state: "failed" as const, title: "Live voice needs attention", detail: "The test stopped before the conversation could continue." };
+  if (state === "connecting") return { state: "pending" as const, title: "Connecting live voice", detail: "Setting up a private browser session for this assistant." };
+  if (state === "thinking") return { state: "active" as const, title: "Checking approved knowledge", detail: "Wireline is using only the assistant’s approved tools and context." };
+  if (state === "speaking") return { state: "active" as const, title: "Assistant speaking", detail: "You can interrupt naturally at any time." };
+  if (state === "listening") return { state: "complete" as const, title: "Listening", detail: "Microphone audio is streaming to this private live test." };
+  return { state: "pending" as const, title: "Ready for a private live test", detail: "Start a test to speak with this assistant using its configured rules and knowledge." };
+}
+
 export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: string; agentName: string }) {
-  const [state, setState] = useState<"idle" | "connecting" | "listening" | "speaking" | "thinking" | "error">("idle");
+  const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const socket = useRef<WebSocket | null>(null);
@@ -255,9 +268,7 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
       if (type === "response.output_audio.delta" && typeof event.delta === "string") { play(event.delta); setState("speaking"); }
       if (type === "response.output_audio_transcript.delta" && typeof event.delta === "string") appendAssistant(event.delta, "audio");
       if (type === "response.output_text.delta" && typeof event.delta === "string") appendAssistant(event.delta, "text");
-      if (type === "conversation.item.input_audio_transcription.updated") {
-        updateUserTranscript(typeof event.transcript === "string" ? event.transcript : "", event.item_id);
-      }
+      if (type === "conversation.item.input_audio_transcription.updated") updateUserTranscript(typeof event.transcript === "string" ? event.transcript : "", event.item_id);
       if (type === "input_audio_buffer.speech_started") { stopPlayback(); setState("listening"); }
       if (type === "response.done") {
         assistantLineId.current = null;
@@ -341,12 +352,51 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
 
   useEffect(() => () => stop(), []);
   const active = ["connecting", "listening", "speaking", "thinking"].includes(state);
-  const label = state === "connecting" ? "Connecting" : state === "speaking" ? "Assistant speaking" : state === "thinking" ? "Checking approved knowledge" : state === "listening" ? "Listening" : "Ready for a private live test";
+  const activity = voiceActivity(state);
 
-  return <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-    <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="wl-stitch-label">Live voice</p><h3 className="mt-1 font-display text-[20px] font-semibold tracking-[-.02em] text-foreground">Speak with {agentName}</h3><p className="mt-1 max-w-2xl text-[13px] leading-5 text-muted-foreground">A private browser test using this assistant’s rules, facts, voice profile, and pronunciation guidance.</p></div><button type="button" onClick={active ? stop : () => void start()} className={active ? "studio-secondary-button" : "studio-primary-button"}>{state === "connecting" ? <Loader2 size={16} className="animate-spin" /> : active ? <PhoneOff size={16} /> : <Mic size={16} />}{active ? "End live test" : "Start live test"}</button></div>
-    <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 text-[12px] text-muted-foreground"><span className={`h-2 w-2 rounded-full ${state === "error" ? "bg-[color:var(--wl-status-error)]" : active ? "bg-[color:var(--wl-status-active)]" : "bg-muted-foreground/40"}`} /><AudioLines size={15} className="text-primary" /><span>{label}</span></div>
-    <div className="mt-4 min-h-[130px] space-y-3 rounded-lg border border-border bg-secondary p-4">{lines.length ? lines.map((line) => <div key={line.id} className={line.role === "You" ? "ml-auto max-w-[88%] text-right" : "mr-auto max-w-[88%]"}><p className="text-[10px] font-semibold uppercase tracking-[.08em] text-muted-foreground">{line.role === "You" ? "You" : agentName}</p><p className={`mt-1 rounded-lg px-3 py-2 text-[13px] leading-5 ${line.role === "You" ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground"}`}>{line.text}</p></div>) : <div className="grid min-h-[96px] place-items-center text-center"><p className="max-w-md text-[13px] leading-5 text-muted-foreground">Start a test, ask a real question, and interrupt naturally. This safe channel can search approved knowledge but cannot perform external actions.</p></div>}</div>
-    {error ? <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-[color:var(--wl-status-error)] px-3 py-2 text-[12px] text-[color:var(--wl-status-error)]"><span>{error}</span><button type="button" onClick={() => { setError(""); setState("idle"); }} aria-label="Reset live voice" className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary"><RotateCcw size={14} /></button></div> : null}
-  </section>;
+  return (
+    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="wl-stitch-label">Live voice</p>
+          <h3 className="mt-1 font-display text-[20px] font-semibold tracking-[-.02em] text-foreground">Speak with {agentName}</h3>
+          <p className="mt-1 max-w-2xl text-[13px] leading-5 text-muted-foreground">A private browser test using this assistant’s rules, facts, voice profile, and pronunciation guidance.</p>
+        </div>
+        <button type="button" onClick={active ? stop : () => void start()} className={active ? "studio-secondary-button" : "studio-primary-button"}>
+          {state === "connecting" ? <Loader2 size={16} className="animate-spin" /> : active ? <PhoneOff size={16} /> : <Mic size={16} />}
+          {active ? "End live test" : "Start live test"}
+        </button>
+      </div>
+
+      <ConversationActivity className="mt-4" state={activity.state} title={activity.title} detail={activity.detail} icon={<AudioLines aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />} />
+
+      <div className="mt-4 min-h-[130px] space-y-3 rounded-lg border border-border bg-secondary p-4" aria-live="polite" aria-label="Live voice transcript">
+        {lines.length ? lines.map((line) => (
+          <ConversationMessage
+            key={line.id}
+            author={line.role === "You" ? "customer" : "assistant"}
+            channel="voice"
+            label={line.role === "You" ? "You" : agentName}
+          >
+            {line.text}
+          </ConversationMessage>
+        )) : (
+          <div className="grid min-h-[96px] place-items-center text-center">
+            <p className="max-w-md text-[13px] leading-5 text-muted-foreground">Start a test, ask a real question, and interrupt naturally. This safe channel can search approved knowledge but cannot perform external actions.</p>
+          </div>
+        )}
+      </div>
+
+      {error ? (
+        <StatusNotice
+          tone="destructive"
+          className="mt-3"
+          title="Live voice interrupted"
+          action={<button type="button" onClick={() => { setError(""); setState("idle"); }} aria-label="Reset live voice" className="grid h-7 w-7 place-items-center rounded-md hover:bg-secondary"><RotateCcw size={14} /></button>}
+        >
+          {error}
+        </StatusNotice>
+      ) : null}
+    </section>
+  );
 }
