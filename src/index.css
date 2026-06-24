@@ -3,6 +3,7 @@
 @import "./styles/design-system.css";
 @import "./styles/stitch-patterns.css";
 @import "./styles/layout-system-pass.css";
+@import "./styles/route-density-fixes.css";
 @import "./styles/cta-readability.css";
 @import "./styles/workspace-buttons.css";
 @import "./styles/phone-agent-blueprint.css";
