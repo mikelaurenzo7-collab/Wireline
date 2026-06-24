@@ -52,8 +52,8 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(draftServiceSource).toContain("updateAgentDraft");
   });
 
-  it("states the no-launch boundary consistently", () => {
-    expect(rolloutDocs).toContain("No live launch without a separate confirmation inside Wireline.");
+  it("states the account-first no-launch boundary consistently", () => {
+    expect(rolloutDocs).toContain("No agent launch.");
     expect(submissionPacket).toContain("No agent launch.");
     expect(submissionPacket).toContain("No outbound or inbound calling from the ChatGPT app.");
     expect(submissionPacket).toContain("OAuth authorization code flow with PKCE `S256`.");
