@@ -1,11 +1,137 @@
+import "dotenv/config";
+import "express-async-errors";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { IS_PROD, log } from "./src/lib/server-context";
+import { AppError, formatErrorResponse } from "./src/lib/api-error";
+import { normalizeApiErrorResponse } from "./src/middleware/normalize-api-error-response";
+import { assertSameOrigin } from "./src/middleware/same-origin";
+import { installWebhookBodyParsers } from "./src/lib/body-parsers";
+import { buildCSP, buildConnectSrcs, generateCspNonce } from "./src/lib/csp";
+import { getErrorMessage } from "./src/lib/server-utils";
+import { validateStartupEnv } from "./src/lib/startup";
+import { startMemoryCleanup } from "./src/lib/rate-limit";
+import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
+import { registerApiRoutes } from "./src/server/register-api-routes";
+import { sseBroadcaster } from "./src/services/sse-broadcaster";
+
 /**
- * DEPRECATED STALE WRAPPER
- * 
- * This file was a thin re-export of server-v2.ts.
- * The active, production server is server-v2.ts (comprehensive Express app with all routes, middleware, CSP, SSE, etc.).
+ * Canonical Wireline server entrypoint.
  *
- * Recommendation: Delete this file entirely after confirming Vercel / deployment config points to server-v2.ts or update package.json "main" / start script.
- * 
- * Purged as part of deeper redundancy cleanup (2026-06-23).
+ * Build, local development, Vercel's bundled API function, and process startup
+ * all originate here. `server-v2.ts` is retained only as a compatibility export
+ * for older internal references.
  */
-export { app } from "./server-v2";
+if (typeof (BigInt.prototype as unknown as { toJSON?: () => string }).toJSON !== "function") {
+  Object.defineProperty(BigInt.prototype, "toJSON", {
+    value: function toJSON(this: bigint) {
+      return this.toString();
+    },
+    configurable: true,
+  });
+}
+
+validateStartupEnv();
+
+export const app = express();
+
+if (IS_PROD) app.set("trust proxy", 1);
+
+const origins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean);
+if (IS_PROD && !origins.length && process.env.APP_URL) origins.push(process.env.APP_URL);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || !origins.length || origins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
+    credentials: true,
+  }),
+);
+
+// Must run before global JSON parsing so signed vendor payloads retain raw bytes.
+installWebhookBodyParsers(app);
+app.use(express.json({ limit: "6mb" }));
+app.use(assertSameOrigin);
+app.use((req, res, next) => {
+  const incoming = String(req.headers["x-request-id"] || "").slice(0, 64);
+  const requestId = /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID();
+  res.locals.requestId = requestId;
+  res.setHeader("X-Request-Id", requestId);
+  next();
+});
+app.use(normalizeApiErrorResponse);
+
+const connectSrc = buildConnectSrcs(!IS_PROD);
+app.use((_req, res, next) => {
+  const nonce = IS_PROD ? generateCspNonce() : undefined;
+  res.locals.cspNonce = nonce;
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
+  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, nonce, connectSrc));
+  if (IS_PROD) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  next();
+});
+
+startMemoryCleanup();
+registerApiRoutes(app);
+
+app.get("/api/live-ops/stream", authenticateLiveOpsStream, (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  const tenantId = req.tenantId || req.user?.id;
+  if (!tenantId) {
+    return res.status(401).json({ error: "Authentication required", code: "AUTH_REQUIRED" });
+  }
+  sseBroadcaster.addClient((res.locals?.requestId as string) || randomUUID(), res, tenantId);
+});
+
+app.use("/api", (req, res) => {
+  const { status, body } = formatErrorResponse(
+    AppError.notFound(`No API route matches ${req.method} ${req.path}`),
+    res.locals.requestId as string | undefined,
+  );
+  res.status(status).json(body);
+});
+
+app.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  log.error("API error", {
+    requestId: res.locals.requestId,
+    method: req.method,
+    path: req.path,
+    error: getErrorMessage(error),
+  });
+  const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
+  res.status(status).json(body);
+});
+
+async function startServer() {
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer } = await import("vite");
+    const vite = await createServer({ server: { middlewareMode: true }, appType: "spa" });
+    app.use(vite.middlewares);
+    return;
+  }
+
+  const dist = path.join(process.cwd(), "dist");
+  app.use(express.static(dist));
+  const html = readFileSync(path.join(dist, "index.html"));
+  app.get("*", (_req, res) => res.type("html").send(html));
+}
+
+if (process.env.VERCEL !== "1") {
+  void startServer().then(() => {
+    const port = Number(process.env.PORT) || 3000;
+    app.listen(port, () => log.info("Wireline server started", { port }));
+  });
+}
