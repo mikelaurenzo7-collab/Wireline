@@ -105,10 +105,10 @@ export default function PrecisionPublicHeader() {
 
       <DialogContent
         id="wireline-mobile-navigation"
+        presentation="navigation"
         aria-label="Wireline navigation"
         showClose={false}
         overlayClassName="!top-16 !z-[60] bg-[rgba(11,28,48,0.3)] backdrop-blur-[2px]"
-        className="!inset-x-0 !bottom-0 !left-0 !top-16 !z-[70] !w-auto !max-w-none !translate-x-0 !translate-y-0 !gap-0 !overflow-y-auto !rounded-none !border-x-0 !border-b-0 !border-t !border-border !bg-[var(--wl-page)] !p-0 !shadow-none data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-top-0"
       >
         <DialogTitle className="sr-only">Wireline navigation</DialogTitle>
         <DialogDescription className="sr-only">
