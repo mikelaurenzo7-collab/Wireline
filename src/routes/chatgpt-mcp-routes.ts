@@ -263,6 +263,29 @@ async function ensureMcpSchema(): Promise<void> {
       await drizzle.execute(
         sql`DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON wireline_mcp_oauth_codes, wireline_mcp_access_tokens, wireline_mcp_refresh_tokens FROM anon; END IF; IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON wireline_mcp_oauth_codes, wireline_mcp_access_tokens, wireline_mcp_refresh_tokens FROM authenticated; END IF; END $$`,
       );
+      await drizzle.execute(sql`
+        DO $$
+        DECLARE
+          mcp_table text;
+        BEGIN
+          FOREACH mcp_table IN ARRAY ARRAY[
+            'wireline_mcp_oauth_codes',
+            'wireline_mcp_access_tokens',
+            'wireline_mcp_refresh_tokens'
+          ] LOOP
+            EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', mcp_table);
+            EXECUTE format('DROP POLICY IF EXISTS deny_direct_api_access ON public.%I', mcp_table);
+
+            IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
+               AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+              EXECUTE format(
+                'CREATE POLICY deny_direct_api_access ON public.%I FOR ALL TO anon, authenticated USING (false) WITH CHECK (false)',
+                mcp_table
+              );
+            END IF;
+          END LOOP;
+        END $$;
+      `);
     })().catch((error) => {
       schemaReady = null;
       throw error;
@@ -484,28 +507,26 @@ async function saveDemo(principal: McpPrincipal, demoToken: unknown) {
         `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
       );
     const id = `agent-${randomBytes(16).toString("hex")}`;
-    await drizzle
-      .insert(schema.agents)
-      .values({
-        id,
-        userId: principal.userId,
-        name: spec.agentName,
-        role: spec.role,
-        channel: "voice",
-        archetype: roleArchetypes[spec.role] || "Assistant",
-        voiceId: pickRotatedVoiceId(existing),
-        voiceProvider: "openai",
-        enabledTools: getDefaultAgentTools(spec.role),
-        firstMessage: `Hi, this is ${spec.agentName}. How can I help?`,
-        isBusinessAgent: spec.businessName !== "Your business",
-        businessVariables: {
-          businessName: spec.businessName,
-          primaryGoal: spec.primaryGoal,
-          previewTone: spec.tone,
-          source: "chatgpt_app",
-        },
-        systemPromptOverride: buildDemoRealtimeInstructions(spec),
-      });
+    await drizzle.insert(schema.agents).values({
+      id,
+      userId: principal.userId,
+      name: spec.agentName,
+      role: spec.role,
+      channel: "voice",
+      archetype: roleArchetypes[spec.role] || "Assistant",
+      voiceId: pickRotatedVoiceId(existing),
+      voiceProvider: "openai",
+      enabledTools: getDefaultAgentTools(spec.role),
+      firstMessage: `Hi, this is ${spec.agentName}. How can I help?`,
+      isBusinessAgent: spec.businessName !== "Your business",
+      businessVariables: {
+        businessName: spec.businessName,
+        primaryGoal: spec.primaryGoal,
+        previewTone: spec.tone,
+        source: "chatgpt_app",
+      },
+      systemPromptOverride: buildDemoRealtimeInstructions(spec),
+    });
     return { id, spec };
   });
 }
