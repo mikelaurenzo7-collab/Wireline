@@ -35,12 +35,12 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "Wireline in ChatGPT",
-    status: "Developer mode and review-ready",
+    status: "Developer mode",
     description:
       "Create and refine a private, unlaunched Wireline assistant draft in ChatGPT, then continue its full setup in Wireline.",
-    detail: "Requires a connected Wireline account",
-    action: "Read connection guide",
-    href: "/chatgpt-app",
+    detail: "Requires a connected Wireline account and a ChatGPT Developer Mode connection",
+    action: "Ask about ChatGPT access",
+    href: "mailto:support@trywireline.com?subject=Wireline%20in%20ChatGPT",
   },
 ] as const;
 
@@ -71,7 +71,6 @@ export default function ClientAppsPage() {
               <a
                 className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]"
                 href={href}
-                {...(href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}
               >
                 {action} <ArrowUpRight size={15} />
               </a>
