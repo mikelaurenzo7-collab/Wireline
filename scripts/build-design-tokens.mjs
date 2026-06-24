@@ -30,9 +30,17 @@ const requiredPaths = [
   "color.action.primary.default",
   "color.action.primary.pressed",
   "color.border.default",
+  "color.focus.default",
+  "color.overlay.scrim",
+  "color.feedback.success.surface",
+  "color.feedback.error.border",
+  "elevation.md",
+  "motion.duration.fast",
+  "motion.easing.standard",
+  "interaction.target.minimum",
+  "interaction.focus.width",
   "space.100",
   "radius.lg",
-  "motion.duration.fast",
 ];
 
 for (const path of requiredPaths) {
