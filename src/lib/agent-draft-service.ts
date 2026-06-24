@@ -4,7 +4,14 @@ import * as schema from "../db/schema";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { AppError } from "./api-error";
 import { getDefaultAgentTools } from "./agent-capabilities";
-import { normalizeAgentCustomization, compileAgentRuntimeInstructions, profileToBusinessVariables, type AgentCustomizationInput, type AgentCustomizationProfile, isAgentCustomizationProfile } from "./agent-customization";
+import {
+  normalizeAgentCustomization,
+  compileAgentRuntimeInstructions,
+  profileToBusinessVariables,
+  type AgentCustomizationInput,
+  type AgentCustomizationProfile,
+  isAgentCustomizationProfile,
+} from "./agent-customization";
 import { resolveAgentEntitlement } from "./agent-entitlements";
 import { isOwnerEmail } from "./auth-service";
 import { drizzle, tenantStore } from "./server-context";
@@ -37,17 +44,25 @@ export interface AgentDraftView {
   openInWirelinePath: string;
 }
 
+function persistedBusinessVariables(profile: AgentCustomizationProfile): Record<string, unknown> {
+  return {
+    ...profileToBusinessVariables(profile),
+    customizationProfile: profile,
+  };
+}
+
 function profileFromStoredAgent(agent: {
   name: string;
   role: string | null;
   businessVariables: unknown;
-  flowConfig: unknown;
   systemPromptOverride: string | null;
 }): AgentCustomizationProfile {
-  if (isAgentCustomizationProfile(agent.flowConfig)) return agent.flowConfig;
   const variables = agent.businessVariables && typeof agent.businessVariables === "object"
     ? (agent.businessVariables as Record<string, unknown>)
     : {};
+  if (isAgentCustomizationProfile(variables.customizationProfile)) {
+    return variables.customizationProfile;
+  }
   return normalizeAgentCustomization(
     {
       agent_name: agent.name,
@@ -141,8 +156,7 @@ export async function createAgentDraft(
       firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
       personalityVibe: profile.identity.tone,
       isBusinessAgent: profile.identity.businessName !== "Your business",
-      businessVariables: profileToBusinessVariables(profile),
-      flowConfig: profile,
+      businessVariables: persistedBusinessVariables(profile),
       systemPromptOverride: compileAgentRuntimeInstructions(profile),
       disallowedTopics: profile.behavior.prohibitedTopics,
       escalationKeywords: [],
@@ -163,7 +177,6 @@ export async function getAgentDraft(
         name: schema.agents.name,
         role: schema.agents.role,
         businessVariables: schema.agents.businessVariables,
-        flowConfig: schema.agents.flowConfig,
         systemPromptOverride: schema.agents.systemPromptOverride,
       })
       .from(schema.agents)
@@ -210,8 +223,7 @@ export async function updateAgentDraft(
         archetype: ROLE_ARCHETYPES[merged.identity.role],
         firstMessage: `Hi, this is ${merged.identity.name}. How can I help?`,
         personalityVibe: merged.identity.tone,
-        businessVariables: profileToBusinessVariables(merged),
-        flowConfig: merged,
+        businessVariables: persistedBusinessVariables(merged),
         systemPromptOverride: compileAgentRuntimeInstructions(merged),
         disallowedTopics: merged.behavior.prohibitedTopics,
         escalationHandoffEnabled: merged.behavior.escalationPolicy === "handoff_when_configured",
