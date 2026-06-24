@@ -64,7 +64,7 @@ requirePatterns("src/index.css", indexCss, [
   [/family=Inter/i, "must load Inter for Ametrine Precision hierarchy and dense content"],
   [/family=Hanken\+Grotesk/i, "must load Hanken Grotesk for display headings"],
   [/family=JetBrains\+Mono/i, "must load JetBrains Mono for metadata"],
-  [/--wl-font-display:\s*"?Hanken Grotesk"?/i, "must map display typography to Hanken Grotesk"],
+  [/--wl-font-display:\s*\"?Hanken Grotesk\"?/i, "must map display typography to Hanken Grotesk"],
   [/--wl-font-sans:\s*Inter/i, "must map body typography to Inter"],
 ]);
 if (/Professional Heritage|#1A3C34|#F9F9F7/i.test(indexCss)) {
@@ -133,6 +133,15 @@ const designContract = spawnSync(process.execPath, [resolve(root, "scripts/check
 });
 if (designContract.status !== 0) {
   report("scripts/check-design-system-contract.mjs", "design-system contract check failed");
+}
+
+const atomicCompletionContract = spawnSync(
+  process.execPath,
+  [resolve(root, "scripts/check-atomic-design-completion.mjs")],
+  { stdio: "inherit" },
+);
+if (atomicCompletionContract.status !== 0) {
+  report("scripts/check-atomic-design-completion.mjs", "Atomic Design completion contract check failed");
 }
 
 const commandPaletteContract = spawnSync(process.execPath, [resolve(root, "scripts/check-command-palette-contract.mjs")], {
