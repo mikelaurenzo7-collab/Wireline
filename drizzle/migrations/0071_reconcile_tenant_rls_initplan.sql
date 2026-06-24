@@ -6,8 +6,9 @@
 -- per query rather than once per scanned row, while preserving tenant semantics.
 --
 -- This migration is deliberately explicit. It touches only tables whose
--- tenant_isolation policy is the simple user_id == current tenant form. It
--- leaves multi-party / special policies (membership, OAuth, Stripe, etc.) alone.
+-- tenant_isolation policy is the simple user_id == current tenant form, plus
+-- the documented organization owner-or-membership policy. It leaves OAuth,
+-- Stripe, and other special policies alone.
 
 DO $$
 DECLARE
@@ -81,6 +82,20 @@ BEGIN
       'CREATE POLICY tenant_isolation ON wireline_users FOR ALL '
       || 'USING (id = %s) WITH CHECK (id = %s)',
       guc_expr,
+      guc_expr
+    );
+  END IF;
+
+  IF to_regclass('public.wireline_organizations') IS NOT NULL
+    AND to_regclass('public.wireline_memberships') IS NOT NULL THEN
+    DROP POLICY IF EXISTS tenant_isolation ON wireline_organizations;
+    EXECUTE format(
+      'CREATE POLICY tenant_isolation ON wireline_organizations FOR ALL '
+      || 'USING (owner_id = %1$s OR EXISTS ('
+      || 'SELECT 1 FROM wireline_memberships m '
+      || 'WHERE m.organization_id = wireline_organizations.id '
+      || 'AND m.user_id = %1$s)) '
+      || 'WITH CHECK (owner_id = %1$s)',
       guc_expr
     );
   END IF;
