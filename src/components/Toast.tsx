@@ -5,21 +5,34 @@ import { useToast, type Toast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { cn } from "../lib/utils";
-import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Button } from "./atoms/Button";
+import { IconButton } from "./atoms/IconButton";
 
 const META = {
   success: {
     icon: CheckCircle2,
-    border: "border-[color-mix(in_srgb,var(--wl-signal)_35%,transparent)]",
-    bg: "wl-status-success",
+    border: "border-[var(--wl-success-border)]",
+    bg: "bg-[var(--wl-success-surface)]",
+    iconTone: "text-[var(--wl-success)]",
   },
-  error: { icon: XCircle, border: "border-rose-500/30", bg: "bg-rose-500/10" },
+  error: {
+    icon: XCircle,
+    border: "border-[var(--wl-error-border)]",
+    bg: "bg-[var(--wl-error-surface)]",
+    iconTone: "text-[var(--wl-error)]",
+  },
   warning: {
     icon: AlertTriangle,
-    border: "border-brand/35",
-    bg: "bg-brand/10",
+    border: "border-[var(--wl-warning-border)]",
+    bg: "bg-[var(--wl-warning-surface)]",
+    iconTone: "text-[var(--wl-warning)]",
   },
-  info: { icon: Info, border: "border-brand/30", bg: "bg-brand/10" },
+  info: {
+    icon: Info,
+    border: "border-[var(--wl-info-border)]",
+    bg: "bg-[var(--wl-info-surface)]",
+    iconTone: "text-[var(--wl-info)]",
+  },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {
@@ -45,56 +58,45 @@ function ToastItem({ toast }: { toast: Toast }) {
         reduceMotion ? { duration: 0.01 } : { type: "spring", stiffness: 380, damping: 32 }
       }
       className={cn(
-        "toast-item relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-md wl-panel elev-2 border overflow-hidden toast-enter",
+        "toast-item relative w-full max-w-full overflow-hidden rounded-md border bg-card shadow-[var(--wl-shadow-md)] sm:w-80 sm:max-w-[92vw]",
         m.border,
       )}
       data-toast={toast.type}
     >
-      <div className="absolute left-0 inset-y-0 w-0.5 rounded-full wl-toast-accent" />
+      <div className="absolute inset-y-0 left-0 w-0.5 rounded-full bg-primary" />
 
       <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
-        <div
-          className={cn(
-            "shrink-0 w-7 h-7 rounded-md flex items-center justify-center mt-0.5",
-            m.bg,
-          )}
-        >
-          <Icon aria-hidden="true" className="w-3.5 h-3.5 wl-toast-icon" strokeWidth={2} />
+        <div className={cn("mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md", m.bg)}>
+          <Icon aria-hidden="true" className={cn("size-3.5", m.iconTone)} strokeWidth={2} />
         </div>
-        <div className="flex-1 min-w-0 pr-2">
-          <p className="text-[12px] font-semibold text-foreground leading-snug truncate">
-            {toast.title}
-          </p>
-          {toast.message && (
-            <p className="text-caption leading-snug mt-0.5 line-clamp-2">{toast.message}</p>
-          )}
-          {toast.action && (
-            <ShadButton
+        <div className="min-w-0 flex-1 pr-2">
+          <p className="truncate text-[12px] font-semibold leading-snug text-foreground">{toast.title}</p>
+          {toast.message ? <p className="mt-0.5 line-clamp-2 text-caption leading-snug">{toast.message}</p> : null}
+          {toast.action ? (
+            <Button
               type="button"
               variant="outline"
-              size="sm"
-              disableAnimations
+              size="xs"
               onClick={() => {
                 toast.action?.onClick();
                 dismiss(toast.id);
               }}
-              className="mt-2 h-7 px-2.5 rounded-md wl-label text-brand border-brand/30 hover:bg-brand/10 touch-press"
+              className="mt-2 border-primary/30 text-primary hover:bg-primary/10"
             >
               {toast.action.label}
-            </ShadButton>
-          )}
+            </Button>
+          ) : null}
         </div>
-        <ShadButton
+        <IconButton
           type="button"
+          label="Dismiss notification"
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={() => dismiss(toast.id)}
-          aria-label="Dismiss notification"
-          disableAnimations
-          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 text-muted hover:text-foreground"
+          className="-m-1.5 size-9 min-h-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground sm:m-0 sm:mt-0.5 sm:size-8 sm:min-h-8 sm:min-w-8"
         >
-          <X aria-hidden="true" className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-        </ShadButton>
+          <X aria-hidden="true" className="size-3.5" />
+        </IconButton>
       </div>
     </motion.div>
   );
@@ -106,9 +108,6 @@ export default function ToastStack() {
   const location = useLocation();
   const marketingSticky = !user && isMarketingStickyCtaRoute(location.pathname);
 
-  // The mobile bottom tab bar was removed, so signed-in toasts now sit at the
-  // standard bottom gutter. Only the public marketing sticky CTA still needs
-  // extra clearance.
   return (
     <div
       role="log"
@@ -116,7 +115,7 @@ export default function ToastStack() {
       aria-atomic="false"
       aria-relevant="additions text"
       aria-label="Notifications"
-      className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
+      className="toast-stack fixed inset-x-3 z-[9999] flex flex-col items-stretch gap-2 pointer-events-none max-md:bottom-[var(--toast-mobile-bottom)] md:inset-x-auto md:bottom-5 md:right-5 md:items-end"
       data-marketing-sticky={marketingSticky ? "true" : undefined}
     >
       <AnimatePresence initial={false} mode="sync">
