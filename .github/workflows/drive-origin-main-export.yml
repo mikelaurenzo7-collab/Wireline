@@ -1,0 +1,43 @@
+name: Export origin/main source snapshot to Drive artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/drive-origin-main-export.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Archive exact origin/main source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pull request context
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build immutable source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          SOURCE_SHA="$(git rev-parse origin/main)"
+          mkdir -p export
+          git archive --format=zip --prefix="Wireline-${SOURCE_SHA}/" "${SOURCE_SHA}" -o "export/Wireline-origin-main-${SOURCE_SHA}.zip"
+          {
+            echo "repository=mikelaurenzo7-collab/Wireline"
+            echo "source_ref=origin/main"
+            echo "source_sha=${SOURCE_SHA}"
+            echo "created_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "archive=Wireline-origin-main-${SOURCE_SHA}.zip"
+            echo "archive_sha256=$(sha256sum "export/Wireline-origin-main-${SOURCE_SHA}.zip" | awk '{print $1}')"
+          } > export/SNAPSHOT_MANIFEST.txt
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireline-origin-main-source
+          path: export/
+          if-no-files-found: error
+          retention-days: 7
