@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
 import { AppError } from "../../lib/api-error";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle, log } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { authenticateUser } from "../../middleware/auth";
@@ -17,6 +17,11 @@ import { squareOAuthConfigured } from "../../lib/square-service";
 import { microsoftGraphConfigured } from "../../lib/microsoft-graph-service";
 import { googleSheetsConfigured } from "../../lib/google-sheets-service";
 import { computeIntegrationHealth } from "../../lib/integration-health";
+import {
+  getSalesforceSyncPreferences,
+  mergeSalesforceSyncPreferences,
+  SalesforceSyncPreferencesSchema,
+} from "../../lib/salesforce-sync-preferences";
 
 const router = express.Router();
 
@@ -73,6 +78,7 @@ router.get(
               email: sfConn.connectedEmail,
               instance_url: sfConn.instanceUrl,
               connected_at: sfConn.createdAt,
+              sync_preferences: getSalesforceSyncPreferences(sfConn.metadata),
             }
           : { connected: false, configured: sfOAuthConfigured() },
         hubspot: isLive(hsConn)
@@ -180,6 +186,60 @@ router.get(
     } catch (e: any) {
       log.error("CRM status check failed", { error: e?.message });
       throw AppError.fromHttpStatus(500, "Failed to check CRM status");
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+//  Salesforce delivery preferences
+// ────────────────────────────────────────────────────────────────────
+
+router.put(
+  "/api/oauth/crm/salesforce/preferences",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
+
+    const parsed = SalesforceSyncPreferencesSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw AppError.fromHttpStatus(400, "Invalid Salesforce call activity preference.");
+    }
+
+    try {
+      const [connection] = await drizzle
+        .select({
+          id: schema.crmConnections.id,
+          metadata: schema.crmConnections.metadata,
+          active: schema.crmConnections.active,
+        })
+        .from(schema.crmConnections)
+        .where(
+          and(
+            eq(schema.crmConnections.userId, userId),
+            eq(schema.crmConnections.provider, "salesforce"),
+          ),
+        )
+        .limit(1);
+
+      if (!connection || connection.active === false) {
+        throw AppError.fromHttpStatus(
+          409,
+          "Connect an active Salesforce account before changing call activity delivery.",
+        );
+      }
+
+      const metadata = mergeSalesforceSyncPreferences(connection.metadata, parsed.data);
+      await drizzle
+        .update(schema.crmConnections)
+        .set({ metadata, updatedAt: new Date() })
+        .where(eq(schema.crmConnections.id, connection.id));
+
+      res.json({ preferences: getSalesforceSyncPreferences(metadata) });
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      log.error("Salesforce preference update failed", { userId, error: error?.message });
+      throw AppError.fromHttpStatus(500, "Failed to update Salesforce call activity preference.");
     }
   },
 );
