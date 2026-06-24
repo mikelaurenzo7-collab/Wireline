@@ -26,10 +26,19 @@
   --wl-line-strong: #b9c0d0;
   --wl-focus: rgba(17, 28, 50, 0.46);
 
-  /* Status */
+  /* Status: foreground, quiet surface, and clear structural edge. */
   --wl-success: #19703b;
+  --wl-success-surface: #eaf6ed;
+  --wl-success-border: #a9d9b8;
   --wl-warning: #995d08;
+  --wl-warning-surface: #fff4e0;
+  --wl-warning-border: #e7c785;
   --wl-error: #c12a2a;
+  --wl-error-surface: #fff0f0;
+  --wl-error-border: #edb4b4;
+  --wl-info: #315d9f;
+  --wl-info-surface: #edf4ff;
+  --wl-info-border: #b9cff2;
   --wl-status-active: var(--wl-success);
   --wl-status-warning: var(--wl-warning);
   --wl-status-error: var(--wl-error);
