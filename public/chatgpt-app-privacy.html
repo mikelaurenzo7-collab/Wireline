@@ -15,7 +15,6 @@
     p, li { color: #4e5c73; line-height: 1.7; }
     .card { margin-top: 28px; border: 1px solid #dde2ed; border-radius: 18px; padding: 22px; background: #fff; }
     a { color: #5537c9; font-weight: 600; }
-    code { padding: 2px 5px; border-radius: 5px; background: #eef0f8; color: #27324a; }
   </style>
 </head>
 <body>
@@ -25,23 +24,23 @@
     <p>This notice explains the data practices specific to the Wireline app used inside ChatGPT. It supplements the <a href="/privacy">Wireline Privacy Policy</a>.</p>
 
     <section class="card">
-      <strong>V1 boundary:</strong> the Wireline ChatGPT App lets a person describe a prospective AI phone agent, try a private voice preview, and—only after account connection and confirmation—save an unlaunched draft to Wireline. It does not place calls, send messages, purchase or connect phone numbers, access call recordings, or launch an agent from ChatGPT.
+      <strong>Account-bound product:</strong> the Wireline ChatGPT App requires a Wireline account. It creates and refines private, unlaunched agent drafts in the connected workspace, and can run a short private voice simulation of those drafts. It does not place calls, send messages, purchase or connect phone numbers, access call recordings, or launch an agent from ChatGPT.
     </section>
 
-    <h2>Information used for a guest preview</h2>
-    <p>When someone asks Wireline to create a preview, we process the business name, intended agent role, primary goal, optional agent name, and tone supplied in the ChatGPT conversation. We use this information to generate a temporary preview specification. The preview specification is signed, expires after one hour, and is not a durable Wireline agent record unless the person later chooses to save it.</p>
+    <h2>Information used to create an agent</h2>
+    <p>When a connected user creates or updates an agent draft, Wireline processes the agent name, business or brand, intended role, goal, voice and tone preferences, operating rules, knowledge summary, intended actions, prohibited topics, and escalation preferences supplied in the ChatGPT conversation. This information becomes part of the user’s private Wireline workspace draft and may be edited or deleted in Wireline.</p>
 
-    <h2>Voice preview</h2>
-    <p>If a person selects <strong>Try live voice</strong>, the app requests microphone access through the ChatGPT widget surface and creates a short-lived, tool-free realtime session. The session is used only to demonstrate the prospective agent. The preview cannot access business systems or complete an external action. Audio processing for this optional feature is performed through OpenAI services. Do not use the preview to provide sensitive personal information, payment-card data, health information, or confidential customer records.</p>
+    <h2>Private voice simulation</h2>
+    <p>If a connected user selects <strong>Try private voice</strong>, the app requests microphone access through the ChatGPT widget surface and creates a short-lived, tool-free realtime simulation for that saved draft. The simulation cannot access business systems or complete an external action. Audio processing for this optional feature is performed through OpenAI services. Do not use the simulation to provide sensitive personal information, payment-card data, health information, or confidential customer records.</p>
 
-    <h2>Account connection and saving</h2>
-    <p>Saving a preview requires the person to connect an existing Wireline account through OAuth. Wireline uses the connection only for the scopes shown during consent. OAuth authorization codes and bearer credentials are stored only as cryptographic hashes, are time-limited, and are bound to the Wireline MCP resource. A successful save creates an unlaunched agent draft in the connected Wireline account.</p>
+    <h2>Account connection and permissions</h2>
+    <p>Wireline uses OAuth to connect the user’s ChatGPT session to their private Wireline account. Wireline uses the connection only for the scopes shown during consent. OAuth authorization codes and bearer credentials are stored only as cryptographic hashes, are time-limited, and are bound to the Wireline MCP resource.</p>
 
     <h2>How data is used</h2>
-    <p>We use app data to provide the requested preview, operate and secure the account-linking flow, prevent abuse of voice previews, and create the agent draft the person expressly confirms. We do not sell or share personal information for cross-context behavioral advertising. We do not use guest preview inputs or preview audio to train Wireline models.</p>
+    <p>We use app data to provide requested agent drafting, private simulation, account-linking, security, and abuse prevention. We do not sell or share personal information for cross-context behavioral advertising. We do not use account-bound agent-draft inputs or private simulation audio to train Wireline models.</p>
 
     <h2>Retention and controls</h2>
-    <p>Unsigned guest previews are temporary. Saved drafts become part of the connected Wireline account and may be edited or deleted in Wireline. The general retention, access, deletion, and regional privacy-rights processes are described in the <a href="/privacy">Wireline Privacy Policy</a>.</p>
+    <p>Agent drafts become part of the connected Wireline account and may be edited or deleted in Wireline. The general retention, access, deletion, and regional privacy-rights processes are described in the <a href="/privacy">Wireline Privacy Policy</a>.</p>
 
     <h2>Contact</h2>
     <p>Questions or privacy requests: <a href="mailto:support@trywireline.com">support@trywireline.com</a>.</p>
