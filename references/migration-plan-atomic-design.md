@@ -80,6 +80,12 @@ src/components/
 - Settings adopts canonical session state, sign-out actions, and account-action error treatment.
 - Both routes use `StatusNotice`, establishing a shared inline feedback pattern rather than duplicating semantic surface classes.
 
+### Studio and knowledge configuration panels
+
+- Studio’s empty and loading states now use canonical EmptyState, Button, and Skeleton treatment instead of bespoke action classes and text-only loading.
+- Knowledge uses canonical NativeSelect, Input, Textarea, Button, FormField, Skeleton, EmptyState, Badge, and StatusNotice patterns across its mobile selector, editor, panel loading states, and source freshness treatment.
+- Source management remains explicitly staged: the panel now communicates preview-state truthfully instead of implying fully wired actions that do not exist yet.
+
 ## Adoption Order
 
 ### 1. New work — mandatory now
@@ -91,10 +97,10 @@ src/components/
 ### 2. High-traffic migrations — next
 
 1. Conversation, call, and other data-heavy records when a second list-detail consumer proves a shared organism
-2. Training and advanced configuration panels
-3. Admin and long-tail configuration panels
-4. PageShell adoption where its responsive header or tabs replace duplicate route-specific behavior
-5. Visual QA and accessibility validation across desktop, laptop, and mobile viewport tiers
+2. Admin and long-tail configuration panels
+3. PageShell adoption where its responsive header or tabs replace duplicate route-specific behavior
+4. Visual QA and accessibility validation across desktop, laptop, and mobile viewport tiers
+5. Compatibility-export cleanup after repository-wide imports converge
 
 ### 3. Deliberate exceptions
 
@@ -112,7 +118,8 @@ src/components/
 - source-root alias and public barrel contracts remain valid;
 - semantic feedback tokens are present;
 - high-traffic consumer adoption remains real rather than aspirational;
-- the mounted command palette stays keyboard-correct and route-accurate.
+- the mounted command palette stays keyboard-correct and route-accurate;
+- Studio and Knowledge configuration surfaces stay on canonical fields, selectors, and notices.
 
 The guardrail grows after each adoption wave. Turning every legacy import into a hard failure before its route is safely migrated creates false urgency and encourages unsafe bulk rewrites.
 
