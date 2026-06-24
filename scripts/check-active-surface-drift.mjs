@@ -135,6 +135,13 @@ if (designContract.status !== 0) {
   report("scripts/check-design-system-contract.mjs", "design-system contract check failed");
 }
 
+const commandPaletteContract = spawnSync(process.execPath, [resolve(root, "scripts/check-command-palette-contract.mjs")], {
+  stdio: "inherit",
+});
+if (commandPaletteContract.status !== 0) {
+  report("scripts/check-command-palette-contract.mjs", "command-palette contract check failed");
+}
+
 if (failures.length) {
   console.error("Ametrine Precision contract check failed:\n- " + failures.join("\n- "));
   process.exitCode = 1;
