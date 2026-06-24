@@ -179,6 +179,11 @@ assertIncludes(
   "must use the canonical status notice for account-action failures.",
 );
 assertExcludes(
+  "src/pages/SettingsPage.tsx",
+  /to="\/(security|support)"/,
+  "must not advertise destinations that resolve through the workspace catch-all route.",
+);
+assertExcludes(
   "src/components/atoms/Badge.tsx",
   /(emerald|amber)-\d+/,
   "must consume semantic feedback tokens instead of raw palette variants.",
