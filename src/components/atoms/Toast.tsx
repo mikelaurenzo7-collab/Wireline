@@ -1,29 +1,56 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { X } from "lucide-react";
+import { cva, type VariantProps } from "class-variance-authority";
 
-interface ToastProps {
-  message: string;
-  type?: 'success' | 'error' | 'info';
+import { Button } from "@/components/atoms/Button";
+import { cn } from "@/lib/utils";
+
+export const toastVariants = cva(
+  "fixed bottom-4 right-4 z-50 flex max-w-sm items-start gap-3 rounded-lg border px-4 py-3 shadow-lg",
+  {
+    variants: {
+      variant: {
+        success: "border-emerald-500/30 bg-emerald-950 text-emerald-50",
+        error: "border-destructive/30 bg-destructive text-destructive-foreground",
+        info: "border-border bg-card text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "info",
+    },
+  },
+);
+
+export interface ToastProps extends VariantProps<typeof toastVariants> {
+  message: React.ReactNode;
   onClose?: () => void;
+  /** @deprecated Use variant. */
+  type?: "success" | "error" | "info";
 }
 
-export const Toast: React.FC<ToastProps> = ({ message, type = 'info', onClose }) => {
+export function Toast({ message, variant, type, onClose }: ToastProps) {
+  const resolvedVariant = variant ?? type ?? "info";
+
   return (
     <div
-      className={cn(
-        'fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg',
-        'wl-toast',
-        type === 'success' && 'border-green-500/30 bg-green-950 text-green-400',
-        type === 'error' && 'border-red-500/30 bg-red-950 text-red-400',
-        type === 'info' && 'border-border bg-card text-foreground'
-      )}
+      data-slot="toast"
+      role={resolvedVariant === "error" ? "alert" : "status"}
+      aria-live={resolvedVariant === "error" ? "assertive" : "polite"}
+      className={cn(toastVariants({ variant: resolvedVariant }))}
     >
-      <div className="flex-1 text-sm font-medium">{message}</div>
+      <div className="min-w-0 flex-1 text-sm font-medium">{message}</div>
       {onClose && (
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          ×
-        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Dismiss notification"
+          onClick={onClose}
+          className="-mr-2 -mt-1 h-7 w-7 shrink-0 text-current opacity-80 hover:bg-black/10 hover:text-current"
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </Button>
       )}
     </div>
   );
-};
+}
