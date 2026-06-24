@@ -25,6 +25,7 @@ export interface StatusNoticeProps
   extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof statusNoticeVariants> {
   title?: React.ReactNode;
   icon?: React.ReactNode;
+  action?: React.ReactNode;
 }
 
 function defaultIcon(tone: NonNullable<StatusNoticeProps["tone"]>) {
@@ -35,7 +36,7 @@ function defaultIcon(tone: NonNullable<StatusNoticeProps["tone"]>) {
 }
 
 const StatusNotice = React.forwardRef<HTMLDivElement, StatusNoticeProps>(
-  ({ tone = "info", title, icon, className, children, ...props }, ref) => (
+  ({ tone = "info", title, icon, action, className, children, ...props }, ref) => (
     <div
       ref={ref}
       data-slot="status-notice"
@@ -44,10 +45,11 @@ const StatusNotice = React.forwardRef<HTMLDivElement, StatusNoticeProps>(
       {...props}
     >
       {icon ?? defaultIcon(tone)}
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         {title ? <p className="font-semibold text-foreground">{title}</p> : null}
         <div className={title ? "mt-1 text-muted-foreground" : "text-muted-foreground"}>{children}</div>
       </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   ),
 );
