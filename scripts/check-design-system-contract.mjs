@@ -45,6 +45,16 @@ assertIncludes(
   "must remain a compatibility re-export of the canonical Input atom.",
 );
 assertIncludes(
+  "src/components/ui/shadcn/Badge.tsx",
+  /from "\.\.\/\.\.\/atoms\/Badge"/,
+  "must route legacy badge calls through the canonical Badge atom.",
+);
+assertIncludes(
+  "src/components/ui/shadcn/Skeleton.tsx",
+  /from "\.\.\/\.\.\/atoms\/Skeleton"/,
+  "must route legacy skeleton calls through the canonical Skeleton atom.",
+);
+assertIncludes(
   "src/components/atoms/HelpTooltip.tsx",
   /export const helpTooltipVariants/,
   "must expose the tooltip variants named by the atom barrel.",
