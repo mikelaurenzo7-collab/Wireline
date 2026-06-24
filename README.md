@@ -9,7 +9,7 @@ Wireline is a horizontal AI voice + messaging agent platform. One fleet of assis
 - **Browser Companion**: A Manifest V3 side-panel/sidebar companion for Chrome, Edge, Opera, and Firefox. It deliberately brings the active page, selected text, or a linked phone number into Studio; it has no broad host permission, background harvesting, or copied credentials.
 - **Native mobile**: iOS (SwiftUI + CallKit + widgets + App Intents + CarPlay plans) and Android (Jetpack Compose + Telecom + FCM + widgets) as thin, high-quality personal control surfaces.
 - **ChatGPT App**: OAuth-connected, account-bound MCP tools for private draft creation, refinement, and tool-free voice simulations—never phone provisioning, launch, or external actions.
-- **Studio & Director**: Web workspace for building, training, reviewing, and operating assistants at scale.
+- **Studio workspace**: Web workspace for building, training, reviewing, and operating assistants at scale.
 - **Infrastructure**: Postgres + Drizzle, RLS tenant isolation, Stripe billing, strong auth, rate limiting, and verification gates.
 
 ## Tech
@@ -50,7 +50,6 @@ node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
 
 See:
 
-- `AGENTS.md` — design system rules (Ametrine Precision), implementation guidance, and contributor rules
 - `CODEBASE_HEALTH.md` — guardrails, cleanup policy, deletion rules, and health standards
 - `ARCHITECTURE.md` — system design and runtime flows
 - `docs/CLIENT_SURFACES.md` — client ownership, repository boundaries, and staged extraction plan
