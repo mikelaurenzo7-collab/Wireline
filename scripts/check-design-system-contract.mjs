@@ -32,6 +32,7 @@ const canonicalAtoms = [
   "src/components/atoms/Input.tsx",
   "src/components/atoms/NativeSelect.tsx",
   "src/components/atoms/Skeleton.tsx",
+  "src/components/atoms/Switch.tsx",
   "src/components/atoms/Textarea.tsx",
   "src/components/atoms/EmptyState.tsx",
   "src/components/atoms/Toast.tsx",
@@ -79,6 +80,11 @@ assertIncludes(
   "must route legacy skeleton calls through the canonical Skeleton atom.",
 );
 assertIncludes(
+  "src/components/ui/shadcn/Switch.tsx",
+  /from "\.\.\/\.\.\/atoms\/Switch"/,
+  "must route legacy switch calls through the canonical Switch atom.",
+);
+assertIncludes(
   "src/components/ui/shadcn/Textarea.tsx",
   /from "\.\.\/\.\.\/atoms\/Textarea"/,
   "must route legacy textarea calls through the canonical Textarea atom.",
@@ -97,6 +103,11 @@ assertIncludes(
   "src/components/atoms/index.ts",
   /helpTooltipVariants/,
   "must re-export the canonical tooltip variant symbol.",
+);
+assertIncludes(
+  "src/components/atoms/index.ts",
+  /Switch/,
+  "must export the canonical switch atom.",
 );
 assertIncludes(
   "vite.config.ts",
@@ -262,6 +273,26 @@ assertIncludes(
   "src/pages/TeamSettings.tsx",
   /StatusNotice/,
   "must use the canonical RBAC notice.",
+);
+assertIncludes(
+  "src/pages/SalesforceIntegrationPage.tsx",
+  /<Switch/,
+  "must use the canonical switch for Salesforce call-activity control.",
+);
+assertIncludes(
+  "src/pages/SalesforceIntegrationPage.tsx",
+  /StatusNotice/,
+  "must use canonical feedback for Salesforce loading, success, and failure states.",
+);
+assertIncludes(
+  "src/pages/SalesforceIntegrationPage.tsx",
+  /\/api\/oauth\/crm\/salesforce\/preferences/,
+  "must persist the Salesforce activity setting through the authenticated server contract.",
+);
+assertExcludes(
+  "src/pages/SalesforceIntegrationPage.tsx",
+  /Preview configuration|Save preview choices|Draft saved for this session/,
+  "must not present local-only Salesforce controls as configuration.",
 );
 assertExcludes(
   "src/pages/SettingsPage.tsx",

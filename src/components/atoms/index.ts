@@ -7,5 +7,6 @@ export * from "./HelpTooltip";
 export * from "./Input";
 export * from "./NativeSelect";
 export * from "./Skeleton";
+export { Switch, switchThumbVariants, switchVariants } from "./Switch";
 export * from "./Textarea";
 export * from "./Toast";
