@@ -1,7 +1,10 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Database, Loader2, Plus, ShieldCheck, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+
 import { authFetch, safeJson } from "../lib/api";
+import { Badge, Button, EmptyState, Input, NativeSelect, Skeleton, Textarea } from "../components/atoms";
+import { FormField, StatusNotice } from "../components/molecules";
 import { useAgents } from "../contexts/AgentsContext";
 
 type Config = {
@@ -9,9 +12,50 @@ type Config = {
   knowledge?: Array<{ content?: string }>;
   personality?: string;
 };
-type View = "facts" | "rules" | "tone" | "sources";
 
-function Panel({
+type View = "facts" | "rules" | "tone" | "sources";
+type EntryKind = "knowledge" | "directive";
+
+type PanelShellProps = {
+  title: string;
+  icon: ReactNode;
+  countLabel?: string;
+  loading: boolean;
+  action?: ReactNode;
+  children: ReactNode;
+};
+
+function PanelShell({ title, icon, countLabel, loading, action, children }: PanelShellProps) {
+  return (
+    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
+      <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
+        <div className="flex items-center gap-2">
+          <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">{icon}</span>
+          <div>
+            <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">{title}</h2>
+            {countLabel ? (
+              <p className="mt-1 font-mono text-[11px] leading-4 text-muted-foreground">{loading ? "—" : countLabel}</p>
+            ) : null}
+          </div>
+        </div>
+        {action}
+      </header>
+      <div className="wl-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
+    </article>
+  );
+}
+
+function PanelLoadingRows() {
+  return (
+    <div className="space-y-4" aria-hidden="true">
+      {Array.from({ length: 3 }, (_, index) => (
+        <Skeleton key={index} shape="surface" className="h-20 w-full" />
+      ))}
+    </div>
+  );
+}
+
+function ItemsPanel({
   title,
   icon,
   items,
@@ -24,100 +68,67 @@ function Panel({
   items: string[];
   empty: string;
   loading: boolean;
-  countLabel?: string;
+  countLabel: string;
 }) {
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
-      <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
-        <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
-            {icon}
-          </span>
-          <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">
-            {title}
-          </h2>
+    <PanelShell title={title} icon={icon} loading={loading} countLabel={countLabel}>
+      {loading ? (
+        <PanelLoadingRows />
+      ) : items.length ? (
+        <div className="space-y-5">
+          {items.map((item, index) => (
+            <article className="border-l-2 border-[color:var(--wl-line-strong)] pl-3" key={`${item}-${index}`}>
+              <p className="text-[15px] font-semibold leading-5 text-foreground">{item.split(/[:\n]/)[0]}</p>
+              <p className="mt-1 line-clamp-5 text-[14px] leading-5 text-muted-foreground">
+                {item.includes(":") ? item.slice(item.indexOf(":") + 1).trim() : item}
+              </p>
+            </article>
+          ))}
         </div>
-        <span className="font-mono text-[11px] leading-4 text-muted-foreground">
-          {loading ? "—" : countLabel || `${items.length} items`}
-        </span>
-      </header>
-      <div className="wl-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((id) => (
-              <div key={id} className="h-16 animate-pulse rounded-sm bg-muted" />
-            ))}
-          </div>
-        ) : items.length ? (
-          <div className="space-y-5">
-            {items.map((item, index) => (
-              <article
-                className="border-l-2 border-[color:var(--wl-line-strong)] pl-3"
-                key={`${item}-${index}`}
-              >
-                <p className="text-[15px] font-semibold leading-5 text-foreground">
-                  {item.split(/[:\n]/)[0]}
-                </p>
-                <p className="mt-1 line-clamp-5 text-[14px] leading-5 text-muted-foreground">
-                  {item.includes(":") ? item.slice(item.indexOf(":") + 1).trim() : item}
-                </p>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="grid min-h-[180px] place-items-center text-center text-[13px] leading-5 text-muted-foreground">
-            {empty}
-          </p>
-        )}
-      </div>
-    </article>
+      ) : (
+        <EmptyState
+          density="compact"
+          className="min-h-[220px] border-dashed"
+          icon={icon}
+          title="Nothing here yet"
+          description={empty}
+        />
+      )}
+    </PanelShell>
   );
 }
 
 function TonePanel({ personality, loading }: { personality?: string; loading: boolean }) {
-  const traits = personality
-    ? ["Professional", "Concise", "Helpful"]
-    : ["Clear", "Direct", "Helpful"];
+  const traits = personality ? ["Professional", "Concise", "Helpful"] : ["Clear", "Direct", "Helpful"];
+
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
-      <header className="flex items-center gap-2 border-b border-border px-4 py-4">
-        <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
-          <SlidersHorizontal size={16} />
-        </span>
-        <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">
-          Tone &amp; personality
-        </h2>
-      </header>
-      <div className="wl-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        {loading ? (
-          <div className="space-y-3">
-            <div className="h-4 animate-pulse bg-muted" />
-            <div className="h-4 w-5/6 animate-pulse bg-muted" />
-            <div className="h-4 w-4/5 animate-pulse bg-muted" />
+    <PanelShell
+      title="Tone & personality"
+      icon={<SlidersHorizontal size={16} />}
+      loading={loading}
+      countLabel={`${traits.length} traits`}
+    >
+      {loading ? (
+        <PanelLoadingRows />
+      ) : (
+        <>
+          <blockquote className="border-l-2 border-[color:var(--wl-line-strong)] pl-3 text-[15px] italic leading-6 text-muted-foreground">
+            {personality ||
+              "Define how your assistant should sound. Keep it clear, confident, concise, and appropriate to every conversation."}
+          </blockquote>
+          <p className="mt-8 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-muted-foreground">
+            Key traits
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {traits.map((trait) => (
+              <Badge key={trait} variant="outline">
+                {trait}
+              </Badge>
+            ))}
           </div>
-        ) : (
-          <>
-            <blockquote className="border-l-2 border-[color:var(--wl-line-strong)] pl-3 text-[15px] italic leading-6 text-muted-foreground">
-              {personality ||
-                "Define how your assistant should sound. Keep it clear, confident, concise, and appropriate to every conversation."}
-            </blockquote>
-            <p className="mt-8 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-muted-foreground">
-              Key traits
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {traits.map((trait) => (
-                <span
-                  key={trait}
-                  className="rounded-sm bg-muted px-2 py-1 font-mono text-[12px] text-foreground"
-                >
-                  {trait}
-                </span>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </article>
+        </>
+      )}
+    </PanelShell>
   );
 }
 
@@ -129,7 +140,7 @@ function SourcesPanel({ loading }: { loading: boolean }) {
       type: "Web",
       url: "https://wireline.com",
       lastSync: "2 hours ago",
-      status: "Fresh",
+      stale: false,
     },
     {
       id: 2,
@@ -137,7 +148,7 @@ function SourcesPanel({ loading }: { loading: boolean }) {
       type: "PDF",
       url: "product-v2.pdf",
       lastSync: "5 days ago",
-      status: "Stale",
+      stale: true,
     },
     {
       id: 3,
@@ -145,75 +156,58 @@ function SourcesPanel({ loading }: { loading: boolean }) {
       type: "Notion",
       url: "notion.so/playbook",
       lastSync: "10 mins ago",
-      status: "Fresh",
+      stale: false,
     },
   ];
 
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
-      <header className="flex items-center justify-between border-b border-border px-4 py-4">
-        <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-sm bg-primary/10 text-primary">
-            <Database size={16} />
-          </span>
-          <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">
-            Sources &amp; Freshness
-          </h2>
-        </div>
-        <button className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
-          <Plus size={14} /> Add Source
-        </button>
-      </header>
-      <div className="wl-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((id) => (
-              <div key={id} className="h-16 animate-pulse rounded-sm bg-muted" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-[13px] text-muted-foreground leading-5 mb-2">
-              Keep your assistant up to date. Stale sources may contain outdated pricing or
-              policies.
-            </p>
-            {sources.map((src) => (
-              <div
-                key={src.id}
-                className="border border-border rounded-lg p-3 flex items-center justify-between hover:border-[color:var(--wl-line-strong)] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-muted w-10 h-10 rounded flex items-center justify-center font-mono text-[10px] font-semibold text-muted-foreground">
-                    {src.type}
-                  </div>
-                  <div>
-                    <div className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-                      {src.name}
-                      {src.status === "Stale" && (
-                        <span className="bg-error/10 text-error text-[10px] px-1.5 py-0.5 rounded-sm uppercase tracking-wider font-bold">
-                          Stale
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[12px] text-muted-foreground mt-0.5 font-mono truncate max-w-[200px]">
-                      {src.url}
-                    </div>
-                  </div>
+    <PanelShell
+      title="Sources & freshness"
+      icon={<Database size={16} />}
+      loading={loading}
+      countLabel={`${sources.length} tracked`}
+      action={
+        <Button type="button" variant="secondary" size="sm" disabled>
+          <Plus aria-hidden="true" size={14} />
+          Add source
+        </Button>
+      }
+    >
+      {loading ? (
+        <PanelLoadingRows />
+      ) : (
+        <div className="space-y-4">
+          <StatusNotice tone="info" title="Source controls are staged next.">
+            This panel shows freshness design states now. Connector-backed source management will replace these preview actions in the next knowledge pass.
+          </StatusNotice>
+          {sources.map((src) => (
+            <article
+              key={src.id}
+              className="flex items-center justify-between gap-4 rounded-lg border border-border p-3 transition-colors hover:border-[color:var(--wl-line-strong)]"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
+                  {src.type}
                 </div>
-                <div className="text-right flex flex-col items-end">
-                  <div className="text-[12px] font-medium text-foreground">
-                    Synced {src.lastSync}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[14px] font-semibold text-foreground">{src.name}</p>
+                    <Badge variant={src.stale ? "warning" : "success"}>{src.stale ? "Stale" : "Fresh"}</Badge>
                   </div>
-                  <button className="text-[11px] font-semibold text-primary mt-1 hover:underline">
-                    Re-sync now
-                  </button>
+                  <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">{src.url}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </article>
+              <div className="flex shrink-0 flex-col items-end gap-2 text-right">
+                <p className="text-[12px] font-medium text-foreground">Synced {src.lastSync}</p>
+                <Button type="button" variant="link" size="sm" className="h-auto px-0 text-xs" disabled>
+                  Re-sync next
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </PanelShell>
   );
 }
 
@@ -221,30 +215,38 @@ export default function KnowledgeWorkspace() {
   const { agents } = useAgents();
   const [params, setParams] = useSearchParams();
   const [config, setConfig] = useState<Config>({});
-  const [kind, setKind] = useState<"knowledge" | "directive">("knowledge");
+  const [kind, setKind] = useState<EntryKind>("knowledge");
   const [title, setTitle] = useState("");
   const [entry, setEntry] = useState("");
   const [tags, setTags] = useState("");
   const [view, setView] = useState<View>("facts");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const agentId = params.get("agent") || agents[0]?.id || "";
-  const facts = useMemo(
-    () => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [],
-    [config.knowledge],
-  );
-  const rules = useMemo(
-    () => config.directives?.map((item) => item.content || "").filter(Boolean) || [],
-    [config.directives],
-  );
+  const facts = useMemo(() => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [], [config.knowledge]);
+  const rules = useMemo(() => config.directives?.map((item) => item.content || "").filter(Boolean) || [], [config.directives]);
 
   const load = useCallback(async () => {
-    if (!agentId) return setConfig({});
+    if (!agentId) {
+      setConfig({});
+      return;
+    }
+
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`);
       const payload = await safeJson(response);
-      if (response.ok && payload && typeof payload === "object") setConfig(payload as Config);
+      if (response.ok && payload && typeof payload === "object") {
+        setConfig(payload as Config);
+      } else {
+        setLoadError("Knowledge could not be loaded right now.");
+      }
+    } catch {
+      setLoadError("Knowledge could not be loaded right now.");
     } finally {
       setLoading(false);
     }
@@ -256,7 +258,9 @@ export default function KnowledgeWorkspace() {
 
   async function save() {
     if (!entry.trim() || !agentId || saving) return;
+
     setSaving(true);
+    setSaveError(null);
     try {
       const content = title.trim() ? `${title.trim()}: ${entry.trim()}` : entry.trim();
       const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
@@ -271,19 +275,31 @@ export default function KnowledgeWorkspace() {
             .filter(Boolean),
         }),
       });
-      if (response.ok) {
-        setTitle("");
-        setEntry("");
-        setTags("");
-        await load();
+      const payload = await safeJson(response);
+      if (!response.ok) {
+        setSaveError((payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") ? payload.error : "Your change could not be saved.");
+        return;
       }
+      setTitle("");
+      setEntry("");
+      setTags("");
+      await load();
+    } catch {
+      setSaveError("Your change could not be saved.");
     } finally {
       setSaving(false);
     }
   }
 
+  function clearDraft() {
+    setTitle("");
+    setEntry("");
+    setTags("");
+    setSaveError(null);
+  }
+
   const factsPanel = (
-    <Panel
+    <ItemsPanel
       title="Facts & preferences"
       icon={<Database size={16} />}
       items={facts}
@@ -293,7 +309,7 @@ export default function KnowledgeWorkspace() {
     />
   );
   const rulesPanel = (
-    <Panel
+    <ItemsPanel
       title="Rules & boundaries"
       icon={<ShieldCheck size={16} />}
       items={rules}
@@ -317,18 +333,15 @@ export default function KnowledgeWorkspace() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex shrink-0 items-center justify-end lg:hidden">
-        <select
-          value={agentId}
-          onChange={(event) => setParams({ agent: event.target.value })}
-          className="h-10 rounded-md border border-border bg-card px-3 text-sm"
-        >
+        <NativeSelect value={agentId} onChange={(event) => setParams({ agent: event.target.value })} className="max-w-[260px]" aria-label="Choose assistant">
           {agents.map((agent) => (
             <option value={agent.id} key={agent.id}>
               {agent.name}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
+
       <div className="grid shrink-0 grid-cols-4 overflow-hidden rounded-md border border-border bg-muted lg:hidden">
         {(["facts", "rules", "tone", "sources"] as View[]).map((item) => (
           <button
@@ -343,6 +356,8 @@ export default function KnowledgeWorkspace() {
         ))}
       </div>
 
+      {loadError ? <StatusNotice tone="warning" title="Knowledge is partially unavailable.">{loadError}</StatusNotice> : null}
+
       <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(170px,.85fr)_minmax(170px,.85fr)_minmax(180px,.9fr)_minmax(350px,1.65fr)] xl:gap-6">
         <div className="hidden min-h-0 xl:block">{factsPanel}</div>
         <div className="hidden min-h-0 xl:block">{rulesPanel}</div>
@@ -355,8 +370,12 @@ export default function KnowledgeWorkspace() {
         <aside className="mt-4 flex min-h-[520px] flex-col rounded-xl border border-border bg-card p-4 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)] xl:mt-0">
           <div className="flex items-center gap-2 border-b border-border pb-3">
             <Plus size={19} className="text-foreground" />
-            <h2 className="text-[20px] font-semibold tracking-[-.01em]">Add a detail</h2>
+            <div>
+              <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">Add a detail</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Teach the assistant something true or define a boundary it should respect.</p>
+            </div>
           </div>
+
           <div className="mt-4 grid grid-cols-2 rounded-md bg-muted p-1">
             <button
               type="button"
@@ -375,67 +394,50 @@ export default function KnowledgeWorkspace() {
               Add rule
             </button>
           </div>
-          <label className="mt-4 block">
-            <span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">
-              Title
-            </span>
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="wl-stitch-input mt-2"
-              placeholder={
-                kind === "knowledge" ? "e.g., Preferred pharmacy" : "e.g., When to ask me first"
-              }
-            />
-          </label>
-          <label className="mt-4 flex min-h-0 flex-1 flex-col">
-            <span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">
-              Content
-            </span>
-            <textarea
-              value={entry}
-              onChange={(event) => setEntry(event.target.value)}
-              className="wl-stitch-input mt-2 min-h-[150px] flex-1 resize-none leading-6"
-              placeholder={
-                kind === "knowledge"
-                  ? "Describe a fact, preference, routine, or policy clearly…"
-                  : "Describe what the assistant must do or avoid…"
-              }
-            />
-          </label>
-          <label className="mt-4 block">
-            <span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">
-              Tags (optional)
-            </span>
-            <input
-              value={tags}
-              onChange={(event) => setTags(event.target.value)}
-              className="wl-stitch-input mt-2"
-              placeholder="Separate with commas"
-            />
-          </label>
+
+          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
+            <FormField label="Title" description={kind === "knowledge" ? "Name the fact so it is easy to scan later." : "Summarize the boundary or condition."}>
+              <Input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder={kind === "knowledge" ? "e.g., Preferred pharmacy" : "e.g., When to ask me first"}
+              />
+            </FormField>
+
+            <FormField label="Content" required description={kind === "knowledge" ? "Describe a fact, preference, routine, or policy clearly." : "Describe what the assistant must do or avoid."} error={saveError ? saveError : undefined} className="flex min-h-0 flex-1 flex-col">
+              <Textarea
+                value={entry}
+                onChange={(event) => setEntry(event.target.value)}
+                className="mt-1 min-h-[180px] flex-1"
+                resize="none"
+                placeholder={kind === "knowledge" ? "Describe a fact, preference, routine, or policy clearly…" : "Describe what the assistant must do or avoid…"}
+              />
+            </FormField>
+
+            <FormField label="Tags" description="Optional comma-separated labels for future filtering and retrieval.">
+              <Input
+                value={tags}
+                onChange={(event) => setTags(event.target.value)}
+                placeholder="Separate with commas"
+              />
+            </FormField>
+          </div>
+
+          {saveError ? (
+            <StatusNotice tone="destructive" className="mt-4" title="This detail was not saved.">
+              {saveError}
+            </StatusNotice>
+          ) : null}
+
           <div className="mt-4 flex justify-end gap-3 border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setTitle("");
-                setEntry("");
-                setTags("");
-              }}
-              className="studio-secondary-button text-sm"
-            >
-              <Trash2 size={14} />
+            <Button type="button" variant="secondary" onClick={clearDraft}>
+              <Trash2 aria-hidden="true" size={14} />
               Clear
-            </button>
-            <button
-              type="button"
-              disabled={!entry.trim() || saving}
-              onClick={() => void save()}
-              className="studio-primary-button text-sm disabled:opacity-40"
-            >
-              {saving ? <Loader2 className="animate-spin" size={15} /> : <Plus size={15} />}Save{" "}
-              {kind === "knowledge" ? "fact" : "rule"}
-            </button>
+            </Button>
+            <Button type="button" disabled={!entry.trim() || saving} onClick={() => void save()}>
+              {saving ? <Loader2 className="animate-spin" size={15} /> : <Plus size={15} />}
+              Save {kind === "knowledge" ? "fact" : "rule"}
+            </Button>
           </div>
         </aside>
       </div>
