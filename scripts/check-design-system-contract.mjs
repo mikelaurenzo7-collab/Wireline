@@ -44,5 +44,25 @@ assertIncludes(
   /from "\.\.\/\.\.\/atoms\/Input"/,
   "must remain a compatibility re-export of the canonical Input atom.",
 );
+assertIncludes(
+  "src/components/atoms/HelpTooltip.tsx",
+  /export const helpTooltipVariants/,
+  "must expose the tooltip variants named by the atom barrel.",
+);
+assertIncludes(
+  "src/components/atoms/index.ts",
+  /helpTooltipVariants/,
+  "must re-export the canonical tooltip variant symbol.",
+);
+assertIncludes(
+  "vite.config.ts",
+  /const sourceRoot = path\.resolve\(__dirname, "src"\)/,
+  "must resolve source-root aliases from src/.",
+);
+assertIncludes(
+  "tsconfig.json",
+  /"@\/\*": \["\.\/src\/\*"\]/,
+  "must align TypeScript aliases with the Vite source root.",
+);
 
 console.log("Design-system contract checks passed.");
