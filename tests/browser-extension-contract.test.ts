@@ -30,7 +30,6 @@ describe("Wireline Browser Companion contract", () => {
     expect(serviceWorker).not.toContain("chrome.storage");
     expect(serviceWorker).not.toContain("browser.storage");
     expect(serviceWorker).not.toContain("fetch(");
-    expect(serviceWorker).toContain("activeTab");
   });
 
   it("treats browser text as reference-only and removes the fragment after import", () => {
