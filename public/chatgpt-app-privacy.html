@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="index,follow" />
+  <title>Wireline ChatGPT App Privacy Notice</title>
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: #f8f9ff; color: #172033; }
+    main { width: min(100% - 40px, 760px); margin: 0 auto; padding: 56px 0 72px; }
+    .eyebrow { color: #5d3fd3; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { margin: 10px 0 8px; font-size: clamp(32px, 5vw, 46px); letter-spacing: -.04em; line-height: 1.05; }
+    h2 { margin: 34px 0 10px; font-size: 20px; letter-spacing: -.02em; }
+    p, li { color: #4e5c73; line-height: 1.7; }
+    .card { margin-top: 28px; border: 1px solid #dde2ed; border-radius: 18px; padding: 22px; background: #fff; }
+    a { color: #5537c9; font-weight: 600; }
+    code { padding: 2px 5px; border-radius: 5px; background: #eef0f8; color: #27324a; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Wireline</div>
+    <h1>ChatGPT App Privacy Notice</h1>
+    <p>This notice explains the data practices specific to the Wireline app used inside ChatGPT. It supplements the <a href="/privacy">Wireline Privacy Policy</a>.</p>
+
+    <section class="card">
+      <strong>V1 boundary:</strong> the Wireline ChatGPT App lets a person describe a prospective AI phone agent, try a private voice preview, and—only after account connection and confirmation—save an unlaunched draft to Wireline. It does not place calls, send messages, purchase or connect phone numbers, access call recordings, or launch an agent from ChatGPT.
+    </section>
+
+    <h2>Information used for a guest preview</h2>
+    <p>When someone asks Wireline to create a preview, we process the business name, intended agent role, primary goal, optional agent name, and tone supplied in the ChatGPT conversation. We use this information to generate a temporary preview specification. The preview specification is signed, expires after one hour, and is not a durable Wireline agent record unless the person later chooses to save it.</p>
+
+    <h2>Voice preview</h2>
+    <p>If a person selects <strong>Try live voice</strong>, the app requests microphone access through the ChatGPT widget surface and creates a short-lived, tool-free realtime session. The session is used only to demonstrate the prospective agent. The preview cannot access business systems or complete an external action. Audio processing for this optional feature is performed through OpenAI services. Do not use the preview to provide sensitive personal information, payment-card data, health information, or confidential customer records.</p>
+
+    <h2>Account connection and saving</h2>
+    <p>Saving a preview requires the person to connect an existing Wireline account through OAuth. Wireline uses the connection only for the scopes shown during consent. OAuth authorization codes and bearer credentials are stored only as cryptographic hashes, are time-limited, and are bound to the Wireline MCP resource. A successful save creates an unlaunched agent draft in the connected Wireline account.</p>
+
+    <h2>How data is used</h2>
+    <p>We use app data to provide the requested preview, operate and secure the account-linking flow, prevent abuse of voice previews, and create the agent draft the person expressly confirms. We do not sell or share personal information for cross-context behavioral advertising. We do not use guest preview inputs or preview audio to train Wireline models.</p>
+
+    <h2>Retention and controls</h2>
+    <p>Unsigned guest previews are temporary. Saved drafts become part of the connected Wireline account and may be edited or deleted in Wireline. The general retention, access, deletion, and regional privacy-rights processes are described in the <a href="/privacy">Wireline Privacy Policy</a>.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or privacy requests: <a href="mailto:support@trywireline.com">support@trywireline.com</a>.</p>
+
+    <p><small>Last updated: June 24, 2026</small></p>
+  </main>
+</body>
+</html>
