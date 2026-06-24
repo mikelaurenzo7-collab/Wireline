@@ -1,11 +1,18 @@
 import express from "express";
+import chatgptMcpAccountRouter from "../routes/chatgpt-mcp-account-routes";
 import chatgptMcpRouter from "../routes/chatgpt-mcp-routes";
 import { AppError, formatErrorResponse } from "../lib/api-error";
 
 const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
+
+// Account-bound tools own the production /mcp transport. The legacy router
+// remains mounted for OAuth discovery, consent, token exchange, and a safe
+// compatibility fallback while connected clients refresh tool descriptors.
+app.use(chatgptMcpAccountRouter);
 app.use(chatgptMcpRouter);
+
 app.use((req, res) => {
   const { status, body } = formatErrorResponse(
     AppError.notFound(`No ChatGPT App route matches ${req.method} ${req.path}`),
