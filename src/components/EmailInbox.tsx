@@ -13,6 +13,8 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { Badge, Button, EmptyState, Skeleton, type BadgeProps } from "./atoms";
+import { SearchField } from "./molecules";
 
 type OutcomeStatus = "open" | "waiting" | "escalated" | "booked" | "resolved";
 
@@ -43,18 +45,12 @@ type ThreadsResponse = {
   error?: string;
 };
 
-const OUTCOME_META: Record<OutcomeStatus, { label: string; className: string }> = {
-  open: { label: "Needs review", className: "border-primary/25 bg-primary/10 text-primary" },
-  waiting: { label: "Waiting", className: "border-border bg-muted text-muted-foreground" },
-  escalated: {
-    label: "Handoff",
-    className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  },
-  booked: {
-    label: "Booked",
-    className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  },
-  resolved: { label: "Resolved", className: "border-border bg-secondary text-foreground" },
+const OUTCOME_META: Record<OutcomeStatus, { label: string; variant: NonNullable<BadgeProps["variant"]> }> = {
+  open: { label: "Needs review", variant: "info" },
+  waiting: { label: "Waiting", variant: "default" },
+  escalated: { label: "Handoff", variant: "warning" },
+  booked: { label: "Booked", variant: "success" },
+  resolved: { label: "Resolved", variant: "outline" },
 };
 
 function text(value: unknown, fallback = "") {
@@ -107,6 +103,19 @@ function isAssistantMessage(role: string) {
   return role === "ai" || role === "assistant" || role === "out";
 }
 
+function InboxLoadingState({ frameClass }: { frameClass: string }) {
+  return (
+    <section className={`${frameClass} grid place-items-center px-5`} aria-busy="true" aria-live="polite">
+      <div className="w-full max-w-md space-y-3 rounded-[var(--radius-xl)] border border-border bg-card p-6 shadow-[var(--wl-shadow-sm)]">
+        <Skeleton shape="text" className="h-4 w-28" />
+        <Skeleton shape="text" className="h-7 w-3/4" />
+        <Skeleton shape="text" className="h-4 w-full" />
+        <Skeleton shape="text" className="h-4 w-5/6" />
+      </div>
+    </section>
+  );
+}
+
 export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -118,6 +127,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   const [error, setError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
@@ -149,8 +159,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         handoff?: { id: string; status: string } | null;
         error?: string;
       } | null;
-      if (!response.ok || !body?.thread)
+      if (!response.ok || !body?.thread) {
         throw new Error(body?.error || "Could not load this conversation.");
+      }
       setDetail({
         thread: normalizeThread(body.thread),
         messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
@@ -191,9 +202,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       if (body?.message) {
         setNotice(body.message);
       } else if (body?.fetched) {
-        setNotice(
-          `Inbox refreshed — ${body.fetched} message${body.fetched === 1 ? "" : "s"} checked.`,
-        );
+        setNotice(`Inbox refreshed — ${body.fetched} message${body.fetched === 1 ? "" : "s"} checked.`);
       } else {
         setNotice("Inbox refresh started.");
       }
@@ -220,20 +229,17 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         handoff_task_id?: string | null;
         error?: string;
       } | null;
-      if (!response.ok || !body?.thread)
+      if (!response.ok || !body?.thread) {
         throw new Error(body?.error || "Could not update the outcome.");
+      }
       const updated = normalizeThread(body.thread);
-      setThreads((current) =>
-        current.map((thread) => (thread.id === updated.id ? { ...thread, ...updated } : thread)),
-      );
+      setThreads((current) => current.map((thread) => (thread.id === updated.id ? { ...thread, ...updated } : thread)));
       setDetail((current) =>
         current
           ? {
               ...current,
               thread: updated,
-              handoff: body.handoff_task_id
-                ? { id: body.handoff_task_id, status: "pending" }
-                : current.handoff,
+              handoff: body.handoff_task_id ? { id: body.handoff_task_id, status: "pending" } : current.handoff,
             }
           : current,
       );
@@ -250,71 +256,49 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   };
 
   const selectedThread = useMemo(
-    () =>
-      selectedId
-        ? threads.find((thread) => thread.id === selectedId) || detail?.thread || null
-        : null,
+    () => (selectedId ? threads.find((thread) => thread.id === selectedId) || detail?.thread || null : null),
     [detail?.thread, selectedId, threads],
   );
+
+  const visibleThreads = useMemo(() => {
+    const term = query.trim().toLocaleLowerCase();
+    if (!term) return threads;
+    return threads.filter((thread) => {
+      const haystack = [thread.subject, thread.sender, thread.summary, OUTCOME_META[thread.status].label]
+        .join(" ")
+        .toLocaleLowerCase();
+      return haystack.includes(term);
+    });
+  }, [query, threads]);
 
   const frameClass = embedded
     ? "flex h-full min-h-0 flex-col bg-background"
     : "min-h-screen bg-background px-5 py-8 sm:px-6";
 
-  if (loading) {
-    return (
-      <section
-        className={`${frameClass} grid place-items-center px-5`}
-        aria-busy="true"
-        aria-live="polite"
-      >
-        <div className="flex flex-col items-center gap-3 text-center">
-          <span className="grid size-11 place-items-center rounded-[var(--radius-lg)] border border-border bg-card text-primary shadow-[var(--wl-shadow-sm)]">
-            <Loader2 className="size-5 animate-spin" />
-          </span>
-          <p className="text-sm text-muted-foreground">Preparing your outcomes center…</p>
-        </div>
-      </section>
-    );
-  }
+  if (loading) return <InboxLoadingState frameClass={frameClass} />;
 
   if (threads.length === 0) {
     return (
       <section className={`${frameClass} grid place-items-center px-5 text-center`}>
-        <div className="studio-card w-full max-w-md px-6 py-10 sm:px-8">
-          <span className="mx-auto grid size-12 place-items-center rounded-[var(--radius-xl)] bg-muted text-primary">
-            <Mail className="size-5" />
-          </span>
-          <p className="studio-kicker mt-5">Outcome center</p>
-          <h2 className="wl-section-title mt-2">No email conversations yet.</h2>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Connect an inbox, then Wireline can organize the conversations that need attention—from
-            lead replies and appointment coordination to follow-up and recap.
-          </p>
-          {error ? (
-            <p className="mt-3 text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link to="/connections" className="studio-primary-button">
-              Open connections
-            </Link>
-            <button
-              type="button"
-              onClick={() => void syncInbox()}
-              disabled={syncing}
-              className="studio-secondary-button"
-            >
-              {syncing ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <RefreshCw className="size-4" />
-              )}
-              Refresh inbox
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          density="default"
+          className="studio-card w-full max-w-md px-6 py-10 sm:px-8"
+          icon={<Mail className="size-5" />}
+          title="No email conversations yet."
+          description="Connect an inbox, then Wireline can organize the conversations that need attention—from lead replies and appointment coordination to follow-up and recap."
+          action={
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button asChild>
+                <Link to="/actions">Open connections</Link>
+              </Button>
+              <Button type="button" variant="secondary" disabled={syncing} onClick={() => void syncInbox()}>
+                {syncing ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <RefreshCw aria-hidden="true" className="size-4" />}
+                {syncing ? "Refreshing" : "Refresh inbox"}
+              </Button>
+            </div>
+          }
+        />
+        {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
       </section>
     );
   }
@@ -328,135 +312,115 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             Inspect the conversation, choose the next state, and make the handoff durable.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void syncInbox()}
-          disabled={syncing}
-          className="studio-secondary-button min-h-9 px-3 text-sm"
-        >
-          {syncing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+        <Button type="button" variant="secondary" size="sm" disabled={syncing} onClick={() => void syncInbox()}>
+          {syncing ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <RefreshCw aria-hidden="true" className="size-4" />}
           {syncing ? "Refreshing" : "Refresh"}
-        </button>
+        </Button>
       </header>
 
       {error ? (
-        <div
-          className="mx-5 mt-4 flex items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-foreground sm:mx-6"
-          role="alert"
-        >
+        <div className="mx-5 mt-4 flex items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--wl-error-border)] bg-[var(--wl-error-surface)] px-4 py-3 text-sm text-foreground sm:mx-6" role="alert">
           <div className="flex min-w-0 items-start gap-2.5">
-            <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <CircleAlert className="mt-0.5 size-4 shrink-0 text-[var(--wl-error)]" />
             <p>{error}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => void loadThreads()}
-            className="shrink-0 text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]"
-          >
+          <Button type="button" variant="link" className="h-auto shrink-0 px-0 text-sm" onClick={() => void loadThreads()}>
             Retry
-          </button>
+          </Button>
         </div>
       ) : null}
 
-      {notice ? (
-        <p className="mx-5 mt-4 text-sm text-primary sm:mx-6" role="status">
-          {notice}
-        </p>
-      ) : null}
+      {notice ? <p className="mx-5 mt-4 text-sm text-primary sm:mx-6" role="status">{notice}</p> : null}
 
       <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(320px,.95fr)_minmax(0,1.35fr)]">
         <div className="wl-scroll min-h-0 overflow-y-auto border-b border-border p-3 xl:border-b-0 xl:border-r sm:p-4">
+          <div className="mb-3 flex items-center gap-3">
+            <SearchField
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onClear={() => setQuery("")}
+              aria-label="Search conversations"
+              placeholder="Search conversations"
+              className="min-w-0 flex-1"
+            />
+            <span className="shrink-0 text-xs text-muted-foreground" aria-live="polite">
+              {visibleThreads.length}/{threads.length}
+            </span>
+          </div>
           <ul className="space-y-2" aria-label="Email conversations">
-            {threads.map((thread) => {
-              const outcome = OUTCOME_META[thread.status];
-              const selected = selectedId === thread.id;
-              return (
-                <li key={thread.id}>
-                  <button
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() => {
-                      setSelectedId(thread.id);
-                      setNotice(null);
-                    }}
-                    className={`w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors ${selected ? "border-primary/35 bg-primary/[.055]" : "border-border bg-card hover:bg-muted/70"}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-sm font-semibold text-primary"
-                        aria-hidden
-                      >
-                        {senderInitial(thread.sender)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-foreground">
-                              {thread.subject}
-                            </p>
-                            <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
-                              {thread.sender}
-                            </p>
+            {visibleThreads.length ? (
+              visibleThreads.map((thread) => {
+                const outcome = OUTCOME_META[thread.status];
+                const selected = selectedId === thread.id;
+                return (
+                  <li key={thread.id}>
+                    <button
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setSelectedId(thread.id);
+                        setNotice(null);
+                      }}
+                      className={`w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors ${selected ? "border-primary/35 bg-primary/[.055]" : "border-border bg-card hover:bg-muted/70"}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-sm font-semibold text-primary" aria-hidden="true">
+                          {senderInitial(thread.sender)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-foreground">{thread.subject}</p>
+                              <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{thread.sender}</p>
+                            </div>
+                            <Badge variant={outcome.variant} className="shrink-0 text-[10px] uppercase tracking-[.06em]">
+                              {outcome.label}
+                            </Badge>
                           </div>
-                          <span
-                            className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[.06em] ${outcome.className}`}
-                          >
-                            {outcome.label}
-                          </span>
+                          <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">{thread.summary}</p>
+                          {thread.lastMessageAt ? <p className="mt-2 text-xs text-muted-foreground">{formatTimestamp(thread.lastMessageAt)}</p> : null}
                         </div>
-                        <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">
-                          {thread.summary}
-                        </p>
-                        {thread.lastMessageAt ? (
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            {formatTimestamp(thread.lastMessageAt)}
-                          </p>
-                        ) : null}
                       </div>
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
+                    </button>
+                  </li>
+                );
+              })
+            ) : (
+              <li>
+                <EmptyState
+                  density="compact"
+                  icon={<Sparkles className="size-5" />}
+                  title="No conversations match this search."
+                  description="Try a sender, subject, outcome, or a shorter search term."
+                />
+              </li>
+            )}
           </ul>
         </div>
 
         <aside className="wl-scroll min-h-0 overflow-y-auto bg-secondary/30 p-4 sm:p-6">
           {!selectedThread ? (
-            <div className="grid min-h-[360px] place-items-center rounded-[var(--radius-xl)] border border-dashed border-border bg-card p-8 text-center">
-              <div>
-                <span className="mx-auto grid size-11 place-items-center rounded-[var(--radius-lg)] bg-muted text-primary">
-                  <Sparkles className="size-5" />
-                </span>
-                <h2 className="wl-section-title mt-4 text-xl">Choose a conversation.</h2>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                  Review the thread, then set a clear operational outcome instead of leaving it as
-                  an unread summary.
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              density="default"
+              className="min-h-[360px] border-dashed border-border bg-card p-8"
+              icon={<Sparkles className="size-5" />}
+              title="Choose a conversation."
+              description="Review the thread, then set a clear operational outcome instead of leaving it as an unread summary."
+            />
           ) : detailLoading ? (
-            <div
-              className="grid min-h-[360px] place-items-center rounded-[var(--radius-xl)] border border-border bg-card p-8 text-center"
-              aria-busy="true"
-            >
-              <Loader2 className="size-5 animate-spin text-primary" />
-              <p className="mt-3 text-sm text-muted-foreground">Loading the conversation…</p>
+            <div className="space-y-4 rounded-[var(--radius-xl)] border border-border bg-card p-6" aria-busy="true" aria-live="polite">
+              <Skeleton shape="text" className="h-4 w-28" />
+              <Skeleton shape="text" className="h-7 w-4/5" />
+              <Skeleton shape="text" className="h-4 w-1/3" />
+              <Skeleton shape="surface" className="h-28 w-full" />
             </div>
           ) : detailError ? (
-            <div
-              className="rounded-[var(--radius-xl)] border border-destructive/25 bg-destructive/5 p-5"
-              role="alert"
-            >
+            <div className="rounded-[var(--radius-xl)] border border-[var(--wl-error-border)] bg-[var(--wl-error-surface)] p-5" role="alert">
               <p className="font-semibold text-foreground">Could not open this conversation.</p>
               <p className="mt-1 text-sm text-muted-foreground">{detailError}</p>
-              <button
-                type="button"
-                onClick={() => void loadThreadDetail(selectedThread.id)}
-                className="studio-secondary-button mt-4"
-              >
+              <Button type="button" variant="secondary" size="sm" className="mt-4" onClick={() => void loadThreadDetail(selectedThread.id)}>
                 Try again
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="space-y-5">
@@ -464,16 +428,12 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="studio-kicker">Conversation outcome</p>
-                    <h2 className="mt-2 text-xl font-semibold tracking-[-.03em] text-foreground sm:text-2xl">
-                      {selectedThread.subject}
-                    </h2>
+                    <h2 className="mt-2 text-xl font-semibold tracking-[-.03em] text-foreground sm:text-2xl">{selectedThread.subject}</h2>
                     <p className="mt-2 text-sm text-muted-foreground">{selectedThread.sender}</p>
                   </div>
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.06em] ${OUTCOME_META[selectedThread.status].className}`}
-                  >
+                  <Badge variant={OUTCOME_META[selectedThread.status].variant} className="text-[10px] uppercase tracking-[.06em]">
                     {OUTCOME_META[selectedThread.status].label}
-                  </span>
+                  </Badge>
                 </div>
                 <p className="mt-5 rounded-[var(--radius-lg)] border border-border bg-secondary p-4 text-sm leading-6 text-muted-foreground">
                   {selectedThread.summary}
@@ -483,9 +443,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               <section className="studio-card overflow-hidden">
                 <div className="border-b border-border px-5 py-4 sm:px-6">
                   <p className="wl-card-title">Conversation record</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    The underlying messages available to this workspace.
-                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">The underlying messages available to this workspace.</p>
                 </div>
                 <div className="space-y-3 p-4 sm:p-5">
                   {detail?.messages.length ? (
@@ -500,20 +458,16 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             {assistantMessage ? "Wireline" : "Customer"}
                           </p>
                           <p className="whitespace-pre-wrap">{message.content}</p>
-                          {message.createdAt ? (
-                            <p className="mt-2 text-[11px] text-muted-foreground">
-                              {formatTimestamp(message.createdAt)}
-                            </p>
-                          ) : null}
+                          {message.createdAt ? <p className="mt-2 text-[11px] text-muted-foreground">{formatTimestamp(message.createdAt)}</p> : null}
                         </article>
                       );
                     })
                   ) : (
-                    <div className="rounded-[var(--radius-lg)] border border-dashed border-border bg-secondary px-4 py-5 text-sm leading-6 text-muted-foreground">
-                      The synced inbox currently has the thread summary but no stored message bodies
-                      for this conversation. The outcome controls still let the team make ownership
-                      explicit.
-                    </div>
+                    <EmptyState
+                      density="compact"
+                      title="Message bodies are not stored for this conversation."
+                      description="The synced inbox still has the thread summary, and the outcome controls can make ownership explicit."
+                    />
                   )}
                 </div>
               </section>
@@ -525,86 +479,38 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                   </span>
                   <div>
                     <p className="wl-card-title">Set the next state</p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      This is an accountable team decision, not an inferred AI score.
-                    </p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">This is an accountable team decision, not an inferred AI score.</p>
                   </div>
                 </div>
                 <div className="mt-5 flex flex-wrap gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => void setOutcome("waiting")}
-                    disabled={outcomeBusy !== null}
-                    className="studio-secondary-button text-sm"
-                  >
-                    {outcomeBusy === "waiting" ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <Clock3 className="size-4" />
-                    )}{" "}
+                  <Button type="button" variant="secondary" size="sm" disabled={outcomeBusy !== null} onClick={() => void setOutcome("waiting")}>
+                    {outcomeBusy === "waiting" ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <Clock3 aria-hidden="true" className="size-4" />}
                     Mark waiting
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void setOutcome("booked")}
-                    disabled={outcomeBusy !== null}
-                    className="studio-secondary-button text-sm"
-                  >
-                    {outcomeBusy === "booked" ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="size-4" />
-                    )}{" "}
+                  </Button>
+                  <Button type="button" variant="secondary" size="sm" disabled={outcomeBusy !== null} onClick={() => void setOutcome("booked")}>
+                    {outcomeBusy === "booked" ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <CheckCircle2 aria-hidden="true" className="size-4" />}
                     Mark booked
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void setOutcome("escalated", true)}
-                    disabled={outcomeBusy !== null}
-                    className="studio-secondary-button text-sm"
-                  >
-                    {outcomeBusy === "handoff" ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <UserRoundCheck className="size-4" />
-                    )}{" "}
+                  </Button>
+                  <Button type="button" variant="secondary" size="sm" disabled={outcomeBusy !== null} onClick={() => void setOutcome("escalated", true)}>
+                    {outcomeBusy === "handoff" ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <UserRoundCheck aria-hidden="true" className="size-4" />}
                     Handoff to team
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void setOutcome("resolved")}
-                    disabled={outcomeBusy !== null}
-                    className="studio-primary-button text-sm"
-                  >
-                    {outcomeBusy === "resolved" ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="size-4" />
-                    )}{" "}
+                  </Button>
+                  <Button type="button" size="sm" disabled={outcomeBusy !== null} onClick={() => void setOutcome("resolved")}>
+                    {outcomeBusy === "resolved" ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <CheckCircle2 aria-hidden="true" className="size-4" />}
                     Resolve
-                  </button>
+                  </Button>
                   {selectedThread.status !== "open" ? (
-                    <button
-                      type="button"
-                      onClick={() => void setOutcome("open")}
-                      disabled={outcomeBusy !== null}
-                      className="text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]"
-                    >
+                    <Button type="button" variant="link" className="h-auto px-0 text-sm" disabled={outcomeBusy !== null} onClick={() => void setOutcome("open")}>
                       Reopen
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
                 {detail?.handoff ? (
-                  <p className="mt-4 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
-                    <ArrowUpRight className="size-4" /> A follow-up task is active for this
-                    conversation.
+                  <p className="mt-4 flex items-center gap-2 text-sm text-[var(--wl-warning)]">
+                    <ArrowUpRight className="size-4" /> A follow-up task is active for this conversation.
                   </p>
                 ) : null}
-                {detailError ? (
-                  <p className="mt-4 text-sm text-destructive" role="alert">
-                    {detailError}
-                  </p>
-                ) : null}
+                {detailError ? <p className="mt-4 text-sm text-destructive" role="alert">{detailError}</p> : null}
               </section>
             </div>
           )}
