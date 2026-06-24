@@ -1,0 +1,39 @@
+/* Generated from design-tokens/wireline.tokens.json. Do not edit by hand. */
+:root {
+  --wireline-color-action-primary-container: rgba(93, 63, 211, 0.10);
+  --wireline-color-action-primary-default: #5D3FD3;
+  --wireline-color-action-primary-pressed: #451EBB;
+  --wireline-color-border-default: #C9C4D7;
+  --wireline-color-border-strong: #B9C0D0;
+  --wireline-color-canvas-default: #F8F9FF;
+  --wireline-color-status-error: #C12A2A;
+  --wireline-color-status-info: #315D9F;
+  --wireline-color-status-success: #19703B;
+  --wireline-color-status-warning: #995D08;
+  --wireline-color-surface-container: #E5EEFF;
+  --wireline-color-surface-default: #FFFFFF;
+  --wireline-color-surface-strong: #DDE3F0;
+  --wireline-color-surface-subtle: #EFF4FF;
+  --wireline-color-text-onAction: #FFFFFF;
+  --wireline-color-text-primary: #0B1C30;
+  --wireline-color-text-secondary: #5F687B;
+  --wireline-font-family-body: Inter;
+  --wireline-font-family-display: Hanken Grotesk;
+  --wireline-font-family-mono: JetBrains Mono;
+  --wireline-motion-duration-fast: 120ms;
+  --wireline-motion-duration-slow: 300ms;
+  --wireline-motion-duration-standard: 200ms;
+  --wireline-motion-press: 0.98;
+  --wireline-radius-lg: 8px;
+  --wireline-radius-md: 6px;
+  --wireline-radius-pill: 999px;
+  --wireline-radius-sm: 4px;
+  --wireline-radius-xl: 16px;
+  --wireline-space-050: 4px;
+  --wireline-space-100: 8px;
+  --wireline-space-150: 12px;
+  --wireline-space-200: 16px;
+  --wireline-space-300: 24px;
+  --wireline-space-400: 32px;
+  --wireline-space-600: 48px;
+}
