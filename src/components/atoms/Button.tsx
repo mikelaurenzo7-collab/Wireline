@@ -4,6 +4,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+const touchTarget = "after:pointer-events-none after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-[44px] after:-translate-y-1/2 after:content-['']";
+
 export const buttonVariants = cva(
   "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
@@ -27,11 +29,11 @@ export const buttonVariants = cva(
           "border border-primary/80 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_2px_0_#000,0_8px_18px_rgba(29,29,31,0.18)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_#000]",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        md: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-8",
-        icon: "h-9 w-9 px-0 [&_svg]:size-5",
+        default: `h-9 px-4 py-2 ${touchTarget}`,
+        md: `h-9 px-4 py-2 ${touchTarget}`,
+        sm: `h-8 px-3 text-xs ${touchTarget}`,
+        lg: `h-10 px-8 ${touchTarget}`,
+        icon: "h-9 w-9 px-0 [&_svg]:size-5 after:pointer-events-none after:absolute after:left-1/2 after:top-1/2 after:min-h-[44px] after:min-w-[44px] after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
       },
     },
     defaultVariants: {
