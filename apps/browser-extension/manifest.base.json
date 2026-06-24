@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Wireline Companion",
+  "version": "0.1.0",
+  "description": "Bring the page, selected text, and call context you choose into Wireline Studio.",
+  "action": {
+    "default_title": "Open Wireline Companion"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": ["activeTab", "contextMenus", "scripting", "tabs"],
+  "commands": {
+    "capture-current-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Bring the current page into Wireline Studio"
+    }
+  }
+}
