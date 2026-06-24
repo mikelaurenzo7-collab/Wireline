@@ -39,7 +39,7 @@ export default function StudioWorkspaceV2() {
   if (loading) {
     return (
       <main className="grid min-h-[60vh] place-items-center bg-background px-6 text-sm text-muted-foreground">
-        Loading Studio…
+        Loading studio…
       </main>
     );
   }
