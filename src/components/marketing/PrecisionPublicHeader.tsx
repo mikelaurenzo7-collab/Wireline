@@ -1,104 +1,138 @@
 import { Menu, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "../atoms";
 import WirelineMark from "../brand/WirelineMark";
 
 const links = [
   {
     to: "/for/personal",
     label: "Product",
+    description: "Personal assistants for real conversations.",
     active: (path: string) => path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/"),
   },
-  { to: "/features", label: "Features", active: (path: string) => path === "/features" },
-  { to: "/pricing", label: "Pricing", active: (path: string) => path === "/pricing" },
+  {
+    to: "/features",
+    label: "Features",
+    description: "See how calls, texts, and email work together.",
+    active: (path: string) => path === "/features",
+  },
+  {
+    to: "/pricing",
+    label: "Pricing",
+    description: "Simple plans for personal and business assistants.",
+    active: (path: string) => path === "/pricing",
+  },
 ] as const;
+
+const mobileControlClassName =
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-border bg-[var(--wl-surface)] text-foreground shadow-[var(--wl-shadow-sm)] transition-[background-color,border-color,color,transform] hover:border-primary/35 hover:bg-[var(--wl-surface-subtle)] hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
 
 export default function PrecisionPublicHeader() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const menuRef = useRef<HTMLElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    menuRef.current?.querySelector<HTMLElement>("a")?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setOpen(false);
-      menuButtonRef.current?.focus();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-[color:color-mix(in_srgb,var(--wl-page)_96%,transparent)] backdrop-blur-xl">
-      <a className="wl-skip-link" href="#main-content">Skip to content</a>
-      <div className="wl-measure mx-auto flex h-16 items-center justify-between px-5 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-8">
-          <Link
-            to="/"
-            className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wl-font-display)] text-[20px] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
-            aria-label="Wireline home"
-          >
-            <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
-            <span>Wireline</span>
-          </Link>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <header className="fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wl-page)_96%,transparent)] backdrop-blur-xl">
+        <a className="wl-skip-link" href="#main-content">
+          Skip to content
+        </a>
 
-          <nav className="hidden h-full items-center gap-6 md:flex" aria-label="Site">
-            {links.map((link) => {
-              const active = link.active(location.pathname);
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex h-full items-center border-b-2 text-[13px] font-medium transition-colors ${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
+        <div className="wl-measure mx-auto flex h-16 items-center justify-between gap-4 px-5 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-8">
+            <Link
+              to="/"
+              className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wl-font-display)] text-[20px] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
+              aria-label="Wireline home"
+            >
+              <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
+              <span>Wireline</span>
+            </Link>
+
+            <nav className="hidden h-full items-center gap-6 md:flex" aria-label="Site">
+              {links.map((link) => {
+                const active = link.active(location.pathname);
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex h-full items-center border-b-2 text-[13px] font-medium transition-colors ${
+                      active
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="hidden items-center gap-5 md:flex">
+            <Link to="/signin" className="text-[13px] font-medium text-foreground transition-colors hover:text-primary">
+              Sign in
+            </Link>
+            <Link to="/signup" className="marketing-btn-primary min-h-9 px-4 text-[12px] font-semibold uppercase tracking-[.05em]">
+              Create account
+            </Link>
+          </div>
+
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className={`${mobileControlClassName} md:hidden`}
+              aria-label={open ? "Close navigation" : "Open navigation"}
+              aria-expanded={open}
+              aria-controls="wireline-mobile-navigation"
+            >
+              {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+            </button>
+          </DialogTrigger>
         </div>
+      </header>
 
-        <div className="hidden items-center gap-5 md:flex">
-          <Link to="/signin" className="text-[13px] font-medium text-foreground transition-colors hover:text-primary">
-            Log in
-          </Link>
-          <Link to="/signup" className="marketing-btn-primary min-h-9 px-4 text-[12px] font-semibold uppercase tracking-[.05em]">
-            Create account
-          </Link>
-        </div>
+      <DialogContent
+        id="wireline-mobile-navigation"
+        presentation="navigation"
+        aria-label="Wireline navigation"
+        showClose={false}
+        overlayClassName="!top-16 !z-[60] bg-[rgba(11,28,48,0.3)] backdrop-blur-[2px]"
+      >
+        <DialogTitle className="sr-only">Wireline navigation</DialogTitle>
+        <DialogDescription className="sr-only">
+          Browse Wireline product pages or open your account.
+        </DialogDescription>
 
-        <button
-          ref={menuButtonRef}
-          type="button"
-          className="wl-control-icon md:hidden"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          aria-controls="wireline-mobile-menu"
-          onClick={() => setOpen((current) => !current)}
-        >
-          {open ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
+        <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <div className="mb-6 flex items-center justify-between">
+            <p className="text-eyebrow">Explore Wireline</p>
+            <DialogClose asChild>
+              <button
+                type="button"
+                className={mobileControlClassName}
+                aria-label="Close navigation"
+              >
+                <X size={20} aria-hidden="true" />
+              </button>
+            </DialogClose>
+          </div>
 
-      {open ? (
-        <div
-          id="wireline-mobile-menu"
-          className="fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto border-t border-border bg-[color:var(--wl-page)] px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:hidden"
-        >
-          <nav ref={menuRef} className="mx-auto grid max-w-lg gap-2" aria-label="Mobile site">
+          <nav className="grid gap-2" aria-label="Mobile site">
             {links.map((link) => {
               const active = link.active(location.pathname);
               return (
@@ -107,30 +141,42 @@ export default function PrecisionPublicHeader() {
                   to={link.to}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setOpen(false)}
-                  className={`flex min-h-12 items-center rounded-[var(--radius-md)] px-4 text-[16px] font-semibold transition-colors ${active ? "bg-[color:var(--wl-accent-container)] text-primary" : "text-foreground hover:bg-muted"}`}
+                  className={`group flex min-h-[76px] items-center justify-between gap-4 rounded-[var(--radius-lg)] border px-4 py-4 transition-colors ${
+                    active
+                      ? "border-primary/30 bg-[var(--wl-accent-container)] text-foreground"
+                      : "border-border bg-[var(--wl-surface)] text-foreground hover:border-primary/30 hover:bg-[var(--wl-surface-subtle)]"
+                  }`}
                 >
-                  {link.label}
+                  <span className="min-w-0">
+                    <span className="block text-[17px] font-semibold tracking-[-.02em]">{link.label}</span>
+                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{link.description}</span>
+                  </span>
+                  <span aria-hidden="true" className="shrink-0 text-lg text-primary transition-transform group-hover:translate-x-0.5">
+                    →
+                  </span>
                 </Link>
               );
             })}
-            <div className="my-3 border-t border-border" />
+          </nav>
+
+          <div className="mt-auto grid gap-3 border-t border-border pt-6">
             <Link
               to="/signin"
               onClick={() => setOpen(false)}
-              className="flex min-h-12 items-center rounded-[var(--radius-md)] px-4 text-[16px] font-semibold text-foreground hover:bg-muted"
+              className="marketing-btn-secondary min-h-12 text-[14px] font-semibold"
             >
-              Log in
+              Sign in
             </Link>
             <Link
               to="/signup"
               onClick={() => setOpen(false)}
-              className="marketing-btn-primary mt-1 min-h-12 text-[13px] font-semibold uppercase tracking-[.05em]"
+              className="marketing-btn-primary min-h-12 text-[14px] font-semibold"
             >
-              Create account
+              Create your assistant
             </Link>
-          </nav>
+          </div>
         </div>
-      ) : null}
-    </header>
+      </DialogContent>
+    </Dialog>
   );
 }

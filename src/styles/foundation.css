@@ -126,6 +126,33 @@ button,
   color: var(--wl-on-primary);
 }
 
+/* The skip link is semantic navigation for keyboard users, not visible page copy. */
+.wl-skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  border: 1px solid var(--wl-primary);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  background: var(--wl-primary);
+  color: var(--wl-on-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 1.5rem));
+  transition: transform var(--transition-fast);
+}
+
+.wl-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--wl-on-primary);
+  outline-offset: 3px;
+}
+
 .wl-interactive {
   transition:
     background-color var(--transition-base),
