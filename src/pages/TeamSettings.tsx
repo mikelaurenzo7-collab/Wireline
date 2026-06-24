@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -67,7 +67,7 @@ export default function TeamSettings() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<Role | "Manager">("Admin");
 
-  const handleInvite = (e: React.FormEvent) => {
+  const handleInvite = (e: FormEvent) => {
     e.preventDefault();
     if (inviteEmail) {
       setIsInviteOpen(false);
