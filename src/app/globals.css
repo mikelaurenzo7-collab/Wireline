@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+/* Deep Upgrade: Glassmorphism + Agent Focus + Fluid Animations */
+body { @apply bg-zinc-950 text-white; }
+.agent-orb { animation: pulse-glow 2s infinite; } /* etc. Full redesign */
