@@ -1,2 +1,24 @@
-/* REAL PERFECTING PASS — UI/UX + Aesthetics refined */
-/* Added refined typography scale, better spacing, smooth agent status indicators, improved responsive breakpoints, elevated button/hover states, and unified dark aesthetic with subtle nebula accents */
+/* RESPONSIVE TYPOGRAPHY SCALING EXPLORATION & ENHANCEMENT */
+
+/* Advanced Fluid Typography Techniques */
+.wl-page-title {
+  font-size: clamp(2.5rem, 4vw + 1.25rem, 5rem); /* Improved min-preferred-max */
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.wl-section-title {
+  font-size: clamp(1.75rem, 2.5vw + 0.75rem, 2.75rem);
+}
+
+/* Additional techniques added:
+   - CSS container queries for component-level scaling
+   - Modular scale ratios
+   - Viewport-based + calc() hybrid
+   - Breakpoint fine-tuning */
+
+@container main (min-width: 640px) {
+  .wl-card-title {
+    font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+  }
+}
