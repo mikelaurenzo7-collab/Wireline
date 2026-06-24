@@ -1,57 +1,164 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import {
-  useState,
-  useEffect,
   useCallback,
+  useEffect,
+  useMemo,
   useRef,
-  KeyboardEvent as ReactKeyboardEvent,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import {
-  Search,
   Bot,
-  PhoneCall,
-  Mail,
-  Zap,
-  Terminal,
+  BriefcaseBusiness,
+  Cable,
   ChevronRight,
-  Inbox,
-  BarChart3,
-  Calendar,
-  MessageSquare,
-  MessagesSquare,
-  MessageCircle,
-  PhoneOutgoing,
-  History,
-  ServerCog,
-  PlugZap,
-  Sparkles,
-  Activity,
+  CreditCard,
   Database,
-  Crown,
-  Kanban,
-  ScrollText,
-  Ban,
-  LifeBuoy,
+  Inbox,
+  LayoutDashboard,
+  MonitorDown,
+  PenLine,
+  Search,
+  Settings,
+  Sparkles,
+  Terminal,
+  UsersRound,
+  WandSparkles,
+  X,
+  type LucideIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
-import { useAuth } from "../contexts/AuthContext";
-import { Input } from "./ui/shadcn/Input";
+import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
-import { ShadButton } from "./ui/shadcn/ShadButton";
 
-interface CommandItem {
+type CommandCategory = "Navigate" | "Create" | "Manage";
+
+type CommandItem = {
   id: string;
   label: string;
   description: string;
-  icon: any;
-  action: () => void;
-  category: string;
+  icon: LucideIcon;
+  href: string;
+  category: CommandCategory;
   shortcut?: string;
-  ownerOnly?: boolean;
-}
+};
+
+const COMMAND_CATEGORIES: readonly CommandCategory[] = ["Navigate", "Create", "Manage"];
+
+const WORKSPACE_COMMANDS: readonly CommandItem[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    description: "See the current state of your workspace.",
+    icon: LayoutDashboard,
+    href: "/overview",
+    category: "Navigate",
+    shortcut: "O",
+  },
+  {
+    id: "agents",
+    label: "Assistants",
+    description: "Manage personal assistants and business agents.",
+    icon: Bot,
+    href: "/agents",
+    category: "Navigate",
+    shortcut: "A",
+  },
+  {
+    id: "studio",
+    label: "Studio",
+    description: "Build, direct, and refine an assistant.",
+    icon: PenLine,
+    href: "/studio",
+    category: "Navigate",
+    shortcut: "S",
+  },
+  {
+    id: "knowledge",
+    label: "Knowledge",
+    description: "Manage the context, facts, and policies assistants use.",
+    icon: Database,
+    href: "/knowledge",
+    category: "Navigate",
+    shortcut: "K",
+  },
+  {
+    id: "connections",
+    label: "Connections",
+    description: "Choose the accounts and actions an assistant can use.",
+    icon: Cable,
+    href: "/actions",
+    category: "Navigate",
+    shortcut: "C",
+  },
+  {
+    id: "inbox",
+    label: "Inbox",
+    description: "Review conversations, outcomes, and team handoffs.",
+    icon: Inbox,
+    href: "/inbox",
+    category: "Navigate",
+    shortcut: "I",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    description: "Manage workspace, billing, team, and client surfaces.",
+    icon: Settings,
+    href: "/settings",
+    category: "Navigate",
+  },
+  {
+    id: "create-personal",
+    label: "Create a personal assistant",
+    description: "Start with a focused personal conversation to delegate.",
+    icon: Sparkles,
+    href: "/studio?create=1",
+    category: "Create",
+  },
+  {
+    id: "create-business",
+    label: "Create a business agent",
+    description: "Set up an assistant for a professional conversation line.",
+    icon: BriefcaseBusiness,
+    href: "/studio?create=1&posture=business",
+    category: "Create",
+  },
+  {
+    id: "create-from-brief",
+    label: "Open a new Studio brief",
+    description: "Start the assistant creation flow in Studio.",
+    icon: WandSparkles,
+    href: "/studio?create=1",
+    category: "Create",
+  },
+  {
+    id: "billing",
+    label: "Billing and usage",
+    description: "Review plan, conversation balance, invoices, and payment details.",
+    icon: CreditCard,
+    href: "/settings/billing",
+    category: "Manage",
+  },
+  {
+    id: "team",
+    label: "Team",
+    description: "Invite collaborators and manage workspace access.",
+    icon: UsersRound,
+    href: "/settings/team",
+    category: "Manage",
+  },
+  {
+    id: "client-apps",
+    label: "Wireline everywhere",
+    description: "Open browser companion, native app, and ChatGPT connection settings.",
+    icon: MonitorDown,
+    href: "/settings/apps",
+    category: "Manage",
+  },
+];
 
 export function isTextEntryTarget(target: EventTarget | null): boolean {
   if (!target || typeof target !== "object") return false;
@@ -87,265 +194,65 @@ export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const { user } = useAuth();
   const reduceMotion = useReducedMotion();
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
 
-  // Pin the page underneath while the command palette is open so
-  // arrow-key navigation doesn't scroll the page beneath it.
   useBodyScrollLock(isOpen);
-  const navigate = useNavigate();
 
-  const commands: CommandItem[] = [
-    // ── Navigation ─────────────────────────────────────────
-    {
-      id: "agents",
-      label: "Studio",
-      description: "Build, voice & tune your agents — home",
-      icon: Bot,
-      category: "Navigation",
-      shortcut: "A",
-      action: () => navigate("/agents"),
-    },
-    {
-      id: "assistant",
-      label: "Assistant",
-      description: "Direct your agents — embedded co-pilot in Studio",
-      icon: MessagesSquare,
-      category: "Navigation",
-      action: () => navigate("/agents"),
-    },
-    {
-      id: "dash",
-      label: "Recaps",
-      description: "Live callers, listen-in, actions & Assistants analytics",
-      icon: Activity,
-      category: "Navigation",
-      shortcut: "D",
-      action: () => navigate("/ops"),
-    },
-    {
-      id: "triage",
-      label: "Triage",
-      description: "Hot leads, compliance, knowledge gaps",
-      icon: Inbox,
-      category: "Navigation",
-      shortcut: "T",
-      action: () => navigate("/ops?tab=triage"),
-    },
-    {
-      id: "insights",
-      label: "Insights",
-      description: "Funnel, topics, heatmap, leaderboard",
-      icon: BarChart3,
-      category: "Navigation",
-      shortcut: "I",
-      action: () => navigate("/insights"),
-    },
-    {
-      id: "appointments",
-      label: "Appointments",
-      description: "Booked appointments",
-      icon: Calendar,
-      category: "Navigation",
-      action: () => navigate("/phone?tab=appointments"),
-    },
-    {
-      id: "logs",
-      label: "Call Logs",
-      description: "Call records and transcripts",
-      icon: History,
-      category: "Navigation",
-      shortcut: "L",
-      action: () => navigate("/phone"),
-    },
-    {
-      id: "inbox",
-      label: "Email",
-      description: "Inbound email threads",
-      icon: Mail,
-      category: "Navigation",
-      shortcut: "E",
-      action: () => navigate("/email"),
-    },
-    {
-      id: "sms",
-      label: "SMS",
-      description: "Two-way text conversations",
-      icon: MessageCircle,
-      category: "Navigation",
-      action: () => navigate("/sms"),
-    },
-    {
-      id: "outbound",
-      label: "Outbound",
-      description: "Single and bulk lead outreach",
-      icon: PhoneOutgoing,
-      category: "Navigation",
-      shortcut: "O",
-      action: () => navigate("/phone?tab=outbound"),
-    },
-    {
-      id: "pipeline",
-      label: "Pipeline",
-      description: "Kanban view of leads across stages",
-      icon: Kanban,
-      category: "Navigation",
-      action: () => navigate("/pipeline"),
-    },
-    {
-      id: "founder",
-      label: "Founder",
-      description: "Owner-only metrics dashboard",
-      icon: Crown,
-      category: "Navigation",
-      ownerOnly: true,
-      action: () => navigate("/founder"),
-    },
-    {
-      id: "train",
-      label: "Training",
-      description: "Train and tune agents (in Chat)",
-      icon: MessageSquare,
-      category: "Navigation",
-      action: () => navigate("/chat"),
-    },
-    {
-      id: "knowledge",
-      label: "Knowledge",
-      description: "Cross-agent fact manager",
-      icon: Database,
-      category: "Navigation",
-      action: () => navigate("/agents?rail=knowledge"),
-    },
-    {
-      id: "integrations",
-      label: "Integrations",
-      description: "Phone numbers and integrations",
-      icon: PlugZap,
-      category: "Navigation",
-      action: () => navigate("/actions"),
-    },
-    {
-      id: "admin",
-      label: "Settings",
-      description: "Account and platform settings",
-      icon: ServerCog,
-      category: "Navigation",
-      action: () => navigate("/admin"),
-    },
-    {
-      id: "dnc",
-      label: "DNC List",
-      description: "Do-not-call number registry",
-      icon: Ban,
-      category: "Navigation",
-      action: () => navigate("/dnc"),
-    },
-    {
-      id: "audit",
-      label: "Audit Log",
-      description: "Account activity and security events",
-      icon: ScrollText,
-      category: "Navigation",
-      action: () => navigate("/audit"),
-    },
-    {
-      id: "help",
-      label: "Help",
-      description: "Reach the Wireline team",
-      icon: LifeBuoy,
-      category: "Navigation",
-      action: () => navigate("/help"),
-    },
-
-    // ── Actions ────────────────────────────────────────────
-    {
-      id: "forge-agent",
-      label: "Design Agent with Wireline AI",
-      description: "Build a complete agent from a goal",
-      icon: Sparkles,
-      category: "Actions",
-      action: () => navigate("/agents"),
-    },
-    {
-      id: "test-call",
-      label: "Start Test Call",
-      description: "Pick an agent, then Training → Test call",
-      icon: PhoneCall,
-      category: "Actions",
-      action: () => navigate("/chat"),
-    },
-    {
-      id: "review-agent",
-      label: "Run Performance Review",
-      description: "Deep audit of an agent's recent calls",
-      icon: BarChart3,
-      category: "Actions",
-      action: () => navigate("/chat"),
-    },
-    {
-      id: "ingest-url",
-      label: "Ingest Knowledge from URL",
-      description: "Wireline AI reads a site and extracts facts",
-      icon: Zap,
-      category: "Actions",
-      action: () => navigate("/chat"),
-    },
-  ];
-
-  const filteredCommands = commands.filter((c) => {
-    if (c.ownerOnly && user?.is_owner !== true) return false;
-    const q = query.toLowerCase();
-    return (
-      c.label.toLowerCase().includes(q) ||
-      c.description.toLowerCase().includes(q) ||
-      c.category.toLowerCase().includes(q)
+  const filteredCommands = useMemo(() => {
+    const term = query.trim().toLocaleLowerCase();
+    if (!term) return WORKSPACE_COMMANDS;
+    return WORKSPACE_COMMANDS.filter((command) =>
+      [command.label, command.description, command.category].join(" ").toLocaleLowerCase().includes(term),
     );
-  });
+  }, [query]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const typingTarget = isTextEntryTarget(e.target);
-
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        if (!isOpen && typingTarget) return;
-        e.preventDefault();
-        setIsOpen((prev) => !prev);
-      }
-      if (e.key === "Escape" && isOpen) setIsOpen(false);
-    };
-
-    const handleOpenCommandBar = () => {
-      setIsOpen(true);
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("wireline:open-command-bar", handleOpenCommandBar);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("wireline:open-command-bar", handleOpenCommandBar);
-    };
-  }, [isOpen]);
-
-  const handleAction = useCallback((cmd: CommandItem) => {
-    cmd.action();
+  const close = useCallback(() => {
     setIsOpen(false);
     setQuery("");
   }, []);
 
+  const execute = useCallback(
+    (command: CommandItem) => {
+      navigate(command.href);
+      close();
+    },
+    [close, navigate],
+  );
+
   useEffect(() => {
-    if (isOpen) setSelectedIndex(0);
-  }, [isOpen, query]);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isCommandShortcut = (event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === "k";
+      if (isCommandShortcut) {
+        if (!isOpen && isTextEntryTarget(event.target)) return;
+        event.preventDefault();
+        setIsOpen((open) => !open);
+        return;
+      }
+      if (event.key === "Escape" && isOpen) {
+        event.preventDefault();
+        close();
+      }
+    };
+    const handleOpen = () => setIsOpen(true);
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("wireline:open-command-bar", handleOpen);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wireline:open-command-bar", handleOpen);
+    };
+  }, [close, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
-      restoreFocusRef.current =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      return;
+      restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const frame = requestAnimationFrame(() => inputRef.current?.focus());
+      return () => cancelAnimationFrame(frame);
     }
     if (restoreFocusRef.current && document.contains(restoreFocusRef.current)) {
       restoreFocusRef.current.focus();
@@ -353,243 +260,166 @@ export default function CommandBar() {
   }, [isOpen]);
 
   useEffect(() => {
+    if (isOpen) setSelectedIndex(0);
+  }, [isOpen, query]);
+
+  useEffect(() => {
     if (!isOpen) return;
     optionRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
   }, [isOpen, selectedIndex]);
 
-  const onKeyDown = (e: ReactKeyboardEvent) => {
-    if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
-      e.preventDefault();
-      setSelectedIndex((prev) =>
-        resolveCommandSelectionIndex(prev, e.key, filteredCommands.length),
+  function onDialogKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      setSelectedIndex((current) =>
+        resolveCommandSelectionIndex(current, event.key, filteredCommands.length),
       );
-    } else if (e.key === "Tab") {
-      // Standard command-palette behavior: Tab cycles results instead of
-      // moving focus out of the dialog (keyboard trap fix).
-      e.preventDefault();
-      const len = Math.max(1, filteredCommands.length);
-      setSelectedIndex((prev) => (e.shiftKey ? (prev - 1 + len) % len : (prev + 1) % len));
-    } else if (e.key === "Enter" && filteredCommands[selectedIndex]) {
-      handleAction(filteredCommands[selectedIndex]);
+      return;
     }
-  };
+    if (event.key === "Enter" && filteredCommands[selectedIndex]) {
+      event.preventDefault();
+      execute(filteredCommands[selectedIndex]);
+      return;
+    }
+    if (event.key === "Tab") {
+      event.preventDefault();
+      if (event.shiftKey) closeButtonRef.current?.focus();
+      else inputRef.current?.focus();
+    }
+  }
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen ? (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center px-4 pt-[max(1rem,calc(env(safe-area-inset-top,0px)+8dvh))]">
-          {/* Backdrop */}
-          <motion.div
+          <motion.button
+            type="button"
+            aria-label="Close command palette"
             initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { opacity: 0 }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-md"
-            onClick={() => setIsOpen(false)}
+            className="absolute inset-0 bg-[color:color-mix(in_srgb,var(--foreground)_68%,transparent)] backdrop-blur-sm"
+            onClick={close}
           />
-
-          {/* Dialog */}
           <motion.div
-            initial={reduceMotion ? { opacity: 1 } : { scale: 0.96, opacity: 0, y: -16 }}
+            initial={reduceMotion ? { opacity: 1 } : { scale: 0.98, opacity: 0, y: -12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={
-              reduceMotion
-                ? { opacity: 0, transition: { duration: 0.01 } }
-                : { scale: 0.96, opacity: 0, y: -16 }
-            }
-            transition={
-              reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
-            }
+            exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { scale: 0.98, opacity: 0, y: -12 }}
+            transition={reduceMotion ? { duration: 0.01 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             role="dialog"
             aria-modal="true"
-            aria-label="Command bar"
-            className="relative w-full max-w-xl overflow-hidden wl-panel elev-glow"
+            aria-labelledby="command-palette-title"
+            aria-describedby="command-palette-description"
+            data-slot="command-palette"
+            onKeyDown={onDialogKeyDown}
+            className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--wl-shadow-lg)]"
           >
-            {/* Purple ring border */}
-            <div className="absolute inset-0 rounded-md p-px overflow-hidden pointer-events-none z-20">
-              <div className="absolute inset-0 rounded-md wl-command-glow-ring" />
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
+              <Search aria-hidden="true" className="size-4 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <p id="command-palette-title" className="sr-only">Wireline command palette</p>
+                <p id="command-palette-description" className="sr-only">Search workspace destinations and supported actions.</p>
+                <Input
+                  ref={inputRef}
+                  autoComplete="off"
+                  aria-label="Search commands"
+                  role="combobox"
+                  aria-expanded="true"
+                  aria-controls="command-palette-listbox"
+                  aria-activedescendant={
+                    filteredCommands[selectedIndex]
+                      ? `command-palette-option-${filteredCommands[selectedIndex].id}`
+                      : undefined
+                  }
+                  aria-autocomplete="list"
+                  placeholder="Search workspace or create an assistant…"
+                  className="h-8 border-none bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </div>
+              <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-muted-foreground sm:inline-flex">ESC</kbd>
+              <Button ref={closeButtonRef} type="button" variant="ghost" size="icon" aria-label="Close command palette" onClick={close} className="size-8 min-h-8 min-w-8">
+                <X aria-hidden="true" className="size-4" />
+              </Button>
             </div>
 
-            {/* Search input */}
-            <div className="relative z-10 wl-panel-elevated rounded-t-md px-5 py-4 flex items-center gap-3 border-b border-border">
-              <Search className="w-4 h-4 text-brand/80 shrink-0" />
-              <Input
-                ref={inputRef}
-                autoFocus
-                aria-label="Command search input"
-                role="combobox"
-                aria-expanded="true"
-                aria-controls="command-bar-listbox"
-                aria-activedescendant={
-                  filteredCommands[selectedIndex]
-                    ? `command-bar-option-${filteredCommands[selectedIndex].id}`
-                    : undefined
-                }
-                aria-autocomplete="list"
-                placeholder="Jump anywhere or take an action…"
-                className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground placeholder:text-foreground/55 font-normal"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={onKeyDown}
-              />
-              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md wl-panel border border-border wl-micro-meta uppercase tracking-[0.2em] leading-none shrink-0">
-                ESC
-              </kbd>
-            </div>
-
-            {/* Results */}
-            <div className="relative z-10 wl-panel-elevated rounded-b-md max-h-[60dvh] sm:max-h-[420px] flex flex-col min-h-0">
-              <ScrollArea className="flex-1 min-h-0 max-h-[calc(60dvh-2.75rem)] sm:max-h-[calc(420px-2.75rem)]">
-                {filteredCommands.length > 0 ? (
-                  <div
-                    className="py-2"
-                    id="command-bar-listbox"
-                    role="listbox"
-                    aria-label="Command results"
-                  >
-                    {["Navigation", "Actions"].map((category) => {
-                      const catCmds = filteredCommands.filter((c) => c.category === category);
-                      if (catCmds.length === 0) return null;
+            <div className="max-h-[min(60dvh,32rem)] min-h-0">
+              <ScrollArea className="max-h-[min(60dvh,32rem)]">
+                {filteredCommands.length ? (
+                  <div id="command-palette-listbox" role="listbox" aria-label="Command results" className="p-2 sm:p-3">
+                    {COMMAND_CATEGORIES.map((category) => {
+                      const commands = filteredCommands.filter((command) => command.category === category);
+                      if (!commands.length) return null;
                       return (
-                        <div key={category} className="mb-1 last:mb-0">
-                          <div className="px-5 pt-3 pb-1.5 wl-label text-foreground/55 flex items-center gap-2">
-                            <span className="h-px flex-1 bg-border/40" />
+                        <section key={category} className="mb-3 last:mb-0">
+                          <p className="px-2 pb-1 pt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                             {category}
-                            <span className="h-px flex-1 bg-border/40" />
-                          </div>
-                          <div className="px-2 space-y-0.5">
-                            {catCmds.map((cmd) => {
-                              const globalIndex = filteredCommands.indexOf(cmd);
-                              const isSelected = globalIndex === selectedIndex;
+                          </p>
+                          <div className="space-y-1">
+                            {commands.map((command) => {
+                              const index = filteredCommands.indexOf(command);
+                              const selected = index === selectedIndex;
+                              const Icon = command.icon;
                               return (
-                                <ShadButton
-                                  key={cmd.id}
-                                  id={`command-bar-option-${cmd.id}`}
+                                <Button
+                                  key={command.id}
+                                  id={`command-palette-option-${command.id}`}
                                   type="button"
                                   variant="ghost"
-                                  disableAnimations
                                   role="option"
-                                  aria-selected={isSelected}
+                                  aria-selected={selected}
                                   tabIndex={-1}
                                   ref={(node) => {
-                                    optionRefs.current[globalIndex] = node;
+                                    optionRefs.current[index] = node;
                                   }}
-                                  onClick={() => handleAction(cmd)}
-                                  onMouseEnter={() => setSelectedIndex(globalIndex)}
-                                  onFocus={() => setSelectedIndex(globalIndex)}
+                                  onClick={() => execute(command)}
+                                  onMouseEnter={() => setSelectedIndex(index)}
                                   className={cn(
-                                    "group w-full h-auto rounded-md px-3 py-2.5 flex items-center gap-3 text-left justify-start",
-                                    isSelected
-                                      ? "bg-accent/40 border border-brand/25"
-                                      : "border border-transparent hover:bg-muted/30",
+                                    "h-auto w-full justify-start gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left",
+                                    selected ? "bg-primary/10 text-foreground" : "hover:bg-secondary",
                                   )}
                                 >
-                                  {/* Icon */}
-                                  <div
-                                    className={cn(
-                                      "w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-all",
-                                      isSelected
-                                        ? "bg-brand/15 border border-brand/30 text-brand"
-                                        : "wl-panel border border-border text-muted",
-                                    )}
-                                  >
-                                    <cmd.icon aria-hidden="true" className="w-3.5 h-3.5" />
-                                  </div>
-
-                                  {/* Label + description */}
-                                  <div className="flex-1 min-w-0">
-                                    <div
-                                      className={cn(
-                                        "text-[13px] leading-none mb-0.5 transition-colors",
-                                        isSelected ? "text-foreground" : "text-foreground/80",
-                                      )}
-                                    >
-                                      {cmd.label}
-                                    </div>
-                                    <div className="wl-micro-meta truncate leading-none">
-                                      {cmd.description}
-                                    </div>
-                                  </div>
-
-                                  {/* Shortcut or chevron */}
-                                  <div className="shrink-0 flex items-center gap-2">
-                                    {cmd.shortcut && (
-                                      <kbd
-                                        className={cn(
-                                          "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border wl-label leading-none transition-all",
-                                          isSelected
-                                            ? "bg-brand/15 border-brand/30 text-brand"
-                                            : "wl-panel border border-border/80 text-foreground/55",
-                                        )}
-                                      >
-                                        {cmd.shortcut}
-                                      </kbd>
-                                    )}
-                                    <ChevronRight
-                                      aria-hidden="true"
-                                      className={cn(
-                                        "w-3.5 h-3.5 transition-all",
-                                        isSelected
-                                          ? "text-brand opacity-100"
-                                          : "text-foreground/55 opacity-0 group-hover:opacity-100",
-                                      )}
-                                    />
-                                  </div>
-                                </ShadButton>
+                                  <span className={cn("grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] border", selected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground")}>
+                                    <Icon aria-hidden="true" className="size-4" />
+                                  </span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block text-sm font-semibold leading-5 text-foreground">{command.label}</span>
+                                    <span className="mt-0.5 block truncate text-xs leading-5 text-muted-foreground">{command.description}</span>
+                                  </span>
+                                  <span className="flex shrink-0 items-center gap-2">
+                                    {command.shortcut ? <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">{command.shortcut}</kbd> : null}
+                                    <ChevronRight aria-hidden="true" className={cn("size-4", selected ? "text-primary" : "text-muted-foreground")} />
+                                  </span>
+                                </Button>
                               );
                             })}
                           </div>
-                        </div>
+                        </section>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="py-16 flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-md wl-panel flex items-center justify-center border border-brand/15">
-                      <Terminal className="w-5 h-5 text-brand/60" />
-                    </div>
-                    <p className="wl-label text-muted">No matching commands</p>
-                    <p className="text-[11px] text-muted/70">Try “ops”, “agents”, or “insights”</p>
-                  </div>
+                  <EmptyState
+                    density="compact"
+                    className="m-4 min-h-48 border-dashed"
+                    icon={<Terminal className="size-5" />}
+                    title="No matching commands."
+                    description="Try a workspace destination, assistant, connection, or setting."
+                  />
                 )}
               </ScrollArea>
-
-              {/* Footer */}
-              <div className="shrink-0 px-5 py-2.5 border-t border-border flex items-center justify-between bg-card/60 backdrop-blur-sm">
-                <div className="flex items-center gap-3 wl-label text-foreground/55">
-                  <span className="flex items-center gap-1">
-                    <kbd
-                      className="px-1.5 py-0.5 rounded wl-panel border border-border wl-micro-badge font-mono leading-none"
-                      aria-label="Arrow keys to navigate"
-                    >
-                      ↑↓
-                    </kbd>
-                    Navigate
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <kbd
-                      className="px-1.5 py-0.5 rounded wl-panel border border-border wl-micro-badge font-mono leading-none"
-                      aria-label="Enter key to execute"
-                    >
-                      ↵
-                    </kbd>
-                    Execute
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <kbd
-                      className="px-1.5 py-0.5 rounded wl-panel border border-border wl-micro-badge font-mono leading-none"
-                      aria-label="Escape key to close"
-                    >
-                      ESC
-                    </kbd>
-                    Close
-                  </span>
-                </div>
-                <span className="wl-label text-foreground/55">WIRELINE</span>
-              </div>
             </div>
+
+            <footer className="flex items-center justify-between gap-3 border-t border-border bg-secondary/40 px-4 py-2.5 sm:px-5">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↑↓</span> Navigate · <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↵</span> Open
+              </p>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Wireline</p>
+            </footer>
           </motion.div>
         </div>
-      )}
+      ) : null}
     </AnimatePresence>
   );
 }
