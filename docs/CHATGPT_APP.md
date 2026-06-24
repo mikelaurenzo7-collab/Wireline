@@ -50,11 +50,6 @@ Do not place values in Git or Google Drive.
 MCP_DEMO_STATE_SECRET=
 MCP_OAUTH_TOKEN_PEPPER=
 
-# Exact values supplied by the ChatGPT Developer Mode / app registration flow.
-# Comma-separated only when multiple environments are intentionally registered.
-MCP_OAUTH_ALLOWED_CLIENT_IDS=
-MCP_OAUTH_ALLOWED_REDIRECT_URIS=
-
 # Existing values
 APP_URL=https://trywireline.com
 OPENAI_API_KEY=
@@ -62,6 +57,12 @@ OPENAI_API_KEY=
 # Used for guest ChatGPT-App Realtime preview when present. Falls back to OPENAI_API_KEY.
 OPENAI_API_KEY_CHATKIT=
 ```
+
+### Client registration
+
+Wireline supports **Client ID Metadata Documents (CIMD)**, which is ChatGPT's preferred OAuth client-registration path. ChatGPT supplies an HTTPS `client_id` metadata URL and Wireline fetches that document, validates its `https://chatgpt.com/connector/oauth/...` callback URI, and uses PKCE S256 for the authorization-code exchange.
+
+Do **not** set `MCP_OAUTH_ALLOWED_CLIENT_IDS` or `MCP_OAUTH_ALLOWED_REDIRECT_URIS` for the standard ChatGPT CIMD flow. Those variables remain optional only for a controlled, legacy pre-registered OAuth client.
 
 ### Secret ownership
 
@@ -74,11 +75,10 @@ OPENAI_API_KEY_CHATKIT=
 
 1. Deploy this branch to a Vercel Preview environment.
 2. Open ChatGPT on the web and create a developer-mode app using the preview URL plus `/mcp`.
-3. Copy the exact `client_id` and redirect URI required by the ChatGPT registration into the preview environment's `MCP_OAUTH_ALLOWED_CLIENT_IDS` and `MCP_OAUTH_ALLOWED_REDIRECT_URIS` values.
-4. Add the same values to Production only after the preview flow passes.
-5. In ChatGPT, exercise the golden prompts below.
-6. Verify that guest save attempts trigger OAuth, and that a successful consent creates only an unlaunched draft.
-7. Capture screenshots of the card, OAuth consent screen, account-link success, and saved draft for the eventual app submission.
+3. Select OAuth with the ChatGPT-supported Client ID Metadata Document registration path. ChatGPT supplies its own client metadata URL and callback URI during the flow; do not manually invent a static client ID.
+4. In ChatGPT, exercise the golden prompts below.
+5. Verify that guest save attempts trigger OAuth, and that a successful consent creates only an unlaunched draft.
+6. Capture screenshots of the card, OAuth consent screen, account-link success, and saved draft for the eventual app submission.
 
 ## Golden prompts
 
@@ -116,8 +116,9 @@ The app should not be selected for generic questions that lack a phone-agent tas
 - Guest voice agents have no tools and cannot imply they completed an external action.
 - Saving requires OAuth plus an explicit `confirmed: true` tool call.
 - Saving creates an agent with draft semantics only.
-- All OAuth authorization-code exchanges use PKCE `S256` and all persisted bearer credentials are hashed.
-- OAuth client ID and redirect URI are exact allowlist matches.
+- All OAuth authorization-code exchanges use PKCE `S256`; codes and bearer credentials are hashed at rest.
+- CIMD client metadata and its ChatGPT callback URI are validated before consent.
+- OAuth tokens are bound to the exact MCP `resource` requested by ChatGPT.
 
 ## ChatKit relationship
 
