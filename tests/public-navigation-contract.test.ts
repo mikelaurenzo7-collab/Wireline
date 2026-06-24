@@ -12,6 +12,7 @@ describe("public navigation mobile regression contract", () => {
     expect(header).toContain("DialogContent");
     expect(header).toContain("DialogTrigger");
     expect(header).toContain("DialogClose");
+    expect(header).toContain('presentation="navigation"');
     expect(header).toContain("showClose={false}");
     expect(header).toContain('id="wireline-mobile-navigation"');
     expect(header).not.toContain("document.body.style.overflow");
@@ -38,12 +39,15 @@ describe("public navigation mobile regression contract", () => {
     expect(foundation).toContain("transform: translateY(0)");
   });
 
-  it("keeps Dialog capable of route-safe overlay and close-control composition", () => {
+  it("keeps Dialog capable of route-safe overlay, close-control, and navigation composition", () => {
     const dialog = source("src/components/atoms/Dialog.tsx");
 
+    expect(dialog).toContain("dialogContentVariants = cva");
+    expect(dialog).toContain("presentation: {");
+    expect(dialog).toContain("navigation:");
     expect(dialog).toContain("overlayClassName?: string");
     expect(dialog).toContain("showClose?: boolean");
-    expect(dialog).toContain("data-slot=\"dialog-overlay\"");
+    expect(dialog).toContain('data-slot="dialog-overlay"');
     expect(dialog).toContain("DialogPortal");
   });
 });
