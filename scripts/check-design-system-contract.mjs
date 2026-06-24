@@ -178,6 +178,36 @@ assertIncludes(
   /StatusNotice/,
   "must use the canonical status notice for account-action failures.",
 );
+assertIncludes(
+  "src/components/StudioWorkspaceV2.tsx",
+  /EmptyState/,
+  "must use the canonical empty state when Studio has no active assistant.",
+);
+assertIncludes(
+  "src/components/StudioWorkspaceV2.tsx",
+  /Skeleton/,
+  "must use structured loading treatment for Studio initialization.",
+);
+assertIncludes(
+  "src/components/KnowledgeWorkspace.tsx",
+  /FormField/,
+  "must compose the knowledge editor from canonical form fields.",
+);
+assertIncludes(
+  "src/components/KnowledgeWorkspace.tsx",
+  /NativeSelect/,
+  "must use the canonical mobile assistant selector.",
+);
+assertIncludes(
+  "src/components/KnowledgeWorkspace.tsx",
+  /StatusNotice/,
+  "must use semantic notices for knowledge and source feedback.",
+);
+assertIncludes(
+  "src/components/KnowledgeWorkspace.tsx",
+  /Textarea/,
+  "must use the canonical textarea for long-form knowledge entries.",
+);
 assertExcludes(
   "src/pages/SettingsPage.tsx",
   /to="\/(security|support)"/,
