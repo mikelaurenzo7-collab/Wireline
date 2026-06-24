@@ -4,6 +4,7 @@ import AppRoutes from "../../routes/AppRoutes";
 import ActivationCheckpoint from "../ActivationCheckpoint";
 import TrialGateModal from "../TrialGateModal";
 import WirelineMark from "../brand/WirelineMark";
+import { CommandBar } from "../organisms";
 
 export default function AppShell() {
   const { user, loading } = useAuth();
@@ -33,6 +34,7 @@ export default function AppShell() {
   return (
     <>
       <AppRoutes />
+      <CommandBar />
       <ActivationCheckpoint />
       <TrialGateModal />
     </>
