@@ -25,8 +25,15 @@
       ]
     }
   ],
-  "functions": { "api/index.ts": { "maxDuration": 600, "includeFiles": "dist/server.cjs" } },
+  "functions": {
+    "api/index.ts": { "maxDuration": 600, "includeFiles": "dist/server.cjs" },
+    "api/mcp.ts": { "maxDuration": 60 }
+  },
   "rewrites": [
+    { "source": "/mcp", "destination": "/api/mcp" },
+    { "source": "/mcp/:path*", "destination": "/api/mcp" },
+    { "source": "/.well-known/oauth-protected-resource", "destination": "/api/mcp" },
+    { "source": "/.well-known/oauth-authorization-server", "destination": "/api/mcp" },
     { "source": "/api/:path*", "destination": "/api/index.ts" },
     { "source": "/legal/data-deletion", "destination": "/legal/data-deletion.html" },
     { "source": "/((?!api/|assets/|legal/|.+\\.[A-Za-z0-9]+$).*)", "destination": "/index.html" }
