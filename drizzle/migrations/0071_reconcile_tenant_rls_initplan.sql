@@ -100,6 +100,13 @@ BEGIN
       CONTINUE;
     END IF;
 
-    DROP POLICY IF EXISTS tenant_isolation ON public."" || tbl;
+    EXECUTE format('DROP POLICY IF EXISTS tenant_isolation ON public.%I', tbl);
+    EXECUTE format(
+      'CREATE POLICY tenant_isolation ON public.%I FOR ALL '
+      || 'USING (user_id = %s) WITH CHECK (user_id = %s)',
+      tbl,
+      guc_expr,
+      guc_expr
+    );
   END LOOP;
 END $$;
