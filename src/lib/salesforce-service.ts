@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { getSalesforceSyncPreferences } from "./salesforce-sync-preferences";
 
 /**
  * Salesforce CRM Service — real OAuth 2.0 Web Server flow.
@@ -161,6 +162,26 @@ async function getConnection(userId: string): Promise<CrmConnection | null> {
   return data || null;
 }
 
+/**
+ * Legacy connections have no Wireline preference metadata, so a missing value
+ * deliberately stays enabled. The preference only gates automatic Task
+ * delivery; OAuth connection health remains owned by getValidToken().
+ */
+async function isSalesforceCallActivitySyncEnabled(userId: string): Promise<boolean> {
+  const [connection] = await drizzle
+    .select({ metadata: schema.crmConnections.metadata })
+    .from(schema.crmConnections)
+    .where(
+      and(
+        eq(schema.crmConnections.userId, userId),
+        eq(schema.crmConnections.provider, "salesforce"),
+      ),
+    )
+    .limit(1);
+
+  return getSalesforceSyncPreferences(connection?.metadata).callActivitySyncEnabled;
+}
+
 async function getValidToken(
   userId: string,
 ): Promise<{ token: string; instanceUrl: string } | null> {
@@ -243,6 +264,11 @@ export async function searchContacts(query: string, userId?: string): Promise<Sa
 
 export async function logCall(entry: SalesforceCallLog, userId?: string): Promise<string | null> {
   const uid = userId || "";
+  if (!(await isSalesforceCallActivitySyncEnabled(uid))) {
+    log.info("Salesforce call activity sync disabled by connection preference", { userId: uid });
+    return null;
+  }
+
   const creds = await getValidToken(uid);
   if (!creds) {
     log.warn("Salesforce not connected — skipping call log");
