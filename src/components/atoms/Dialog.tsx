@@ -40,6 +40,8 @@ export const dialogContentVariants = cva(
           "inset-x-0 bottom-0 top-16 z-[70] w-auto max-w-none gap-0 overflow-y-auto rounded-none border-x-0 border-b-0 border-t border-border bg-[var(--wl-page)] p-0 shadow-none data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-top-0",
         drawer:
           "inset-x-0 bottom-0 z-[70] max-h-[min(70dvh,40rem)] w-auto max-w-none gap-0 overflow-y-auto rounded-t-[var(--radius-xl)] border border-b-0 border-x-0 border-border bg-[var(--wl-surface)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[var(--wl-shadow-lg)] data-[state=closed]:slide-out-to-bottom-0 data-[state=open]:slide-in-from-bottom-0",
+        sidebar:
+          "inset-y-0 left-0 z-[70] h-[100dvh] w-[min(84vw,20rem)] max-w-none gap-0 overflow-y-auto rounded-none border-y-0 border-l-0 border-r border-border bg-[var(--wl-surface)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] data-[state=closed]:slide-out-to-left-0 data-[state=open]:slide-in-from-left-0",
       },
     },
     defaultVariants: {
