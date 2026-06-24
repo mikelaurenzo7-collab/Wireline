@@ -4,35 +4,55 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-const routeSource = read("src/routes/chatgpt-mcp-routes.ts");
-const appSource = read("src/lib/chatgpt-mcp.ts");
+const oauthRouteSource = read("src/routes/chatgpt-mcp-routes.ts");
+const accountRouteSource = read("src/routes/chatgpt-mcp-account-routes.ts");
+const profileSource = read("src/lib/agent-customization.ts");
+const draftServiceSource = read("src/lib/agent-draft-service.ts");
 const rolloutDocs = read("docs/CHATGPT_APP.md");
 const submissionPacket = read("docs/CHATGPT_APP_SUBMISSION.md");
 
 describe("Wireline ChatGPT App production contract", () => {
   it("publishes the required MCP and OAuth discovery surfaces", () => {
-    expect(routeSource).toContain('router.post("/mcp"');
-    expect(routeSource).toContain('"/.well-known/oauth-protected-resource"');
-    expect(routeSource).toContain('"/.well-known/oauth-authorization-server"');
-    expect(routeSource).toContain("client_id_metadata_document_supported: true");
-    expect(routeSource).toContain('code_challenge_method: "S256"');
+    expect(accountRouteSource).toContain('router.post("/mcp"');
+    expect(oauthRouteSource).toContain('"/.well-known/oauth-protected-resource"');
+    expect(oauthRouteSource).toContain('"/.well-known/oauth-authorization-server"');
+    expect(oauthRouteSource).toContain("client_id_metadata_document_supported: true");
+    expect(oauthRouteSource).toContain('code_challenge_method: "S256"');
   });
 
-  it("keeps guest demos temporary and voice previews tool-free", () => {
-    expect(appSource).toContain("expiresAt: issuedAt + 60 * 60 * 1000");
-    expect(routeSource).toContain("toolChoice: \"none\"");
-    expect(routeSource).toContain("tools: []");
-    expect(routeSource).toContain("chatgpt-demo-voice");
+  it("requires OAuth for every production agent operation", () => {
+    expect(accountRouteSource).toContain('name: "create_agent_draft"');
+    expect(accountRouteSource).toContain('name: "get_agent_draft"');
+    expect(accountRouteSource).toContain('name: "update_agent_draft"');
+    expect(accountRouteSource).toContain('name: "start_private_voice_simulation"');
+    expect(accountRouteSource).toContain('securitySchemes: [{ type: "oauth2", scopes: ["agents.write"] }]');
+    expect(accountRouteSource).toContain('securitySchemes: [{ type: "oauth2", scopes: ["demo.voice"] }]');
   });
 
-  it("requires account connection and explicit confirmation before a draft is created", () => {
-    expect(routeSource).toContain('requireScope(principal, "agents.write")');
-    expect(routeSource).toContain("args.confirmed !== true");
-    expect(routeSource).toContain('status: "draft"');
-    expect(routeSource).toContain("unlaunched Wireline draft");
+  it("keeps private voice simulation tool-free and rate-limited", () => {
+    expect(accountRouteSource).toContain("toolChoice: \"none\"");
+    expect(accountRouteSource).toContain("tools: []");
+    expect(accountRouteSource).toContain("chatgpt-private-simulation");
   });
 
-  it("states the ChatGPT-to-Wireline conversion boundary consistently", () => {
+  it("requires explicit confirmation before a private draft is created or changed", () => {
+    expect(accountRouteSource).toContain("assertDraftConfirmation(args.confirmed)");
+    expect(accountRouteSource).toContain('requireScope(principal, "agents.write")');
+    expect(draftServiceSource).toContain('lifecycle: "draft"');
+    expect(accountRouteSource).toContain("unlaunched Wireline agent draft");
+  });
+
+  it("keeps agent customization canonical across client surfaces", () => {
+    expect(profileSource).toContain("normalizeAgentCustomization");
+    expect(profileSource).toContain("compileAgentRuntimeInstructions");
+    expect(profileSource).toContain("allowedActions");
+    expect(profileSource).toContain("prohibitedTopics");
+    expect(profileSource).toContain("escalationPolicy");
+    expect(draftServiceSource).toContain("createAgentDraft");
+    expect(draftServiceSource).toContain("updateAgentDraft");
+  });
+
+  it("states the no-launch boundary consistently", () => {
     expect(rolloutDocs).toContain("No live launch without a separate confirmation inside Wireline.");
     expect(submissionPacket).toContain("No agent launch.");
     expect(submissionPacket).toContain("No outbound or inbound calling from the ChatGPT app.");
