@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -126,6 +127,13 @@ requirePatterns("android/app/src/main/java/com/wireline/app/widget/WidgetPalette
   [/Canvas\s*=\s*Color\(0xFFF8F9FF\)/, "must use #F8F9FF widget canvas"],
   [/Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 widget action color"],
 ]);
+
+const designContract = spawnSync(process.execPath, [resolve(root, "scripts/check-design-system-contract.mjs")], {
+  stdio: "inherit",
+});
+if (designContract.status !== 0) {
+  report("scripts/check-design-system-contract.mjs", "design-system contract check failed");
+}
 
 if (failures.length) {
   console.error("Ametrine Precision contract check failed:\n- " + failures.join("\n- "));
