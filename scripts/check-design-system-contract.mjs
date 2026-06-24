@@ -30,7 +30,9 @@ const canonicalAtoms = [
   "src/components/atoms/Button.tsx",
   "src/components/atoms/Badge.tsx",
   "src/components/atoms/Input.tsx",
+  "src/components/atoms/NativeSelect.tsx",
   "src/components/atoms/Skeleton.tsx",
+  "src/components/atoms/Textarea.tsx",
   "src/components/atoms/EmptyState.tsx",
   "src/components/atoms/Toast.tsx",
   "src/components/atoms/HelpTooltip.tsx",
@@ -60,6 +62,11 @@ assertIncludes(
   "src/components/ui/shadcn/Skeleton.tsx",
   /from "\.\.\/\.\.\/atoms\/Skeleton"/,
   "must route legacy skeleton calls through the canonical Skeleton atom.",
+);
+assertIncludes(
+  "src/components/ui/shadcn/Textarea.tsx",
+  /from "\.\.\/\.\.\/atoms\/Textarea"/,
+  "must route legacy textarea calls through the canonical Textarea atom.",
 );
 assertIncludes(
   "src/components/atoms/HelpTooltip.tsx",
@@ -110,6 +117,16 @@ assertIncludes(
   "src/components/EmailInbox.tsx",
   /SearchField/,
   "must adopt shared search field behavior for the conversation list.",
+);
+assertIncludes(
+  "src/pages/AgentStudioHome.tsx",
+  /FormField/,
+  "must compose the create-agent dialog from canonical form fields.",
+);
+assertIncludes(
+  "src/pages/AgentStudioHome.tsx",
+  /NativeSelect/,
+  "must use native select semantics for simple create-agent role choice.",
 );
 assertExcludes(
   "src/components/atoms/Badge.tsx",
