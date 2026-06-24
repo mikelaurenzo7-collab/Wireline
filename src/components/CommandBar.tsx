@@ -33,7 +33,7 @@ import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
 
-type CommandCategory = "Navigate" | "Create" | "Manage";
+type CommandCategory = "Workspace" | "Create" | "Manage";
 
 type CommandItem = {
   id: string;
@@ -42,10 +42,9 @@ type CommandItem = {
   icon: LucideIcon;
   href: string;
   category: CommandCategory;
-  shortcut?: string;
 };
 
-const COMMAND_CATEGORIES: readonly CommandCategory[] = ["Navigate", "Create", "Manage"];
+const COMMAND_CATEGORIES: readonly CommandCategory[] = ["Workspace", "Create", "Manage"];
 
 const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
@@ -54,8 +53,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     description: "See the current state of your workspace.",
     icon: LayoutDashboard,
     href: "/overview",
-    category: "Navigate",
-    shortcut: "O",
+    category: "Workspace",
   },
   {
     id: "agents",
@@ -63,8 +61,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     description: "Manage personal assistants and business agents.",
     icon: Bot,
     href: "/agents",
-    category: "Navigate",
-    shortcut: "A",
+    category: "Workspace",
   },
   {
     id: "studio",
@@ -72,17 +69,15 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     description: "Build, direct, and refine an assistant.",
     icon: PenLine,
     href: "/studio",
-    category: "Navigate",
-    shortcut: "S",
+    category: "Workspace",
   },
   {
     id: "knowledge",
     label: "Knowledge",
-    description: "Manage the context, facts, and policies assistants use.",
+    description: "Manage the facts, context, and policies assistants use.",
     icon: Database,
     href: "/knowledge",
-    category: "Navigate",
-    shortcut: "K",
+    category: "Workspace",
   },
   {
     id: "connections",
@@ -90,8 +85,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     description: "Choose the accounts and actions an assistant can use.",
     icon: Cable,
     href: "/actions",
-    category: "Navigate",
-    shortcut: "C",
+    category: "Workspace",
   },
   {
     id: "inbox",
@@ -99,8 +93,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     description: "Review conversations, outcomes, and team handoffs.",
     icon: Inbox,
     href: "/inbox",
-    category: "Navigate",
-    shortcut: "I",
+    category: "Workspace",
   },
   {
     id: "settings",
@@ -108,7 +101,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     description: "Manage workspace, billing, team, and client surfaces.",
     icon: Settings,
     href: "/settings",
-    category: "Navigate",
+    category: "Workspace",
   },
   {
     id: "create-personal",
@@ -127,9 +120,9 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     category: "Create",
   },
   {
-    id: "create-from-brief",
+    id: "create-brief",
     label: "Open a new Studio brief",
-    description: "Start the assistant creation flow in Studio.",
+    description: "Start an assistant creation flow in Studio.",
     icon: WandSparkles,
     href: "/studio?create=1",
     category: "Create",
@@ -230,7 +223,8 @@ export default function CommandBar() {
       if (isCommandShortcut) {
         if (!isOpen && isTextEntryTarget(event.target)) return;
         event.preventDefault();
-        setIsOpen((open) => !open);
+        if (isOpen) close();
+        else setIsOpen(true);
         return;
       }
       if (event.key === "Escape" && isOpen) {
@@ -268,7 +262,7 @@ export default function CommandBar() {
     optionRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
   }, [isOpen, selectedIndex]);
 
-  function onDialogKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+  function onSearchKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
     if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
       event.preventDefault();
       setSelectedIndex((current) =>
@@ -279,12 +273,17 @@ export default function CommandBar() {
     if (event.key === "Enter" && filteredCommands[selectedIndex]) {
       event.preventDefault();
       execute(filteredCommands[selectedIndex]);
-      return;
     }
-    if (event.key === "Tab") {
+  }
+
+  function onDialogKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Tab") return;
+    if (event.target === inputRef.current) {
       event.preventDefault();
-      if (event.shiftKey) closeButtonRef.current?.focus();
-      else inputRef.current?.focus();
+      closeButtonRef.current?.focus();
+    } else if (event.target === closeButtonRef.current) {
+      event.preventDefault();
+      inputRef.current?.focus();
     }
   }
 
@@ -292,14 +291,13 @@ export default function CommandBar() {
     <AnimatePresence>
       {isOpen ? (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center px-4 pt-[max(1rem,calc(env(safe-area-inset-top,0px)+8dvh))]">
-          <motion.button
-            type="button"
-            aria-label="Close command palette"
+          <motion.div
+            aria-hidden="true"
             initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { opacity: 0 }}
             className="absolute inset-0 bg-[color:color-mix(in_srgb,var(--foreground)_68%,transparent)] backdrop-blur-sm"
-            onClick={close}
+            onMouseDown={close}
           />
           <motion.div
             initial={reduceMotion ? { opacity: 1 } : { scale: 0.98, opacity: 0, y: -12 }}
@@ -336,10 +334,19 @@ export default function CommandBar() {
                   className="h-8 border-none bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={onSearchKeyDown}
                 />
               </div>
               <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-muted-foreground sm:inline-flex">ESC</kbd>
-              <Button ref={closeButtonRef} type="button" variant="ghost" size="icon" aria-label="Close command palette" onClick={close} className="size-8 min-h-8 min-w-8">
+              <Button
+                ref={closeButtonRef}
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Close command palette"
+                onClick={close}
+                className="size-8 min-h-8 min-w-8"
+              >
                 <X aria-hidden="true" className="size-4" />
               </Button>
             </div>
@@ -380,17 +387,21 @@ export default function CommandBar() {
                                     selected ? "bg-primary/10 text-foreground" : "hover:bg-secondary",
                                   )}
                                 >
-                                  <span className={cn("grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] border", selected ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground")}>
+                                  <span
+                                    className={cn(
+                                      "grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] border",
+                                      selected
+                                        ? "border-primary/20 bg-primary/10 text-primary"
+                                        : "border-border bg-card text-muted-foreground",
+                                    )}
+                                  >
                                     <Icon aria-hidden="true" className="size-4" />
                                   </span>
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-sm font-semibold leading-5 text-foreground">{command.label}</span>
                                     <span className="mt-0.5 block truncate text-xs leading-5 text-muted-foreground">{command.description}</span>
                                   </span>
-                                  <span className="flex shrink-0 items-center gap-2">
-                                    {command.shortcut ? <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">{command.shortcut}</kbd> : null}
-                                    <ChevronRight aria-hidden="true" className={cn("size-4", selected ? "text-primary" : "text-muted-foreground")} />
-                                  </span>
+                                  <ChevronRight aria-hidden="true" className={cn("size-4 shrink-0", selected ? "text-primary" : "text-muted-foreground")} />
                                 </Button>
                               );
                             })}
