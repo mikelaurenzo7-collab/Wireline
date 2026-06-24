@@ -91,7 +91,8 @@ export function getOpenAIRealtimeStatus() {
 export async function createOpenAIRealtimeClientSecret(
   input: CreateOpenAIRealtimeClientSecretInput,
 ) {
-  const apiKey = getOpenAIApiKey(input.apiKeyPurpose);
+  const purpose = input.apiKeyPurpose || (input.userId.startsWith("guest:") ? "chatgpt_demo" : "runtime");
+  const apiKey = getOpenAIApiKey(purpose);
   const body = buildOpenAIRealtimeSessionConfig(input);
 
   try {
@@ -122,7 +123,7 @@ export async function createOpenAIRealtimeClientSecret(
     if (!response.ok) {
       log.warn("OpenAI Realtime client secret request failed", {
         userId: input.userId,
-        purpose: input.apiKeyPurpose || "runtime",
+        purpose,
         status: response.status,
         body: typeof text === "string" ? text.slice(0, 500) : undefined,
       });
@@ -138,21 +139,17 @@ export async function createOpenAIRealtimeClientSecret(
         provider: "openai_realtime",
         model: body.session.model,
         voice: body.session.audio.output.voice,
-        tools: toolsForTelemetry(tools),
-        purpose: input.apiKeyPurpose || "runtime",
+        tools: (input.tools ?? OPENAI_REALTIME_WIRELINE_TOOLS).map((tool) => tool.name),
+        purpose,
       },
     };
   } catch (error) {
     if (error instanceof AppError) throw error;
     log.error("OpenAI Realtime client secret request errored", {
       userId: input.userId,
-      purpose: input.apiKeyPurpose || "runtime",
+      purpose,
       error: getErrorMessage(error),
     });
     throw AppError.fromHttpStatus(502, "OpenAI Realtime session request failed.");
   }
-}
-
-function toolsForTelemetry(tools: OpenAIRealtimeToolDefinition[]): string[] {
-  return tools.map((tool) => tool.name);
 }
