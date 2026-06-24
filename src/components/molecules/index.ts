@@ -9,6 +9,11 @@ export {
   type CardProps,
 } from "./Card";
 export {
+  ConversationActivity,
+  conversationActivityVariants,
+  type ConversationActivityProps,
+} from "./ConversationActivity";
+export {
   ConversationMessage,
   conversationMessageVariants,
   type ConversationMessageProps,
