@@ -99,6 +99,37 @@
   line-height: 1.12;
 }
 
+/* Knowledge previously forced four independently scrolling columns into the desktop viewport. */
+[data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex.h-full {
+  height: auto;
+  min-height: 0;
+}
+
+[data-wireline-route="/knowledge"] .min-h-\[520px\] {
+  min-height: 19rem;
+}
+
+[data-wireline-route="/knowledge"] .wl-scroll {
+  overflow: visible;
+}
+
+[data-wireline-route="/knowledge"] .wl-scroll > * {
+  min-height: 0;
+}
+
+@media (min-width: 1280px) {
+  [data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex > .xl\:grid {
+    grid-template-columns: minmax(220px, 0.9fr) minmax(220px, 0.9fr) minmax(250px, 1fr) minmax(360px, 1.25fr);
+    gap: 1rem;
+  }
+
+  [data-wireline-route="/knowledge"] .wl-workspace-content-inner > .flex > .xl\:grid > aside {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+  }
+}
+
 @media (max-width: 1023px) {
   .wl-workspace-content-inner {
     max-width: none;
