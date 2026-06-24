@@ -1,5 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
 @import "./styles/design-system.css";
 @import "./styles/stitch-patterns.css";
 @import "./styles/layout-system-pass.css";
@@ -72,6 +74,29 @@
   --color-text: var(--foreground);
   --color-text-2: var(--muted-foreground);
   --color-text-3: var(--muted-foreground);
+}
+
+/* ============================================
+   Tailwind Typography Plugin Customization
+   Matches Wireline Precision/Ametrine tokens
+   ============================================ */
+@plugin "@tailwindcss/typography" {
+  --tw-prose-body: var(--wl-on-surface);
+  --tw-prose-headings: var(--wl-on-surface);
+  --tw-prose-links: var(--wl-primary-container);
+  --tw-prose-bold: var(--wl-on-surface);
+  --tw-prose-counters: var(--wl-muted);
+  --tw-prose-bullets: var(--wl-line-strong);
+  --tw-prose-hr: var(--wl-line);
+  --tw-prose-quotes: var(--wl-on-surface);
+  --tw-prose-code: var(--wl-on-surface);
+  --tw-prose-pre-bg: var(--wl-surface-subtle);
+  --tw-prose-pre-code: var(--wl-on-surface);
+
+  /* Slightly larger & stronger prose headings to match our "larger titles" direction */
+  --tw-prose-h1-size: 2.25rem;
+  --tw-prose-h2-size: 1.75rem;
+  --tw-prose-h3-size: 1.5rem;
 }
 
 body {
