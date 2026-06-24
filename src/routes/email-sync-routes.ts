@@ -1,5 +1,5 @@
 import { Router, Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { validateBody, emailInboxSyncSchema } from "../lib/api-validation";
 import { IntegrationService } from "../lib/integrations";
@@ -15,8 +15,8 @@ const router = Router();
 /**
  * The outcome center needs a truthful refresh: this route is mounted before the
  * legacy email router, whose historic connection-state endpoint shares the
- * same path. It fetches the mailbox now, updates an existing thread when a new
- * message lands, and never overwrites the account holder's chosen outcome.
+ * same path. It fetches the mailbox now, updates each existing thread from its
+ * own incoming value, and never overwrites the account holder's chosen outcome.
  */
 router.post(
   "/api/emails/sync",
@@ -60,10 +60,10 @@ router.post(
           .onConflictDoUpdate({
             target: schema.emailThreads.threadId,
             set: {
-              subject: rows[0]!.subject,
-              customerEmail: rows[0]!.customerEmail,
-              summary: rows[0]!.summary,
-              lastMessageAt: rows[0]!.lastMessageAt,
+              subject: sql`excluded.subject`,
+              customerEmail: sql`excluded.customer_email`,
+              summary: sql`excluded.summary`,
+              lastMessageAt: sql`excluded.last_message_at`,
             },
           })
           .returning({ id: schema.emailThreads.id });
