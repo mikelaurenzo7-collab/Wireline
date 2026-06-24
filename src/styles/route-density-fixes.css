@@ -1,0 +1,35 @@
+/* Route-level repairs for the dense operational surfaces. */
+
+[data-wireline-route="/actions"] .wl-workspace-content-inner > .flex.h-full,
+[data-wireline-route="/actions"] .wl-workspace-content-inner > .grid.h-full {
+  height: auto;
+  min-height: 0;
+}
+
+[data-wireline-route="/actions"] .wl-scroll {
+  overflow: visible;
+}
+
+[data-wireline-route="/actions"] .wl-workspace-content-inner > .flex > .lg\:grid > aside,
+[data-wireline-route="/actions"] .wl-workspace-content-inner > .flex > .lg\:grid > div:last-child {
+  align-self: start;
+}
+
+[data-wireline-route="/overview"] .wl-workspace-content-inner > .flex {
+  gap: 1.5rem;
+}
+
+[data-wireline-route="/overview"] .wl-metric-value {
+  font-size: clamp(2rem, 1.6rem + 1vw, 2.75rem);
+}
+
+/* A legacy per-agent Director surface needs a readable central conversation column. */
+.agent-workspace-chat-scroll {
+  margin-inline: auto;
+  width: min(100%, 56rem);
+}
+
+.agent-workspace-composer {
+  margin-inline: auto;
+  width: min(100%, 56rem);
+}
