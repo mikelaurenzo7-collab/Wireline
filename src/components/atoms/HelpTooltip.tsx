@@ -1,20 +1,37 @@
-import React from 'react';
-import { HelpCircle } from 'lucide-react';
+import * as React from "react";
+import { HelpCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/shadcn/Tooltip";
+import { cn } from "@/lib/utils";
 
-import { cn } from '@/lib/utils';
-
-interface HelpTooltipProps {
+export interface HelpTooltipProps {
   content: React.ReactNode;
+  label?: string;
   className?: string;
 }
 
-export const HelpTooltip: React.FC<HelpTooltipProps> = ({ content, className }) => {
+export function HelpTooltip({ content, label = "More information", className }: HelpTooltipProps) {
   return (
-    <div className={cn('group relative inline-flex', className)}>
-      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-      <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow transition-opacity group-hover:opacity-100">
-        {content}
-      </div>
-    </div>
+    <TooltipProvider delayDuration={250}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label={label}
+            className={cn(
+              "inline-grid size-5 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/45",
+              className,
+            )}
+          >
+            <HelpCircle aria-hidden="true" size={15} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs whitespace-normal leading-5">{content}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
-};
+}
