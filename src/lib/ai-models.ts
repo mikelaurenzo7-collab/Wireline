@@ -1,13 +1,17 @@
-// REAL IMPLEMENTATION — Grok as default for chat and voice
+// FULL UPDATE — Removed OpenRouter entirely
 
-export const DEFAULT_MODEL = 'grok-xai'; // xAI Grok default
+export const DEFAULT_MODEL = 'grok-xai';
 
-export const MODEL_OPTIONS = [
-  { id: 'grok-xai', name: 'Grok (xAI)', provider: 'xai', voiceVariants: ['grok-default', 'grok-fun', 'grok-pro'] },
-  { id: 'claude-3.5', name: 'Claude 3.5 Sonnet', provider: 'openrouter' },
-  { id: 'gpt-4o', name: 'GPT-4o', provider: 'openrouter' },
+export const AVAILABLE_MODELS = [
+  { id: 'grok-xai', name: 'Grok (xAI)', provider: 'xai' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'gemini', apiKeyEnv: 'GEMINI_API_KEY' },
+  { id: 'gpt-4o', name: 'OpenAI GPT-4o', provider: 'openai', apiKeyEnv: 'OPENAI_API_KEY' },
+  { id: 'byok-custom', name: 'Bring Your Own Key (Custom)', provider: 'byok' },
 ];
 
-export const getChatModel = () => process.env.XAI_API_KEY ? 'grok-xai' : 'openrouter-fallback';
+export const getActiveModel = (userSelection, geminiKey, openaiKey) => {
+  if (userSelection) return userSelection;
+  return 'grok-xai'; // Grok default
+};
 
-export const getVoiceModel = (selectedVoice) => selectedVoice || 'grok-default'; // Client can select Grok voices
+// Voice selection remains with Grok options + fallback to Gemini/OpenAI TTS if needed
