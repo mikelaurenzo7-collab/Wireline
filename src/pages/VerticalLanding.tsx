@@ -165,7 +165,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
               {isPersonal
                 ? "Give Wireline the task, what it may share, and where it should stop. You can review the outcome, take over, or keep the call private to your assistant."
-                : "Give Wireline the approved facts, rules, and escalation path. It follows the same operating boundaries on every conversation."}
+                : "Give the agent the approved facts, rules, and escalation path. It applies those exact boundaries on every conversation."}
             </p>
           </div>
           <div className="wl-stitch-card border-l-4 border-l-primary p-6 sm:p-8">
@@ -176,7 +176,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
               {isPersonal
                 ? "Your assistant uses the instruction you approve before the call. It should never invent identity details, agree to a commitment, or go beyond the boundaries you set."
-                : "The script is grounded in the facts, rules, and escalation path you set in Studio and Knowledge."}
+                : "The script is grounded in the facts, rules, and escalation path you set for that specific agent in Studio and Knowledge."}
             </p>
           </div>
         </div>

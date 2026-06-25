@@ -16,19 +16,19 @@ const channels = [
   {
     label: "Voice",
     title: "Calls handled on your terms",
-    body: "Give it the brief, boundaries, and escalation path. Wireline handles the conversation and brings back the answer.",
+    body: "Build a custom voice agent with your specific brief, boundaries, and escalation path. It handles the conversation and brings back the answer.",
     icon: PhoneCall,
   },
   {
     label: "Email",
     title: "Inbox motion with guardrails",
-    body: "Keep follow-ups moving with your context, approval limits, and a clear next step for every thread.",
+    body: "Create an email agent with your context, approval limits, and rules. It keeps follow-ups moving and surfaces the next step.",
     icon: Mail,
   },
   {
     label: "Text",
     title: "Text that turns interest into action",
-    body: "Reply to inbound leads, run opt-in marketing and sales follow-up, book and confirm appointments, and keep your team in the loop.",
+    body: "Your text agent follows the exact rules you set: reply to leads, run follow-up, book appointments, and keep your team informed.",
     icon: MessageSquareText,
   },
 ];
@@ -41,9 +41,9 @@ function OperatingModel() {
           <Sparkles size={17} />
         </span>
         <div>
-          <p className="wl-overline text-primary">Your brief</p>
+          <p className="wl-overline text-primary">Your agent's brief</p>
           <p className="mt-1 font-[var(--wireline-font-display)] text-[17px] font-semibold tracking-[-.02em]">
-            After-hours lead coverage
+            Home services after-hours coverage
           </p>
         </div>
       </div>
@@ -54,7 +54,7 @@ function OperatingModel() {
         </div>
         <div className="marketing-operating-model__row">
           <span>It follows</span>
-          <strong>Your rules and approvals</strong>
+          <strong>That agent's specific rules and approvals</strong>
         </div>
         <div className="marketing-operating-model__row">
           <span>It returns</span>
@@ -65,7 +65,9 @@ function OperatingModel() {
         <CheckCircle2 size={17} />
         <div>
           <p className="wl-overline">Outcome</p>
-          <p className="mt-1 text-sm font-semibold">A lead was qualified and offered a callback.</p>
+          <p className="mt-1 text-sm font-semibold">
+            The agent followed your exact rules and qualified the lead for your team.
+          </p>
         </div>
       </div>
     </aside>
@@ -88,8 +90,9 @@ export default function PrecisionLanding() {
                 Voice + Email + Text
               </p>
               <p className="mt-5 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8 lg:mx-0">
-                Give Wireline the brief. It handles calls, inboxes, and texts—from personal errands
-                to leads, appointments, and customer follow-up—under your rules.
+                Create specialized agents with their own knowledge, tools, voice, and approval
+                rules. Each one handles calls, inboxes, and texts the same way — exactly as you
+                configured it.
               </p>
               <div className="mt-8 grid gap-3 sm:max-w-none sm:grid-cols-2 lg:max-w-[510px]">
                 <Link
@@ -120,14 +123,15 @@ export default function PrecisionLanding() {
         <section className="wl-measure mx-auto px-5 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
           <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
-              <p className="wl-overline text-primary">One operating model</p>
+              <p className="wl-overline text-primary">Your agent. Every channel.</p>
               <h2 className="mt-2 font-[var(--wireline-font-display)] text-[clamp(26px,3vw,38px)] font-semibold leading-[1.1] tracking-[-.04em]">
-                The same rules across every channel.
+                Custom rules, applied the same way.
               </h2>
             </div>
             <p className="max-w-md text-sm leading-6 text-muted-foreground">
-              Start with the conversation that matters today. Add channels and systems only when
-              they make the next step better.
+              Build a specialized agent with its own knowledge, boundaries, tools, and voice. It
+              applies those exact rules whether the conversation starts as a call, an email, or a
+              text.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
@@ -146,13 +150,14 @@ export default function PrecisionLanding() {
         </section>
         <section className="border-t border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-measure mx-auto text-center">
-            <p className="wl-overline">Start with one clear brief</p>
+            <p className="wl-overline">Start with one specialized agent</p>
             <h2 className="mx-auto mt-3 max-w-2xl font-[var(--wireline-font-display)] text-[clamp(30px,4vw,44px)] font-semibold leading-[1.08] tracking-[-.045em] text-foreground">
-              Delegate the conversation. Keep the decision.
+              Build it your way. It works the same across every channel.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[16px] leading-7 text-muted-foreground">
-              Start with a pharmacy call, a text-back workflow for new leads, appointment
-              confirmation, or customer coverage. Expand when the job earns it.
+              Start with one focused agent — a scheduling specialist, a lead qualifier, or
+              after-hours support. Give it the exact knowledge and rules it needs. Expand to more
+              specialized agents as you grow.
             </p>
             <div className="mt-7">
               <Link

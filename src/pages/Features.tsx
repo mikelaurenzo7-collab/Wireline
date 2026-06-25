@@ -28,12 +28,30 @@ const BOUNDARIES = [
 ] as const;
 
 const USE_CASES = [
-  ["Personal calls", "Call a pharmacy, service desk, school, reservation line, or anyone you do not have time to wait for."],
-  ["Appointment coordination", "Offer times, book the right slot, send text confirmations and reminders, and bring your team in when a decision is needed."],
-  ["Business front desk", "Answer common questions, capture the reason for a call or text, and route urgent conversations to your team."],
-  ["SMS marketing + sales follow-up", "Reach opted-in contacts at the right moment, reply to new inquiries, keep sales conversations warm, and revive stalled opportunities."],
-  ["Lead qualification", "Reply across call, email, or text, collect the details that matter, and book qualified opportunities for your team."],
-  ["Custom workflows", "Build a focused assistant around your knowledge, rules, connected accounts, and approval process."],
+  [
+    "Personal calls",
+    "Call a pharmacy, service desk, school, reservation line, or anyone you do not have time to wait for.",
+  ],
+  [
+    "Appointment coordination",
+    "Offer times, book the right slot, send text confirmations and reminders, and bring your team in when a decision is needed.",
+  ],
+  [
+    "Business front desk",
+    "Answer common questions, capture the reason for a call or text, and route urgent conversations to your team.",
+  ],
+  [
+    "SMS marketing + sales follow-up",
+    "Reach opted-in contacts at the right moment, reply to new inquiries, keep sales conversations warm, and revive stalled opportunities.",
+  ],
+  [
+    "Lead qualification",
+    "Reply across call, email, or text, collect the details that matter, and book qualified opportunities for your team.",
+  ],
+  [
+    "Custom workflows",
+    "Build a focused assistant around your knowledge, rules, connected accounts, and approval process.",
+  ],
 ] as const;
 
 export default function Features() {
@@ -54,13 +72,20 @@ export default function Features() {
               Give every conversation a clear next step.
             </h1>
             <p className="mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
-              Wireline handles the original inquiry, sales conversation, appointment workflow, or customer follow-up inside the boundaries you set, then returns the outcome to you.
+              Wireline handles the original inquiry, sales conversation, appointment workflow, or
+              customer follow-up inside the boundaries you set, then returns the outcome to you.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+              <Link
+                to="/signup"
+                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+              >
                 Create your assistant
               </Link>
-              <Link to="/showcase" className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+              <Link
+                to="/showcase"
+                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+              >
                 <Play size={15} /> Hear a demo
               </Link>
             </div>
@@ -73,11 +98,16 @@ export default function Features() {
               <MessageSquareText size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">Calls and texts that stay on task</h2>
               <p className="mt-3 max-w-md text-[15px] leading-6 text-muted-foreground">
-                Wireline handles the actual conversation—not just a summary. It can answer questions, qualify interest, propose availability, and drive the next approved step across phone, email, and text.
+                Wireline handles the actual conversation—not just a summary. It can answer
+                questions, qualify interest, propose availability, and drive the next approved step
+                across phone, email, and text.
               </p>
               <ul className="mt-7 space-y-3">
                 {CHANNEL_POINTS.map((point) => (
-                  <li key={point} className="flex items-start gap-3 text-[14px] leading-6 text-foreground">
+                  <li
+                    key={point}
+                    className="flex items-start gap-3 text-[14px] leading-6 text-foreground"
+                  >
                     <Check size={16} className="mt-1 shrink-0 text-primary" />
                     <span>{point}</span>
                   </li>
@@ -85,7 +115,9 @@ export default function Features() {
               </ul>
               <div className="mt-7 flex items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-secondary px-4 py-3">
                 <span className="h-2 w-2 rounded-full bg-primary" />
-                <span className="text-xs text-muted-foreground">New lead · qualified · appointment offered</span>
+                <span className="text-xs text-muted-foreground">
+                  New lead · qualified · appointment offered
+                </span>
               </div>
             </article>
 
@@ -93,7 +125,8 @@ export default function Features() {
               <ShieldCheck size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">You decide the boundaries</h2>
               <p className="mt-3 max-w-md text-[15px] leading-6 text-muted-foreground">
-                Give an assistant clear rules before it does anything: what it can promise, what it should collect, and exactly when it should stop and bring you into the conversation.
+                Give an assistant clear rules before it does anything: what it can promise, what it
+                should collect, and exactly when it should stop and bring you into the conversation.
               </p>
               <dl className="mt-7 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">
                 {BOUNDARIES.map(([label, value]) => (
@@ -110,25 +143,44 @@ export default function Features() {
         <section className="border-y border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto max-w-[1040px]">
             <Workflow size={22} className="text-primary" />
-            <h2 className="wl-stitch-display mt-5 max-w-2xl">Connect a tool only when it makes the outcome better.</h2>
+            <h2 className="wl-stitch-display mt-5 max-w-2xl">
+              Connect a tool only when it makes the outcome better.
+            </h2>
             <p className="mt-3 max-w-2xl text-[15px] leading-6 text-muted-foreground">
-              Wireline can work with your calendar, inbox, CRM, and business systems. You choose which accounts are connected and which actions an assistant is allowed to take.
+              Wireline can work with your calendar, inbox, CRM, and business systems. You choose
+              which accounts are connected and which actions an assistant is allowed to take.
             </p>
 
             <div className="mt-10 grid items-stretch gap-3 md:mt-12 md:grid-cols-[1fr_auto_1.2fr_auto_1fr]">
-              <FlowNode icon={PhoneCall} label="Call, email, or text" sub="A lead, request, or task" />
+              <FlowNode
+                icon={PhoneCall}
+                label="Call, email, or text"
+                sub="A lead, request, or task"
+              />
               <FlowArrow />
               <div className="grid place-items-center rounded-[var(--radius-xl)] border border-primary bg-secondary p-6 text-center">
                 <span className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
                   <Workflow size={22} />
                 </span>
-                <span className="mt-4 text-[15px] font-semibold tracking-[-.01em] text-foreground">Your assistant or agent</span>
+                <span className="mt-4 text-[15px] font-semibold tracking-[-.01em] text-foreground">
+                  Your assistant or agent
+                </span>
                 <span className="wl-overline mt-2">Handles · qualifies · books</span>
               </div>
               <FlowArrow />
               <div className="grid gap-3">
-                <FlowNode icon={CalendarClock} label="Your calendar" sub="Checks, books, and confirms" compact />
-                <FlowNode icon={Contact} label="Your systems" sub="Only the accounts you approve" compact />
+                <FlowNode
+                  icon={CalendarClock}
+                  label="Your calendar"
+                  sub="Checks, books, and confirms"
+                  compact
+                />
+                <FlowNode
+                  icon={Contact}
+                  label="Your systems"
+                  sub="Only the accounts you approve"
+                  compact
+                />
               </div>
             </div>
           </div>
@@ -138,10 +190,13 @@ export default function Features() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] lg:items-end">
             <div>
               <p className="wl-stitch-eyebrow">Useful on day one</p>
-              <h2 className="wl-stitch-display mt-3 text-balance">Start with the job you do not want to carry yourself.</h2>
+              <h2 className="wl-stitch-display mt-3 text-balance">
+                Start with the job you do not want to carry yourself.
+              </h2>
             </div>
             <p className="max-w-xl text-[15px] leading-7 text-muted-foreground">
-              A pharmacy call, inbound support line, text-back workflow, and lead follow-up flow all start the same way: a clear job, useful facts, and boundaries you trust.
+              Each agent is built for its job — with the exact facts, tools, and boundaries it
+              needs. It applies them consistently whether the customer calls, texts, or emails.
             </p>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -156,15 +211,21 @@ export default function Features() {
         </section>
 
         <section className="border-t border-border px-5 py-12 text-center sm:px-6 sm:py-16">
-          <p className="wl-stitch-eyebrow">Start with one clear brief</p>
+          <p className="wl-stitch-eyebrow">Build specialized agents</p>
           <h2 className="mx-auto mt-3 max-w-2xl text-[clamp(28px,4vw,42px)] font-semibold leading-[1.08] tracking-[-.04em] text-foreground">
-            Build the assistant you need, then put it to work.
+            Your rules, your knowledge. Applied the same way on every channel.
           </h2>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+            <Link
+              to="/signup"
+              className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+            >
               Create your assistant
             </Link>
-            <Link to="/pricing" className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+            <Link
+              to="/pricing"
+              className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+            >
               See plans <ArrowRight size={15} />
             </Link>
           </div>
@@ -188,10 +249,16 @@ function FlowNode({
   compact?: boolean;
 }) {
   return (
-    <div className={`flex items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-secondary ${compact ? "px-4 py-3.5" : "flex-col justify-center px-6 py-6 text-center"}`}>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card text-primary"><Icon size={18} /></span>
+    <div
+      className={`flex items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-secondary ${compact ? "px-4 py-3.5" : "flex-col justify-center px-6 py-6 text-center"}`}
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card text-primary">
+        <Icon size={18} />
+      </span>
       <div className={compact ? "" : "mt-1"}>
-        <span className="block text-[14px] font-semibold tracking-[-.01em] text-foreground">{label}</span>
+        <span className="block text-[14px] font-semibold tracking-[-.01em] text-foreground">
+          {label}
+        </span>
         <span className="mt-0.5 block text-[12px] leading-5 text-muted-foreground">{sub}</span>
       </div>
     </div>

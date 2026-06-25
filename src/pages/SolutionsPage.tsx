@@ -83,7 +83,7 @@ const SOLUTIONS = {
       ],
       [
         "Your policies, not generic scripts",
-        "Give the agent approved language, service rules, escalation thresholds, and connected accounts.",
+        "Give each agent its own approved language, service rules, escalation thresholds, and connected accounts.",
       ],
     ],
     proof: "Customers get a useful answer sooner. Your team only joins when its judgment matters.",
