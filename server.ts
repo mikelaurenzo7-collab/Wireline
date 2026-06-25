@@ -17,6 +17,7 @@ import { startMemoryCleanup } from "./src/lib/rate-limit";
 import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
+import gatewayCatalogRouter from "./src/lib/gateway-catalog";
 
 /**
  * Canonical Wireline server entrypoint.
@@ -84,6 +85,7 @@ app.use((_req, res, next) => {
 
 startMemoryCleanup();
 registerApiRoutes(app);
+app.use(gatewayCatalogRouter);
 
 app.get("/api/live-ops/stream", authenticateLiveOpsStream, (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
