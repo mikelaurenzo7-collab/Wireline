@@ -106,6 +106,30 @@
   min-height: 0;
 }
 
+/* Connections are a control surface: title, state, and a clear toggle are enough. */
+[data-wireline-route="/actions"] .wl-stitch-tool-row {
+  align-items: center;
+  min-height: 3rem;
+  padding-block: 0.625rem;
+}
+
+[data-wireline-route="/actions"] .wl-stitch-tool-row small {
+  display: none;
+}
+
+[data-wireline-route="/actions"] .wl-stitch-tool-row strong {
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 1.2;
+}
+
+[data-wireline-route="/actions"] aside .studio-card p {
+  display: none;
+}
+
+[data-wireline-route="/actions"] aside .studio-card {
+  min-height: 3.75rem;
+}
+
 @media (max-width: 767px) {
   .wl-ui-caps .wl-workspace-main {
     --wl-app-rail: 100%;
