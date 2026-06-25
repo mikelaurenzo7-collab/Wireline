@@ -59,7 +59,7 @@ export default function Features() {
     <div className="min-h-screen bg-background text-foreground">
       <PageMeta
         title="AI Voice, Email & SMS Agent Features | Wireline"
-        description="Personal assistants and business agents for calls, email, and SMS—qualify leads, schedule appointments, and follow up with the boundaries you define."
+        description="Custom voice agents for calls, email, and SMS. Qualify leads. Schedule appointments. Follow up with boundaries you define."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -122,7 +122,7 @@ export default function Features() {
               <ShieldCheck size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">You decide the boundaries</h2>
               <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-                Custom boundaries and escalation — exactly as you define.
+                Custom boundaries. Escalation exactly as you define.
               </p>
               <dl className="mt-7 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">
                 {BOUNDARIES.map(([label, value]) => (
@@ -193,8 +193,8 @@ export default function Features() {
               </h2>
             </div>
             <p className="max-w-xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-              Each agent is built for its job — with the exact facts, tools, and boundaries it
-              needs. It applies them consistently whether the customer calls, texts, or emails.
+              Each agent is built for its job. With the exact facts, tools, and boundaries it needs.
+              It applies them consistently whether the customer calls, texts, or emails.
             </p>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

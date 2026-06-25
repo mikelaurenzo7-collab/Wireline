@@ -102,7 +102,7 @@ export default function HeroCallPreview() {
             <span className="mb-1.5 block font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.16em] text-foreground/48">
               Caller
             </span>
-            Hi — do you have any openings this Saturday?
+            Hi. Any openings this Saturday?
           </motion.div>
 
           <motion.div
@@ -114,7 +114,7 @@ export default function HeroCallPreview() {
             <span className="mb-1.5 block font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.16em] text-foreground/48">
               Sarah
             </span>
-            We do — 9:30 or 2:15. Want me to lock one in?
+            We do. 9:30 or 2:15. Want me to lock one in?
             {!reduce && (
               <motion.span
                 className="ml-0.5 inline-block h-[13px] w-[5px] align-[-2px] bg-brand/70"
@@ -136,7 +136,7 @@ export default function HeroCallPreview() {
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
           <span className="text-[var(--wireline-typography-caption-size)] text-foreground">
-            <strong className="font-semibold">Booking appointment</strong> — Sat 9:30 AM
+            <strong className="font-semibold">Booking appointment.</strong> Sat 9:30 AM
           </span>
           <span className="ml-auto flex gap-1.5">
             <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] text-foreground/55">

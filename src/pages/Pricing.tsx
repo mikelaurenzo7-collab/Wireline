@@ -19,7 +19,7 @@ const PERSONAL_FEATURES = [
   "Build and test personal assistants for free",
   "Add $5 when you are ready to put one to work",
   "Keep personal usage on a prepaid Conversation Balance",
-  "Choose when to add more — no automatic reload",
+  "Choose when to add more. No automatic reload.",
   "Set rules and approvals before an assistant acts externally",
 ] as const;
 
@@ -119,7 +119,7 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing — Start free, add $5 to go live | Wireline"
+        title="Pricing | Start free, add $5 to go live | Wireline"
         description="Personal assistants are free to build and test. Add a $5 Conversation Balance for live work. Business plans add numbers, routing, and team tools."
         path="/pricing"
       />
@@ -243,7 +243,7 @@ export default function Pricing() {
                 Add the operating system when your team needs it.
               </h2>
               <p className="mx-auto mt-4 max-w-[600px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-                Shared inboxes, professional lines, integrations, and routing for teams — with the
+                Shared inboxes. Professional lines. Integrations and routing for teams. With the
                 same direct control over when live work is funded.
               </p>
             </div>

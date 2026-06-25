@@ -47,13 +47,13 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "Wireline for Home Services — AI Receptionist that Books Every Call",
+    metaTitle: "Wireline for Home Services | AI Receptionist that Books Every Call",
     metaDescription:
       "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up. 14-day free trial.",
     eyebrow: "For Home Services Pros",
     headline: "Stop missing $500 after-hours calls.",
     subhead:
-      "An AI receptionist that picks up every call — emergency dispatches, quote requests, follow-ups — and books the job before the caller hangs up.",
+      "Picks up every call and books before the caller hangs up. Emergency dispatches. Quote requests. Follow ups.",
     pains: [
       {
         icon: Clock,
@@ -73,46 +73,46 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Shield,
         title: "TCPA-clean every call",
-        body: "Compliance ledger logs every disclosure and opt-out. No more wondering if you're allowed to call that number — the system enforces it.",
+        body: "Compliance ledger logs every disclosure and opt out. No more wondering if you are allowed to call that number. The system enforces it.",
       },
     ],
-    scriptPreview: `"Hey, this is Sarah from [Your Company] — sounds like you've got water coming through the ceiling. Let me get you on the schedule right now. Are you home in the next 90 minutes or would after 5 work better?"`,
+    scriptPreview: `"Hey, this is Sarah from [Your Company]. Sounds like you have water coming through the ceiling. Let me get you on the schedule right now. Are you home in the next 90 minutes or would after 5 work better?"`,
     statValue: "24 / 7",
     statLabel:
-      "Always answers — including the 6pm pipe-burst that books a $500 emergency job your competitor missed.",
+      "Always answers. Including the 6pm pipe burst that books a $500 emergency job your competitor missed.",
     primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("home-services") },
     secondaryCta: { label: "Call inbound CS demo", href: "tel:+16306425927" },
     trustLine:
-      "Built on enterprise-grade carrier infrastructure. White-labeled — customers hear your business name, not ours.",
+      "Built on enterprise grade carrier infrastructure. White labeled. Customers hear your business name, not ours.",
     faqs: [
       {
         q: "Will customers know they're talking to an AI?",
-        a: 'Only if you choose to disclose. Wireline agents introduce themselves with your business name and the persona you configure — most home-services tenants run them as a named receptionist (e.g. "Sarah from Premier HVAC"). Disclosure is your call; TCPA compliance is logged either way.',
+        a: 'Only if you choose to disclose. Wireline agents introduce themselves with your business name and the persona you configure. Most home services tenants run them as a named receptionist. For example "Sarah from Premier HVAC". Disclosure is your call. TCPA compliance is logged either way.',
       },
       {
         q: "What happens if the agent doesn't know the answer?",
-        a: "The agent says it doesn't have that detail handy and offers to either text/email the customer once it's looked up, or transfer to you live. Configure the escalation number per shift in Settings. No guessing, no hallucinations — refuses gracefully when uncertain.",
+        a: "The agent says it does not have that detail handy and offers to either text or email the customer once it is looked up, or transfer to you live. Configure the escalation number per shift in Settings. No guessing. No hallucinations. Refuses gracefully when uncertain.",
       },
       {
         q: "Can it actually dispatch me on an emergency?",
-        a: 'Yes. Configure on-call rotations and the agent triages by urgency keyword ("water," "smoke," "sparks," "no heat") — pages you via SMS/call, schedules a same-day arrival window, and texts the customer the ETA. Optional: auto-add to the Jobber/ServiceTitan calendar.',
+        a: "Yes. Configure on call rotations and the agent triages by urgency keyword. Water. Smoke. Sparks. No heat. Pages you via SMS or call. Schedules a same day arrival window. Texts the customer the ETA. Optional auto add to the Jobber or ServiceTitan calendar.",
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Most after-hours answering services charge $1-2 per minute or $200-400/month per business. Wireline starts at $9/month with the number + 30 minutes included on Personal — and the agent actually books jobs instead of just taking messages.",
+        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline starts at nine dollars per month with the number plus thirty minutes included on Personal. And the agent actually books jobs instead of just taking messages.",
       },
     ],
   },
 
   medical: {
     slug: "medical",
-    metaTitle: "Wireline for Medical Practices — AI Patient Intake on Every Call",
+    metaTitle: "Wireline for Medical Practices | AI Patient Intake on Every Call",
     metaDescription:
       "AI voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
     headline: "Patients waiting on hold becomes patients on the schedule.",
     subhead:
-      "An AI front desk that answers every call, qualifies the visit type, books the next available slot, and sends the patient an SMS confirmation — while your staff focuses on the room.",
+      "An AI front desk that answers every call. Qualifies the visit type. Books the next available slot. Sends the patient an SMS confirmation. While your staff focuses on the room.",
     pains: [
       {
         icon: Phone,
@@ -135,22 +135,22 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "Healthcare-style flow with TCPA logging and opt-out enforcement. HIPAA BAA available on Enterprise (~30-day onboarding). No PHI in transcripts by default.",
       },
     ],
-    scriptPreview: `"Thanks for calling Dr. Chen's office — I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9 — which works?"`,
+    scriptPreview: `"Thanks for calling Dr. Chen's office. I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9. Which works?"`,
     statValue: "First ring",
     statLabel:
-      "Patients on hold drop calls. Wireline picks up before the first ring — every call, every hour.",
+      "Patients on hold drop calls. Wireline picks up before the first ring. Every call. Every hour.",
     primaryCta: { label: "Call medical demo", href: "tel:+16173134469" },
     secondaryCta: { label: "Start trial", href: signupHrefForWedge("medical") },
     trustLine:
-      "Built on enterprise voice infrastructure. White-labeled — patients hear your practice name. Use Enterprise onboarding for workflows that require a signed BAA.",
+      "Built on enterprise voice infrastructure. White labeled. Patients hear your practice name. Use Enterprise onboarding for workflows that require a signed BAA.",
     faqs: [
       {
         q: "Is Wireline HIPAA-compliant?",
-        a: "Wireline runs healthcare-style intake flows today — TCPA disclosure logging, opt-out enforcement, and no PHI in transcripts by default. Use Enterprise onboarding for workflows that require a signed BAA. We're honest: don't claim certified until certified.",
+        a: "Wireline runs healthcare style intake flows today. TCPA disclosure logging. Opt out enforcement. And no PHI in transcripts by default. Use Enterprise onboarding for workflows that require a signed BAA. We are honest. Do not claim certified until certified.",
       },
       {
         q: "Can it actually book to my existing schedule?",
-        a: "Yes. Connect Google Calendar or Outlook in Settings — the agent reads real availability, respects buffer time you set, books the patient, and sends an SMS confirmation. Reschedules and cancellations flow back to the calendar automatically.",
+        a: "Yes. Connect Google Calendar or Outlook in Settings. The agent reads real availability. Respects buffer time you set. Books the patient. And sends an SMS confirmation. Reschedules and cancellations flow back to the calendar automatically.",
       },
       {
         q: "What about insurance verification?",
@@ -165,7 +165,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "Wireline for Law Firms — AI Intake That Captures Every New Matter",
+    metaTitle: "Wireline for Law Firms | AI Intake That Captures Every New Matter",
     metaDescription:
       "AI voice + email intake for law firms. Capture new matters, qualify urgency, schedule consults, and route conflict checks. Call the legal demo.",
     eyebrow: "For Law Firms",
@@ -194,7 +194,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "Plaintiff PI firms typically pay $400+ per booked consult on Google Ads. Wireline turns the calls those ads source into booked consults — without the receptionist headcount.",
       },
     ],
-    scriptPreview: `"Thank you for calling Henderson Law — this call may be confidential under attorney-client privilege. To get you the right attorney quickly, can you briefly describe what brings you in today?"`,
+    scriptPreview: `"Thank you for calling Henderson Law. This call may be confidential under attorney client privilege. To get you the right attorney quickly, can you briefly describe what brings you in today?"`,
     statValue: "Conflict-checked",
     statLabel:
       "Captures the prospective client + the opposing party name; pings your paralegal in Slack before the consult lands on the attorney's calendar.",
@@ -224,13 +224,13 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "Wireline for Real Estate — AI Lead Qualifier on Every Listing Call",
+    metaTitle: "Wireline for Real Estate | AI Lead Qualifier on Every Listing Call",
     metaDescription:
       "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes. 14-day free trial.",
     eyebrow: "For Real Estate Agents & Brokerages",
     headline: "Every lead worked. Every showing booked.",
     subhead:
-      "An AI agent that picks up every listing inquiry, qualifies pre-approval status, books the showing, and follows up on cold leads — so your top-producing agents only see qualified prospects.",
+      "An AI agent that picks up every listing inquiry. Qualifies pre approval status. Books the showing. And follows up on cold leads. So your top producing agents only see qualified prospects.",
     pains: [
       {
         icon: Phone,
@@ -253,7 +253,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "Pushes every qualified lead into HubSpot or Salesforce with the call summary, sentiment score, and next-step task. No data re-entry.",
       },
     ],
-    scriptPreview: `"Hi, you called about the listing at 1247 Maple — great property. Quick question: are you working with a buyer's agent already, or are we starting fresh? And ballpark, where do you need to be on price?"`,
+    scriptPreview: `"Hi. You called about the listing at 1247 Maple. Great property. Quick question. Are you working with a buyers agent already, or are we starting fresh? And ballpark, where do you need to be on price?"`,
     statValue: "Same day",
     statLabel:
       "Pre-qualified buyers get a same-day showing slot. Cold leads get nurtured via text until they're warm — your top agents only see the ready ones.",

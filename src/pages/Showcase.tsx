@@ -134,7 +134,7 @@ export default function Showcase() {
               </h2>
               <p className="mt-4 max-w-xl text-sm leading-7 text-primary-foreground/75 sm:text-base">
                 Build one assistant for your life or a business agent for lead response, scheduling,
-                and customer coverage—then refine it from a real conversation.
+                and customer coverage. Then refine it from a real conversation.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-none">

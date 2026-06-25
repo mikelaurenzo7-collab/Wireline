@@ -168,7 +168,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="text-center mb-6">
           <p className="wl-stitch-eyebrow">See it in action</p>
           <h3 className="text-xl font-semibold">
-            Custom voice agent preview — tailored for this work.
+            Custom voice agent preview. Tailored for this work.
           </h3>
         </div>
         <HeroCallPreview />
@@ -187,7 +187,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 : "Your process, handled consistently."}
             </h2>
             <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
-              Custom knowledge, voice, and boundaries — applied every time.
+              Custom knowledge. Your voice. Your boundaries. Applied every time.
             </p>
           </div>
           <div className="wl-stitch-card border-l-4 border-l-primary p-6 sm:p-8">

@@ -11,7 +11,7 @@ const PRINCIPLES = [
   },
   {
     title: "Deep customization per agent.",
-    copy: "Your knowledge base, boundaries, tools, and escalation paths — built in.",
+    copy: "Your knowledge base. Your boundaries. Your tools. Built in.",
   },
   {
     title: "One agent, complete context.",
@@ -53,7 +53,7 @@ export default function About() {
           </div>
           <div className="bg-card px-5 py-9 sm:px-8 sm:py-12 lg:px-10">
             <p className="max-w-xl text-base leading-7 text-muted-foreground">
-              Independently built. Every voice agent is fully customizable — your knowledge, your
+              Independently built. Every voice agent is fully customizable. Your knowledge. Your
               voice, your rules.
             </p>
             <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">

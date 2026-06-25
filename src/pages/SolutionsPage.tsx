@@ -31,7 +31,7 @@ const SOLUTIONS = {
         "It qualifies using your playbook",
         "Specialized knowledge, your voice, your exact criteria.",
       ],
-      ["Clear next step delivered", "Booked, handed off, or logged — exactly as configured."],
+      ["Clear next step delivered", "Booked. Handed off. Or logged exactly as configured."],
     ],
     capabilities: [
       [
@@ -47,7 +47,7 @@ const SOLUTIONS = {
         "Book real appointments without double-booking or overpromising.",
       ],
     ],
-    proof: "Your team spends time with qualified people—not a pile of unanswered inquiries.",
+    proof: "Your team spends time with qualified people. Not a pile of unanswered inquiries.",
   },
   support: {
     eyebrow: "Customer coverage",
@@ -98,7 +98,7 @@ export default function SolutionsPage() {
   return (
     <MarketingPageFrame mainClassName="!px-0 !pb-0 !pt-16">
       <PageMeta
-        title={`${page.title} — Wireline`}
+        title={`${page.title} | Wireline`}
         description={page.description}
         path={`/solutions/${key}`}
       />
