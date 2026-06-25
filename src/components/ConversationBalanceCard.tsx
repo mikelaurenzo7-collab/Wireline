@@ -20,9 +20,7 @@ type BalanceResponse = {
 };
 
 function formatReason(reason: string) {
-  return reason
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return reason.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function formatDate(value: string | null) {
@@ -43,8 +41,14 @@ export default function ConversationBalanceCard() {
     setError(null);
     try {
       const response = await authFetch("/api/conversation-balance");
-      const body = (await response.json().catch(() => null)) as BalanceResponse | { error?: string } | null;
-      if (!response.ok) throw new Error((body as { error?: string } | null)?.error || "Could not load Conversation Balance.");
+      const body = (await response.json().catch(() => null)) as
+        | BalanceResponse
+        | { error?: string }
+        | null;
+      if (!response.ok)
+        throw new Error(
+          (body as { error?: string } | null)?.error || "Could not load Conversation Balance.",
+        );
       setBalance(body as BalanceResponse);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load Conversation Balance.");
@@ -74,7 +78,10 @@ export default function ConversationBalanceCard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount_usd: amountUsd }),
       });
-      const body = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
+      const body = (await response.json().catch(() => null)) as {
+        url?: string;
+        error?: string;
+      } | null;
       if (!response.ok || !body?.url) throw new Error(body?.error || "Could not start checkout.");
       window.location.href = body.url;
     } catch (cause) {
@@ -86,7 +93,9 @@ export default function ConversationBalanceCard() {
   if (loading) {
     return (
       <section className="studio-card flex items-center gap-3 p-5" aria-busy="true">
-        <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary"><Loader2 className="size-4 animate-spin" /></span>
+        <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
+          <Loader2 className="size-4 animate-spin" />
+        </span>
         <p className="text-sm text-muted-foreground">Loading Conversation Balance…</p>
       </section>
     );
@@ -96,7 +105,8 @@ export default function ConversationBalanceCard() {
   const copy = balance?.copy ?? {
     title: "Conversation Balance",
     subtitle: "Build and test for free. Add $5 when you are ready to put an assistant to work.",
-    reassurance: "No subscription for personal use. No automatic reload. You decide when to add more.",
+    reassurance:
+      "No subscription for personal use. No automatic reload. You decide when to add more.",
   };
   const balanceUsd = balance?.balance_usd ?? 0;
 
@@ -108,12 +118,16 @@ export default function ConversationBalanceCard() {
             <Wallet className="size-4" />
             <p className="studio-kicker">On-demand live work</p>
           </div>
-          <h2 className="wl-section-title mt-2 text-[clamp(1.4rem,1.2rem+1vw,1.85rem)]">{copy.title}</h2>
+          <h2 className="wl-section-title mt-2 text-[clamp(1.4rem,1.2rem+1vw,1.85rem)]">
+            {copy.title}
+          </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
         </div>
         <div className="shrink-0 rounded-[var(--radius-lg)] border border-border bg-secondary px-4 py-3 text-right">
           <p className="wl-overline text-[10px]">Available now</p>
-          <p className="mt-1 text-3xl font-semibold tracking-[-.04em] tabular-nums text-foreground">${balanceUsd.toFixed(2)}</p>
+          <p className="mt-1 text-3xl font-semibold tracking-[-.04em] tabular-nums text-foreground">
+            ${balanceUsd.toFixed(2)}
+          </p>
         </div>
       </div>
 
@@ -127,7 +141,11 @@ export default function ConversationBalanceCard() {
               disabled={busyAmount !== null || !balance?.stripe_configured}
               className="studio-secondary-button min-h-10 px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {busyAmount === amount ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {busyAmount === amount ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
               Add ${amount}
             </button>
           ))}
@@ -135,15 +153,19 @@ export default function ConversationBalanceCard() {
         <p className="mt-3 text-[13px] leading-5 text-muted-foreground">{copy.reassurance}</p>
 
         {error ? (
-          <div className="mt-4 flex items-start gap-2.5 rounded-[var(--radius-lg)] border border-destructive/25 bg-destructive/5 px-3 py-3 text-sm text-foreground" role="alert">
+          <div
+            className="mt-4 flex items-start gap-2.5 rounded-[var(--radius-lg)] border border-destructive/25 bg-destructive/5 px-3 py-3 text-sm text-foreground"
+            role="alert"
+          >
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
             <p>{error}</p>
           </div>
         ) : null}
 
         {!balance?.stripe_configured ? (
-          <div className="mt-4 rounded-[var(--radius-lg)] border border-[color:color-mix(in_srgb,var(--wl-status-warning)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-warning)_8%,var(--card))] px-3 py-3 text-sm text-foreground">
-            Payments are still being connected for this environment. Your balance history will appear here once checkout is live.
+          <div className="mt-4 rounded-[var(--radius-lg)] border border-[color:color-mix(in_srgb,var(--wireline-color-status-warning)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wireline-color-status-warning)_8%,var(--card))] px-3 py-3 text-sm text-foreground">
+            Payments are still being connected for this environment. Your balance history will
+            appear here once checkout is live.
           </div>
         ) : null}
 
@@ -155,14 +177,33 @@ export default function ConversationBalanceCard() {
             </div>
             <ul className="divide-y divide-border rounded-[var(--radius-lg)] border border-border bg-card">
               {balance.ledger.slice(0, 5).map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between gap-4 px-3.5 py-3 text-sm">
+                <li
+                  key={entry.id}
+                  className="flex items-center justify-between gap-4 px-3.5 py-3 text-sm"
+                >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{formatReason(entry.reason)}</p>
-                    {entry.createdAt ? <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(entry.createdAt)}</p> : null}
+                    <p className="truncate font-medium text-foreground">
+                      {formatReason(entry.reason)}
+                    </p>
+                    {entry.createdAt ? (
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {formatDate(entry.createdAt)}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className={entry.deltaUsd >= 0 ? "font-semibold text-primary" : "font-semibold text-foreground"}>{entry.deltaUsd >= 0 ? "+" : ""}${entry.deltaUsd.toFixed(2)}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">${entry.balanceAfterUsd.toFixed(2)} left</p>
+                    <p
+                      className={
+                        entry.deltaUsd >= 0
+                          ? "font-semibold text-primary"
+                          : "font-semibold text-foreground"
+                      }
+                    >
+                      {entry.deltaUsd >= 0 ? "+" : ""}${entry.deltaUsd.toFixed(2)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      ${entry.balanceAfterUsd.toFixed(2)} left
+                    </p>
                   </div>
                 </li>
               ))}

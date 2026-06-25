@@ -48,13 +48,17 @@
 }
 
 .wl-page-title {
-  font-size: var(--wl-font-size-display);
+  font-size: var(--wireline-typography-display-size);
+  font-weight: var(--wireline-typography-display-weight);
+  line-height: var(--wireline-typography-display-lineHeight);
+  letter-spacing: var(--wireline-typography-display-letterSpacing);
 }
 
 .wl-app-page-title {
-  font-size: var(--wl-font-size-h1);
-  font-weight: var(--wl-font-weight-h1);
-  line-height: var(--wl-line-height-h1);
+  font-size: var(--wireline-typography-h1-size);
+  font-weight: var(--wireline-typography-h1-weight);
+  line-height: var(--wireline-typography-h1-lineHeight);
+  letter-spacing: var(--wireline-typography-h1-letterSpacing);
 }
 
 .wl-section-title {

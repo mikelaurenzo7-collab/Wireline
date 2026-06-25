@@ -388,4 +388,16 @@ assertIncludes(
   "components.css must reference the generated vars for primitives",
 );
 
+// Perfect symmetry: application code must use canonical --wireline- tokens (no --wl- leakage)
+assertExcludes(
+  "src/components/atoms/Button.tsx",
+  /--wl-[a-z]/,
+  "no legacy --wl- vars in app code; migrate to --wireline-* for masterful design system",
+);
+assertExcludes(
+  "src/pages/PersonalDashboard.tsx",
+  /--wl-[a-z]/,
+  "no legacy --wl- vars in app code; migrate to --wireline-* for masterful design system",
+);
+
 console.log("Design-system contract checks passed.");

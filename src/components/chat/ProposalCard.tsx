@@ -7,7 +7,8 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const TONE_CLASSES: Record<string, string> = {
   brand: "border-brand/25 bg-brand/[0.04]",
-  emerald: "border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)] bg-brand/[0.04]",
+  emerald:
+    "border-[color-mix(in_srgb,var(--wireline-color-status-success)_25%,transparent)] bg-brand/[0.04]",
   amber: "border-brand/30 bg-brand/[0.05]",
 };
 

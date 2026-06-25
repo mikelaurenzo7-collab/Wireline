@@ -1,6 +1,6 @@
 /* Guided assistant setup — consistent with the workspace's compact control grammar. */
 .studio-blueprint-card > svg {
-  color: var(--wl-muted);
+  color: var(--wireline-muted);
 }
 
 .studio-blueprint-trigger {
@@ -10,10 +10,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-line);
   border-radius: var(--radius-md);
-  background: var(--wl-surface-subtle);
-  color: var(--wl-ink);
+  background: var(--wireline-surface-subtle);
+  color: var(--wireline-ink);
   font-size: 14px;
   font-weight: 600;
   text-align: left;
@@ -21,8 +21,8 @@
 }
 
 .studio-blueprint-trigger:hover:not(:disabled) {
-  border-color: var(--wl-line-strong);
-  background: var(--wl-surface-container);
+  border-color: var(--wireline-line-strong);
+  background: var(--wireline-surface-container);
 }
 
 .studio-blueprint-trigger:active:not(:disabled) {
@@ -49,10 +49,10 @@
   max-height: min(790px, calc(100dvh - 40px));
   overflow: auto;
   padding: 28px;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-line);
   border-radius: var(--radius-xl);
-  background: var(--wl-surface);
-  box-shadow: var(--wl-shadow-lg);
+  background: var(--wireline-surface);
+  box-shadow: var(--wireline-shadow-lg);
 }
 
 .studio-blueprint-heading {
@@ -65,8 +65,8 @@
 .studio-blueprint-heading h2 {
   max-width: 550px;
   margin: 4px 0 8px;
-  color: var(--wl-ink);
-  font-family: var(--wl-font-display);
+  color: var(--wireline-ink);
+  font-family: var(--wireline-font-display);
   font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.03em;
@@ -76,7 +76,7 @@
 .studio-blueprint-heading p:not(.studio-kicker) {
   max-width: 610px;
   margin: 0;
-  color: var(--wl-muted);
+  color: var(--wireline-muted);
   font-size: 14px;
   line-height: 20px;
 }
@@ -87,19 +87,19 @@
   width: 40px;
   height: 40px;
   place-items: center;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-line);
   border-radius: var(--radius-md);
-  background: var(--wl-surface);
-  color: var(--wl-muted);
+  background: var(--wireline-surface);
+  color: var(--wireline-muted);
   font-size: 21px;
   line-height: 1;
   transition: background-color var(--transition-base), border-color var(--transition-base), color var(--transition-base), transform var(--transition-fast);
 }
 
 .studio-blueprint-close:hover {
-  border-color: var(--wl-line-strong);
-  background: var(--wl-surface-subtle);
-  color: var(--wl-ink);
+  border-color: var(--wireline-line-strong);
+  background: var(--wireline-surface-subtle);
+  color: var(--wireline-ink);
 }
 
 .studio-blueprint-close:active {
@@ -116,18 +116,18 @@
 .studio-blueprint-templates button {
   min-height: 76px;
   padding: 12px;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-line);
   border-radius: var(--radius-lg);
-  background: var(--wl-surface);
-  color: var(--wl-ink);
+  background: var(--wireline-surface);
+  color: var(--wireline-ink);
   text-align: left;
   transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
 }
 
 .studio-blueprint-templates button:hover {
-  border-color: var(--wl-line-strong);
-  background: var(--wl-surface-subtle);
-  box-shadow: var(--wl-shadow-sm);
+  border-color: var(--wireline-line-strong);
+  background: var(--wireline-surface-subtle);
+  box-shadow: var(--wireline-shadow-sm);
 }
 
 .studio-blueprint-templates button:active {
@@ -135,8 +135,8 @@
 }
 
 .studio-blueprint-templates button.is-selected {
-  border-color: var(--wl-accent);
-  background: var(--wl-accent);
+  border-color: var(--wireline-accent);
+  background: var(--wireline-accent);
   color: #fff;
 }
 
@@ -152,7 +152,7 @@
 
 .studio-blueprint-templates small {
   padding-top: 4px;
-  color: var(--wl-muted);
+  color: var(--wireline-muted);
   font-size: 12px;
   line-height: 16px;
 }
@@ -171,8 +171,8 @@
 .studio-blueprint-form label {
   display: grid;
   gap: 8px;
-  color: var(--wl-muted);
-  font-family: var(--wl-font-mono);
+  color: var(--wireline-muted);
+  font-family: var(--wireline-font-mono);
   font-size: 11px;
   font-weight: 600;
   line-height: 16px;
@@ -187,11 +187,11 @@
 .studio-blueprint-form textarea,
 .studio-blueprint-form select {
   width: 100%;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-line);
   border-radius: var(--radius-md);
   outline: none;
-  background: var(--wl-surface);
-  color: var(--wl-ink);
+  background: var(--wireline-surface);
+  color: var(--wireline-ink);
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -210,8 +210,8 @@
 
 .studio-blueprint-form textarea:focus,
 .studio-blueprint-form select:focus {
-  border-color: var(--wl-accent);
-  box-shadow: 0 0 0 3px var(--wl-accent-container);
+  border-color: var(--wireline-accent);
+  box-shadow: 0 0 0 3px var(--wireline-accent-container);
 }
 
 .studio-blueprint-selected {
@@ -221,8 +221,8 @@
   gap: 8px;
   padding: 0 12px;
   border-radius: var(--radius-md);
-  background: var(--wl-surface-subtle);
-  color: var(--wl-muted);
+  background: var(--wireline-surface-subtle);
+  color: var(--wireline-muted);
   font-size: 14px;
 }
 
@@ -231,18 +231,18 @@
   gap: 4px;
   margin-top: 20px;
   padding: 14px;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-line);
   border-radius: var(--radius-lg);
-  background: var(--wl-surface-subtle);
+  background: var(--wireline-surface-subtle);
 }
 
 .studio-blueprint-preview span {
-  color: var(--wl-muted);
+  color: var(--wireline-muted);
   font-size: 12px;
 }
 
 .studio-blueprint-preview strong {
-  color: var(--wl-ink);
+  color: var(--wireline-ink);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -256,7 +256,7 @@
 }
 
 .studio-blueprint-notice.is-success {
-  color: var(--wl-status-active);
+  color: var(--wireline-status-active);
 }
 
 @media (max-width: 700px) {

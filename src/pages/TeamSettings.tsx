@@ -1,14 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  ChevronDown,
-  Mail,
-  Plus,
-  ShieldCheck,
-  UserPlus,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ChevronDown, Mail, Plus, ShieldCheck, UserPlus, X } from "lucide-react";
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
@@ -126,14 +118,16 @@ export default function TeamSettings() {
                   className="flex items-center justify-between p-6 transition-colors hover:bg-muted/20"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--wl-surface-container-low)] text-sm font-medium text-[color:var(--wl-brand-primary)]">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--wireline-color-surface-subtle)] text-sm font-medium text-[color:var(--wireline-color-action-primary-default)]">
                       {member.avatarInitials}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         {member.name}{" "}
                         {member.role === "Owner" && (
-                          <span className="ml-2 text-xs font-normal text-muted-foreground">(You)</span>
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            (You)
+                          </span>
                         )}
                       </p>
                       <p className="text-[13px] text-muted-foreground">{member.email}</p>
@@ -161,7 +155,8 @@ export default function TeamSettings() {
           </div>
 
           <StatusNotice tone="warning" title="Role-based access control is active.">
-            Your business agents may handle sensitive client data and routing policies. Provision elevated access only to trusted operators who should be able to manage those workflows.
+            Your business agents may handle sensitive client data and routing policies. Provision
+            elevated access only to trusted operators who should be able to manage those workflows.
           </StatusNotice>
         </div>
       </div>
@@ -172,7 +167,9 @@ export default function TeamSettings() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Invite to workspace</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Choose an email and assign the right level of access.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Choose an email and assign the right level of access.
+                </p>
               </div>
               <Button
                 type="button"
@@ -195,8 +192,14 @@ export default function TeamSettings() {
                     onChange={(e) => setInviteEmail(e.target.value)}
                   />
                 </FormField>
-                <FormField label="Role assignment" description="Managers are represented as a planned role in this preview state.">
-                  <NativeSelect value={inviteRole} onChange={(e) => setInviteRole(e.target.value as Role | "Manager")}>
+                <FormField
+                  label="Role assignment"
+                  description="Managers are represented as a planned role in this preview state."
+                >
+                  <NativeSelect
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as Role | "Manager")}
+                  >
                     {inviteRoleOptions.map((role) => (
                       <option key={role} value={role}>
                         {role}

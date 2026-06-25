@@ -100,7 +100,9 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
         </div>
         <div className="flex items-center justify-between gap-4 py-3">
           <dt className="text-muted-foreground">Connected</dt>
-          <dd className="font-medium text-foreground">{formatConnectedAt(connection.connected_at)}</dd>
+          <dd className="font-medium text-foreground">
+            {formatConnectedAt(connection.connected_at)}
+          </dd>
         </div>
       </dl>
 
@@ -183,7 +185,9 @@ export default function SalesforceIntegrationPage() {
       setCallActivitySyncEnabled(previousValue);
       setSaveState("error");
       setSaveError(
-        error instanceof Error ? error.message : "Could not update Salesforce call activity delivery.",
+        error instanceof Error
+          ? error.message
+          : "Could not update Salesforce call activity delivery.",
       );
     }
   };
@@ -205,7 +209,11 @@ export default function SalesforceIntegrationPage() {
             onClick={() => void refreshConnection()}
             disabled={isRefreshing || saveState === "saving"}
           >
-            {isRefreshing ? <Loader2 className="animate-spin" size={16} /> : <RefreshCcw size={16} />}
+            {isRefreshing ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              <RefreshCcw size={16} />
+            )}
             Refresh
           </Button>
         </div>
@@ -214,9 +222,9 @@ export default function SalesforceIntegrationPage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-10">
         <div className="max-w-3xl">
           <p className="wl-page-copy">
-            Wireline records eligible completed calls in Salesforce as Task activities after post-call
-            enrichment. Control that live delivery here and review the exact runtime payload before your
-            team relies on it.
+            Wireline records eligible completed calls in Salesforce as Task activities after
+            post-call enrichment. Control that live delivery here and review the exact runtime
+            payload before your team relies on it.
           </p>
         </div>
 
@@ -239,9 +247,9 @@ export default function SalesforceIntegrationPage() {
                     id="salesforce-activity-sync-description"
                     className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground"
                   >
-                    When enabled, Wireline creates a completed Salesforce Task for an eligible call after
-                    enrichment resolves its outcome. Turning this off pauses future automatic Task delivery;
-                    it does not remove past Salesforce activities.
+                    When enabled, Wireline creates a completed Salesforce Task for an eligible call
+                    after enrichment resolves its outcome. Turning this off pauses future automatic
+                    Task delivery; it does not remove past Salesforce activities.
                   </p>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
@@ -251,7 +259,10 @@ export default function SalesforceIntegrationPage() {
 
               <div className="mt-6 flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/20 p-4">
                 <div>
-                  <label htmlFor="salesforce-call-activity-sync" className="font-medium text-foreground">
+                  <label
+                    htmlFor="salesforce-call-activity-sync"
+                    className="font-medium text-foreground"
+                  >
                     Log completed calls to Salesforce
                   </label>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -288,9 +299,13 @@ export default function SalesforceIntegrationPage() {
                 </StatusNotice>
               ) : null}
               {!isConnected && !isRefreshing ? (
-                <StatusNotice className="mt-5" tone="warning" title="Connect Salesforce to control delivery">
-                  Complete OAuth from Connections before Wireline can create or pause Salesforce call
-                  activities.
+                <StatusNotice
+                  className="mt-5"
+                  tone="warning"
+                  title="Connect Salesforce to control delivery"
+                >
+                  Complete OAuth from Connections before Wireline can create or pause Salesforce
+                  call activities.
                 </StatusNotice>
               ) : null}
             </section>
@@ -303,8 +318,8 @@ export default function SalesforceIntegrationPage() {
                 <div>
                   <h2 className="font-semibold text-foreground">Activity payload</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    The current Salesforce runtime is intentionally explicit: it creates standard Tasks rather
-                    than applying unverified custom-field mappings.
+                    The current Salesforce runtime is intentionally explicit: it creates standard
+                    Tasks rather than applying unverified custom-field mappings.
                   </p>
                 </div>
               </div>
@@ -324,15 +339,15 @@ export default function SalesforceIntegrationPage() {
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Task details</dt>
                   <dd className="text-muted-foreground">
-                    Agent, direction, caller number, duration, intent, sentiment, lead score, and post-call
-                    summary.
+                    Agent, direction, caller number, duration, intent, sentiment, lead score, and
+                    post-call summary.
                   </dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Not yet exposed</dt>
                   <dd className="text-muted-foreground">
-                    Custom field mapping, transcript attachments, and recording links will appear only after
-                    their runtime delivery contracts are implemented.
+                    Custom field mapping, transcript attachments, and recording links will appear
+                    only after their runtime delivery contracts are implemented.
                   </dd>
                 </div>
               </dl>
@@ -343,17 +358,18 @@ export default function SalesforceIntegrationPage() {
             <ConnectionSummary connection={connection} />
             <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-[color:var(--wl-success)]" />
+                <CheckCircle2 className="size-4 text-[color:var(--wireline-color-status-success)]" />
                 <h2 className="font-semibold text-foreground">Runtime guardrails</h2>
               </div>
               <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
                 <li>OAuth tokens remain encrypted and are never exposed in this workspace.</li>
                 <li>
-                  Pausing delivery affects future automatic activities only; existing Salesforce records remain
-                  unchanged.
+                  Pausing delivery affects future automatic activities only; existing Salesforce
+                  records remain unchanged.
                 </li>
                 <li>
-                  Salesforce health and contact matching are evaluated by the server before any Task is created.
+                  Salesforce health and contact matching are evaluated by the server before any Task
+                  is created.
                 </li>
               </ul>
             </section>

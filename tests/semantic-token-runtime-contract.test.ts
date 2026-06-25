@@ -10,6 +10,11 @@ describe("semantic token runtime", () => {
     expect(foundation).toContain("--wl-page: var(--wireline-color-canvas-default)");
     expect(foundation).toContain("--wl-overlay-scrim: var(--wireline-color-overlay-scrim)");
     expect(foundation).toContain("--wl-shadow-md: var(--wireline-elevation-md)");
-    expect(foundation).toContain("--wl-target-comfortable: var(--wireline-interaction-target-comfortable)");
+    expect(foundation).toContain(
+      "--wl-target-comfortable: var(--wireline-interaction-target-comfortable)",
+    );
+    // Modern direct tokens
+    expect(foundation).toContain("--wireline-color-canvas-default");
+    expect(foundation).toContain("--wireline-typography-body-size");
   });
 });

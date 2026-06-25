@@ -143,7 +143,7 @@ export default function AgentStudioHome() {
       </div>
       {showCreate ? (
         <div
-          className="fixed inset-0 z-[70] grid place-items-center bg-[color:var(--wl-focus)] p-4"
+          className="fixed inset-0 z-[70] grid place-items-center bg-[color:var(--wireline-color-focus-default)] p-4"
           role="presentation"
         >
           <form
@@ -163,23 +163,37 @@ export default function AgentStudioHome() {
                     ? PRODUCT_POSTURE.business.createCta
                     : PRODUCT_POSTURE.personal.createCta}
                 </p>
-                <h2 id="create-assistant-title" className="mt-1 text-xl font-semibold tracking-[-.04em]">
+                <h2
+                  id="create-assistant-title"
+                  className="mt-1 text-xl font-semibold tracking-[-.04em]"
+                >
                   {wantsBusinessAgent
                     ? "Give your business agent one clear job."
                     : "Start with one useful call."}
                 </h2>
-                <p id="create-assistant-description" className="mt-2 text-sm leading-5 text-muted-foreground">
+                <p
+                  id="create-assistant-description"
+                  className="mt-2 text-sm leading-5 text-muted-foreground"
+                >
                   {wantsBusinessAgent
                     ? "Name the agent, describe how it should represent your business, and refine policies in Studio."
                     : "Name the help you want and teach the details in Studio."}
                 </p>
                 {browserBrief ? (
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    Browser context has been added to the first brief as reference. Review it before creating your assistant.
+                    Browser context has been added to the first brief as reference. Review it before
+                    creating your assistant.
                   </p>
                 ) : null}
               </div>
-              <Button type="button" variant="ghost" size="icon" onClick={close} aria-label="Close create assistant dialog" className="shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={close}
+                aria-label="Close create assistant dialog"
+                className="shrink-0"
+              >
                 <X aria-hidden="true" size={16} />
               </Button>
             </div>
@@ -234,9 +248,21 @@ export default function AgentStudioHome() {
               />
             </FormField>
 
-            {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
-            <Button type="submit" disabled={!name.trim() || creating} className="mt-5 w-full justify-center">
-              {creating ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <WandSparkles aria-hidden="true" size={16} />}
+            {error ? (
+              <p className="mt-3 text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <Button
+              type="submit"
+              disabled={!name.trim() || creating}
+              className="mt-5 w-full justify-center"
+            >
+              {creating ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <WandSparkles aria-hidden="true" size={16} />
+              )}
               Create and open Studio
             </Button>
           </form>

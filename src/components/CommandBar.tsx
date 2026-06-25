@@ -200,7 +200,10 @@ export default function CommandBar() {
     const term = query.trim().toLocaleLowerCase();
     if (!term) return WORKSPACE_COMMANDS;
     return WORKSPACE_COMMANDS.filter((command) =>
-      [command.label, command.description, command.category].join(" ").toLocaleLowerCase().includes(term),
+      [command.label, command.description, command.category]
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(term),
     );
   }, [query]);
 
@@ -219,7 +222,8 @@ export default function CommandBar() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isCommandShortcut = (event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === "k";
+      const isCommandShortcut =
+        (event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === "k";
       if (isCommandShortcut) {
         if (!isOpen && isTextEntryTarget(event.target)) return;
         event.preventDefault();
@@ -244,7 +248,8 @@ export default function CommandBar() {
 
   useEffect(() => {
     if (isOpen) {
-      restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      restoreFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
       const frame = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(frame);
     }
@@ -302,21 +307,31 @@ export default function CommandBar() {
           <motion.div
             initial={reduceMotion ? { opacity: 1 } : { scale: 0.98, opacity: 0, y: -12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { scale: 0.98, opacity: 0, y: -12 }}
-            transition={reduceMotion ? { duration: 0.01 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            exit={
+              reduceMotion
+                ? { opacity: 0, transition: { duration: 0.01 } }
+                : { scale: 0.98, opacity: 0, y: -12 }
+            }
+            transition={
+              reduceMotion ? { duration: 0.01 } : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
+            }
             role="dialog"
             aria-modal="true"
             aria-labelledby="command-palette-title"
             aria-describedby="command-palette-description"
             data-slot="command-palette"
             onKeyDown={onDialogKeyDown}
-            className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--wl-shadow-lg)]"
+            className="relative w-full max-w-2xl overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--wireline-elevation-lg)]"
           >
             <div className="flex items-center gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
               <Search aria-hidden="true" className="size-4 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
-                <p id="command-palette-title" className="sr-only">Wireline command palette</p>
-                <p id="command-palette-description" className="sr-only">Search workspace destinations and supported actions.</p>
+                <p id="command-palette-title" className="sr-only">
+                  Wireline command palette
+                </p>
+                <p id="command-palette-description" className="sr-only">
+                  Search workspace destinations and supported actions.
+                </p>
                 <Input
                   ref={inputRef}
                   autoComplete="off"
@@ -337,7 +352,9 @@ export default function CommandBar() {
                   onKeyDown={onSearchKeyDown}
                 />
               </div>
-              <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-muted-foreground sm:inline-flex">ESC</kbd>
+              <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-muted-foreground sm:inline-flex">
+                ESC
+              </kbd>
               <Button
                 ref={closeButtonRef}
                 type="button"
@@ -354,9 +371,16 @@ export default function CommandBar() {
             <div className="max-h-[min(60dvh,32rem)] min-h-0">
               <ScrollArea className="max-h-[min(60dvh,32rem)]">
                 {filteredCommands.length ? (
-                  <div id="command-palette-listbox" role="listbox" aria-label="Command results" className="p-2 sm:p-3">
+                  <div
+                    id="command-palette-listbox"
+                    role="listbox"
+                    aria-label="Command results"
+                    className="p-2 sm:p-3"
+                  >
                     {COMMAND_CATEGORIES.map((category) => {
-                      const commands = filteredCommands.filter((command) => command.category === category);
+                      const commands = filteredCommands.filter(
+                        (command) => command.category === category,
+                      );
                       if (!commands.length) return null;
                       return (
                         <section key={category} className="mb-3 last:mb-0">
@@ -384,7 +408,9 @@ export default function CommandBar() {
                                   onMouseEnter={() => setSelectedIndex(index)}
                                   className={cn(
                                     "h-auto w-full justify-start gap-3 rounded-[var(--radius-md)] px-3 py-3 text-left",
-                                    selected ? "bg-primary/10 text-foreground" : "hover:bg-secondary",
+                                    selected
+                                      ? "bg-primary/10 text-foreground"
+                                      : "hover:bg-secondary",
                                   )}
                                 >
                                   <span
@@ -398,10 +424,20 @@ export default function CommandBar() {
                                     <Icon aria-hidden="true" className="size-4" />
                                   </span>
                                   <span className="min-w-0 flex-1">
-                                    <span className="block text-sm font-semibold leading-5 text-foreground">{command.label}</span>
-                                    <span className="mt-0.5 block truncate text-xs leading-5 text-muted-foreground">{command.description}</span>
+                                    <span className="block text-sm font-semibold leading-5 text-foreground">
+                                      {command.label}
+                                    </span>
+                                    <span className="mt-0.5 block truncate text-xs leading-5 text-muted-foreground">
+                                      {command.description}
+                                    </span>
                                   </span>
-                                  <ChevronRight aria-hidden="true" className={cn("size-4 shrink-0", selected ? "text-primary" : "text-muted-foreground")} />
+                                  <ChevronRight
+                                    aria-hidden="true"
+                                    className={cn(
+                                      "size-4 shrink-0",
+                                      selected ? "text-primary" : "text-muted-foreground",
+                                    )}
+                                  />
                                 </Button>
                               );
                             })}
@@ -424,9 +460,14 @@ export default function CommandBar() {
 
             <footer className="flex items-center justify-between gap-3 border-t border-border bg-secondary/40 px-4 py-2.5 sm:px-5">
               <p className="text-xs text-muted-foreground">
-                <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↑↓</span> Navigate · <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↵</span> Open
+                <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↑↓</span>{" "}
+                Navigate ·{" "}
+                <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↵</span>{" "}
+                Open
               </p>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">Wireline</p>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                Wireline
+              </p>
             </footer>
           </motion.div>
         </div>

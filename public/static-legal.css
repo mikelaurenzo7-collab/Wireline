@@ -1,13 +1,22 @@
 :root {
-  --wl-page: #f8f9ff;
-  --wl-card: #ffffff;
-  --wl-surface-low: #eff4ff;
-  --wl-surface: #e5eeff;
-  --wl-primary: #451ebb;
-  --wl-primary-container: #5d3fd3;
-  --wl-text: #0b1c30;
-  --wl-muted: #484554;
-  --wl-outline: #c9c4d7;
+  --wireline-color-canvas-default: #F8F9FF;
+  --wireline-color-surface-default: #FFFFFF;
+  --wireline-color-surface-subtle: #EFF4FF;
+  --wireline-color-surface-container: #E5EEFF;
+  --wireline-color-action-primary-pressed: #451EBB;
+  --wireline-color-action-primary-default: #5D3FD3;
+  --wireline-color-text-primary: #0B1C30;
+  --wireline-color-text-secondary: #5F687B;
+  --wireline-color-border-default: #C9C4D7;
+  --wl-page: var(--wireline-color-canvas-default);
+  --wl-card: var(--wireline-color-surface-default);
+  --wl-surface-low: var(--wireline-color-surface-subtle);
+  --wl-surface: var(--wireline-color-surface-container);
+  --wl-primary: var(--wireline-color-action-primary-pressed);
+  --wl-primary-container: var(--wireline-color-action-primary-default);
+  --wl-text: var(--wireline-color-text-primary);
+  --wl-muted: var(--wireline-color-text-secondary);
+  --wl-outline: var(--wireline-color-border-default);
   color-scheme: light;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }

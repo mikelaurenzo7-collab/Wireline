@@ -37,11 +37,11 @@ export const dialogContentVariants = cva(
         modal:
           "wl-panel glass-xl left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border p-6 shadow-lg data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-xl",
         navigation:
-          "inset-x-0 bottom-0 top-16 z-[70] w-auto max-w-none gap-0 overflow-y-auto rounded-none border-x-0 border-b-0 border-t border-border bg-[var(--wl-page)] p-0 shadow-none data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-top-0",
+          "inset-x-0 bottom-0 top-16 z-[70] w-auto max-w-none gap-0 overflow-y-auto rounded-none border-x-0 border-b-0 border-t border-border bg-[var(--wireline-color-canvas-default)] p-0 shadow-none data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-top-0",
         drawer:
-          "inset-x-0 bottom-0 z-[70] max-h-[min(70dvh,40rem)] w-auto max-w-none gap-0 overflow-y-auto rounded-t-[var(--radius-xl)] border border-b-0 border-x-0 border-border bg-[var(--wl-surface)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[var(--wl-shadow-lg)] data-[state=closed]:slide-out-to-bottom-0 data-[state=open]:slide-in-from-bottom-0",
+          "inset-x-0 bottom-0 z-[70] max-h-[min(70dvh,40rem)] w-auto max-w-none gap-0 overflow-y-auto rounded-t-[var(--radius-xl)] border border-b-0 border-x-0 border-border bg-[var(--wireline-color-surface-default)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[var(--wireline-elevation-lg)] data-[state=closed]:slide-out-to-bottom-0 data-[state=open]:slide-in-from-bottom-0",
         sidebar:
-          "inset-y-0 left-0 z-[70] h-[100dvh] w-[min(84vw,20rem)] max-w-none gap-0 overflow-y-auto rounded-none border-y-0 border-l-0 border-r border-border bg-[var(--wl-surface)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] data-[state=closed]:slide-out-to-left-0 data-[state=open]:slide-in-from-left-0",
+          "inset-y-0 left-0 z-[70] h-[100dvh] w-[min(84vw,20rem)] max-w-none gap-0 overflow-y-auto rounded-none border-y-0 border-l-0 border-r border-border bg-[var(--wireline-color-surface-default)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] data-[state=closed]:slide-out-to-left-0 data-[state=open]:slide-in-from-left-0",
       },
     },
     defaultVariants: {
@@ -73,9 +73,7 @@ const DialogContent = React.forwardRef<
     >
       {children}
       {showClose ? (
-        <DialogPrimitive.Close
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-        >
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
@@ -85,10 +83,7 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-const DialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     data-slot="dialog-header"
     className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
@@ -97,10 +92,7 @@ const DialogHeader = ({
 );
 DialogHeader.displayName = "DialogHeader";
 
-const DialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     data-slot="dialog-footer"
     className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
@@ -116,7 +108,10 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     data-slot="dialog-title"
-    className={cn("text-lg font-semibold leading-none tracking-tight wl-page-title text-xl", className)}
+    className={cn(
+      "text-lg font-semibold leading-none tracking-tight wl-page-title text-xl",
+      className,
+    )}
     {...props}
   />
 ));
@@ -129,7 +124,7 @@ const DialogDescription = React.forwardRef<
   <DialogPrimitive.Description
     ref={ref}
     data-slot="dialog-description"
-    className={cn("text-sm text-[var(--wl-text-secondary)]", className)}
+    className={cn("text-sm text-[var(--wireline-color-text-secondary)]", className)}
     {...props}
   />
 ));

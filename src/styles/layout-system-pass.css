@@ -2,8 +2,8 @@
 
 .wl-workspace-shell {
   background:
-    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--wl-primary-container) 7%, transparent), transparent 31rem),
-    var(--wl-page);
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--wireline-color-action-primary-container) 7%, transparent), transparent 31rem),
+    var(--wireline-color-canvas-default);
 }
 
 .wl-workspace-main {
@@ -24,24 +24,24 @@
 }
 
 .wl-workspace-sidebar {
-  background: color-mix(in srgb, var(--wl-surface) 97%, var(--wl-page));
+  background: color-mix(in srgb, var(--wireline-color-surface-default) 97%, var(--wireline-color-canvas-default));
 }
 
 .wl-stitch-sidebar-link {
   min-height: 2.625rem;
   font-size: 0.8125rem;
-  color: color-mix(in srgb, var(--wl-muted) 88%, var(--wl-on-surface));
+  color: color-mix(in srgb, var(--wireline-color-text-secondary) 88%, var(--wireline-color-text-primary));
 }
 
 .wl-stitch-sidebar-link:hover {
-  background: color-mix(in srgb, var(--wl-primary-container) 5%, var(--wl-surface));
-  color: var(--wl-on-surface);
+  background: color-mix(in srgb, var(--wireline-color-action-primary-container) 5%, var(--wireline-color-surface-default));
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-stitch-sidebar-link[aria-current="page"] {
   position: relative;
-  background: color-mix(in srgb, var(--wl-primary-container) 11%, var(--wl-surface));
-  color: var(--wl-primary-container);
+  background: color-mix(in srgb, var(--wireline-color-action-primary-container) 11%, var(--wireline-color-surface-default));
+  color: var(--wireline-color-action-primary-container);
   font-weight: 650;
 }
 
@@ -52,12 +52,12 @@
   width: 0.1875rem;
   height: 1.25rem;
   border-radius: 999px;
-  background: var(--wl-primary-container);
+  background: var(--wireline-color-action-primary-container);
   content: "";
 }
 
 .wl-workspace-header {
-  background: color-mix(in srgb, var(--wl-page) 86%, transparent);
+  background: color-mix(in srgb, var(--wireline-color-canvas-default) 86%, transparent);
   backdrop-filter: blur(18px);
 }
 
@@ -74,7 +74,7 @@
 }
 
 .wl-workspace-content .studio-card {
-  border-color: color-mix(in srgb, var(--wl-line) 82%, transparent);
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 82%, transparent);
   border-radius: calc(var(--radius-xl) - 2px);
 }
 
@@ -91,7 +91,7 @@
 }
 
 .wl-route-section-heading {
-  font-family: var(--wl-font-display);
+  font-family: var(--wireline-font-display);
   font-size: clamp(1.25rem, 1.05rem + 0.75vw, 1.75rem);
   font-weight: 650;
   letter-spacing: -0.03em;
@@ -100,7 +100,7 @@
 
 .wl-route-copy {
   max-width: 66ch;
-  color: var(--wl-muted);
+  color: var(--wireline-color-text-secondary);
   font-size: 0.9375rem;
   line-height: 1.6;
 }
@@ -108,23 +108,23 @@
 .wl-setup-surface {
   display: grid;
   gap: 1.25rem;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-xl);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
   padding: clamp(1.25rem, 1rem + 1vw, 2rem);
 }
 
 .wl-setup-surface__eyebrow {
-  font-family: var(--wl-font-mono);
+  font-family: var(--wireline-font-mono);
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--wl-primary-container);
+  color: var(--wireline-color-action-primary-container);
 }
 
 .wl-setup-surface__title {
-  font-family: var(--wl-font-display);
+  font-family: var(--wireline-font-display);
   font-size: clamp(1.375rem, 1.15rem + .75vw, 1.9rem);
   font-weight: 650;
   letter-spacing: -0.03em;
@@ -179,22 +179,22 @@
 
 /* The public hero now carries one purposeful product proof card. */
 .marketing-hero {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--wl-primary-container) 4%, var(--wl-page)), var(--wl-page) 72%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wireline-color-action-primary-container) 4%, var(--wireline-color-canvas-default)), var(--wireline-color-canvas-default) 72%);
 }
 
 .marketing-operating-model {
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--wl-primary-container) 20%, var(--wl-line));
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-container) 20%, var(--wireline-color-border-default));
   border-radius: calc(var(--radius-xl) + 2px);
-  background: var(--wl-surface);
-  box-shadow: 0 24px 50px -38px color-mix(in srgb, var(--wl-primary-container) 52%, transparent), var(--wl-shadow-sm);
+  background: var(--wireline-color-surface-default);
+  box-shadow: 0 24px 50px -38px color-mix(in srgb, var(--wireline-color-action-primary-container) 52%, transparent), var(--wireline-shadow-sm);
 }
 
 .marketing-operating-model__header {
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  border-bottom: 1px solid var(--wl-line);
+  border-bottom: 1px solid var(--wireline-color-border-default);
   padding: 1.25rem;
 }
 
@@ -210,17 +210,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem 1rem;
-  border-bottom: 1px solid var(--wl-line);
+  border-bottom: 1px solid var(--wireline-color-border-default);
   padding: 0.9rem 0;
   font-size: 0.8125rem;
 }
 
 .marketing-operating-model__row span {
-  color: var(--wl-muted);
+  color: var(--wireline-color-text-secondary);
 }
 
 .marketing-operating-model__row strong {
-  color: var(--wl-on-surface);
+  color: var(--wireline-color-text-primary);
   font-weight: 600;
 }
 
@@ -229,15 +229,15 @@
   align-items: flex-start;
   gap: 0.75rem;
   margin: 0 1.25rem 1.25rem;
-  border: 1px solid color-mix(in srgb, var(--wl-primary-container) 16%, var(--wl-line));
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-container) 16%, var(--wireline-color-border-default));
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--wl-primary-container) 7%, var(--wl-surface));
+  background: color-mix(in srgb, var(--wireline-color-action-primary-container) 7%, var(--wireline-color-surface-default));
   padding: 1rem;
-  color: var(--wl-primary-container);
+  color: var(--wireline-color-action-primary-container);
 }
 
 .marketing-operating-model__outcome p:last-child {
-  color: var(--wl-on-surface);
+  color: var(--wireline-color-text-primary);
 }
 
 .marketing-channel-card {
@@ -245,7 +245,7 @@
 }
 
 .marketing-channel-card:hover {
-  border-color: color-mix(in srgb, var(--wl-primary-container) 35%, var(--wl-line));
+  border-color: color-mix(in srgb, var(--wireline-color-action-primary-container) 35%, var(--wireline-color-border-default));
 }
 
 @media (min-width: 1280px) {
@@ -267,7 +267,7 @@
 
 @media (max-width: 1023px) {
   .wl-workspace-shell {
-    background: var(--wl-page);
+    background: var(--wireline-color-canvas-default);
   }
 
   .wl-workspace-content-inner {

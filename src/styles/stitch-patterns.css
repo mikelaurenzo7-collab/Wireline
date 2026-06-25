@@ -1,23 +1,23 @@
 /* Wireline shared component patterns — legacy stitch namespace, live semantic token layer. */
 .wl-stitch-gradient-radial,
 .wl-stitch-gradient-card {
-  background: var(--wl-page);
+  background: var(--wireline-page);
   background-image: none;
 }
 
 .wl-stitch-label,
 .wl-stitch-eyebrow {
-  font-family: var(--wl-font-mono);
+  font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.11em;
   line-height: 1.2;
   text-transform: uppercase;
-  color: var(--wl-muted);
+  color: var(--wireline-color-text-secondary);
 }
 
 .wl-stitch-headline {
-  font-family: var(--wl-font-display);
+  font-family: var(--wireline-font-display);
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.03em;
@@ -26,7 +26,7 @@
 }
 
 .wl-stitch-display {
-  font-family: var(--wl-font-display);
+  font-family: var(--wireline-font-display);
   font-size: clamp(1.75rem, 1.4rem + 1.8vw, 2.5rem);
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -35,7 +35,7 @@
 }
 
 .wl-stitch-marketing-hero {
-  font-family: var(--wl-font-display);
+  font-family: var(--wireline-font-display);
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -49,10 +49,10 @@
 .wl-stitch-knowledge-panel,
 .wl-stitch-connection-card,
 .wl-stitch-auth-card {
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-xl);
-  background: var(--wl-surface);
-  box-shadow: var(--wl-shadow-sm);
+  background: var(--wireline-color-surface-default);
+  box-shadow: var(--wireline-shadow-sm);
 }
 
 /* Motion is opt-in. Static information should remain still. */
@@ -71,8 +71,8 @@
 .wl-stitch-pricing-card.wl-card-action:hover,
 .wl-stitch-knowledge-panel.wl-card-action:hover,
 .wl-stitch-connection-card.wl-card-action:hover {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--wl-line));
-  box-shadow: var(--wl-shadow-md);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--wireline-color-border-default));
+  box-shadow: var(--wireline-shadow-md);
   transform: translateY(-1px);
 }
 
@@ -89,11 +89,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--wl-line));
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--wireline-color-border-default));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 8%, var(--wl-surface));
+  background: color-mix(in srgb, var(--primary) 8%, var(--wireline-color-surface-default));
   padding: 4px 10px;
-  font-family: var(--wl-font-mono);
+  font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -124,15 +124,15 @@
   inset: 0 0 auto;
   z-index: 50;
   height: 64px;
-  border-bottom: 1px solid var(--wl-line);
-  background: var(--wl-surface);
+  border-bottom: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
 }
 
 .wl-stitch-auth-shell {
   display: flex;
   min-height: 100dvh;
   flex-direction: column;
-  background: var(--wl-page);
+  background: var(--wireline-page);
 }
 
 .wl-stitch-auth-card {
@@ -146,18 +146,18 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-md);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
   padding: 10px 12px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--wl-ink);
+  color: var(--wireline-color-text-primary);
   transition: background-color 0.2s ease-out, border-color 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .wl-stitch-oauth-btn:hover:not(:disabled) {
-  background: var(--wl-surface-subtle);
+  background: var(--wireline-color-surface-subtle);
   border-color: var(--accent);
 }
 
@@ -168,12 +168,12 @@
 .wl-stitch-input {
   min-height: 40px;
   width: 100%;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-md);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
   padding: 10px 12px;
   font-size: 14px;
-  color: var(--wl-ink);
+  color: var(--wireline-color-text-primary);
   outline: none;
 }
 
@@ -183,30 +183,30 @@
 }
 
 .wl-stitch-input::placeholder {
-  color: color-mix(in srgb, var(--wl-muted) 60%, transparent);
+  color: color-mix(in srgb, var(--wireline-color-text-secondary) 60%, transparent);
 }
 
 .wl-stitch-sidebar {
-  border-right: 1px solid var(--wl-line);
-  background: var(--wl-surface);
+  border-right: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
 }
 
 .wl-stitch-sidebar-link {
   display: flex;
   align-items: center;
   border-radius: var(--radius-md);
-  font-family: var(--wl-font-sans);
+  font-family: var(--wireline-font-sans);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--wl-muted);
+  color: var(--wireline-color-text-secondary);
   transition: background-color 0.2s ease-out, color 0.2s ease-out;
 }
 
 .wl-stitch-sidebar-link:hover {
-  background: var(--wl-surface-subtle);
-  color: var(--wl-ink);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-stitch-sidebar-link[aria-current="page"] {
@@ -223,19 +223,19 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-xl);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
   padding: 14px 16px;
-  box-shadow: var(--wl-shadow-sm);
+  box-shadow: var(--wireline-shadow-sm);
 }
 
 .wl-stitch-stat-box strong {
-  font-family: var(--wl-font-display);
+  font-family: var(--wireline-font-display);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.03em;
-  color: var(--wl-ink);
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-stitch-bento {
@@ -277,7 +277,7 @@
   border-top-right-radius: var(--radius-sm);
   background: var(--accent);
   padding: 4px 12px;
-  font-family: var(--wl-font-mono);
+  font-family: var(--wireline-font-mono);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -287,9 +287,9 @@
 
 .wl-stitch-interval-toggle {
   display: inline-flex;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-md);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
   padding: 4px;
 }
 
@@ -313,26 +313,26 @@
 
 .wl-stitch-data-table thead tr,
 .wl-stitch-data-table tbody tr {
-  border-bottom: 1px solid var(--wl-line);
+  border-bottom: 1px solid var(--wireline-color-border-default);
 }
 
 .wl-stitch-data-table th {
   padding: 16px 20px;
-  font-family: var(--wl-font-mono);
+  font-family: var(--wireline-font-mono);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--wl-muted);
+  color: var(--wireline-color-text-secondary);
 }
 
 .wl-stitch-data-table td {
   padding: 16px 20px;
-  color: var(--wl-ink);
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-stitch-data-table tbody tr:hover {
-  background: var(--wl-surface-subtle);
+  background: var(--wireline-color-surface-subtle);
 }
 
 .wl-stitch-roster-card {
@@ -340,9 +340,9 @@
   width: 100%;
   align-items: center;
   gap: 16px;
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-xl);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
   padding: 16px;
   text-align: left;
   transition: border-color 0.2s ease-out, background-color 0.2s ease-out, transform 0.2s ease-out;
@@ -351,7 +351,7 @@
 .wl-stitch-roster-card:hover,
 .wl-stitch-roster-card--active {
   border-color: var(--accent);
-  background: var(--wl-surface-subtle);
+  background: var(--wireline-color-surface-subtle);
 }
 
 .wl-stitch-roster-card:active {
@@ -361,12 +361,12 @@
 .wl-stitch-build-map-tab {
   border-bottom: 2px solid transparent;
   padding: 8px 4px;
-  font-family: var(--wl-font-mono);
+  font-family: var(--wireline-font-mono);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--wl-muted);
+  color: var(--wireline-color-text-secondary);
 }
 
 .wl-stitch-build-map-tab--active {
@@ -386,19 +386,19 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid var(--wl-line);
-  background: var(--wl-surface-subtle);
+  border-bottom: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-subtle);
   padding: 14px 16px;
 }
 
 .wl-stitch-knowledge-entry {
-  border: 1px solid var(--wl-line);
+  border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--radius-lg);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
   padding: 14px 16px;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--wl-ink);
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-stitch-tool-row {
@@ -406,7 +406,7 @@
 }
 
 .wl-stitch-tool-row:hover:not(:disabled) {
-  background: var(--wl-surface-subtle);
+  background: var(--wireline-color-surface-subtle);
 }
 
 .wl-stitch-tool-row:active:not(:disabled) {
@@ -419,9 +419,9 @@
   width: 18px;
   flex-shrink: 0;
   place-items: center;
-  border: 2px solid var(--wl-line-strong);
+  border: 2px solid var(--wireline-color-border-default-strong);
   border-radius: var(--radius-sm);
-  background: var(--wl-surface);
+  background: var(--wireline-color-surface-default);
 }
 
 .wl-stitch-tool-row[aria-pressed="true"] .wl-stitch-tool-check {
@@ -444,7 +444,7 @@
   gap: 12px;
   margin-block: 24px;
   font-size: 14px;
-  color: var(--wl-muted);
+  color: var(--wireline-color-text-secondary);
 }
 
 .wl-stitch-auth-divider::before,
@@ -452,5 +452,5 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--wl-line);
+  background: var(--wireline-color-border-default);
 }

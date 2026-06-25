@@ -35,7 +35,7 @@ Make the design-tokens/wireline.tokens.json + generators the authoritative sourc
 - Updates to generators/checks as needed for atomic contracts.
 - Documentation + examples of the “correct” way.
 - Parity and generation for the surfaces already supported by the token script.
-- Migration guidance for existing code using the current wl-*/var patterns.
+- Full migration of code and custom styles to --wireline-* tokens; legacy --wl-* aliases retained ONLY in foundation.css for backward compat during transition. No new --wl- allowed in src/.
 
 ## Approaches
 
@@ -44,10 +44,10 @@ Extend the generator (or post-process) to emit the legacy `--radius-*`, `--wl-*`
 
 *Trade-offs*: Quick wins, minimal atom changes. Leaves two "faces" on the token system; less clear that the JSON is the single source.
 
-**Approach 2: Token-primary atoms + contracts (recommended)**  
-Update the canonical atoms to directly use `--wireline-*` vars (or a thin mapping) inside their cva definitions and class strings. Update components.css / foundation.css to build wl- primitives from the new vars. Significantly strengthen the check scripts to require token-derived values and reject hard-coded colors/hex outside the token system. Update brand-colors.ts and any direct consumers.
+**Approach 2: Token-primary + full migration (chosen for perfect symmetry)**  
+Update the canonical atoms, all custom styles, components, pages to directly use `--wireline-*` vars. Keep legacy --wl-* ONLY as thin aliases in foundation.css. Strengthen checks to require --wireline- in src/ (ban new --wl-). Update brand-colors.ts and consumers.
 
-*Trade-offs*: Makes the new tokens clearly authoritative. Requires changes to several atom files and the contracts (good — that's the point). Native and extension already receive the generated output.
+*Trade-offs*: Makes the new tokens clearly authoritative across monorepo. Requires migration of code and styles (done for symmetry). Native and extension receive generated. Achieves flawless cross-surface mastery.
 
 **Approach 3: Tailwind theme extension + migration codemod**  
 Register the semantic tokens in the Tailwind theme (via plugin or config) so semantic class names become available, then provide a small codemod or codemod-assisted PRs to migrate existing code. Keep cva but benefit from theme tokens.

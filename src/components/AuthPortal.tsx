@@ -698,7 +698,7 @@ export default function AuthPortal() {
                 type="submit"
                 disabled={loading || (isSignUp && !agreedToTerms)}
                 aria-disabled={loading || (isSignUp && !agreedToTerms)}
-                className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wl-accent-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wireline-color-action-primary-pressed)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <>

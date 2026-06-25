@@ -32,7 +32,9 @@ export default function BillingSettings() {
                 <ShieldCheck className="size-4" />
                 Payments
               </div>
-              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">PCI DSS via Stripe</p>
+              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
+                PCI DSS via Stripe
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Subscriptions and Conversation Balance top-ups are vaulted by Stripe.
               </p>
@@ -42,7 +44,9 @@ export default function BillingSettings() {
                 <CreditCard className="size-4 text-primary" />
                 Personal assistants
               </div>
-              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">Pay as you go</p>
+              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
+                Pay as you go
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Free to build. Add balance only when you want live conversations handled.
               </p>
@@ -52,7 +56,9 @@ export default function BillingSettings() {
                 <Receipt className="size-4 text-primary" />
                 Business agents
               </div>
-              <p className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">Monthly plans</p>
+              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
+                Monthly plans
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Numbers, routing, and team tools — upgrade or cancel anytime in the Stripe portal.
               </p>
@@ -64,7 +70,7 @@ export default function BillingSettings() {
 
         <section>
           <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
-            <h2 className="flex items-center gap-2 font-[var(--wl-font-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
+            <h2 className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
               <CreditCard className="size-5 text-primary" />
               Business workspace plan
             </h2>
@@ -73,7 +79,8 @@ export default function BillingSettings() {
         </section>
 
         <StatusNotice tone="info" title="Invoices & receipts">
-          Past invoices and usage receipts are available in the secure Stripe billing portal. Update payment methods, download PDFs, or change your plan without leaving Wireline.
+          Past invoices and usage receipts are available in the secure Stripe billing portal. Update
+          payment methods, download PDFs, or change your plan without leaving Wireline.
         </StatusNotice>
       </div>
     </WorkspaceShell>

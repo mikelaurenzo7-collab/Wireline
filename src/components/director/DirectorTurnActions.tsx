@@ -70,7 +70,7 @@ function ActionRow({ action }: { action: TurnActionItem }) {
           "absolute left-0 top-2 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-card dark:bg-velvet",
           running && "border-brand bg-brand/10 animate-pulse",
           action.status === "done" &&
-            "border-[color-mix(in_srgb,var(--wl-signal)_50%,transparent)]",
+            "border-[color-mix(in_srgb,var(--wireline-color-status-success)_50%,transparent)]",
           failed && "border-rose-500/60",
         )}
       >

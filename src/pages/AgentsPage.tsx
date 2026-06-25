@@ -92,7 +92,7 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           </Badge>
         </div>
       </div>
-      <h2 className="mt-4 font-[var(--wl-font-display)] text-[19px] font-semibold leading-6 tracking-[-.02em] text-foreground">
+      <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[19px] font-semibold leading-6 tracking-[-.02em] text-foreground">
         {agent.name}
       </h2>
       <p className="mt-1 inline-flex items-center gap-2 font-mono text-[10px] capitalize tracking-[.035em] text-muted-foreground">
@@ -100,7 +100,9 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
         <ChannelIcon size={12} />
         <span>{channel}</span>
       </p>
-      <p className="mt-3 line-clamp-2 flex-1 text-sm leading-5 text-muted-foreground">{agentHint(agent)}</p>
+      <p className="mt-3 line-clamp-2 flex-1 text-sm leading-5 text-muted-foreground">
+        {agentHint(agent)}
+      </p>
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3.5">
         <Button asChild variant="link" className="h-auto px-0 text-sm">
           <Link to={`/studio?agent=${encodeURIComponent(agent.id)}`}>
@@ -108,7 +110,11 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
             Open Studio
           </Link>
         </Button>
-        <Button asChild variant="link" className="h-auto px-0 text-sm text-muted-foreground hover:text-foreground">
+        <Button
+          asChild
+          variant="link"
+          className="h-auto px-0 text-sm text-muted-foreground hover:text-foreground"
+        >
           <Link to={`/actions?agent=${encodeURIComponent(agent.id)}`}>
             <Zap aria-hidden="true" size={15} />
             Connections
@@ -146,7 +152,9 @@ function RosterSection({
         </Button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {agents.map((agent) => <RosterCard key={agent.id} agent={agent} />)}
+        {agents.map((agent) => (
+          <RosterCard key={agent.id} agent={agent} />
+        ))}
       </div>
     </section>
   );
@@ -173,27 +181,59 @@ export default function AgentsPage() {
     >
       <div className="flex w-full flex-col gap-6 pb-8">
         {degraded ? (
-          <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--wl-error-border)] bg-[var(--wl-error-surface)] px-4 py-4 text-foreground" role="alert">
-            <CircleAlert size={18} className="mt-0.5 shrink-0 text-[var(--wl-error)]" />
+          <div
+            className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-4 py-4 text-foreground"
+            role="alert"
+          >
+            <CircleAlert
+              size={18}
+              className="mt-0.5 shrink-0 text-[var(--wireline-color-status-error)]"
+            />
             <div>
-              <p className="font-semibold text-[var(--wl-error)]">We cannot load your roster right now</p>
-              <p className="mt-1 text-sm leading-5 text-muted-foreground">Your saved setup is safe. Please try again in a moment.</p>
+              <p className="font-semibold text-[var(--wireline-color-status-error)]">
+                We cannot load your roster right now
+              </p>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                Your saved setup is safe. Please try again in a moment.
+              </p>
             </div>
           </div>
         ) : null}
         {!loading && agents.length ? (
           <section className="grid gap-4 md:grid-cols-3">
-            <MetricCard label="Roster" value={String(agents.length)} footer={rosterSummary(personalAgents.length, businessAgents.length)} />
-            <MetricCard label="Personal assistants" value={String(personalAgents.length)} footer="Everyday calls, scheduling, and follow-ups" />
-            <MetricCard label="Business agents" value={String(businessAgents.length)} footer="Professional lines, policies, and connected accounts" />
+            <MetricCard
+              label="Roster"
+              value={String(agents.length)}
+              footer={rosterSummary(personalAgents.length, businessAgents.length)}
+            />
+            <MetricCard
+              label="Personal assistants"
+              value={String(personalAgents.length)}
+              footer="Everyday calls, scheduling, and follow-ups"
+            />
+            <MetricCard
+              label="Business agents"
+              value={String(businessAgents.length)}
+              footer="Professional lines, policies, and connected accounts"
+            />
           </section>
         ) : null}
         {!loading && !agents.length ? <EmptyRoster /> : null}
         {loading ? <LoadingRoster /> : null}
         {!loading && agents.length ? (
           <div className="flex flex-col gap-9">
-            <RosterSection title="Personal assistants" agents={personalAgents} createHref="/studio?create=1" createLabel={PRODUCT_POSTURE.personal.createCta} />
-            <RosterSection title="Business agents" agents={businessAgents} createHref="/studio?create=1&posture=business" createLabel={PRODUCT_POSTURE.business.createCta} />
+            <RosterSection
+              title="Personal assistants"
+              agents={personalAgents}
+              createHref="/studio?create=1"
+              createLabel={PRODUCT_POSTURE.personal.createCta}
+            />
+            <RosterSection
+              title="Business agents"
+              agents={businessAgents}
+              createHref="/studio?create=1&posture=business"
+              createLabel={PRODUCT_POSTURE.business.createCta}
+            />
           </div>
         ) : null}
       </div>

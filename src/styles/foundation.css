@@ -44,6 +44,24 @@
   --wl-status-warning: var(--wl-warning);
   --wl-status-error: var(--wl-error);
 
+  /* Additional legacy aliases for full transition support and symmetry */
+  --wl-surface-hover: var(--wireline-color-surface-subtle);
+  --wl-text-primary: var(--wireline-color-text-primary);
+  --wl-text-tertiary: var(--wireline-color-text-secondary);
+  --wl-border: var(--wireline-color-border-default);
+  --wl-accent-deep: var(--wireline-color-action-primary-pressed);
+  --wl-brand-primary: var(--wireline-color-action-primary-default);
+  --wl-surface-container-low: var(--wireline-color-surface-subtle);
+  --wl-signal: var(--wireline-color-status-success);
+  --wl-accent-container: var(--wireline-color-action-primary-container);
+  --wl-error: var(--wireline-color-status-error);
+  --wl-error-surface: var(--wireline-color-feedback-error-surface);
+  --wl-error-border: var(--wireline-color-feedback-error-border);
+  --wl-focus: var(--wireline-color-focus-default);
+  --wl-success: var(--wireline-color-status-success);
+  --wl-warning: var(--wireline-color-status-warning);
+  --wl-page: var(--wireline-color-canvas-default);
+
   /* Standard shadcn/Tailwind CSS var aliases — derive directly from generated --wireline-* semantic tokens
    * so that colors, surfaces, and radii in atoms (via Tailwind classes) and wl- primitives are sourced here. */
   --background: var(--wireline-color-canvas-default);

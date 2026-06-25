@@ -418,7 +418,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                 </p>
               )}
               {event.lesson_extracted && (
-                <span className="inline-block mt-1 wl-micro-badge px-1.5 py-0.5 rounded wl-status-success wl-text-success border border-[color-mix(in_srgb,var(--wl-signal)_20%,transparent)]">
+                <span className="inline-block mt-1 wl-micro-badge px-1.5 py-0.5 rounded wl-status-success wl-text-success border border-[color-mix(in_srgb,var(--wireline-color-status-success)_20%,transparent)]">
                   Lesson captured
                 </span>
               )}

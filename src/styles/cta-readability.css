@@ -1,10 +1,10 @@
 /* Public controls — one clear primary action, one quiet secondary action. */
 :root {
-  --wl-cta-bg: var(--wl-accent);
-  --wl-cta-fg: #ffffff;
-  --wl-cta-subtle-bg: var(--wl-surface);
-  --wl-cta-subtle-fg: var(--wl-ink);
-  --wl-cta-hover: var(--wl-accent-hover);
+  --wireline-cta-bg: var(--wireline-color-action-primary-default);
+  --wireline-cta-fg: var(--wireline-color-text-onAction);
+  --wireline-cta-subtle-bg: var(--wireline-color-surface-default);
+  --wireline-cta-subtle-fg: var(--wireline-color-text-primary);
+  --wireline-cta-hover: var(--wireline-color-action-primary-pressed);
 }
 
 .marketing-btn-primary,
@@ -28,9 +28,9 @@
 }
 
 .marketing-btn-primary {
-  border: 1px solid var(--wl-cta-bg);
-  background: var(--wl-cta-bg);
-  color: var(--wl-cta-fg) !important;
+  border: 1px solid var(--wireline-cta-bg);
+  background: var(--wireline-cta-bg);
+  color: var(--wireline-cta-fg) !important;
   box-shadow: 0 8px 18px -15px rgba(67, 35, 177, 0.62);
 }
 
@@ -39,8 +39,8 @@
 }
 
 .marketing-btn-primary:hover:not(:disabled) {
-  border-color: var(--wl-cta-hover);
-  background: var(--wl-cta-hover);
+  border-color: var(--wireline-cta-hover);
+  background: var(--wireline-cta-hover);
   box-shadow: 0 10px 22px -15px rgba(67, 35, 177, 0.68);
 }
 
@@ -50,26 +50,26 @@
 }
 
 .marketing-btn-secondary {
-  border: 1px solid var(--wl-line);
-  background: var(--wl-cta-subtle-bg);
-  color: var(--wl-cta-subtle-fg) !important;
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-cta-subtle-bg);
+  color: var(--wireline-cta-subtle-fg) !important;
 }
 
 .marketing-btn-secondary:hover:not(:disabled) {
-  border-color: var(--wl-line-strong);
-  background: var(--wl-surface-subtle);
+  border-color: var(--wireline-color-border-strong);
+  background: var(--wireline-color-surface-subtle);
 }
 
 .marketing-btn-primary:focus-visible,
 .marketing-btn-secondary:focus-visible {
-  outline: 2px solid var(--wl-accent);
+  outline: 2px solid var(--wireline-color-action-primary-default);
   outline-offset: 2px;
 }
 
 [data-testid="header-cta"],
 [data-testid="header-dashboard"],
 #public-mobile-nav a[href="/pricing"] {
-  background-color: var(--wl-cta-bg) !important;
+  background-color: var(--wireline-cta-bg) !important;
   color: #ffffff !important;
 }
 
