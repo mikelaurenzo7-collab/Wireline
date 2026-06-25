@@ -16,10 +16,9 @@ import { PageMeta } from "../lib/page-meta";
 
 const OUTCOMES = ["Answer", "Qualify", "Schedule"] as const;
 const CUSTOMIZATION = [
-  ["Voice & tone", "You choose"],
-  ["How it works", "Your playbook"],
-  ["When it checks in", "Your call"],
-  ["What it can access", "Approved only"],
+  ["Voice & tone", "Yours"],
+  ["Workflow & handoff", "Yours"],
+  ["Connected tools", "Approved"],
 ] as const;
 const USE_CASES = ["Personal calls", "Appointments", "Business front desk", "SMS follow-up", "Lead qualification", "Custom workflows"] as const;
 
@@ -42,16 +41,16 @@ export default function Features() {
         </section>
 
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <div className="wl-public-rail grid gap-4 lg:grid-cols-2">
-            <article className="wl-stitch-card flex min-h-[16rem] flex-col p-6 sm:p-8">
+          <div className="wl-public-rail grid gap-3 lg:grid-cols-2 lg:gap-4">
+            <article className="wl-stitch-card flex min-h-[12rem] flex-col p-5 sm:min-h-[16rem] sm:p-8">
               <MessageSquareText size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5 max-w-[16ch]">Conversations that stay on task.</h2>
-              <div className="mt-auto flex flex-wrap gap-2 pt-8">{OUTCOMES.map((outcome) => <span key={outcome} className="rounded-full border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-foreground">{outcome}</span>)}</div>
+              <div className="mt-auto flex flex-wrap gap-2 pt-6 sm:pt-8">{OUTCOMES.map((outcome) => <span key={outcome} className="rounded-full border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-foreground">{outcome}</span>)}</div>
             </article>
-            <article className="wl-stitch-card flex min-h-[16rem] flex-col p-6 sm:p-8">
+            <article className="wl-stitch-card flex min-h-[12rem] flex-col p-5 sm:min-h-[16rem] sm:p-8">
               <ShieldCheck size={22} className="text-primary" />
-              <h2 className="wl-section-title mt-5">Make every assistant yours.</h2>
-              <dl className="mt-auto divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">{CUSTOMIZATION.map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 px-4 py-3.5"><dt className="text-[var(--wireline-typography-body-size)] text-foreground">{label}</dt><dd className="wl-overline text-primary">{value}</dd></div>)}</dl>
+              <h2 className="wl-section-title mt-5">Made to fit your work.</h2>
+              <dl className="mt-6 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border sm:mt-auto">{CUSTOMIZATION.map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 px-3 py-3 sm:px-4 sm:py-3.5"><dt className="text-sm text-foreground sm:text-[var(--wireline-typography-body-size)]">{label}</dt><dd className="wl-overline text-primary">{value}</dd></div>)}</dl>
             </article>
           </div>
         </section>
