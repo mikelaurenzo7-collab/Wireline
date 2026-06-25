@@ -1,34 +1,35 @@
 import SwiftUI
 
-/// Native Ametrine Precision foundation. Keep platform-native behavior while
-/// mirroring the current Stitch source: lavender-tinted surfaces, precise outlines,
-/// compact geometry, and a single ametrine action color.
+/// Native visual foundation backed by the generated Wireline token contract.
+/// Platform controls and typography remain native; surfaces, color, geometry, and
+/// interaction feedback resolve from the same semantic source as web and widgets.
 enum Brand {
     // ── Surfaces ─────────────────────────────────────────────────────────────
-    static let canvas = Color(hex: 0xF8F9FF)
-    static let panel = Color.white
-    static let panel2 = Color(hex: 0xEFF4FF)
-    static let raised = Color(hex: 0xE5EEFF)
-    static let border = Color(hex: 0xC9C4D7)
+    static let canvas = WirelineTokens.ColorToken.colorCanvasDefault
+    static let panel = WirelineTokens.ColorToken.colorSurfaceDefault
+    static let panel2 = WirelineTokens.ColorToken.colorSurfaceSubtle
+    static let raised = WirelineTokens.ColorToken.colorSurfaceContainer
+    static let border = WirelineTokens.ColorToken.colorBorderDefault
 
     // ── Text ─────────────────────────────────────────────────────────────────
-    static let text = Color(hex: 0x0B1C30)
-    static let text2 = Color(hex: 0x484554)
-    static let text3 = Color(hex: 0x484554, opacity: 0.72)
+    static let text = WirelineTokens.ColorToken.colorTextPrimary
+    static let text2 = WirelineTokens.ColorToken.colorTextSecondary
+    static let text3 = text2.opacity(0.72)
 
     // ── Accent ───────────────────────────────────────────────────────────────
-    static let primary = Color(hex: 0x451EBB)
-    static let primaryContainer = Color(hex: 0x5D3FD3)
+    static let primary = WirelineTokens.ColorToken.colorActionPrimaryDefault
+    static let primaryPressed = WirelineTokens.ColorToken.colorActionPrimaryPressed
+    static let primaryContainer = primary
     static let primaryFixed = Color(hex: 0xE6DEFF)
     static let primaryFixedDim = Color(hex: 0xCABEFF)
-    static let accent = primaryContainer
+    static let accent = primary
     static let accentSoft = Color(hex: 0xD8CEFF)
     static let accentDeep = Color(hex: 0x1C0062)
-    static let accentTint = Color(hex: 0x5D3FD3, opacity: 0.10)
+    static let accentTint = WirelineTokens.ColorToken.colorActionPrimaryContainer
 
     // ── Semantic ─────────────────────────────────────────────────────────────
-    static let destructive = Color(hex: 0xBA1A1A)
-    static let signal = Color(hex: 0x2E7D32)
+    static let destructive = WirelineTokens.ColorToken.colorStatusError
+    static let signal = WirelineTokens.ColorToken.colorStatusSuccess
     static let success = signal
 
     // ── Compatibility aliases ─────────────────────────────────────────────────
@@ -37,10 +38,10 @@ enum Brand {
     static let ink = text
 
     // ── Geometry ─────────────────────────────────────────────────────────────
-    static let radiusSm: CGFloat = 2
-    static let radiusMd: CGFloat = 4
-    static let radiusLg: CGFloat = 8
-    static let radiusXl: CGFloat = 12
+    static let radiusSm = WirelineTokens.Radius.radiusSm
+    static let radiusMd = WirelineTokens.Radius.radiusMd
+    static let radiusLg = WirelineTokens.Radius.radiusLg
+    static let radiusXl = WirelineTokens.Radius.radiusXl
 }
 
 extension Color {
@@ -73,12 +74,12 @@ struct TouchPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .opacity(configuration.isPressed ? 0.86 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.20), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? WirelineTokens.Motion.motionPress : 1)
+            .animation(.easeOut(duration: WirelineTokens.Motion.motionDurationStandard), value: configuration.isPressed)
     }
 }
 
-/// Shared elevated surface. Ametrine Precision uses precise borders and restrained depth.
+/// Shared elevated surface. Wireline uses precise borders and restrained depth.
 struct AssistantCard<Content: View>: View {
     private let content: Content
     private let radius: CGFloat
@@ -90,7 +91,7 @@ struct AssistantCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(16)
+            .padding(WirelineTokens.Space.space200)
             .background(Brand.panel, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -125,7 +126,7 @@ extension View {
     }
 
     /// Backward-compatible name for existing views while they migrate to the
-    /// semantic Ametrine Precision card helpers.
+    /// semantic card helpers.
     func brandGlowCard(radius: CGFloat = Brand.radiusLg, borderOpacity: Double = 1) -> some View {
         assistantCardSurface(radius: radius, borderOpacity: borderOpacity)
     }
@@ -140,7 +141,7 @@ public struct AssistantCardModifier: ViewModifier {
 
     public func makeBody(content: Content) -> some View {
         content
-            .padding(16)
+            .padding(WirelineTokens.Space.space200)
             .background(Brand.panel)
             .cornerRadius(Brand.radiusLg)
             .overlay(
