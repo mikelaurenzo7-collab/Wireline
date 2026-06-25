@@ -137,6 +137,9 @@ export default function WorkspaceShell({
   const location = useLocation();
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
+  const studioParams = new URLSearchParams(location.search);
+  const isStudioOperationsRoute =
+    isStudioRoute && studioParams.get("mode") !== "legacy" && !studioParams.get("tab");
   const closeMobileNavigation = () => setMobileNavigationOpen(false);
 
   useEffect(() => {
@@ -149,7 +152,11 @@ export default function WorkspaceShell({
 
   return (
     <Dialog open={mobileNavigationOpen} onOpenChange={setMobileNavigationOpen}>
-      <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
+      <div
+        className={`wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground ${
+          isStudioOperationsRoute ? "wl-workspace-shell--studio" : ""
+        }`}
+      >
         <a className="wl-skip-link" href="#workspace-main">
           Skip to content
         </a>
@@ -218,8 +225,12 @@ export default function WorkspaceShell({
         presentation="sidebar"
         showClose={false}
         aria-label="Workspace navigation"
-        overlayClassName="bg-[rgba(11,28,48,0.34)] lg:hidden"
-        className="lg:hidden"
+        overlayClassName={
+          isStudioOperationsRoute
+            ? "bg-[rgba(3,5,9,0.72)] lg:hidden"
+            : "bg-[rgba(11,28,48,0.34)] lg:hidden"
+        }
+        className={`${isStudioOperationsRoute ? "wl-studio-navigation-dialog" : ""} lg:hidden`}
       >
         <DialogTitle className="sr-only">Workspace navigation</DialogTitle>
         <DialogDescription className="sr-only">
