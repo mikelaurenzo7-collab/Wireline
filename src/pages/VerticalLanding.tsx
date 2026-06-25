@@ -5,7 +5,6 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type VerticalKey, type VerticalConfig, WEDGES } from "../data/vertical-wedges";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
-import HeroCallPreview from "../components/marketing/HeroCallPreview";
 
 function isExternalHref(href: string): boolean {
   return /^(tel:|mailto:|https?:)/.test(href);
@@ -88,18 +87,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="max-w-3xl">
           <p className="wl-stitch-eyebrow">{isPersonal ? "Personal call help" : cfg.eyebrow}</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">{cfg.headline}</h1>
-          <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            {isPersonal
-              ? "Hand off the calls that follow you around."
-              : "Every important call gets a clear next step."}
+          <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
+            {isPersonal ? "Hand off the calls that follow you around." : "Every important call gets a clear next step."}
           </p>
-          <div className="mt-4">
-            <BrowserCallWidget
-              agentName="Demo Voice Agent"
-              buttonLabel="Talk to the custom voice agent"
-            />
+          <div className="mt-6 max-w-md">
+            <BrowserCallWidget agentName="Demo Voice Agent" buttonLabel="Talk to a live assistant" />
           </div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <CtaLink
               href={cfg.primaryCta.href}
               className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
@@ -116,23 +110,23 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" />
-              You approve the job and boundaries
+              Your rules
             </span>
             <span className="inline-flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" />
-              You get the useful result back
+              Clear outcomes
             </span>
           </div>
         </div>
       </section>
 
       <section className="border-y border-border bg-card px-5 py-8 sm:px-8 sm:py-10">
-        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+        <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
           <div className="wl-stitch-stat-box w-fit font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
             <span className="wl-stitch-status-dot" aria-hidden />
             <strong className="text-foreground">{cfg.statValue}</strong>
           </div>
-          <p className="max-w-3xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+          <p className="max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
             {cfg.statLabel}
           </p>
         </div>
@@ -142,38 +136,21 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="max-w-2xl">
           <p className="wl-stitch-eyebrow">Useful coverage</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
-            {isPersonal
-              ? "Hand off the calls that keep following you around."
-              : "Give every important call a clear next step."}
+            {isPersonal ? "Hand off the calls that keep following you around." : "Give every important call a clear next step."}
           </h2>
         </div>
         <div className="mt-9 grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
             const Icon = pain.icon;
             return (
-              <article key={pain.title} className="wl-stitch-card p-5 sm:p-6">
-                <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
+              <article key={pain.title} className="wl-stitch-card flex items-center gap-4 p-5 sm:p-6">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-muted text-primary">
                   <Icon className="h-4 w-4" />
                 </span>
-                <h3 className="mt-5 text-lg font-semibold tracking-[-.025em] text-foreground">
-                  {pain.title}
-                </h3>
+                <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">{pain.title}</h3>
               </article>
             );
           })}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
-        <div className="text-center mb-6">
-          <p className="wl-stitch-eyebrow">See it in action</p>
-          <h3 className="text-xl font-semibold">
-            Custom voice agent preview. Tailored for this work.
-          </h3>
-        </div>
-        <HeroCallPreview />
-        <div className="mt-6 text-center">
-          <BrowserCallWidget agentName="Demo Assistant" buttonLabel="Talk to it live" />
         </div>
       </section>
 
@@ -182,22 +159,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div>
             <p className="wl-stitch-eyebrow">Call behavior</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              {isPersonal
-                ? "You set the words and the limits."
-                : "Your process, handled consistently."}
+              {isPersonal ? "You set the words and the limits." : "Your process, handled consistently."}
             </h2>
-            <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
-              Custom knowledge. Your voice. Your boundaries. Applied every time.
-            </p>
           </div>
           <div className="wl-stitch-card border-l-4 border-l-primary p-6 sm:p-8">
             <p className="wl-stitch-label">Example opening</p>
-            <blockquote className="mt-4 text-lg leading-8 tracking-[-.02em] text-foreground">
-              {cfg.scriptPreview}
-            </blockquote>
-            <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
-              Your voice. Your knowledge. Your control.
-            </p>
+            <blockquote className="mt-4 text-lg leading-8 tracking-[-.02em] text-foreground">{cfg.scriptPreview}</blockquote>
+            <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">Your voice. Your knowledge. Your control.</p>
           </div>
         </div>
       </section>
@@ -206,9 +174,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="max-w-2xl">
           <p className="wl-stitch-eyebrow">Frequently asked</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
-            {isPersonal
-              ? "The questions people ask before handing off a call."
-              : "The questions account holders ask before going live."}
+            {isPersonal ? "Questions before you hand off a call." : "Questions before you go live."}
           </h2>
         </div>
         <div className="mt-8 space-y-3">
@@ -216,16 +182,10 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             <details key={faq.q} className="group wl-stitch-card overflow-hidden">
               <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
                 <span>{faq.q}</span>
-                <span
-                  aria-hidden="true"
-                  className="text-lg text-muted-foreground transition-transform group-open:rotate-45"
-                >
-                  +
+                <span aria-hidden="true" className="text-lg text-muted-foreground transition-transform group-open:rotate-45">+
                 </span>
               </summary>
-              <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">
-                {faq.a}
-              </p>
+              <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">{faq.a}</p>
             </details>
           ))}
         </div>
@@ -241,15 +201,8 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                   You stay in control
                 </span>
                 <h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-                  {isPersonal
-                    ? "Start with the call you keep putting off."
-                    : "Start with the workflow your team needs covered."}
+                  {isPersonal ? "Start with the call you keep putting off." : "Start with the workflow your team needs covered."}
                 </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-6 text-primary-foreground/75">
-                  {isPersonal
-                    ? "Create a private assistant, set its call rules, and let it return the answer without taking over your day."
-                    : "Set the role, connect the tools, define permissions, and keep a person ready for the moments that need one."}
-                </p>
               </div>
               <CtaLink
                 href={cfg.primaryCta.href}
@@ -257,22 +210,6 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               >
                 {primaryLabel} <ArrowRight className="h-4 w-4" />
               </CtaLink>
-            </div>
-          </div>
-          <div className="mt-5 rounded border border-border bg-background p-5 text-center">
-            <p className="wl-stitch-label">One Wireline, two ways to use it</p>
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              {isPersonal
-                ? "Use Wireline for your own calls today. Add a business workspace later if you need customer coverage, team routing, or operational review."
-                : "Run Wireline for customer coverage today. Personal call delegation remains available when you need an assistant for your own tasks too."}
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-4 text-sm font-semibold text-primary">
-              <Link to="/for/personal" className="hover:underline">
-                For you →
-              </Link>
-              <Link to="/solutions/support" className="hover:underline">
-                For business →
-              </Link>
             </div>
           </div>
         </div>
