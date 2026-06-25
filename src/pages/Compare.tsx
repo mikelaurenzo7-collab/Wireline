@@ -5,7 +5,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const DIFFERENCES = [
   { icon: PhoneCall, title: "It makes the call.", copy: "Handles the conversation." },
-  { icon: MessageSquare, title: "You explain it normally.", copy: "Your rules and knowledge." },
+  { icon: MessageSquare, title: "You explain it normally.", copy: "Your voice, playbook, and knowledge." },
   { icon: Clock3, title: "You get the answer back.", copy: "A clear next step." },
 ] as const;
 
@@ -21,7 +21,7 @@ export default function Compare() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
         title="Why Wireline"
-        description="Wireline handles routine phone conversations under your rules and returns a clear outcome."
+        description="Wireline handles routine phone conversations around your voice, priorities, and playbook—then returns a clear outcome."
         path="/compare"
       />
 
@@ -71,7 +71,7 @@ export default function Compare() {
       <section className="border-t border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
         <div className="mx-auto grid max-w-6xl gap-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" />You set the boundaries.</p>
+            <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" />You shape the assistant.</p>
             <h2 className="wl-stitch-display mt-4 max-w-2xl text-balance">You stay in control of every assistant.</h2>
           </div>
           <Link to="/signup?mode=personal" className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold">Create your assistant <ArrowRight className="h-4 w-4" /></Link>
