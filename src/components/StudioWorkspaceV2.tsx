@@ -104,8 +104,29 @@ export default function StudioWorkspaceV2() {
   }
 
   if (isAssistantWorkspace) {
-    return <StudioAssistantWorkspace agentId={active.id} agentName={active.name} initialCommand={params.get("command") || undefined} onBack={returnToOverview} onOpenDetailed={openDetailed} />;
+    return (
+      <div className="wl-studio-operations h-full min-h-0 overflow-hidden">
+        <StudioAssistantWorkspace
+          agentId={active.id}
+          agentName={active.name}
+          initialCommand={params.get("command") || undefined}
+          onBack={returnToOverview}
+          onOpenDetailed={openDetailed}
+        />
+      </div>
+    );
   }
 
-  return <StudioOverview active={active} agents={agents} degraded={degraded} onSelect={selectAgent} onOpen={openAssistant} onCreate={openCreate} />;
+  return (
+    <div className="wl-studio-operations h-full min-h-0 overflow-hidden">
+      <StudioOverview
+        active={active}
+        agents={agents}
+        degraded={degraded}
+        onSelect={selectAgent}
+        onOpen={openAssistant}
+        onCreate={openCreate}
+      />
+    </div>
+  );
 }
