@@ -42,7 +42,7 @@ export default function MarketingFooter({
               Wireline
             </p>
             <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-              Voice, email, and text under your rules.
+              Voice, email, and text—made yours.
             </p>
           </div>
           <nav aria-label="Product" className="flex flex-col items-start gap-1">
@@ -71,7 +71,7 @@ export default function MarketingFooter({
           </nav>
         </div>
         <div className="mt-7 flex flex-col gap-3 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>Clear rules. Useful outcomes.</span>
+          <span>Your voice. Your playbook. Useful outcomes.</span>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link to="/privacy" className="hover:text-foreground">
               Privacy
