@@ -6,8 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import WirelineMark from "../brand/WirelineMark";
 
 const links = [
-  { to: "/for/personal", label: "Product", active: (path: string) => path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/") },
-  { to: "/features", label: "Features", active: (path: string) => path === "/features" },
+  { to: "/for/personal", label: "Use cases", active: (path: string) => path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/") },
+  { to: "/features", label: "System", active: (path: string) => path === "/features" },
   { to: "/pricing", label: "Pricing", active: (path: string) => path === "/pricing" },
 ] as const;
 
@@ -38,7 +38,7 @@ export default function PrecisionPublicHeader() {
           </div>
           <div className="hidden items-center gap-5 md:flex">
             <Link to="/signin" className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground transition-colors hover:text-primary">Sign in</Link>
-            <Link to="/signup" className="marketing-btn-primary min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">Create account</Link>
+            <Link to="/signup" className="marketing-btn-primary min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">Start</Link>
           </div>
           <DialogTrigger asChild>
             <button type="button" className={`${mobileControlClassName} md:hidden`} aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="wireline-mobile-navigation">
@@ -53,7 +53,7 @@ export default function PrecisionPublicHeader() {
         <DialogDescription className="sr-only">Browse Wireline product pages or open your account.</DialogDescription>
         <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between border-b border-border pb-4">
-            <p className="wl-overline">Explore Wireline</p>
+            <p className="wl-overline">Wireline</p>
             <span className="font-[var(--wireline-font-display)] text-sm font-semibold tracking-[-.02em] text-foreground">Menu</span>
           </div>
           <nav className="mt-2" aria-label="Mobile site">
@@ -63,7 +63,7 @@ export default function PrecisionPublicHeader() {
             })}
           </nav>
           <div className="mt-auto grid gap-2 pt-6">
-            <Link to="/signup" onClick={() => setOpen(false)} className="marketing-btn-primary min-h-12 text-[var(--wireline-typography-body-size)] font-semibold">Create your assistant</Link>
+            <Link to="/signup" onClick={() => setOpen(false)} className="marketing-btn-primary min-h-12 text-[var(--wireline-typography-body-size)] font-semibold">Start</Link>
             <Link to="/signin" onClick={() => setOpen(false)} className="marketing-btn-secondary min-h-12 text-[var(--wireline-typography-body-size)] font-semibold">Sign in</Link>
           </div>
         </div>
