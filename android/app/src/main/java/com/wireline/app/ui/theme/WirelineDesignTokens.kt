@@ -53,6 +53,22 @@ internal object WirelineDesignTokens {
     val space400 = 32.dp
     val space600 = 48.dp
     val space800 = 64.dp
+    val typographyBodyLineHeight = 24.dp
+    val typographyBodySize = 16.dp
+    val typographyBodyStrongLineHeight = 24.dp
+    val typographyBodyStrongSize = 16.dp
+    val typographyCaptionLineHeight = 18.dp
+    val typographyCaptionSize = 13.dp
+    val typographyDisplayLineHeight = 56.dp
+    val typographyDisplaySize = 48.dp
+    val typographyH1LineHeight = 42.dp
+    val typographyH1Size = 36.dp
+    val typographyH2LineHeight = 34.dp
+    val typographyH2Size = 28.dp
+    val typographyH3LineHeight = 28.dp
+    val typographyH3Size = 22.dp
+    val typographyOverlineLineHeight = 16.dp
+    val typographyOverlineSize = 11.dp
   }
 
   object Motion {
@@ -60,5 +76,16 @@ internal object WirelineDesignTokens {
     const val motionDurationSlowMillis = 300
     const val motionDurationStandardMillis = 200
     const val pressScale = 0.98f
+  }
+
+  object ZIndex {
+    const val zIndexBase = 0
+    const val zIndexDropdown = 1000
+    const val zIndexFixed = 1030
+    const val zIndexModal = 1050
+    const val zIndexModalBackdrop = 1040
+    const val zIndexPopover = 1060
+    const val zIndexSticky = 1020
+    const val zIndexTooltip = 1070
   }
 }

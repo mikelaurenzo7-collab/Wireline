@@ -9,13 +9,13 @@
   border: 1px solid var(--wireline-color-border-default);
   border-radius: var(--wireline-radius-lg);
   background: var(--wireline-color-surface-default);
-  box-shadow: var(--wl-shadow-sm);
+  box-shadow: var(--wireline-elevation-sm);
 
   &-elevated {
     border: 1px solid var(--wireline-color-border-strong);
     border-radius: var(--wireline-radius-xl);
     background: var(--wireline-color-surface-default);
-    box-shadow: var(--wl-shadow-md);
+    box-shadow: var(--wireline-elevation-md);
   }
 }
 

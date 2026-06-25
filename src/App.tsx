@@ -37,9 +37,9 @@ const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 
 function RouteLoading() {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#F8F9FF] z-[9999]">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[var(--wireline-color-canvas-default)] z-[9999]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 rounded-full border-4 border-[#C9C4D7] border-t-[#5D3FD3] animate-spin" />
+        <div className="w-12 h-12 rounded-full border-4 border-[var(--wireline-color-border-default)] border-t-[var(--wireline-color-action-primary-default)] animate-spin" />
         <span
           className="font-medium font-sans tracking-wide"
           style={{

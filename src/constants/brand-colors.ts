@@ -52,6 +52,16 @@ export const BRAND = {
     scale: "Fluid modular steps with clamp() for responsive hierarchy",
     headingStrategy:
       "Short, single-layer headings only. Concise and purposeful across the app shell.",
+    // Full semantic scale from tokens for perfect cross-surface symmetry
+    sizes: {
+      display: token["typography.display.size"],
+      h1: token["typography.h1.size"],
+      h2: token["typography.h2.size"],
+      h3: token["typography.h3.size"],
+      body: token["typography.body.size"],
+      caption: token["typography.caption.size"],
+      overline: token["typography.overline.size"],
+    },
   },
 
   elevation: {

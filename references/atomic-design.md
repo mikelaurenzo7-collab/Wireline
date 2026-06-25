@@ -3,6 +3,8 @@
 ## Philosophy
 We follow Atomic Design methodology to build a scalable, consistent, and maintainable design system.
 
+The single source of truth is the DTCG design tokens in `design-tokens/wireline.tokens.json`. All surfaces (web, extension, iOS, Android) consume generated outputs for perfect symmetry in colors, spacing, radii, typography, elevations, motion, interaction targets, and z-index layering. No platform-specific deviations in core semantics.
+
 ## Levels
 
 ### Atoms

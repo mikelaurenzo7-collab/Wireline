@@ -50,6 +50,22 @@ public enum WirelineDesignTokens {
     public static let space400: CGFloat = 32
     public static let space600: CGFloat = 48
     public static let space800: CGFloat = 64
+    public static let typographyBodyLineHeight: CGFloat = 24
+    public static let typographyBodySize: CGFloat = 16
+    public static let typographyBodyStrongLineHeight: CGFloat = 24
+    public static let typographyBodyStrongSize: CGFloat = 16
+    public static let typographyCaptionLineHeight: CGFloat = 18
+    public static let typographyCaptionSize: CGFloat = 13
+    public static let typographyDisplayLineHeight: CGFloat = 56
+    public static let typographyDisplaySize: CGFloat = 48
+    public static let typographyH1LineHeight: CGFloat = 42
+    public static let typographyH1Size: CGFloat = 36
+    public static let typographyH2LineHeight: CGFloat = 34
+    public static let typographyH2Size: CGFloat = 28
+    public static let typographyH3LineHeight: CGFloat = 28
+    public static let typographyH3Size: CGFloat = 22
+    public static let typographyOverlineLineHeight: CGFloat = 16
+    public static let typographyOverlineSize: CGFloat = 11
   }
 
   public enum Motion {
@@ -57,5 +73,16 @@ public enum WirelineDesignTokens {
     public static let motionDurationSlow: Double = 0.3
     public static let motionDurationStandard: Double = 0.2
     public static let pressScale: CGFloat = 0.98
+  }
+
+  public enum ZIndex {
+    public static let zIndexBase: Int = 0
+    public static let zIndexDropdown: Int = 1000
+    public static let zIndexFixed: Int = 1030
+    public static let zIndexModal: Int = 1050
+    public static let zIndexModalBackdrop: Int = 1040
+    public static let zIndexPopover: Int = 1060
+    public static let zIndexSticky: Int = 1020
+    public static let zIndexTooltip: Int = 1070
   }
 }

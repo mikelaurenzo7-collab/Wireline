@@ -125,6 +125,16 @@
   --wl-shadow-sm: var(--wireline-elevation-sm);
   --wl-shadow-md: var(--wireline-elevation-md);
   --wl-shadow-lg: var(--wireline-elevation-lg);
+
+  /* Z layering for perfect symmetry */
+  --z-base: var(--wireline-zIndex-base);
+  --z-dropdown: var(--wireline-zIndex-dropdown);
+  --z-sticky: var(--wireline-zIndex-sticky);
+  --z-fixed: var(--wireline-zIndex-fixed);
+  --z-modal-backdrop: var(--wireline-zIndex-modalBackdrop);
+  --z-modal: var(--wireline-zIndex-modal);
+  --z-popover: var(--wireline-zIndex-popover);
+  --z-tooltip: var(--wireline-zIndex-tooltip);
 }
 
 *,

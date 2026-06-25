@@ -38,7 +38,7 @@ private struct AskWirelineWidgetView: View {
             ZStack {
                 AccessoryWidgetBackground()
                 Image(systemName: "mic.fill")
-                    .font(.title2.weight(.semibold))
+                    .font(Brand.displayLarge)
                     .foregroundStyle(WidgetColors.accent)
             }
         case .accessoryRectangular:
@@ -47,21 +47,21 @@ private struct AskWirelineWidgetView: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(WidgetColors.accent)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Ask Wireline").font(.headline.weight(.bold))
-                    Text("Tap to start").font(.caption2).foregroundStyle(.secondary)
+                    Text("Ask Wireline").font(Brand.h1)
+                    Text("Tap to start").font(Brand.caption).foregroundStyle(.secondary)
                 }
             }
         case .systemMedium:
             HStack(spacing: 14) {
                 Image(systemName: "mic.fill")
-                    .font(.title2.weight(.semibold))
+                    .font(Brand.displayLarge)
                     .foregroundStyle(WidgetColors.accent)
                     .frame(width: 44, height: 44)
                     .background(WidgetColors.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Ask Wireline").font(.title3.weight(.semibold)).foregroundStyle(WidgetColors.text)
+                    Text("Ask Wireline").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
                     Text("Hand off a call, the wait, and the follow-up.")
-                        .font(.caption)
+                        .font(Brand.caption)
                         .foregroundStyle(WidgetColors.text2)
                         .lineLimit(2)
                 }
@@ -86,7 +86,7 @@ private struct AskWirelineWidgetView: View {
                     .minimumScaleFactor(0.8)
                     .lineLimit(2)
                 Text("Tap to start")
-                    .font(.caption)
+                    .font(Brand.caption)
                     .foregroundStyle(WidgetColors.text2)
             }
             .padding(16)

@@ -290,17 +290,18 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
   return (
     <div className="space-y-5">
       {/* ── Context Switcher (Personal vs Business) ───────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-[#C9C4D7] bg-[#FFFFFF] shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-sm">
         <div className="min-w-0">
-          <h3 className="font-display italic text-base text-[#0B1C30] leading-tight">
+          <h3 className="font-display italic text-base text-[var(--wireline-color-text-primary)] leading-tight">
             Personal assistant or business agent
           </h3>
-          <p className="text-[11px] text-[#484554] leading-relaxed mt-0.5">
-            Choose whether this is a personal assistant for your day or a business agent for your company.
+          <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-relaxed mt-0.5">
+            Choose whether this is a personal assistant for your day or a business agent for your
+            company.
           </p>
         </div>
 
-        <div className="flex p-0.5 rounded-lg border border-[#C9C4D7]/60 bg-[#EFF4FF] self-start sm:self-center">
+        <div className="flex p-0.5 rounded-lg border border-[var(--wireline-color-border-default)]/60 bg-[var(--wireline-color-surface-subtle)] self-start sm:self-center">
           <ShadButton
             type="button"
             variant="ghost"
@@ -309,11 +310,11 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             className={cn(
               "h-7 px-3.5 rounded-md flex items-center gap-1.5 text-[10.5px] font-semibold transition-all touch-press",
               !isBusiness
-                ? "bg-[#E6DEFF] text-[#0B1C30] border border-[#C9C4D7]/50 shadow-sm"
-                : "text-[#484554] hover:bg-[#E5EEFF]",
+                ? "bg-[var(--wireline-color-action-primary-container)] text-[var(--wireline-color-text-primary)] border border-[var(--wireline-color-border-default)]/50 shadow-sm"
+                : "text-[var(--wireline-color-text-secondary)] hover:bg-[var(--wireline-color-surface-subtle)]",
             )}
           >
-            <User className="w-3.5 h-3.5 text-[#5D3FD3]" />
+            <User className="w-3.5 h-3.5 text-[var(--wireline-color-action-primary-default)]" />
             Personal assistant
           </ShadButton>
           <ShadButton
@@ -324,11 +325,11 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             className={cn(
               "h-7 px-3.5 rounded-md flex items-center gap-1.5 text-[10.5px] font-semibold transition-all touch-press",
               isBusiness
-                ? "bg-[#E6DEFF] text-[#0B1C30] border border-[#C9C4D7]/50 shadow-sm"
-                : "text-[#484554] hover:bg-[#E5EEFF]",
+                ? "bg-[var(--wireline-color-action-primary-container)] text-[var(--wireline-color-text-primary)] border border-[var(--wireline-color-border-default)]/50 shadow-sm"
+                : "text-[var(--wireline-color-text-secondary)] hover:bg-[var(--wireline-color-surface-subtle)]",
             )}
           >
-            <Briefcase className="w-3.5 h-3.5 text-[#5D3FD3]" />
+            <Briefcase className="w-3.5 h-3.5 text-[var(--wireline-color-action-primary-default)]" />
             Business agent
           </ShadButton>
         </div>
@@ -338,66 +339,67 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-[#C9C4D7] bg-[#FFFFFF] p-8 text-center space-y-6 max-w-2xl mx-auto my-4 shadow-sm relative overflow-hidden"
+          className="rounded-xl border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-8 text-center space-y-6 max-w-2xl mx-auto my-4 shadow-sm relative overflow-hidden"
         >
           {/* Subtle top indicator using Ametrine Purple */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-[#5D3FD3]" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-[var(--wireline-color-action-primary-default)]" />
 
-          <div className="mx-auto w-14 h-14 rounded-full bg-[#E6DEFF] border border-[#C9C4D7]/80 flex items-center justify-center text-[#5D3FD3]">
+          <div className="mx-auto w-14 h-14 rounded-full bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-border-default)]/80 flex items-center justify-center text-[var(--wireline-color-action-primary-default)]">
             <User className="w-7 h-7" />
           </div>
 
           <div className="space-y-2">
-            <h2 className="font-display italic text-xl text-[#0B1C30] tracking-tight">
+            <h2 className="font-display italic text-xl text-[var(--wireline-color-text-primary)] tracking-tight">
               Personal assistant
             </h2>
-            <p className="text-[12px] text-[#484554] max-w-md mx-auto leading-relaxed">
-              This personal assistant manages your daily tasks, scheduling, and communication from your device.
+            <p className="text-[var(--wireline-typography-body-size)] text-[var(--wireline-color-text-secondary)] max-w-md mx-auto leading-relaxed">
+              This personal assistant manages your daily tasks, scheduling, and communication from
+              your device.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left max-w-lg mx-auto">
-            <div className="p-3.5 rounded-lg border border-[#C9C4D7]/40 bg-[#F8F9FF] space-y-1">
-              <span className="text-[11.5px] font-semibold text-[#0B1C30] block">
+            <div className="p-3.5 rounded-lg border border-[var(--wireline-color-border-default)]/40 bg-[var(--wireline-color-canvas-default)] space-y-1">
+              <span className="text-[var(--wireline-typography-caption-size)] font-semibold text-[var(--wireline-color-text-primary)] block">
                 Your Day & Schedule
               </span>
-              <span className="text-[10.5px] text-[#484554] leading-normal block">
+              <span className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-normal block">
                 Coordinates appointments, dentist bookings, reservations, and personal errands.
               </span>
             </div>
 
-            <div className="p-3.5 rounded-lg border border-[#C9C4D7]/40 bg-[#F8F9FF] space-y-1">
-              <span className="text-[11.5px] font-semibold text-[#0B1C30] block">
+            <div className="p-3.5 rounded-lg border border-[var(--wireline-color-border-default)]/40 bg-[var(--wireline-color-canvas-default)] space-y-1">
+              <span className="text-[var(--wireline-typography-caption-size)] font-semibold text-[var(--wireline-color-text-primary)] block">
                 Smart Hold & Support
               </span>
-              <span className="text-[10.5px] text-[#484554] leading-normal block">
+              <span className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-normal block">
                 Navigates automated support systems, waits on hold, and rings when a human is ready.
               </span>
             </div>
 
-            <div className="p-3.5 rounded-lg border border-[#C9C4D7]/40 bg-[#F8F9FF] space-y-1">
-              <span className="text-[11.5px] font-semibold text-[#0B1C30] block">
+            <div className="p-3.5 rounded-lg border border-[var(--wireline-color-border-default)]/40 bg-[var(--wireline-color-canvas-default)] space-y-1">
+              <span className="text-[var(--wireline-typography-caption-size)] font-semibold text-[var(--wireline-color-text-primary)] block">
                 Knowledge & Reminders
               </span>
-              <span className="text-[10.5px] text-[#484554] leading-normal block">
+              <span className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-normal block">
                 Keeps track of important details like family preferences, school info, and
                 pharmacies.
               </span>
             </div>
 
-            <div className="p-3.5 rounded-lg border border-[#C9C4D7]/40 bg-[#F8F9FF] space-y-1">
-              <span className="text-[11.5px] font-semibold text-[#0B1C30] block">
+            <div className="p-3.5 rounded-lg border border-[var(--wireline-color-border-default)]/40 bg-[var(--wireline-color-canvas-default)] space-y-1">
+              <span className="text-[var(--wireline-typography-caption-size)] font-semibold text-[var(--wireline-color-text-primary)] block">
                 Recaps & Alerts
               </span>
-              <span className="text-[10.5px] text-[#484554] leading-normal block">
+              <span className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-normal block">
                 Sends high-fidelity call summaries, transcribed insights, and instant phone
                 follow-ups.
               </span>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#C9C4D7]/40 max-w-md mx-auto space-y-3">
-            <p className="text-[11px] text-[#484554] leading-normal">
+          <div className="pt-4 border-t border-[var(--wireline-color-border-default)]/40 max-w-md mx-auto space-y-3">
+            <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-normal">
               Need advanced routing, custom variables, HIPAA/GDPR compliance, operational hours, or
               immediate phone escalation for a store or business?
             </p>
@@ -405,9 +407,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               type="button"
               variant="outline"
               onClick={() => setField("is_business_agent", true)}
-              className="h-8 px-4 rounded-md inline-flex items-center gap-2 bg-[#E6DEFF] border-[#C9C4D7] text-[#0B1C30] text-[11px] font-semibold hover:bg-[#5D3FD3] hover:text-[#FFFFFF] transition-all touch-press hover:scale-[1.02]"
+              className="h-8 px-4 rounded-md inline-flex items-center gap-2 bg-[var(--wireline-color-action-primary-container)] border-[var(--wireline-color-border-default)] text-[var(--wireline-color-text-primary)] text-[var(--wireline-typography-caption-size)] font-semibold hover:bg-[var(--wireline-color-action-primary-default)] hover:text-[var(--wireline-color-text-onAction)] transition-all touch-press hover:scale-[1.02]"
             >
-              <Briefcase className="w-3.5 h-3.5 text-[#5D3FD3] group-hover:text-[#FFFFFF]" />
+              <Briefcase className="w-3.5 h-3.5 text-[var(--wireline-color-action-primary-default)] group-hover:text-[var(--wireline-color-text-onAction)]" />
               Configure as Business Assistant
             </ShadButton>
           </div>
