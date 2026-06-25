@@ -72,6 +72,40 @@
   gap: 0.5rem;
 }
 
+/* Studio is a workbench, not a centered chat landing screen. */
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full {
+  background: var(--wireline-color-canvas-default);
+}
+
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full > div:first-child > div:first-child > .text-center {
+  text-align: left;
+}
+
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full > div:first-child > div:first-child > .text-center p {
+  justify-content: flex-start;
+}
+
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center {
+  align-items: flex-start;
+  justify-content: flex-start;
+  max-width: 38rem;
+  padding-block: clamp(2rem, 4vh, 4rem);
+  text-align: left;
+}
+
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center > p,
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center > h3 {
+  text-align: left;
+}
+
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center > div {
+  justify-content: flex-start;
+}
+
+[data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full textarea {
+  min-height: 0;
+}
+
 @media (max-width: 767px) {
   .wl-ui-caps .wl-workspace-main {
     --wl-app-rail: 100%;
@@ -94,5 +128,9 @@
 
   .wl-ui-caps [data-slot="status-notice"] {
     align-items: flex-start;
+  }
+
+  [data-wireline-route="/studio"] .wl-workspace-content-inner > div > .flex.flex-col.h-full .scroll-viewport > .flex.flex-col.items-center.justify-center {
+    padding-inline: 0.25rem;
   }
 }
