@@ -10,18 +10,11 @@ function EmptyKnowledge() {
     <div className="grid h-full min-h-[520px] place-items-center py-8">
       <EmptyState
         density="default"
-        className="studio-card w-full max-w-[512px] px-8 py-12 sm:px-10"
+        className="studio-card w-full max-w-[512px] px-8 py-12 text-left sm:px-10"
         icon={<Database size={30} strokeWidth={1.7} />}
-        title="Give your assistant the right context."
-        description="Create an assistant first, then add the facts, policies, and rules it needs to represent you well."
-        action={
-          <Button asChild>
-            <Link to="/studio?create=1">
-              <WandSparkles aria-hidden="true" size={16} />
-              Create an assistant
-            </Link>
-          </Button>
-        }
+        title="Give your assistant context."
+        description="Start with the facts and rules that matter."
+        action={<Button asChild><Link to="/studio?create=1"><WandSparkles aria-hidden="true" size={16} />Create an assistant</Link></Button>}
       />
     </div>
   );
@@ -38,22 +31,7 @@ export default function KnowledgePage() {
       eyebrow="Workspace"
       title="Knowledge"
       contentClassName={populated ? "pt-5" : "pt-0"}
-      action={
-        populated ? (
-          <NativeSelect
-            value={agentId}
-            onChange={(event) => setParams({ agent: event.target.value })}
-            aria-label="Choose assistant"
-            className="min-w-[230px]"
-          >
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name}
-              </option>
-            ))}
-          </NativeSelect>
-        ) : undefined
-      }
+      action={populated ? <NativeSelect value={agentId} onChange={(event) => setParams({ agent: event.target.value })} aria-label="Choose assistant" className="min-w-[230px]">{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</NativeSelect> : undefined}
     >
       {!loading && !agents.length ? <EmptyKnowledge /> : <KnowledgeWorkspace />}
     </WorkspaceShell>
