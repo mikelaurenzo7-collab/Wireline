@@ -1,9 +1,3 @@
-/* Design System - Consolidated
- * Typography extracted to ./lib/typography.css for maintainability
- * All-caps titles with responsive larger sizing applied app-wide
- * Other core styles now in index.css + modular imports
- */
-
 @import './lib/typography.css';
 
-/* Future design tokens, elevation, motion, and component primitives go here */
+/* Wireline Clear System */
