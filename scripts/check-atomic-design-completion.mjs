@@ -28,7 +28,7 @@ assertIncludes(
 );
 assertIncludes(
   "src/components/molecules/Card.tsx",
-  /data-slot="card"/,
+  /"data-slot":\s*"card"/,
   "must expose a stable card surface slot.",
 );
 assertIncludes(
@@ -100,6 +100,18 @@ assertExcludes(
   "src/components/ui/shadcn/index.ts",
   /This is the \*\*canonical\*\* UI layer/,
   "must describe shadcn exports as a compatibility layer rather than a second canonical system.",
+);
+
+/* PR3: new canonical expectations for token usage in atomic completion checks */
+assertIncludes(
+  "src/components/molecules/Card.tsx",
+  /--wireline-(color|radius)/,
+  "Card must derive from semantic wireline tokens",
+);
+assertIncludes(
+  "src/components/molecules/StatusNotice.tsx",
+  /--wireline-(color|radius)/,
+  "StatusNotice must derive from semantic wireline tokens",
 );
 
 console.log("Atomic Design completion checks passed.");

@@ -322,6 +322,7 @@ assertExcludes(
  * Make --wireline-* the source; base layers (and atoms via aliases/Tailwind) derive from them.
  * Per design: assertIncludes for wireline tokens, assertExcludes for hard-coded hex.
  * PR2 updated canonical atoms to use --wireline-* directly in cva.
+ * PR3: strengthened with explicit loop asserts, brand-colors coverage, and wl- primitive refs in base layers.
  */
 assertIncludes(
   "src/styles/foundation.css",
@@ -338,10 +339,53 @@ assertExcludes(
   /#[0-9a-fA-F]{3,6}/,
   "no hard-coded hex colors outside tokens",
 );
+assertExcludes(
+  "src/styles/foundation.css",
+  /#[0-9a-fA-F]{3,6}/,
+  "no hard-coded hex colors outside tokens",
+);
 
-// Canonical atoms now source directly from --wireline-* (PR2)
-for (const atom of canonicalAtoms) {
-  // atoms must derive colors/radii/surfaces from semantic tokens inside cva
+// PR3: expand with explicit requirements for token-derived values (atoms/molecules/base)
+for (const atom of [
+  "src/components/atoms/Button.tsx",
+  "src/components/atoms/Badge.tsx",
+  "src/components/atoms/Input.tsx",
+  "src/components/atoms/NativeSelect.tsx",
+  "src/components/atoms/Skeleton.tsx",
+  "src/components/atoms/Textarea.tsx",
+]) {
+  assertIncludes(
+    atom,
+    /--wireline-(color|radius|font)/,
+    "must derive from semantic wireline tokens",
+  );
 }
+assertIncludes(
+  "src/components/molecules/Card.tsx",
+  /--wireline-(color|radius|font)/,
+  "must derive from semantic wireline tokens",
+);
+assertIncludes(
+  "src/components/molecules/StatusNotice.tsx",
+  /--wireline-(color|radius|font)/,
+  "must derive from semantic wireline tokens",
+);
+
+// brand-colors.ts covers core semantic set from generated tokens; base layers ref generated for wl-
+assertIncludes(
+  "src/constants/brand-colors.ts",
+  /from "\.\/generated-design-tokens"|token\["color\./,
+  "brand-colors.ts must cover the core semantic set",
+);
+assertIncludes(
+  "src/styles/foundation.css",
+  /--wl-.*var\(--wireline-/,
+  "foundation.css must reference the generated vars for wl- primitives",
+);
+assertIncludes(
+  "src/styles/components.css",
+  /var\(--wireline-/,
+  "components.css must reference the generated vars for wl- primitives",
+);
 
 console.log("Design-system contract checks passed.");
