@@ -41,7 +41,14 @@ export default function TeamSettings() {
       eyebrow="Workspace"
       title="Team"
       contentClassName="pt-6"
-      action={<Button asChild variant="secondary" size="sm"><Link to="/settings"><ArrowLeft size={16} />Settings</Link></Button>}
+      action={
+        <Button asChild variant="secondary" size="sm" className="shrink-0">
+          <Link to="/settings" aria-label="Back to Settings">
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">Settings</span>
+          </Link>
+        </Button>
+      }
     >
       <div className="min-h-0 flex-1 pb-12">
         <div className="mx-auto max-w-[920px] space-y-6">
