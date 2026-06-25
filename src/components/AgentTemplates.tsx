@@ -441,7 +441,7 @@ function TemplateCard({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
-              className="rounded-md p-3 border text-[11px] text-foreground/80 leading-relaxed italic relative wl-accent-bubble"
+              className="rounded-md p-3 border text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 leading-relaxed italic relative wl-accent-bubble"
             >
               <MessageCircle className="absolute -top-2 -left-1.5 w-4 h-4 wl-accent-text" />
               <span className="pl-2">&ldquo;{template.firstMessage}&rdquo;</span>
@@ -458,7 +458,7 @@ function TemplateCard({
           variant="default"
           onClick={() => onDeploy(template)}
           disabled={deploying}
-          className="w-full !py-2 !text-[11px] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
+          className="w-full !py-2 !text-[var(--wireline-typography-overline-size)] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
         >
           {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
           {alreadyDeployed ? "Deploy Another" : "Deploy Assistant"}

@@ -43,12 +43,12 @@ function AccountCard({
             {account.label ?? (account.type === "personal" ? "Personal" : "Business")}
           </span>
           {account.isPrimary && (
-            <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-medium text-brand bg-brand/10 border border-brand/20">
+            <span className="inline-flex items-center px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
               Primary
             </span>
           )}
           {isActive && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-medium text-brand bg-brand/10 border border-brand/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
               <Check className="h-2.5 w-2.5" /> Active
             </span>
           )}

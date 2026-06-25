@@ -117,7 +117,10 @@ function ToolGroup({
             {title}
           </h3>
         </div>
-        <Badge variant="info" className="shrink-0 text-[10px] uppercase tracking-[.06em]">
+        <Badge
+          variant="info"
+          className="shrink-0 text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
+        >
           {activeCount} on
         </Badge>
       </header>
@@ -150,7 +153,7 @@ function ToolGroup({
                 >
                   {copy?.label || tool.label}
                 </strong>
-                <small className="mt-1 block text-[14px] leading-5 text-muted-foreground">
+                <small className="mt-1 block text-[var(--wireline-typography-body-size)] leading-5 text-[var(--wireline-color-text-secondary)]">
                   {copy?.description || tool.description}
                 </small>
               </span>
@@ -327,12 +330,15 @@ export default function ActionsWorkspace() {
               Choose how {selectedAgent?.name || "this assistant"} can help.
             </h2>
             {!loading ? (
-              <Badge variant="info" className="text-[10px] uppercase tracking-[.06em]">
+              <Badge
+                variant="info"
+                className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
+              >
                 {enabledTools.length} enabled
               </Badge>
             ) : null}
           </div>
-          <p className="mt-2 max-w-2xl text-[14px] leading-6 text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-[var(--wireline-typography-body-size)] leading-6 text-[var(--wireline-color-text-secondary)]">
             Turn on only the actions this assistant should take. You can change the scope whenever
             the role changes.
           </p>
@@ -382,10 +388,10 @@ export default function ActionsWorkspace() {
           </div>
           {Object.keys(businessGroups).length ? (
             <details className="studio-card mt-5 p-5">
-              <summary className="cursor-pointer text-[15px] font-semibold text-foreground">
+              <summary className="cursor-pointer text-[var(--wireline-typography-body-size)] font-semibold text-[var(--wireline-color-text-primary)]">
                 Business tools
               </summary>
-              <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
+              <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-5 text-[var(--wireline-color-text-secondary)]">
                 Optional controls for sales, customer records, teams, and commerce. Enable only what
                 this assistant needs for its current role.
               </p>
@@ -421,7 +427,7 @@ export default function ActionsWorkspace() {
         <aside className="mt-6 min-h-0 lg:mt-0">
           <p className="studio-kicker">Connected apps</p>
           <h2 className="wl-section-title mt-2">Add context when it helps.</h2>
-          <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+          <p className="mt-2 text-[var(--wireline-typography-body-size)] leading-6 text-[var(--wireline-color-text-secondary)]">
             Connect only the accounts and tools that make this assistant more useful. A connection
             is not permission by itself.
           </p>
@@ -456,7 +462,7 @@ export default function ActionsWorkspace() {
                   </div>
                   <Badge
                     variant={stateVariant}
-                    className="shrink-0 text-[10px] uppercase tracking-[.06em]"
+                    className="shrink-0 text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
                   >
                     {state}
                   </Badge>

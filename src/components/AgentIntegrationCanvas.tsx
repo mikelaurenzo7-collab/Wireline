@@ -260,7 +260,7 @@ export default function AgentIntegrationCanvas({
 
                   {/* Tool count badge */}
                   {isEnabled && (
-                    <div className="wl-canvas-node__badge absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[10px] font-bold text-white px-0.5 leading-none">
+                    <div className="wl-canvas-node__badge absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[var(--wireline-typography-overline-size)] font-bold text-[var(--wireline-color-text-onAction)] px-0.5 leading-none">
                       {enabledCount}
                     </div>
                   )}

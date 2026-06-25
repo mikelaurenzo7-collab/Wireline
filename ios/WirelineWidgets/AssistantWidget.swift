@@ -38,24 +38,24 @@ private struct AssistantWidgetView: View {
             ZStack {
                 AccessoryWidgetBackground()
                 Image(systemName: "sparkles")
-                    .font(.title2.weight(.semibold))
+                    .font(Brand.displayLarge)
             }
         case .accessoryRectangular:
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.headline.weight(.semibold))
+                    .font(Brand.h1)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Assistant")
-                        .font(.headline.weight(.bold))
+                        .font(Brand.h1)
                     Text("Tap to route call")
-                        .font(.caption2)
+                        .font(Brand.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         default:
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.title.weight(.semibold))
+                    .font(Brand.bodyStrong)
                     .foregroundStyle(WidgetColors.accent)
                 Spacer()
                 Text("100% Coverage")

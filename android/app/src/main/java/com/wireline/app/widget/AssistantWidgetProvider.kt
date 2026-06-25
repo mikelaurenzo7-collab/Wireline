@@ -52,7 +52,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                 text = "Wireline Assistants",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Accent),
-                    fontSize = 14.sp,
+                    fontSize = WirelineDesignTokens.Metric.typographyBodySize.sp,
                     fontWeight = FontWeight.Bold,
                 ),
             )
@@ -66,7 +66,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                     text = "100%",
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Success),
-                        fontSize = 12.sp,
+                        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                 )
@@ -81,7 +81,7 @@ class AssistantStatusWidget : GlanceAppWidget() {
                     text = "All active calls",
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Text),
-                        fontSize = 12.sp,
+                        fontSize = WirelineDesignTokens.Metric.typographyCaptionSize.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                 )

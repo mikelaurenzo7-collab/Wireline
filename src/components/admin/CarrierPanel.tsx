@@ -341,7 +341,7 @@ export function CarrierPanel({
                         /* silent — Account Holder will see no save indicator */
                       }
                     }}
-                    className="text-[11px] bg-black/5 border border-input rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-brand/40 text-foreground min-w-[200px] placeholder:text-foreground/55 h-auto"
+                    className="text-[var(--wireline-typography-caption-size)] bg-[var(--wireline-color-surface-subtle)] border border-[var(--wireline-color-border-default)] rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-[var(--wireline-color-focus-default)]/40 text-[var(--wireline-color-text-primary)] min-w-[200px] placeholder:text-[var(--wireline-color-text-secondary)]/55 h-auto"
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
@@ -477,7 +477,7 @@ export function CarrierPanel({
                   Copy URL
                 </ShadButton>
               </div>
-              <code className="block text-[11px] font-mono text-foreground/90 bg-black/15 px-2.5 py-1.5 rounded select-all break-all">
+              <code className="block text-[var(--wireline-typography-caption-size)] font-mono text-foreground/90 bg-black/15 px-2.5 py-1.5 rounded select-all break-all">
                 https://trywireline.com/api/twilio-webhook/sms
               </code>
             </div>
@@ -581,7 +581,7 @@ export function CarrierPanel({
           <div className="mt-6 pt-5 border-t border-input space-y-3">
             <div>
               <p className="wl-label text-foreground/55 mb-1">Alerts to you</p>
-              <p className="text-[11px] text-muted leading-relaxed">
+              <p className="text-[var(--wireline-typography-caption-size)] text-muted leading-relaxed">
                 Have Wireline text YOU when your agents do something worth knowing about — booked
                 meetings, escalations, hot leads, trial milestones.
               </p>

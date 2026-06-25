@@ -92,10 +92,10 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           </Badge>
         </div>
       </div>
-      <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[19px] font-semibold leading-6 tracking-[-.02em] text-foreground">
+      <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-.02em] text-[var(--wireline-color-text-primary)]">
         {agent.name}
       </h2>
-      <p className="mt-1 inline-flex items-center gap-2 font-mono text-[10px] capitalize tracking-[.035em] text-muted-foreground">
+      <p className="mt-1 inline-flex items-center gap-2 font-mono text-[var(--wireline-typography-overline-size)] capitalize tracking-[.035em] text-[var(--wireline-color-text-secondary)]">
         <span>{formatAgentRoleLabel(agent.role)}</span>
         <ChannelIcon size={12} />
         <span>{channel}</span>

@@ -438,7 +438,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     key={d.key}
                     className="grid grid-cols-[5.5rem,_auto,_1fr] sm:grid-cols-[6rem,_auto,_1fr,_1fr] items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/3 transition-colors"
                   >
-                    <label className="text-[11px] text-foreground/80 truncate">{d.label}</label>
+                    <label className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 truncate">
+                      {d.label}
+                    </label>
                     <ShadButton
                       type="button"
                       variant={closed ? "destructive" : "outline"}
@@ -533,7 +535,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground text-[12px]">{opt.label}</span>
+                      <span className="font-medium text-foreground text-[var(--wireline-typography-body-size)]">
+                        {opt.label}
+                      </span>
                       {active && <span className="wl-label text-brand">Active</span>}
                     </div>
                     <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
@@ -567,7 +571,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground text-[12px]">{opt.label}</span>
+                      <span className="font-medium text-foreground text-[var(--wireline-typography-body-size)]">
+                        {opt.label}
+                      </span>
                       {active && <span className="wl-label text-brand">Active</span>}
                     </div>
                     <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
@@ -645,7 +651,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     }
                     placeholder="+1 555 123 4567"
                     aria-label="Per-agent escalation phone number"
-                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
+                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[var(--wireline-typography-body-size)] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
                     data-testid="escalation-phone-input"
                   />
                 </label>
@@ -663,7 +669,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     }
                     placeholder="lead@yourcompany.com"
                     aria-label="Per-agent escalation email"
-                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
+                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[var(--wireline-typography-body-size)] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
                     data-testid="escalation-email-input"
                   />
                 </label>
@@ -696,7 +702,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   data-testid="escalation-handoff-toggle"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-semibold text-foreground leading-tight">
+                  <p className="text-[var(--wireline-typography-body-size)] font-semibold text-foreground leading-tight">
                     Warm-transfer the live caller
                   </p>
                   <p className="text-[10.5px] text-foreground/55 leading-relaxed mt-0.5">
@@ -723,7 +729,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           >
             <div className="space-y-1.5">
               {variableEntries.length === 0 && (
-                <div className="text-[11px] text-foreground/55 italic px-1 py-2">
+                <div className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/55 italic px-1 py-2">
                   No variables yet. Add ones like{" "}
                   <code className="text-foreground/80">business_name</code>,{" "}
                   <code className="text-foreground/80">website</code>,{" "}
@@ -735,7 +741,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               {variableEntries.map(([k, v]) => (
                 <div key={k} className="flex items-center gap-2">
                   <code
-                    className="text-[11px] text-brand bg-brand/8 border border-brand/20 rounded-md px-2 py-1.5 font-mono shrink-0 truncate max-w-[12rem]"
+                    className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20 rounded-md px-2 py-1.5 font-mono shrink-0 truncate max-w-[12rem]"
                     title={k}
                   >
                     {`{${k}}`}
@@ -894,7 +900,11 @@ function ChipList({
   tone: "rose" | "brand";
 }) {
   if (chips.length === 0) {
-    return <p className="text-[11px] text-foreground/55 italic px-1 py-1">None yet.</p>;
+    return (
+      <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/55 italic px-1 py-1">
+        None yet.
+      </p>
+    );
   }
   const toneClass =
     tone === "rose"
@@ -906,7 +916,7 @@ function ChipList({
         <li
           key={`${c}-${i}`}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] leading-none",
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[var(--wireline-typography-caption-size)] leading-none",
             toneClass,
           )}
         >

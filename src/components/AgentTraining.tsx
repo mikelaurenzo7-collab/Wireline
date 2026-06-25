@@ -294,7 +294,7 @@ export default function AgentTraining({
             <span className="wl-label text-brand whitespace-nowrap">
               {OPS_TRAINING_ASSISTS_COPY.eyebrow}
             </span>
-            <span className="hidden sm:inline text-[11px] text-foreground/60 whitespace-nowrap">
+            <span className="hidden sm:inline text-[var(--wireline-typography-overline-size)] text-[var(--wireline-color-text-secondary)]/60 whitespace-nowrap">
               — {OPS_TRAINING_ASSISTS_COPY.hint}
             </span>
           </span>
@@ -969,7 +969,7 @@ export default function AgentTraining({
                       <Phone className="w-4 h-4 text-brand" />
                       <h4 className="font-display italic text-base text-foreground">Voice call</h4>
                     </div>
-                    <p className="text-[11px] text-foreground/55 leading-relaxed">
+                    <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/55 leading-relaxed">
                       Speak directly with your agent through your browser microphone. Tests the
                       exact voice and persona your callers will hear.
                     </p>

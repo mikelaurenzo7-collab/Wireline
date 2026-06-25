@@ -692,7 +692,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               <AlertTriangle className="w-3 h-3" />
               {validationIssues.length} item{validationIssues.length === 1 ? "" : "s"} to finish
             </div>
-            <ul className="text-[11px] text-foreground/70 leading-snug space-y-0.5 max-h-24 overflow-y-auto">
+            <ul className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/70 leading-snug space-y-0.5 max-h-24 overflow-y-auto">
               {validationIssues.slice(0, 6).map((v, i) => (
                 <li key={i} className="flex items-start gap-1.5">
                   <span className="text-brand shrink-0">·</span>
@@ -912,9 +912,11 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-brand">
                     <Settings2 className="w-4 h-4" />
-                    <h4 className="text-[11px] uppercase tracking-[0.3em]">Agent Instructions</h4>
+                    <h4 className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
+                      Agent Instructions
+                    </h4>
                   </div>
-                  <p className="text-[11px] text-foreground/55 leading-relaxed max-w-2xl">
+                  <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/55 leading-relaxed max-w-2xl">
                     What should the agent say and do while in this stage? Be specific about the
                     goals, questions to ask, and tone to maintain.
                   </p>
@@ -1021,7 +1023,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       )}
                     </ShadButton>
                     {stepCritiques[activeStep.id] && (
-                      <div className="rounded-md wl-panel border border-brand/15 p-3 text-[12px] text-foreground/85 leading-relaxed whitespace-pre-wrap">
+                      <div className="rounded-md wl-panel border border-brand/15 p-3 text-[var(--wireline-typography-body-size)] text-[var(--wireline-color-text-primary)]/85 leading-relaxed whitespace-pre-wrap">
                         {stepCritiques[activeStep.id]}
                       </div>
                     )}
@@ -1035,11 +1037,11 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-brand">
                       <ArrowRight className="w-4 h-4" />
-                      <h4 className="text-[11px] uppercase tracking-[0.3em]">
+                      <h4 className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
                         Transition Condition
                       </h4>
                     </div>
-                    <p className="text-[11px] text-foreground/55 leading-relaxed max-w-2xl">
+                    <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/55 leading-relaxed max-w-2xl">
                       When should the agent naturally progress to the next stage? The LLM evaluates
                       this condition continuously.
                     </p>
@@ -1061,7 +1063,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         <div className={cn(WL_OPS_CLASSES.divider, "flex-1")} aria-hidden />
                         <div className="flex items-center gap-2 wl-label text-muted">
                           Proceeds to:{" "}
-                          <span className="text-foreground font-medium normal-case tracking-normal text-[11px]">
+                          <span className="text-[var(--wireline-color-text-primary)] font-medium normal-case tracking-normal text-[var(--wireline-typography-caption-size)]">
                             {steps[activeStepIndex + 1].name}
                           </span>
                         </div>

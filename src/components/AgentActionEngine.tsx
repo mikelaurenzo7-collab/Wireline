@@ -140,7 +140,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           variant="outline"
           onClick={handleSave}
           disabled={isSaving}
-          className="h-10 px-6 rounded-full bg-brand/15 border-brand/40 text-brand text-[11px] uppercase tracking-[0.25em] hover:bg-brand/25"
+          className="h-10 px-6 rounded-full bg-brand/15 border-brand/40 text-brand text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] hover:bg-brand/25"
         >
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
@@ -182,7 +182,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                       "relative p-5 rounded-md border transition-all cursor-pointer overflow-hidden group",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
                       isEnabled && !isMissingIntegration
-                        ? "bg-brand/5 border-brand/30 shadow-[0_4px_24px_rgba(124,58,237,0.08)] hover:-translate-y-px"
+                        ? "bg-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_5%,transparent)] border-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_30%,var(--wireline-color-border-default))] shadow-[0_4px_24px_color-mix(in_srgb,var(--wireline-color-action-primary-default)_8%,transparent)] hover:-translate-y-px"
                         : "wl-panel hover:border-brand/30 hover:-translate-y-px",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}

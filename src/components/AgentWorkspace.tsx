@@ -201,9 +201,11 @@ function ProposalCard({
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-medium leading-snug">{title}</p>
+          <p className="text-[var(--wireline-typography-body-size)] font-medium leading-snug">
+            {title}
+          </p>
           {detail && (
-            <p className="mt-0.5 text-[11px] text-muted whitespace-pre-wrap break-words leading-relaxed">
+            <p className="mt-0.5 text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] whitespace-pre-wrap break-words leading-relaxed">
               {detail}
             </p>
           )}
@@ -243,7 +245,7 @@ function ProposalCard({
       ) : (
         <>
           {consent && (
-            <label className="mt-2.5 flex items-start gap-2 text-[11px] text-muted leading-snug cursor-pointer">
+            <label className="mt-2.5 flex items-start gap-2 text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-snug cursor-pointer">
               <Checkbox
                 checked={consent.checked}
                 onChange={(e) => consent.onChange(e.target.checked)}

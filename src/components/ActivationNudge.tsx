@@ -83,7 +83,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "mx-4 mt-2 mb-0.5 flex flex-col gap-2 border border-border bg-card px-3 py-2 text-[12px] sm:flex-row sm:items-center",
+        "mx-4 mt-2 mb-0.5 flex flex-col gap-2 border border-border bg-card px-3 py-2 text-[var(--wireline-typography-caption-size)] sm:flex-row sm:items-center",
         className,
       )}
       role="status"
@@ -93,7 +93,9 @@ export default function ActivationNudge({ className }: { className?: string }) {
         <p className="wl-label mb-1 text-brand">{ACTIVATION_NUDGE_COPY.eyebrow}</p>
         <p className="text-xs leading-relaxed text-foreground/75">{ACTIVATION_NUDGE_COPY.body}</p>
         {phoneNumber ? (
-          <p className="mt-1 font-mono text-[11px] tabular-nums text-muted">{phoneNumber}</p>
+          <p className="mt-1 font-mono text-[var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">
+            {phoneNumber}
+          </p>
         ) : null}
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2 sm:pl-2">
