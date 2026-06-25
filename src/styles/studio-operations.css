@@ -1,86 +1,34 @@
-/* Studio is an operational workroom, not a second marketing theme.
-   Scoped tokens keep the rest of the product in its existing visual system. */
+/* Studio operations compatibility layer.
+ * Studio now inherits the same Wireline Clear System tokens as the rest of the app.
+ * This file keeps existing class hooks alive without creating a second theme.
+ */
+
 .wl-studio-operations,
-.wl-workspace-shell--studio {
-  --background: #0a0c12;
-  --foreground: #f7f8fc;
-  --card: #12151d;
-  --muted: #191e2a;
-  --muted-foreground: #a7b0c2;
-  --border: rgba(173, 186, 218, 0.18);
-  --primary: #91a8ff;
-  --primary-foreground: #0a0c12;
-  --secondary: #1a2030;
-  --secondary-foreground: #f7f8fc;
+.wl-workspace-shell--studio,
+.wl-studio-navigation-dialog {
+  --background: var(--wireline-color-canvas-default);
+  --foreground: var(--wireline-color-text-primary);
+  --card: var(--wireline-color-surface-default);
+  --muted: var(--wireline-color-surface-subtle);
+  --muted-foreground: var(--wireline-color-text-secondary);
+  --border: var(--wireline-color-border-default);
+  --primary: var(--wireline-color-action-primary-default);
+  --primary-foreground: var(--wireline-color-text-onAction);
+  --secondary: var(--wireline-color-surface-subtle);
+  --secondary-foreground: var(--wireline-color-text-primary);
+  background: var(--background);
   color: var(--foreground);
-  background:
-    radial-gradient(circle at 78% 8%, rgba(82, 117, 255, 0.12), transparent 30rem),
-    radial-gradient(circle at 44% 100%, rgba(65, 222, 187, 0.055), transparent 31rem),
-    #0a0c12;
 }
 
-/* The Studio route needs one uninterrupted operating environment across the
-   desktop rail, header, and mobile navigation—not a dark work area inside a
-   separate light shell. Legacy detailed mode intentionally does not opt in. */
 .wl-workspace-shell--studio .wl-workspace-main,
 .wl-workspace-shell--studio .wl-workspace-content,
 .wl-workspace-shell--studio .wl-workspace-content-inner {
   background: transparent;
 }
 
-.wl-workspace-shell--studio .wl-workspace-header {
-  border-color: var(--border);
-}
-
-.wl-workspace-shell--studio .wl-workspace-sidebar,
-.wl-studio-navigation-dialog {
-  --background: #0a0c12;
-  --foreground: #f7f8fc;
-  --card: #12151d;
-  --muted: #191e2a;
-  --muted-foreground: #a7b0c2;
-  --border: rgba(173, 186, 218, 0.18);
-  --primary: #91a8ff;
-  --primary-foreground: #0a0c12;
-  background: #0d1017 !important;
-  color: var(--foreground);
-  border-color: var(--border) !important;
-}
-
-.wl-workspace-shell--studio .wl-workspace-sidebar .border-border,
-.wl-studio-navigation-dialog .border-border {
-  border-color: var(--border);
-}
-
-.wl-workspace-shell--studio .wl-workspace-sidebar .text-foreground,
-.wl-studio-navigation-dialog .text-foreground {
-  color: var(--foreground);
-}
-
-.wl-workspace-shell--studio .wl-workspace-sidebar .text-primary,
-.wl-studio-navigation-dialog .text-primary {
-  color: var(--primary);
-}
-
-.wl-workspace-shell--studio .wl-stitch-sidebar-link,
-.wl-studio-navigation-dialog .wl-stitch-sidebar-link {
-  color: var(--muted-foreground);
-}
-
-.wl-workspace-shell--studio .wl-stitch-sidebar-link:hover,
-.wl-studio-navigation-dialog .wl-stitch-sidebar-link:hover {
-  background: rgba(145, 168, 255, 0.08);
-  color: var(--foreground);
-}
-
-.wl-workspace-shell--studio .wl-stitch-sidebar-link[aria-current="page"],
-.wl-studio-navigation-dialog .wl-stitch-sidebar-link[aria-current="page"] {
-  background: rgba(145, 168, 255, 0.15);
-  color: var(--primary);
-}
-
-.wl-workspace-shell--studio .wl-overline {
-  color: var(--primary);
+.wl-studio-operations main {
+  min-height: 100%;
+  background-color: transparent;
 }
 
 .wl-studio-operations :is(.bg-background, .bg-card, .bg-muted\/30, .bg-muted\/\[0\.12\]) {
@@ -95,31 +43,6 @@
 .wl-studio-operations .text-primary { color: var(--primary); }
 .wl-studio-operations .bg-primary { background-color: var(--primary); }
 .wl-studio-operations .text-primary-foreground { color: var(--primary-foreground); }
-.wl-studio-operations .border-primary\/30 { border-color: rgba(145, 168, 255, 0.34); }
-.wl-studio-operations .bg-primary\/\[0\.06\] { background-color: rgba(145, 168, 255, 0.10); }
-.wl-studio-operations .bg-primary\/\[0\.08\] { background-color: rgba(145, 168, 255, 0.13); }
-.wl-studio-operations .bg-primary\/10 { background-color: rgba(145, 168, 255, 0.13); }
-.wl-studio-operations .border-dashed { border-color: rgba(173, 186, 218, 0.24); }
-
-.wl-studio-operations main {
-  min-height: 100%;
-  background-color: transparent;
-}
-
-.wl-studio-operations h1,
-.wl-studio-operations h2 {
-  text-wrap: balance;
-}
-
-.wl-studio-operations button,
-.wl-studio-operations a {
-  min-width: 0;
-}
-
-.wl-studio-operations button > span,
-.wl-studio-operations a > span {
-  min-width: 0;
-}
 
 .wl-studio-operations textarea {
   color: var(--foreground);
@@ -134,41 +57,18 @@
   outline-color: var(--primary);
 }
 
-.wl-studio-operations .wl-overline {
-  color: var(--primary);
-  letter-spacing: 0.14em;
+.wl-studio-operations h1,
+.wl-studio-operations h2 {
+  text-wrap: balance;
 }
 
-.wl-studio-operations [class*="shadow-"] {
-  box-shadow: 0 18px 48px -30px rgba(0, 0, 0, 0.9);
-}
-
-@media (min-width: 640px) and (max-width: 1023px) {
-  .wl-studio-operations main > div > section > aside,
-  .wl-studio-operations main > .grid > aside {
-    border-top: 1px solid var(--border);
-  }
-
-  .wl-studio-operations main > div > section > aside > .mt-3,
-  .wl-studio-operations main > .grid > aside > .mt-6 {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
+.wl-studio-operations button,
+.wl-studio-operations a {
+  min-width: 0;
 }
 
 @media (max-width: 639px) {
-  .wl-studio-operations,
-  .wl-workspace-shell--studio {
-    background:
-      radial-gradient(circle at 92% 0%, rgba(82, 117, 255, 0.11), transparent 18rem),
-      #0a0c12;
-  }
-
-  .wl-studio-operations main {
-    min-width: 0;
-  }
-
+  .wl-studio-operations main,
   .wl-studio-operations :is(header, section, aside, article, div) {
     min-width: 0;
   }
@@ -179,39 +79,11 @@
     letter-spacing: -0.045em !important;
   }
 
-  .wl-studio-operations h2 {
-    text-wrap: pretty;
-  }
-
   .wl-studio-operations button {
     max-inline-size: 100%;
   }
 
-  .wl-studio-operations button:not([aria-label]) {
-    white-space: normal;
-  }
-
-  .wl-studio-operations main > div > section > aside > .mt-3,
-  .wl-studio-operations main > .grid > aside > .mt-6 {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .wl-studio-operations main > .grid > aside {
-    border-top: 1px solid var(--border);
-  }
-
   .wl-studio-operations textarea {
     font-size: 16px !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .wl-studio-operations main > div {
-    max-width: 78rem;
-  }
-
-  .wl-studio-operations main > .grid {
-    grid-template-columns: minmax(0, 1.38fr) minmax(19rem, 0.62fr);
   }
 }
