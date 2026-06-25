@@ -5,6 +5,9 @@ const root = process.cwd();
 const sourcePath = resolve(root, "design-tokens/wireline.tokens.json");
 const cssOutputPath = resolve(root, "src/styles/tokens.generated.css");
 const tsOutputPath = resolve(root, "src/constants/generated-design-tokens.ts");
+const swiftOutputPath = resolve(root, "ios/WirelineDesignTokens/WirelineDesignTokens.swift");
+const kotlinOutputPath = resolve(root, "android/design-tokens/src/main/java/com/wireline/design/WirelineDesignTokens.kt");
+const extensionOutputPath = resolve(root, "extension/styles/wireline-tokens.generated.css");
 
 const tokens = JSON.parse(await readFile(sourcePath, "utf8"));
 
@@ -70,13 +73,106 @@ const ts = [
   "",
 ].join("\n");
 
+const pxNumber = (value) => {
+  if (typeof value === "number") return value;
+  const match = String(value).match(/^(-?\\d+(?:\\.\\d+)?)px$/);
+  return match ? Number(match[1]) : null;
+};
+
+const camel = (path) =>
+  path
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_, char) => char.toUpperCase())
+    .replace(/^[A-Z]/, (char) => char.toLowerCase());
+
+const rgbaToSwift = (value) => {
+  const rgba = String(value).match(/^rgba\\((\\d+),\\s*(\\d+),\\s*(\\d+),\\s*([0-9.]+)\\)$/);
+  if (rgba) {
+    const [, r, g, b, a] = rgba;
+    return `Color(red: ${Number(r) / 255}, green: ${Number(g) / 255}, blue: ${Number(b) / 255}, opacity: ${a})`;
+  }
+  const hex = String(value).match(/^#([0-9A-Fa-f]{6})$/);
+  if (hex) return `Color(hex: \"${hex[1].toUpperCase()}\")`;
+  return null;
+};
+
+const rgbaToCompose = (value) => {
+  const rgba = String(value).match(/^rgba\\((\\d+),\\s*(\\d+),\\s*(\\d+),\\s*([0-9.]+)\\)$/);
+  if (rgba) {
+    const [, r, g, b, a] = rgba;
+    const alpha = Math.round(Number(a) * 255)
+      .toString(16)
+      .padStart(2, "0")
+      .toUpperCase();
+    return `Color(0x${alpha}${[r, g, b].map((part) => Number(part).toString(16).padStart(2, "0").toUpperCase()).join("")})`;
+  }
+  const hex = String(value).match(/^#([0-9A-Fa-f]{6})$/);
+  if (hex) return `Color(0xFF${hex[1].toUpperCase()})`;
+  return null;
+};
+
+const colorEntries = orderedEntries.filter(([path]) => path.startsWith("color."));
+const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
+
+const swift = [
+  "// Generated from design-tokens/wireline.tokens.json. Do not edit by hand.",
+  "import SwiftUI",
+  "",
+  "public enum WirelineDesignTokens {",
+  "  public enum ColorToken {",
+  ...colorEntries.map(([path, value]) => `    public static let ${camel(path)} = ${rgbaToSwift(value) ?? `Color.clear /* unsupported token: ${value} */`}`),
+  "  }",
+  "",
+  "  public enum Metric {",
+  ...dimensionEntries.map(([path, value]) => `    public static let ${camel(path)}: CGFloat = ${pxNumber(value)}`),
+  "  }",
+  "}",
+  "",
+  "private extension Color {",
+  "  init(hex: String) {",
+  "    let scanner = Scanner(string: hex)",
+  "    var value: UInt64 = 0",
+  "    scanner.scanHexInt64(&value)",
+  "    let red = Double((value >> 16) & 0xFF) / 255.0",
+  "    let green = Double((value >> 8) & 0xFF) / 255.0",
+  "    let blue = Double(value & 0xFF) / 255.0",
+  "    self.init(red: red, green: green, blue: blue)",
+  "  }",
+  "}",
+  "",
+].join("\n");
+
+const kotlin = [
+  "// Generated from design-tokens/wireline.tokens.json. Do not edit by hand.",
+  "package com.wireline.design",
+  "",
+  "import androidx.compose.ui.graphics.Color",
+  "import androidx.compose.ui.unit.dp",
+  "",
+  "object WirelineDesignTokens {",
+  "  object ColorToken {",
+  ...colorEntries.map(([path, value]) => `    val ${camel(path)} = ${rgbaToCompose(value) ?? `Color.Transparent /* unsupported token: ${value} */`}`),
+  "  }",
+  "",
+  "  object Metric {",
+  ...dimensionEntries.map(([path, value]) => `    val ${camel(path)} = ${pxNumber(value)}.dp`),
+  "  }",
+  "}",
+  "",
+].join("\n");
+
 await Promise.all([
   mkdir(dirname(cssOutputPath), { recursive: true }),
   mkdir(dirname(tsOutputPath), { recursive: true }),
+  mkdir(dirname(swiftOutputPath), { recursive: true }),
+  mkdir(dirname(kotlinOutputPath), { recursive: true }),
+  mkdir(dirname(extensionOutputPath), { recursive: true }),
 ]);
 await Promise.all([
   writeFile(cssOutputPath, css),
   writeFile(tsOutputPath, ts),
+  writeFile(swiftOutputPath, swift),
+  writeFile(kotlinOutputPath, kotlin),
+  writeFile(extensionOutputPath, css),
 ]);
 
-console.log(`Generated ${orderedEntries.length} Wireline design tokens.`);
+console.log(`Generated ${orderedEntries.length} Wireline design tokens for web, extension, iOS, and Android.`);
