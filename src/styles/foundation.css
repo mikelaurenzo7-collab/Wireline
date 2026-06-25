@@ -44,7 +44,29 @@
   --wl-status-warning: var(--wl-warning);
   --wl-status-error: var(--wl-error);
 
-  /* Geometry */
+  /* Standard shadcn/Tailwind CSS var aliases — derive directly from generated --wireline-* semantic tokens
+   * so that colors, surfaces, and radii in atoms (via Tailwind classes) and wl- primitives are sourced here. */
+  --background: var(--wireline-color-canvas-default);
+  --foreground: var(--wireline-color-text-primary);
+  --card: var(--wireline-color-surface-default);
+  --card-foreground: var(--wireline-color-text-primary);
+  --popover: var(--wireline-color-surface-default);
+  --popover-foreground: var(--wireline-color-text-primary);
+  --primary: var(--wireline-color-action-primary-default);
+  --primary-foreground: var(--wireline-color-text-onAction);
+  --secondary: var(--wireline-color-surface-subtle);
+  --secondary-foreground: var(--wireline-color-text-primary);
+  --muted: var(--wireline-color-surface-subtle);
+  --muted-foreground: var(--wireline-color-text-secondary);
+  --accent: var(--wireline-color-action-primary-container);
+  --accent-foreground: var(--wireline-color-text-primary);
+  --destructive: var(--wireline-color-status-error);
+  --destructive-foreground: var(--wireline-color-text-onAction);
+  --border: var(--wireline-color-border-default);
+  --input: var(--wireline-color-border-default);
+  --ring: var(--wireline-color-focus-default);
+
+  /* Geometry — radius tokens authoritative from wireline */
   --radius-sm: var(--wireline-radius-sm);
   --radius: var(--wireline-radius-sm);
   --radius-md: var(--wireline-radius-md);
