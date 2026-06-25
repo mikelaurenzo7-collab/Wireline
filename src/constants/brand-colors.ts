@@ -72,6 +72,13 @@ export const BRAND = {
     modal: "0 10px 25px -5px rgba(93,63,211,0.08)",
   },
 
+  zIndex: {
+    base: token["zIndex.base"],
+    dropdown: token["zIndex.dropdown"],
+    modal: token["zIndex.modal"],
+    tooltip: token["zIndex.tooltip"],
+  },
+
   radius: {
     base: token["radius.sm"],
     sm: token["radius.sm"],

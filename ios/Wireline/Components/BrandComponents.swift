@@ -16,7 +16,7 @@ struct Medallion: View {
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.headline)
+            .font(Brand.h1)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -33,9 +33,9 @@ struct AssistantRow: View {
         HStack(spacing: 12) {
             Medallion(systemImage: icon(for: agent.archetype), size: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text(agent.name).font(.headline).foregroundStyle(Brand.text)
+                Text(agent.name).font(Brand.h1).foregroundStyle(Brand.text)
                 Text(postureLabel(for: agent))
-                    .font(.caption)
+                    .font(Brand.caption)
                     .foregroundStyle(Brand.text2)
             }
             Spacer()
@@ -43,7 +43,7 @@ struct AssistantRow: View {
                 HStack(spacing: 6) {
                     ForEach(channels.prefix(3), id: \.self) { channel in
                         Image(systemName: channelIcon(channel))
-                            .font(.caption)
+                            .font(Brand.caption)
                             .foregroundStyle(Brand.accent)
                     }
                 }
@@ -90,8 +90,8 @@ struct CallCard: View {
                 .fill(isLive ? Brand.signal : Brand.text3)
                 .frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {
-                Text(call.customerNumber ?? "Unknown caller").font(.headline).foregroundStyle(Brand.text)
-                Text(call.status?.capitalized ?? "Call update").font(.caption).foregroundStyle(Brand.text2)
+                Text(call.customerNumber ?? "Unknown caller").font(Brand.h1).foregroundStyle(Brand.text)
+                Text(call.status?.capitalized ?? "Call update").font(Brand.caption).foregroundStyle(Brand.text2)
             }
             Spacer()
             Image(systemName: "waveform").foregroundStyle(Brand.accent)
@@ -110,8 +110,8 @@ struct BrandEmptyState: View {
     var body: some View {
         VStack(spacing: 12) {
             Medallion(systemImage: systemImage, size: 56)
-            Text(title).font(.title3.weight(.semibold)).foregroundStyle(Brand.text)
-            Text(message).font(.subheadline).foregroundStyle(Brand.text2).multilineTextAlignment(.center)
+            Text(title).font(Brand.bodyStrong).foregroundStyle(Brand.text)
+            Text(message).font(Brand.body).foregroundStyle(Brand.text2).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)

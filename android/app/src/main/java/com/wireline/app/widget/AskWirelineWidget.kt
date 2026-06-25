@@ -8,6 +8,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.action.actionStartActivity
+import com.wireline.app.ui.theme.WirelineDesignTokens
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
@@ -54,7 +55,7 @@ class AskWirelineWidget : GlanceAppWidget() {
                 text = "Ask Wireline",
                 style = TextStyle(
                     color = ColorProvider(WidgetPalette.Text),
-                    fontSize = 16.sp,
+                    fontSize = WirelineDesignTokens.Metric.typographyBodySize.sp,
                     fontWeight = FontWeight.Bold,
                 ),
             )

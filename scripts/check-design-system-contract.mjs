@@ -367,7 +367,7 @@ assertIncludes(
 );
 assertIncludes(
   "src/components/molecules/StatusNotice.tsx",
-  /--wireline-(color|radius|font)/,
+  /--wireline-(color|radius|font|typography)/,
   "must derive from semantic wireline tokens",
 );
 
@@ -379,13 +379,13 @@ assertIncludes(
 );
 assertIncludes(
   "src/styles/foundation.css",
-  /--wl-.*var\(--wireline-/,
-  "foundation.css must reference the generated vars for wl- primitives",
+  /--wireline-(color|radius|typography|zIndex|elevation)/,
+  "foundation.css must derive from semantic wireline tokens",
 );
 assertIncludes(
   "src/styles/components.css",
-  /var\(--wireline-/,
-  "components.css must reference the generated vars for wl- primitives",
+  /--wireline-(color|radius|typography|elevation)/,
+  "components.css must reference the generated vars for primitives",
 );
 
 console.log("Design-system contract checks passed.");

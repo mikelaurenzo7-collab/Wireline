@@ -39,7 +39,7 @@ object Brand {
     val Text2 = WirelineDesignTokens.ColorToken.colorTextSecondary
     val Text3 = WirelineDesignTokens.ColorToken.colorTextSecondary.copy(alpha = 0.72f)
 
-    val Primary = WirelineDesignTokens.ColorToken.colorActionPrimaryPressed
+    val Primary = WirelineDesignTokens.ColorToken.colorActionPrimaryDefault
     val PrimaryContainer = WirelineDesignTokens.ColorToken.colorActionPrimaryDefault
     val PrimaryFixed = WirelineDesignTokens.ColorToken.colorSurfaceSubtle
     val PrimaryFixedDim = WirelineDesignTokens.ColorToken.colorSurfaceContainer

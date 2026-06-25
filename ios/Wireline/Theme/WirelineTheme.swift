@@ -17,7 +17,7 @@ enum Brand {
     static let text3 = WirelineDesignTokens.ColorToken.colorTextSecondary.opacity(0.72)
 
     // ── Action ───────────────────────────────────────────────────────────────
-    static let primary = WirelineDesignTokens.ColorToken.colorActionPrimaryPressed
+    static let primary = WirelineDesignTokens.ColorToken.colorActionPrimaryDefault
     static let primaryContainer = WirelineDesignTokens.ColorToken.colorActionPrimaryDefault
     static let primaryFixed = WirelineDesignTokens.ColorToken.colorSurfaceSubtle
     static let primaryFixedDim = WirelineDesignTokens.ColorToken.colorSurfaceContainer

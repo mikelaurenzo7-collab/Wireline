@@ -1,13 +1,13 @@
 /* Tiny first-paint layer. React owns all product layout after hydration. */
 :root {
-  background: #f7f7f5;
+  background: #f8f9ff;
   color-scheme: light;
 }
 
 body {
   min-height: 100dvh;
   margin: 0;
-  background: #f7f7f5;
-  color: #1d1d1f;
-  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  background: #f8f9ff;
+  color: #0b1c30;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 }

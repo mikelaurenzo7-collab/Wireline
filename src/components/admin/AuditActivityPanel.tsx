@@ -213,7 +213,7 @@ export function AuditActivityPanel() {
                     <YAxis hide domain={[0, "auto"]} />
                     <Tooltip
                       contentStyle={{
-                        background: "#fff",
+                        background: "var(--wireline-color-surface-default)",
                         border: "none",
                         borderRadius: 0,
                         boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
