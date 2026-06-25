@@ -4,7 +4,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { useAgents } from "../contexts/AgentsContext";
 import { PRODUCT_POSTURE } from "../lib/product-copy";
-import AgentWorkspace from "./AgentWorkspace";
 import StudioAssistantWorkspace from "./StudioAssistantWorkspace";
 import StudioOverview from "./StudioOverview";
 
@@ -51,7 +50,6 @@ export default function StudioWorkspaceV2() {
   const requestedId = params.get("agent");
   const active = agents.find((agent) => agent.id === requestedId) || agents[0];
   const isAssistantWorkspace = params.get("mode") === "assistant";
-  const isDetailedWorkspace = params.get("mode") === "legacy" || Boolean(params.get("tab"));
 
   function selectAgent(agentId: string) {
     const next = new URLSearchParams(params);
@@ -75,16 +73,6 @@ export default function StudioWorkspaceV2() {
     setParams(next);
   }
 
-  function openDetailed(tab?: "training" | "connectors" | "memory", sub?: string) {
-    if (!active) return;
-    const next = new URLSearchParams();
-    next.set("agent", active.id);
-    next.set("mode", "legacy");
-    if (tab) next.set("tab", tab);
-    if (sub) next.set("sub", sub);
-    setParams(next);
-  }
-
   function returnToOverview() {
     if (!active) return;
     setParams(new URLSearchParams({ agent: active.id }));
@@ -97,12 +85,6 @@ export default function StudioWorkspaceV2() {
   if (loading) return <StudioLoadingState />;
   if (!active) return <StudioEmptyState />;
 
-  if (isDetailedWorkspace) {
-    const command = params.get("command");
-    const nonce = Number(params.get("commandNonce") || "0");
-    return <AgentWorkspace agentId={active.id} agentName={active.name} composerSeed={command ? { text: command, nonce } : undefined} />;
-  }
-
   if (isAssistantWorkspace) {
     return (
       <div className="wl-studio-operations h-full min-h-0 overflow-hidden">
@@ -111,7 +93,6 @@ export default function StudioWorkspaceV2() {
           agentName={active.name}
           initialCommand={params.get("command") || undefined}
           onBack={returnToOverview}
-          onOpenDetailed={openDetailed}
         />
       </div>
     );
