@@ -13,7 +13,7 @@ const primaryNavigation = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
 
-const mobileNavigation = [
+const nativeNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/studio", label: "Build", icon: PenLine },
@@ -21,6 +21,27 @@ const mobileNavigation = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "More", icon: Settings },
 ] as const;
+
+type NativeWindow = Window & {
+  WirelineNative?: unknown;
+  webkit?: {
+    messageHandlers?: Record<string, unknown>;
+  };
+};
+
+function isNativeAppShell() {
+  if (typeof window === "undefined") return false;
+  const currentWindow = window as NativeWindow;
+  const params = new URLSearchParams(currentWindow.location.search);
+  const userAgent = currentWindow.navigator.userAgent || "";
+
+  return (
+    currentWindow.WirelineNative === true ||
+    currentWindow.document.documentElement.dataset.wirelineNative === "true" ||
+    params.get("wireline_native") === "1" ||
+    /WirelineNative|WirelineiOS|WirelineAndroid/i.test(userAgent)
+  );
+}
 
 function isActive(pathname: string, href: string) {
   if (pathname === href) return true;
@@ -91,14 +112,14 @@ function DesktopRail({ pathname }: { pathname: string }) {
   );
 }
 
-function MobileDock({ pathname }: { pathname: string }) {
+function NativeDock({ pathname }: { pathname: string }) {
   return (
     <nav
-      aria-label="Workspace navigation"
+      aria-label="App navigation"
       className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
     >
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
-        {mobileNavigation.map((item) => (
+        {nativeNavigation.map((item) => (
           <RailItem key={item.href} {...item} active={isActive(pathname, item.href) || (item.href === "/settings" && pathname.startsWith("/admin"))} compact />
         ))}
       </div>
@@ -121,6 +142,7 @@ export default function WorkspaceShell({
 }) {
   const location = useLocation();
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
+  const nativeAppShell = isNativeAppShell();
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
@@ -132,7 +154,9 @@ export default function WorkspaceShell({
         <main
           id="workspace-main"
           data-wireline-route={location.pathname}
-          className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pb-6 lg:pt-6 xl:px-10"
+          className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pb-6 lg:pt-6 xl:px-10 ${
+            nativeAppShell ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]" : "pb-4 sm:pb-5"
+          }`}
         >
           <div className="sr-only">
             {eyebrow ? <p>{eyebrow}</p> : null}
@@ -150,7 +174,7 @@ export default function WorkspaceShell({
           </div>
         </main>
       </div>
-      <MobileDock pathname={location.pathname} />
+      {nativeAppShell ? <NativeDock pathname={location.pathname} /> : null}
     </div>
   );
 }
