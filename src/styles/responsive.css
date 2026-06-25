@@ -1,4 +1,6 @@
 @media (max-width: 639px) {
+  .marketing-surface > main.scroll-viewport { padding-top: 4rem !important; }
+  .marketing-surface > main.scroll-viewport > .wl-measure > section:first-child { padding-top: 2.5rem !important; }
   .wl-public-rail { width: 100%; }
   .marketing-hero { background: var(--wireline-color-canvas-default); }
   .wl-public-copy { max-width: 31rem; font-size: 1rem; line-height: 1.55; }
