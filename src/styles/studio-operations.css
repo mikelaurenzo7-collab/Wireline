@@ -1,6 +1,7 @@
 /* Studio is an operational workroom, not a second marketing theme.
    Scoped tokens keep the rest of the product in its existing visual system. */
-.wl-studio-operations {
+.wl-studio-operations,
+.wl-workspace-shell--studio {
   --background: #0a0c12;
   --foreground: #f7f8fc;
   --card: #12151d;
@@ -16,6 +17,70 @@
     radial-gradient(circle at 78% 8%, rgba(82, 117, 255, 0.12), transparent 30rem),
     radial-gradient(circle at 44% 100%, rgba(65, 222, 187, 0.055), transparent 31rem),
     #0a0c12;
+}
+
+/* The Studio route needs one uninterrupted operating environment across the
+   desktop rail, header, and mobile navigation—not a dark work area inside a
+   separate light shell. Legacy detailed mode intentionally does not opt in. */
+.wl-workspace-shell--studio .wl-workspace-main,
+.wl-workspace-shell--studio .wl-workspace-content,
+.wl-workspace-shell--studio .wl-workspace-content-inner {
+  background: transparent;
+}
+
+.wl-workspace-shell--studio .wl-workspace-header {
+  border-color: var(--border);
+}
+
+.wl-workspace-shell--studio .wl-workspace-sidebar,
+.wl-studio-navigation-dialog {
+  --background: #0a0c12;
+  --foreground: #f7f8fc;
+  --card: #12151d;
+  --muted: #191e2a;
+  --muted-foreground: #a7b0c2;
+  --border: rgba(173, 186, 218, 0.18);
+  --primary: #91a8ff;
+  --primary-foreground: #0a0c12;
+  background: #0d1017 !important;
+  color: var(--foreground);
+  border-color: var(--border) !important;
+}
+
+.wl-workspace-shell--studio .wl-workspace-sidebar .border-border,
+.wl-studio-navigation-dialog .border-border {
+  border-color: var(--border);
+}
+
+.wl-workspace-shell--studio .wl-workspace-sidebar .text-foreground,
+.wl-studio-navigation-dialog .text-foreground {
+  color: var(--foreground);
+}
+
+.wl-workspace-shell--studio .wl-workspace-sidebar .text-primary,
+.wl-studio-navigation-dialog .text-primary {
+  color: var(--primary);
+}
+
+.wl-workspace-shell--studio .wl-stitch-sidebar-link,
+.wl-studio-navigation-dialog .wl-stitch-sidebar-link {
+  color: var(--muted-foreground);
+}
+
+.wl-workspace-shell--studio .wl-stitch-sidebar-link:hover,
+.wl-studio-navigation-dialog .wl-stitch-sidebar-link:hover {
+  background: rgba(145, 168, 255, 0.08);
+  color: var(--foreground);
+}
+
+.wl-workspace-shell--studio .wl-stitch-sidebar-link[aria-current="page"],
+.wl-studio-navigation-dialog .wl-stitch-sidebar-link[aria-current="page"] {
+  background: rgba(145, 168, 255, 0.15);
+  color: var(--primary);
+}
+
+.wl-workspace-shell--studio .wl-overline {
+  color: var(--primary);
 }
 
 .wl-studio-operations :is(.bg-background, .bg-card, .bg-muted\/30, .bg-muted\/\[0\.12\]) {
@@ -93,7 +158,8 @@
 }
 
 @media (max-width: 639px) {
-  .wl-studio-operations {
+  .wl-studio-operations,
+  .wl-workspace-shell--studio {
     background:
       radial-gradient(circle at 92% 0%, rgba(82, 117, 255, 0.11), transparent 18rem),
       #0a0c12;
