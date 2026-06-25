@@ -57,7 +57,9 @@ const ConversationMessage = React.forwardRef<HTMLElement, ConversationMessagePro
         <span>{label ?? defaultLabel[author]}</span>
         {channel ? <span className="text-muted-foreground/75">· {channel}</span> : null}
       </div>
-      <div className="whitespace-pre-wrap">{children}</div>
+      <div data-wireline-preserve-case className="whitespace-pre-wrap">
+        {children}
+      </div>
       {timestamp ? (
         <p className="mt-2 text-[var(--wireline-typography-overline-size)] text-muted-foreground">
           {timestamp}
