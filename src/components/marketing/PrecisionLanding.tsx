@@ -1,4 +1,4 @@
-import { ArrowRight, Mail, MessageSquareText, PhoneCall, Play } from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail, MessageSquareText, PhoneCall, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
@@ -20,6 +20,29 @@ const channels = [
     label: "Text",
     title: "Replies that sound like you.",
     icon: MessageSquareText,
+  },
+] as const;
+
+const setupSteps = [
+  {
+    number: "01",
+    title: "Start with the job",
+    description: "Choose a starting point or describe the work in plain language.",
+  },
+  {
+    number: "02",
+    title: "Make it yours",
+    description: "Shape the voice, knowledge, priorities, and handoff that fit your workflow.",
+  },
+  {
+    number: "03",
+    title: "Connect the context",
+    description: "Bring in the calendar, inbox, and tools the assistant needs to be useful.",
+  },
+  {
+    number: "04",
+    title: "Launch and coach",
+    description: "Review outcomes, refine the details, and keep the work moving.",
   },
 ] as const;
 
@@ -52,6 +75,10 @@ export default function PrecisionLanding() {
                   <Play size={15} /> Hear a demo
                 </Link>
               </div>
+              <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[var(--wireline-typography-caption-size)] text-muted-foreground">
+                <li className="inline-flex items-center gap-2"><CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> Your voice, playbook, and handoff</li>
+                <li className="inline-flex items-center gap-2"><CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> One protected workspace</li>
+              </ul>
             </div>
             <HeroCallPreview />
           </div>
@@ -72,6 +99,32 @@ export default function PrecisionLanding() {
                     <p className="wl-overline mt-5 text-primary">{label}</p>
                   </div>
                   <h3 className="wl-section-title text-[clamp(22px,4vw,28px)]">{title}</h3>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+          <div className="wl-public-rail">
+            <p className="wl-overline text-primary">Built around how you work</p>
+            <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="wl-public-section-heading">Useful before it needs to be perfect.</h2>
+                <p className="wl-public-copy mt-4 max-w-2xl">
+                  Begin with a clear job. Add the context that matters. Keep control of the work without turning setup into a project.
+                </p>
+              </div>
+              <Link to="/features" className="marketing-btn-secondary shrink-0 px-5 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">
+                Explore how it works <ArrowRight size={15} />
+              </Link>
+            </div>
+            <div className="mt-8 grid overflow-hidden rounded-[var(--radius-xl)] border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+              {setupSteps.map(({ number, title, description }) => (
+                <article key={number} className="min-h-48 bg-card p-6 sm:p-7 lg:border-r lg:border-border last:border-r-0">
+                  <p className="wl-overline text-primary">{number}</p>
+                  <h3 className="wl-section-title mt-10 text-[clamp(22px,3vw,27px)]">{title}</h3>
+                  <p className="mt-3 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">{description}</p>
                 </article>
               ))}
             </div>
