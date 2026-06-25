@@ -26,7 +26,7 @@ import WirelineMark from "./brand/WirelineMark";
 
 const primaryNavigation = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
-  { href: "/agents", label: "Assistants & agents", icon: Bot },
+  { href: "/agents", label: "Assistants", icon: Bot },
   { href: "/studio", label: "Studio", icon: PenLine },
   { href: "/knowledge", label: "Knowledge", icon: Database },
   { href: "/actions", label: "Connections", icon: Cable },
@@ -83,14 +83,9 @@ function WorkspaceNavigationContent({
           className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline-none"
           aria-label="Wireline overview"
         >
-          <WirelineMark className="h-6 w-6 shrink-0 text-[var(--wireline-typography-h3-size)] leading-none text-primary" />
-          <span className="min-w-0">
-            <span className="block font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.03em] text-foreground">
-              Wireline
-            </span>
-            <span className="mt-1 block truncate font-mono text-[var(--wireline-typography-overline-size)] font-medium lowercase tracking-[.08em] text-muted-foreground">
-              personal + business
-            </span>
+          <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
+          <span className="truncate font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.03em] text-foreground">
+            Wireline
           </span>
         </Link>
         {mobile ? (
@@ -171,7 +166,7 @@ export default function WorkspaceShell({
             data-wireline-route={location.pathname}
             className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 sm:px-6 sm:pb-5 lg:px-8 lg:pb-6 xl:px-10"
           >
-            <header className="wl-workspace-header flex min-h-[68px] shrink-0 flex-col justify-center gap-3 border-b border-border py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <header className="wl-workspace-header flex min-h-[68px] shrink-0 flex-row items-center justify-between gap-3 border-b border-border py-3 sm:gap-4">
               <div className="flex min-w-0 items-center gap-3">
                 <DialogTrigger asChild>
                   <Button
@@ -190,7 +185,7 @@ export default function WorkspaceShell({
                   <h1 className="wl-app-page-title mt-1 truncate">{title}</h1>
                 </div>
               </div>
-              <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+              <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-nowrap items-center gap-2 sm:justify-end">
                 <Button
                   type="button"
                   variant="ghost"
@@ -198,11 +193,11 @@ export default function WorkspaceShell({
                   aria-label="Open command palette"
                   title="Open command palette"
                   onClick={openCommandPalette}
-                  className="size-9 min-h-9 min-w-9 text-muted-foreground hover:text-foreground"
+                  className="hidden size-9 min-h-9 min-w-9 text-muted-foreground hover:text-foreground sm:inline-flex"
                 >
                   <Search aria-hidden="true" className="size-4" />
                 </Button>
-                {action}
+                {action ? <div className="wl-workspace-header-primary-action">{action}</div> : null}
               </div>
             </header>
             <div
