@@ -1,0 +1,98 @@
+/*
+ * Application polish
+ *
+ * Quiet hierarchy for the authenticated web app. This layer is intentionally
+ * structural: one alignment axis, controlled density, and concise feedback.
+ */
+
+.wl-ui-caps .wl-workspace-main {
+  --wl-app-rail: 88rem;
+}
+
+.wl-ui-caps .wl-workspace-content-inner,
+.wl-ui-caps .wl-route-content,
+.wl-ui-caps .wl-page-content {
+  max-width: var(--wl-app-rail);
+}
+
+.wl-ui-caps .wl-route-copy,
+.wl-ui-caps .wl-page-description,
+.wl-ui-caps .wl-card-description {
+  max-width: 42rem;
+  line-height: 1.55;
+}
+
+.wl-ui-caps .wl-stitch-card {
+  box-shadow: none;
+}
+
+.wl-ui-caps .wl-stitch-card :is(p, span, small).text-muted-foreground {
+  line-height: 1.5;
+}
+
+.wl-ui-caps .wl-stitch-card :is(.wl-card-title, .wl-section-title) + p {
+  margin-top: 0.5rem;
+}
+
+.wl-ui-caps .wl-setup-surface,
+.wl-ui-caps [data-slot="status-notice"] {
+  box-shadow: none;
+}
+
+.wl-ui-caps [data-slot="status-notice"] {
+  align-items: center;
+}
+
+.wl-ui-caps [data-slot="status-notice"] > div {
+  max-width: 44rem;
+}
+
+.wl-ui-caps :is(input, textarea, select) {
+  box-shadow: none;
+}
+
+.wl-ui-caps textarea {
+  min-height: 7.5rem;
+}
+
+.wl-ui-caps .studio-card {
+  min-width: 0;
+}
+
+.wl-ui-caps .studio-card :is(a, button) {
+  white-space: nowrap;
+}
+
+.wl-ui-caps .wl-metric-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-ui-caps .wl-page-actions,
+.wl-ui-caps .wl-workspace-header-actions {
+  gap: 0.5rem;
+}
+
+@media (max-width: 767px) {
+  .wl-ui-caps .wl-workspace-main {
+    --wl-app-rail: 100%;
+  }
+
+  .wl-ui-caps .wl-workspace-content-inner,
+  .wl-ui-caps .wl-route-content,
+  .wl-ui-caps .wl-page-content {
+    padding-inline: 0;
+  }
+
+  .wl-ui-caps .wl-stitch-card {
+    border-radius: var(--radius-lg);
+  }
+
+  .wl-ui-caps .wl-page-actions > *,
+  .wl-ui-caps .wl-workspace-header-actions > * {
+    min-width: 0;
+  }
+
+  .wl-ui-caps [data-slot="status-notice"] {
+    align-items: flex-start;
+  }
+}
