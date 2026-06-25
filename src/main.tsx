@@ -5,6 +5,7 @@ import App from "./App.tsx";
 
 import "./styles/foundation.css";
 import "./index.css";
+import "./styles/responsive.css";
 
 if (typeof window !== "undefined") {
   const safeReload = () => {
