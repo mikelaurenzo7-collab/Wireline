@@ -15,9 +15,10 @@ import MarketingFooter from "../components/marketing/MarketingFooter";
 import { PageMeta } from "../lib/page-meta";
 
 const OUTCOMES = ["Answer", "Qualify", "Schedule"] as const;
-const BOUNDARIES = [
-  ["What it can say", "You decide"],
-  ["When it asks you", "Clearly defined"],
+const CUSTOMIZATION = [
+  ["Voice & tone", "You choose"],
+  ["How it works", "Your playbook"],
+  ["When it checks in", "Your call"],
   ["What it can access", "Approved only"],
 ] as const;
 const USE_CASES = ["Personal calls", "Appointments", "Business front desk", "SMS follow-up", "Lead qualification", "Custom workflows"] as const;
@@ -25,14 +26,14 @@ const USE_CASES = ["Personal calls", "Appointments", "Business front desk", "SMS
 export default function Features() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <PageMeta title="AI Voice, Email & SMS Agent Features | Wireline" description="AI assistants for calls, email, and SMS. Set the rules, keep the outcome." path="/features" />
+      <PageMeta title="AI Voice, Email & SMS Agent Features | Wireline" description="AI assistants for calls, email, and SMS. Shape the voice, workflow, and handoff for every conversation." path="/features" />
       <PrecisionPublicHeader />
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
           <div className="wl-public-rail">
             <p className="wl-overline text-primary">How it works</p>
             <h1 className="mt-4 max-w-[13ch] font-[var(--wireline-font-display)] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">Give every conversation a clear next step.</h1>
-            <p className="wl-public-copy mt-5">Set the boundaries. Keep the outcome.</p>
+            <p className="wl-public-copy mt-5">Make it yours. Keep the outcome.</p>
             <div className="marketing-hero__actions mt-8">
               <Link to="/signup" className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">Create your assistant</Link>
               <Link to="/showcase" className="marketing-btn-secondary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"><Play size={15} /> Hear a demo</Link>
@@ -49,8 +50,8 @@ export default function Features() {
             </article>
             <article className="wl-stitch-card flex min-h-[16rem] flex-col p-6 sm:p-8">
               <ShieldCheck size={22} className="text-primary" />
-              <h2 className="wl-section-title mt-5">You decide the boundaries.</h2>
-              <dl className="mt-auto divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">{BOUNDARIES.map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 px-4 py-3.5"><dt className="text-[var(--wireline-typography-body-size)] text-foreground">{label}</dt><dd className="wl-overline text-primary">{value}</dd></div>)}</dl>
+              <h2 className="wl-section-title mt-5">Make every assistant yours.</h2>
+              <dl className="mt-auto divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">{CUSTOMIZATION.map(([label, value]) => <div key={label} className="flex items-center justify-between gap-4 px-4 py-3.5"><dt className="text-[var(--wireline-typography-body-size)] text-foreground">{label}</dt><dd className="wl-overline text-primary">{value}</dd></div>)}</dl>
             </article>
           </div>
         </section>
@@ -85,7 +86,7 @@ export default function Features() {
         <section className="px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail">
             <p className="wl-overline text-primary">Build your assistant</p>
-            <h2 className="wl-public-section-heading mt-3">Your knowledge. Your rules. Every channel.</h2>
+            <h2 className="wl-public-section-heading mt-3">Your knowledge. Your playbook. Every channel.</h2>
             <div className="marketing-hero__actions mt-8"><Link to="/signup" className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">Create your assistant</Link><Link to="/pricing" className="marketing-btn-secondary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">See plans <ArrowRight size={15} /></Link></div>
           </div>
         </section>
