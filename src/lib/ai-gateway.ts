@@ -1,3 +1,4 @@
+import { gatewayAuthorizationHeaders, isGatewayCredentialAvailable } from "./ai-gateway-auth";
 import { log } from "./server-logger";
 
 const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1";
@@ -39,7 +40,7 @@ function normalizeModel(raw: unknown): GatewayModelEntry | null {
 }
 
 export function isAIGatewayConfigured() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY?.trim());
+  return isGatewayCredentialAvailable();
 }
 
 export function gatewayModelId(model: string) {
@@ -52,12 +53,7 @@ export function gatewayModelId(model: string) {
 }
 
 export function gatewayHeaders(): Record<string, string> {
-  const credential = process.env.AI_GATEWAY_API_KEY?.trim();
-  if (!credential) throw new Error("AI Gateway is not configured");
-  return {
-    Authorization: `Bearer ${credential}`,
-    "Content-Type": "application/json",
-  };
+  return gatewayAuthorizationHeaders();
 }
 
 export async function listAIGatewayLanguageModels(): Promise<GatewayModelEntry[]> {
