@@ -87,10 +87,15 @@
   justify-content: space-between;
 }
 
+.wl-workspace-header-actions,
+.wl-workspace-header-actions > *,
+.wl-workspace-header-actions :is(.studio-primary-button, .studio-secondary-button) {
+  width: auto;
+}
+
 .wl-workspace-header-actions {
   flex-wrap: nowrap;
   justify-content: flex-end;
-  width: auto;
 }
 
 .wl-workspace-header-primary-action {
