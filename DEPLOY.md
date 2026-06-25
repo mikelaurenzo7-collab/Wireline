@@ -33,12 +33,9 @@ Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
 
 ### Node.js runtime
 
-The repo requires **Node 22+** (`.nvmrc`, `package.json` `engines`, and
-`vercel.json` `build.env.NODE_VERSION`). In Vercel → wireline → Settings →
-General, set **Node.js Version** to **22.x** if the dashboard still shows 20.x.
-Vercel uses `package.json` `engines.node` during installs, so the repo-level
-`22.x` declaration is the source of truth until the dashboard setting is
-manually reconciled.
+The repo prefers **Node 22** (`.nvmrc`, `vercel.json` `build.env.NODE_VERSION`) for full modern features, but `package.json` `engines` accepts `>=20 <23` to prevent install warnings when the Vercel project dashboard is still set to 20.x. 
+
+In Vercel → wireline → Settings → General, set **Node.js Version** to **22.x** (recommended). Vercel uses `package.json` `engines.node` during installs, so once the dashboard is updated to 22 the strict preference takes effect cleanly. The flexible engines eliminate the known "project 20.x / package 22.x" warning in the meantime.
 
 ### Release gate and preview migration policy
 

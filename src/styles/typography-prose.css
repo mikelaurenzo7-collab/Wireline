@@ -3,11 +3,29 @@
    Extracted for reusability and maintainability
    ============================================ */
 
-/* Base typography tokens */
+/* Base typography tokens — masterful, past-modern scale from design tokens */
 :root {
-  --wl-font-display: "Hanken Grotesk", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --wl-font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --wl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --wl-font-display: var(--wireline-font-family-display), Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wl-font-sans: var(--wireline-font-family-body), Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wl-font-mono: var(--wireline-font-family-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Semantic sizes/line/weight from tokens for flawless hierarchy */
+  --wl-font-size-display: var(--wireline-typography-display-size);
+  --wl-font-weight-display: var(--wireline-typography-display-weight);
+  --wl-line-height-display: var(--wireline-typography-display-lineHeight);
+  --wl-letter-spacing-display: var(--wireline-typography-display-letterSpacing);
+
+  --wl-font-size-h1: var(--wireline-typography-h1-size);
+  --wl-font-weight-h1: var(--wireline-typography-h1-weight);
+  --wl-line-height-h1: var(--wireline-typography-h1-lineHeight);
+
+  --wl-font-size-body: var(--wireline-typography-body-size);
+  --wl-font-weight-body: var(--wireline-typography-body-weight);
+  --wl-line-height-body: var(--wireline-typography-body-lineHeight);
+
+  --wl-font-size-caption: var(--wireline-typography-caption-size);
+  --wl-font-weight-overline: var(--wireline-typography-overline-weight);
+  --wl-letter-spacing-overline: var(--wireline-typography-overline-letterSpacing);
 }
 
 /* ============================================
@@ -22,25 +40,31 @@
 .wl-pro-title,
 .wl-workspace-title {
   text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
+  font-family: var(--wl-font-display);
+  font-weight: var(--wl-font-weight-display);
+  letter-spacing: var(--wl-letter-spacing-display);
+  line-height: var(--wl-line-height-display);
+  color: var(--wl-ink);
 }
 
 .wl-page-title {
-  font-size: clamp(2.25rem, 5vw + 1rem, 4rem);
+  font-size: var(--wl-font-size-display);
 }
 
 .wl-app-page-title {
-  font-size: clamp(1.5rem, 3.5vw + 0.75rem, 2.5rem);
+  font-size: var(--wl-font-size-h1);
+  font-weight: var(--wl-font-weight-h1);
+  line-height: var(--wl-line-height-h1);
 }
 
 .wl-section-title {
   font-size: clamp(1.35rem, 3vw + 0.6rem, 2rem);
+  font-weight: 600;
 }
 
 .wl-card-title {
   font-size: clamp(1.1rem, 2.5vw + 0.5rem, 1.5rem);
+  font-weight: 600;
 }
 
 .wl-metric-value {
@@ -60,13 +84,16 @@
   }
 }
 
-/* Eyebrow / micro labels */
+/* Eyebrow / micro labels — unique, crisp from tokens */
 .wl-overline,
 .wl-pro-eyebrow,
 .wl-micro-meta {
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 600;
+  font-family: var(--wl-font-sans);
+  font-size: var(--wl-font-size-caption);
+  letter-spacing: var(--wl-letter-spacing-overline);
+  font-weight: var(--wl-font-weight-overline);
+  color: var(--wl-muted);
 }
 
 /* ============================================

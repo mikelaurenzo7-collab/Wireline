@@ -73,9 +73,42 @@
   --radius-lg: var(--wireline-radius-lg);
   --radius-xl: var(--wireline-radius-xl);
 
-  /* Type scale helpers */
-  --wl-text-base: 1rem;
-  --wl-text-sm: 0.875rem;
+  /* Type scale helpers — now authoritative from typography tokens for masterful, consistent hierarchy */
+  --wl-text-base: var(--wireline-typography-body-size);
+  --wl-text-sm: var(--wireline-typography-caption-size);
+  --wl-text-xs: 0.75rem; /* keep for micro */
+  --wl-font-display: var(--wireline-font-family-display);
+  --wl-font-body: var(--wireline-font-family-body);
+  --wl-font-mono: var(--wireline-font-family-mono);
+
+  /* Full semantic typography from tokens */
+  --wl-typography-display-size: var(--wireline-typography-display-size);
+  --wl-typography-display-weight: var(--wireline-typography-display-weight);
+  --wl-typography-display-line-height: var(--wireline-typography-display-lineHeight);
+  --wl-typography-display-letter-spacing: var(--wireline-typography-display-letterSpacing);
+
+  --wl-typography-h1-size: var(--wireline-typography-h1-size);
+  --wl-typography-h1-weight: var(--wireline-typography-h1-weight);
+  --wl-typography-h1-line-height: var(--wireline-typography-h1-lineHeight);
+
+  --wl-typography-body-size: var(--wireline-typography-body-size);
+  --wl-typography-body-weight: var(--wireline-typography-body-weight);
+  --wl-typography-body-line-height: var(--wireline-typography-body-lineHeight);
+
+  --wl-typography-caption-size: var(--wireline-typography-caption-size);
+  --wl-typography-overline-size: var(--wireline-typography-overline-size);
+  --wl-typography-overline-weight: var(--wireline-typography-overline-weight);
+  --wl-typography-overline-letter-spacing: var(--wireline-typography-overline-letterSpacing);
+
+  /* Z-index layering — canonical and beautiful stacking */
+  --wl-z-base: var(--wireline-zIndex-base);
+  --wl-z-dropdown: var(--wireline-zIndex-dropdown);
+  --wl-z-sticky: var(--wireline-zIndex-sticky);
+  --wl-z-fixed: var(--wireline-zIndex-fixed);
+  --wl-z-modal-backdrop: var(--wireline-zIndex-modalBackdrop);
+  --wl-z-modal: var(--wireline-zIndex-modal);
+  --wl-z-popover: var(--wireline-zIndex-popover);
+  --wl-z-tooltip: var(--wireline-zIndex-tooltip);
 
   /* Interaction */
   --transition-fast: var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);

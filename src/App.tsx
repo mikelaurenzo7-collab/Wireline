@@ -40,7 +40,13 @@ function RouteLoading() {
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#F8F9FF] z-[9999]">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-full border-4 border-[#C9C4D7] border-t-[#5D3FD3] animate-spin" />
-        <span className="text-[13px] font-medium text-muted-foreground font-sans tracking-wide">
+        <span
+          className="font-medium font-sans tracking-wide"
+          style={{
+            fontSize: "var(--wireline-typography-caption-size)",
+            color: "var(--wireline-color-text-secondary)",
+          }}
+        >
           Loading Wireline...
         </span>
       </div>

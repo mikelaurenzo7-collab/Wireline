@@ -356,13 +356,13 @@ for (const atom of [
 ]) {
   assertIncludes(
     atom,
-    /--wireline-(color|radius|font)/,
+    /--wireline-(color|radius|font|typography)/,
     "must derive from semantic wireline tokens",
   );
 }
 assertIncludes(
   "src/components/molecules/Card.tsx",
-  /--wireline-(color|radius|font)/,
+  /--wireline-(color|radius|font|typography)/,
   "must derive from semantic wireline tokens",
 );
 assertIncludes(

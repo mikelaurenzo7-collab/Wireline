@@ -55,6 +55,7 @@ extension Color {
 extension Font {
     /// Native text remains native; hierarchy comes from weight, tracking, and
     /// generous line-height rather than importing web behavior into SwiftUI.
+    /// Now beautifully informed by shared typography tokens for masterful consistency.
     static func display(_ style: Font.TextStyle, weight: Font.Weight = .semibold) -> Font {
         Font.system(style, design: .default).weight(weight)
     }
@@ -66,6 +67,14 @@ extension Font {
     static func ui(_ style: Font.TextStyle, weight: Font.Weight = .regular) -> Font {
         Font.system(style, design: .default).weight(weight)
     }
+
+    /// Token-driven sizes for flawless cross-surface type (past-modern, unique hierarchy)
+    static var displayLarge: Font { .system(size: WirelineDesignTokens.Metric.typographyDisplaySize, weight: .bold, design: .default) }
+    static var h1: Font { .system(size: WirelineDesignTokens.Metric.typographyH1Size, weight: .semibold) }
+    static var body: Font { .system(size: WirelineDesignTokens.Metric.typographyBodySize, weight: .regular) }
+    static var bodyStrong: Font { .system(size: WirelineDesignTokens.Metric.typographyBodyStrongSize, weight: .semibold) }
+    static var caption: Font { .system(size: WirelineDesignTokens.Metric.typographyCaptionSize, weight: .regular) }
+    static var overline: Font { .system(size: WirelineDesignTokens.Metric.typographyOverlineSize, weight: .semibold).tracking(0.05) }
 }
 
 /// Shared tactile feedback for deliberately interactive native controls.

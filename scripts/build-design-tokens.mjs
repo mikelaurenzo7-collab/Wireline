@@ -43,6 +43,9 @@ const requiredPaths = [
   "interaction.focus.width",
   "space.100",
   "radius.lg",
+  "typography.body.size",
+  "typography.h1.size",
+  "zIndex.modal",
 ];
 
 for (const path of requiredPaths) {
@@ -111,8 +114,9 @@ const rgbaToCompose = (value) => {
 };
 
 const colorEntries = orderedEntries.filter(([path]) => path.startsWith("color."));
-const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
+const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction.", "typography."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
 const durationEntries = orderedEntries.filter(([path, value]) => path.startsWith("motion.duration.") && millisecondNumber(value) !== null);
+const zIndexEntries = orderedEntries.filter(([path]) => path.startsWith("zIndex."));
 
 const swift = [
   "// Generated from design-tokens/wireline.tokens.json. Do not edit by hand.",
@@ -130,6 +134,10 @@ const swift = [
   "  public enum Motion {",
   ...durationEntries.map(([path, value]) => `    public static let ${camel(path)}: Double = ${millisecondNumber(value) / 1000}`),
   "    public static let pressScale: CGFloat = 0.98",
+  "  }",
+  "",
+  "  public enum ZIndex {",
+  ...zIndexEntries.map(([path, value]) => `    public static let ${camel(path)}: Int = ${value}`),
   "  }",
   "}",
   "",
@@ -154,6 +162,10 @@ const kotlin = [
   "  object Motion {",
   ...durationEntries.map(([path, value]) => `    const val ${camel(path)}Millis = ${millisecondNumber(value)}`),
   "    const val pressScale = 0.98f",
+  "  }",
+  "",
+  "  object ZIndex {",
+  ...zIndexEntries.map(([path, value]) => `    const val ${camel(path)} = ${value}`),
   "  }",
   "}",
   "",

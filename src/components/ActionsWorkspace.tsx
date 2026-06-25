@@ -107,10 +107,15 @@ function ToolGroup({
     <section className="studio-card p-5">
       <header className="flex items-center justify-between gap-3 border-b border-border pb-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-md)] bg-muted text-muted-foreground">
+          <span className="grid h-8 w-8 place-items-center rounded-[var(--wireline-radius-md)] bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-secondary)]">
             <CircleDot size={16} />
           </span>
-          <h3 className="wl-card-title text-base">{title}</h3>
+          <h3
+            className="wl-card-title"
+            style={{ fontSize: "var(--wireline-typography-body-size)" }}
+          >
+            {title}
+          </h3>
         </div>
         <Badge variant="info" className="shrink-0 text-[10px] uppercase tracking-[.06em]">
           {activeCount} on
@@ -129,12 +134,25 @@ function ToolGroup({
               onClick={() => onToggle(tool.name)}
               className="wl-stitch-tool-row flex w-full items-start gap-3 rounded-[var(--radius-md)] px-2 py-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className={`wl-stitch-tool-check mt-0.5 ${active ? "text-primary-foreground" : ""}`} aria-hidden="true">
+              <span
+                className={`wl-stitch-tool-check mt-0.5 ${active ? "text-primary-foreground" : ""}`}
+                aria-hidden="true"
+              >
                 {active ? <Check size={11} strokeWidth={3} /> : null}
               </span>
               <span className="min-w-0">
-                <strong className="block text-[15px] font-medium text-foreground">{copy?.label || tool.label}</strong>
-                <small className="mt-1 block text-[14px] leading-5 text-muted-foreground">{copy?.description || tool.description}</small>
+                <strong
+                  className="block"
+                  style={{
+                    fontSize: "var(--wireline-typography-bodyStrong-size)",
+                    fontWeight: "var(--wireline-typography-bodyStrong-weight)",
+                  }}
+                >
+                  {copy?.label || tool.label}
+                </strong>
+                <small className="mt-1 block text-[14px] leading-5 text-muted-foreground">
+                  {copy?.description || tool.description}
+                </small>
               </span>
             </button>
           );
@@ -146,7 +164,11 @@ function ToolGroup({
 
 function LoadingPermissions() {
   return (
-    <div className="flex h-full min-h-0 flex-col" aria-busy="true" aria-label="Loading assistant permissions">
+    <div
+      className="flex h-full min-h-0 flex-col"
+      aria-busy="true"
+      aria-label="Loading assistant permissions"
+    >
       <div className="mb-5 flex items-end justify-between gap-3">
         <div className="space-y-3">
           <Skeleton shape="text" className="h-3 w-28" />
@@ -156,7 +178,9 @@ function LoadingPermissions() {
       </div>
       <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,.75fr)] lg:gap-6">
         <div className="space-y-5">
-          {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} shape="surface" className="h-[176px] w-full" />)}
+          {Array.from({ length: 3 }, (_, index) => (
+            <Skeleton key={index} shape="surface" className="h-[176px] w-full" />
+          ))}
         </div>
         <Skeleton shape="surface" className="h-[320px] w-full" />
       </div>
@@ -173,7 +197,9 @@ export default function ActionsWorkspace() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [notice, setNotice] = useState<string | null>(null);
   const requestedAgentId = params.get("agent") || "";
-  const agentId = agents.some((agent) => agent.id === requestedAgentId) ? requestedAgentId : agents[0]?.id || "";
+  const agentId = agents.some((agent) => agent.id === requestedAgentId)
+    ? requestedAgentId
+    : agents[0]?.id || "";
   const selectedAgent = agents.find((agent) => agent.id === agentId);
 
   useEffect(() => {
@@ -185,22 +211,32 @@ export default function ActionsWorkspace() {
       try {
         const [status, agentResponse] = await Promise.all([
           authFetch("/api/oauth/crm/status"),
-          agentId ? authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`) : Promise.resolve(null),
+          agentId
+            ? authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`)
+            : Promise.resolve(null),
         ]);
         const statusBody = await safeJson(status);
         if (!cancelled && status.ok && statusBody && typeof statusBody === "object") {
           setConnections(statusBody as ConnectionStatus);
         }
         if (agentResponse) {
-          const agentBody = (await safeJson(agentResponse)) as { agent?: { enabledTools?: AgentToolName[] }; error?: string } | null;
+          const agentBody = (await safeJson(agentResponse)) as {
+            agent?: { enabledTools?: AgentToolName[] };
+            error?: string;
+          } | null;
           if (!cancelled && agentResponse.ok) {
-            setEnabledTools(Array.isArray(agentBody?.agent?.enabledTools) ? agentBody.agent.enabledTools : []);
+            setEnabledTools(
+              Array.isArray(agentBody?.agent?.enabledTools) ? agentBody.agent.enabledTools : [],
+            );
           } else if (!cancelled && !agentResponse.ok) {
-            setNotice(agentBody?.error || "The assistant's action settings could not be loaded yet.");
+            setNotice(
+              agentBody?.error || "The assistant's action settings could not be loaded yet.",
+            );
           }
         }
       } catch {
-        if (!cancelled && agentId) setNotice("The assistant's action settings could not be loaded yet.");
+        if (!cancelled && agentId)
+          setNotice("The assistant's action settings could not be loaded yet.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -241,12 +277,20 @@ export default function ActionsWorkspace() {
     } catch (cause) {
       setEnabledTools(previous);
       setSaveState("error");
-      setNotice(cause instanceof Error ? cause.message : "Your changes could not be saved. Please try again.");
+      setNotice(
+        cause instanceof Error
+          ? cause.message
+          : "Your changes could not be saved. Please try again.",
+      );
     }
   }
 
   const toggle = (tool: AgentToolName) =>
-    void persist(enabledTools.includes(tool) ? enabledTools.filter((item) => item !== tool) : [...enabledTools, tool]);
+    void persist(
+      enabledTools.includes(tool)
+        ? enabledTools.filter((item) => item !== tool)
+        : [...enabledTools, tool],
+    );
 
   if (agentsLoading) return <LoadingPermissions />;
 
@@ -259,14 +303,19 @@ export default function ActionsWorkspace() {
           icon={<Sparkles size={29} />}
           title="Create the assistant before you give it actions."
           description="Start with one useful job. In Studio, you can decide what the assistant should know, which actions it can take, and where it must ask you first."
-          action={<Button asChild><Link to="/studio?create=1">Create an assistant</Link></Button>}
+          action={
+            <Button asChild>
+              <Link to="/studio?create=1">Create an assistant</Link>
+            </Button>
+          }
         />
       </div>
     );
   }
 
   const noticeTone = saveState === "error" ? "destructive" : "warning";
-  const noticeTitle = saveState === "error" ? "Permissions were not saved." : "Permissions need attention.";
+  const noticeTitle =
+    saveState === "error" ? "Permissions were not saved." : "Permissions need attention.";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -274,13 +323,31 @@ export default function ActionsWorkspace() {
         <div className="min-w-0">
           <p className="studio-kicker">Assistant permissions</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2 className="wl-section-title">Choose how {selectedAgent?.name || "this assistant"} can help.</h2>
-            {!loading ? <Badge variant="info" className="text-[10px] uppercase tracking-[.06em]">{enabledTools.length} enabled</Badge> : null}
+            <h2 className="wl-section-title">
+              Choose how {selectedAgent?.name || "this assistant"} can help.
+            </h2>
+            {!loading ? (
+              <Badge variant="info" className="text-[10px] uppercase tracking-[.06em]">
+                {enabledTools.length} enabled
+              </Badge>
+            ) : null}
           </div>
-          <p className="mt-2 max-w-2xl text-[14px] leading-6 text-muted-foreground">Turn on only the actions this assistant should take. You can change the scope whenever the role changes.</p>
+          <p className="mt-2 max-w-2xl text-[14px] leading-6 text-muted-foreground">
+            Turn on only the actions this assistant should take. You can change the scope whenever
+            the role changes.
+          </p>
         </div>
-        <NativeSelect value={agentId} onChange={(event) => chooseAgent(event.target.value)} className="max-w-[240px]" aria-label="Choose assistant or agent">
-          {agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
+        <NativeSelect
+          value={agentId}
+          onChange={(event) => chooseAgent(event.target.value)}
+          className="max-w-[240px]"
+          aria-label="Choose assistant or agent"
+        >
+          {agents.map((agent) => (
+            <option key={agent.id} value={agent.id}>
+              {agent.name}
+            </option>
+          ))}
         </NativeSelect>
       </div>
 
@@ -298,42 +365,101 @@ export default function ActionsWorkspace() {
       <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,.75fr)] lg:gap-6">
         <section className="wl-scroll min-h-0 overflow-y-auto pr-0.5">
           <div className="space-y-5">
-            {loading ? (
-              Array.from({ length: 3 }, (_, index) => <Skeleton key={index} shape="surface" className="h-[176px] w-full" />)
-            ) : (
-              Object.entries(everydayGroups).map(([group, tools]) => <ToolGroup key={group} title={GROUP_LABELS[group] || group} tools={tools} enabled={enabledTools} disabled={saveState === "saving"} onToggle={toggle} />)
-            )}
+            {loading
+              ? Array.from({ length: 3 }, (_, index) => (
+                  <Skeleton key={index} shape="surface" className="h-[176px] w-full" />
+                ))
+              : Object.entries(everydayGroups).map(([group, tools]) => (
+                  <ToolGroup
+                    key={group}
+                    title={GROUP_LABELS[group] || group}
+                    tools={tools}
+                    enabled={enabledTools}
+                    disabled={saveState === "saving"}
+                    onToggle={toggle}
+                  />
+                ))}
           </div>
           {Object.keys(businessGroups).length ? (
             <details className="studio-card mt-5 p-5">
-              <summary className="cursor-pointer text-[15px] font-semibold text-foreground">Business tools</summary>
-              <p className="mt-2 text-[13px] leading-5 text-muted-foreground">Optional controls for sales, customer records, teams, and commerce. Enable only what this assistant needs for its current role.</p>
+              <summary className="cursor-pointer text-[15px] font-semibold text-foreground">
+                Business tools
+              </summary>
+              <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
+                Optional controls for sales, customer records, teams, and commerce. Enable only what
+                this assistant needs for its current role.
+              </p>
               <div className="mt-5 space-y-5">
-                {Object.entries(businessGroups).map(([group, tools]) => <ToolGroup key={group} title={GROUP_LABELS[group] || group} tools={tools} enabled={enabledTools} disabled={loading || saveState === "saving"} onToggle={toggle} />)}
+                {Object.entries(businessGroups).map(([group, tools]) => (
+                  <ToolGroup
+                    key={group}
+                    title={GROUP_LABELS[group] || group}
+                    tools={tools}
+                    enabled={enabledTools}
+                    disabled={loading || saveState === "saving"}
+                    onToggle={toggle}
+                  />
+                ))}
               </div>
             </details>
           ) : null}
-          <p className="mt-4 inline-flex min-h-5 items-center gap-2 wl-overline" role="status" aria-live="polite">
-            {saveState === "saving" ? <><Loader2 size={14} className="animate-spin" /> Saving permission changes</> : ""}
+          <p
+            className="mt-4 inline-flex min-h-5 items-center gap-2 wl-overline"
+            role="status"
+            aria-live="polite"
+          >
+            {saveState === "saving" ? (
+              <>
+                <Loader2 size={14} className="animate-spin" /> Saving permission changes
+              </>
+            ) : (
+              ""
+            )}
           </p>
         </section>
 
         <aside className="mt-6 min-h-0 lg:mt-0">
           <p className="studio-kicker">Connected apps</p>
           <h2 className="wl-section-title mt-2">Add context when it helps.</h2>
-          <p className="mt-2 text-[14px] leading-6 text-muted-foreground">Connect only the accounts and tools that make this assistant more useful. A connection is not permission by itself.</p>
+          <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+            Connect only the accounts and tools that make this assistant more useful. A connection
+            is not permission by itself.
+          </p>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {
-              const connected = integration.connection === "google" ? connections.google?.connected : integration.connection === "microsoft" ? connections.microsoft?.connected : false;
-              const state = connected ? "Connected" : integration.connection === "workspace" ? "Available" : "Connect";
-              const stateVariant = connected ? "success" : integration.connection === "workspace" ? "info" : "default";
+              const connected =
+                integration.connection === "google"
+                  ? connections.google?.connected
+                  : integration.connection === "microsoft"
+                    ? connections.microsoft?.connected
+                    : false;
+              const state = connected
+                ? "Connected"
+                : integration.connection === "workspace"
+                  ? "Available"
+                  : "Connect";
+              const stateVariant = connected
+                ? "success"
+                : integration.connection === "workspace"
+                  ? "info"
+                  : "default";
               return (
-                <article className="studio-card flex min-h-[82px] items-center justify-between gap-3 p-4" key={integration.id}>
+                <article
+                  className="studio-card flex min-h-[82px] items-center justify-between gap-3 p-4"
+                  key={integration.id}
+                >
                   <div className="min-w-0">
                     <h3 className="wl-card-title">{integration.label}</h3>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{integration.detail}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {integration.detail}
+                    </p>
                   </div>
-                  <Badge variant={stateVariant} className="shrink-0 text-[10px] uppercase tracking-[.06em]">{state}</Badge>
+                  <Badge
+                    variant={stateVariant}
+                    className="shrink-0 text-[10px] uppercase tracking-[.06em]"
+                  >
+                    {state}
+                  </Badge>
                 </article>
               );
             })}
