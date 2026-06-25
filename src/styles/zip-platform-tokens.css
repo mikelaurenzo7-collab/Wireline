@@ -1,0 +1,78 @@
+.wl-zip-migration {
+  --wireline-color-canvas-default: #0d0b12;
+  --wireline-color-surface-default: #14121a;
+  --wireline-color-surface-subtle: #1a1721;
+  --wireline-color-surface-container: #211d29;
+  --wireline-color-surface-strong: #292332;
+  --wireline-color-text-primary: #f5f3fb;
+  --wireline-color-text-secondary: #aaa4b4;
+  --wireline-color-text-onAction: #0d0b12;
+  --wireline-color-border-default: #2b2633;
+  --wireline-color-border-strong: #4a4056;
+  --wireline-color-action-primary-default: #8ca9ff;
+  --wireline-color-action-primary-pressed: #7594f7;
+  --wireline-color-action-primary-container: #1d294a;
+  --wireline-color-focus-default: #9db6ff;
+  --wireline-color-overlay-scrim: rgba(7, 6, 10, .78);
+  --wireline-color-status-success: #58dcbc;
+  --wireline-color-status-warning: #f3c178;
+  --wireline-color-status-error: #ef7f98;
+  --wireline-color-status-info: #8ca9ff;
+  --wireline-color-feedback-success-surface: rgba(88, 220, 188, .12);
+  --wireline-color-feedback-success-border: rgba(88, 220, 188, .34);
+  --wireline-color-feedback-warning-surface: rgba(243, 193, 120, .12);
+  --wireline-color-feedback-warning-border: rgba(243, 193, 120, .34);
+  --wireline-color-feedback-error-surface: rgba(239, 127, 152, .12);
+  --wireline-color-feedback-error-border: rgba(239, 127, 152, .34);
+  --wireline-color-feedback-info-surface: rgba(140, 169, 255, .12);
+  --wireline-color-feedback-info-border: rgba(140, 169, 255, .34);
+  --wireline-radius-sm: .5rem;
+  --wireline-radius-md: .75rem;
+  --wireline-radius-lg: 1rem;
+  --wireline-radius-xl: 1.25rem;
+  --wireline-elevation-sm: 0 1px 0 rgba(255,255,255,.025) inset;
+  --wireline-elevation-md: 0 16px 40px rgba(0,0,0,.24);
+  --wireline-elevation-lg: 0 24px 72px rgba(0,0,0,.34);
+  --wireline-font-family-display: "Hanken Grotesk", Inter, ui-sans-serif, system-ui, sans-serif;
+  --wireline-font-family-body: Inter, ui-sans-serif, system-ui, sans-serif;
+  --wireline-font-family-mono: "JetBrains Mono", ui-monospace, monospace;
+  min-height: 100dvh;
+  background: radial-gradient(circle at 0 0, rgba(79,45,122,.26), transparent 34rem), #0d0b12;
+  color: #f5f3fb;
+  color-scheme: dark;
+}
+
+.wl-zip-migration :is(.bg-background, .bg-card, .bg-popover) { background-color: var(--wireline-color-surface-default); }
+.wl-zip-migration :is(.bg-secondary, .bg-muted) { background-color: var(--wireline-color-surface-subtle); }
+.wl-zip-migration :is(.text-foreground, .text-card-foreground, .text-popover-foreground) { color: var(--wireline-color-text-primary); }
+.wl-zip-migration .text-muted-foreground { color: var(--wireline-color-text-secondary); }
+.wl-zip-migration .border-border { border-color: var(--wireline-color-border-default); }
+.wl-zip-migration .text-primary { color: var(--wireline-color-action-primary-default); }
+.wl-zip-migration .bg-primary { background-color: var(--wireline-color-action-primary-default); }
+.wl-zip-migration .text-primary-foreground { color: var(--wireline-color-text-onAction); }
+
+.wl-zip-migration .studio-card,
+.wl-zip-migration .wl-stitch-card,
+.wl-zip-migration .wl-surface,
+.wl-zip-migration .wl-stitch-agent-card,
+.wl-zip-migration .wl-stitch-knowledge-panel,
+.wl-zip-migration .wl-stitch-connection-card {
+  border-color: #2c2734;
+  background: linear-gradient(145deg, rgba(27,24,34,.96), rgba(16,14,21,.98));
+  box-shadow: 0 1px 0 rgba(255,255,255,.025) inset;
+}
+
+.wl-zip-migration .studio-kicker,
+.wl-zip-migration .wl-overline,
+.wl-zip-migration .wl-stitch-label,
+.wl-zip-migration .wl-stitch-eyebrow,
+.wl-zip-migration .wl-page-context { color: #9cb3ff; font-size: .65rem; letter-spacing: .18em; }
+
+.wl-zip-migration .marketing-btn-primary,
+.wl-zip-migration .workspace-btn-primary { border-color: #8ca9ff; background: #8ca9ff; color: #0d0b12 !important; box-shadow: 0 10px 28px rgba(96,120,220,.2); }
+.wl-zip-migration .marketing-btn-secondary,
+.wl-zip-migration .workspace-btn-secondary { border-color: #39333f; background: rgba(255,255,255,.035); color: #f4f1fb !important; }
+.wl-zip-migration .marketing-btn-primary:hover,
+.wl-zip-migration .workspace-btn-primary:hover { background: #a0b8ff; }
+.wl-zip-migration .marketing-btn-secondary:hover,
+.wl-zip-migration .workspace-btn-secondary:hover { border-color: #50485a; background: rgba(255,255,255,.07); }
