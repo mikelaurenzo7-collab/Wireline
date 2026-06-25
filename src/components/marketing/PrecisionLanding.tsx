@@ -4,6 +4,7 @@ import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import HeroCallPreview from "./HeroCallPreview";
 import BrowserCallWidget from "./BrowserCallWidget";
+import { Capabilities } from "../migration/Capabilities";
 
 const channels = [
   {
@@ -104,6 +105,8 @@ export default function PrecisionLanding() {
             </div>
           </div>
         </section>
+
+        <Capabilities />
 
         <section className="border-b border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="wl-public-rail">
