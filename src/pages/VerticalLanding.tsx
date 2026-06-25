@@ -110,7 +110,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" />
-              Your rules
+              Your voice &amp; workflow
             </span>
             <span className="inline-flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" />
@@ -159,7 +159,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div>
             <p className="wl-stitch-eyebrow">Call behavior</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              {isPersonal ? "You set the words and the limits." : "Your process, handled consistently."}
+              {isPersonal ? "You shape the voice and the handoff." : "Your process, handled consistently."}
             </h2>
           </div>
           <div className="wl-stitch-card border-l-4 border-l-primary p-6 sm:p-8">
