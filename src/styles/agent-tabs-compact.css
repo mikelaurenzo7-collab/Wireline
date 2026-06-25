@@ -1,0 +1,31 @@
+@media (max-width: 639px) {
+  div:has(> button[aria-label="Back to workspace"]) + div {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+    overflow: hidden;
+    padding: 0.375rem 0.75rem 0.5rem !important;
+  }
+
+  div:has(> button[aria-label="Back to workspace"]) + div > button {
+    min-width: 0;
+    min-height: 2.5rem;
+    justify-content: center;
+    gap: 0.3rem;
+    overflow: hidden;
+    padding: 0.375rem 0.3rem;
+  }
+
+  div:has(> button[aria-label="Back to workspace"]) + div > button > span {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.625rem;
+    letter-spacing: 0.025em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  div:has(> button[aria-label="Back to workspace"]) + div > button:nth-child(4) {
+    display: none;
+  }
+}
