@@ -36,7 +36,7 @@ export default function PrecisionLanding() {
                 Every conversation, handled.
               </h1>
               <p className="wl-public-copy mt-5">
-                Voice, email, and text working from your rules.
+                Voice, email, and text—shaped around your voice, priorities, and workflow.
               </p>
               <div className="marketing-hero__actions mt-8">
                 <Link
@@ -60,7 +60,10 @@ export default function PrecisionLanding() {
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="wl-public-rail">
             <p className="wl-overline text-primary">One operating model</p>
-            <h2 className="wl-public-section-heading mt-3">Same rules across every channel.</h2>
+            <h2 className="wl-public-section-heading mt-3">One assistant. Every channel.</h2>
+            <p className="wl-public-copy mt-4 max-w-2xl">
+              Your voice, playbook, and handoff stay consistent wherever the conversation begins.
+            </p>
             <div className="marketing-channel-grid mt-8">
               {channels.map(({ label, title, icon: Icon }) => (
                 <article key={label} className="wl-stitch-card marketing-channel-card flex flex-col p-6 sm:p-7">
