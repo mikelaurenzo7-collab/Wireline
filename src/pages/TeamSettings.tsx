@@ -90,10 +90,10 @@ export default function TeamSettings() {
                 <ShieldCheck size={14} />
                 Business workspace
               </Badge>
-              <h2 className="mt-3 text-[20px] font-semibold tracking-[-.01em] text-foreground">
+              <h2 className="mt-3 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.01em] text-foreground">
                 Manage your business roster
               </h2>
-              <p className="mt-1 text-[14px] text-muted-foreground">
+              <p className="mt-1 text-[var(--wireline-typography-body-size)] text-muted-foreground">
                 Provision seats, assign roles, and control access to your automated business agents.
               </p>
             </div>
@@ -130,7 +130,9 @@ export default function TeamSettings() {
                           </span>
                         )}
                       </p>
-                      <p className="text-[13px] text-muted-foreground">{member.email}</p>
+                      <p className="text-[var(--wireline-typography-caption-size)] text-muted-foreground">
+                        {member.email}
+                      </p>
                     </div>
                   </div>
 

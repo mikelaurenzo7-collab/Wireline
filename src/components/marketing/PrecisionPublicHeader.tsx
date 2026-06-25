@@ -56,7 +56,7 @@ export default function PrecisionPublicHeader() {
           <div className="flex min-w-0 items-center gap-8">
             <Link
               to="/"
-              className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[20px] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
+              className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
               aria-label="Wireline home"
             >
               <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
@@ -71,7 +71,7 @@ export default function PrecisionPublicHeader() {
                     key={link.to}
                     to={link.to}
                     aria-current={active ? "page" : undefined}
-                    className={`flex h-full items-center border-b-2 text-[13px] font-medium transition-colors ${
+                    className={`flex h-full items-center border-b-2 text-[var(--wireline-typography-caption-size)] font-medium transition-colors ${
                       active
                         ? "border-primary text-foreground"
                         : "border-transparent text-muted-foreground hover:text-foreground"
@@ -87,13 +87,13 @@ export default function PrecisionPublicHeader() {
           <div className="hidden items-center gap-5 md:flex">
             <Link
               to="/signin"
-              className="text-[13px] font-medium text-foreground transition-colors hover:text-primary"
+              className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground transition-colors hover:text-primary"
             >
               Sign in
             </Link>
             <Link
               to="/signup"
-              className="marketing-btn-primary min-h-9 px-4 text-[12px] font-semibold uppercase tracking-[.05em]"
+              className="marketing-btn-primary min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
             >
               Create account
             </Link>
@@ -155,7 +155,7 @@ export default function PrecisionPublicHeader() {
                   }`}
                 >
                   <span className="min-w-0">
-                    <span className="block text-[17px] font-semibold tracking-[-.02em]">
+                    <span className="block text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em]">
                       {link.label}
                     </span>
                     <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
@@ -177,14 +177,14 @@ export default function PrecisionPublicHeader() {
             <Link
               to="/signin"
               onClick={() => setOpen(false)}
-              className="marketing-btn-secondary min-h-12 text-[14px] font-semibold"
+              className="marketing-btn-secondary min-h-12 text-[var(--wireline-typography-body-size)] font-semibold"
             >
               Sign in
             </Link>
             <Link
               to="/signup"
               onClick={() => setOpen(false)}
-              className="marketing-btn-primary min-h-12 text-[14px] font-semibold"
+              className="marketing-btn-primary min-h-12 text-[var(--wireline-typography-body-size)] font-semibold"
             >
               Create your assistant
             </Link>

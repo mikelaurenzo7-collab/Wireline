@@ -85,9 +85,11 @@ export function CallPlaybookForm({
                     <p className="text-foreground/90 text-sm font-medium">
                       {i + 1}. "{q.question}"
                     </p>
-                    <p className="text-muted text-[11px] mt-0.5">Intent: {q.intent}</p>
+                    <p className="text-muted text-[var(--wireline-typography-overline-size)] mt-0.5">
+                      Intent: {q.intent}
+                    </p>
                     {q.follow_up && (
-                      <p className="text-foreground/70 text-[11px] mt-1">
+                      <p className="text-foreground/70 text-[var(--wireline-typography-overline-size)] mt-1">
                         Follow-up: "{q.follow_up}"
                       </p>
                     )}

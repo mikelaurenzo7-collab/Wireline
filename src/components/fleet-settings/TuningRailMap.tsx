@@ -62,7 +62,7 @@ export default function TuningRailMap({
           </span>
           <span
             className={cn(
-              "shrink-0 rounded-full border px-2 py-0.5 font-mono text-[11px] tabular-nums",
+              "shrink-0 rounded-full border px-2 py-0.5 font-mono text-[var(--wireline-typography-overline-size)] tabular-nums",
               ready
                 ? "border-brand/25 bg-brand/12 text-brand"
                 : "border-ink/[0.08] bg-ink/[0.04] text-foreground/55",

@@ -242,7 +242,7 @@ function SpendBudgetCard() {
       <label className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
         <div>
           <div className="text-sm text-foreground">Hard cap outbound work</div>
-          <div className="text-[11px] text-foreground/70 mt-1">
+          <div className="text-[var(--wireline-typography-overline-size)] text-foreground/70 mt-1">
             When enabled, Wireline blocks new outbound calls and messages after the monthly limit is
             reached.
           </div>
@@ -255,7 +255,7 @@ function SpendBudgetCard() {
       </label>
 
       <div className="flex items-center justify-between gap-4 pt-1">
-        <div className="text-[11px] text-foreground/70">
+        <div className="text-[var(--wireline-typography-overline-size)] text-foreground/70">
           Threshold crossings fire{" "}
           <span className="font-mono text-foreground/75">spend.warning</span> and{" "}
           <span className="font-mono text-foreground/75">spend.exceeded</span> webhook events — wire

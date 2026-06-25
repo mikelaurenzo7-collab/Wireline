@@ -115,19 +115,19 @@ export default function SolutionsPage() {
               <span className="wl-overline text-foreground">{page.eyebrow}</span>
             </div>
             <h1 className="wl-page-title mt-6 max-w-[13ch] text-balance">{page.title}</h1>
-            <p className="mt-6 max-w-2xl text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
+            <p className="mt-6 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
               {page.description}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to={page.primary.href}
-                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 {page.primary.label} <ArrowRight size={15} />
               </Link>
               <Link
                 to={page.secondary.href}
-                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 {page.secondary.label}
               </Link>
@@ -148,13 +148,15 @@ export default function SolutionsPage() {
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
           {page.sequence.map(([title, copy], index) => (
             <li key={title} className="wl-stitch-card relative p-6 sm:p-7">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[12px] font-semibold text-primary">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
               </span>
               <h3 className="wl-section-title mt-5 text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
                 {title}
               </h3>
-              <p className="mt-3 text-[15px] leading-6 text-muted-foreground">{copy}</p>
+              <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
+                {copy}
+              </p>
             </li>
           ))}
         </ol>
@@ -167,7 +169,7 @@ export default function SolutionsPage() {
             <h2 className="wl-stitch-display mt-3 text-balance">
               The capabilities that make a conversation operational.
             </h2>
-            <p className="mt-4 max-w-lg text-[15px] leading-7 text-muted-foreground">
+            <p className="mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
               Start with a focused assignment. Expand into the next channel, connected account, or
               workflow only when it makes the outcome better.
             </p>
@@ -181,7 +183,9 @@ export default function SolutionsPage() {
                 <article key={title} className="wl-stitch-card bg-background p-5">
                   <CapabilityIcon size={18} className="text-primary" />
                   <h3 className="wl-card-title mt-4">{title}</h3>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{copy}</p>
+                  <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                    {copy}
+                  </p>
                 </article>
               );
             })}
@@ -202,7 +206,7 @@ export default function SolutionsPage() {
           </div>
           <Link
             to={page.primary.href}
-            className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+            className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
           >
             Build your agent <ArrowRight size={15} />
           </Link>
@@ -231,17 +235,19 @@ function WorkflowPanel({ page }: { page: Solution }) {
       <div className="space-y-4 p-5">
         {page.sequence.map(([title, copy], index) => (
           <div key={title} className="flex gap-3">
-            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-primary/25 bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-primary/25 bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-overline-size)] font-semibold text-primary">
               {index + 1}
             </span>
             <div>
               <p className="text-sm font-semibold text-foreground">{title}</p>
-              <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{copy}</p>
+              <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+                {copy}
+              </p>
             </div>
           </div>
         ))}
       </div>
-      <div className="border-t border-border px-5 py-4 text-[13px] leading-5 text-muted-foreground">
+      <div className="border-t border-border px-5 py-4 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
         <Check size={15} className="mr-2 inline text-primary" />
         You choose what the agent can say, access, and escalate.
       </div>

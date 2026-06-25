@@ -308,7 +308,7 @@ export default function CrmConnectionCard() {
 
   if (loading) {
     return (
-      <div className="text-[11px] text-muted flex items-center gap-2 py-4">
+      <div className="text-[var(--wireline-typography-overline-size)] text-muted flex items-center gap-2 py-4">
         <Loader2 className="w-3 h-3 animate-spin" /> Checking integration connections…
       </div>
     );
@@ -406,7 +406,9 @@ export default function CrmConnectionCard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <div className="text-[11px] font-semibold text-foreground">{label}</div>
+                            <div className="text-[var(--wireline-typography-overline-size)] font-semibold text-foreground">
+                              {label}
+                            </div>
                             {s.connected && (
                               <CheckCircle2 className={cn("w-3 h-3", styles.check)} />
                             )}

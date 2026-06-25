@@ -34,13 +34,15 @@ export default function HeroCallPreview() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2 font-semibold text-[14px] tracking-tight text-foreground">
+            <div className="flex flex-wrap items-center gap-2 font-semibold text-[var(--wireline-typography-body-size)] tracking-tight text-foreground">
               Sarah
-              <span className="border border-brand/20 bg-brand/[0.05] px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-brand">
+              <span className="border border-brand/20 bg-brand/[0.05] px-1.5 py-0.5 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.14em] text-brand">
                 warm
               </span>
             </div>
-            <p className="mt-0.5 text-[12px] text-foreground/58">Front desk · inbound support</p>
+            <p className="mt-0.5 text-[var(--wireline-typography-caption-size)] text-foreground/58">
+              Front desk · inbound support
+            </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 shrink-0">
@@ -50,7 +52,7 @@ export default function HeroCallPreview() {
               )}
               <span className="relative inline-flex h-2 w-2 bg-brand" />
             </span>
-            <span className="font-mono text-[10px] text-foreground/72 tracking-[0.08em] tabular-nums">
+            <span className="font-mono text-[var(--wireline-typography-overline-size)] text-foreground/72 tracking-[0.08em] tabular-nums">
               ON CALL · 0:42
             </span>
           </div>
@@ -95,9 +97,9 @@ export default function HeroCallPreview() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-[86%] border border-ink/[0.1] bg-white/[0.55] px-3 py-2.5 text-[13px] leading-snug text-foreground"
+            className="max-w-[86%] border border-ink/[0.1] bg-white/[0.55] px-3 py-2.5 text-[var(--wireline-typography-caption-size)] leading-snug text-foreground"
           >
-            <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/48">
+            <span className="mb-1.5 block font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.16em] text-foreground/48">
               Caller
             </span>
             Hi — do you have any openings this Saturday?
@@ -107,9 +109,9 @@ export default function HeroCallPreview() {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.82, ease: [0.16, 1, 0.3, 1] }}
-            className="ml-auto max-w-[86%] border border-brand/18 bg-brand/[0.045] px-3 py-2.5 text-[13px] leading-snug text-foreground"
+            className="ml-auto max-w-[86%] border border-brand/18 bg-brand/[0.045] px-3 py-2.5 text-[var(--wireline-typography-caption-size)] leading-snug text-foreground"
           >
-            <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/48">
+            <span className="mb-1.5 block font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.16em] text-foreground/48">
               Sarah
             </span>
             We do — 9:30 or 2:15. Want me to lock one in?
@@ -133,15 +135,15 @@ export default function HeroCallPreview() {
           <span className="grid h-[18px] w-[18px] shrink-0 place-items-center bg-brand text-white">
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
-          <span className="text-[12.5px] text-foreground">
+          <span className="text-[var(--wireline-typography-caption-size)] text-foreground">
             <strong className="font-semibold">Booking appointment</strong> — Sat 9:30 AM
           </span>
           <span className="ml-auto flex gap-1.5">
-            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-foreground/55">
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] text-foreground/55">
               <Calendar className="h-2.5 w-2.5" aria-hidden="true" />
               Calendar
             </span>
-            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-foreground/55">
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] text-foreground/55">
               <MessageSquare className="h-2.5 w-2.5" aria-hidden="true" />
               SMS
             </span>
@@ -156,7 +158,7 @@ export default function HeroCallPreview() {
         className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-brand/22 bg-[#F9F9FF]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(30,27,46,0.5)] backdrop-blur-sm"
       >
         <PhoneCall className="h-3 w-3 text-brand" aria-hidden="true" />
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand/90">
+        <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.12em] text-brand/90">
           Active · handled by assistant
         </span>
       </motion.div>

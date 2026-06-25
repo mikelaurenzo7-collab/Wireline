@@ -53,7 +53,7 @@ export default function DirectorLayout({
               <h1 className="font-display text-2xl text-primary leading-none tracking-tighter">
                 OP-ALPHA
               </h1>
-              <p className="font-mono text-[10px] text-primary mt-1 uppercase tracking-widest">
+              <p className="font-mono text-[var(--wireline-typography-overline-size)] text-primary mt-1 uppercase tracking-widest">
                 Verified Session
               </p>
             </div>
@@ -121,7 +121,9 @@ export default function DirectorLayout({
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                <span className="font-mono text-[10px] uppercase tracking-widest">Live</span>
+                <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-widest">
+                  Live
+                </span>
               </div>
             </div>
           </header>
@@ -134,7 +136,7 @@ export default function DirectorLayout({
         {showArtifacts && (
           <aside className="hidden xl:flex w-80 flex-col h-full bg-velvet border-l border-white/5 shrink-0 z-20 shadow-[-10px_0_40px_rgba(0,0,0,0.2)]">
             <header className="h-14 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
-              <h3 className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider">
+              <h3 className="font-mono text-[var(--wireline-typography-overline-size)] uppercase text-muted-foreground tracking-wider">
                 Active Artifacts
               </h3>
               <FileText className="w-4 h-4 text-muted-foreground" />
@@ -145,11 +147,13 @@ export default function DirectorLayout({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2 text-primary">
                     <FileText className="w-4 h-4" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest">
+                    <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-widest">
                       PRD-882-ALPHA
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] text-muted-foreground">14:05</span>
+                  <span className="font-mono text-[var(--wireline-typography-overline-size)] text-muted-foreground">
+                    14:05
+                  </span>
                 </div>
                 <h4 className="font-sans text-sm font-bold text-foreground mb-1">
                   Voice Core Integration
@@ -164,13 +168,15 @@ export default function DirectorLayout({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
                     <Network className="w-4 h-4" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest">
+                    <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-widest">
                       DB_SCHEMA_V4.JSON
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] text-muted-foreground">14:03</span>
+                  <span className="font-mono text-[var(--wireline-typography-overline-size)] text-muted-foreground">
+                    14:03
+                  </span>
                 </div>
-                <div className="bg-background border border-white/5 p-2 font-mono text-[10px] text-muted-foreground line-clamp-3">
+                <div className="bg-background border border-white/5 p-2 font-mono text-[var(--wireline-typography-overline-size)] text-muted-foreground line-clamp-3">
                   {`{\n  "version": "4.0",\n  "tables": [...]\n}`}
                 </div>
               </div>

@@ -49,13 +49,13 @@ export default function Compare() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               to="/pricing"
-              className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold"
+              className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
             >
               Start at $9 <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/showcase"
-              className="marketing-btn-secondary min-h-12 px-6 text-[15px] font-semibold"
+              className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
             >
               Hear an assistant
             </Link>
@@ -121,7 +121,7 @@ export default function Compare() {
           </div>
           <Link
             to="/signup?mode=personal"
-            className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold"
+            className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
           >
             Create your assistant <ArrowRight className="h-4 w-4" />
           </Link>

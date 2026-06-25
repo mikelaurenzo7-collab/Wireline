@@ -180,7 +180,9 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
         ) : (
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
         )}
-        <span className="text-[11px] text-foreground/80">{label}</span>
+        <span className="text-[var(--wireline-typography-overline-size)] text-foreground/80">
+          {label}
+        </span>
       </div>
       <span className={cn("wl-micro-meta", ok ? "text-foreground/65" : "text-rose-400/80")}>
         {detail}

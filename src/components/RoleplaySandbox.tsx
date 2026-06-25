@@ -13,9 +13,12 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
             <MessageSquareText size={17} />
           </span>
           <div>
-            <p className="text-[13px] font-semibold text-foreground">Test realistic interruptions</p>
-            <p className="mt-1 text-[12px] leading-5 text-muted-foreground">
-              Talk naturally, pause, change your mind, and interrupt the assistant while it is speaking.
+            <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground">
+              Test realistic interruptions
+            </p>
+            <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+              Talk naturally, pause, change your mind, and interrupt the assistant while it is
+              speaking.
             </p>
           </div>
         </div>
@@ -24,9 +27,12 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
             <ShieldCheck size={17} />
           </span>
           <div>
-            <p className="text-[13px] font-semibold text-foreground">Safe test channel</p>
-            <p className="mt-1 text-[12px] leading-5 text-muted-foreground">
-              Live testing may search approved assistant knowledge but cannot send, book, transfer, or change outside systems.
+            <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground">
+              Safe test channel
+            </p>
+            <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+              Live testing may search approved assistant knowledge but cannot send, book, transfer,
+              or change outside systems.
             </p>
           </div>
         </div>

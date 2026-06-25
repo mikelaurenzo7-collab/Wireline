@@ -326,7 +326,9 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
               className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-destructive/10 border border-destructive/30"
             >
               <AlertOctagon className="w-3.5 h-3.5 text-destructive shrink-0" />
-              <p className="text-[11px] text-destructive leading-snug">{err}</p>
+              <p className="text-[var(--wireline-typography-overline-size)] text-destructive leading-snug">
+                {err}
+              </p>
             </div>
           )}
         </div>
@@ -512,7 +514,7 @@ function CalendarGrid({
                   <>
                     <div
                       className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] ml-auto",
+                        "w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[var(--wireline-typography-overline-size)] ml-auto",
                         isToday ? "bg-brand text-on-brand font-bold" : "text-foreground/55",
                       )}
                     >

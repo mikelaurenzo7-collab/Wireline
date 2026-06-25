@@ -208,12 +208,16 @@ export default function Status() {
                     )}
                   </p>
                   {fallbackCovering ? (
-                    <p className="mt-2 text-[11px] leading-5 text-muted">
+                    <p className="mt-2 text-[var(--wireline-typography-overline-size)] leading-5 text-muted">
                       A primary model probe is unavailable; Wireline&apos;s configured fallback
                       remains available.
                     </p>
                   ) : null}
-                  {error ? <p className="mt-2 text-[11px] text-muted">{error}</p> : null}
+                  {error ? (
+                    <p className="mt-2 text-[var(--wireline-typography-overline-size)] text-muted">
+                      {error}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -244,7 +248,7 @@ export default function Status() {
                       <div className="mb-2.5 flex items-center justify-between">
                         <Icon className="h-4 w-4 text-foreground/75" strokeWidth={1.75} />
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8.5px] font-semibold uppercase leading-none tracking-[0.22em] ${stateMeta.pill}`}
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[var(--wireline-typography-overline-size)] font-semibold uppercase leading-none tracking-[0.22em] ${stateMeta.pill}`}
                         >
                           <StateIcon className="h-2.5 w-2.5" />
                           {stateMeta.label}
@@ -268,7 +272,7 @@ export default function Status() {
               a confirmed lack of serving paths. We never store, log, or render the content of these
               probes.
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[9.5px] uppercase tracking-[0.32em] text-muted/70">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
               <span>Probe interval · 60s</span>
               <span className="text-muted/70">·</span>
               <span>Public cache · 60s</span>

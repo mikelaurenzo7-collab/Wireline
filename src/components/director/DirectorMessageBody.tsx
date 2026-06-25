@@ -43,7 +43,7 @@ function renderInline(text: string): React.ReactNode[] {
       nodes.push(
         <code
           key={key++}
-          className="font-mono text-[12px] px-1 py-0.5 rounded bg-black/[0.06] dark:bg-white/[0.08] text-foreground/90"
+          className="font-mono text-[var(--wireline-typography-caption-size)] px-1 py-0.5 rounded bg-black/[0.06] dark:bg-white/[0.08] text-foreground/90"
         >
           {token.slice(1, -1)}
         </code>,
@@ -149,7 +149,7 @@ function MarkdownTable({ rows }: { rows: string[][] }) {
   const [head, ...body] = rows;
   return (
     <div className="app-table-scroll rounded-md border border-white/8 dark:border-white/10">
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[var(--wireline-typography-caption-size)]">
         <thead>
           <tr className="border-b border-white/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]">
             {head.map((cell, i) => (
@@ -249,7 +249,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
           .map((l, i) => (
             <li
               key={i}
-              className="font-display text-[13px] text-foreground/90 flex gap-1.5 leading-relaxed"
+              className="font-display text-[var(--wireline-typography-caption-size)] text-foreground/90 flex gap-1.5 leading-relaxed"
             >
               <span className="text-brand/50 shrink-0">•</span>
               <span>{renderInline(l.replace(/^[-*•]\s*/, ""))}</span>
@@ -270,7 +270,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
             return (
               <li
                 key={i}
-                className="font-display text-[13px] text-foreground/90 flex gap-1.5 leading-relaxed"
+                className="font-display text-[var(--wireline-typography-caption-size)] text-foreground/90 flex gap-1.5 leading-relaxed"
               >
                 <span className="text-brand/60 shrink-0 font-mono wl-micro-badge w-4">
                   {i + 1}.
@@ -328,7 +328,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
         <div key={bi} className={cn("rounded-md border-l-[3px] px-3.5 py-2.5", cp.border, cp.bg)}>
           <p className={cn("text-eyebrow font-bold tracking-[0.12em] mb-1", cp.label)}>{cTitle}</p>
           {cBody && (
-            <p className="font-display text-[13px] text-foreground/85 leading-relaxed">
+            <p className="font-display text-[var(--wireline-typography-caption-size)] text-foreground/85 leading-relaxed">
               {renderInline(cBody)}
             </p>
           )}
@@ -339,7 +339,10 @@ function renderBlock(block: string, bi: number): React.ReactNode {
     return (
       <blockquote key={bi} className="border-l-2 border-brand/25 pl-3.5 py-0.5">
         {quoteLines.map((l, i) => (
-          <p key={i} className="font-display text-[13px] text-foreground/70 italic leading-relaxed">
+          <p
+            key={i}
+            className="font-display text-[var(--wireline-typography-caption-size)] text-foreground/70 italic leading-relaxed"
+          >
             {renderInline(l.replace(/^>\s*/, ""))}
           </p>
         ))}
@@ -350,7 +353,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   return (
     <p
       key={bi}
-      className="font-display text-[13px] text-foreground/90 leading-relaxed whitespace-pre-wrap"
+      className="font-display text-[var(--wireline-typography-caption-size)] text-foreground/90 leading-relaxed whitespace-pre-wrap"
     >
       {renderInline(trimmed)}
     </p>

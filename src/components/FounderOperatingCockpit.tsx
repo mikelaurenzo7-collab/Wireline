@@ -84,7 +84,7 @@ function QuestionCard({
       {href ? (
         <Link
           to={href}
-          className="wl-label text-brand text-[11px] hover:underline mt-auto touch-press inline-block"
+          className="wl-label text-brand text-[var(--wireline-typography-overline-size)] hover:underline mt-auto touch-press inline-block"
         >
           Drill down →
         </Link>
@@ -144,13 +144,13 @@ export default function FounderOperatingCockpit() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
           <p className="app-section-title mb-0.5">Operating cockpit</p>
-          <p className="text-[12px] text-muted">
+          <p className="text-[var(--wireline-typography-caption-size)] text-muted">
             Launch readiness {data.launch_readiness.overall_score}% ·{" "}
             {data.launch_readiness.campaign_ready ? "Campaign ready" : "Not campaign ready"}
           </p>
         </div>
         {!data.launch_readiness.campaign_ready ? (
-          <div className="flex items-center gap-2 text-[11px] text-amber-800 bg-amber-500/10 border border-amber-500/25 rounded-full px-3 py-1.5">
+          <div className="flex items-center gap-2 text-[var(--wireline-typography-overline-size)] text-amber-800 bg-amber-500/10 border border-amber-500/25 rounded-full px-3 py-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
             {data.launch_readiness.launch_blockers.slice(0, 2).join(", ") ||
               "Check launch readiness"}

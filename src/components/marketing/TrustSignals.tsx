@@ -120,7 +120,7 @@ export default function TrustSignals() {
         <span className="hero-accent-line bg-brand" />
         <h2
           id="trust-heading"
-          className="text-[10px] uppercase tracking-[0.5em] text-muted/70 font-semibold"
+          className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.5em] text-muted/70 font-semibold"
         >
           Built for businesses that can't afford to miss a call
         </h2>
@@ -140,7 +140,7 @@ export default function TrustSignals() {
               className="w-3.5 h-3.5 text-brand group-hover:scale-110 transition-transform"
               strokeWidth={1.8}
             />
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted/70 text-center leading-tight">
+            <span className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.18em] text-muted/70 text-center leading-tight">
               {label}
             </span>
           </div>
@@ -159,7 +159,7 @@ export default function TrustSignals() {
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <Icon className="w-3.5 h-3.5 text-foreground/70" strokeWidth={1.75} />
                 <span
-                  className={`text-[10px] uppercase tracking-[0.22em] font-semibold px-1.5 py-0.5 rounded-full border leading-none ${tone.pill}`}
+                  className={`text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] font-semibold px-1.5 py-0.5 rounded-full border leading-none ${tone.pill}`}
                 >
                   <span
                     className={`inline-block w-1 h-1 rounded-full mr-1 align-middle ${tone.dot}`}
@@ -167,10 +167,12 @@ export default function TrustSignals() {
                   {tone.label}
                 </span>
               </div>
-              <p className="text-[11px] font-semibold text-foreground leading-none mb-0.5">
+              <p className="text-[var(--wireline-typography-overline-size)] font-semibold text-foreground leading-none mb-0.5">
                 {label}
               </p>
-              <p className="text-[10px] text-muted/70 leading-tight">{detail}</p>
+              <p className="text-[var(--wireline-typography-overline-size)] text-muted/70 leading-tight">
+                {detail}
+              </p>
             </div>
           );
         })}
@@ -179,7 +181,7 @@ export default function TrustSignals() {
       {/* Status-page deep link — the single most under-rated trust
           signal in B2B SaaS. If we publish uptime, prospects believe
           we run a real shop. */}
-      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.32em] text-muted/70">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
         <a
           href="/status"
           className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"

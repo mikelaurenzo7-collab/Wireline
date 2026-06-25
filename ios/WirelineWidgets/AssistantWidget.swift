@@ -59,7 +59,7 @@ private struct AssistantWidgetView: View {
                     .foregroundStyle(WidgetColors.accent)
                 Spacer()
                 Text("100% Coverage")
-                    .font(Font.system(.headline, design: .serif).weight(.bold))
+                    .font(Brand.h1)
                     .foregroundStyle(WidgetColors.accent)
                     .minimumScaleFactor(0.8)
                     .lineLimit(2)

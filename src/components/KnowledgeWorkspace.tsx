@@ -42,11 +42,11 @@ function PanelShell({ title, icon, countLabel, loading, action, children }: Pane
             {icon}
           </span>
           <div>
-            <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">
+            <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.02em] text-foreground">
               {title}
             </h2>
             {countLabel ? (
-              <p className="mt-1 font-mono text-[11px] leading-4 text-muted-foreground">
+              <p className="mt-1 font-mono text-[var(--wireline-typography-overline-size)] leading-4 text-muted-foreground">
                 {loading ? "—" : countLabel}
               </p>
             ) : null}
@@ -95,10 +95,10 @@ function ItemsPanel({
               className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3"
               key={`${item}-${index}`}
             >
-              <p className="text-[15px] font-semibold leading-5 text-foreground">
+              <p className="text-[var(--wireline-typography-body-size)] font-semibold leading-5 text-foreground">
                 {item.split(/[:\n]/)[0]}
               </p>
-              <p className="mt-1 line-clamp-5 text-[14px] leading-5 text-muted-foreground">
+              <p className="mt-1 line-clamp-5 text-[var(--wireline-typography-body-size)] leading-5 text-muted-foreground">
                 {item.includes(":") ? item.slice(item.indexOf(":") + 1).trim() : item}
               </p>
             </article>
@@ -133,11 +133,11 @@ function TonePanel({ personality, loading }: { personality?: string; loading: bo
         <PanelLoadingRows />
       ) : (
         <>
-          <blockquote className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3 text-[15px] italic leading-6 text-muted-foreground">
+          <blockquote className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3 text-[var(--wireline-typography-body-size)] italic leading-6 text-muted-foreground">
             {personality ||
               "Define how your assistant should sound. Keep it clear, confident, concise, and appropriate to every conversation."}
           </blockquote>
-          <p className="mt-8 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-muted-foreground">
+          <p className="mt-8 font-mono text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-[.05em] text-muted-foreground">
             Key traits
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -208,23 +208,27 @@ function SourcesPanel({ loading }: { loading: boolean }) {
               className="flex items-center justify-between gap-4 rounded-lg border border-border p-3 transition-colors hover:border-[color:var(--wireline-color-border-strong)]"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted font-mono text-[var(--wireline-typography-overline-size)] font-semibold text-muted-foreground">
                   {src.type}
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[14px] font-semibold text-foreground">{src.name}</p>
+                    <p className="text-[var(--wireline-typography-body-size)] font-semibold text-foreground">
+                      {src.name}
+                    </p>
                     <Badge variant={src.stale ? "warning" : "success"}>
                       {src.stale ? "Stale" : "Fresh"}
                     </Badge>
                   </div>
-                  <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
+                  <p className="mt-0.5 truncate font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
                     {src.url}
                   </p>
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2 text-right">
-                <p className="text-[12px] font-medium text-foreground">Synced {src.lastSync}</p>
+                <p className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground">
+                  Synced {src.lastSync}
+                </p>
                 <Button
                   type="button"
                   variant="link"
@@ -399,7 +403,7 @@ export default function KnowledgeWorkspace() {
             type="button"
             aria-selected={view === item}
             onClick={() => setView(item)}
-            className={`min-h-10 border-r border-border px-3 text-[12px] font-medium capitalize last:border-r-0 ${view === item ? "bg-card text-foreground" : "text-muted-foreground"}`}
+            className={`min-h-10 border-r border-border px-3 text-[var(--wireline-typography-caption-size)] font-medium capitalize last:border-r-0 ${view === item ? "bg-card text-foreground" : "text-muted-foreground"}`}
           >
             {item}
           </button>
@@ -425,7 +429,7 @@ export default function KnowledgeWorkspace() {
           <div className="flex items-center gap-2 border-b border-border pb-3">
             <Plus size={19} className="text-foreground" />
             <div>
-              <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">
+              <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.01em] text-foreground">
                 Add a detail
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -438,7 +442,7 @@ export default function KnowledgeWorkspace() {
             <button
               type="button"
               aria-selected={kind === "knowledge"}
-              className={`min-h-9 rounded-sm text-[14px] font-medium ${kind === "knowledge" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(93,63,211,.04)]" : "text-muted-foreground"}`}
+              className={`min-h-9 rounded-sm text-[var(--wireline-typography-body-size)] font-medium ${kind === "knowledge" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(93,63,211,.04)]" : "text-muted-foreground"}`}
               onClick={() => setKind("knowledge")}
             >
               Add fact
@@ -446,7 +450,7 @@ export default function KnowledgeWorkspace() {
             <button
               type="button"
               aria-selected={kind === "directive"}
-              className={`min-h-9 rounded-sm text-[14px] font-medium ${kind === "directive" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(93,63,211,.04)]" : "text-muted-foreground"}`}
+              className={`min-h-9 rounded-sm text-[var(--wireline-typography-body-size)] font-medium ${kind === "directive" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(93,63,211,.04)]" : "text-muted-foreground"}`}
               onClick={() => setKind("directive")}
             >
               Add rule

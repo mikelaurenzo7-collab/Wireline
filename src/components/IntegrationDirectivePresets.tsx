@@ -183,7 +183,7 @@ export default function IntegrationDirectivePresets({
                         <span className="text-xs font-medium text-foreground/90">
                           {preset.label}
                         </span>
-                        <p className="text-[10px] text-muted font-mono leading-relaxed truncate hover:text-clip hover:whitespace-normal">
+                        <p className="text-[var(--wireline-typography-overline-size)] text-muted font-mono leading-relaxed truncate hover:text-clip hover:whitespace-normal">
                           {preset.directive}
                         </p>
                       </div>

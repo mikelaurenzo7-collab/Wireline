@@ -353,7 +353,7 @@ export default function Pipeline() {
                                     className="wl-pipeline-card-grip w-3 h-3 shrink-0 text-foreground/55"
                                     aria-hidden
                                   />
-                                  <CardTitle className="text-[12px] font-semibold text-foreground truncate flex items-center gap-1.5 leading-none flex-1 min-w-0">
+                                  <CardTitle className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground truncate flex items-center gap-1.5 leading-none flex-1 min-w-0">
                                     {lead.customerName || "(no name)"}
                                     {lead.demo && (
                                       <Badge

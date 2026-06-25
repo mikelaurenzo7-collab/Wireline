@@ -219,7 +219,7 @@ export function PrivacyPolicy() {
             these rights
           </li>
         </ul>
-        <p className="mt-3 p-3 rounded-md border border-brand/20 bg-brand/5 text-brand/90 text-[12px]">
+        <p className="mt-3 p-3 rounded-md border border-brand/20 bg-brand/5 text-brand/90 text-[var(--wireline-typography-caption-size)]">
           <strong>We do not sell or share your personal information.</strong> We do not sell
           personal information to third parties, and we do not share personal information for
           cross-context behavioral advertising as defined under the CCPA/CPRA.

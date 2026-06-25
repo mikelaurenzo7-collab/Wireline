@@ -190,7 +190,9 @@ export default function CreateCampaignModal({
               className="flex items-center gap-2 px-3 py-2 rounded-md bg-destructive/10 border border-destructive/30"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
-              <p className="text-[11px] text-destructive">{err}</p>
+              <p className="text-[var(--wireline-typography-overline-size)] text-destructive">
+                {err}
+              </p>
             </div>
           )}
         </div>

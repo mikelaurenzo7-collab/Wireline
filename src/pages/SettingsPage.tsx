@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { ArrowRight, Cable, CreditCard, LogOut, MonitorDown, ShieldCheck, UsersRound } from "lucide-react";
+import {
+  ArrowRight,
+  Cable,
+  CreditCard,
+  LogOut,
+  MonitorDown,
+  ShieldCheck,
+  UsersRound,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Badge, Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -32,7 +40,8 @@ const settingsDestinations = [
     href: "/settings/apps",
     icon: MonitorDown,
     label: "Wireline everywhere",
-    description: "Access the browser companion, native apps, and ChatGPT connection from one clear place.",
+    description:
+      "Access the browser companion, native apps, and ChatGPT connection from one clear place.",
     action: "View client apps",
   },
 ] as const;
@@ -65,9 +74,12 @@ export default function SettingsPage() {
             <div className="min-w-0">
               <p className="studio-kicker">Account</p>
               <h2 className="wl-section-title mt-2 truncate">{displayName}</h2>
-              {user?.email ? <p className="mt-1 text-sm text-muted-foreground">{user.email}</p> : null}
+              {user?.email ? (
+                <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+              ) : null}
               <p className="wl-page-copy mt-4">
-                Your account is the control point for the assistants, connected systems, and people in this workspace.
+                Your account is the control point for the assistants, connected systems, and people
+                in this workspace.
               </p>
             </div>
             <div className="flex flex-col items-start gap-3 sm:items-end">
@@ -75,7 +87,13 @@ export default function SettingsPage() {
                 <ShieldCheck aria-hidden="true" className="size-3.5" />
                 Secure session
               </Badge>
-              <Button type="button" variant="secondary" size="sm" disabled={signingOut} onClick={handleSignOut}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={signingOut}
+                onClick={handleSignOut}
+              >
                 <LogOut aria-hidden="true" size={16} />
                 {signingOut ? "Signing out…" : "Sign out"}
               </Button>
@@ -93,17 +111,24 @@ export default function SettingsPage() {
             <p className="studio-kicker">Workspace controls</p>
             <h2 className="wl-section-title mt-2">The controls that shape how Wireline works.</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Keep the operating details, people, money, connected systems, and companion surfaces clear and intentionally scoped.
+              Keep the operating details, people, money, connected systems, and companion surfaces
+              clear and intentionally scoped.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {settingsDestinations.map(({ href, icon: Icon, label, description, action }) => (
-              <Link key={href} to={href} className="studio-card wl-card-action group flex min-h-[210px] flex-col p-5">
+              <Link
+                key={href}
+                to={href}
+                className="studio-card wl-card-action group flex min-h-[210px] flex-col p-5"
+              >
                 <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                   <Icon aria-hidden="true" size={19} />
                 </span>
                 <div className="mt-7 flex-1">
-                  <h3 className="wl-card-title text-[17px]">{label}</h3>
+                  <h3 className="wl-card-title text-[var(--wireline-typography-body-size)]">
+                    {label}
+                  </h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
                 </div>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
@@ -119,16 +144,24 @@ export default function SettingsPage() {
             <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
             <div>
               <p className="studio-kicker">Control by design</p>
-              <h2 className="wl-card-title mt-2 text-[17px]">Only connect what the job needs.</h2>
+              <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">
+                Only connect what the job needs.
+              </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Wireline keeps billing, provider credentials, webhooks, and account-level changes on the server. A connected system should be useful, approved, and appropriately limited for the work at hand.
+                Wireline keeps billing, provider credentials, webhooks, and account-level changes on
+                the server. A connected system should be useful, approved, and appropriately limited
+                for the work at hand.
               </p>
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
                 <Button asChild variant="link" className="h-auto px-0 text-sm">
-                  <Link to="/actions">Review connection policy <ArrowRight aria-hidden="true" size={14} /></Link>
+                  <Link to="/actions">
+                    Review connection policy <ArrowRight aria-hidden="true" size={14} />
+                  </Link>
                 </Button>
                 <Button asChild variant="link" className="h-auto px-0 text-sm">
-                  <Link to="/settings/team">Manage team access <ArrowRight aria-hidden="true" size={14} /></Link>
+                  <Link to="/settings/team">
+                    Manage team access <ArrowRight aria-hidden="true" size={14} />
+                  </Link>
                 </Button>
               </div>
             </div>

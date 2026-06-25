@@ -161,7 +161,9 @@ export function ArtifactCard({
           <Icon className="w-4 h-4" />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-medium text-foreground truncate">{name}</p>
+          <p className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground truncate">
+            {name}
+          </p>
           <p className="wl-micro-meta--muted">
             {type.toUpperCase()}
             {sizeBytes != null && ` · ${formatBytes(sizeBytes)}`}

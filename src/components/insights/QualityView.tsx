@@ -312,7 +312,9 @@ export default function QualityView({ days }: { days: number }) {
             return (
               <div key={key} className="px-5 py-3.5 flex items-center gap-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-foreground font-medium">{label}</p>
+                  <p className="text-[var(--wireline-typography-overline-size)] text-foreground font-medium">
+                    {label}
+                  </p>
                   <p className="wl-micro-meta--muted mt-0.5">{desc}</p>
                 </div>
                 <div className="w-28 flex items-center gap-2 shrink-0">

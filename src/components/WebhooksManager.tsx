@@ -98,7 +98,7 @@ export default function WebhooksManager() {
             <h4 className="font-display italic text-2xl text-foreground leading-tight mt-1">
               Push events anywhere
             </h4>
-            <p className="text-[11px] text-muted mt-1">
+            <p className="text-[var(--wireline-typography-overline-size)] text-muted mt-1">
               Connect Wireline to Slack, Discord, your CRM, Zapier, n8n, or any HTTPS endpoint.
               Signed with HMAC-SHA256.
             </p>
@@ -110,7 +110,7 @@ export default function WebhooksManager() {
           size="sm"
           disableAnimations
           onClick={() => setShowForm(!showForm)}
-          className="!py-2.5 !px-5 !text-[11px] !tracking-[0.3em] uppercase"
+          className="!py-2.5 !px-5 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
         >
           {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {showForm ? "Cancel" : "Add Webhook"}
@@ -285,7 +285,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         disableAnimations
         onClick={submit}
         disabled={busy || !name || !url || picked.size === 0}
-        className="w-full !py-3 !text-[11px] !tracking-[0.3em] uppercase"
+        className="w-full !py-3 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
       >
         {busy ? (
           <>
@@ -599,7 +599,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                   return (
                     <div
                       key={d.id}
-                      className="rounded-md bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[11px]"
+                      className="rounded-md bg-black/20 border border-white/5 px-3 py-2 flex items-center gap-3 flex-wrap text-[var(--wireline-typography-overline-size)]"
                     >
                       <span
                         className={cn(

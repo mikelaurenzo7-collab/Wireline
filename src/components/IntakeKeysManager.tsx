@@ -149,7 +149,7 @@ export default function IntakeKeysManager() {
             <h4 className="font-display italic text-2xl text-foreground leading-tight mt-1">
               Capture leads from anywhere
             </h4>
-            <p className="text-[11px] text-muted mt-1">
+            <p className="text-[var(--wireline-typography-overline-size)] text-muted mt-1">
               Issue an API key, point your form / CRM / Zapier at{" "}
               <span className="font-mono text-foreground/80">POST /api/intake/lead</span>, and leads
               land straight in Outbound + Triage. Fires{" "}
@@ -166,7 +166,7 @@ export default function IntakeKeysManager() {
             setShowForm(!showForm);
             setCreateError(null);
           }}
-          className="!py-2.5 !px-5 !text-[11px] !tracking-[0.3em] uppercase"
+          className="!py-2.5 !px-5 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
         >
           {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {showForm ? "Cancel" : "New Key"}
@@ -384,7 +384,7 @@ export default function IntakeKeysManager() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 flex-wrap text-[11px] text-muted">
+                <div className="flex items-center gap-3 flex-wrap text-[var(--wireline-typography-overline-size)] text-muted">
                   <span className="font-mono">{k.key_prefix}…</span>
                   <span>{k.use_count || 0} uses</span>
                   {k.last_used_at && <span>last {formatDateTime(k.last_used_at)}</span>}
@@ -470,7 +470,7 @@ export default function IntakeKeysManager() {
       <div
         className={cn(
           WL_APP_CLASSES.settingsRow,
-          "text-[11px] text-muted font-mono leading-relaxed overflow-x-auto space-y-3 bg-muted/5",
+          "text-[var(--wireline-typography-overline-size)] text-muted font-mono leading-relaxed overflow-x-auto space-y-3 bg-muted/5",
         )}
       >
         <div>

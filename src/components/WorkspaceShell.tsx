@@ -83,12 +83,12 @@ function WorkspaceNavigationContent({
           className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline-none"
           aria-label="Wireline overview"
         >
-          <WirelineMark className="h-6 w-6 shrink-0 text-[22px] leading-none text-primary" />
+          <WirelineMark className="h-6 w-6 shrink-0 text-[var(--wireline-typography-h3-size)] leading-none text-primary" />
           <span className="min-w-0">
-            <span className="block font-[var(--wireline-font-display)] text-[20px] font-semibold leading-5 tracking-[-.03em] text-foreground">
+            <span className="block font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.03em] text-foreground">
               Wireline
             </span>
-            <span className="mt-1 block truncate font-mono text-[9px] font-medium lowercase tracking-[.08em] text-muted-foreground">
+            <span className="mt-1 block truncate font-mono text-[var(--wireline-typography-overline-size)] font-medium lowercase tracking-[.08em] text-muted-foreground">
               personal + business
             </span>
           </span>

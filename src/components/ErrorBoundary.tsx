@@ -81,7 +81,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 variant="editorial"
                 onClick={this.reset}
                 disableAnimations
-                className="!py-3 !px-6 !text-[11px] !tracking-[0.3em]"
+                className="!py-3 !px-6 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em]"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Try Again
               </ShadButton>
@@ -89,7 +89,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 variant="outline"
                 asChild
                 disableAnimations
-                className="!text-[11px] !tracking-[0.3em] uppercase"
+                className="!text-[var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
               >
                 <a href="/" className="flex items-center gap-2">
                   <Home className="w-3.5 h-3.5" /> Back to Dashboard

@@ -213,7 +213,7 @@ export default function PersonalDashboard() {
                   </p>
                   {boundPhoneNumber ? (
                     <div className="p-4 bg-[var(--wireline-color-surface-subtle)] rounded-xl border border-[var(--wireline-color-border-default)] text-center mb-5">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                      <p className="text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                         Your Assistant's Number
                       </p>
                       <p className="font-mono text-lg font-semibold text-foreground tracking-tight wl-numeric">

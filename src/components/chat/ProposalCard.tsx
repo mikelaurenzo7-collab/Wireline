@@ -85,9 +85,11 @@ export default function ProposalCard({
               {stepLabel}
             </p>
           )}
-          <p className="text-[12px] font-medium leading-snug">{title}</p>
+          <p className="text-[var(--wireline-typography-caption-size)] font-medium leading-snug">
+            {title}
+          </p>
           {detail && (
-            <p className="mt-0.5 text-[11px] text-muted whitespace-pre-wrap break-words leading-relaxed">
+            <p className="mt-0.5 text-[var(--wireline-typography-overline-size)] text-muted whitespace-pre-wrap break-words leading-relaxed">
               {detail}
             </p>
           )}
@@ -127,7 +129,7 @@ export default function ProposalCard({
       ) : (
         <>
           {consent && (
-            <label className="mt-2.5 flex items-start gap-2 text-[11px] text-muted leading-snug cursor-pointer">
+            <label className="mt-2.5 flex items-start gap-2 text-[var(--wireline-typography-overline-size)] text-muted leading-snug cursor-pointer">
               <Checkbox
                 checked={consent.checked}
                 onChange={(e) => consent.onChange(e.target.checked)}
@@ -145,7 +147,7 @@ export default function ProposalCard({
               onClick={onApprove}
               disabled={approveDisabled}
               disableAnimations
-              className="touch-press hover:scale-[1.02] h-8 text-[11px] gap-1.5"
+              className="touch-press hover:scale-[1.02] h-8 text-[var(--wireline-typography-overline-size)] gap-1.5"
             >
               {busy ? (
                 <>
@@ -166,7 +168,7 @@ export default function ProposalCard({
               onClick={onDismiss}
               disabled={busy}
               disableAnimations
-              className="touch-press hover:scale-[1.02] h-8 text-[11px] text-muted"
+              className="touch-press hover:scale-[1.02] h-8 text-[var(--wireline-typography-overline-size)] text-muted"
             >
               <X className="w-3 h-3" />
               Dismiss

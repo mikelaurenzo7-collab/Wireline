@@ -102,7 +102,7 @@ export function XPreviewCard() {
       </div>
       <div className="wl-preview-x-body p-3 space-y-2">
         <div className="wl-preview-fade-up" data-visible={visible ? "true" : "false"}>
-          <div className="text-[11px] leading-relaxed wl-preview-x-text">
+          <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed wl-preview-x-text">
             Thanks for calling in — we&apos;ll follow up with your quote by end of day. 🎯
           </div>
           <div className="flex items-center gap-3 mt-2 wl-preview-micro wl-preview-x-meta">
@@ -139,12 +139,12 @@ export function SlackPreviewCard() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold wl-preview-slack-name">
+              <span className="text-[var(--wireline-typography-overline-size)] font-semibold wl-preview-slack-name">
                 Wireline Agent
               </span>
               <span className="wl-preview-micro wl-preview-muted-35">just now</span>
             </div>
-            <div className="text-[11px] leading-relaxed wl-preview-slack-message">
+            <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed wl-preview-slack-message">
               🔥 <strong>Qualified lead:</strong> Jennifer Park, ACME Corp
               <br />
               <span className="wl-preview-slack-quote">&quot;Interested in the Pro plan&quot;</span>
@@ -201,7 +201,7 @@ export function SMSPreviewCard() {
         {/* Bot message */}
         {(phase === "sent" || phase === "replied") && (
           <div className="flex justify-end wl-preview-appear-up">
-            <div className="wl-preview-sms-bubble-out max-w-[80%] px-3 py-2 rounded-md rounded-tr-sm text-[11px] text-white leading-relaxed">
+            <div className="wl-preview-sms-bubble-out max-w-[80%] px-3 py-2 rounded-md rounded-tr-sm text-[var(--wireline-typography-overline-size)] text-white leading-relaxed">
               Thanks for calling! Here's your booking confirmation: trywireline.com/b/4x9z
             </div>
           </div>
@@ -215,7 +215,7 @@ export function SMSPreviewCard() {
         {/* Customer reply */}
         {phase === "replied" && (
           <div className="flex justify-start wl-preview-appear-up">
-            <div className="wl-preview-sms-bubble-in max-w-[75%] px-3 py-2 rounded-md rounded-tl-sm text-[11px] leading-relaxed">
+            <div className="wl-preview-sms-bubble-in max-w-[75%] px-3 py-2 rounded-md rounded-tl-sm text-[var(--wireline-typography-overline-size)] leading-relaxed">
               Got it, thanks! 👍
             </div>
           </div>
@@ -278,7 +278,7 @@ export function CalendarPreviewCard() {
           data-confirmed={confirmed ? "true" : "false"}
         >
           <div
-            className="wl-preview-cal-check w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
+            className="wl-preview-cal-check w-4 h-4 rounded-full text-[var(--wireline-typography-overline-size)] font-bold text-white flex items-center justify-center"
             data-confirmed={confirmed ? "true" : "false"}
           >
             ✓
@@ -570,7 +570,7 @@ export function GeminiPreviewCard() {
               data-visible={showResults ? "true" : "false"}
               data-stagger={String(i)}
             >
-              <div className="wl-preview-gemini-result-icon w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold text-white">
+              <div className="wl-preview-gemini-result-icon w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center text-[var(--wireline-typography-overline-size)] font-bold text-white">
                 G
               </div>
               <div>

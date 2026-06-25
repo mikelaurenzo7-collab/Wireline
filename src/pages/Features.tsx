@@ -71,20 +71,20 @@ export default function Features() {
             <h1 className="mt-4 max-w-[760px] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
               Give every conversation a clear next step.
             </h1>
-            <p className="mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
+            <p className="mt-6 max-w-[650px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
               Wireline handles the original inquiry, sales conversation, appointment workflow, or
               customer follow-up inside the boundaries you set, then returns the outcome to you.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/signup"
-                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 Create your assistant
               </Link>
               <Link
                 to="/showcase"
-                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 <Play size={15} /> Hear a demo
               </Link>
@@ -97,7 +97,7 @@ export default function Features() {
             <article className="wl-stitch-card p-6 sm:p-8">
               <MessageSquareText size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">Calls and texts that stay on task</h2>
-              <p className="mt-3 max-w-md text-[15px] leading-6 text-muted-foreground">
+              <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
                 Wireline handles the actual conversation—not just a summary. It can answer
                 questions, qualify interest, propose availability, and drive the next approved step
                 across phone, email, and text.
@@ -106,7 +106,7 @@ export default function Features() {
                 {CHANNEL_POINTS.map((point) => (
                   <li
                     key={point}
-                    className="flex items-start gap-3 text-[14px] leading-6 text-foreground"
+                    className="flex items-start gap-3 text-[var(--wireline-typography-body-size)] leading-6 text-foreground"
                   >
                     <Check size={16} className="mt-1 shrink-0 text-primary" />
                     <span>{point}</span>
@@ -124,14 +124,16 @@ export default function Features() {
             <article className="wl-stitch-card p-6 sm:p-8">
               <ShieldCheck size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">You decide the boundaries</h2>
-              <p className="mt-3 max-w-md text-[15px] leading-6 text-muted-foreground">
+              <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
                 Give an assistant clear rules before it does anything: what it can promise, what it
                 should collect, and exactly when it should stop and bring you into the conversation.
               </p>
               <dl className="mt-7 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">
                 {BOUNDARIES.map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between gap-4 px-4 py-3.5">
-                    <dt className="text-[14px] text-foreground">{label}</dt>
+                    <dt className="text-[var(--wireline-typography-body-size)] text-foreground">
+                      {label}
+                    </dt>
                     <dd className="wl-overline text-primary">{value}</dd>
                   </div>
                 ))}
@@ -146,7 +148,7 @@ export default function Features() {
             <h2 className="wl-stitch-display mt-5 max-w-2xl">
               Connect a tool only when it makes the outcome better.
             </h2>
-            <p className="mt-3 max-w-2xl text-[15px] leading-6 text-muted-foreground">
+            <p className="mt-3 max-w-2xl text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
               Wireline can work with your calendar, inbox, CRM, and business systems. You choose
               which accounts are connected and which actions an assistant is allowed to take.
             </p>
@@ -162,7 +164,7 @@ export default function Features() {
                 <span className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
                   <Workflow size={22} />
                 </span>
-                <span className="mt-4 text-[15px] font-semibold tracking-[-.01em] text-foreground">
+                <span className="mt-4 text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.01em] text-foreground">
                   Your assistant or agent
                 </span>
                 <span className="wl-overline mt-2">Handles · qualifies · books</span>
@@ -194,7 +196,7 @@ export default function Features() {
                 Start with the job you do not want to carry yourself.
               </h2>
             </div>
-            <p className="max-w-xl text-[15px] leading-7 text-muted-foreground">
+            <p className="max-w-xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
               Each agent is built for its job — with the exact facts, tools, and boundaries it
               needs. It applies them consistently whether the customer calls, texts, or emails.
             </p>
@@ -204,7 +206,9 @@ export default function Features() {
               <article key={title} className="wl-stitch-card p-5">
                 <SlidersHorizontal size={17} className="text-primary" />
                 <h3 className="wl-card-title mt-4">{title}</h3>
-                <p className="mt-2 text-[14px] leading-6 text-muted-foreground">{copy}</p>
+                <p className="mt-2 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
+                  {copy}
+                </p>
               </article>
             ))}
           </div>
@@ -218,13 +222,13 @@ export default function Features() {
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               to="/signup"
-              className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+              className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
             >
               Create your assistant
             </Link>
             <Link
               to="/pricing"
-              className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+              className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
             >
               See plans <ArrowRight size={15} />
             </Link>
@@ -256,10 +260,12 @@ function FlowNode({
         <Icon size={18} />
       </span>
       <div className={compact ? "" : "mt-1"}>
-        <span className="block text-[14px] font-semibold tracking-[-.01em] text-foreground">
+        <span className="block text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.01em] text-foreground">
           {label}
         </span>
-        <span className="mt-0.5 block text-[12px] leading-5 text-muted-foreground">{sub}</span>
+        <span className="mt-0.5 block text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+          {sub}
+        </span>
       </div>
     </div>
   );

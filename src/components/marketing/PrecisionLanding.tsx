@@ -42,7 +42,7 @@ function OperatingModel() {
         </span>
         <div>
           <p className="wl-overline text-primary">Your agent's brief</p>
-          <p className="mt-1 font-[var(--wireline-font-display)] text-[17px] font-semibold tracking-[-.02em]">
+          <p className="mt-1 font-[var(--wireline-font-display)] text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em]">
             Home services after-hours coverage
           </p>
         </div>
@@ -86,10 +86,10 @@ export default function PrecisionLanding() {
               <h1 className="mt-4 font-[var(--wireline-font-display)] text-[clamp(42px,5vw,66px)] font-semibold leading-[1.03] tracking-[-.055em] text-foreground sm:mt-5">
                 Every conversation, handled.
               </h1>
-              <p className="mt-5 text-[14px] font-semibold tracking-[.08em] text-primary sm:text-[15px]">
+              <p className="mt-5 text-[var(--wireline-typography-body-size)] font-semibold tracking-[.08em] text-primary sm:text-[var(--wireline-typography-body-size)]">
                 Voice + Email + Text
               </p>
-              <p className="mt-5 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8 lg:mx-0">
+              <p className="mt-5 max-w-[650px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8 lg:mx-0">
                 Create specialized agents with their own knowledge, tools, voice, and approval
                 rules. Each one handles calls, inboxes, and texts the same way — exactly as you
                 configured it.
@@ -97,18 +97,18 @@ export default function PrecisionLanding() {
               <div className="mt-8 grid gap-3 sm:max-w-none sm:grid-cols-2 lg:max-w-[510px]">
                 <Link
                   to="/signup"
-                  className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                  className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
                 >
                   Create your assistant <ArrowRight size={16} />
                 </Link>
                 <Link
                   to="/showcase"
-                  className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                  className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
                 >
                   <Play size={15} /> Hear a demo
                 </Link>
               </div>
-              <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[12px] font-medium text-muted-foreground lg:justify-start">
+              <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[var(--wireline-typography-caption-size)] font-medium text-muted-foreground lg:justify-start">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-primary" /> You define the boundaries
                 </span>
@@ -143,7 +143,9 @@ export default function PrecisionLanding() {
                 <Icon className="size-5 text-primary" aria-hidden="true" />
                 <p className="wl-overline mt-5 text-primary">{label}</p>
                 <h2 className="wl-section-title mt-2 text-[clamp(22px,4vw,26px)]">{title}</h2>
-                <p className="mt-3 text-[15px] leading-6 text-muted-foreground">{body}</p>
+                <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
+                  {body}
+                </p>
               </article>
             ))}
           </div>
@@ -154,7 +156,7 @@ export default function PrecisionLanding() {
             <h2 className="mx-auto mt-3 max-w-2xl font-[var(--wireline-font-display)] text-[clamp(30px,4vw,44px)] font-semibold leading-[1.08] tracking-[-.045em] text-foreground">
               Build it your way. It works the same across every channel.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[16px] leading-7 text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
               Start with one focused agent — a scheduling specialist, a lead qualifier, or
               after-hours support. Give it the exact knowledge and rules it needs. Expand to more
               specialized agents as you grow.
@@ -162,7 +164,7 @@ export default function PrecisionLanding() {
             <div className="mt-7">
               <Link
                 to="/for/personal"
-                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 Explore how it works <ArrowRight size={15} />
               </Link>

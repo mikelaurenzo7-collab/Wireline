@@ -259,7 +259,7 @@ export default function DeployAgentModal({
                   <h2 className="font-display italic text-2xl text-foreground leading-tight">
                     {template.name}
                   </h2>
-                  <p className="text-[12px] text-foreground/65 leading-relaxed">
+                  <p className="text-[var(--wireline-typography-caption-size)] text-foreground/65 leading-relaxed">
                     {template.description}
                   </p>
                 </div>
@@ -295,7 +295,7 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[15px] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[var(--wireline-typography-body-size)] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
                   <p className="wl-micro-meta">
                     What callers and your team will see. You can change this any time in /agents.
@@ -365,7 +365,7 @@ export default function DeployAgentModal({
                                 disableAnimations
                                 onClick={() => setVoiceId(v.id)}
                                 className={cn(
-                                  "w-full h-auto justify-between rounded-md px-3 py-2.5 text-[12px] border",
+                                  "w-full h-auto justify-between rounded-md px-3 py-2.5 text-[var(--wireline-typography-caption-size)] border",
                                   isSelected
                                     ? "bg-brand/12 border-brand/35 text-foreground"
                                     : "bg-muted/20 border border-border text-foreground/75 hover:bg-muted/30 hover:text-foreground",
@@ -399,7 +399,7 @@ export default function DeployAgentModal({
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[12px] text-foreground/65">
+                  <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[var(--wireline-typography-caption-size)] text-foreground/65">
                     Email assistant — no voice picker. The assistant's writing tone is configured in{" "}
                     <span className="text-foreground/80">/agents → Personality</span> after deploy.
                   </div>
@@ -414,7 +414,7 @@ export default function DeployAgentModal({
                   disableAnimations
                   onClick={() => !deploying && onClose()}
                   disabled={deploying}
-                  className="text-[11px] uppercase tracking-[0.32em]"
+                  className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em]"
                 >
                   Cancel
                 </ShadButton>
@@ -424,7 +424,7 @@ export default function DeployAgentModal({
                   disableAnimations
                   onClick={handleSubmit}
                   disabled={!canSubmit}
-                  className="rounded-md text-[11px] uppercase tracking-[0.32em] disabled:opacity-50"
+                  className="rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] disabled:opacity-50"
                 >
                   {deploying ? (
                     <>
@@ -493,7 +493,9 @@ function GenderTile({
           <Icon className="w-4 h-4" strokeWidth={2.2} />
         </div>
         <div className="min-w-0">
-          <p className="text-[12px] font-semibold tracking-wide">{label}</p>
+          <p className="text-[var(--wireline-typography-caption-size)] font-semibold tracking-wide">
+            {label}
+          </p>
           <p className="wl-micro-meta truncate">{sublabel}</p>
         </div>
       </div>

@@ -36,12 +36,16 @@ export function SectionHeader({
       <div className="flex items-baseline justify-between gap-4">
         <div className="min-w-0">
           <h3
-            className={cn(marketing ? "wl-stitch-headline text-[21px]" : WL_APP_CLASSES.proTitle)}
+            className={cn(
+              marketing
+                ? "wl-stitch-headline text-[var(--wireline-typography-h3-size)]"
+                : WL_APP_CLASSES.proTitle,
+            )}
           >
             {title}
           </h3>
           {description && (
-            <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-muted">
+            <p className="mt-1.5 max-w-prose text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted">
               {description}
             </p>
           )}

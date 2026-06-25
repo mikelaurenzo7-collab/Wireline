@@ -317,7 +317,7 @@ export default function PhoneAgentBlueprint({
         </p>
         {isReplacing && savedStageNames.length > 0 && (
           <p
-            className="mb-3 truncate border-t border-[#deded9] pt-3 text-[11px] font-medium leading-4 text-[#54545b]"
+            className="mb-3 truncate border-t border-[#deded9] pt-3 text-[var(--wireline-typography-overline-size)] font-medium leading-4 text-[#54545b]"
             title={savedStageNames.join(" → ")}
           >
             {savedStageNames.join(" → ")}

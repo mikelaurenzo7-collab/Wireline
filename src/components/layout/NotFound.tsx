@@ -53,7 +53,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           {location.pathname && location.pathname !== "/" && (
             <>
               We couldn't find{" "}
-              <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[12px] font-mono text-foreground/70">
+              <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[var(--wireline-typography-caption-size)] font-mono text-foreground/70">
                 {location.pathname.length > 32
                   ? location.pathname.slice(0, 32) + "…"
                   : location.pathname}
@@ -184,7 +184,9 @@ function NotFoundCard({
       </div>
       <div className="text-left flex-1 min-w-0">
         <p className="wl-label-muted !text-[0.625rem]">{hint}</p>
-        <p className="text-[12px] text-foreground font-medium">{label}</p>
+        <p className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium">
+          {label}
+        </p>
       </div>
       <ChevronRight className="w-4 h-4 text-foreground/65 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
     </Link>

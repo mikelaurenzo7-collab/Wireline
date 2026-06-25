@@ -135,9 +135,11 @@ export function EmptyState({
                     isPrimary && "app-primary-action",
                     isPrimary &&
                       compact &&
-                      "!normal-case !tracking-normal !text-[11px] !font-semibold",
+                      "!normal-case !tracking-normal !text-[var(--wireline-typography-overline-size)] !font-semibold",
                     !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
-                    !isPrimary && compact && "normal-case tracking-normal text-[11px] font-medium",
+                    !isPrimary &&
+                      compact &&
+                      "normal-case tracking-normal text-[var(--wireline-typography-overline-size)] font-medium",
                   )}
                 >
                   {internal ? (
@@ -161,9 +163,11 @@ export function EmptyState({
                   isPrimary && "app-primary-action",
                   isPrimary &&
                     compact &&
-                    "!normal-case !tracking-normal !text-[11px] !font-semibold",
+                    "!normal-case !tracking-normal !text-[var(--wireline-typography-overline-size)] !font-semibold",
                   !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
-                  !isPrimary && compact && "normal-case tracking-normal text-[11px] font-medium",
+                  !isPrimary &&
+                    compact &&
+                    "normal-case tracking-normal text-[var(--wireline-typography-overline-size)] font-medium",
                 )}
               >
                 {action.label}

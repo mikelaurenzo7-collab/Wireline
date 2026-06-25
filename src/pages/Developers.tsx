@@ -92,7 +92,7 @@ export default function Developers() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 border border-brand/20 bg-brand/5 rounded-sm mb-4">
                 <Code2 className="w-3.5 h-3.5 text-brand" />
-                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold">
+                <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] text-brand font-semibold">
                   Core API v2.4
                 </span>
               </div>
@@ -100,9 +100,9 @@ export default function Developers() {
                 Programmatic Assistants
               </h1>
               <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
-                Establish programmatic controls for your Wireline assistants. Our world-class API allows for
-                real-time assistant provisioning, scheduling, custom routing triggers, and automated
-                call-activity retrieval.
+                Establish programmatic controls for your Wireline assistants. Our world-class API
+                allows for real-time assistant provisioning, scheduling, custom routing triggers,
+                and automated call-activity retrieval.
               </p>
             </div>
 
@@ -138,12 +138,12 @@ export default function Developers() {
               </div>
               <p className="text-foreground/75 text-xs sm:text-sm leading-relaxed mb-4">
                 Every API request must include a Bearer token in the{" "}
-                <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[11px] text-brand">
+                <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[var(--wireline-typography-caption-size)] text-brand">
                   Authorization
                 </code>{" "}
                 header. Tokens are created in your dashboard under Settings → API Access.
               </p>
-              <div className="bg-ink p-4 rounded-sm font-mono text-[11px] text-white/90 overflow-x-auto border border-white/10">
+              <div className="bg-ink p-4 rounded-sm font-mono text-[var(--wireline-typography-caption-size)] text-white/90 overflow-x-auto border border-white/10">
                 <code>Authorization: Bearer wl_YOUR_API_KEY</code>
               </div>
             </div>
@@ -159,8 +159,12 @@ export default function Developers() {
                       className="wl-panel border border-ink/[0.08] p-4 bg-card rounded-sm"
                     >
                       <Icon className="w-5 h-5 text-brand mb-3" />
-                      <h3 className="font-display italic text-base text-foreground mb-1">{step.title}</h3>
-                      <p className="text-[11px] text-foreground/70 leading-relaxed">{step.description}</p>
+                      <h3 className="font-display italic text-base text-foreground mb-1">
+                        {step.title}
+                      </h3>
+                      <p className="text-[var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed">
+                        {step.description}
+                      </p>
                     </div>
                   );
                 })}
@@ -175,14 +179,14 @@ export default function Developers() {
                     key={endpoint.path}
                     className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4"
                   >
-                    <code className="text-[11px] font-mono text-brand font-semibold shrink-0 bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-sm">
+                    <code className="text-[var(--wireline-typography-caption-size)] font-mono text-brand font-semibold shrink-0 bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-sm">
                       {endpoint.path}
                     </code>
                     <span className="text-xs text-foreground/75">{endpoint.description}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-center text-[10px] text-foreground/50 mt-4 uppercase tracking-wider font-semibold">
+              <p className="text-center text-[var(--wireline-typography-overline-size)] text-foreground/50 mt-4 uppercase tracking-wider font-semibold">
                 Full endpoint list available in the{" "}
                 <a
                   href={openApiUrl}
@@ -214,19 +218,23 @@ export default function Developers() {
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
               </div>
-              <span className="font-mono text-[10px] text-white/50 tracking-wider">bash — wireline-shell</span>
+              <span className="font-mono text-[var(--wireline-typography-overline-size)] text-white/50 tracking-wider">
+                bash — wireline-shell
+              </span>
             </div>
-            <span className="flex items-center gap-1.5 text-[10px] text-brand font-mono font-semibold">
+            <span className="flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] text-brand font-mono font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
               LIVE CONNECTED
             </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 font-mono text-[11px] space-y-6 z-10 text-white/90">
+          <div className="flex-1 overflow-y-auto p-6 font-mono text-[var(--wireline-typography-caption-size)] space-y-6 z-10 text-white/90">
             <div>
               <div className="flex items-center gap-2 mb-2 text-brand">
                 <Terminal className="w-3.5 h-3.5" />
-                <span className="font-bold text-[10px] uppercase tracking-wider">Request Input</span>
+                <span className="font-bold text-[var(--wireline-typography-overline-size)] uppercase tracking-wider">
+                  Request Input
+                </span>
               </div>
               <div className="bg-black/35 p-4 rounded-md border border-white/5 overflow-x-auto">
                 <pre className="text-white/80 leading-relaxed">{curlCommand}</pre>
@@ -249,7 +257,7 @@ export default function Developers() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-white/55 text-[10px] uppercase tracking-wider font-semibold">
+              <div className="flex items-center justify-between text-white/55 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-semibold">
                 <span>Real-time Activity Logs</span>
                 <span>Real-time</span>
               </div>
@@ -258,7 +266,10 @@ export default function Developers() {
                   let badgeColor = "text-brand";
                   if (log.includes("[WARN]")) badgeColor = "text-yellow-500";
                   return (
-                    <p key={`${log}-${index}`} className="text-white/70 leading-relaxed font-mono text-xs">
+                    <p
+                      key={`${log}-${index}`}
+                      className="text-white/70 leading-relaxed font-mono text-xs"
+                    >
                       <span className={badgeColor}>{log.substring(0, 7)}</span>
                       {log.substring(7)}
                     </p>
@@ -269,7 +280,7 @@ export default function Developers() {
             </div>
           </div>
 
-          <div className="px-4 py-2 bg-black/60 border-t border-white/5 text-[10px] text-white/55 flex justify-between items-center z-10 font-mono">
+          <div className="px-4 py-2 bg-black/60 border-t border-white/5 text-[var(--wireline-typography-overline-size)] text-white/55 flex justify-between items-center z-10 font-mono">
             <div className="flex gap-4">
               <span>PATH: /api/agents</span>
               <span>LATENCY: 14ms</span>

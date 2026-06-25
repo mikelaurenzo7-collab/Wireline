@@ -44,7 +44,9 @@ export default function AgentReadinessStage({
           <span className="font-display text-2xl leading-none text-foreground/90 tabular-nums">
             {score}
           </span>
-          <span className="text-[11px] text-muted/70">/ {total} ready</span>
+          <span className="text-[var(--wireline-typography-overline-size)] text-muted/70">
+            / {total} ready
+          </span>
         </div>
 
         {/* Calm segmented bar — one segment per launch check. */}
@@ -73,7 +75,7 @@ export default function AgentReadinessStage({
         ) : nextStep ? (
           <span className="inline-flex shrink-0 items-center gap-2 rounded-md border border-brand/20 bg-brand/[0.05] px-2.5 py-1">
             <span className="wl-label text-brand">Next</span>
-            <span className="max-w-[220px] truncate text-[12px] text-foreground/85">
+            <span className="max-w-[220px] truncate text-[var(--wireline-typography-caption-size)] text-foreground/85">
               {nextStep.todo}
             </span>
           </span>
@@ -81,14 +83,14 @@ export default function AgentReadinessStage({
       </div>
 
       {!ready ? (
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] leading-relaxed text-muted/75">
+        <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
           <Sparkles className="h-3 w-3 shrink-0 text-brand/60" />
           Ask the Assistant below to handle it
           <ArrowDown className="h-3 w-3 shrink-0 text-muted/50" />
           or fine-tune it yourself in the rail on the right.
         </p>
       ) : isPersonal ? (
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] leading-relaxed text-muted/75">
+        <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
           <Smartphone className="h-3 w-3 shrink-0 text-brand/60" />
           Use it from your phone — tap the widget, ask Siri, or route a live call to your assistant.
         </p>

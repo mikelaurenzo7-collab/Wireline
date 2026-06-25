@@ -88,12 +88,12 @@ export default function LearningMetricsView() {
               <p className="text-sm font-semibold text-foreground mb-2">
                 {agent?.name ?? d.agentId}
               </p>
-              <p className="text-[12px] text-muted mb-3">
+              <p className="text-[var(--wireline-typography-caption-size)] text-muted mb-3">
                 {d.lessonsPending} pending · {d.lessonsApproved} approved
                 {d.outcomeLiftPct != null ? ` · ${d.outcomeLiftPct}% outcome lift` : ""}
               </p>
               {d.topLessons.length > 0 && (
-                <ul className="list-disc pl-4 space-y-1 text-[12px] text-muted">
+                <ul className="list-disc pl-4 space-y-1 text-[var(--wireline-typography-caption-size)] text-muted">
                   {d.topLessons.map((lesson, i) => (
                     <li key={i}>{lesson}</li>
                   ))}

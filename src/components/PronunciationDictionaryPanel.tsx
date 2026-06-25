@@ -201,7 +201,7 @@ export default function PronunciationDictionaryPanel() {
     <div className="h-full overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto">
       <div>
         <h2 className="font-display italic text-2xl text-foreground mb-1">Pronunciation</h2>
-        <p className="text-[12px] text-muted leading-relaxed">
+        <p className="text-[var(--wireline-typography-caption-size)] text-muted leading-relaxed">
           Teach your agents to say industry jargon the way humans say it. "HVAC" reads as "H-V-A-C",
           "ACL" gets spelled out, and you can use IPA phonemes for surgical control of medical or
           legal terms. Active dictionaries apply to every call your agents take.
@@ -211,7 +211,7 @@ export default function PronunciationDictionaryPanel() {
       {!configured && (
         <div className="rounded-md border border-brand/30 bg-brand/5 p-3 flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-brand shrink-0 mt-0.5" />
-          <p className="text-[12px] text-brand/80 leading-relaxed">
+          <p className="text-[var(--wireline-typography-caption-size)] text-brand/80 leading-relaxed">
             Voice playback isn't connected yet. Pronunciation dictionaries will sync to your agents'
             voices once it's set up.
           </p>
@@ -228,7 +228,9 @@ export default function PronunciationDictionaryPanel() {
           className="w-full h-auto rounded-md border-2 border-dashed border-brand/30 bg-brand/5 hover:bg-brand/8 hover:border-brand/50 py-6 flex-col gap-2"
         >
           <BookOpen className="w-5 h-5 text-brand" />
-          <span className="text-[13px] text-brand font-medium">New pronunciation dictionary</span>
+          <span className="text-[var(--wireline-typography-caption-size)] text-brand font-medium">
+            New pronunciation dictionary
+          </span>
         </ShadButton>
       ) : (
         <form
@@ -237,7 +239,7 @@ export default function PronunciationDictionaryPanel() {
         >
           <div>
             <h3 className="font-display italic text-lg text-foreground">New dictionary</h3>
-            <p className="text-[11px] text-muted leading-relaxed mt-1">
+            <p className="text-[var(--wireline-typography-overline-size)] text-muted leading-relaxed mt-1">
               Group rules by vertical, agent persona, or campaign. You can edit rules anytime.
             </p>
           </div>
@@ -255,7 +257,7 @@ export default function PronunciationDictionaryPanel() {
               minLength={1}
               maxLength={80}
               placeholder="e.g. HVAC service terms"
-              className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground outline-none focus:border-brand/40"
+              className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[var(--wireline-typography-caption-size)] text-foreground outline-none focus:border-brand/40"
             />
           </div>
 
@@ -272,7 +274,7 @@ export default function PronunciationDictionaryPanel() {
               variant="editorial"
               disableAnimations
               disabled={creating || newName.trim().length < 1}
-              className="flex-1 rounded-full text-[11px] uppercase tracking-[0.28em] py-2.5"
+              className="flex-1 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] py-2.5"
             >
               {creating ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -291,7 +293,7 @@ export default function PronunciationDictionaryPanel() {
                 setNewEntries([blankEntry()]);
               }}
               disabled={creating}
-              className="rounded-full text-[11px] uppercase tracking-[0.28em] text-muted"
+              className="rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] text-muted"
             >
               Cancel
             </ShadButton>
@@ -324,7 +326,9 @@ export default function PronunciationDictionaryPanel() {
             >
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-foreground truncate">{dict.name}</p>
+                  <p className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground truncate">
+                    {dict.name}
+                  </p>
                   <p className="wl-label-muted/70">
                     {dict.entries.length} {dict.entries.length === 1 ? "rule" : "rules"}
                     {dict.elevenlabsDictionaryId ? " · synced" : " · draft"}
@@ -429,7 +433,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
                 onChange(next);
               }}
               placeholder={entry.kind === "phoneme" ? "ACL" : "HVAC"}
-              className="rounded-md border border-border bg-card px-2.5 py-2 text-[12px] text-foreground outline-none focus:border-brand/40"
+              className="rounded-md border border-border bg-card px-2.5 py-2 text-[var(--wireline-typography-caption-size)] text-foreground outline-none focus:border-brand/40"
             />
             <Input
               type="text"
@@ -441,7 +445,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
                 onChange(next);
               }}
               placeholder={entry.kind === "phoneme" ? "ˈeɪ siː ɛl" : "H-V-A-C"}
-              className="rounded-md border border-border bg-card px-2.5 py-2 text-[12px] text-foreground outline-none focus:border-brand/40"
+              className="rounded-md border border-border bg-card px-2.5 py-2 text-[var(--wireline-typography-caption-size)] text-foreground outline-none focus:border-brand/40"
             />
             <Select
               value={entry.kind}
@@ -459,7 +463,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
             >
               <SelectTrigger
                 aria-label="Entry kind"
-                className="rounded-md border border-border bg-card px-2 py-2 text-[11px] text-foreground h-auto"
+                className="rounded-md border border-border bg-card px-2 py-2 text-[var(--wireline-typography-overline-size)] text-foreground h-auto"
               >
                 <SelectValue />
               </SelectTrigger>

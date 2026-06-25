@@ -121,7 +121,7 @@ export default function BrowserCallWidget({
         disabled={connecting || !vapi}
         aria-label={callActive ? "End conversation" : "Talk to assistant"}
         className={cn(
-          "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
+          "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
           callActive
             ? "border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-status-error)] text-white shadow-[0_1px_3px_rgba(186,26,26,0.12)]"
             : "border-primary bg-primary text-white shadow-[0_1px_3px_rgba(93,63,211,0.12)] hover:border-[color:var(--wireline-color-action-primary-default-hover)] hover:bg-[color:var(--wireline-color-action-primary-default-hover)] hover:text-white",
@@ -172,14 +172,14 @@ export default function BrowserCallWidget({
               );
             })}
           </div>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-wider text-muted-foreground">
             {speakerActive ? "Assistant speaking" : "Listening"}
           </span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-surface-subtle)] px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-destructive">
+        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-surface-subtle)] px-3 py-1 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-destructive">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>

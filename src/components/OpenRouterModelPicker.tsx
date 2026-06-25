@@ -75,7 +75,7 @@ export default function OpenRouterModelPicker({
 
   const selectedLabel = labelFor(value, models);
   const triggerClass = compact
-    ? "inline-flex h-8 max-w-[min(14rem,calc(100vw-8rem))] items-center gap-1.5 rounded-lg border border-border bg-card px-2 text-[10px] font-semibold text-muted-foreground outline-none transition-colors hover:border-foreground/20 focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8 disabled:opacity-50"
+    ? "inline-flex h-8 max-w-[min(14rem,calc(100vw-8rem))] items-center gap-1.5 rounded-lg border border-border bg-card px-2 text-[var(--wireline-typography-overline-size)] font-semibold text-muted-foreground outline-none transition-colors hover:border-foreground/20 focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8 disabled:opacity-50"
     : "inline-flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition-colors hover:border-foreground/20 focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8 disabled:opacity-50";
 
   return (
@@ -138,7 +138,7 @@ export default function OpenRouterModelPicker({
                           {model.description}
                         </span>
                       ) : (
-                        <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                        <span className="block truncate font-mono text-[var(--wireline-typography-overline-size)] text-muted-foreground">
                           {model.id}
                         </span>
                       )}
@@ -163,7 +163,7 @@ export default function OpenRouterModelPicker({
                     />
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{model.label}</span>
-                      <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                      <span className="block truncate font-mono text-[var(--wireline-typography-overline-size)] text-muted-foreground">
                         {model.id}
                       </span>
                     </span>

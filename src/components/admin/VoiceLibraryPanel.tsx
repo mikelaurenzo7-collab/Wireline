@@ -35,7 +35,10 @@ export default function VoiceLibraryPanel() {
     setLoading(true);
     try {
       const response = await authFetch("/api/voices");
-      const body = await response.json().catch(() => null) as { voices?: ClonedVoice[]; configured?: boolean } | null;
+      const body = (await response.json().catch(() => null)) as {
+        voices?: ClonedVoice[];
+        configured?: boolean;
+      } | null;
       if (!response.ok) throw new Error("Voice library is unavailable.");
       setVoices(body?.voices || []);
       setConfigured(Boolean(body?.configured));
@@ -83,8 +86,10 @@ export default function VoiceLibraryPanel() {
   const startClone = async (event: FormEvent) => {
     event.preventDefault();
     if (!cloneFile) return toastError("Audio sample required");
-    if (cloneFile.size > 25 * 1024 * 1024) return toastError("File too large", "Keep samples under 25 MB.");
-    if (!consent) return toastError("Consent required", "Confirm you have the right to use this voice.");
+    if (cloneFile.size > 25 * 1024 * 1024)
+      return toastError("File too large", "Keep samples under 25 MB.");
+    if (!consent)
+      return toastError("Consent required", "Confirm you have the right to use this voice.");
     setCloning(true);
     try {
       const response = await authFetch("/api/voices/clone", {
@@ -97,7 +102,7 @@ export default function VoiceLibraryPanel() {
           consent_given: true,
         }),
       });
-      const body = await response.json().catch(() => null) as { error?: string } | null;
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Clone failed.");
       toastSuccess("Voice ready", "You can select it for any assistant.");
       resetClone();
@@ -110,9 +115,12 @@ export default function VoiceLibraryPanel() {
   };
 
   const deleteClone = async (voice: ClonedVoice) => {
-    if (!confirm(`Delete "${voice.name}"? Assistants using it will return to an automatic voice.`)) return;
+    if (!confirm(`Delete "${voice.name}"? Assistants using it will return to an automatic voice.`))
+      return;
     try {
-      const response = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, { method: "DELETE" });
+      const response = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, {
+        method: "DELETE",
+      });
       if (!response.ok) throw new Error("Delete failed.");
       toastSuccess("Voice deleted");
       await loadVoices();
@@ -128,16 +136,18 @@ export default function VoiceLibraryPanel() {
       <header>
         <p className="wl-label text-brand">Wireline voice</p>
         <h2 className="mt-1 font-display text-2xl font-semibold text-foreground">Voice library</h2>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted">
-          Create a recognizable sound for your assistants. Use only your own voice or a voice you have explicit permission to use.
+        <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted">
+          Create a recognizable sound for your assistants. Use only your own voice or a voice you
+          have explicit permission to use.
         </p>
       </header>
 
       {!configured ? (
         <div className="flex items-start gap-2.5 rounded-md border border-brand/30 bg-brand/5 p-3">
           <AlertTriangle className="mt-0.5 w-4 h-4 shrink-0 text-brand" />
-          <p className="text-[12px] leading-relaxed text-brand/80">
-            Wireline voice creation is not configured for this workspace yet. Ask the workspace owner to finish voice setup, then return here to create voices.
+          <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed text-brand/80">
+            Wireline voice creation is not configured for this workspace yet. Ask the workspace
+            owner to finish voice setup, then return here to create voices.
           </p>
         </div>
       ) : null}
@@ -152,50 +162,147 @@ export default function VoiceLibraryPanel() {
           className="flex h-auto w-full flex-col gap-2 rounded-md border-2 border-dashed border-brand/30 bg-brand/5 py-6 hover:border-brand/50 hover:bg-brand/8 disabled:opacity-40"
         >
           <Mic className="w-5 h-5 text-brand" />
-          <span className="text-[13px] font-medium text-brand">Create a Wireline voice</span>
+          <span className="text-[var(--wireline-typography-caption-size)] font-medium text-brand">
+            Create a Wireline voice
+          </span>
         </ShadButton>
       ) : (
-        <form onSubmit={startClone} className="space-y-4 rounded-md border border-border bg-card p-5">
+        <form
+          onSubmit={startClone}
+          className="space-y-4 rounded-md border border-border bg-card p-5"
+        >
           <div>
             <h3 className="font-display text-lg font-semibold text-foreground">Create a voice</h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted">Upload a clean 30–90 second single-speaker sample. MP3, WAV, M4A, or OGG under 25 MB.</p>
+            <p className="mt-1 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted">
+              Upload a clean 30–90 second single-speaker sample. MP3, WAV, M4A, or OGG under 25 MB.
+            </p>
           </div>
           <label className="block">
             <span className="wl-label text-muted">Voice name</span>
-            <Input value={cloneName} onChange={(event) => setCloneName(event.target.value)} minLength={2} maxLength={80} required placeholder="e.g. Founder voice" className="mt-1.5 w-full rounded-md border border-white/10 bg-card px-3 py-2.5 text-[13px]" />
+            <Input
+              value={cloneName}
+              onChange={(event) => setCloneName(event.target.value)}
+              minLength={2}
+              maxLength={80}
+              required
+              placeholder="e.g. Founder voice"
+              className="mt-1.5 w-full rounded-md border border-white/10 bg-card px-3 py-2.5 text-[var(--wireline-typography-caption-size)]"
+            />
           </label>
           <label className="block">
             <span className="wl-label text-muted">Audio sample</span>
-            <Input type="file" required accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.ogg" onChange={(event) => setCloneFile(event.target.files?.[0] || null)} className="mt-1.5 w-full text-[12px]" />
-            {cloneFile ? <p className="mt-1 wl-micro-meta--muted">{cloneFile.name} · {(cloneFile.size / 1024 / 1024).toFixed(2)} MB</p> : null}
+            <Input
+              type="file"
+              required
+              accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.ogg"
+              onChange={(event) => setCloneFile(event.target.files?.[0] || null)}
+              className="mt-1.5 w-full text-[var(--wireline-typography-caption-size)]"
+            />
+            {cloneFile ? (
+              <p className="mt-1 wl-micro-meta--muted">
+                {cloneFile.name} · {(cloneFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            ) : null}
           </label>
-          <label className="flex cursor-pointer items-start gap-2.5 text-[11px] text-foreground/80">
-            <Checkbox checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-0.5 h-3.5 w-3.5 accent-brand" />
-            <span>I confirm I have permission to use this voice and, if it belongs to another person, I have their explicit consent.</span>
+          <label className="flex cursor-pointer items-start gap-2.5 text-[var(--wireline-typography-overline-size)] text-foreground/80">
+            <Checkbox
+              checked={consent}
+              onChange={(event) => setConsent(event.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5 accent-brand"
+            />
+            <span>
+              I confirm I have permission to use this voice and, if it belongs to another person, I
+              have their explicit consent.
+            </span>
           </label>
           <div className="flex gap-2">
-            <ShadButton type="submit" variant="editorial" disableAnimations disabled={cloning || !cloneFile || !consent || cloneName.trim().length < 2} className="flex-1 rounded-full py-2.5 text-[11px] uppercase tracking-[0.22em]">
-              {cloning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+            <ShadButton
+              type="submit"
+              variant="editorial"
+              disableAnimations
+              disabled={cloning || !cloneFile || !consent || cloneName.trim().length < 2}
+              className="flex-1 rounded-full py-2.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em]"
+            >
+              {cloning ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <UploadCloud className="w-3.5 h-3.5" />
+              )}
               {cloning ? "Creating…" : "Create voice"}
             </ShadButton>
-            <ShadButton type="button" variant="ghost" disableAnimations disabled={cloning} onClick={resetClone} className="rounded-full text-[11px] uppercase tracking-[0.22em] text-muted">Cancel</ShadButton>
+            <ShadButton
+              type="button"
+              variant="ghost"
+              disableAnimations
+              disabled={cloning}
+              onClick={resetClone}
+              className="rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted"
+            >
+              Cancel
+            </ShadButton>
           </div>
         </form>
       )}
 
       <section className="space-y-2">
         <p className="wl-label-muted">Your Wireline voices · {ownedVoices.length}</p>
-        {loading ? <div className="flex items-center gap-2 rounded-md border border-white/8 p-4 text-[12px] text-muted"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div> : null}
-        {!loading && !ownedVoices.length ? <div className="rounded-md border border-dashed border-white/15 p-6 text-center text-[12px] text-muted">No voices created yet.</div> : null}
-        {!loading ? ownedVoices.map((voice) => (
-          <div key={voice.voice_id} className="flex items-center gap-3 rounded-md border border-white/10 bg-card p-3">
-            <ShadButton type="button" variant="outline" size="icon" disableAnimations onClick={() => playPreview(voice)} disabled={!voice.preview_url} className={cn("h-9 w-9 shrink-0 rounded-full", voice.preview_url ? "border-brand/20 bg-brand/10 text-brand hover:bg-brand/20" : "bg-black/5 text-muted/70")} aria-label={`Play preview of ${voice.name}`}>
-              {playingVoiceId === voice.voice_id ? <Pause className="w-4 h-4" /> : <Play className="ml-0.5 w-4 h-4" />}
-            </ShadButton>
-            <div className="min-w-0 flex-1"><p className="truncate text-[13px] font-medium text-foreground">{voice.name}</p><p className="wl-label-muted/70">Wireline voice</p></div>
-            <ShadButton type="button" variant="ghost" size="icon" disableAnimations onClick={() => void deleteClone(voice)} className="h-8 w-8 shrink-0 rounded-md text-muted hover:bg-rose-500/8 hover:text-rose-600" aria-label={`Delete ${voice.name}`}><Trash2 className="w-3.5 h-3.5" /></ShadButton>
+        {loading ? (
+          <div className="flex items-center gap-2 rounded-md border border-white/8 p-4 text-[var(--wireline-typography-caption-size)] text-muted">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
           </div>
-        )) : null}
+        ) : null}
+        {!loading && !ownedVoices.length ? (
+          <div className="rounded-md border border-dashed border-white/15 p-6 text-center text-[var(--wireline-typography-caption-size)] text-muted">
+            No voices created yet.
+          </div>
+        ) : null}
+        {!loading
+          ? ownedVoices.map((voice) => (
+              <div
+                key={voice.voice_id}
+                className="flex items-center gap-3 rounded-md border border-white/10 bg-card p-3"
+              >
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disableAnimations
+                  onClick={() => playPreview(voice)}
+                  disabled={!voice.preview_url}
+                  className={cn(
+                    "h-9 w-9 shrink-0 rounded-full",
+                    voice.preview_url
+                      ? "border-brand/20 bg-brand/10 text-brand hover:bg-brand/20"
+                      : "bg-black/5 text-muted/70",
+                  )}
+                  aria-label={`Play preview of ${voice.name}`}
+                >
+                  {playingVoiceId === voice.voice_id ? (
+                    <Pause className="w-4 h-4" />
+                  ) : (
+                    <Play className="ml-0.5 w-4 h-4" />
+                  )}
+                </ShadButton>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[var(--wireline-typography-caption-size)] font-medium text-foreground">
+                    {voice.name}
+                  </p>
+                  <p className="wl-label-muted/70">Wireline voice</p>
+                </div>
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disableAnimations
+                  onClick={() => void deleteClone(voice)}
+                  className="h-8 w-8 shrink-0 rounded-md text-muted hover:bg-rose-500/8 hover:text-rose-600"
+                  aria-label={`Delete ${voice.name}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </ShadButton>
+              </div>
+            ))
+          : null}
       </section>
     </div>
   );

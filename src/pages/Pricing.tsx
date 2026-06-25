@@ -132,7 +132,7 @@ export default function Pricing() {
             <h1 className="mx-auto mt-4 max-w-[820px] text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
               Build free. Add $5 when you are ready to go live.
             </h1>
-            <p className="mx-auto mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
+            <p className="mx-auto mt-6 max-w-[650px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
               Personal assistants are free to create and test. Add Conversation Balance before live
               work, then add a business plan when you need numbers, routing, and a shared team
               workspace.
@@ -140,13 +140,13 @@ export default function Pricing() {
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
                 to="/signup"
-                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 Create your assistant
               </Link>
               <Link
                 to="/showcase"
-                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 <Play size={15} /> Hear a demo
               </Link>
@@ -166,7 +166,7 @@ export default function Pricing() {
                   <span className="wl-metric-value text-[clamp(2.5rem,6vw,3.5rem)]">$0</span>
                   <span className="wl-overline">/ month</span>
                 </div>
-                <p className="mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
+                <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
                   No personal subscription. Add Conversation Balance only when you are ready to move
                   from testing into live work.
                 </p>
@@ -178,7 +178,7 @@ export default function Pricing() {
                       <span
                         key={amount}
                         className={
-                          "inline-flex min-w-[64px] items-center justify-center rounded-full border px-4 py-2 text-[15px] font-semibold tabular-nums " +
+                          "inline-flex min-w-[64px] items-center justify-center rounded-full border px-4 py-2 text-[var(--wireline-typography-body-size)] font-semibold tabular-nums " +
                           (index === 0
                             ? "border-primary/40 bg-primary/10 text-primary"
                             : "border-border bg-card text-foreground")
@@ -188,7 +188,7 @@ export default function Pricing() {
                       </span>
                     ))}
                   </div>
-                  <p className="mt-3 text-[12px] text-muted-foreground">
+                  <p className="mt-3 text-[var(--wireline-typography-caption-size)] text-muted-foreground">
                     Start at $5. Add more only when it makes sense for you.
                   </p>
                 </div>
@@ -197,7 +197,7 @@ export default function Pricing() {
                   {PERSONAL_FEATURES.map((feature) => (
                     <li
                       key={feature}
-                      className="flex items-start gap-2.5 text-[14px] leading-6 text-foreground"
+                      className="flex items-start gap-2.5 text-[var(--wireline-typography-body-size)] leading-6 text-foreground"
                     >
                       <Check size={16} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
                       <span>{feature}</span>
@@ -208,7 +208,7 @@ export default function Pricing() {
                 <div className="mt-8">
                   <Link
                     to="/signup"
-                    className="marketing-btn-primary w-full justify-center px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[.05em] sm:w-auto"
+                    className="marketing-btn-primary w-full justify-center px-6 py-3.5 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em] sm:w-auto"
                   >
                     Start free <ArrowRight size={14} />
                   </Link>
@@ -223,7 +223,9 @@ export default function Pricing() {
                     </span>
                     <div>
                       <h2 className="wl-card-title">{title}</h2>
-                      <p className="mt-1 text-[13px] leading-6 text-muted-foreground">{body}</p>
+                      <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                        {body}
+                      </p>
                     </div>
                   </article>
                 ))}
@@ -242,7 +244,7 @@ export default function Pricing() {
               <h2 className="mx-auto mt-4 max-w-[680px] text-[clamp(28px,3.6vw,42px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
                 Add the operating system when your team needs it.
               </h2>
-              <p className="mx-auto mt-4 max-w-[600px] text-[15px] leading-7 text-muted-foreground">
+              <p className="mx-auto mt-4 max-w-[600px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
                 Shared inboxes, professional lines, integrations, and routing for teams — with the
                 same direct control over when live work is funded.
               </p>
@@ -265,12 +267,14 @@ export default function Pricing() {
                     <span className="wl-metric-value text-[2rem]">{tier.price}</span>
                     {tier.cadence ? <span className="wl-overline">{tier.cadence}</span> : null}
                   </div>
-                  <p className="mt-3 text-[13px] leading-6 text-muted-foreground">{tier.blurb}</p>
+                  <p className="mt-3 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                    {tier.blurb}
+                  </p>
                   <ul className="mt-5 flex-1 space-y-2.5">
                     {tier.features.map((feature) => (
                       <li
                         key={feature}
-                        className="flex items-start gap-2.5 text-[13px] leading-6 text-foreground"
+                        className="flex items-start gap-2.5 text-[var(--wireline-typography-caption-size)] leading-6 text-foreground"
                       >
                         <Check
                           size={15}
@@ -286,7 +290,7 @@ export default function Pricing() {
                       to={tier.cta.to}
                       className={
                         (tier.featured ? "marketing-btn-primary" : "marketing-btn-secondary") +
-                        " w-full justify-center px-5 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
+                        " w-full justify-center px-5 py-3 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
                       }
                     >
                       {tier.cta.label} <ArrowRight size={14} />
@@ -308,18 +312,20 @@ export default function Pricing() {
               {FAQ.map(([question, answer]) => (
                 <article key={question} className="wl-stitch-card p-5">
                   <h3 className="wl-card-title">{question}</h3>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{answer}</p>
+                  <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                    {answer}
+                  </p>
                 </article>
               ))}
             </div>
             <div className="mt-10 flex flex-col items-center gap-4 text-center">
-              <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
+              <p className="flex items-center gap-2 text-[var(--wireline-typography-caption-size)] text-muted-foreground">
                 <ShieldCheck size={15} className="text-primary" /> Stripe-secured payments · Cancel
                 any time · You stay in control
               </p>
               <Link
                 to="/signup"
-                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
                 Create your assistant <ArrowRight size={14} />
               </Link>

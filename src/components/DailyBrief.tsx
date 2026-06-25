@@ -590,7 +590,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               onClick={sendNow}
               disabled={sending || !gmailConnected || !recipient}
               variant="outline"
-              className="h-10 px-4 border-brand/30 text-brand hover:bg-brand/10 text-[11px] uppercase tracking-[0.25em]"
+              className="h-10 px-4 border-brand/30 text-brand hover:bg-brand/10 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em]"
             >
               {sending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -603,7 +603,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               {feedback && (
                 <span
                   className={cn(
-                    "text-[11px]",
+                    "text-[var(--wireline-typography-overline-size)]",
                     feedback.kind === "ok" ? "text-brand" : "text-rose-500",
                   )}
                 >
@@ -614,7 +614,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onClick={save}
                 disabled={saving}
                 variant="default"
-                className="h-10 px-4 text-[11px] uppercase tracking-[0.25em]"
+                className="h-10 px-4 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em]"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

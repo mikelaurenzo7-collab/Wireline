@@ -39,7 +39,7 @@ export default function CertifiedIntegrationsStrip() {
           <span
             key={row.id}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px]",
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[var(--wireline-typography-overline-size)]",
               row.certified
                 ? "border-brand/25 bg-brand/8 text-foreground"
                 : row.buyer_tier === "beta"

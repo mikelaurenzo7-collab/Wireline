@@ -54,7 +54,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
     <>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:bg-primary focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-primary-foreground"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:bg-primary focus:px-3 focus:py-2 focus:text-[var(--wireline-typography-caption-size)] focus:font-medium focus:text-primary-foreground"
       >
         Skip to content
       </a>
@@ -63,7 +63,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           <div className="flex min-w-0 items-center gap-8">
             <Link
               to={homeTo}
-              className="text-[15px] font-bold tracking-[-.03em] text-primary"
+              className="text-[var(--wireline-typography-body-size)] font-bold tracking-[-.03em] text-primary"
               data-testid="header-logo"
             >
               Wireline
@@ -81,7 +81,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     to={link.to}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "rounded px-3 py-2 text-[14px] font-medium transition-colors",
+                      "rounded px-3 py-2 text-[var(--wireline-typography-body-size)] font-medium transition-colors",
                       isActive
                         ? "bg-muted text-foreground"
                         : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
@@ -98,7 +98,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               <Link
                 to="/studio"
                 data-testid="header-dashboard"
-                className="marketing-btn-primary hidden min-h-9 px-4 text-[13px] font-semibold md:inline-flex"
+                className="marketing-btn-primary hidden min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold md:inline-flex"
               >
                 Open Studio
               </Link>
@@ -107,14 +107,14 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 <Link
                   to="/signin"
                   data-testid="header-signin"
-                  className="hidden min-h-9 items-center px-3 text-[14px] font-semibold text-muted-foreground transition hover:text-foreground md:inline-flex"
+                  className="hidden min-h-9 items-center px-3 text-[var(--wireline-typography-body-size)] font-semibold text-muted-foreground transition hover:text-foreground md:inline-flex"
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/pricing"
                   data-testid="header-cta"
-                  className="marketing-btn-primary hidden min-h-9 px-4 text-[13px] font-semibold md:inline-flex"
+                  className="marketing-btn-primary hidden min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold md:inline-flex"
                 >
                   Start at $9
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -159,7 +159,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     to={link.to}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex min-h-11 items-center rounded px-4 text-[15px] font-medium transition-colors",
+                      "flex min-h-11 items-center rounded px-4 text-[var(--wireline-typography-body-size)] font-medium transition-colors",
                       isActive
                         ? "bg-primary text-primary-foreground"
                         : "text-foreground hover:bg-muted",
@@ -175,7 +175,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               {signedIn && !isAuth ? (
                 <Link
                   to="/studio"
-                  className="marketing-btn-primary flex min-h-11 text-[14px] font-semibold"
+                  className="marketing-btn-primary flex min-h-11 text-[var(--wireline-typography-body-size)] font-semibold"
                   onClick={() => setMenuOpen(false)}
                 >
                   Open Studio <ArrowRight className="h-4 w-4" />
@@ -184,14 +184,14 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     to="/signin"
-                    className="flex min-h-11 items-center justify-center rounded border border-border text-[14px] font-semibold"
+                    className="flex min-h-11 items-center justify-center rounded border border-border text-[var(--wireline-typography-body-size)] font-semibold"
                     onClick={() => setMenuOpen(false)}
                   >
                     Sign in
                   </Link>
                   <Link
                     to="/pricing"
-                    className="marketing-btn-primary flex min-h-11 text-[14px] font-semibold"
+                    className="marketing-btn-primary flex min-h-11 text-[var(--wireline-typography-body-size)] font-semibold"
                     onClick={() => setMenuOpen(false)}
                   >
                     Start at $9

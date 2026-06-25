@@ -124,7 +124,9 @@ export default function ConversationBalanceCard() {
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
         </div>
         <div className="shrink-0 rounded-[var(--radius-lg)] border border-border bg-secondary px-4 py-3 text-right">
-          <p className="wl-overline text-[10px]">Available now</p>
+          <p className="wl-overline text-[var(--wireline-typography-overline-size)]">
+            Available now
+          </p>
           <p className="mt-1 text-3xl font-semibold tracking-[-.04em] tabular-nums text-foreground">
             ${balanceUsd.toFixed(2)}
           </p>
@@ -150,7 +152,9 @@ export default function ConversationBalanceCard() {
             </button>
           ))}
         </div>
-        <p className="mt-3 text-[13px] leading-5 text-muted-foreground">{copy.reassurance}</p>
+        <p className="mt-3 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+          {copy.reassurance}
+        </p>
 
         {error ? (
           <div

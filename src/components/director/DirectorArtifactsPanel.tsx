@@ -109,7 +109,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
                     </p>
                   </div>
                   {/* Format badge */}
-                  <div className="absolute top-1.5 right-1.5 px-1 py-0.5 rounded bg-black/40 backdrop-blur-sm text-[10px] font-mono text-white/80 uppercase font-bold">
+                  <div className="absolute top-1.5 right-1.5 px-1 py-0.5 rounded bg-black/40 backdrop-blur-sm text-[var(--wireline-typography-overline-size)] font-mono text-white/80 uppercase font-bold">
                     {a.mimeType?.split("/")[1]?.replace("+xml", "") || a.artifactType}
                   </div>
                 </div>

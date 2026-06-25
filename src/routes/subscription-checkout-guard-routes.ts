@@ -1,5 +1,4 @@
 import { Router, Response, NextFunction } from "express";
-import { AppError } from "../lib/api-error";
 import { planById } from "../lib/plan-catalog";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";

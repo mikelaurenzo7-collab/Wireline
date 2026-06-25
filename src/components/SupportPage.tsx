@@ -147,7 +147,7 @@ export function SupportPage() {
                       type="button"
                       key={item.value}
                       onClick={() => setIssueType(item.value)}
-                      className={`min-h-11 rounded border px-3 py-2 text-left text-[12px] font-semibold ${issueType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                      className={`min-h-11 rounded border px-3 py-2 text-left text-[var(--wireline-typography-caption-size)] font-semibold ${issueType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
                     >
                       {item.label}
                     </button>

@@ -84,7 +84,7 @@ function ActionRow({ action }: { action: TurnActionItem }) {
           <Icon aria-hidden className={cn("w-3 h-3 shrink-0", failed ? "" : "text-brand/60")} />
           <span
             className={cn(
-              "text-[11px] leading-tight",
+              "text-[var(--wireline-typography-overline-size)] leading-tight",
               running && "font-semibold text-foreground",
               action.status === "done" && "text-foreground/70",
             )}

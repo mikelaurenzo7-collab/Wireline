@@ -31,7 +31,7 @@ export default function AuthShowcasePanel() {
             {AUTH_PORTAL_SHOWCASE.titleAccent}
           </span>
         </h2>
-        <p className="mt-3 text-[14px] leading-relaxed text-foreground/65 max-w-md text-pretty">
+        <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-relaxed text-foreground/65 max-w-md text-pretty">
           {AUTH_PORTAL_SHOWCASE.subtitle}
         </p>
       </div>
@@ -56,7 +56,9 @@ export default function AuthShowcasePanel() {
               </span>
               <div className="min-w-0">
                 <p className="wl-label text-foreground">{feature.label}</p>
-                <p className="text-[12px] text-muted leading-relaxed mt-0.5">{feature.detail}</p>
+                <p className="text-[var(--wireline-typography-caption-size)] text-muted leading-relaxed mt-0.5">
+                  {feature.detail}
+                </p>
               </div>
             </motion.li>
           );

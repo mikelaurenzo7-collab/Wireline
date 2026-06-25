@@ -270,7 +270,7 @@ export default function Cadences() {
           <h3 className="font-display italic text-xl text-foreground leading-none">
             Multi-touch cadences
           </h3>
-          <p className="text-[11px] text-foreground/55 mt-1.5 max-w-xl leading-relaxed">
+          <p className="text-[var(--wireline-typography-overline-size)] text-foreground/55 mt-1.5 max-w-xl leading-relaxed">
             Define a sequence of call → SMS → email steps with delays. Enroll any lead from
             /pipeline or the API. The job-worker ticks each step automatically.
           </p>
@@ -280,7 +280,7 @@ export default function Cadences() {
           variant="editorial"
           disableAnimations
           onClick={() => setShowBuilder(true)}
-          className="touch-press hover:scale-[1.05] rounded-full text-[11px] uppercase tracking-[0.28em]"
+          className="touch-press hover:scale-[1.05] rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
         >
           <Plus className="w-3.5 h-3.5" />
           New sequence
@@ -298,7 +298,7 @@ export default function Cadences() {
           className="py-6"
         >
           <div className="w-full max-w-3xl mt-2 text-left">
-            <p className="text-[11px] uppercase tracking-[0.32em] text-brand mb-3 text-center">
+            <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-brand mb-3 text-center">
               Start from a template
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -311,7 +311,9 @@ export default function Cadences() {
                   onClick={() => loadTemplate(t)}
                   className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group touch-press hover:scale-[1.02]"
                 >
-                  <p className="text-[12px] font-semibold text-foreground mb-1">{t.name}</p>
+                  <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground mb-1">
+                    {t.name}
+                  </p>
                   <p className="wl-micro-meta mb-3">{t.description}</p>
                   <div className="flex items-center gap-1 flex-wrap">
                     {t.steps.map((s, i) => (
@@ -342,7 +344,9 @@ export default function Cadences() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-[13px] font-semibold text-foreground">{c.name}</h4>
+                  <h4 className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground">
+                    {c.name}
+                  </h4>
                   {c.active ? (
                     <span className="wl-label px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
                       Active
@@ -358,7 +362,11 @@ export default function Cadences() {
                     </span>
                   )}
                 </div>
-                {c.description && <p className="text-[11px] text-muted mb-2">{c.description}</p>}
+                {c.description && (
+                  <p className="text-[var(--wireline-typography-overline-size)] text-muted mb-2">
+                    {c.description}
+                  </p>
+                )}
                 <div className="flex items-center gap-1 flex-wrap">
                   {c.steps.map((s, i) => (
                     <span
@@ -441,7 +449,7 @@ export default function Cadences() {
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
-                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-caption-size)] focus:outline-none focus:border-brand/50"
                 />
               </div>
               <div>
@@ -450,7 +458,7 @@ export default function Cadences() {
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
-                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-caption-size)] focus:outline-none focus:border-brand/50"
                 />
               </div>
             </div>
@@ -477,7 +485,7 @@ export default function Cadences() {
                       >
                         <SelectTrigger
                           aria-label="Step type"
-                          className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[11px] h-auto"
+                          className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-overline-size)] h-auto"
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -496,7 +504,7 @@ export default function Cadences() {
                         min={0}
                         value={s.delayHours}
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}
-                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[11px]"
+                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-overline-size)]"
                       />
                       <span className="wl-micro-meta">hours delay</span>
                     </div>
@@ -509,7 +517,7 @@ export default function Cadences() {
                             ? "Hi {{name}}, ..."
                             : "Subject + body — vars: {{name}}, {{email}}"
                         }
-                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[11px]"
+                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[var(--wireline-typography-overline-size)]"
                       />
                     )}
                   </div>
@@ -547,7 +555,7 @@ export default function Cadences() {
                 size="sm"
                 disableAnimations
                 onClick={() => setShowBuilder(false)}
-                className="text-[11px] uppercase tracking-[0.28em] text-muted"
+                className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] text-muted"
               >
                 Cancel
               </ShadButton>
@@ -557,7 +565,7 @@ export default function Cadences() {
                 disableAnimations
                 onClick={save}
                 disabled={saving}
-                className="touch-press hover:scale-[1.05] rounded-md text-[11px] uppercase tracking-[0.28em]"
+                className="touch-press hover:scale-[1.05] rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

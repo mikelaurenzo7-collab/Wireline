@@ -400,7 +400,7 @@ export default function AuditLog() {
                 >
                   <SelectTrigger
                     aria-label="Time range"
-                    className="h-9 w-[140px] rounded-full wl-panel border border-border text-[11px] text-muted bg-transparent"
+                    className="h-9 w-[140px] rounded-full wl-panel border border-border text-[var(--wireline-typography-overline-size)] text-muted bg-transparent"
                   >
                     <SelectValue />
                   </SelectTrigger>
@@ -577,7 +577,7 @@ export default function AuditLog() {
                     placeholder="Search events…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none"
+                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[var(--wireline-typography-overline-size)] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none"
                   />
                 </div>
               }

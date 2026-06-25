@@ -281,7 +281,7 @@ export function AssistantComposer({
                       {m.hint && (
                         <span
                           className={cx(
-                            "block text-[11px]",
+                            "block text-[var(--wireline-typography-overline-size)]",
                             dark ? "text-white/50" : "text-muted-foreground",
                           )}
                         >

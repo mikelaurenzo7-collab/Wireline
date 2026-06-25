@@ -39,7 +39,7 @@ export default function MarketingFooter({
         <div className="grid gap-8 sm:grid-cols-[minmax(0,1.25fr)_auto_auto] sm:items-start sm:gap-12">
           <div className="max-w-sm">
             <p className="wl-overline">Wireline</p>
-            <p className="mt-3 text-[15px] leading-6 text-muted-foreground">
+            <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
               An assistant for your life or an operating line for your business—voice, email, and
               text working from the brief you define for each agent.
             </p>

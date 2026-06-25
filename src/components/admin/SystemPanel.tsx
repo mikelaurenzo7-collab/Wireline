@@ -132,7 +132,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-foreground leading-tight">
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground leading-tight">
                         Stripe Live Mode Active
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -146,7 +146,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-foreground leading-tight">
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground leading-tight">
                         SSL / TLS Domain Encryption
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -160,7 +160,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-foreground leading-tight">
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground leading-tight">
                         E2E Outbound TCPA Safety Gate
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -176,7 +176,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-foreground leading-tight">
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground leading-tight">
                         Transactional support mailbox
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -190,7 +190,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-foreground leading-tight">
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground leading-tight">
                         Voice Synthesizer (ElevenLabs)
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -204,7 +204,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-foreground leading-tight">
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground leading-tight">
                         Obs-Latency Metrics (Vapi)
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -343,7 +343,9 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-foreground">LLM Mesh</p>
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground">
+                        LLM Mesh
+                      </p>
                       <p className="wl-micro-meta--muted truncate">Cognitive Routing Active</p>
                     </div>
                   </div>
@@ -352,7 +354,9 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-foreground">Carrier Bridge</p>
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground">
+                        Carrier Bridge
+                      </p>
                       <p className="wl-micro-meta--muted truncate">Voice + SMS Synchronized</p>
                     </div>
                   </div>
@@ -361,7 +365,9 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-foreground">Data Vault</p>
+                      <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground">
+                        Data Vault
+                      </p>
                       <p className="wl-micro-meta--muted truncate">Postgres RLS Verified</p>
                     </div>
                   </div>

@@ -92,13 +92,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <CtaLink
               href={cfg.primaryCta.href}
-              className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold"
+              className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
             >
               {primaryLabel} <ArrowRight className="h-4 w-4" />
             </CtaLink>
             <CtaLink
               href={cfg.secondaryCta.href}
-              className="marketing-btn-secondary min-h-12 px-6 text-[15px] font-semibold"
+              className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
             >
               <Phone className="h-4 w-4" /> {secondaryLabel}
             </CtaLink>
@@ -118,11 +118,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
 
       <section className="border-y border-border bg-card px-5 py-8 sm:px-8 sm:py-10">
         <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
-          <div className="wl-stitch-stat-box w-fit font-mono text-[13px] text-muted-foreground">
+          <div className="wl-stitch-stat-box w-fit font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
             <span className="wl-stitch-status-dot" aria-hidden />
             <strong className="text-foreground">{cfg.statValue}</strong>
           </div>
-          <p className="max-w-3xl text-[15px] leading-7 text-muted-foreground">{cfg.statLabel}</p>
+          <p className="max-w-3xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+            {cfg.statLabel}
+          </p>
         </div>
       </section>
 

@@ -276,7 +276,7 @@ export default function Integrations() {
       onClick={syncAll}
       disabled={syncing}
       variant="outline"
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel border border-input text-foreground text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50 touch-press"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel border border-input text-foreground text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50 touch-press"
     >
       <RotateCw className={`w-3 h-3 text-brand ${syncing ? "animate-spin" : ""}`} />
       {syncing ? "Syncing…" : OPS_CHANNEL_TOOLBAR.integrations.sync}
@@ -318,7 +318,7 @@ export default function Integrations() {
                       <ShadButton
                         onClick={handleConnectGmail}
                         variant="outline"
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] touch-press"
                       >
                         <Plus className="w-3 h-3" />
                         Gmail
@@ -326,7 +326,7 @@ export default function Integrations() {
                       <ShadButton
                         onClick={handleConnectOutlook}
                         variant="outline"
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] touch-press"
                       >
                         <Plus className="w-3 h-3" />
                         Outlook
@@ -334,7 +334,7 @@ export default function Integrations() {
                       <ShadButton
                         onClick={handleConnectYahoo}
                         variant="outline"
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] touch-press"
                       >
                         <Plus className="w-3 h-3" />
                         Yahoo
@@ -342,7 +342,7 @@ export default function Integrations() {
                       <ShadButton
                         onClick={() => setIcloudOpen(true)}
                         variant="outline"
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] touch-press"
                       >
                         <Plus className="w-3 h-3" />
                         iCloud
@@ -386,7 +386,7 @@ export default function Integrations() {
                           key={task.id}
                           className="rounded-md border border-brand/8 bg-brand/[0.02] px-3 py-2"
                         >
-                          <p className="text-[12px] text-foreground font-medium leading-snug text-pretty">
+                          <p className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium leading-snug text-pretty">
                             {task.callerMoment}
                           </p>
                           <p className="chrome-subtle mt-1 leading-snug text-pretty">
@@ -408,13 +408,13 @@ export default function Integrations() {
                           >
                             <div className="flex items-start gap-2 mb-1.5">
                               <Phone className="w-3 h-3 text-brand shrink-0 mt-0.5" />
-                              <p className="text-[12px] text-foreground font-medium leading-snug text-pretty">
+                              <p className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium leading-snug text-pretty">
                                 {task.callerMoment}
                               </p>
                             </div>
                             <div className="flex items-start gap-2">
                               <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" />
-                              <p className="text-[12px] text-muted leading-relaxed text-pretty">
+                              <p className="text-[var(--wireline-typography-caption-size)] text-muted leading-relaxed text-pretty">
                                 {task.agentAction}
                               </p>
                             </div>

@@ -411,7 +411,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             </div>
                             <Badge
                               variant={outcome.variant}
-                              className="shrink-0 text-[10px] uppercase tracking-[.06em]"
+                              className="shrink-0 text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
                             >
                               {outcome.label}
                             </Badge>
@@ -493,7 +493,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                   </div>
                   <Badge
                     variant={OUTCOME_META[selectedThread.status].variant}
-                    className="text-[10px] uppercase tracking-[.06em]"
+                    className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
                   >
                     {OUTCOME_META[selectedThread.status].label}
                   </Badge>

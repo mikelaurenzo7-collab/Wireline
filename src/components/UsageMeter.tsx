@@ -127,7 +127,7 @@ export default function UsageMeter({
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[11px] font-mono text-foreground/55">
+          <div className="text-[var(--wireline-typography-overline-size)] font-mono text-foreground/55">
             <span className="text-foreground tabular-nums text-base font-bold">
               {used.toLocaleString()}
             </span>
@@ -152,7 +152,7 @@ export default function UsageMeter({
       {isOver && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
-          <div className="text-[11px] leading-relaxed">
+          <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed">
             <span className="text-rose-400 font-semibold wl-label mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
               Overage
             </span>
@@ -173,7 +173,7 @@ export default function UsageMeter({
       )}
 
       {isWarn && !isOver && (
-        <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
+        <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[var(--wireline-typography-overline-size)] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
             Approaching your {included.toLocaleString()}-minute plan — upgrading adds headroom; past
@@ -209,7 +209,7 @@ export default function UsageMeter({
             <span className="text-right leading-tight">
               <span
                 className={cn(
-                  "tabular-nums font-bold text-[15px]",
+                  "tabular-nums font-bold text-[var(--wireline-typography-body-size)]",
                   lowCredit ? "text-amber-500" : "text-foreground",
                 )}
               >

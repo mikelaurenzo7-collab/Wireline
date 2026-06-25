@@ -39,7 +39,7 @@ function AgentContactCard({
             <span
               className={cn(
                 "font-semibold text-foreground truncate",
-                landing ? "text-sm" : "text-[11px]",
+                landing ? "text-sm" : "text-[var(--wireline-typography-overline-size)]",
               )}
             >
               {agent.name}
@@ -69,7 +69,7 @@ function AgentContactCard({
           ) : (
             <a
               href={`tel:${agent.tel}`}
-              className="font-mono text-[11px] tabular-nums text-foreground/90 hover:text-brand hover:underline underline-offset-2"
+              className="font-mono text-[var(--wireline-typography-overline-size)] tabular-nums text-foreground/90 hover:text-brand hover:underline underline-offset-2"
               aria-label={`Call ${agent.name} at ${agent.display}`}
             >
               {agent.display}
@@ -132,7 +132,7 @@ function AgentContactCard({
           </p>
           <a
             href={`tel:${agent.tel}`}
-            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[13px] tabular-nums text-foreground underline-offset-2 hover:text-brand hover:underline"
+            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[var(--wireline-typography-caption-size)] tabular-nums text-foreground underline-offset-2 hover:text-brand hover:underline"
             aria-label={`Call ${agent.name} at ${agent.display}`}
           >
             <span className="select-all">{agent.display}</span>

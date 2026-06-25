@@ -264,7 +264,7 @@ function ProposalCard({
               disableAnimations
               onClick={onApprove}
               disabled={approveDisabled}
-              className="rounded-md text-[11px]"
+              className="rounded-md text-[var(--wireline-typography-overline-size)]"
             >
               {busy ? (
                 <>
@@ -285,7 +285,7 @@ function ProposalCard({
               disableAnimations
               onClick={onDismiss}
               disabled={busy}
-              className="rounded-md text-[11px]"
+              className="rounded-md text-[var(--wireline-typography-overline-size)]"
             >
               <X className="w-3 h-3" />
               Dismiss
@@ -719,7 +719,7 @@ export default function AgentWorkspace({
           </ShadButton>
 
           <div className="min-w-0 text-center">
-            <p className="truncate text-[13px] font-semibold text-foreground leading-tight">
+            <p className="truncate text-[var(--wireline-typography-caption-size)] font-semibold text-foreground leading-tight">
               {agentName}
             </p>
             <p className="flex items-center justify-center gap-1.5 wl-micro-meta--muted leading-tight">
@@ -763,7 +763,7 @@ export default function AgentWorkspace({
                 disableAnimations
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "shrink-0 rounded-md text-[11px] font-medium",
+                  "shrink-0 rounded-md text-[var(--wireline-typography-overline-size)] font-medium",
                   isActive
                     ? "bg-brand/10 text-brand border border-brand/30"
                     : "text-muted hover:text-foreground hover:bg-black/5 border border-transparent",
@@ -805,7 +805,7 @@ export default function AgentWorkspace({
                 <h3 className="font-display italic text-xl text-foreground mb-1.5">
                   Chat with {agentName}
                 </h3>
-                <p className="text-[12px] text-muted leading-relaxed max-w-xs mb-5">
+                <p className="text-[var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xs mb-5">
                   Coach it, give context, ask how calls went, or direct changes in plain language.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2 max-w-sm">
@@ -820,7 +820,7 @@ export default function AgentWorkspace({
                       onClick={() => triggerCommand(p.label)}
                       disabled={isSending}
                       className={cn(
-                        "touch-press group h-auto text-left text-[11px] text-foreground/80 px-3 py-2 gap-2",
+                        "touch-press group h-auto text-left text-[var(--wireline-typography-overline-size)] text-foreground/80 px-3 py-2 gap-2",
                         WL_DIRECTOR_CLASSES.starterChip,
                       )}
                     >
@@ -874,7 +874,9 @@ export default function AgentWorkspace({
                         />
                       )}
 
-                      <p className="text-[14px] leading-relaxed">{m.content}</p>
+                      <p className="text-[var(--wireline-typography-body-size)] leading-relaxed">
+                        {m.content}
+                      </p>
 
                       {/* Proposals */}
                       {m.role === "agent" && m.proposals && (
@@ -998,7 +1000,7 @@ export default function AgentWorkspace({
 
                       {(streamState.phase === "thinking" || streamState.phase === "replying") &&
                         streamState.thinkingText && (
-                          <div className="text-[11px] text-muted/70 leading-relaxed max-h-24 overflow-y-auto mb-2">
+                          <div className="text-[var(--wireline-typography-overline-size)] text-muted/70 leading-relaxed max-h-24 overflow-y-auto mb-2">
                             <p className="whitespace-pre-wrap line-clamp-6">
                               {streamState.thinkingText.slice(-600)}
                             </p>
@@ -1008,7 +1010,7 @@ export default function AgentWorkspace({
                       {streamState.phase === "replying" &&
                         typeof streamState.reply?.reply === "string" &&
                         streamState.reply.reply.trim() && (
-                          <div className="text-[12px] text-foreground/85 leading-relaxed max-h-28 overflow-y-auto border-t border-brand/8 pt-2 mt-1">
+                          <div className="text-[var(--wireline-typography-caption-size)] text-foreground/85 leading-relaxed max-h-28 overflow-y-auto border-t border-brand/8 pt-2 mt-1">
                             <p className="whitespace-pre-wrap line-clamp-8">
                               {streamState.reply.reply.slice(-800)}
                             </p>
@@ -1042,7 +1044,7 @@ export default function AgentWorkspace({
                   </div>
                   <div className="space-y-1">
                     {enabledTools.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground px-2 py-2">
+                      <p className="text-[var(--wireline-typography-overline-size)] text-muted-foreground px-2 py-2">
                         No tools enabled yet. The agent will use its default capabilities.
                       </p>
                     ) : (
@@ -1052,7 +1054,7 @@ export default function AgentWorkspace({
                           className="flex items-center gap-2 px-2 py-2 rounded-md bg-muted/40"
                         >
                           <span className="w-2 h-2 rounded-full bg-brand" />
-                          <span className="text-[12px] text-foreground font-medium capitalize">
+                          <span className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium capitalize">
                             {tool.replace(/_/g, " ")}
                           </span>
                         </div>
@@ -1062,7 +1064,7 @@ export default function AgentWorkspace({
                   <div className="mt-2 pt-2 border-t border-border">
                     <a
                       href="/actions"
-                      className="flex items-center gap-2 px-2 py-2 text-[11px] text-brand hover:text-brand/80 transition-colors"
+                      className="flex items-center gap-2 px-2 py-2 text-[var(--wireline-typography-overline-size)] text-brand hover:text-brand/80 transition-colors"
                     >
                       <ArrowUpRight className="w-3 h-3" />
                       Manage integrations
@@ -1088,7 +1090,7 @@ export default function AgentWorkspace({
                     : `Message ${agentName}…  (${IS_APPLE ? "⌘" : "Ctrl"}+Enter to send)`
                 }
                 disabled={isSending || isUploading}
-                className="w-full resize-none bg-transparent text-[14px] text-foreground dark:text-foreground placeholder:text-muted/50 outline-none px-5 py-4 leading-relaxed"
+                className="w-full resize-none bg-transparent text-[var(--wireline-typography-body-size)] text-foreground dark:text-foreground placeholder:text-muted/50 outline-none px-5 py-4 leading-relaxed"
               />
 
               {/* Bottom bar */}
@@ -1102,7 +1104,7 @@ export default function AgentWorkspace({
                     disableAnimations
                     onClick={() => setToolsOpen(!toolsOpen)}
                     className={cn(
-                      "rounded-md text-[11px] font-medium",
+                      "rounded-md text-[var(--wireline-typography-overline-size)] font-medium",
                       toolsOpen
                         ? "bg-brand/10 text-brand border border-brand/30"
                         : "text-foreground/50 hover:text-brand hover:bg-brand/5 border border-transparent",
@@ -1136,7 +1138,7 @@ export default function AgentWorkspace({
                       onClick={() => setAttachmentsOpen(!attachmentsOpen)}
                       disabled={isUploading || isSending}
                       className={cn(
-                        "rounded-md text-[11px] font-medium",
+                        "rounded-md text-[var(--wireline-typography-overline-size)] font-medium",
                         attachmentsOpen
                           ? "bg-brand/10 text-brand border border-brand/30"
                           : "text-foreground/50 hover:text-brand hover:bg-brand/5 border border-transparent",
@@ -1177,7 +1179,7 @@ export default function AgentWorkspace({
                           >
                             <FileText className="w-4 h-4 text-brand" />
                             <div className="text-left">
-                              <span className="block text-[11px] font-semibold text-foreground">
+                              <span className="block text-[var(--wireline-typography-overline-size)] font-semibold text-foreground">
                                 Document
                               </span>
                               <span className="block wl-micro-meta--muted-foreground">
@@ -1198,7 +1200,7 @@ export default function AgentWorkspace({
                           >
                             <Brain className="w-4 h-4 text-brand" />
                             <div className="text-left">
-                              <span className="block text-[11px] font-semibold text-foreground">
+                              <span className="block text-[var(--wireline-typography-overline-size)] font-semibold text-foreground">
                                 Memory
                               </span>
                               <span className="block wl-micro-meta--muted">
@@ -1219,7 +1221,7 @@ export default function AgentWorkspace({
                           >
                             <GraduationCap className="w-4 h-4 text-brand/70" />
                             <div className="text-left">
-                              <span className="block text-[11px] font-medium text-foreground dark:text-white">
+                              <span className="block text-[var(--wireline-typography-overline-size)] font-medium text-foreground dark:text-white">
                                 Instruction
                               </span>
                               <span className="block wl-micro-meta--muted">
@@ -1240,7 +1242,7 @@ export default function AgentWorkspace({
                   onClick={send}
                   disabled={!input.trim() || isSending || isUploading}
                   aria-label="Send message"
-                  className="rounded-md text-[12px] font-semibold"
+                  className="rounded-md text-[var(--wireline-typography-caption-size)] font-semibold"
                 >
                   {isSending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1280,7 +1282,7 @@ export default function AgentWorkspace({
           <div className="px-4 pt-3">
             <a
               href="/actions"
-              className="inline-flex items-center gap-1.5 text-[11px] text-brand hover:text-brand/80 transition-colors"
+              className="inline-flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] text-brand hover:text-brand/80 transition-colors"
             >
               <ArrowUpRight className="w-3.5 h-3.5" />
               Manage email & calendar connections

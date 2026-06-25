@@ -57,9 +57,12 @@ export default function LaunchReadinessPanel() {
             <Rocket className="w-3.5 h-3.5 text-brand" />
             Launch readiness
           </p>
-          <p className="text-[12px] text-muted leading-relaxed">
+          <p className="text-[var(--wireline-typography-caption-size)] text-muted leading-relaxed">
             Soft gate for campaigns — hard gate {report.hard_gate_enabled ? "enabled" : "off"} (
-            <code className="text-[11px]">LAUNCH_HARD_GATE</code>).
+            <code className="text-[var(--wireline-typography-overline-size)]">
+              LAUNCH_HARD_GATE
+            </code>
+            ).
           </p>
         </div>
         <div className="text-right shrink-0">
@@ -72,7 +75,7 @@ export default function LaunchReadinessPanel() {
 
       <div
         className={cn(
-          "rounded-md border px-3 py-2 flex items-center gap-2 text-[12px]",
+          "rounded-md border px-3 py-2 flex items-center gap-2 text-[var(--wireline-typography-caption-size)]",
           report.campaign_ready
             ? "border-brand/25 bg-brand/8 text-foreground"
             : "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-100",
@@ -92,7 +95,7 @@ export default function LaunchReadinessPanel() {
         {report.capabilities.map((cap) => (
           <li
             key={cap.id}
-            className="rounded-md border border-border px-3 py-2 text-[12px] bg-surface/30"
+            className="rounded-md border border-border px-3 py-2 text-[var(--wireline-typography-caption-size)] bg-surface/30"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-foreground">{cap.label}</span>

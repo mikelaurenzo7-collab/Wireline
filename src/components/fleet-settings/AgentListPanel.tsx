@@ -13,7 +13,7 @@ import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { OPS_CHANNEL_EMPTY, WL_FLEET_CLASSES } from "../../lib/wireline-ops-design";
-import { PRODUCT_POSTURE, PRODUCT_VERSATILITY } from "../../lib/product-copy";
+import { PRODUCT_VERSATILITY } from "../../lib/product-copy";
 import PostureBadge from "../ui/PostureBadge";
 
 interface Props {
@@ -113,9 +113,7 @@ export default function AgentListPanel({
     >
       <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
-          <p className="app-section-title mb-0.5">
-            {PRODUCT_VERSATILITY.eyebrow}
-          </p>
+          <p className="app-section-title mb-0.5">{PRODUCT_VERSATILITY.eyebrow}</p>
           <h2 className="font-display italic text-2xl text-foreground leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
             {isPersonal ? "Your personal assistant" : "Personal assistants & business agents"}
@@ -203,7 +201,7 @@ export default function AgentListPanel({
                       <PostureBadge
                         isBusiness={Boolean(agent.is_business_agent)}
                         compact
-                        className="text-[9px]"
+                        className="text-[var(--wireline-typography-overline-size)]"
                       />
                       <RoleBadge role={agent.role} size="xs" />
                       <span className="wl-label tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-card-warm/80 border border-white/8 text-foreground/50 leading-none">

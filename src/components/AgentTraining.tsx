@@ -980,7 +980,7 @@ export default function AgentTraining({
                       onClick={startTestCall}
                       disabled={simConnecting}
                       className={cn(
-                        "w-full h-auto rounded-full text-[11px] uppercase tracking-[0.3em] py-2.5",
+                        "w-full h-auto rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] py-2.5",
                         simConnected &&
                           "bg-rose-500/15 border border-rose-500/40 text-rose-500 hover:bg-rose-500/25 shadow-none",
                       )}

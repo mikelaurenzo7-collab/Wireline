@@ -149,7 +149,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 <span className="ml-1 text-caption font-sans not-italic">/yr recovered</span>
               </p>
             </div>
-            <div className="shrink-0 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[11px] font-semibold wl-text-success">
+            <div className="shrink-0 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[var(--wireline-typography-overline-size)] font-semibold wl-text-success">
               {results.paybackDays}d payback
             </div>
           </div>
@@ -180,19 +180,19 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           <span className="hero-accent-line bg-brand" />
           <h2
             id="roi-heading"
-            className="text-[10px] uppercase tracking-[0.5em] text-brand font-semibold"
+            className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.5em] text-brand font-semibold"
           >
             <Calculator className="inline w-3 h-3 mr-1 -mt-0.5" strokeWidth={2} />
             Your numbers, our math
           </h2>
         </div>
-        <p className="font-display italic text-[20px] sm:text-2xl leading-tight text-foreground mb-4">
+        <p className="font-display italic text-[var(--wireline-typography-h3-size)] sm:text-2xl leading-tight text-foreground mb-4">
           See what Wireline pays back on day one.
         </p>
 
         {/* Industry preset row */}
         <div className="flex flex-wrap gap-1.5 mb-4">
-          <span className="text-[8.5px] uppercase tracking-[0.25em] text-muted/70 mr-1 leading-none self-center">
+          <span className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] text-muted/70 mr-1 leading-none self-center">
             Pick yours →
           </span>
           {PRESETS.map((p) => {
@@ -206,7 +206,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 size="sm"
                 onClick={() => applyPreset(p.id)}
                 className={
-                  "text-[10px] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full " +
+                  "text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full " +
                   (active
                     ? "bg-brand text-paper border-brand"
                     : "bg-card text-muted/75 border-white/10 hover:border-brand/30 hover:text-foreground")
@@ -277,14 +277,14 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               </p>
               <p className="font-display italic text-3xl leading-none text-foreground">
                 {fmtUsd(Math.max(0, results.netAnnual))}
-                <span className="text-[10px] text-muted/70 ml-2 tracking-[0.2em] uppercase font-sans not-italic">
+                <span className="text-[var(--wireline-typography-overline-size)] text-muted/70 ml-2 tracking-[0.2em] uppercase font-sans not-italic">
                   / yr
                 </span>
               </p>
             </div>
             <div className="flex items-center justify-between gap-3 mt-auto">
               <div>
-                <p className="text-[8.5px] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
+                <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
                   Payback in
                 </p>
                 <p className="font-display italic text-xl leading-none text-brand">
@@ -295,7 +295,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               </div>
               <a
                 href="/signup"
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-brand text-paper text-[10px] uppercase tracking-[0.25em] font-semibold hover:bg-brand-deep hover:-translate-y-px transition-all shadow-[0_6px_18px_-8px_rgba(107,43,153,0.5)]"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-brand text-paper text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] font-semibold hover:bg-brand-deep hover:-translate-y-px transition-all shadow-[0_6px_18px_-8px_rgba(107,43,153,0.5)]"
                 data-testid="roi-cta-start"
               >
                 Start free trial
@@ -305,7 +305,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         </div>
 
         {/* Honest footer */}
-        <p className="mt-3 text-[8.5px] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
+        <p className="mt-3 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
           Assumes Wireline recovers 82% of missed calls (the rest were wrong-numbers or
           window-shoppers). Labor saved uses $22/hr (US BLS 2025 admin-assistant median). Wireline
           Account Holder tier billed at $59/mo. Switch tiers anytime.
@@ -337,11 +337,13 @@ function SliderRow({
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-1.5">
-        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-muted/75 font-medium">
+        <span className="flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/75 font-medium">
           <span className="text-brand">{icon}</span>
           {label}
         </span>
-        <span className="text-[12px] tabular-nums font-semibold text-foreground">{suffix}</span>
+        <span className="text-[var(--wireline-typography-caption-size)] tabular-nums font-semibold text-foreground">
+          {suffix}
+        </span>
       </div>
       <Slider
         min={min}

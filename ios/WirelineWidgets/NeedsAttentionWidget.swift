@@ -103,7 +103,7 @@ private struct NeedsAttentionWidgetView: View {
                     }
                     Spacer()
                     Text("\(count)")
-                        .font(Font.system(size: 48, design: .serif).weight(.bold))
+                        .font(Brand.displayLarge)
                         .foregroundStyle(count == 0 ? WidgetColors.text2 : WidgetColors.accent)
                     Text(count == 1 ? "needs follow-up" : "need follow-up")
                         .font(.caption.weight(.medium))

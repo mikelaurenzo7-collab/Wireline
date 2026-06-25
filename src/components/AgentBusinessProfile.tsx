@@ -308,7 +308,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             disableAnimations
             onClick={() => setField("is_business_agent", false)}
             className={cn(
-              "h-7 px-3.5 rounded-md flex items-center gap-1.5 text-[10.5px] font-semibold transition-all touch-press",
+              "h-7 px-3.5 rounded-md flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] font-semibold transition-all touch-press",
               !isBusiness
                 ? "bg-[var(--wireline-color-action-primary-container)] text-[var(--wireline-color-text-primary)] border border-[var(--wireline-color-border-default)]/50 shadow-sm"
                 : "text-[var(--wireline-color-text-secondary)] hover:bg-[var(--wireline-color-surface-subtle)]",
@@ -323,7 +323,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             disableAnimations
             onClick={() => setField("is_business_agent", true)}
             className={cn(
-              "h-7 px-3.5 rounded-md flex items-center gap-1.5 text-[10.5px] font-semibold transition-all touch-press",
+              "h-7 px-3.5 rounded-md flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] font-semibold transition-all touch-press",
               isBusiness
                 ? "bg-[var(--wireline-color-action-primary-container)] text-[var(--wireline-color-text-primary)] border border-[var(--wireline-color-border-default)]/50 shadow-sm"
                 : "text-[var(--wireline-color-text-secondary)] hover:bg-[var(--wireline-color-surface-subtle)]",
@@ -705,13 +705,13 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   <p className="text-[var(--wireline-typography-body-size)] font-semibold text-foreground leading-tight">
                     Warm-transfer the live caller
                   </p>
-                  <p className="text-[10.5px] text-foreground/55 leading-relaxed mt-0.5">
+                  <p className="text-[var(--wireline-typography-overline-size)] text-foreground/55 leading-relaxed mt-0.5">
                     {value.escalation_phone
                       ? "When this assistant escalates, the live call transfers to the phone above instead of just sending an alert. The assistant will say a brief handoff line before transferring."
                       : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
                   </p>
                   {value.escalation_handoff_enabled && value.escalation_phone && (
-                    <p className="mt-1.5 text-[9.5px] uppercase tracking-[0.22em] text-brand font-semibold">
+                    <p className="mt-1.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-brand font-semibold">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand mr-1 align-middle" />
                       Live transfer enabled
                     </p>

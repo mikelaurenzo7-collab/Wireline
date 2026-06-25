@@ -70,7 +70,7 @@ export function PersonaCloneForm({
               disableAnimations
               variant="outline"
               onClick={() => setSamples((arr) => [...arr, ""])}
-              className="w-full py-2 rounded-md border-dashed text-[11px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
+              className="w-full py-2 rounded-md border-dashed text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
             >
               <Plus className="w-3.5 h-3.5" /> Add Sample
             </ShadButton>

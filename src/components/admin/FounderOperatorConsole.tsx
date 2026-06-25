@@ -62,7 +62,7 @@ export default function FounderAccountHolderConsole() {
           <ShieldCheck className="w-3.5 h-3.5 text-brand" />
           Platform · Account Holder
         </p>
-        <p className="text-[12px] text-muted/80 max-w-2xl leading-relaxed mb-4">
+        <p className="text-[var(--wireline-typography-caption-size)] text-muted/80 max-w-2xl leading-relaxed mb-4">
           Internal health, integration env matrix, and billing simulators — not shown to customer
           accounts.
         </p>

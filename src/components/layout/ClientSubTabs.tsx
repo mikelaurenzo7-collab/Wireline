@@ -114,7 +114,7 @@ export default function ClientSubTabs({
                 "wl-label",
                 density === "compact"
                   ? "min-h-7 px-1.5 py-0.5 tracking-[0.06em]"
-                  : "min-h-9 sm:min-h-10 gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 sm:text-[11px] tracking-[0.08em]",
+                  : "min-h-9 sm:min-h-10 gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 sm:text-[var(--wireline-typography-overline-size)] tracking-[0.08em]",
                 active ? "app-tab-active" : "text-muted hover:text-foreground hover:bg-black/4",
               )}
             >

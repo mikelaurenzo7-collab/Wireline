@@ -106,7 +106,7 @@ export default function CallbacksList({
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-foreground font-medium truncate">
+                  <span className="text-[var(--wireline-typography-overline-size)] text-foreground font-medium truncate">
                     {cb.customer_name || cb.customer_number}
                   </span>
                   <span

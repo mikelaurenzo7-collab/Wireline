@@ -121,7 +121,7 @@ export function OwnerBillingSimulator({
             <ServerCog className="w-3.5 h-3.5 text-brand" />
             <h4 className="font-display italic text-base text-foreground">Developer terminal</h4>
           </div>
-          <div className="space-y-2 text-[11px] font-mono">
+          <div className="space-y-2 text-[var(--wireline-typography-overline-size)] font-mono">
             <div className="flex items-center justify-between py-1 border-b border-white/5">
               <span className="wl-label text-foreground/55">Core</span>
               <span className="text-foreground">v2.0.4</span>

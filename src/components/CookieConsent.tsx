@@ -93,7 +93,7 @@ export default function CookieConsent() {
             </div>
 
             {/* Copy */}
-            <p className="text-[12px] leading-relaxed flex-1 min-w-0 text-foreground/80">
+            <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed flex-1 min-w-0 text-foreground/80">
               Essential cookies only — no ad or cross-site tracking.{" "}
               <Link
                 to="/privacy"

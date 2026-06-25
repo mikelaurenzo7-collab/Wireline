@@ -17,7 +17,7 @@ export default function PostureBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em]",
+        "inline-flex items-center gap-1 rounded-full border border-border px-2 py-1 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em]",
         isBusiness ? "bg-accent text-primary" : "bg-secondary text-foreground",
         className,
       )}

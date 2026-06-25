@@ -177,7 +177,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                     aria-expanded={userMenuOpen}
                     title={user.email}
                   >
-                    <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] wl-avatar-cream">
+                    <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[var(--wireline-typography-overline-size)] wl-avatar-cream">
                       {user.email?.slice(0, 1).toUpperCase() ?? "?"}
                     </div>
                   </button>
@@ -207,7 +207,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                     <div className="relative px-4 py-3.5 border-b border-white/8 overflow-hidden text-left">
                       <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.04] to-transparent pointer-events-none" />
                       <p className="wl-label-muted mb-1">Signed in as</p>
-                      <p className="text-[12px] font-semibold text-foreground truncate relative z-10">
+                      <p className="text-[var(--wireline-typography-caption-size)] font-semibold text-foreground truncate relative z-10">
                         {user.email || "—"}
                       </p>
                     </div>
@@ -216,7 +216,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/admin?tab=subscription"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[var(--wireline-typography-caption-size)] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <CreditCard className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -225,7 +225,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/admin"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[var(--wireline-typography-caption-size)] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <Settings className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -234,7 +234,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/actions"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[var(--wireline-typography-caption-size)] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <PlugZap className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -243,7 +243,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/help"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[var(--wireline-typography-caption-size)] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <LifeBuoy className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -254,7 +254,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                         <Link
                           to="/founder"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
+                          className="flex items-center gap-2.5 px-4 py-2 text-[var(--wireline-typography-caption-size)] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                           role="menuitem"
                         >
                           <Crown className="w-3.5 h-3.5 text-brand/50 group-hover:text-brand transition-colors" />
@@ -271,7 +271,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                           setUserMenuOpen(false);
                           signOut();
                         }}
-                        className="w-full justify-start gap-2.5 px-4 py-2 h-auto text-[12px] font-medium text-rose-600 hover:bg-rose-500/[0.06] hover:text-rose-600"
+                        className="w-full justify-start gap-2.5 px-4 py-2 h-auto text-[var(--wireline-typography-caption-size)] font-medium text-rose-600 hover:bg-rose-500/[0.06] hover:text-rose-600"
                         role="menuitem"
                       >
                         <LogOut className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

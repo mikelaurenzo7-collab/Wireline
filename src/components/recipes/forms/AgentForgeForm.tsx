@@ -114,7 +114,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
             </div>
             <p className="text-foreground/80 text-sm italic">"{design.first_message}"</p>
             {design.suggested_voice_tone && (
-              <p className="text-[11px] uppercase tracking-[0.3em] text-muted">
+              <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
                 Voice tone · {design.suggested_voice_tone}
               </p>
             )}
@@ -163,7 +163,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
               variant="editorial"
               onClick={create}
               disabled={creating}
-              className="w-full !py-4 !text-[12px] !tracking-[0.32em]"
+              className="w-full !py-4 !text-[var(--wireline-typography-caption-size)] !tracking-[0.32em]"
             >
               {creating ? (
                 <>

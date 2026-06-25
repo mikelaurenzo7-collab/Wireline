@@ -132,10 +132,12 @@ export default function WorkspaceSidebar({
             </div>
             {!isCollapsed && (
               <div>
-                <div className="font-semibold text-[17px] tracking-[-0.3px] text-on-surface">
+                <div className="font-semibold text-[var(--wireline-typography-body-size)] tracking-[-0.3px] text-on-surface">
                   Wireline
                 </div>
-                <div className="text-[10px] text-on-surface-variant -mt-0.5">{planName}</div>
+                <div className="text-[var(--wireline-typography-overline-size)] text-on-surface-variant -mt-0.5">
+                  {planName}
+                </div>
               </div>
             )}
           </Link>
@@ -158,7 +160,7 @@ export default function WorkspaceSidebar({
           {Object.entries(grouped).map(([section, sectionItems], idx) => (
             <div key={section} className={cn(idx > 0 && "mt-5")}>
               {!isCollapsed && (
-                <div className="px-3 mb-1.5 text-[10px] font-medium tracking-[0.08em] text-on-surface-variant/70 uppercase">
+                <div className="px-3 mb-1.5 text-[var(--wireline-typography-overline-size)] font-medium tracking-[0.08em] text-on-surface-variant/70 uppercase">
                   {section}
                 </div>
               )}
@@ -194,13 +196,13 @@ export default function WorkspaceSidebar({
                         strokeWidth={active ? 2.5 : 2}
                       />
                       {!isCollapsed && (
-                        <span className="truncate text-[13.5px] tracking-[-0.1px]">
+                        <span className="truncate text-[var(--wireline-typography-caption-size)] tracking-[-0.1px]">
                           {item.label}
                         </span>
                       )}
 
                       {!isCollapsed && badge > 0 && (
-                        <span className="ml-auto min-w-[18px] h-[17px] px-1.5 rounded-full bg-error/10 text-error text-[10px] font-mono flex items-center justify-center">
+                        <span className="ml-auto min-w-[18px] h-[17px] px-1.5 rounded-full bg-error/10 text-error text-[var(--wireline-typography-overline-size)] font-mono flex items-center justify-center">
                           {badge > 99 ? "99+" : badge}
                         </span>
                       )}

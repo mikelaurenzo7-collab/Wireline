@@ -18,7 +18,7 @@ export default function AppShell() {
             <WirelineMark className="size-6" />
           </span>
           <div>
-            <p className="font-[var(--wireline-font-display)] text-[17px] font-semibold tracking-[-.02em] text-foreground">
+            <p className="font-[var(--wireline-font-display)] text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em] text-foreground">
               Opening Wireline
             </p>
             <p className="mt-1 text-sm text-muted-foreground">Preparing your workspace…</p>

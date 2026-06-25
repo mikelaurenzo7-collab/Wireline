@@ -49,7 +49,11 @@ const WORKSPACE_MOVES = [
 
 function RosterLoading() {
   return (
-    <div className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-busy="true" aria-label="Loading roster">
+    <div
+      className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+      aria-busy="true"
+      aria-label="Loading roster"
+    >
       {Array.from({ length: 4 }, (_, index) => (
         <div key={index} className="studio-card min-h-[190px] p-4">
           <div className="flex items-start justify-between gap-3">
@@ -193,7 +197,9 @@ export default function OverviewPage() {
             </div>
             {hasAgents ? (
               <Button asChild variant="link" className="h-auto px-0 text-sm">
-                <Link to="/agents">View assistants <ArrowRight aria-hidden="true" className="size-4" /></Link>
+                <Link to="/agents">
+                  View assistants <ArrowRight aria-hidden="true" className="size-4" />
+                </Link>
               </Button>
             ) : null}
           </div>
@@ -205,7 +211,9 @@ export default function OverviewPage() {
                 className="studio-card wl-card-action group flex min-h-[198px] flex-col p-5 text-left"
               >
                 <Icon aria-hidden="true" className="size-5 text-primary" />
-                <h3 className="wl-card-title mt-5 text-[17px]">{title}</h3>
+                <h3 className="wl-card-title mt-5 text-[var(--wireline-typography-body-size)]">
+                  {title}
+                </h3>
                 <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{body}</p>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                   {label} <ArrowRight aria-hidden="true" size={15} />
@@ -224,7 +232,8 @@ export default function OverviewPage() {
               </h2>
               {!hasAgents ? (
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  {PRODUCT_VERSATILITY.tagline} Start personal, then add business agents when the work needs a professional line.
+                  {PRODUCT_VERSATILITY.tagline} Start personal, then add business agents when the
+                  work needs a professional line.
                 </p>
               ) : null}
             </div>
@@ -250,12 +259,16 @@ export default function OverviewPage() {
                       <Bot aria-hidden="true" size={18} />
                     </span>
                     <div className="flex flex-col items-end gap-1.5">
-                      <span className="wl-overline text-[10px]">{agent.channel || "voice"}</span>
+                      <span className="wl-overline text-[var(--wireline-typography-overline-size)]">
+                        {agent.channel || "voice"}
+                      </span>
                       <PostureBadge isBusiness={Boolean(agent.is_business_agent)} compact />
                     </div>
                   </div>
                   <h3 className="wl-card-title mt-5">{agent.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{formatAgentRoleLabel(agent.role)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {formatAgentRoleLabel(agent.role)}
+                  </p>
                   <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                     Open Studio <ArrowRight aria-hidden="true" size={15} />
                   </span>
@@ -266,7 +279,8 @@ export default function OverviewPage() {
             <div className="flex min-h-[190px] flex-col items-start justify-center gap-3 py-8">
               <Sparkles aria-hidden="true" className="size-6 text-primary" />
               <p className="max-w-lg text-sm leading-6 text-muted-foreground">
-                Choose the first job, add what the assistant needs to know, and only then connect the actions it should be allowed to take.
+                Choose the first job, add what the assistant needs to know, and only then connect
+                the actions it should be allowed to take.
               </p>
             </div>
           )}

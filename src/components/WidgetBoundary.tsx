@@ -63,7 +63,9 @@ export default class WidgetBoundary extends Component<Props, State> {
         <div className="space-y-0.5">
           <p className="wl-label text-destructive">Widget unavailable</p>
           {this.props.label && (
-            <p className="text-[12px] text-foreground font-medium">{this.props.label}</p>
+            <p className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium">
+              {this.props.label}
+            </p>
           )}
           <p className="text-caption max-w-[220px] mt-1">
             The rest of the page is fine. We&apos;ve logged the error.

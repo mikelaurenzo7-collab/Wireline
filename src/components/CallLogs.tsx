@@ -141,7 +141,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[11px] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[var(--wireline-typography-overline-size)] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -685,7 +685,7 @@ function CallDetail({
                     <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                       <MessageSquare className="w-3 h-3" /> AI coaching note
                     </div>
-                    <p className="text-[12px] text-foreground/80 leading-relaxed">
+                    <p className="text-[var(--wireline-typography-caption-size)] text-foreground/80 leading-relaxed">
                       {call.coaching_note}
                     </p>
                   </div>
@@ -730,7 +730,7 @@ function CallDetail({
                       })}
                     </div>
                     {qaBreakdown.notes && (
-                      <p className="text-[11px] text-foreground/65 leading-relaxed border-t border-border pt-2 mt-2">
+                      <p className="text-[var(--wireline-typography-overline-size)] text-foreground/65 leading-relaxed border-t border-border pt-2 mt-2">
                         <Sparkles className="w-3 h-3 inline mr-1 text-brand" />
                         {qaBreakdown.notes}
                       </p>
@@ -816,7 +816,7 @@ function CallDetail({
                       <div
                         key={i}
                         className={cn(
-                          "p-3 rounded-md border text-[12px] leading-snug max-w-[85%]",
+                          "p-3 rounded-md border text-[var(--wireline-typography-caption-size)] leading-snug max-w-[85%]",
                           isAI
                             ? "bg-muted/30 border-border text-foreground mr-auto"
                             : isUser

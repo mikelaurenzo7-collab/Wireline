@@ -1077,7 +1077,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       <CheckCircle2 className="w-6 h-6 text-rose-500" />
                     </div>
                     <h4 className="text-sm font-medium text-foreground mb-1">Terminal Stage</h4>
-                    <p className="text-[11px] text-foreground/55 max-w-md mx-auto">
+                    <p className="text-[var(--wireline-typography-overline-size)] text-foreground/55 max-w-md mx-auto">
                       The call will gracefully end when the instructions in this stage have been
                       fulfilled. No transition condition is required.
                     </p>

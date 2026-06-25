@@ -160,7 +160,11 @@ function OAuthSignInButtons({
     {
       id: "google",
       label: "Gmail",
-      mark: <span className="text-[18px] font-semibold text-[#4285F4]">G</span>,
+      mark: (
+        <span className="text-[var(--wireline-typography-h3-size)] font-semibold text-[#4285F4]">
+          G
+        </span>
+      ),
     },
     {
       id: "microsoft",
@@ -177,7 +181,11 @@ function OAuthSignInButtons({
     {
       id: "yahoo",
       label: "Yahoo",
-      mark: <span className="text-[18px] font-semibold text-brand">Y</span>,
+      mark: (
+        <span className="text-[var(--wireline-typography-h3-size)] font-semibold text-brand">
+          Y
+        </span>
+      ),
     },
   ];
 

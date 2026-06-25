@@ -352,7 +352,7 @@ export default function CommandBar() {
                   onKeyDown={onSearchKeyDown}
                 />
               </div>
-              <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-muted-foreground sm:inline-flex">
+              <kbd className="hidden rounded-[var(--radius-sm)] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[var(--wireline-typography-overline-size)] font-semibold tracking-[0.08em] text-muted-foreground sm:inline-flex">
                 ESC
               </kbd>
               <Button
@@ -384,7 +384,7 @@ export default function CommandBar() {
                       if (!commands.length) return null;
                       return (
                         <section key={category} className="mb-3 last:mb-0">
-                          <p className="px-2 pb-1 pt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                          <p className="px-2 pb-1 pt-1 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                             {category}
                           </p>
                           <div className="space-y-1">
@@ -460,12 +460,16 @@ export default function CommandBar() {
 
             <footer className="flex items-center justify-between gap-3 border-t border-border bg-secondary/40 px-4 py-2.5 sm:px-5">
               <p className="text-xs text-muted-foreground">
-                <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↑↓</span>{" "}
+                <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold tracking-[0.08em]">
+                  ↑↓
+                </span>{" "}
                 Navigate ·{" "}
-                <span className="font-mono text-[10px] font-semibold tracking-[0.08em]">↵</span>{" "}
+                <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold tracking-[0.08em]">
+                  ↵
+                </span>{" "}
                 Open
               </p>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                 Wireline
               </p>
             </footer>

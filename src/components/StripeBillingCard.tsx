@@ -207,7 +207,9 @@ export default function StripeBillingCard() {
     return (
       <div className="wl-panel flex items-center gap-4 p-10">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        <span className="text-[14px] text-muted-foreground">Loading your plan and balance…</span>
+        <span className="text-[var(--wireline-typography-body-size)] text-muted-foreground">
+          Loading your plan and balance…
+        </span>
       </div>
     );
   }
@@ -223,7 +225,7 @@ export default function StripeBillingCard() {
             Billing is finishing setup
           </h3>
         </div>
-        <p className="max-w-2xl text-[12px] text-foreground/75 leading-relaxed">
+        <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
           You can keep using Wireline — we'll email you the moment self-serve plan changes are
           available, or write to{" "}
@@ -258,7 +260,7 @@ export default function StripeBillingCard() {
           className="rounded-md bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"
         >
           <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-          <p className="text-[11px] text-rose-500">{error}</p>
+          <p className="text-[var(--wireline-typography-overline-size)] text-rose-500">{error}</p>
         </div>
       )}
       {hasActive ? (
@@ -267,7 +269,7 @@ export default function StripeBillingCard() {
             <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
               Manage plan
             </h3>
-            <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
+            <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
               Upgrade, downgrade, update payment method, or cancel through the secure Stripe
               customer portal. Changes apply to your next billing cycle unless noted otherwise.
             </p>
@@ -279,7 +281,7 @@ export default function StripeBillingCard() {
               variant="outline"
               onClick={openPortal}
               disabled={busy === "portal"}
-              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
             >
               {busy === "portal" ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -288,7 +290,7 @@ export default function StripeBillingCard() {
               )}
               Open billing portal
             </ShadButton>
-            <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
+            <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
               <Shield className="w-3 h-3" />
               Upgrade · cancel · invoices
             </span>
@@ -302,7 +304,7 @@ export default function StripeBillingCard() {
           onSelectPlan={startCheckout}
         />
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
         <div className="flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Stripe · PCI DSS Level 1 · Cancel anytime
@@ -334,7 +336,7 @@ function CreditTopUpCard({
         <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
           Add call credits
         </h3>
-        <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
+        <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           Most months your plan's minutes are plenty — credits are an optional safety net for the
           occasional spike. They cover overage at your plan rate before it's invoiced; if you're
           regularly over, upgrading your plan is the more economical move.
@@ -349,7 +351,7 @@ function CreditTopUpCard({
             variant="outline"
             onClick={() => onBuy(a)}
             disabled={busy !== null}
-            className="inline-flex gap-2 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+            className="inline-flex gap-2 px-6 py-3 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
           >
             {busy === a ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -359,7 +361,7 @@ function CreditTopUpCard({
             ${a}
           </ShadButton>
         ))}
-        <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
+        <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Applied to overage automatically
         </span>
@@ -383,7 +385,7 @@ function PlanPicker({
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-8">
       <div className="border-b border-border pb-6">
         <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Choose a plan</h3>
-        <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
+        <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           {PRODUCT_VERSATILITY.short} Start with personal assistants on a Conversation Balance, then
           add a business plan when you need numbers, routing, and team tools. Stripe-secured. Cancel
           anytime.
@@ -429,7 +431,7 @@ function PlanPicker({
                   <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
                     <Icon className="w-6 h-6 wl-accent-text" />
                   </div>
-                  <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                  <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
                     {plan.max_agents} {plan.max_agents === 1 ? "slot" : "slots"}
                   </span>
                 </div>
@@ -441,7 +443,7 @@ function PlanPicker({
                     <span className="font-semibold tracking-[-.02em] text-4xl text-foreground">
                       ${plan.price_usd_monthly.toLocaleString()}
                     </span>
-                    <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                    <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
                       /mo
                     </span>
                   </div>
@@ -479,7 +481,7 @@ function PlanPicker({
                   )}
                 </ShadButton>
                 {!plan.configured && (
-                  <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+                  <p className="text-[var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
                     Stripe price pending — contact us to start on this tier
                   </p>
                 )}
@@ -556,7 +558,7 @@ function ActiveSubCard({
             <h3 className="font-semibold tracking-[-.02em] text-3xl md:text-4xl text-foreground">
               {sub.plan_name || sub.plan || "—"}
             </h3>
-            <p className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
+            <p className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
               {sub.max_agents ? (
                 <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
                   {agentCount} / {sub.max_agents}{" "}
@@ -580,7 +582,7 @@ function ActiveSubCard({
           variant="outline"
           onClick={onPortal}
           disabled={busy}
-          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta"
+          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta"
         >
           {busy ? (
             <Loader2 className="w-4 h-4 animate-spin" />

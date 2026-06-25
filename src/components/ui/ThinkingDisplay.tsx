@@ -163,7 +163,9 @@ export function ThinkingDisplay({
                         : "border-brand bg-brand/40 animate-pulse",
                     )}
                   />
-                  <p className="text-[11px] text-muted leading-relaxed pl-2">{step}</p>
+                  <p className="text-[var(--wireline-typography-overline-size)] text-muted leading-relaxed pl-2">
+                    {step}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -228,7 +230,7 @@ export function LiveThinkingIndicator({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.2 }}
-          className="text-[12px] text-muted font-medium"
+          className="text-[var(--wireline-typography-caption-size)] text-muted font-medium"
         >
           {currentStage.label}…
         </motion.span>
