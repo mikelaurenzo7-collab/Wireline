@@ -1,78 +1,27 @@
-import {
-  ArrowRight,
-  CheckCircle2,
-  Mail,
-  MessageSquareText,
-  PhoneCall,
-  Play,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, Mail, MessageSquareText, PhoneCall, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import HeroCallPreview from "./HeroCallPreview";
+import BrowserCallWidget from "./BrowserCallWidget";
 
 const channels = [
   {
     label: "Voice",
     title: "Calls handled on your terms",
-    body: "Build a custom voice agent with your specific brief, boundaries, and escalation path. It handles the conversation and brings back the answer.",
     icon: PhoneCall,
   },
   {
     label: "Email",
     title: "Inbox motion with guardrails",
-    body: "Create an email agent with your context, approval limits, and rules. It keeps follow-ups moving and surfaces the next step.",
     icon: Mail,
   },
   {
     label: "Text",
     title: "Text that turns interest into action",
-    body: "Your text agent follows the exact rules you set: reply to leads, run follow-up, book appointments, and keep your team informed.",
     icon: MessageSquareText,
   },
 ];
-
-function OperatingModel() {
-  return (
-    <aside className="marketing-operating-model" aria-label="How Wireline works">
-      <div className="marketing-operating-model__header">
-        <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-primary text-primary-foreground">
-          <Sparkles size={17} />
-        </span>
-        <div>
-          <p className="wl-overline text-primary">Your agent's brief</p>
-          <p className="mt-1 font-[var(--wireline-font-display)] text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em]">
-            Home services after-hours coverage
-          </p>
-        </div>
-      </div>
-      <div className="marketing-operating-model__body">
-        <div className="marketing-operating-model__row">
-          <span>It can handle</span>
-          <strong>Calls · Email · Text</strong>
-        </div>
-        <div className="marketing-operating-model__row">
-          <span>It follows</span>
-          <strong>That agent's specific rules and approvals</strong>
-        </div>
-        <div className="marketing-operating-model__row">
-          <span>It returns</span>
-          <strong>Qualified lead · next step</strong>
-        </div>
-      </div>
-      <div className="marketing-operating-model__outcome">
-        <CheckCircle2 size={17} />
-        <div>
-          <p className="wl-overline">Outcome</p>
-          <p className="mt-1 text-sm font-semibold">
-            The agent followed your exact rules and qualified the lead for your team.
-          </p>
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 export default function PrecisionLanding() {
   return (
@@ -89,10 +38,8 @@ export default function PrecisionLanding() {
               <p className="mt-5 text-[var(--wireline-typography-body-size)] font-semibold tracking-[.08em] text-primary sm:text-[var(--wireline-typography-body-size)]">
                 Voice + Email + Text
               </p>
-              <p className="mt-5 max-w-[650px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8 lg:mx-0">
-                Create specialized agents with their own knowledge, tools, voice, and approval
-                rules. Each one handles calls, inboxes, and texts the same way — exactly as you
-                configured it.
+              <p className="mt-5 max-w-[520px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground lg:mx-0">
+                One agent. Your rules. Voice, email, text.
               </p>
               <div className="mt-8 grid gap-3 sm:max-w-none sm:grid-cols-2 lg:max-w-[510px]">
                 <Link
@@ -109,64 +56,69 @@ export default function PrecisionLanding() {
                 </Link>
               </div>
               <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[var(--wireline-typography-caption-size)] font-medium text-muted-foreground lg:justify-start">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 size={14} className="text-primary" /> You define the boundaries
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck size={14} className="text-primary" /> You approve connected actions
-                </span>
+                <span className="flex items-center gap-1.5">You set the rules. It executes.</span>
               </div>
             </div>
-            <OperatingModel />
+            <HeroCallPreview />
           </div>
         </section>
         <section className="wl-measure mx-auto px-5 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
-          <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-            <div>
-              <p className="wl-overline text-primary">Your agent. Every channel.</p>
-              <h2 className="mt-2 font-[var(--wireline-font-display)] text-[clamp(26px,3vw,38px)] font-semibold leading-[1.1] tracking-[-.04em]">
-                Custom rules, applied the same way.
-              </h2>
-            </div>
-            <p className="max-w-md text-sm leading-6 text-muted-foreground">
-              Build a specialized agent with its own knowledge, boundaries, tools, and voice. It
-              applies those exact rules whether the conversation starts as a call, an email, or a
-              text.
-            </p>
+          <div className="mb-6">
+            <p className="wl-overline text-primary">Your agent. Every channel.</p>
+            <h2 className="mt-2 font-[var(--wireline-font-display)] text-[clamp(26px,3vw,38px)] font-semibold leading-[1.1] tracking-[-.04em]">
+              It works the same. Your rules.
+            </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            {channels.map(({ label, title, body, icon: Icon }) => (
+            {channels.map(({ label, title, icon: Icon }) => (
               <article
                 key={label}
-                className="wl-stitch-card marketing-channel-card flex min-h-[224px] flex-col p-6 sm:p-7"
+                className="wl-stitch-card marketing-channel-card flex flex-col p-6 sm:p-7"
               >
                 <Icon className="size-5 text-primary" aria-hidden="true" />
                 <p className="wl-overline mt-5 text-primary">{label}</p>
                 <h2 className="wl-section-title mt-2 text-[clamp(22px,4vw,26px)]">{title}</h2>
-                <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-                  {body}
-                </p>
               </article>
             ))}
           </div>
         </section>
+
+        <section className="border-t border-border px-5 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <div className="wl-measure mx-auto">
+            <div className="mx-auto max-w-md text-center">
+              <p className="wl-overline text-primary">Prove it yourself</p>
+              <h3 className="mt-1 font-[var(--wireline-font-display)] text-[clamp(20px,3vw,26px)] font-semibold tracking-[-.02em]">
+                Talk to a live agent in your browser.
+              </h3>
+            </div>
+            <div className="mt-6 flex justify-center">
+              <BrowserCallWidget agentName="Sarah" buttonLabel="Talk to demo agent" />
+            </div>
+            <p className="mt-3 text-center text-[var(--wireline-typography-caption-size)] text-muted-foreground">
+              Real voice. Your rules apply.
+            </p>
+          </div>
+        </section>
+
         <section className="border-t border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-measure mx-auto text-center">
-            <p className="wl-overline">Start with one specialized agent</p>
-            <h2 className="mx-auto mt-3 max-w-2xl font-[var(--wireline-font-display)] text-[clamp(30px,4vw,44px)] font-semibold leading-[1.08] tracking-[-.045em] text-foreground">
-              Build it your way. It works the same across every channel.
+            <h2 className="mx-auto max-w-2xl font-[var(--wireline-font-display)] text-[clamp(30px,4vw,44px)] font-semibold leading-[1.08] tracking-[-.045em] text-foreground">
+              See it handle real conversations.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-              Start with one focused agent — a scheduling specialist, a lead qualifier, or
-              after-hours support. Give it the exact knowledge and rules it needs. Expand to more
-              specialized agents as you grow.
-            </p>
             <div className="mt-7">
               <Link
-                to="/for/personal"
+                to="/signup"
+                className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+              >
+                Create your first agent <ArrowRight size={15} />
+              </Link>
+            </div>
+            <div className="mt-3">
+              <Link
+                to="/showcase"
                 className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
-                Explore how it works <ArrowRight size={15} />
+                <Play size={15} /> Watch demos
               </Link>
             </div>
           </div>

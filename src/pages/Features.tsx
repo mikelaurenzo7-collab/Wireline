@@ -71,9 +71,8 @@ export default function Features() {
             <h1 className="mt-4 max-w-[760px] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
               Give every conversation a clear next step.
             </h1>
-            <p className="mt-6 max-w-[650px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-              Wireline handles the original inquiry, sales conversation, appointment workflow, or
-              customer follow-up inside the boundaries you set, then returns the outcome to you.
+            <p className="mt-6 max-w-[520px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+              Handles conversations inside your boundaries. Returns the outcome.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -98,9 +97,7 @@ export default function Features() {
               <MessageSquareText size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">Calls and texts that stay on task</h2>
               <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-                Wireline handles the actual conversation—not just a summary. It can answer
-                questions, qualify interest, propose availability, and drive the next approved step
-                across phone, email, and text.
+                Handles the full conversation and drives the next step.
               </p>
               <ul className="mt-7 space-y-3">
                 {CHANNEL_POINTS.map((point) => (
@@ -125,8 +122,7 @@ export default function Features() {
               <ShieldCheck size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">You decide the boundaries</h2>
               <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-                Give an assistant clear rules before it does anything: what it can promise, what it
-                should collect, and exactly when it should stop and bring you into the conversation.
+                Clear rules up front. It stops and escalates when needed.
               </p>
               <dl className="mt-7 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">
                 {BOUNDARIES.map(([label, value]) => (

@@ -16,20 +16,17 @@ const links = [
   {
     to: "/for/personal",
     label: "Product",
-    description: "Personal assistants for real conversations.",
     active: (path: string) =>
       path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/"),
   },
   {
     to: "/features",
     label: "Features",
-    description: "See how calls, texts, and email work together.",
     active: (path: string) => path === "/features",
   },
   {
     to: "/pricing",
     label: "Pricing",
-    description: "Simple plans for personal and business assistants.",
     active: (path: string) => path === "/pricing",
   },
 ] as const;
@@ -157,9 +154,6 @@ export default function PrecisionPublicHeader() {
                   <span className="min-w-0">
                     <span className="block text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em]">
                       {link.label}
-                    </span>
-                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
-                      {link.description}
                     </span>
                   </span>
                   <span

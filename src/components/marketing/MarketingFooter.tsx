@@ -40,8 +40,7 @@ export default function MarketingFooter({
           <div className="max-w-sm">
             <p className="wl-overline">Wireline</p>
             <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-              An assistant for your life or an operating line for your business—voice, email, and
-              text working from the brief you define for each agent.
+              Agents that handle conversations your way.
             </p>
           </div>
           <nav aria-label="Product" className="flex flex-col items-start gap-1">
