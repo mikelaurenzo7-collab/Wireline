@@ -25,11 +25,11 @@ import {
 import WirelineMark from "./brand/WirelineMark";
 
 const primaryNavigation = [
-  { href: "/overview", label: "Overview", icon: LayoutDashboard },
-  { href: "/agents", label: "Assistants", icon: Bot },
-  { href: "/studio", label: "Studio", icon: PenLine },
-  { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/actions", label: "Connections", icon: Cable },
+  { href: "/overview", label: "Home", icon: LayoutDashboard },
+  { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/studio", label: "Build", icon: PenLine },
+  { href: "/knowledge", label: "Know", icon: Database },
+  { href: "/actions", label: "Wire", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
 
@@ -39,22 +39,30 @@ function NavItem({
   icon: Icon,
   active,
   onNavigate,
+  mobile = false,
 }: {
   href: string;
   label: string;
   icon: typeof Bot;
   active: boolean;
   onNavigate: () => void;
+  mobile?: boolean;
 }) {
   return (
     <Link
       to={href}
+      aria-label={label}
       aria-current={active ? "page" : undefined}
+      title={label}
       onClick={onNavigate}
-      className="wl-stitch-sidebar-link gap-3 px-3 py-2.5"
+      className={
+        mobile
+          ? "wl-stitch-sidebar-link gap-3 px-3 py-2.5"
+          : "wl-stitch-sidebar-link mx-auto grid size-11 place-items-center rounded-xl p-0"
+      }
     >
-      <Icon size={17} strokeWidth={active ? 2.1 : 1.75} />
-      <span className="truncate normal-case tracking-normal">{label}</span>
+      <Icon size={18} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+      <span className={mobile ? "truncate normal-case tracking-normal" : "sr-only"}>{label}</span>
     </Link>
   );
 }
@@ -75,46 +83,47 @@ function WorkspaceNavigationContent({
   };
 
   return (
-    <div className="flex min-h-full flex-col px-3 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-      <div className="flex shrink-0 items-center justify-between px-2">
+    <div
+      className={
+        mobile
+          ? "flex min-h-full flex-col px-3 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+          : "flex min-h-full flex-col items-center px-2 py-5 pb-5"
+      }
+    >
+      <div className={mobile ? "flex shrink-0 items-center justify-between px-2" : "flex shrink-0 items-center justify-center"}>
         <Link
           to="/overview"
           onClick={onNavigate}
-          className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] focus-visible:outline-none"
-          aria-label="Wireline overview"
+          className="grid size-11 place-items-center rounded-xl text-primary transition-colors hover:bg-muted focus-visible:outline-none"
+          aria-label="Wireline home"
+          title="Wireline"
         >
-          <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
-          <span className="truncate font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.03em] text-foreground">
-            Wireline
-          </span>
+          <WirelineMark className="h-6 w-6 shrink-0" />
+          <span className={mobile ? "sr-only" : "sr-only"}>Wireline</span>
         </Link>
         {mobile ? (
           <DialogClose asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Close workspace navigation"
-            >
+            <Button type="button" variant="ghost" size="icon" aria-label="Close navigation">
               <X size={18} aria-hidden="true" />
             </Button>
           </DialogClose>
         ) : null}
       </div>
 
-      <nav className="mt-7 flex flex-col gap-1" aria-label="Workspace">
+      <nav className={mobile ? "mt-7 flex flex-col gap-1" : "mt-8 flex flex-col items-center gap-2"} aria-label="Workspace">
         {primaryNavigation.map((item) => (
-          <NavItem key={item.href} {...item} active={isActive(item.href)} onNavigate={onNavigate} />
+          <NavItem key={item.href} {...item} active={isActive(item.href)} onNavigate={onNavigate} mobile={mobile} />
         ))}
       </nav>
 
-      <nav className="mt-auto border-t border-border px-1 pt-4" aria-label="Account settings">
+      <nav className={mobile ? "mt-auto border-t border-border px-1 pt-4" : "mt-auto flex justify-center pt-4"} aria-label="Account">
         <NavItem
           href="/settings"
           label="Settings"
           icon={Settings}
           active={isActive("/settings") || pathname.startsWith("/admin")}
           onNavigate={onNavigate}
+          mobile={mobile}
         />
       </nav>
     </div>
@@ -153,10 +162,10 @@ export default function WorkspaceShell({
         <a className="wl-skip-link" href="#workspace-main">
           Skip to content
         </a>
-        <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[256px_minmax(0,1fr)]">
+        <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[72px_minmax(0,1fr)]">
           <aside
             aria-label="Workspace navigation"
-            className="wl-stitch-sidebar wl-workspace-sidebar sticky top-0 hidden h-[100dvh] w-[256px] shrink-0 flex-col lg:flex"
+            className="wl-stitch-sidebar wl-workspace-sidebar sticky top-0 hidden h-[100dvh] w-[72px] shrink-0 flex-col lg:flex"
           >
             <WorkspaceNavigationContent pathname={location.pathname} onNavigate={() => undefined} />
           </aside>
@@ -166,14 +175,14 @@ export default function WorkspaceShell({
             data-wireline-route={location.pathname}
             className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 sm:px-6 sm:pb-5 lg:px-8 lg:pb-6 xl:px-10"
           >
-            <header className="wl-workspace-header flex min-h-[68px] shrink-0 flex-row items-center justify-between gap-3 border-b border-border py-3 sm:gap-4">
+            <header className="wl-workspace-header flex min-h-[64px] shrink-0 flex-row items-center justify-between gap-3 border-b border-border py-3 sm:gap-4">
               <div className="flex min-w-0 items-center gap-3">
                 <DialogTrigger asChild>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label="Open workspace navigation"
+                    aria-label="Open navigation"
                     aria-controls="wireline-workspace-navigation"
                     className="lg:hidden"
                   >
@@ -190,8 +199,8 @@ export default function WorkspaceShell({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label="Open command palette"
-                  title="Open command palette"
+                  aria-label="Command"
+                  title="Command"
                   onClick={openCommandPalette}
                   className="hidden size-9 min-h-9 min-w-9 text-muted-foreground hover:text-foreground sm:inline-flex"
                 >
@@ -222,14 +231,8 @@ export default function WorkspaceShell({
         className="lg:hidden"
       >
         <DialogTitle className="sr-only">Workspace navigation</DialogTitle>
-        <DialogDescription className="sr-only">
-          Navigate between Wireline workspace areas and account settings.
-        </DialogDescription>
-        <WorkspaceNavigationContent
-          pathname={location.pathname}
-          onNavigate={closeMobileNavigation}
-          mobile
-        />
+        <DialogDescription className="sr-only">Move through Wireline.</DialogDescription>
+        <WorkspaceNavigationContent pathname={location.pathname} onNavigate={closeMobileNavigation} mobile />
       </DialogContent>
     </Dialog>
   );
