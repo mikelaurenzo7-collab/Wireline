@@ -24,6 +24,13 @@ type Config = {
 type View = "facts" | "rules" | "tone" | "sources";
 type EntryKind = "knowledge" | "directive";
 
+const VIEW_LABELS: Record<View, string> = {
+  facts: "Facts",
+  rules: "Guidance",
+  tone: "Tone",
+  sources: "Sources",
+};
+
 type PanelShellProps = {
   title: string;
   icon: ReactNode;
@@ -266,7 +273,7 @@ export default function KnowledgeWorkspace() {
     () => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [],
     [config.knowledge],
   );
-  const rules = useMemo(
+  const guidance = useMemo(
     () => config.directives?.map((item) => item.content || "").filter(Boolean) || [],
     [config.directives],
   );
@@ -357,14 +364,14 @@ export default function KnowledgeWorkspace() {
       countLabel={`${facts.length} items`}
     />
   );
-  const rulesPanel = (
+  const guidancePanel = (
     <ItemsPanel
-      title="Rules & boundaries"
+      title="Guidance & handoff"
       icon={<ShieldCheck size={16} />}
-      items={rules}
-      empty="Add promises, limits, and situations where your assistant should ask you first."
+      items={guidance}
+      empty="Add the instructions and handoff preferences that shape each conversation."
       loading={loading}
-      countLabel={rules.length ? `${rules.length} active` : "0 items"}
+      countLabel={guidance.length ? `${guidance.length} active` : "0 items"}
     />
   );
   const tonePanel = <TonePanel personality={config.personality} loading={loading} />;
@@ -374,7 +381,7 @@ export default function KnowledgeWorkspace() {
     view === "facts"
       ? factsPanel
       : view === "rules"
-        ? rulesPanel
+        ? guidancePanel
         : view === "tone"
           ? tonePanel
           : sourcesPanel;
@@ -405,7 +412,7 @@ export default function KnowledgeWorkspace() {
             onClick={() => setView(item)}
             className={`min-h-10 border-r border-border px-3 text-[var(--wireline-typography-caption-size)] font-medium capitalize last:border-r-0 ${view === item ? "bg-card text-foreground" : "text-muted-foreground"}`}
           >
-            {item}
+            {VIEW_LABELS[item]}
           </button>
         ))}
       </div>
@@ -418,7 +425,7 @@ export default function KnowledgeWorkspace() {
 
       <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(170px,.85fr)_minmax(170px,.85fr)_minmax(180px,.9fr)_minmax(350px,1.65fr)] xl:gap-6">
         <div className="hidden min-h-0 xl:block">{factsPanel}</div>
-        <div className="hidden min-h-0 xl:block">{rulesPanel}</div>
+        <div className="hidden min-h-0 xl:block">{guidancePanel}</div>
         <div className="hidden min-h-0 xl:flex xl:flex-col xl:gap-4">
           {tonePanel}
           {sourcesPanel}
@@ -433,7 +440,7 @@ export default function KnowledgeWorkspace() {
                 Add a detail
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Teach the assistant something true or define a boundary it should respect.
+                Add a fact, preference, or handoff preference.
               </p>
             </div>
           </div>
@@ -453,7 +460,7 @@ export default function KnowledgeWorkspace() {
               className={`min-h-9 rounded-sm text-[var(--wireline-typography-body-size)] font-medium ${kind === "directive" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(93,63,211,.04)]" : "text-muted-foreground"}`}
               onClick={() => setKind("directive")}
             >
-              Add rule
+              Add guidance
             </button>
           </div>
 
@@ -463,14 +470,14 @@ export default function KnowledgeWorkspace() {
               description={
                 kind === "knowledge"
                   ? "Name the fact so it is easy to scan later."
-                  : "Summarize the boundary or condition."
+                  : "Summarize the preference, instruction, or handoff."
               }
             >
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder={
-                  kind === "knowledge" ? "e.g., Preferred pharmacy" : "e.g., When to ask me first"
+                  kind === "knowledge" ? "e.g., Preferred pharmacy" : "e.g., When to check in"
                 }
               />
             </FormField>
@@ -481,7 +488,7 @@ export default function KnowledgeWorkspace() {
               description={
                 kind === "knowledge"
                   ? "Describe a fact, preference, routine, or policy clearly."
-                  : "Describe what the assistant must do or avoid."
+                  : "Explain how you want the assistant to handle this."
               }
               error={saveError ? saveError : undefined}
               className="flex min-h-0 flex-1 flex-col"
@@ -494,7 +501,7 @@ export default function KnowledgeWorkspace() {
                 placeholder={
                   kind === "knowledge"
                     ? "Describe a fact, preference, routine, or policy clearly…"
-                    : "Describe what the assistant must do or avoid…"
+                    : "Explain how you want the assistant to handle this…"
                 }
               />
             </FormField>
@@ -524,7 +531,7 @@ export default function KnowledgeWorkspace() {
             </Button>
             <Button type="button" disabled={!entry.trim() || saving} onClick={() => void save()}>
               {saving ? <Loader2 className="animate-spin" size={15} /> : <Plus size={15} />}
-              Save {kind === "knowledge" ? "fact" : "rule"}
+              Save {kind === "knowledge" ? "fact" : "guidance"}
             </Button>
           </div>
         </aside>
