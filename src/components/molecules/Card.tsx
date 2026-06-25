@@ -9,20 +9,23 @@ import { cn } from "@/lib/utils";
  * body, and actions. It owns the recurring panel treatment while allowing
  * feature components to retain domain-specific layout through className.
  */
-export const cardVariants = cva("rounded-md text-card-foreground", {
-  variants: {
-    elevation: {
-      "0": "border border-border bg-card",
-      "1": "wl-panel",
-      "2": "wl-panel shadow-md",
-      "3": "wl-panel-elevated",
-      glow: "wl-panel-elevated",
+export const cardVariants = cva(
+  "rounded-[var(--wireline-radius-lg)] text-[var(--wireline-color-text-primary)]",
+  {
+    variants: {
+      elevation: {
+        "0": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-md)]",
+        "1": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-[var(--wireline-elevation-sm)]",
+        "2": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-[var(--wireline-elevation-md)]",
+        "3": "border border-[var(--wireline-color-border-strong)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-md)]",
+        glow: "border border-[var(--wireline-color-border-strong)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-md)]",
+      },
+    },
+    defaultVariants: {
+      elevation: "1",
     },
   },
-  defaultVariants: {
-    elevation: "1",
-  },
-});
+);
 
 export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardVariants> {
@@ -62,7 +65,11 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 Card.displayName = "Card";
 
 const CardHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div data-slot="card-header" className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />
+  <div
+    data-slot="card-header"
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
 );
 CardHeader.displayName = "CardHeader";
 
@@ -71,12 +78,20 @@ CardHeader.displayName = "CardHeader";
  * the compatibility implementation historically rendered a div here.
  */
 const CardTitle = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div data-slot="card-title" className={cn("font-semibold leading-none tracking-tight", className)} {...props} />
+  <div
+    data-slot="card-title"
+    className={cn("font-semibold leading-none tracking-tight", className)}
+    {...props}
+  />
 );
 CardTitle.displayName = "CardTitle";
 
 const CardDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-  <p data-slot="card-description" className={cn("text-sm text-muted-foreground", className)} {...props} />
+  <p
+    data-slot="card-description"
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
 );
 CardDescription.displayName = "CardDescription";
 
@@ -90,11 +105,4 @@ const CardFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement
 );
 CardFooter.displayName = "CardFooter";
 
-export {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-};
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };

@@ -4,12 +4,13 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const textareaVariants = cva(
-  "flex min-h-24 w-full rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8 disabled:cursor-not-allowed disabled:opacity-50",
+  "flex min-h-24 w-full rounded-[var(--wireline-radius-xl)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3.5 py-2.5 text-sm text-[var(--wireline-color-text-primary)] shadow-sm transition-colors placeholder:text-[var(--wireline-color-text-secondary)] focus-visible:outline-none focus-visible:border-[var(--wireline-color-text-primary)]/30 focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/20 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       state: {
         default: "",
-        invalid: "border-[var(--wl-error)] focus-visible:border-[var(--wl-error)] focus-visible:ring-[color-mix(in_srgb,var(--wl-error)_20%,transparent)]",
+        invalid:
+          "border-[var(--wireline-color-status-error)] focus-visible:border-[var(--wireline-color-status-error)] focus-visible:ring-[var(--wireline-color-feedback-error-surface)]/20",
       },
       resize: {
         none: "resize-none",
@@ -24,8 +25,7 @@ export const textareaVariants = cva(
 );
 
 export interface TextareaProps
-  extends React.ComponentProps<"textarea">,
-    VariantProps<typeof textareaVariants> {}
+  extends React.ComponentProps<"textarea">, VariantProps<typeof textareaVariants> {}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, state, resize, "aria-invalid": ariaInvalid, ...props }, ref) => (

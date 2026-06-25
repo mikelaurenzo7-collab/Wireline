@@ -105,11 +105,7 @@ assertIncludes(
   /helpTooltipVariants/,
   "must re-export the canonical tooltip variant symbol.",
 );
-assertIncludes(
-  "src/components/atoms/index.ts",
-  /Switch/,
-  "must export the canonical switch atom.",
-);
+assertIncludes("src/components/atoms/index.ts", /Switch/, "must export the canonical switch atom.");
 assertIncludes(
   "vite.config.ts",
   /const sourceRoot = path\.resolve\(__dirname, "src"\)/,
@@ -137,12 +133,12 @@ assertIncludes(
 );
 assertIncludes(
   "src/components/atoms/Skeleton.tsx",
-  /control: "rounded-\[var\(--radius-md\)\]"/,
+  /control: "rounded-\[var\(--wireline-radius-md\)\]"/,
   "must provide a compact control-loading shape.",
 );
 assertIncludes(
   "src/components/atoms/Skeleton.tsx",
-  /surface: "rounded-\[var\(--radius-lg\)\]"/,
+  /surface: "rounded-\[var\(--wireline-radius-lg\)\]"/,
   "must provide a rounded surface-loading shape.",
 );
 assertIncludes(
@@ -290,11 +286,7 @@ assertIncludes(
   /NativeSelect/,
   "must use the canonical select for invite role assignment.",
 );
-assertIncludes(
-  "src/pages/TeamSettings.tsx",
-  /StatusNotice/,
-  "must use the canonical RBAC notice.",
-);
+assertIncludes("src/pages/TeamSettings.tsx", /StatusNotice/, "must use the canonical RBAC notice.");
 assertIncludes(
   "src/pages/SalesforceIntegrationPage.tsx",
   /<Switch/,
@@ -329,27 +321,27 @@ assertExcludes(
 /* Basic token usage assertions (added for PR1: establish token → styling mapping)
  * Make --wireline-* the source; base layers (and atoms via aliases/Tailwind) derive from them.
  * Per design: assertIncludes for wireline tokens, assertExcludes for hard-coded hex.
+ * PR2 updated canonical atoms to use --wireline-* directly in cva.
  */
 assertIncludes(
   "src/styles/foundation.css",
   /--wireline-(color|radius|font|motion|elevation)/,
-  "must derive from semantic wireline tokens"
+  "must derive from semantic wireline tokens",
 );
 assertIncludes(
   "src/styles/components.css",
   /--wireline-(color|radius)/,
-  "must derive from semantic wireline tokens"
+  "must derive from semantic wireline tokens",
 );
 assertExcludes(
   "src/styles/components.css",
   /#[0-9a-fA-F]{3,6}/,
-  "no hard-coded hex colors outside tokens"
+  "no hard-coded hex colors outside tokens",
 );
 
-// Example per-atom pattern (applied to base layers here; atoms inherit via --radius-* aliases + updated --primary etc in foundation)
+// Canonical atoms now source directly from --wireline-* (PR2)
 for (const atom of canonicalAtoms) {
-  // atoms use Tailwind backed by wireline aliases now; specific radius checks pre-exist
-  // no raw hex exclude applied to atoms to preserve decorative shadow literals like #000 (neutral)
+  // atoms must derive colors/radii/surfaces from semantic tokens inside cva
 }
 
 console.log("Design-system contract checks passed.");
