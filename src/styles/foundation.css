@@ -2,7 +2,6 @@
  * Components should prefer semantic tokens; decorative effects are intentionally restrained. */
 
 :root {
-  /* Canvas + surfaces */
   --wl-page: var(--wireline-color-canvas-default);
   --wl-surface: var(--wireline-color-surface-default);
   --wl-surface-subtle: var(--wireline-color-surface-subtle);
@@ -12,22 +11,16 @@
   --wl-on-surface: var(--wireline-color-text-primary);
   --wl-on-surface-variant: var(--wireline-color-text-secondary);
   --wl-muted: var(--wireline-color-text-secondary);
-
-  /* Action + accent */
   --wl-primary: var(--wireline-color-action-primary-pressed);
   --wl-primary-container: var(--wireline-color-action-primary-default);
   --wl-accent: var(--wireline-color-action-primary-default);
   --wl-accent-hover: var(--wireline-color-action-primary-pressed);
   --wl-accent-container: var(--wireline-color-action-primary-container);
   --wl-on-primary: var(--wireline-color-text-onAction);
-
-  /* Structure */
   --wl-line: var(--wireline-color-border-default);
   --wl-line-strong: var(--wireline-color-border-strong);
   --wl-focus: var(--wireline-color-focus-default);
   --wl-overlay-scrim: var(--wireline-color-overlay-scrim);
-
-  /* Semantic feedback */
   --wl-success: var(--wireline-color-status-success);
   --wl-success-surface: var(--wireline-color-feedback-success-surface);
   --wl-success-border: var(--wireline-color-feedback-success-border);
@@ -43,8 +36,6 @@
   --wl-status-active: var(--wl-success);
   --wl-status-warning: var(--wl-warning);
   --wl-status-error: var(--wl-error);
-
-  /* Legacy aliases during transition */
   --wl-surface-hover: var(--wireline-color-surface-subtle);
   --wl-text-primary: var(--wireline-color-text-primary);
   --wl-text-tertiary: var(--wireline-color-text-secondary);
@@ -53,8 +44,6 @@
   --wl-brand-primary: var(--wireline-color-action-primary-default);
   --wl-surface-container-low: var(--wireline-color-surface-subtle);
   --wl-signal: var(--wireline-color-status-success);
-
-  /* Tailwind/shadcn aliases */
   --background: var(--wireline-color-canvas-default);
   --foreground: var(--wireline-color-text-primary);
   --card: var(--wireline-color-surface-default);
@@ -74,22 +63,17 @@
   --border: var(--wireline-color-border-default);
   --input: var(--wireline-color-border-default);
   --ring: var(--wireline-color-focus-default);
-
-  /* Geometry */
   --radius-sm: var(--wireline-radius-sm);
   --radius: var(--wireline-radius-sm);
   --radius-md: var(--wireline-radius-md);
   --radius-lg: var(--wireline-radius-lg);
   --radius-xl: var(--wireline-radius-xl);
-
-  /* Type */
   --wl-text-base: var(--wireline-typography-body-size);
   --wl-text-sm: var(--wireline-typography-caption-size);
   --wl-text-xs: 0.75rem;
   --wl-font-display: var(--wireline-font-family-display);
   --wl-font-body: var(--wireline-font-family-body);
   --wl-font-mono: var(--wireline-font-family-mono);
-
   --wl-typography-display-size: var(--wireline-typography-display-size);
   --wl-typography-display-weight: var(--wireline-typography-display-weight);
   --wl-typography-display-line-height: var(--wireline-typography-display-lineHeight);
@@ -104,8 +88,6 @@
   --wl-typography-overline-size: var(--wireline-typography-overline-size);
   --wl-typography-overline-weight: var(--wireline-typography-overline-weight);
   --wl-typography-overline-letter-spacing: var(--wireline-typography-overline-letterSpacing);
-
-  /* Z-index */
   --wl-z-base: var(--wireline-zIndex-base);
   --wl-z-dropdown: var(--wireline-zIndex-dropdown);
   --wl-z-sticky: var(--wireline-zIndex-sticky);
@@ -114,8 +96,6 @@
   --wl-z-modal: var(--wireline-zIndex-modal);
   --wl-z-popover: var(--wireline-zIndex-popover);
   --wl-z-tooltip: var(--wireline-zIndex-tooltip);
-
-  /* Interaction */
   --transition-fast: var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
   --transition-base: var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard);
   --transition-slow: var(--wireline-motion-duration-slow) var(--wireline-motion-easing-emphasized);
@@ -175,6 +155,14 @@ body {
   max-width: 100vw;
   max-height: 100dvh;
   background: var(--wl-page);
+}
+
+.wl-ui-caps > :not(.wl-workspace-shell) {
+  height: 100dvh;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .wl-viewport-frame {
