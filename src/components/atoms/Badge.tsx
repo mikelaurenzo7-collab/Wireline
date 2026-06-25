@@ -8,15 +8,17 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-transparent bg-secondary text-secondary-foreground",
+        default:
+          "border-transparent bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-primary)]",
         success:
-          "border-[var(--wl-success-border)] bg-[var(--wl-success-surface)] text-[var(--wl-success)]",
+          "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]",
         warning:
-          "border-[var(--wl-warning-border)] bg-[var(--wl-warning-surface)] text-[var(--wl-warning)]",
+          "border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)]",
         destructive:
-          "border-[var(--wl-error-border)] bg-[var(--wl-error-surface)] text-[var(--wl-error)]",
-        info: "border-[var(--wl-info-border)] bg-[var(--wl-info-surface)] text-[var(--wl-info)]",
-        outline: "border-border bg-transparent text-foreground",
+          "border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)]",
+        info: "border-[var(--wireline-color-feedback-info-border)] bg-[var(--wireline-color-feedback-info-surface)] text-[var(--wireline-color-status-info)]",
+        outline:
+          "border-[var(--wireline-color-border-default)] bg-transparent text-[var(--wireline-color-text-primary)]",
       },
     },
     defaultVariants: {
@@ -28,14 +30,16 @@ export const badgeVariants = cva(
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
 
-const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(({ className, variant, ...props }, ref) => (
-  <span
-    ref={ref}
-    data-slot="badge"
-    className={cn(badgeVariants({ variant }), className)}
-    {...props}
-  />
-));
+const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+  ({ className, variant, ...props }, ref) => (
+    <span
+      ref={ref}
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
+  ),
+);
 Badge.displayName = "Badge";
 
 export { Badge };

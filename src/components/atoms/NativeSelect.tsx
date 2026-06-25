@@ -4,19 +4,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const nativeSelectVariants = cva(
-  "h-10 w-full appearance-none rounded-xl border border-border bg-card px-3.5 py-2 pr-10 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8 disabled:cursor-not-allowed disabled:opacity-50",
+  "h-10 w-full appearance-none rounded-[var(--wireline-radius-xl)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3.5 py-2 pr-10 text-sm text-[var(--wireline-color-text-primary)] shadow-sm transition-colors focus-visible:outline-none focus-visible:border-[var(--wireline-color-text-primary)]/30 focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/20 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       state: {
         default: "",
-        invalid: "border-[var(--wl-error)] focus-visible:border-[var(--wl-error)] focus-visible:ring-[color:var(--wl-error-surface)]",
+        invalid:
+          "border-[var(--wireline-color-status-error)] focus-visible:border-[var(--wireline-color-status-error)] focus-visible:ring-[var(--wireline-color-feedback-error-surface)]",
       },
     },
     defaultVariants: { state: "default" },
   },
 );
 
-export interface NativeSelectProps extends React.ComponentProps<"select">, VariantProps<typeof nativeSelectVariants> {}
+export interface NativeSelectProps
+  extends React.ComponentProps<"select">, VariantProps<typeof nativeSelectVariants> {}
 
 const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
   ({ className, state, children, "aria-invalid": ariaInvalid, ...props }, ref) => (
@@ -30,7 +32,10 @@ const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
       >
         {children}
       </select>
-      <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+      />
     </span>
   ),
 );
