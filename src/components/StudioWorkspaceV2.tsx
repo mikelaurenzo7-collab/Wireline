@@ -93,6 +93,7 @@ export default function StudioWorkspaceV2() {
           agentName={active.name}
           initialCommand={params.get("command") || undefined}
           onBack={returnToOverview}
+          onOpenDetailed={returnToOverview}
         />
       </div>
     );
