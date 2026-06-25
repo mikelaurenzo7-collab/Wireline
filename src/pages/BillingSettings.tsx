@@ -13,7 +13,14 @@ export default function BillingSettings() {
       eyebrow="Workspace"
       title="Billing"
       contentClassName="pt-6"
-      action={<Button asChild variant="secondary" size="sm"><Link to="/settings"><ArrowLeft size={16} />Settings</Link></Button>}
+      action={
+        <Button asChild variant="secondary" size="sm" className="shrink-0">
+          <Link to="/settings" aria-label="Back to Settings">
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">Settings</span>
+          </Link>
+        </Button>
+      }
     >
       <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-6 pb-6">
         <section className="studio-card">
