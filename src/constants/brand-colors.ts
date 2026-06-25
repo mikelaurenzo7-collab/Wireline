@@ -65,11 +65,11 @@ export const BRAND = {
   radius: {
     base: token["radius.sm"],
     sm: token["radius.sm"],
-    md: token["radius.lg"],
-    lg: token["radius.xl"],
+    md: token["radius.md"],
+    lg: token["radius.lg"],
     xl: token["radius.xl"],
     pill: token["radius.pill"],
-    note: "4px inputs/controls, 8px standard cards/buttons, 16px larger panels. Pills remain reserved for status and avatars.",
+    note: "4px inputs/controls (sm), 6px compact (md), 8px standard cards/buttons (lg), 16px larger panels (xl). Pills reserved for status/avatars. Sourced from design-tokens/wireline.tokens.json via generated wirelineTokenValues.",
   },
 
   accessibility: {

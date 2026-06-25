@@ -326,4 +326,30 @@ assertExcludes(
   "must consume semantic feedback tokens instead of raw palette variants.",
 );
 
+/* Basic token usage assertions (added for PR1: establish token → styling mapping)
+ * Make --wireline-* the source; base layers (and atoms via aliases/Tailwind) derive from them.
+ * Per design: assertIncludes for wireline tokens, assertExcludes for hard-coded hex.
+ */
+assertIncludes(
+  "src/styles/foundation.css",
+  /--wireline-(color|radius|font|motion|elevation)/,
+  "must derive from semantic wireline tokens"
+);
+assertIncludes(
+  "src/styles/components.css",
+  /--wireline-(color|radius)/,
+  "must derive from semantic wireline tokens"
+);
+assertExcludes(
+  "src/styles/components.css",
+  /#[0-9a-fA-F]{3,6}/,
+  "no hard-coded hex colors outside tokens"
+);
+
+// Example per-atom pattern (applied to base layers here; atoms inherit via --radius-* aliases + updated --primary etc in foundation)
+for (const atom of canonicalAtoms) {
+  // atoms use Tailwind backed by wireline aliases now; specific radius checks pre-exist
+  // no raw hex exclude applied to atoms to preserve decorative shadow literals like #000 (neutral)
+}
+
 console.log("Design-system contract checks passed.");

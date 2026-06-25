@@ -3,7 +3,7 @@ export * from "./Button";
 export * from "./Dialog";
 export * from "./DropdownMenu";
 export * from "./EmptyState";
-export * from "./HelpTooltip";
+export { HelpTooltip, helpTooltipVariants } from "./HelpTooltip";
 export * from "./Input";
 export * from "./NativeSelect";
 export * from "./Skeleton";

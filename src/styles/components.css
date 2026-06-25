@@ -6,15 +6,15 @@
 /* Panels & Cards */
 .wl-panel,
 .wl-surface-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--card);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-lg);
+  background: var(--wireline-color-surface-default);
   box-shadow: var(--wl-shadow-sm);
 
   &-elevated {
-    border: 1px solid var(--wl-line);
-    border-radius: var(--radius-xl);
-    background: var(--wl-surface);
+    border: 1px solid var(--wireline-color-border-strong);
+    border-radius: var(--wireline-radius-xl);
+    background: var(--wireline-color-surface-default);
     box-shadow: var(--wl-shadow-md);
   }
 }
@@ -27,38 +27,42 @@
   justify-content: center;
   gap: 0.5rem;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--wireline-radius-md);
   padding: 0.625rem 1rem;
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.1;
   text-decoration: none;
-  transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-fast);
 
   &:active:not(:disabled) {
     transform: translateY(1px);
   }
 
   &-primary {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: var(--primary-foreground);
+    border-color: var(--wireline-color-action-primary-default);
+    background: var(--wireline-color-action-primary-default);
+    color: var(--wireline-color-text-onAction);
     box-shadow: 0 8px 18px -15px rgba(67, 35, 177, 0.58);
 
     &:hover:not(:disabled) {
-      border-color: var(--wl-accent-hover);
-      background: var(--wl-accent-hover);
+      border-color: var(--wireline-color-action-primary-pressed);
+      background: var(--wireline-color-action-primary-pressed);
     }
   }
 
   &-secondary {
-    border-color: var(--border);
-    background: var(--card);
-    color: var(--foreground);
+    border-color: var(--wireline-color-border-default);
+    background: var(--wireline-color-surface-default);
+    color: var(--wireline-color-text-primary);
 
     &:hover:not(:disabled) {
-      border-color: var(--wl-line-strong);
-      background: var(--secondary);
+      border-color: var(--wireline-color-border-strong);
+      background: var(--wireline-color-surface-subtle);
     }
   }
 }
@@ -77,10 +81,10 @@
 
 .wl-dialog {
   width: min(100%, 40rem);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  background: var(--card);
-  color: var(--card-foreground);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary);
   box-shadow: var(--wl-shadow-lg);
 }
 
@@ -95,7 +99,7 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--muted-foreground);
+  color: var(--wireline-color-text-secondary);
 }
 
 .wl-page-context,
@@ -110,8 +114,8 @@
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: var(--primary);
-  box-shadow: 0 0 0 4px var(--wl-accent-container);
+  background: var(--wireline-color-action-primary-default);
+  box-shadow: 0 0 0 4px var(--wireline-color-action-primary-container);
 }
 
 /* Titles */
@@ -122,7 +126,7 @@
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.08;
-  color: var(--foreground);
+  color: var(--wireline-color-text-primary);
 }
 
 /* Empty states */
@@ -131,14 +135,14 @@
 .wl-inline-empty__label {
   font-size: 0.875rem;
   line-height: 1.55;
-  color: var(--muted-foreground);
+  color: var(--wireline-color-text-secondary);
 }
 
 .wl-inline-empty {
-  border: 1px dashed var(--wl-line-strong);
-  border-radius: var(--radius-lg);
+  border: 1px dashed var(--wireline-color-border-strong);
+  border-radius: var(--wireline-radius-lg);
   padding: 1rem;
-  background: var(--wl-surface-subtle);
+  background: var(--wireline-color-surface-subtle);
 
   &__label {
     display: block;
@@ -157,11 +161,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.875rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-lg);
   padding: 0.875rem 1rem;
-  background: var(--card);
-  color: var(--foreground);
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary);
 
   &__body {
     display: inline-flex;

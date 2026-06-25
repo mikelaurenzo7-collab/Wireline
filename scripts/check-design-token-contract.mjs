@@ -6,6 +6,7 @@ const sourcePath = resolve(root, "design-tokens/wireline.tokens.json");
 const cssPath = resolve(root, "src/styles/tokens.generated.css");
 const tsPath = resolve(root, "src/constants/generated-design-tokens.ts");
 const foundationPath = resolve(root, "src/styles/foundation.css");
+const componentsPath = resolve(root, "src/styles/components.css");
 const indexPath = resolve(root, "src/index.css");
 const extensionTokensPath = resolve(root, "apps/browser-extension/panel/tokens.generated.css");
 const extensionPanelPath = resolve(root, "apps/browser-extension/panel/index.html");
@@ -19,6 +20,7 @@ for (const path of [
   cssPath,
   tsPath,
   foundationPath,
+  componentsPath,
   indexPath,
   extensionTokensPath,
   extensionPanelPath,
@@ -34,6 +36,7 @@ const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 const css = readFileSync(cssPath, "utf8");
 const ts = readFileSync(tsPath, "utf8");
 const foundation = readFileSync(foundationPath, "utf8");
+const componentsCss = readFileSync(componentsPath, "utf8");
 const indexCss = readFileSync(indexPath, "utf8");
 const extensionTokens = readFileSync(extensionTokensPath, "utf8");
 const extensionPanel = readFileSync(extensionPanelPath, "utf8");
@@ -95,9 +98,19 @@ const foundationMappings = [
   "--wl-shadow-md: var(--wireline-elevation-md)",
   "--wl-target-minimum: var(--wireline-interaction-target-minimum)",
   "--focus-ring: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default)",
+  /* new aliases from PR1 token mapping */
+  "--primary: var(--wireline-color-action-primary-default)",
+  "--card: var(--wireline-color-surface-default)",
+  "--border: var(--wireline-color-border-default)",
+  "--radius-md: var(--wireline-radius-md)",
 ];
 for (const mapping of foundationMappings) {
   if (!foundation.includes(mapping)) throw new Error(`Foundation must consume generated semantic mapping: ${mapping}`);
+}
+
+/* components.css now directly derives wl- primitives from --wireline-* */
+if (!componentsCss.includes("--wireline-color-") || !componentsCss.includes("--wireline-radius-")) {
+  throw new Error("components.css must derive primitives from generated --wireline tokens for radius, colors, surfaces");
 }
 
 const tokenImport = '@import "./styles/tokens.generated.css";';

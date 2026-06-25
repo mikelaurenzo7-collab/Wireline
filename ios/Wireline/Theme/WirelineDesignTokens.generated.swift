@@ -3,7 +3,7 @@ import SwiftUI
 
 public enum WirelineDesignTokens {
   public enum ColorToken {
-    public static let colorActionPrimaryContainer = Color(red: 0.36470588235294116, green: 0.24705882352941178, blue: 0.8274509803921568, opacity: 0.1)
+    public static let colorActionPrimaryContainer = Color(red: 0.36470588235294116, green: 0.24705882352941178, blue: 0.8274509803921568, opacity: 0.10)
     public static let colorActionPrimaryDefault = Color(hex: 0x5D3FD3)
     public static let colorActionPrimaryPressed = Color(hex: 0x451EBB)
     public static let colorBorderDefault = Color(hex: 0xC9C4D7)
@@ -54,8 +54,8 @@ public enum WirelineDesignTokens {
 
   public enum Motion {
     public static let motionDurationFast: Double = 0.12
-    public static let motionDurationStandard: Double = 0.2
     public static let motionDurationSlow: Double = 0.3
+    public static let motionDurationStandard: Double = 0.2
     public static let pressScale: CGFloat = 0.98
   }
 }

@@ -57,8 +57,8 @@ internal object WirelineDesignTokens {
 
   object Motion {
     const val motionDurationFastMillis = 120
-    const val motionDurationStandardMillis = 200
     const val motionDurationSlowMillis = 300
+    const val motionDurationStandardMillis = 200
     const val pressScale = 0.98f
   }
 }
