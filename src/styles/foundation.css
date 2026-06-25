@@ -216,9 +216,9 @@ button,
 /* The skip link is semantic navigation for keyboard users, not visible page copy. */
 .wl-skip-link {
   position: fixed;
-  top: 0.75rem;
+  top: -5rem;
   left: 0.75rem;
-  z-index: var(--wireline-zIndex-sticky);
+  z-index: calc(var(--wireline-zIndex-fixed) + 2);
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
@@ -229,13 +229,16 @@ button,
   color: var(--wl-on-primary);
   font-size: 0.875rem;
   font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
   text-decoration: none;
-  transform: translateY(calc(-100% - 1.5rem));
-  transition: transform var(--transition-fast);
+  transition: top var(--transition-fast), opacity var(--transition-fast);
 }
 
 .wl-skip-link:focus-visible {
-  transform: translateY(0);
+  top: max(0.75rem, env(safe-area-inset-top));
+  opacity: 1;
+  pointer-events: auto;
   outline: var(--wireline-interaction-focus-width) solid var(--wl-on-primary);
   outline-offset: 3px;
 }
