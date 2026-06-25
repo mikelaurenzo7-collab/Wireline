@@ -52,7 +52,7 @@ export default function Showcase() {
                 </li>
               ))}
             </ol>
-            <p className="mt-9 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">In Studio, you set the job, rules, and handoff.</p>
+            <p className="mt-9 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">In Studio, you shape the job, voice, and handoff.</p>
           </aside>
         </div>
       </section>
