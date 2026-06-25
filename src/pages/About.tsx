@@ -10,8 +10,8 @@ const PRINCIPLES = [
     copy: "Custom-trained on your tone, scripts, and service knowledge.",
   },
   {
-    title: "Deep customization per agent.",
-    copy: "Your knowledge base. Your boundaries. Your tools. Built in.",
+    title: "Built around every assistant.",
+    copy: "Your knowledge. Your playbook. Your tools. Built in.",
   },
   {
     title: "One agent, complete context.",
@@ -54,7 +54,7 @@ export default function About() {
           <div className="bg-card px-5 py-9 sm:px-8 sm:py-12 lg:px-10">
             <p className="max-w-xl text-base leading-7 text-muted-foreground">
               Independently built. Every voice agent is fully customizable. Your knowledge. Your
-              voice, your rules.
+              voice. Your playbook.
             </p>
             <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
               The goal is simple: empower businesses to automate customer interactions, capture hot
@@ -82,8 +82,8 @@ export default function About() {
           </div>
           <p className="max-w-xl text-base leading-7 text-muted-foreground">
             Wireline is designed around enterprise-grade execution: answer inbound queries, qualify
-            sales opportunities, book CRM-synced calendar invites, and follow custom rules
-            perfectly.
+            sales opportunities, book CRM-synced calendar invites, and follow your operating
+            playbook consistently.
           </p>
         </div>
         <div className="mt-10 grid gap-3 md:grid-cols-3">
