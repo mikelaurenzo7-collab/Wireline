@@ -1,27 +1,7 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Bot,
-  Cable,
-  Database,
-  Inbox,
-  LayoutDashboard,
-  Menu,
-  PenLine,
-  Search,
-  Settings,
-  X,
-} from "lucide-react";
+import { Bot, Cable, Database, Inbox, LayoutDashboard, PenLine, Settings } from "lucide-react";
 
-import {
-  Button,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from "./atoms";
 import WirelineMark from "./brand/WirelineMark";
 
 const primaryNavigation = [
@@ -33,20 +13,33 @@ const primaryNavigation = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
 
-function NavItem({
+const mobileNavigation = [
+  { href: "/overview", label: "Home", icon: LayoutDashboard },
+  { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/studio", label: "Build", icon: PenLine },
+  { href: "/actions", label: "Wire", icon: Cable },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/settings", label: "More", icon: Settings },
+] as const;
+
+function isActive(pathname: string, href: string) {
+  if (pathname === href) return true;
+  if (href === "/overview") return false;
+  return pathname.startsWith(`${href}/`);
+}
+
+function RailItem({
   href,
   label,
   icon: Icon,
   active,
-  onNavigate,
-  mobile = false,
+  compact = false,
 }: {
   href: string;
   label: string;
   icon: typeof Bot;
   active: boolean;
-  onNavigate: () => void;
-  mobile?: boolean;
+  compact?: boolean;
 }) {
   return (
     <Link
@@ -54,79 +47,62 @@ function NavItem({
       aria-label={label}
       aria-current={active ? "page" : undefined}
       title={label}
-      onClick={onNavigate}
       className={
-        mobile
-          ? "wl-stitch-sidebar-link gap-3 px-3 py-2.5"
-          : "wl-stitch-sidebar-link mx-auto grid size-11 place-items-center rounded-xl p-0"
+        compact
+          ? `grid min-h-14 flex-1 place-items-center gap-0.5 rounded-xl px-2 py-1.5 text-[var(--wireline-typography-overline-size)] font-semibold transition-colors ${
+              active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`
+          : `grid size-11 place-items-center rounded-xl transition-colors ${
+              active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`
       }
     >
-      <Icon size={18} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
-      <span className={mobile ? "truncate normal-case tracking-normal" : "sr-only"}>{label}</span>
+      <Icon size={compact ? 17 : 18} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+      {compact ? <span className="leading-none">{label}</span> : <span className="sr-only">{label}</span>}
     </Link>
   );
 }
 
-function WorkspaceNavigationContent({
-  pathname,
-  onNavigate,
-  mobile = false,
-}: {
-  pathname: string;
-  onNavigate: () => void;
-  mobile?: boolean;
-}) {
-  const isActive = (href: string) => {
-    if (pathname === href) return true;
-    if (href === "/overview") return false;
-    return pathname.startsWith(`${href}/`);
-  };
-
+function DesktopRail({ pathname }: { pathname: string }) {
   return (
-    <div
-      className={
-        mobile
-          ? "flex min-h-full flex-col px-3 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-          : "flex min-h-full flex-col items-center px-2 py-5 pb-5"
-      }
+    <aside
+      aria-label="Workspace navigation"
+      className="hidden h-[100dvh] w-[72px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-2 lg:py-5"
     >
-      <div className={mobile ? "flex shrink-0 items-center justify-between px-2" : "flex shrink-0 items-center justify-center"}>
-        <Link
-          to="/overview"
-          onClick={onNavigate}
-          className="grid size-11 place-items-center rounded-xl text-primary transition-colors hover:bg-muted focus-visible:outline-none"
-          aria-label="Wireline home"
-          title="Wireline"
-        >
-          <WirelineMark className="h-6 w-6 shrink-0" />
-          <span className={mobile ? "sr-only" : "sr-only"}>Wireline</span>
-        </Link>
-        {mobile ? (
-          <DialogClose asChild>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close navigation">
-              <X size={18} aria-hidden="true" />
-            </Button>
-          </DialogClose>
-        ) : null}
-      </div>
+      <Link
+        to="/overview"
+        aria-label="Wireline home"
+        title="Wireline"
+        className="grid size-11 place-items-center rounded-xl text-primary transition-colors hover:bg-muted focus-visible:outline-none"
+      >
+        <WirelineMark className="h-6 w-6 shrink-0" />
+      </Link>
 
-      <nav className={mobile ? "mt-7 flex flex-col gap-1" : "mt-8 flex flex-col items-center gap-2"} aria-label="Workspace">
+      <nav className="mt-8 flex flex-col items-center gap-2" aria-label="Workspace">
         {primaryNavigation.map((item) => (
-          <NavItem key={item.href} {...item} active={isActive(item.href)} onNavigate={onNavigate} mobile={mobile} />
+          <RailItem key={item.href} {...item} active={isActive(pathname, item.href)} />
         ))}
       </nav>
 
-      <nav className={mobile ? "mt-auto border-t border-border px-1 pt-4" : "mt-auto flex justify-center pt-4"} aria-label="Account">
-        <NavItem
-          href="/settings"
-          label="Settings"
-          icon={Settings}
-          active={isActive("/settings") || pathname.startsWith("/admin")}
-          onNavigate={onNavigate}
-          mobile={mobile}
-        />
+      <nav className="mt-auto flex justify-center pt-4" aria-label="Account">
+        <RailItem href="/settings" label="Settings" icon={Settings} active={isActive(pathname, "/settings") || pathname.startsWith("/admin")} />
       </nav>
-    </div>
+    </aside>
+  );
+}
+
+function MobileDock({ pathname }: { pathname: string }) {
+  return (
+    <nav
+      aria-label="Workspace navigation"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
+    >
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
+        {mobileNavigation.map((item) => (
+          <RailItem key={item.href} {...item} active={isActive(pathname, item.href) || (item.href === "/settings" && pathname.startsWith("/admin"))} compact />
+        ))}
+      </div>
+    </nav>
   );
 }
 
@@ -144,96 +120,37 @@ export default function WorkspaceShell({
   contentClassName?: string;
 }) {
   const location = useLocation();
-  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
-  const closeMobileNavigation = () => setMobileNavigationOpen(false);
-
-  useEffect(() => {
-    closeMobileNavigation();
-  }, [location.pathname]);
-
-  function openCommandPalette() {
-    window.dispatchEvent(new Event("wireline:open-command-bar"));
-  }
 
   return (
-    <Dialog open={mobileNavigationOpen} onOpenChange={setMobileNavigationOpen}>
-      <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
-        <a className="wl-skip-link" href="#workspace-main">
-          Skip to content
-        </a>
-        <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[72px_minmax(0,1fr)]">
-          <aside
-            aria-label="Workspace navigation"
-            className="wl-stitch-sidebar wl-workspace-sidebar sticky top-0 hidden h-[100dvh] w-[72px] shrink-0 flex-col lg:flex"
+    <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
+      <a className="wl-skip-link" href="#workspace-main">
+        Skip to content
+      </a>
+      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[72px_minmax(0,1fr)]">
+        <DesktopRail pathname={location.pathname} />
+        <main
+          id="workspace-main"
+          data-wireline-route={location.pathname}
+          className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pb-6 lg:pt-6 xl:px-10"
+        >
+          <div className="sr-only">
+            {eyebrow ? <p>{eyebrow}</p> : null}
+            <h1>{title}</h1>
+            {action}
+          </div>
+          <div
+            className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${
+              isStudioRoute ? "overflow-hidden" : ""
+            } ${contentClassName}`}
           >
-            <WorkspaceNavigationContent pathname={location.pathname} onNavigate={() => undefined} />
-          </aside>
-
-          <main
-            id="workspace-main"
-            data-wireline-route={location.pathname}
-            className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 sm:px-6 sm:pb-5 lg:px-8 lg:pb-6 xl:px-10"
-          >
-            <header className="wl-workspace-header flex min-h-[64px] shrink-0 flex-row items-center justify-between gap-3 border-b border-border py-3 sm:gap-4">
-              <div className="flex min-w-0 items-center gap-3">
-                <DialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Open navigation"
-                    aria-controls="wireline-workspace-navigation"
-                    className="lg:hidden"
-                  >
-                    <Menu size={18} aria-hidden="true" />
-                  </Button>
-                </DialogTrigger>
-                <div className="min-w-0">
-                  {eyebrow ? <p className="wl-overline">{eyebrow}</p> : null}
-                  <h1 className="wl-app-page-title mt-1 truncate">{title}</h1>
-                </div>
-              </div>
-              <div className="wl-workspace-header-actions flex min-w-0 shrink-0 flex-nowrap items-center gap-2 sm:justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Command"
-                  title="Command"
-                  onClick={openCommandPalette}
-                  className="hidden size-9 min-h-9 min-w-9 text-muted-foreground hover:text-foreground sm:inline-flex"
-                >
-                  <Search aria-hidden="true" className="size-4" />
-                </Button>
-                {action ? <div className="wl-workspace-header-primary-action">{action}</div> : null}
-              </div>
-            </header>
-            <div
-              className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${
-                isStudioRoute ? "overflow-hidden" : ""
-              } ${contentClassName}`}
-            >
-              <div className="wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col">
-                {children}
-              </div>
+            <div className="wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col">
+              {children}
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
-
-      <DialogContent
-        id="wireline-workspace-navigation"
-        presentation="sidebar"
-        showClose={false}
-        aria-label="Workspace navigation"
-        overlayClassName="bg-[rgba(11,28,48,0.34)] lg:hidden"
-        className="lg:hidden"
-      >
-        <DialogTitle className="sr-only">Workspace navigation</DialogTitle>
-        <DialogDescription className="sr-only">Move through Wireline.</DialogDescription>
-        <WorkspaceNavigationContent pathname={location.pathname} onNavigate={closeMobileNavigation} mobile />
-      </DialogContent>
-    </Dialog>
+      <MobileDock pathname={location.pathname} />
+    </div>
   );
 }
