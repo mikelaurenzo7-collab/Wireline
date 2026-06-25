@@ -13,7 +13,7 @@ function EmptyKnowledge() {
         className="studio-card w-full max-w-[512px] px-8 py-12 text-left sm:px-10"
         icon={<Database size={30} strokeWidth={1.7} />}
         title="Give your assistant context."
-        description="Start with the facts and rules that matter."
+        description="Start with the facts and guidance that matter."
         action={<Button asChild><Link to="/studio?create=1"><WandSparkles aria-hidden="true" size={16} />Create an assistant</Link></Button>}
       />
     </div>
