@@ -1,18 +1,18 @@
 :root {
   color-scheme: light;
-  --canvas: #f8f9ff;
-  --surface: #ffffff;
-  --surface-secondary: #eff4ff;
-  --raised: #e5eeff;
-  --primary: #5d3fd3;
-  --primary-pressed: #451ebb;
-  --text: #0b1c30;
-  --muted: #484554;
-  --border: #c9c4d7;
-  --focus: #e6deff;
-  --danger: #ba1a1a;
-  --radius-control: 4px;
-  --radius-card: 8px;
+  --canvas: var(--wireline-color-canvas-default);
+  --surface: var(--wireline-color-surface-default);
+  --surface-secondary: var(--wireline-color-surface-subtle);
+  --raised: var(--wireline-color-surface-container);
+  --primary: var(--wireline-color-action-primary-default);
+  --primary-pressed: var(--wireline-color-action-primary-pressed);
+  --text: var(--wireline-color-text-primary);
+  --muted: var(--wireline-color-text-secondary);
+  --border: var(--wireline-color-border-default);
+  --focus: var(--wireline-color-focus-default);
+  --danger: var(--wireline-color-status-error);
+  --radius-control: var(--wireline-radius-md);
+  --radius-card: var(--wireline-radius-lg);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -31,15 +31,15 @@ textarea { font: inherit; }
 button:focus-visible,
 a:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  outline: var(--wireline-interaction-focus-width) solid var(--focus);
+  outline-offset: var(--wireline-interaction-focus-offset);
 }
 
 .panel-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--wireline-space-200);
   padding: 20px;
 }
 
@@ -53,7 +53,7 @@ textarea:focus-visible {
 }
 
 .panel-header p {
-  margin: 8px 0 0;
+  margin: var(--wireline-space-100) 0 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
@@ -95,7 +95,7 @@ textarea:focus-visible {
 }
 
 .selection-preview {
-  margin: 12px 0 0;
+  margin: var(--wireline-space-150) 0 0;
   padding: 10px;
   border-radius: var(--radius-control);
   background: var(--surface-secondary);
@@ -143,17 +143,17 @@ textarea::placeholder { color: var(--muted); }
 }
 
 .primary-button {
-  min-height: 40px;
+  min-height: max(40px, var(--wireline-interaction-target-comfortable));
   border-radius: var(--radius-control);
   background: var(--primary);
-  color: #fff;
+  color: var(--wireline-color-text-onAction);
   font-size: 13px;
   font-weight: 700;
-  transition: transform 200ms ease, background 200ms ease;
+  transition: transform var(--wireline-motion-duration-standard) ease, background var(--wireline-motion-duration-standard) ease;
 }
 
 .primary-button:hover { background: var(--primary-pressed); }
-.primary-button:active { transform: scale(0.98); }
+.primary-button:active { transform: scale(var(--wireline-motion-press)); }
 .primary-button:disabled,
 .quiet-button:disabled,
 .text-button:disabled { cursor: wait; opacity: 0.6; }
