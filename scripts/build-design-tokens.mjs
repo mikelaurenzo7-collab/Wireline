@@ -5,13 +5,12 @@ const root = process.cwd();
 const sourcePath = resolve(root, "design-tokens/wireline.tokens.json");
 const cssOutputPath = resolve(root, "src/styles/tokens.generated.css");
 const tsOutputPath = resolve(root, "src/constants/generated-design-tokens.ts");
-const swiftOutputPath = resolve(root, "ios/WirelineDesignTokens/WirelineDesignTokens.swift");
-const kotlinOutputPath = resolve(root, "android/design-tokens/src/main/java/com/wireline/design/WirelineDesignTokens.kt");
-const extensionOutputPath = resolve(root, "extension/styles/wireline-tokens.generated.css");
+const swiftOutputPath = resolve(root, "ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
+const kotlinOutputPath = resolve(root, "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
+const extensionOutputPath = resolve(root, "apps/browser-extension/panel/tokens.generated.css");
 
 const tokens = JSON.parse(await readFile(sourcePath, "utf8"));
 
-/** Walk DTCG-style groups and collect leaf token values by semantic path. */
 function flatten(group, path = [], output = {}) {
   for (const [key, value] of Object.entries(group)) {
     if (key.startsWith("$")) continue;
@@ -50,13 +49,12 @@ for (const path of requiredPaths) {
   if (!values[path]) throw new Error(`Missing required Wireline token: ${path}`);
 }
 
-const cssVariableName = (path) => `--wireline-${path.replaceAll(".", "-")}`;
 const orderedEntries = Object.entries(values).sort(([left], [right]) => left.localeCompare(right));
 const orderedValues = Object.fromEntries(orderedEntries);
 const css = [
   "/* Generated from design-tokens/wireline.tokens.json. Do not edit by hand. */",
   ":root {",
-  ...orderedEntries.map(([path, value]) => `  ${cssVariableName(path)}: ${value};`),
+  ...orderedEntries.map(([path, value]) => `  --wireline-${path.replaceAll(".", "-")}: ${value};`),
   "}",
   "",
 ].join("\n");
@@ -74,8 +72,12 @@ const ts = [
 ].join("\n");
 
 const pxNumber = (value) => {
-  if (typeof value === "number") return value;
-  const match = String(value).match(/^(-?\\d+(?:\\.\\d+)?)px$/);
+  const match = String(value).match(/^(\d+(?:\.\d+)?)px$/);
+  return match ? Number(match[1]) : null;
+};
+
+const millisecondNumber = (value) => {
+  const match = String(value).match(/^(\d+(?:\.\d+)?)ms$/);
   return match ? Number(match[1]) : null;
 };
 
@@ -85,25 +87,23 @@ const camel = (path) =>
     .replace(/^[A-Z]/, (char) => char.toLowerCase());
 
 const rgbaToSwift = (value) => {
-  const rgba = String(value).match(/^rgba\\((\\d+),\\s*(\\d+),\\s*(\\d+),\\s*([0-9.]+)\\)$/);
+  const rgba = String(value).match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\)$/);
   if (rgba) {
     const [, r, g, b, a] = rgba;
     return `Color(red: ${Number(r) / 255}, green: ${Number(g) / 255}, blue: ${Number(b) / 255}, opacity: ${a})`;
   }
   const hex = String(value).match(/^#([0-9A-Fa-f]{6})$/);
-  if (hex) return `Color(hex: \"${hex[1].toUpperCase()}\")`;
+  if (hex) return `Color(hex: 0x${hex[1].toUpperCase()})`;
   return null;
 };
 
 const rgbaToCompose = (value) => {
-  const rgba = String(value).match(/^rgba\\((\\d+),\\s*(\\d+),\\s*(\\d+),\\s*([0-9.]+)\\)$/);
+  const rgba = String(value).match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\)$/);
   if (rgba) {
     const [, r, g, b, a] = rgba;
-    const alpha = Math.round(Number(a) * 255)
-      .toString(16)
-      .padStart(2, "0")
-      .toUpperCase();
-    return `Color(0x${alpha}${[r, g, b].map((part) => Number(part).toString(16).padStart(2, "0").toUpperCase()).join("")})`;
+    const alpha = Math.round(Number(a) * 255).toString(16).padStart(2, "0").toUpperCase();
+    const rgb = [r, g, b].map((part) => Number(part).toString(16).padStart(2, "0").toUpperCase()).join("");
+    return `Color(0x${alpha}${rgb})`;
   }
   const hex = String(value).match(/^#([0-9A-Fa-f]{6})$/);
   if (hex) return `Color(0xFF${hex[1].toUpperCase()})`;
@@ -112,6 +112,7 @@ const rgbaToCompose = (value) => {
 
 const colorEntries = orderedEntries.filter(([path]) => path.startsWith("color."));
 const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
+const durationEntries = orderedEntries.filter(([path, value]) => path.startsWith("motion.duration.") && millisecondNumber(value) !== null);
 
 const swift = [
   "// Generated from design-tokens/wireline.tokens.json. Do not edit by hand.",
@@ -119,23 +120,16 @@ const swift = [
   "",
   "public enum WirelineDesignTokens {",
   "  public enum ColorToken {",
-  ...colorEntries.map(([path, value]) => `    public static let ${camel(path)} = ${rgbaToSwift(value) ?? `Color.clear /* unsupported token: ${value} */`}`),
+  ...colorEntries.map(([path, value]) => `    public static let ${camel(path)} = ${rgbaToSwift(value) ?? "Color.clear"}`),
   "  }",
   "",
   "  public enum Metric {",
   ...dimensionEntries.map(([path, value]) => `    public static let ${camel(path)}: CGFloat = ${pxNumber(value)}`),
   "  }",
-  "}",
   "",
-  "private extension Color {",
-  "  init(hex: String) {",
-  "    let scanner = Scanner(string: hex)",
-  "    var value: UInt64 = 0",
-  "    scanner.scanHexInt64(&value)",
-  "    let red = Double((value >> 16) & 0xFF) / 255.0",
-  "    let green = Double((value >> 8) & 0xFF) / 255.0",
-  "    let blue = Double(value & 0xFF) / 255.0",
-  "    self.init(red: red, green: green, blue: blue)",
+  "  public enum Motion {",
+  ...durationEntries.map(([path, value]) => `    public static let ${camel(path)}: Double = ${millisecondNumber(value) / 1000}`),
+  "    public static let pressScale: CGFloat = 0.98",
   "  }",
   "}",
   "",
@@ -143,18 +137,23 @@ const swift = [
 
 const kotlin = [
   "// Generated from design-tokens/wireline.tokens.json. Do not edit by hand.",
-  "package com.wireline.design",
+  "package com.wireline.app.ui.theme",
   "",
   "import androidx.compose.ui.graphics.Color",
   "import androidx.compose.ui.unit.dp",
   "",
-  "object WirelineDesignTokens {",
+  "internal object WirelineDesignTokens {",
   "  object ColorToken {",
-  ...colorEntries.map(([path, value]) => `    val ${camel(path)} = ${rgbaToCompose(value) ?? `Color.Transparent /* unsupported token: ${value} */`}`),
+  ...colorEntries.map(([path, value]) => `    val ${camel(path)} = ${rgbaToCompose(value) ?? "Color.Transparent"}`),
   "  }",
   "",
   "  object Metric {",
   ...dimensionEntries.map(([path, value]) => `    val ${camel(path)} = ${pxNumber(value)}.dp`),
+  "  }",
+  "",
+  "  object Motion {",
+  ...durationEntries.map(([path, value]) => `    const val ${camel(path)}Millis = ${millisecondNumber(value)}`),
+  "    const val pressScale = 0.98f",
   "  }",
   "}",
   "",
