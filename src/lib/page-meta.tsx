@@ -40,7 +40,7 @@ const BRAND_SUFFIX = " · Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "Wireline — Personal & Business AI Assistants";
-const DEFAULT_DESCRIPTION = "AI assistants for voice, email, and text conversations—under your rules.";
+const DEFAULT_DESCRIPTION = "AI assistants for voice, email, and text—shaped around your voice, priorities, and workflow.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
