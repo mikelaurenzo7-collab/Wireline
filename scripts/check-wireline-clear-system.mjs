@@ -32,6 +32,9 @@ mustInclude("src/styles/foundation.css", foundationCss, /color-scheme:\s*light/,
 mustInclude("src/styles/design-system.css", designSystemCss, /Wireline Clear System/, "name the current design system");
 mustExclude("src/styles/studio-operations.css", studioOperationsCss, /#0a0c12|#0d1017|#12151d|#191e2a|#f7f8fc|#91a8ff/i, "Studio must not define a separate dark theme");
 mustExclude("src/components/WorkspaceShell.tsx", workspaceShell, /wl-workspace-shell--studio|studioParams|isStudioOperationsRoute/, "shell must not switch theme by Studio route state");
+mustInclude("src/components/WorkspaceShell.tsx", workspaceShell, /function isNativeAppShell/, "bottom dock must be gated by native app shell detection");
+mustInclude("src/components/WorkspaceShell.tsx", workspaceShell, /nativeAppShell \? <NativeDock/, "bottom dock must only render for native app shells");
+mustExclude("src/components/WorkspaceShell.tsx", workspaceShell, /<NativeDock pathname=\{location\.pathname\} \/>\s*<\/div>/, "bottom dock must not render unconditionally on mobile web");
 
 if (failures.length) {
   console.error(`Wireline Clear System check failed:\n- ${failures.join("\n- ")}`);
