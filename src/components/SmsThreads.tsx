@@ -17,15 +17,14 @@ import {
 import { authFetch } from "../lib/api";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { formatDate } from "../lib/safe-date";
-import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, WL_CHANNEL_CLASSES } from "../lib/wireline-ops-design";
+import {
+  OPS_CHANNEL_EMPTY,
+  OPS_CHANNEL_TOOLBAR,
+  WL_CHANNEL_CLASSES,
+} from "../lib/wireline-ops-design";
 import { useToast } from "../contexts/ToastContext";
 import { Button, EmptyState, Input, Skeleton } from "./atoms";
-import {
-  ConversationActivity,
-  ConversationMessage,
-  SearchField,
-  StatusNotice,
-} from "./molecules";
+import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
 import PageShell, { Panel } from "./PageShell";
 import ClientToolbar from "./layout/ClientToolbar";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
@@ -90,10 +89,12 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [toastError]);
 
-  const fetchThreads = async () => {
+  const fetchThreads = useCallback(async () => {
     setFetchErr(null);
     try {
       const response = await authFetch("/api/sms/threads");
@@ -101,15 +102,17 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
       if (!mountedRef.current) return;
       const rows = (body.threads || []) as Record<string, unknown>[];
-      setThreads(rows.map((row) => ({
-        id: String(apiField(row, "id") ?? ""),
-        customer_number: apiStr(row, "customer_number", "Unknown number"),
-        status: apiStr(row, "status", "open"),
-        summary: apiStr(row, "summary") || null,
-        unread_count: apiNum(row, "unread_count"),
-        last_message_at: String(apiField(row, "last_message_at") ?? ""),
-        created_at: String(apiField(row, "created_at") ?? ""),
-      })));
+      setThreads(
+        rows.map((row) => ({
+          id: String(apiField(row, "id") ?? ""),
+          customer_number: apiStr(row, "customer_number", "Unknown number"),
+          status: apiStr(row, "status", "open"),
+          summary: apiStr(row, "summary") || null,
+          unread_count: apiNum(row, "unread_count"),
+          last_message_at: String(apiField(row, "last_message_at") ?? ""),
+          created_at: String(apiField(row, "created_at") ?? ""),
+        })),
+      );
     } catch (error: any) {
       if (!mountedRef.current) return;
       const message = error?.message || "Could not load SMS threads.";
@@ -118,35 +121,48 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  };
+  }, [toastError]);
 
-  const fetchMessages = async (threadId: string) => {
-    setMessagesLoading(true);
-    setThreadErr(null);
-    try {
-      const response = await authFetch(`/api/sms/threads/${threadId}/messages`);
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "Could not load this conversation.");
-      const rows = (body.messages || []) as Record<string, unknown>[];
-      setMessages(rows.map((row) => ({
-        id: String(apiField(row, "id") ?? ""),
-        direction: apiField<string>(row, "direction") === "out" ? "out" : "in",
-        body: apiStr(row, "body"),
-        created_at: String(apiField(row, "created_at") ?? ""),
-        twilio_sid: apiField<string>(row, "twilio_sid") ?? null,
-      })));
-      await authFetch(`/api/sms/threads/${threadId}/mark-read`, { method: "POST" }).catch(() => {});
-      setThreads((current) => current.map((thread) => thread.id === threadId ? { ...thread, unread_count: 0 } : thread));
-    } catch (error: any) {
-      const message = error?.message || "Could not load this conversation.";
-      setThreadErr(message);
-      toastError("Failed to load thread", message);
-    } finally {
-      setMessagesLoading(false);
-    }
-  };
+  const fetchMessages = useCallback(
+    async (threadId: string) => {
+      setMessagesLoading(true);
+      setThreadErr(null);
+      try {
+        const response = await authFetch(`/api/sms/threads/${threadId}/messages`);
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || "Could not load this conversation.");
+        const rows = (body.messages || []) as Record<string, unknown>[];
+        setMessages(
+          rows.map((row) => ({
+            id: String(apiField(row, "id") ?? ""),
+            direction: apiField<string>(row, "direction") === "out" ? "out" : "in",
+            body: apiStr(row, "body"),
+            created_at: String(apiField(row, "created_at") ?? ""),
+            twilio_sid: apiField<string>(row, "twilio_sid") ?? null,
+          })),
+        );
+        await authFetch(`/api/sms/threads/${threadId}/mark-read`, { method: "POST" }).catch(
+          () => {},
+        );
+        setThreads((current) =>
+          current.map((thread) =>
+            thread.id === threadId ? { ...thread, unread_count: 0 } : thread,
+          ),
+        );
+      } catch (error: any) {
+        const message = error?.message || "Could not load this conversation.";
+        setThreadErr(message);
+        toastError("Failed to load thread", message);
+      } finally {
+        setMessagesLoading(false);
+      }
+    },
+    [toastError],
+  );
 
-  useEffect(() => { void fetchThreads(); }, []);
+  useEffect(() => {
+    void fetchThreads();
+  }, [fetchThreads]);
 
   useEffect(() => {
     if (loading || !threads.length || autoSelectedDesktopRef.current) return;
@@ -158,11 +174,15 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   useEffect(() => {
     setMessages([]);
     if (activeId) void fetchMessages(activeId);
-  }, [activeId]);
+  }, [activeId, fetchMessages]);
 
   useEffect(() => {
     if (!messagesEndRef.current || !messages.length) return;
-    try { messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch { /* route transition */ }
+    try {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch {
+      /* route transition */
+    }
   }, [messages]);
 
   const handleSend = async () => {
@@ -205,7 +225,11 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const activeThread = threads.find((thread) => thread.id === activeId);
   const query = search.trim().toLowerCase();
   const visibleThreads = query
-    ? threads.filter((thread) => thread.customer_number.toLowerCase().includes(query) || (thread.summary || "").toLowerCase().includes(query))
+    ? threads.filter(
+        (thread) =>
+          thread.customer_number.toLowerCase().includes(query) ||
+          (thread.summary || "").toLowerCase().includes(query),
+      )
     : threads;
   const activeThreadIndex = visibleThreads.findIndex((thread) => thread.id === activeId);
 
@@ -220,7 +244,13 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   };
 
   const refreshAction = (
-    <Button type="button" variant="secondary" size="sm" onClick={() => void fetchThreads()} disabled={loading}>
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      onClick={() => void fetchThreads()}
+      disabled={loading}
+    >
       {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
       {OPS_CHANNEL_TOOLBAR.sms.refresh}
     </Button>
@@ -230,9 +260,49 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   const listContent = () => {
     if (loading) return <SmsLoadingState />;
-    if (fetchErr) return <StatusNotice tone="destructive" title="Inbox unavailable" action={<Button type="button" variant="link" size="sm" onClick={() => void fetchThreads()}>Retry</Button>}>{fetchErr}</StatusNotice>;
-    if (!threads.length) return <EmptyState icon={<MessageSquare className="size-5" />} eyebrow={OPS_CHANNEL_EMPTY.sms.eyebrow} title={OPS_CHANNEL_EMPTY.sms.title} description={OPS_CHANNEL_EMPTY.sms.description} action={<Button asChild><a href="/actions">Open connections</a></Button>} density="compact" />;
-    if (!visibleThreads.length) return <EmptyState icon={<Sparkles className="size-5" />} title="No threads match this search" description={`Nothing matched “${search.trim()}”.`} action={<Button type="button" variant="secondary" onClick={() => setSearch("")}>Clear search</Button>} density="compact" />;
+    if (fetchErr)
+      return (
+        <StatusNotice
+          tone="destructive"
+          title="Inbox unavailable"
+          action={
+            <Button type="button" variant="link" size="sm" onClick={() => void fetchThreads()}>
+              Retry
+            </Button>
+          }
+        >
+          {fetchErr}
+        </StatusNotice>
+      );
+    if (!threads.length)
+      return (
+        <EmptyState
+          icon={<MessageSquare className="size-5" />}
+          eyebrow={OPS_CHANNEL_EMPTY.sms.eyebrow}
+          title={OPS_CHANNEL_EMPTY.sms.title}
+          description={OPS_CHANNEL_EMPTY.sms.description}
+          action={
+            <Button asChild>
+              <a href="/actions">Open connections</a>
+            </Button>
+          }
+          density="compact"
+        />
+      );
+    if (!visibleThreads.length)
+      return (
+        <EmptyState
+          icon={<Sparkles className="size-5" />}
+          title="No threads match this search"
+          description={`Nothing matched “${search.trim()}”.`}
+          action={
+            <Button type="button" variant="secondary" onClick={() => setSearch("")}>
+              Clear search
+            </Button>
+          }
+          density="compact"
+        />
+      );
 
     return (
       <div className="space-y-1.5" role="listbox" aria-label="SMS threads">
@@ -246,11 +316,17 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
               aria-controls="sms-thread-detail"
               aria-label={`SMS thread with ${thread.customer_number}`}
               tabIndex={activeId === thread.id || (!activeId && index === 0) ? 0 : -1}
-              ref={(node) => { threadButtonRefs.current[index] = node; }}
+              ref={(node) => {
+                threadButtonRefs.current[index] = node;
+              }}
               onClick={() => setActiveId(thread.id)}
               onKeyDown={(event) => {
                 const currentIndex = activeThreadIndex >= 0 ? activeThreadIndex : index;
-                const nextIndex = resolveChannelListNavigationIndex(currentIndex, event.key, visibleThreads.length);
+                const nextIndex = resolveChannelListNavigationIndex(
+                  currentIndex,
+                  event.key,
+                  visibleThreads.length,
+                );
                 if (nextIndex == null) return;
                 event.preventDefault();
                 const nextThread = visibleThreads[nextIndex];
@@ -260,15 +336,36 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
               }}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className={cn(WL_CHANNEL_CLASSES.threadRow, "text-left transition-colors hover:bg-[var(--wl-surface-subtle)]", activeId === thread.id && WL_CHANNEL_CLASSES.threadRowActive)}
+              className={cn(
+                WL_CHANNEL_CLASSES.threadRow,
+                "text-left transition-colors hover:bg-[var(--wireline-surface-subtle)]",
+                activeId === thread.id && WL_CHANNEL_CLASSES.threadRowActive,
+              )}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-sm text-foreground truncate">{thread.customer_number}</p>
-                  {thread.summary ? <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">{thread.summary}</p> : null}
-                  <p className="mt-2 text-xs text-muted-foreground">{formatDate(thread.last_message_at, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }, "—", "en-US")}</p>
+                  <p className="font-mono text-sm text-foreground truncate">
+                    {thread.customer_number}
+                  </p>
+                  {thread.summary ? (
+                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">
+                      {thread.summary}
+                    </p>
+                  ) : null}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {formatDate(
+                      thread.last_message_at,
+                      { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
+                      "—",
+                      "en-US",
+                    )}
+                  </p>
                 </div>
-                {thread.unread_count > 0 ? <span className="grid min-w-6 min-h-6 place-items-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">{thread.unread_count}</span> : null}
+                {thread.unread_count > 0 ? (
+                  <span className="grid min-w-6 min-h-6 place-items-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
+                    {thread.unread_count}
+                  </span>
+                ) : null}
               </div>
             </motion.button>
           ))}
@@ -279,45 +376,179 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-background text-foreground">
-      <ClientToolbar left={<span className="app-toolbar-stat">{showInitialLoad ? OPS_CHANNEL_TOOLBAR.sms.loading : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}</span>} actions={refreshAction} />
-      {showInitialLoad ? <ClientRouteLoading icon={<MessageSquare className="size-7" />} label={OPS_CHANNEL_TOOLBAR.sms.loading} className="flex-1 min-h-0" /> : (
+      <ClientToolbar
+        left={
+          <span className="app-toolbar-stat">
+            {showInitialLoad
+              ? OPS_CHANNEL_TOOLBAR.sms.loading
+              : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}
+          </span>
+        }
+        actions={refreshAction}
+      />
+      {showInitialLoad ? (
+        <ClientRouteLoading
+          icon={<MessageSquare className="size-7" />}
+          label={OPS_CHANNEL_TOOLBAR.sms.loading}
+          className="flex-1 min-h-0"
+        />
+      ) : (
         <div className="flex-1 min-h-0">
-          <PageShell eyebrow={embedded ? undefined : "Channels · Messaging"} title={embedded ? "" : "SMS Inbox"} subtitle={embedded ? undefined : "Two-way text conversations with customers and assistants."}>
-            <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
+          <PageShell
+            eyebrow={embedded ? undefined : "Channels · Messaging"}
+            title={embedded ? "" : "SMS Inbox"}
+            subtitle={
+              embedded ? undefined : "Two-way text conversations with customers and assistants."
+            }
+          >
+            <Panel
+              title="Inbox"
+              hint="SMS · THREADS & REPLIES"
+              icon={Inbox}
+              flush
+              className="h-full"
+            >
               <ChannelInboxGrid>
                 <ChannelInboxListPane label="All conversations" detailOpen={!!activeId}>
-                  {!loading && !fetchErr && threads.length > 0 ? <div className="sticky top-0 z-10 bg-card/95 px-1 pb-3 backdrop-blur"><SearchField value={search} onChange={(event) => setSearch(event.target.value)} onClear={() => setSearch("")} placeholder="Search number or summary" aria-label="Search SMS threads" /></div> : null}
+                  {!loading && !fetchErr && threads.length > 0 ? (
+                    <div className="sticky top-0 z-10 bg-card/95 px-1 pb-3 backdrop-blur">
+                      <SearchField
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        onClear={() => setSearch("")}
+                        placeholder="Search number or summary"
+                        aria-label="Search SMS threads"
+                      />
+                    </div>
+                  ) : null}
                   {listContent()}
                 </ChannelInboxListPane>
 
                 <ChannelInboxDetailPane detailOpen={!!activeId} label="Selected SMS conversation">
-                  {!activeThread ? <EmptyState icon={<MessageSquare className="size-5" />} eyebrow={OPS_CHANNEL_EMPTY.inboxDetail.eyebrow} title={OPS_CHANNEL_EMPTY.inboxDetail.title} description={OPS_CHANNEL_EMPTY.inboxDetail.description} density="compact" /> : (
-                    <motion.div id="sms-thread-detail" key={activeThread.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="flex h-full min-h-0 flex-col p-4 sm:p-5">
+                  {!activeThread ? (
+                    <EmptyState
+                      icon={<MessageSquare className="size-5" />}
+                      eyebrow={OPS_CHANNEL_EMPTY.inboxDetail.eyebrow}
+                      title={OPS_CHANNEL_EMPTY.inboxDetail.title}
+                      description={OPS_CHANNEL_EMPTY.inboxDetail.description}
+                      density="compact"
+                    />
+                  ) : (
+                    <motion.div
+                      id="sms-thread-detail"
+                      key={activeThread.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex h-full min-h-0 flex-col p-4 sm:p-5"
+                    >
                       <header className="flex shrink-0 items-center gap-2 border-b border-border pb-3">
                         <Phone className="size-4 text-primary" />
-                        <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">{activeThread.customer_number}</span>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => void copyNumber(activeThread.customer_number)} aria-label={copied ? "Number copied" : "Copy customer number"}>{copied ? <Check className="size-4 text-[var(--wl-success)]" /> : <Copy className="size-4" />}</Button>
-                        <span className="text-xs font-medium uppercase tracking-[.08em] text-muted-foreground">Two-way</span>
+                        <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
+                          {activeThread.customer_number}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => void copyNumber(activeThread.customer_number)}
+                          aria-label={copied ? "Number copied" : "Copy customer number"}
+                        >
+                          {copied ? (
+                            <Check className="size-4 text-[var(--wireline-success)]" />
+                          ) : (
+                            <Copy className="size-4" />
+                          )}
+                        </Button>
+                        <span className="text-xs font-medium uppercase tracking-[.08em] text-muted-foreground">
+                          Two-way
+                        </span>
                       </header>
-                      <Button type="button" variant="link" size="sm" onClick={() => setActiveId(null)} className="mt-2 self-start px-0 lg:hidden"><ArrowLeft className="size-3" /> Back</Button>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={() => setActiveId(null)}
+                        className="mt-2 self-start px-0 lg:hidden"
+                      >
+                        <ArrowLeft className="size-3" /> Back
+                      </Button>
 
-                      <div className="flex-1 min-h-0 space-y-3 overflow-y-auto py-4" aria-live="polite" aria-label="SMS conversation">
-                        {messagesLoading && !messages.length ? <SmsLoadingState /> : messages.map((message) => (
-                          <ConversationMessage key={message.id} author={message.direction === "out" ? "assistant" : "customer"} channel="text" label={message.direction === "out" ? "You" : "Customer"} timestamp={formatSmsTime(message.created_at)}>
-                            {message.body}
-                          </ConversationMessage>
-                        ))}
+                      <div
+                        className="flex-1 min-h-0 space-y-3 overflow-y-auto py-4"
+                        aria-live="polite"
+                        aria-label="SMS conversation"
+                      >
+                        {messagesLoading && !messages.length ? (
+                          <SmsLoadingState />
+                        ) : (
+                          messages.map((message) => (
+                            <ConversationMessage
+                              key={message.id}
+                              author={message.direction === "out" ? "assistant" : "customer"}
+                              channel="text"
+                              label={message.direction === "out" ? "You" : "Customer"}
+                              timestamp={formatSmsTime(message.created_at)}
+                            >
+                              {message.body}
+                            </ConversationMessage>
+                          ))
+                        )}
                         <div ref={messagesEndRef} />
                       </div>
 
                       <div className="shrink-0 border-t border-border pt-3">
-                        {sending ? <ConversationActivity className="mb-3" state="active" title="Sending text message" detail="The message is queued while Wireline confirms delivery." /> : null}
-                        {threadErr ? <StatusNotice tone="destructive" className="mb-3" title="Message delivery needs attention">{threadErr}</StatusNotice> : null}
+                        {sending ? (
+                          <ConversationActivity
+                            className="mb-3"
+                            state="active"
+                            title="Sending text message"
+                            detail="The message is queued while Wireline confirms delivery."
+                          />
+                        ) : null}
+                        {threadErr ? (
+                          <StatusNotice
+                            tone="destructive"
+                            className="mb-3"
+                            title="Message delivery needs attention"
+                          >
+                            {threadErr}
+                          </StatusNotice>
+                        ) : null}
                         <div className="flex gap-2">
-                          <Input type="text" value={reply} onChange={(event) => setReply(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void handleSend(); } }} placeholder="Type a reply…" disabled={sending} aria-label="SMS reply" className="flex-1" />
-                          <Button type="button" size="icon" onClick={() => void handleSend()} disabled={sending || !reply.trim()} aria-label="Send SMS reply">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
+                          <Input
+                            type="text"
+                            value={reply}
+                            onChange={(event) => setReply(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" && !event.shiftKey) {
+                                event.preventDefault();
+                                void handleSend();
+                              }
+                            }}
+                            placeholder="Type a reply…"
+                            disabled={sending}
+                            aria-label="SMS reply"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            onClick={() => void handleSend()}
+                            disabled={sending || !reply.trim()}
+                            aria-label="Send SMS reply"
+                          >
+                            {sending ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Send className="size-4" />
+                            )}
+                          </Button>
                         </div>
-                        <p className="mt-2 text-xs leading-5 text-muted-foreground">Sent from your Twilio sender · TCPA opt-out applies · STOP keyword auto-honored.</p>
+                        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                          Sent from your Twilio sender · TCPA opt-out applies · STOP keyword
+                          auto-honored.
+                        </p>
                       </div>
                     </motion.div>
                   )}

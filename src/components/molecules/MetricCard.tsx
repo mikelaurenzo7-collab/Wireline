@@ -4,19 +4,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-export const metricCardVariants = cva("wl-panel flex min-w-0 flex-col gap-3 rounded-xl border p-4", {
-  variants: {
-    tone: {
-      default: "border-border bg-card",
-      positive: "border-[var(--wl-success-border)] bg-[var(--wl-success-surface)]",
-      warning: "border-[var(--wl-warning-border)] bg-[var(--wl-warning-surface)]",
-      danger: "border-[var(--wl-error-border)] bg-[var(--wl-error-surface)]",
+export const metricCardVariants = cva(
+  "wl-panel flex min-w-0 flex-col gap-3 rounded-xl border p-4",
+  {
+    variants: {
+      tone: {
+        default: "border-border bg-card",
+        positive: "border-[var(--wireline-success-border)] bg-[var(--wireline-success-surface)]",
+        warning: "border-[var(--wireline-warning-border)] bg-[var(--wireline-warning-surface)]",
+        danger: "border-[var(--wireline-error-border)] bg-[var(--wireline-error-surface)]",
+      },
+    },
+    defaultVariants: {
+      tone: "default",
     },
   },
-  defaultVariants: {
-    tone: "default",
-  },
-});
+);
 
 export interface MetricCardProps
   extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof metricCardVariants> {
@@ -42,13 +45,17 @@ export function MetricCard({
   const TrendIcon = trend === "up" ? ArrowUpRight : trend === "down" ? ArrowDownRight : Minus;
   const trendClass =
     trend === "up"
-      ? "text-[var(--wl-success)]"
+      ? "text-[var(--wireline-success)]"
       : trend === "down"
-        ? "text-[var(--wl-error)]"
+        ? "text-[var(--wireline-error)]"
         : "text-muted-foreground";
 
   return (
-    <section data-slot="metric-card" className={cn(metricCardVariants({ tone }), className)} {...props}>
+    <section
+      data-slot="metric-card"
+      className={cn(metricCardVariants({ tone }), className)}
+      {...props}
+    >
       <div className="flex min-w-0 items-start justify-between gap-3">
         <p className="min-w-0 text-sm font-medium text-muted-foreground">{label}</p>
         {icon ? <span className="shrink-0 text-muted-foreground">{icon}</span> : null}
@@ -58,13 +65,20 @@ export function MetricCard({
           {value}
         </output>
         {delta ? (
-          <span className={cn("inline-flex shrink-0 items-center gap-1 text-xs font-medium", trendClass)}>
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1 text-xs font-medium",
+              trendClass,
+            )}
+          >
             <TrendIcon aria-hidden="true" className="h-3.5 w-3.5" />
             {delta}
           </span>
         ) : null}
       </div>
-      {footer ? <div className="border-t border-border pt-3 text-xs text-muted-foreground">{footer}</div> : null}
+      {footer ? (
+        <div className="border-t border-border pt-3 text-xs text-muted-foreground">{footer}</div>
+      ) : null}
     </section>
   );
 }

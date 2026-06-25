@@ -153,7 +153,7 @@ export function AgentReviewForm({
                   className={cn(
                     "shrink-0 rounded-full wl-label",
                     appliedSet.has(i)
-                      ? "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] wl-text-success"
+                      ? "border-[color-mix(in_srgb,var(--wireline-signal)_30%,transparent)] wl-text-success"
                       : "border-brand/30 text-brand hover:bg-brand/10",
                   )}
                 >

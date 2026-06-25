@@ -59,8 +59,11 @@ export default function MarketingPageFrame({
         )}
       >
         {sectionLinks && sectionLinks.length > 0 ? (
-          <div className="sticky top-16 z-20 -mx-5 mb-6 border-y border-border bg-[color:color-mix(in_srgb,var(--wl-page)_94%,transparent)] px-5 py-2.5 backdrop-blur-xl md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
-            <nav aria-label="On this page" className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll">
+          <div className="sticky top-16 z-20 -mx-5 mb-6 border-y border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_94%,transparent)] px-5 py-2.5 backdrop-blur-xl md:-mx-8 md:px-8 lg:-mx-12 lg:px-12">
+            <nav
+              aria-label="On this page"
+              className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll"
+            >
               <span className="wl-overline shrink-0">On this page</span>
               {sectionLinks.map((link) => {
                 const active = activeSection === link.id;
@@ -86,7 +89,9 @@ export default function MarketingPageFrame({
         <div className={cn(scroll && "wl-measure")}>{children}</div>
       </main>
 
-      {footer ? <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta && scroll} /> : null}
+      {footer ? (
+        <MarketingFooter className="relative z-10 shrink-0" aboveStickyCta={stickyCta && scroll} />
+      ) : null}
       {stickyCta && scroll ? <MarketingStickyCta /> : null}
     </div>
   );

@@ -85,7 +85,7 @@ function WorkspaceNavigationContent({
         >
           <WirelineMark className="h-6 w-6 shrink-0 text-[22px] leading-none text-primary" />
           <span className="min-w-0">
-            <span className="block font-[var(--wl-font-display)] text-[20px] font-semibold leading-5 tracking-[-.03em] text-foreground">
+            <span className="block font-[var(--wireline-font-display)] text-[20px] font-semibold leading-5 tracking-[-.03em] text-foreground">
               Wireline
             </span>
             <span className="mt-1 block truncate font-mono text-[9px] font-medium lowercase tracking-[.08em] text-muted-foreground">
@@ -95,7 +95,12 @@ function WorkspaceNavigationContent({
         </Link>
         {mobile ? (
           <DialogClose asChild>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close workspace navigation">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Close workspace navigation"
+            >
               <X size={18} aria-hidden="true" />
             </Button>
           </DialogClose>
@@ -104,12 +109,7 @@ function WorkspaceNavigationContent({
 
       <nav className="mt-7 flex flex-col gap-1" aria-label="Workspace">
         {primaryNavigation.map((item) => (
-          <NavItem
-            key={item.href}
-            {...item}
-            active={isActive(item.href)}
-            onNavigate={onNavigate}
-          />
+          <NavItem key={item.href} {...item} active={isActive(item.href)} onNavigate={onNavigate} />
         ))}
       </nav>
 
@@ -230,7 +230,11 @@ export default function WorkspaceShell({
         <DialogDescription className="sr-only">
           Navigate between Wireline workspace areas and account settings.
         </DialogDescription>
-        <WorkspaceNavigationContent pathname={location.pathname} onNavigate={closeMobileNavigation} mobile />
+        <WorkspaceNavigationContent
+          pathname={location.pathname}
+          onNavigate={closeMobileNavigation}
+          mobile
+        />
       </DialogContent>
     </Dialog>
   );

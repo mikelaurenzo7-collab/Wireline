@@ -14,11 +14,13 @@ export default function AppShell() {
     return (
       <div className="studio-route-loading" role="status" aria-live="polite">
         <div className="flex flex-col items-center gap-4 text-center">
-          <span className="grid size-11 place-items-center rounded-[var(--radius-lg)] border border-border bg-card text-primary shadow-[var(--wl-shadow-sm)]">
+          <span className="grid size-11 place-items-center rounded-[var(--radius-lg)] border border-border bg-card text-primary shadow-[var(--wireline-shadow-sm)]">
             <WirelineMark className="size-6" />
           </span>
           <div>
-            <p className="font-[var(--wl-font-display)] text-[17px] font-semibold tracking-[-.02em] text-foreground">Opening Wireline</p>
+            <p className="font-[var(--wireline-font-display)] text-[17px] font-semibold tracking-[-.02em] text-foreground">
+              Opening Wireline
+            </p>
             <p className="mt-1 text-sm text-muted-foreground">Preparing your workspace…</p>
           </div>
         </div>

@@ -406,7 +406,7 @@ function PlanPicker({
                   "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
                   isSignupMatch
                     ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
-                    : "border-border hover:border-[color:var(--wl-line-strong)]",
+                    : "border-border hover:border-[color:var(--wireline-color-border-strong)]",
                 )}
                 data-accent={accent}
               >
@@ -464,7 +464,7 @@ function PlanPicker({
                   onClick={() => onSelectPlan(plan.id)}
                   disabled={isBusy || !plan.configured}
                   className={cn(
-                    "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wl-line-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
+                    "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
                     !isBusy && plan.configured && "wl-accent-subscribe",
                   )}
                 >
@@ -513,7 +513,7 @@ function ActiveSubCard({
     sub.status === "active"
       ? {
           label: "Active",
-          cls: "bg-brand/15 border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] wl-text-success",
+          cls: "bg-brand/15 border-[color-mix(in_srgb,var(--wireline-signal)_30%,transparent)] wl-text-success",
         }
       : sub.status === "trialing"
         ? { label: "Trial", cls: "bg-brand/15 border-brand/30 text-brand" }

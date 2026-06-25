@@ -50,8 +50,11 @@ export default function RobotHead({
     >
       <defs>
         <linearGradient id={`wireline-signal-${uid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--wl-accent, #5D3FD3)" />
-          <stop offset="100%" stopColor="var(--wl-accent-deep, #1C0062)" />
+          <stop offset="0%" stopColor="var(--wireline-color-action-primary-default, #5D3FD3)" />
+          <stop
+            offset="100%"
+            stopColor="var(--wireline-color-action-primary-default-deep, #1C0062)"
+          />
         </linearGradient>
       </defs>
       <rect
@@ -60,8 +63,8 @@ export default function RobotHead({
         width="80"
         height="80"
         rx="8"
-        fill="var(--wl-surface, #FFFFFF)"
-        stroke="var(--wl-line, #C9C4D7)"
+        fill="var(--wireline-color-surface-default, #FFFFFF)"
+        stroke="var(--wireline-color-border-default, #C9C4D7)"
       />
       <g transform={mirrored ? "translate(96 0) scale(-1 1)" : undefined}>
         <path
@@ -78,7 +81,7 @@ export default function RobotHead({
         <path
           d="M66 35C72 39 75 44 75 48C75 52 72 57 66 61"
           fill="none"
-          stroke="var(--wl-accent, #5D3FD3)"
+          stroke="var(--wireline-color-action-primary-default, #5D3FD3)"
           strokeWidth="3"
           strokeLinecap="round"
         />
@@ -86,7 +89,7 @@ export default function RobotHead({
           cx="70"
           cy="27"
           r="5"
-          fill="var(--wl-accent-muted, #D8CEFF)"
+          fill="var(--wireline-color-action-primary-default-muted, #D8CEFF)"
           className={pulseClass}
         />
       </g>
@@ -94,7 +97,7 @@ export default function RobotHead({
         x="48"
         y="82"
         textAnchor="middle"
-        fill="var(--wl-muted, #6E6E73)"
+        fill="var(--wireline-color-text-secondary, #6E6E73)"
         fontFamily="Inter, sans-serif"
         fontSize="7"
         fontWeight="700"

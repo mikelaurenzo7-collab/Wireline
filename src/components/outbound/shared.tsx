@@ -23,7 +23,7 @@ export const CLOSED_CONFIRM: ConfirmState = {
 export function campaignOutcomeBarClass(status: string): string {
   if (status?.includes("Blocked")) return "bg-amber-500";
   if (status === "Failed" || status?.includes("Fail")) return "bg-destructive";
-  if (status === "Completed") return "bg-[var(--wl-signal)]";
+  if (status === "Completed") return "bg-[var(--wireline-signal)]";
   if (status === "Queued") return "bg-brand/60";
   return "bg-muted-foreground/35";
 }
@@ -41,8 +41,8 @@ export const CAMPAIGN_STATUS: Record<
   active: {
     text: "wl-text-success",
     bg: "wl-status-success",
-    border: "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)]",
-    iconBorder: "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)]",
+    border: "border-[color-mix(in_srgb,var(--wireline-signal)_30%,transparent)]",
+    iconBorder: "border-[color-mix(in_srgb,var(--wireline-signal)_30%,transparent)]",
   },
   paused: {
     text: "text-amber-600",

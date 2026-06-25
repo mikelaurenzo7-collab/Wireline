@@ -123,8 +123,8 @@ export default function BrowserCallWidget({
         className={cn(
           "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
           callActive
-            ? "border-[color:var(--wl-status-error)] bg-[color:var(--wl-status-error)] text-white shadow-[0_1px_3px_rgba(186,26,26,0.12)]"
-            : "border-primary bg-primary text-white shadow-[0_1px_3px_rgba(93,63,211,0.12)] hover:border-[color:var(--wl-accent-hover)] hover:bg-[color:var(--wl-accent-hover)] hover:text-white",
+            ? "border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-status-error)] text-white shadow-[0_1px_3px_rgba(186,26,26,0.12)]"
+            : "border-primary bg-primary text-white shadow-[0_1px_3px_rgba(93,63,211,0.12)] hover:border-[color:var(--wireline-color-action-primary-default-hover)] hover:bg-[color:var(--wireline-color-action-primary-default-hover)] hover:text-white",
         )}
       >
         {connecting ? (
@@ -152,7 +152,7 @@ export default function BrowserCallWidget({
       </ShadButton>
 
       {callActive && (
-        <div className="flex h-7 items-center gap-2 rounded-full border border-border bg-[color:var(--wl-surface-subtle)] px-4 py-1.5">
+        <div className="flex h-7 items-center gap-2 rounded-full border border-border bg-[color:var(--wireline-surface-subtle)] px-4 py-1.5">
           <Volume2
             className={cn(
               "h-3.5 w-3.5 text-muted-foreground",
@@ -179,7 +179,7 @@ export default function BrowserCallWidget({
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wl-status-error)] bg-[color:var(--wl-surface-subtle)] px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-destructive">
+        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-surface-subtle)] px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-destructive">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>

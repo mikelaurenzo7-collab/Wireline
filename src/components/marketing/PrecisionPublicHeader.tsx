@@ -17,7 +17,8 @@ const links = [
     to: "/for/personal",
     label: "Product",
     description: "Personal assistants for real conversations.",
-    active: (path: string) => path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/"),
+    active: (path: string) =>
+      path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/"),
   },
   {
     to: "/features",
@@ -34,7 +35,7 @@ const links = [
 ] as const;
 
 const mobileControlClassName =
-  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-border bg-[var(--wl-surface)] text-foreground shadow-[var(--wl-shadow-sm)] transition-[background-color,border-color,color,transform] hover:border-primary/35 hover:bg-[var(--wl-surface-subtle)] hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-border bg-[var(--wireline-color-surface-default)] text-foreground shadow-[var(--wireline-shadow-sm)] transition-[background-color,border-color,color,transform] hover:border-primary/35 hover:bg-[var(--wireline-surface-subtle)] hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
 
 export default function PrecisionPublicHeader() {
   const [open, setOpen] = useState(false);
@@ -46,7 +47,7 @@ export default function PrecisionPublicHeader() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <header className="fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wl-page)_96%,transparent)] backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl">
         <a className="wl-skip-link" href="#main-content">
           Skip to content
         </a>
@@ -55,7 +56,7 @@ export default function PrecisionPublicHeader() {
           <div className="flex min-w-0 items-center gap-8">
             <Link
               to="/"
-              className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wl-font-display)] text-[20px] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
+              className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[20px] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
               aria-label="Wireline home"
             >
               <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
@@ -84,10 +85,16 @@ export default function PrecisionPublicHeader() {
           </div>
 
           <div className="hidden items-center gap-5 md:flex">
-            <Link to="/signin" className="text-[13px] font-medium text-foreground transition-colors hover:text-primary">
+            <Link
+              to="/signin"
+              className="text-[13px] font-medium text-foreground transition-colors hover:text-primary"
+            >
               Sign in
             </Link>
-            <Link to="/signup" className="marketing-btn-primary min-h-9 px-4 text-[12px] font-semibold uppercase tracking-[.05em]">
+            <Link
+              to="/signup"
+              className="marketing-btn-primary min-h-9 px-4 text-[12px] font-semibold uppercase tracking-[.05em]"
+            >
               Create account
             </Link>
           </div>
@@ -143,15 +150,22 @@ export default function PrecisionPublicHeader() {
                   onClick={() => setOpen(false)}
                   className={`group flex min-h-[76px] items-center justify-between gap-4 rounded-[var(--radius-lg)] border px-4 py-4 transition-colors ${
                     active
-                      ? "border-primary/30 bg-[var(--wl-accent-container)] text-foreground"
-                      : "border-border bg-[var(--wl-surface)] text-foreground hover:border-primary/30 hover:bg-[var(--wl-surface-subtle)]"
+                      ? "border-primary/30 bg-[var(--wireline-color-action-primary-default-container)] text-foreground"
+                      : "border-border bg-[var(--wireline-color-surface-default)] text-foreground hover:border-primary/30 hover:bg-[var(--wireline-surface-subtle)]"
                   }`}
                 >
                   <span className="min-w-0">
-                    <span className="block text-[17px] font-semibold tracking-[-.02em]">{link.label}</span>
-                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{link.description}</span>
+                    <span className="block text-[17px] font-semibold tracking-[-.02em]">
+                      {link.label}
+                    </span>
+                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+                      {link.description}
+                    </span>
                   </span>
-                  <span aria-hidden="true" className="shrink-0 text-lg text-primary transition-transform group-hover:translate-x-0.5">
+                  <span
+                    aria-hidden="true"
+                    className="shrink-0 text-lg text-primary transition-transform group-hover:translate-x-0.5"
+                  >
                     →
                   </span>
                 </Link>

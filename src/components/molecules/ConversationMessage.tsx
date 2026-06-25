@@ -11,7 +11,8 @@ export const conversationMessageVariants = cva(
       author: {
         customer: "mr-auto border-border bg-card text-foreground",
         assistant: "ml-auto border-primary/25 bg-primary/10 text-foreground",
-        system: "mx-auto max-w-full border-border bg-[var(--wl-surface-subtle)] text-foreground",
+        system:
+          "mx-auto max-w-full border-border bg-[var(--wireline-surface-subtle)] text-foreground",
       },
     },
     defaultVariants: {

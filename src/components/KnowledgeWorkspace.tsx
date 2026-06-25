@@ -3,7 +3,15 @@ import { Database, Loader2, Plus, ShieldCheck, SlidersHorizontal, Trash2 } from 
 import { useSearchParams } from "react-router-dom";
 
 import { authFetch, safeJson } from "../lib/api";
-import { Badge, Button, EmptyState, Input, NativeSelect, Skeleton, Textarea } from "../components/atoms";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Input,
+  NativeSelect,
+  Skeleton,
+  Textarea,
+} from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import { useAgents } from "../contexts/AgentsContext";
 
@@ -30,11 +38,17 @@ function PanelShell({ title, icon, countLabel, loading, action, children }: Pane
     <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
       <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">{icon}</span>
+          <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
+            {icon}
+          </span>
           <div>
-            <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">{title}</h2>
+            <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">
+              {title}
+            </h2>
             {countLabel ? (
-              <p className="mt-1 font-mono text-[11px] leading-4 text-muted-foreground">{loading ? "—" : countLabel}</p>
+              <p className="mt-1 font-mono text-[11px] leading-4 text-muted-foreground">
+                {loading ? "—" : countLabel}
+              </p>
             ) : null}
           </div>
         </div>
@@ -77,8 +91,13 @@ function ItemsPanel({
       ) : items.length ? (
         <div className="space-y-5">
           {items.map((item, index) => (
-            <article className="border-l-2 border-[color:var(--wl-line-strong)] pl-3" key={`${item}-${index}`}>
-              <p className="text-[15px] font-semibold leading-5 text-foreground">{item.split(/[:\n]/)[0]}</p>
+            <article
+              className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3"
+              key={`${item}-${index}`}
+            >
+              <p className="text-[15px] font-semibold leading-5 text-foreground">
+                {item.split(/[:\n]/)[0]}
+              </p>
               <p className="mt-1 line-clamp-5 text-[14px] leading-5 text-muted-foreground">
                 {item.includes(":") ? item.slice(item.indexOf(":") + 1).trim() : item}
               </p>
@@ -99,7 +118,9 @@ function ItemsPanel({
 }
 
 function TonePanel({ personality, loading }: { personality?: string; loading: boolean }) {
-  const traits = personality ? ["Professional", "Concise", "Helpful"] : ["Clear", "Direct", "Helpful"];
+  const traits = personality
+    ? ["Professional", "Concise", "Helpful"]
+    : ["Clear", "Direct", "Helpful"];
 
   return (
     <PanelShell
@@ -112,7 +133,7 @@ function TonePanel({ personality, loading }: { personality?: string; loading: bo
         <PanelLoadingRows />
       ) : (
         <>
-          <blockquote className="border-l-2 border-[color:var(--wl-line-strong)] pl-3 text-[15px] italic leading-6 text-muted-foreground">
+          <blockquote className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3 text-[15px] italic leading-6 text-muted-foreground">
             {personality ||
               "Define how your assistant should sound. Keep it clear, confident, concise, and appropriate to every conversation."}
           </blockquote>
@@ -178,12 +199,13 @@ function SourcesPanel({ loading }: { loading: boolean }) {
       ) : (
         <div className="space-y-4">
           <StatusNotice tone="info" title="Source controls are staged next.">
-            This panel shows freshness design states now. Connector-backed source management will replace these preview actions in the next knowledge pass.
+            This panel shows freshness design states now. Connector-backed source management will
+            replace these preview actions in the next knowledge pass.
           </StatusNotice>
           {sources.map((src) => (
             <article
               key={src.id}
-              className="flex items-center justify-between gap-4 rounded-lg border border-border p-3 transition-colors hover:border-[color:var(--wl-line-strong)]"
+              className="flex items-center justify-between gap-4 rounded-lg border border-border p-3 transition-colors hover:border-[color:var(--wireline-color-border-strong)]"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
@@ -192,14 +214,24 @@ function SourcesPanel({ loading }: { loading: boolean }) {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-[14px] font-semibold text-foreground">{src.name}</p>
-                    <Badge variant={src.stale ? "warning" : "success"}>{src.stale ? "Stale" : "Fresh"}</Badge>
+                    <Badge variant={src.stale ? "warning" : "success"}>
+                      {src.stale ? "Stale" : "Fresh"}
+                    </Badge>
                   </div>
-                  <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">{src.url}</p>
+                  <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
+                    {src.url}
+                  </p>
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2 text-right">
                 <p className="text-[12px] font-medium text-foreground">Synced {src.lastSync}</p>
-                <Button type="button" variant="link" size="sm" className="h-auto px-0 text-xs" disabled>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-0 text-xs"
+                  disabled
+                >
                   Re-sync next
                 </Button>
               </div>
@@ -226,8 +258,14 @@ export default function KnowledgeWorkspace() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const agentId = params.get("agent") || agents[0]?.id || "";
-  const facts = useMemo(() => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [], [config.knowledge]);
-  const rules = useMemo(() => config.directives?.map((item) => item.content || "").filter(Boolean) || [], [config.directives]);
+  const facts = useMemo(
+    () => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [],
+    [config.knowledge],
+  );
+  const rules = useMemo(
+    () => config.directives?.map((item) => item.content || "").filter(Boolean) || [],
+    [config.directives],
+  );
 
   const load = useCallback(async () => {
     if (!agentId) {
@@ -277,7 +315,14 @@ export default function KnowledgeWorkspace() {
       });
       const payload = await safeJson(response);
       if (!response.ok) {
-        setSaveError((payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") ? payload.error : "Your change could not be saved.");
+        setSaveError(
+          payload &&
+            typeof payload === "object" &&
+            "error" in payload &&
+            typeof payload.error === "string"
+            ? payload.error
+            : "Your change could not be saved.",
+        );
         return;
       }
       setTitle("");
@@ -333,7 +378,12 @@ export default function KnowledgeWorkspace() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex shrink-0 items-center justify-end lg:hidden">
-        <NativeSelect value={agentId} onChange={(event) => setParams({ agent: event.target.value })} className="max-w-[260px]" aria-label="Choose assistant">
+        <NativeSelect
+          value={agentId}
+          onChange={(event) => setParams({ agent: event.target.value })}
+          className="max-w-[260px]"
+          aria-label="Choose assistant"
+        >
           {agents.map((agent) => (
             <option value={agent.id} key={agent.id}>
               {agent.name}
@@ -356,7 +406,11 @@ export default function KnowledgeWorkspace() {
         ))}
       </div>
 
-      {loadError ? <StatusNotice tone="warning" title="Knowledge is partially unavailable.">{loadError}</StatusNotice> : null}
+      {loadError ? (
+        <StatusNotice tone="warning" title="Knowledge is partially unavailable.">
+          {loadError}
+        </StatusNotice>
+      ) : null}
 
       <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(170px,.85fr)_minmax(170px,.85fr)_minmax(180px,.9fr)_minmax(350px,1.65fr)] xl:gap-6">
         <div className="hidden min-h-0 xl:block">{factsPanel}</div>
@@ -371,8 +425,12 @@ export default function KnowledgeWorkspace() {
           <div className="flex items-center gap-2 border-b border-border pb-3">
             <Plus size={19} className="text-foreground" />
             <div>
-              <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">Add a detail</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Teach the assistant something true or define a boundary it should respect.</p>
+              <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">
+                Add a detail
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Teach the assistant something true or define a boundary it should respect.
+              </p>
             </div>
           </div>
 
@@ -396,25 +454,51 @@ export default function KnowledgeWorkspace() {
           </div>
 
           <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
-            <FormField label="Title" description={kind === "knowledge" ? "Name the fact so it is easy to scan later." : "Summarize the boundary or condition."}>
+            <FormField
+              label="Title"
+              description={
+                kind === "knowledge"
+                  ? "Name the fact so it is easy to scan later."
+                  : "Summarize the boundary or condition."
+              }
+            >
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder={kind === "knowledge" ? "e.g., Preferred pharmacy" : "e.g., When to ask me first"}
+                placeholder={
+                  kind === "knowledge" ? "e.g., Preferred pharmacy" : "e.g., When to ask me first"
+                }
               />
             </FormField>
 
-            <FormField label="Content" required description={kind === "knowledge" ? "Describe a fact, preference, routine, or policy clearly." : "Describe what the assistant must do or avoid."} error={saveError ? saveError : undefined} className="flex min-h-0 flex-1 flex-col">
+            <FormField
+              label="Content"
+              required
+              description={
+                kind === "knowledge"
+                  ? "Describe a fact, preference, routine, or policy clearly."
+                  : "Describe what the assistant must do or avoid."
+              }
+              error={saveError ? saveError : undefined}
+              className="flex min-h-0 flex-1 flex-col"
+            >
               <Textarea
                 value={entry}
                 onChange={(event) => setEntry(event.target.value)}
                 className="mt-1 min-h-[180px] flex-1"
                 resize="none"
-                placeholder={kind === "knowledge" ? "Describe a fact, preference, routine, or policy clearly…" : "Describe what the assistant must do or avoid…"}
+                placeholder={
+                  kind === "knowledge"
+                    ? "Describe a fact, preference, routine, or policy clearly…"
+                    : "Describe what the assistant must do or avoid…"
+                }
               />
             </FormField>
 
-            <FormField label="Tags" description="Optional comma-separated labels for future filtering and retrieval.">
+            <FormField
+              label="Tags"
+              description="Optional comma-separated labels for future filtering and retrieval."
+            >
               <Input
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}

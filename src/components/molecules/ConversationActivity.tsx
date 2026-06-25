@@ -9,10 +9,14 @@ export const conversationActivityVariants = cva(
   {
     variants: {
       state: {
-        pending: "border-[var(--wl-info-border)] bg-[var(--wl-info-surface)] text-foreground",
-        active: "border-[var(--wl-warning-border)] bg-[var(--wl-warning-surface)] text-foreground",
-        complete: "border-[var(--wl-success-border)] bg-[var(--wl-success-surface)] text-foreground",
-        failed: "border-[var(--wl-error-border)] bg-[var(--wl-error-surface)] text-foreground",
+        pending:
+          "border-[var(--wireline-info-border)] bg-[var(--wireline-info-surface)] text-foreground",
+        active:
+          "border-[var(--wireline-warning-border)] bg-[var(--wireline-warning-surface)] text-foreground",
+        complete:
+          "border-[var(--wireline-success-border)] bg-[var(--wireline-success-surface)] text-foreground",
+        failed:
+          "border-[var(--wireline-error-border)] bg-[var(--wireline-error-surface)] text-foreground",
       },
     },
     defaultVariants: { state: "pending" },
@@ -28,15 +32,39 @@ export interface ConversationActivityProps
 }
 
 function defaultIcon(state: NonNullable<ConversationActivityProps["state"]>) {
-  if (state === "complete") return <CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--wl-success)]" />;
-  if (state === "active") return <Clock3 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--wl-warning)]" />;
-  if (state === "failed") return <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--wl-error)]" />;
-  return <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--wl-info)]" />;
+  if (state === "complete")
+    return (
+      <CheckCircle2
+        aria-hidden="true"
+        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-success)]"
+      />
+    );
+  if (state === "active")
+    return (
+      <Clock3
+        aria-hidden="true"
+        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-warning)]"
+      />
+    );
+  if (state === "failed")
+    return (
+      <CircleAlert
+        aria-hidden="true"
+        className="mt-0.5 size-4 shrink-0 text-[var(--wireline-error)]"
+      />
+    );
+  return <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--wireline-info)]" />;
 }
 
 const ConversationActivity = React.forwardRef<HTMLDivElement, ConversationActivityProps>(
   ({ state = "pending", title, detail, timestamp, icon, className, ...props }, ref) => (
-    <div ref={ref} data-slot="conversation-activity" data-state={state} className={cn(conversationActivityVariants({ state }), className)} {...props}>
+    <div
+      ref={ref}
+      data-slot="conversation-activity"
+      data-state={state}
+      className={cn(conversationActivityVariants({ state }), className)}
+      {...props}
+    >
       {icon ?? defaultIcon(state)}
       <div className="min-w-0">
         <p className="font-semibold text-foreground">{title}</p>

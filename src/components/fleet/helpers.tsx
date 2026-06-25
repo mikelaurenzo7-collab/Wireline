@@ -159,7 +159,7 @@ const ROLE_TW = {
   success: {
     bg: "wl-status-success",
     text: "wl-text-success",
-    border: "border-[color-mix(in_srgb,var(--wl-signal)_25%,transparent)]",
+    border: "border-[color-mix(in_srgb,var(--wireline-signal)_25%,transparent)]",
     dot: "bg-brand",
   },
   critical: {
