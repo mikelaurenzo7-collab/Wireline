@@ -19,6 +19,7 @@
 @import "./styles/precision-studio.css";
 @import "./styles/precision-auth.css";
 @import "./styles/clarity-system.css";
+@import "./styles/studio-operations.css";
 
 /* Base body styles */
 body {
