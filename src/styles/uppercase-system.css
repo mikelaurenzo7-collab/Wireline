@@ -1,0 +1,108 @@
+/* Uppercase is Wireline's interface language. */
+
+.wl-ui-caps {
+  --wl-caps-display-tracking: -0.045em;
+  --wl-caps-title-tracking: -0.028em;
+  --wl-caps-control-tracking: 0.075em;
+  --wl-caps-label-tracking: 0.13em;
+  text-transform: uppercase;
+  letter-spacing: 0.018em;
+}
+
+.wl-ui-caps :where(h1, h2, h3, h4, h5, h6),
+.wl-page-title,
+.wl-app-page-title,
+.wl-section-title,
+.wl-card-title,
+.wl-pro-title,
+.wl-workspace-title,
+.wl-public-section-heading,
+.wl-stitch-display {
+  font-family: var(--wireline-font-family-display);
+  font-weight: 700;
+  letter-spacing: var(--wl-caps-title-tracking);
+  line-height: 1.03;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.wl-page-title {
+  font-size: clamp(2.15rem, 4.5vw + 0.8rem, 4.35rem);
+  letter-spacing: var(--wl-caps-display-tracking);
+}
+
+.wl-app-page-title {
+  font-size: clamp(1.25rem, 1.05rem + 1.15vw, 1.85rem);
+  letter-spacing: -0.02em;
+  line-height: 1.06;
+}
+
+.wl-section-title,
+.wl-stitch-display {
+  font-size: clamp(1.35rem, 1.08rem + 1.25vw, 2.35rem);
+}
+
+.wl-card-title {
+  font-size: clamp(1rem, 0.93rem + 0.45vw, 1.35rem);
+  letter-spacing: -0.018em;
+  line-height: 1.1;
+}
+
+.wl-metric-value {
+  font-size: clamp(2.25rem, 4vw + 1rem, 3.25rem);
+  font-weight: 700;
+  letter-spacing: var(--wl-caps-display-tracking);
+  line-height: 0.92;
+}
+
+.wl-overline,
+.wl-pro-eyebrow,
+.wl-micro-meta,
+.wl-stitch-eyebrow,
+.wl-stitch-label,
+.wl-page-context,
+.wl-workspace-eyebrow,
+.studio-kicker,
+.text-eyebrow {
+  font-family: var(--wireline-font-family-mono);
+  font-size: clamp(0.61rem, 0.57rem + 0.12vw, 0.7rem);
+  font-weight: 650;
+  letter-spacing: var(--wl-caps-label-tracking);
+  line-height: 1.25;
+}
+
+.wl-ui-caps :is(button, [role="button"], [role="tab"], [role="menuitem"], [data-slot="button"], [data-slot="badge"], .wl-btn, .marketing-btn-primary, .marketing-btn-secondary, .studio-primary-button, .studio-secondary-button, .wl-stitch-sidebar-link, nav a, label, legend, th) {
+  letter-spacing: var(--wl-caps-control-tracking);
+  text-transform: uppercase;
+}
+
+.wl-ui-caps :is(.wl-public-copy, .wl-page-copy, .wl-route-copy, .wl-overview-hero-copy, .wl-body-caption, .wl-inline-empty, .wl-inline-empty__label, .wl-banner__body, [data-slot="status-notice"]) {
+  letter-spacing: 0.035em;
+}
+
+.wl-ui-caps :where(input, textarea, select, option, optgroup, [contenteditable="true"], code, pre, kbd, samp),
+.wl-ui-caps :where(.prose, .wl-prose, [data-wireline-preserve-case]),
+.wl-ui-caps :where(.prose, .wl-prose, [data-wireline-preserve-case]) * {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+@media (max-width: 640px) {
+  .wl-page-title {
+    font-size: clamp(1.9rem, 9vw, 3.05rem);
+    line-height: 1.02;
+  }
+
+  .wl-app-page-title {
+    font-size: clamp(1.08rem, 4.7vw, 1.38rem);
+  }
+
+  .wl-section-title,
+  .wl-stitch-display {
+    font-size: clamp(1.22rem, 6vw, 1.82rem);
+  }
+
+  .wl-ui-caps :is(button, [role="button"], [data-slot="button"], .marketing-btn-primary, .marketing-btn-secondary) {
+    letter-spacing: 0.06em;
+  }
+}
