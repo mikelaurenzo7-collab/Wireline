@@ -19,16 +19,8 @@ const links = [
     active: (path: string) =>
       path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/"),
   },
-  {
-    to: "/features",
-    label: "Features",
-    active: (path: string) => path === "/features",
-  },
-  {
-    to: "/pricing",
-    label: "Pricing",
-    active: (path: string) => path === "/pricing",
-  },
+  { to: "/features", label: "Features", active: (path: string) => path === "/features" },
+  { to: "/pricing", label: "Pricing", active: (path: string) => path === "/pricing" },
 ] as const;
 
 const mobileControlClassName =
@@ -122,21 +114,17 @@ export default function PrecisionPublicHeader() {
           Browse Wireline product pages or open your account.
         </DialogDescription>
 
-        <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <div className="mb-6 flex items-center justify-between">
-            <p className="text-eyebrow">Explore Wireline</p>
+        <div className="mx-auto flex min-h-full w-full max-w-lg flex-col px-5 py-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-center justify-between border-b border-border pb-4">
+            <p className="wl-overline">Menu</p>
             <DialogClose asChild>
-              <button
-                type="button"
-                className={mobileControlClassName}
-                aria-label="Close navigation"
-              >
+              <button type="button" className={mobileControlClassName} aria-label="Close navigation">
                 <X size={20} aria-hidden="true" />
               </button>
             </DialogClose>
           </div>
 
-          <nav className="grid gap-2" aria-label="Mobile site">
+          <nav className="mt-3" aria-label="Mobile site">
             {links.map((link) => {
               const active = link.active(location.pathname);
               return (
@@ -145,21 +133,12 @@ export default function PrecisionPublicHeader() {
                   to={link.to}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setOpen(false)}
-                  className={`group flex min-h-[76px] items-center justify-between gap-4 rounded-[var(--radius-lg)] border px-4 py-4 transition-colors ${
-                    active
-                      ? "border-primary/30 bg-[var(--wireline-color-action-primary-default-container)] text-foreground"
-                      : "border-border bg-[var(--wireline-color-surface-default)] text-foreground hover:border-primary/30 hover:bg-[var(--wireline-surface-subtle)]"
+                  className={`group flex min-h-14 items-center justify-between border-b border-border text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em] transition-colors ${
+                    active ? "text-primary" : "text-foreground hover:text-primary"
                   }`}
                 >
-                  <span className="min-w-0">
-                    <span className="block text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em]">
-                      {link.label}
-                    </span>
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="shrink-0 text-lg text-primary transition-transform group-hover:translate-x-0.5"
-                  >
+                  {link.label}
+                  <span aria-hidden="true" className="text-lg transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
                 </Link>
@@ -167,7 +146,7 @@ export default function PrecisionPublicHeader() {
             })}
           </nav>
 
-          <div className="mt-auto grid gap-3 border-t border-border pt-6">
+          <div className="mt-auto grid gap-3 pt-6">
             <Link
               to="/signin"
               onClick={() => setOpen(false)}
