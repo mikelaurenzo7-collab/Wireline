@@ -9,7 +9,7 @@ const PERSONAL_FEATURES = [
   "Build and test free",
   "Add balance only for live work",
   "No automatic reload",
-  "Rules and approvals stay yours",
+  "Your voice, playbook, and approvals stay yours",
 ] as const;
 
 type BusinessTier = {
@@ -47,9 +47,9 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
 ];
 
 const FAQ = [
-  ["Do I need a subscription to start?", "No. Build and test a personal assistant for free. Add balance only when you are ready for live work."],
-  ["Will balance reload automatically?", "No. You decide when to add more."],
-  ["What is Conversation Balance?", "It is prepaid funding for live assistant work."],
+  ["Do I need a subscription to start?", "No. Build and test a personal assistant for free. Add Conversation Balance only when you are ready for live work."],
+  ["Will balance reload automatically?", "No. You decide when to add more. There is no automatic reload."],
+  ["What is Conversation Balance?", "It is prepaid funding for the live conversation work your assistant performs."],
   ["When do I need a business plan?", "When you need shared coverage, professional lines, routing, or team connections."],
 ] as const;
 
@@ -57,8 +57,8 @@ export default function Pricing() {
   return (
     <div className="wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Start free, add $5 to go live | Wireline"
-        description="Build personal assistants free. Add Conversation Balance for live work. Business plans add team coverage, routing, and shared operations."
+        title="Pricing | Build free, fund live work when ready | Wireline"
+        description="Build a Wireline assistant for free. Fund live conversation work when it is useful. Business plans add shared coverage, routing, and team operations."
         path="/pricing"
       />
       <PrecisionPublicHeader />
@@ -69,10 +69,10 @@ export default function Pricing() {
             <div className="max-w-3xl">
               <p className="wl-overline text-primary">Pricing</p>
               <h1 className="mt-4 text-balance text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
-                Start free. Fund live work when you are ready.
+                Build it free. Fund it when it goes live.
               </h1>
               <p className="mt-5 max-w-xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-                Personal assistants cost nothing to build. Live conversations use your Conversation Balance.
+                Start with a real assistant, shaped around your work. Conversation Balance begins only when you ask it to handle live conversations.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">
@@ -91,17 +91,17 @@ export default function Pricing() {
             <article className="wl-stitch-card p-6 sm:p-9">
               <div className="flex items-center gap-2">
                 <Sparkles className="size-5 text-primary" />
-                <span className="wl-overline">Personal</span>
+                <span className="wl-overline">Personal workspace</span>
               </div>
               <div className="mt-5 flex items-baseline gap-2">
                 <span className="wl-metric-value text-[clamp(2.5rem,6vw,3.5rem)]">$0</span>
                 <span className="wl-overline">/ month</span>
               </div>
               <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-                Build first. Add balance when your assistant begins live work.
+                Make the assistant yours first. Add balance when it begins carrying live work.
               </p>
               <div className="mt-7">
-                <p className="wl-overline mb-3">Start balance</p>
+                <p className="wl-overline mb-3">Start with Conversation Balance</p>
                 <div className="flex flex-wrap gap-2">
                   {CONVERSATION_BALANCE_PRESETS_USD.map((amount, index) => (
                     <span key={amount} className={(index === 0 ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-card text-foreground") + " inline-flex min-w-[64px] items-center justify-center rounded-full border px-4 py-2 text-[var(--wireline-typography-body-size)] font-semibold tabular-nums"}>
@@ -127,9 +127,9 @@ export default function Pricing() {
 
             <aside className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
               {[
-                [Wallet, "Start with $5", "Use only what you fund."],
-                [ShieldCheck, "No automatic reload", "You control every top-up."],
-                [Building2, "See it clearly", "Balance and activity live in Billing."],
+                [Wallet, "Start with $5", "Use Conversation Balance only for the live work you choose."],
+                [ShieldCheck, "No automatic reload", "Every top-up stays deliberate and visible."],
+                [Building2, "A clear operating model", "Balance and activity live in Billing alongside the work itself."],
               ].map(([Icon, title, body]) => {
                 const CardIcon = Icon as typeof Wallet;
                 return (
@@ -146,15 +146,15 @@ export default function Pricing() {
           </div>
         </section>
 
-        <section className="border-t border-border px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
+        <section className="border-t border-border bg-card px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
           <div className="mx-auto max-w-6xl">
             <div className="max-w-2xl">
-              <p className="wl-overline text-primary">For business</p>
+              <p className="wl-overline text-primary">For teams</p>
               <h2 className="mt-4 text-balance text-[clamp(28px,3.6vw,42px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
-                Add the operating layer when your team needs it.
+                Add the operating layer when coverage becomes shared.
               </h2>
               <p className="mt-4 text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-                Shared coverage, professional lines, and routing. Live work stays funded on your terms.
+                Professional lines, shared context, and deliberate routing for the conversations a team has to keep moving.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -189,7 +189,7 @@ export default function Pricing() {
           <div className="mx-auto max-w-4xl">
             <div className="max-w-2xl">
               <p className="wl-overline">Questions</p>
-              <h2 className="mt-3 text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">Straightforward from the first task onward.</h2>
+              <h2 className="mt-3 text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">Straightforward from the first conversation onward.</h2>
             </div>
             <div className="mt-8 space-y-3">
               {FAQ.map(([question, answer]) => (
