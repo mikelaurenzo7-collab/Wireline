@@ -47,10 +47,14 @@ const authenticatedRoutes = [
 ];
 
 const viewports = [
-  { name: "desktop", width: 1440, height: 1100, isMobile: false, hasTouch: false },
-  { name: "laptop", width: 1280, height: 900, isMobile: false, hasTouch: false },
-  { name: "tablet", width: 834, height: 1112, isMobile: true, hasTouch: true },
-  { name: "mobile", width: 390, height: 844, isMobile: true, hasTouch: true },
+  { name: "phone-360", width: 360, height: 800, isMobile: true, hasTouch: true },
+  { name: "phone-390", width: 390, height: 844, isMobile: true, hasTouch: true },
+  { name: "phone-430", width: 430, height: 932, isMobile: true, hasTouch: true },
+  { name: "tablet-768", width: 768, height: 1024, isMobile: true, hasTouch: true },
+  { name: "tablet-834", width: 834, height: 1112, isMobile: true, hasTouch: true },
+  { name: "laptop-1024", width: 1024, height: 768, isMobile: false, hasTouch: false },
+  { name: "laptop-1280", width: 1280, height: 900, isMobile: false, hasTouch: false },
+  { name: "desktop-1440", width: 1440, height: 1100, isMobile: false, hasTouch: false },
 ];
 
 function fileName(route) {
@@ -58,9 +62,64 @@ function fileName(route) {
   return route.replace(/^\//, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "home";
 }
 
+function describeControl(element) {
+  return (
+    element.getAttribute("aria-label") ||
+    element.textContent?.replace(/\s+/g, " ").trim().slice(0, 80) ||
+    element.tagName.toLowerCase()
+  );
+}
+
 async function settle(page) {
   await page.waitForLoadState("networkidle", { timeout: 20_000 }).catch(() => {});
   await page.waitForTimeout(450);
+}
+
+async function auditResponsiveLayout(page, viewportName, route, issues) {
+  const findings = await page.evaluate(() => {
+    const viewportWidth = window.innerWidth;
+    const pageOverflow = document.documentElement.scrollWidth > viewportWidth + 1;
+    const controls = Array.from(
+      document.querySelectorAll('button, a, [role="button"], [role="tab"], [data-slot="button"]'),
+    )
+      .filter((element) => {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      })
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        const escapesViewport = rect.left < -1 || rect.right > viewportWidth + 1;
+        const hasVisibleInternalOverflow =
+          element.scrollWidth > element.clientWidth + 1 &&
+          style.overflowX === "visible" &&
+          !element.classList.contains("tab-strip-scroll");
+        return {
+          label:
+            element.getAttribute("aria-label") ||
+            element.textContent?.replace(/\s+/g, " ").trim().slice(0, 80) ||
+            element.tagName.toLowerCase(),
+          escapesViewport,
+          hasVisibleInternalOverflow,
+        };
+      })
+      .filter((control) => control.escapesViewport || control.hasVisibleInternalOverflow);
+
+    return { pageOverflow, controls };
+  });
+
+  if (findings.pageOverflow) {
+    issues.push({ viewport: viewportName, route, kind: "overflow", detail: "Document exceeds viewport width." });
+  }
+  for (const control of findings.controls) {
+    issues.push({
+      viewport: viewportName,
+      route,
+      kind: "control-overflow",
+      detail: `${control.label}: ${control.escapesViewport ? "escapes viewport" : "visible internal overflow"}`,
+    });
+  }
 }
 
 async function captureRoute(page, viewportName, route, issues) {
@@ -72,6 +131,7 @@ async function captureRoute(page, viewportName, route, issues) {
   if (!finalUrl.startsWith(`${baseUrl}${route.split("?")[0]}`)) {
     issues.push({ viewport: viewportName, route, kind: "redirect", detail: finalUrl });
   }
+  await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
   await page.screenshot({ path: file, fullPage: true, animations: "disabled" });
 }
