@@ -30,17 +30,19 @@ export default function MarketingFooter({
     <footer
       className={cn(
         "relative z-10 shrink-0 border-t border-border bg-background",
-        compact ? "px-5 py-6" : "px-5 py-9 sm:px-6 lg:px-8 xl:px-12 2xl:px-16",
+        compact ? "px-5 py-6" : "px-5 py-8 sm:px-6 lg:px-8 xl:px-12 2xl:px-16",
         aboveStickyCta && "marketing-footer-above-sticky",
         className,
       )}
     >
-      <div className="wl-measure mx-auto">
-        <div className="grid gap-8 sm:grid-cols-[minmax(0,1.25fr)_auto_auto] sm:items-start sm:gap-12">
-          <div className="max-w-sm">
-            <p className="wl-overline">Wireline</p>
-            <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-              Custom voice agents with your knowledge and voice.
+      <div className="wl-public-rail">
+        <div className="marketing-footer-rail">
+          <div>
+            <p className="font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground">
+              Wireline
+            </p>
+            <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
+              Voice, email, and text under your rules.
             </p>
           </div>
           <nav aria-label="Product" className="flex flex-col items-start gap-1">
@@ -49,7 +51,7 @@ export default function MarketingFooter({
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -61,15 +63,15 @@ export default function MarketingFooter({
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
         </div>
-        <div className="mt-8 flex flex-col gap-3 border-t border-border pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>Voice agents. Fully customized. Real results.</span>
+        <div className="mt-7 flex flex-col gap-3 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>Clear rules. Useful outcomes.</span>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link to="/privacy" className="hover:text-foreground">
               Privacy
