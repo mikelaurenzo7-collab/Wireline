@@ -15,8 +15,8 @@ const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 
 const loading = (
-  <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">
-    Opening workspace…
+  <div className="grid min-h-dvh place-items-center bg-background px-6 text-foreground">
+    <p className="wl-overline">Opening workspace</p>
   </div>
 );
 
