@@ -55,7 +55,7 @@ export default function ClientAppsPage() {
           <h2 className="wl-section-title mt-2 max-w-3xl">
             One assistant system, wherever the conversation starts.
           </h2>
-          <p className="wl-page-copy mt-3 max-w-2xl">Same assistants. Same rules. One protected workspace.</p>
+          <p className="wl-page-copy mt-3 max-w-2xl">Same assistants. Same setup. One protected workspace.</p>
         </section>
 
         <section className="grid gap-3 md:grid-cols-2">
