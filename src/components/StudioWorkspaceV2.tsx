@@ -5,6 +5,7 @@ import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { useAgents } from "../contexts/AgentsContext";
 import { PRODUCT_POSTURE } from "../lib/product-copy";
 import AgentWorkspace from "./AgentWorkspace";
+import StudioAssistantWorkspace from "./StudioAssistantWorkspace";
 import StudioOverview from "./StudioOverview";
 
 function StudioLoadingState() {
@@ -49,7 +50,8 @@ export default function StudioWorkspaceV2() {
   const [params, setParams] = useSearchParams();
   const requestedId = params.get("agent");
   const active = agents.find((agent) => agent.id === requestedId) || agents[0];
-  const workspaceMode = params.get("mode") === "assistant" || Boolean(params.get("tab"));
+  const isAssistantWorkspace = params.get("mode") === "assistant";
+  const isDetailedWorkspace = params.get("mode") === "legacy" || Boolean(params.get("tab"));
 
   function selectAgent(agentId: string) {
     const next = new URLSearchParams(params);
@@ -73,6 +75,21 @@ export default function StudioWorkspaceV2() {
     setParams(next);
   }
 
+  function openDetailed(tab?: "training" | "connectors" | "memory", sub?: string) {
+    if (!active) return;
+    const next = new URLSearchParams();
+    next.set("agent", active.id);
+    next.set("mode", "legacy");
+    if (tab) next.set("tab", tab);
+    if (sub) next.set("sub", sub);
+    setParams(next);
+  }
+
+  function returnToOverview() {
+    if (!active) return;
+    setParams(new URLSearchParams({ agent: active.id }));
+  }
+
   function openCreate() {
     setParams(new URLSearchParams({ create: "1" }));
   }
@@ -80,10 +97,14 @@ export default function StudioWorkspaceV2() {
   if (loading) return <StudioLoadingState />;
   if (!active) return <StudioEmptyState />;
 
-  if (workspaceMode) {
+  if (isDetailedWorkspace) {
     const command = params.get("command");
     const nonce = Number(params.get("commandNonce") || "0");
     return <AgentWorkspace agentId={active.id} agentName={active.name} composerSeed={command ? { text: command, nonce } : undefined} />;
+  }
+
+  if (isAssistantWorkspace) {
+    return <StudioAssistantWorkspace agentId={active.id} agentName={active.name} initialCommand={params.get("command") || undefined} onBack={returnToOverview} onOpenDetailed={openDetailed} />;
   }
 
   return <StudioOverview active={active} agents={agents} degraded={degraded} onSelect={selectAgent} onOpen={openAssistant} onCreate={openCreate} />;
