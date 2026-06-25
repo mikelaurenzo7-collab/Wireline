@@ -1,3 +1,183 @@
 @import './lib/typography.css';
 
-/* Wireline Clear System */
+/* Wireline Clear System / Wireline Mono
+ * Minimal. Monochrome. Calm. Useful.
+ * Black is action. Gray is structure. White space is product. */
+
+:root {
+  --wireline-page: var(--wireline-color-canvas-default);
+  --wireline-card: var(--wireline-color-surface-default);
+  --wireline-card-muted: var(--wireline-color-surface-subtle);
+  --wireline-rule: var(--wireline-color-border-default);
+  --wireline-rule-strong: var(--wireline-color-border-strong);
+  --wireline-ink: var(--wireline-color-text-primary);
+  --wireline-ink-muted: var(--wireline-color-text-secondary);
+  --wireline-action: var(--wireline-color-action-primary-default);
+  --wireline-action-pressed: var(--wireline-color-action-primary-pressed);
+  --wireline-action-soft: var(--wireline-color-action-primary-container);
+  --wireline-panel-shadow: var(--wireline-elevation-md);
+}
+
+.wl-ui-caps {
+  background: var(--wireline-page);
+  color: var(--wireline-ink);
+}
+
+.wl-app-page-title,
+.wl-public-section-heading,
+.wl-section-title {
+  font-family: var(--wireline-font-family-display), Inter, ui-sans-serif, system-ui, sans-serif;
+  color: var(--wireline-ink);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+.wl-app-page-title {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.04;
+}
+
+.wl-public-section-heading {
+  max-width: 12ch;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.02;
+}
+
+.wl-section-title {
+  line-height: 1.08;
+}
+
+.wl-overline {
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: var(--wireline-typography-overline-weight);
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
+  line-height: var(--wireline-typography-overline-lineHeight);
+  text-transform: uppercase;
+  color: var(--wireline-ink-muted);
+}
+
+.wl-public-copy {
+  max-width: 38rem;
+  color: var(--wireline-ink-muted);
+  font-size: clamp(1rem, 1.4vw, 1.125rem);
+  line-height: 1.65;
+}
+
+.wl-public-rail,
+.wl-measure {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.wl-stitch-card,
+.wl-card,
+.studio-card {
+  border: 1px solid var(--wireline-rule);
+  border-radius: var(--wireline-radius-xl);
+  background: var(--wireline-card);
+  box-shadow: var(--wireline-elevation-sm);
+}
+
+.wl-stitch-card:hover {
+  border-color: var(--wireline-rule-strong);
+}
+
+.wl-stitch-sidebar,
+.wl-workspace-sidebar {
+  background: var(--wireline-card);
+  border-color: var(--wireline-rule);
+}
+
+.wl-stitch-sidebar-link {
+  color: var(--wireline-ink-muted);
+  text-decoration: none;
+  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+}
+
+.wl-stitch-sidebar-link:hover {
+  background: var(--wireline-card-muted);
+  color: var(--wireline-ink);
+}
+
+.wl-stitch-sidebar-link[aria-current='page'] {
+  background: var(--wireline-action-soft);
+  color: var(--wireline-action);
+}
+
+.marketing-btn-primary,
+.marketing-btn-secondary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--wireline-radius-pill);
+  text-decoration: none;
+  transition: background-color var(--transition-base), border-color var(--transition-base), color var(--transition-base), transform var(--transition-fast);
+}
+
+.marketing-btn-primary {
+  border: 1px solid var(--wireline-action);
+  background: var(--wireline-action);
+  color: var(--wireline-color-text-onAction);
+}
+
+.marketing-btn-primary:hover {
+  background: var(--wireline-action-pressed);
+  border-color: var(--wireline-action-pressed);
+  transform: translateY(-1px);
+}
+
+.marketing-btn-secondary {
+  border: 1px solid var(--wireline-rule);
+  background: var(--wireline-card);
+  color: var(--wireline-ink);
+}
+
+.marketing-btn-secondary:hover {
+  border-color: var(--wireline-rule-strong);
+  background: var(--wireline-card-muted);
+  transform: translateY(-1px);
+}
+
+.marketing-hero,
+.marketing-demo-surface {
+  background:
+    radial-gradient(circle at top left, rgba(17, 17, 17, 0.05), transparent 32rem),
+    var(--wireline-page);
+}
+
+.marketing-channel-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .marketing-channel-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.marketing-demo-surface {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border: 1px solid var(--wireline-rule);
+  border-radius: var(--wireline-radius-xl);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.text-primary {
+  color: var(--wireline-action) !important;
+}
+
+.bg-primary\/10 {
+  background-color: var(--wireline-action-soft) !important;
+}
+
+.border-primary\/25,
+.border-primary\/35 {
+  border-color: rgba(17, 17, 17, 0.18) !important;
+}
