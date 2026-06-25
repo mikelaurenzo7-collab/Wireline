@@ -43,7 +43,7 @@ const SOLUTIONS = {
         "Voice agents that continue the conversation via email and text.",
       ],
       [
-        "Your calendar, your rules",
+        "Your calendar, your availability",
         "Book real appointments without double-booking or overpromising.",
       ],
     ],
@@ -53,7 +53,7 @@ const SOLUTIONS = {
     eyebrow: "Customer coverage",
     title: "A front desk that is ready when customers are.",
     description:
-      "Deploy custom voice agents that handle inbound calls, texts, and email with your policies, knowledge, and escalation rules.",
+      "Deploy custom voice agents that handle inbound calls, texts, and email with your policies, knowledge, and escalation paths.",
     icon: Headphones,
     primary: { href: "/signup?posture=business", label: "Create a front desk agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
@@ -79,7 +79,7 @@ const SOLUTIONS = {
       ],
       [
         "Built for your business",
-        "Each agent customized with your exact rules, language, and tools.",
+        "Each agent customized with your voice, playbook, and tools.",
       ],
     ],
     proof: "Customers get a useful answer sooner. Your team only joins when its judgment matters.",
@@ -112,7 +112,7 @@ export default function SolutionsPage() {
             </div>
             <h1 className="wl-page-title mt-6 max-w-[13ch] text-balance">{page.title}</h1>
             <p className="mt-6 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-              Custom voice agents with your knowledge and processes.
+              Custom voice agents shaped around your voice, playbook, and processes.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
