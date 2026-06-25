@@ -1,7 +1,13 @@
-/* Provider-neutral structured runtime adapter. OpenAI Responses is primary;
- * Gemini is used only after a runtime failure. */
+/* Provider-neutral structured runtime adapter. AI Gateway is preferred;
+ * direct OpenAI and Gemini remain continuity fallbacks during migration. */
 import { log } from "./server-logger";
 import { GEMINI_STRUCTURED_FALLBACK_MODEL, OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
+import {
+  AI_GATEWAY_BASE_URL,
+  gatewayHeaders,
+  gatewayModelId,
+  isAIGatewayConfigured,
+} from "./ai-gateway";
 
 export type RuntimeTextBlock = { type: "text"; text: string; citations?: null };
 export type RuntimeToolUseBlock = {
@@ -58,8 +64,10 @@ export type RuntimeClient = {
     };
   };
 };
+
 let client: RuntimeClient | null = null;
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
 function extractText(value: unknown): string {
   if (typeof value === "string") return value;
   if (Array.isArray(value)) return value.map(extractText).filter(Boolean).join("\n");
@@ -72,6 +80,7 @@ function extractText(value: unknown): string {
     return `[${typeof block.title === "string" ? block.title : "attached document"} attached; use only explicitly supplied extracted text.]`;
   return "";
 }
+
 const structuredOutputTool = (
   body: RuntimeRequest,
 ): Required<Pick<RuntimeTool, "name" | "input_schema">> | null => {
@@ -86,6 +95,7 @@ const structuredOutputTool = (
       return { name: tool.name, input_schema: tool.input_schema };
   return null;
 };
+
 function parseStructuredJson(text: string): unknown {
   const cleaned = text.replace(/```json|```/g, "").trim();
   try {
@@ -95,6 +105,7 @@ function parseStructuredJson(text: string): unknown {
     return JSON.parse(match?.[1] ? match[1].trim() : cleaned);
   }
 }
+
 function message(args: {
   model: string;
   content: RuntimeContentBlock[];
@@ -118,47 +129,44 @@ function message(args: {
     },
   };
 }
+
 function extractResponsesText(payload: Record<string, unknown>): string {
-  if (typeof payload.output_text === "string" && payload.output_text.trim())
-    return payload.output_text;
+  if (typeof payload.output_text === "string" && payload.output_text.trim()) return payload.output_text;
   const chunks: string[] = [];
   for (const item of Array.isArray(payload.output) ? payload.output : []) {
     if (!item || typeof item !== "object") continue;
     const record = item as Record<string, unknown>;
     if (typeof record.text === "string") chunks.push(record.text);
     for (const part of Array.isArray(record.content) ? record.content : []) {
-      if (
-        part &&
-        typeof part === "object" &&
-        typeof (part as Record<string, unknown>).text === "string"
-      )
+      if (part && typeof part === "object" && typeof (part as Record<string, unknown>).text === "string")
         chunks.push((part as Record<string, string>).text);
     }
   }
   return chunks.join("\n").trim();
 }
-async function callOpenAI(
-  body: RuntimeRequest,
-  options?: RuntimeRequestOptions,
-): Promise<RuntimeMessage> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
-  const requested = String(body.model || "").trim();
-  const model = requested.startsWith("gpt-") ? requested : OPENAI_STRUCTURED_PRIMARY_MODEL;
-  const tool = structuredOutputTool(body);
+
+async function callResponsesEndpoint(args: {
+  endpoint: string;
+  headers: Record<string, string>;
+  model: string;
+  body: RuntimeRequest;
+  options?: RuntimeRequestOptions;
+  provider: string;
+}): Promise<RuntimeMessage> {
+  const tool = structuredOutputTool(args.body);
   const started = Date.now();
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch(args.endpoint, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    signal: options?.signal,
+    headers: args.headers,
+    signal: args.options?.signal,
     body: JSON.stringify({
-      model,
-      instructions: extractText(body.system) || undefined,
-      input: body.messages.map((item) => ({
+      model: args.model,
+      instructions: extractText(args.body.system) || undefined,
+      input: args.body.messages.map((item) => ({
         role: item.role === "assistant" ? "assistant" : "user",
         content: extractText(item.content),
       })),
-      max_output_tokens: body.max_tokens ?? 4096,
+      max_output_tokens: args.body.max_tokens ?? 4096,
       ...(tool
         ? {
             text: {
@@ -173,22 +181,26 @@ async function callOpenAI(
         : {}),
     }),
   });
+
   if (!response.ok)
     throw new Error(
-      `OpenAI Responses request failed (${response.status}): ${(await response.text()).slice(0, 500)}`,
+      `${args.provider} Responses request failed (${response.status}): ${(await response.text()).slice(0, 500)}`,
     );
+
   const payload = (await response.json()) as Record<string, unknown>;
   const text = extractResponsesText(payload);
-  if (!text) throw new Error("OpenAI returned an empty response");
+  if (!text) throw new Error(`${args.provider} returned an empty response`);
   const usage = (payload.usage || {}) as Record<string, unknown>;
-  log.info("[ai-runtime] OpenAI response complete", {
-    model,
+  log.info("[ai-runtime] response complete", {
+    provider: args.provider,
+    model: args.model,
     latencyMs: Date.now() - started,
     structured: !!tool,
   });
+
   return tool
     ? message({
-        model,
+        model: args.model,
         content: [
           {
             type: "tool_use",
@@ -203,13 +215,47 @@ async function callOpenAI(
         outputTokens: Number(usage.output_tokens || 0),
       })
     : message({
-        model,
+        model: args.model,
         content: [{ type: "text", text, citations: null }],
         stopReason: "end_turn",
         inputTokens: Number(usage.input_tokens || 0),
         outputTokens: Number(usage.output_tokens || 0),
       });
 }
+
+async function callGateway(
+  body: RuntimeRequest,
+  options?: RuntimeRequestOptions,
+): Promise<RuntimeMessage> {
+  if (!isAIGatewayConfigured()) throw new Error("AI Gateway is not configured");
+  return callResponsesEndpoint({
+    endpoint: `${AI_GATEWAY_BASE_URL}/responses`,
+    headers: gatewayHeaders(),
+    model: gatewayModelId(String(body.model || OPENAI_STRUCTURED_PRIMARY_MODEL)),
+    body,
+    options,
+    provider: "AI Gateway",
+  });
+}
+
+async function callOpenAI(
+  body: RuntimeRequest,
+  options?: RuntimeRequestOptions,
+): Promise<RuntimeMessage> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
+  const requested = String(body.model || "").trim();
+  const model = requested.startsWith("gpt-") ? requested : OPENAI_STRUCTURED_PRIMARY_MODEL;
+  return callResponsesEndpoint({
+    endpoint: "https://api.openai.com/v1/responses",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    model,
+    body,
+    options,
+    provider: "OpenAI",
+  });
+}
+
 async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
   const { GoogleGenerativeAI } = await import("@google/generative-ai");
   const apiKey = process.env.GEMINI_API_KEY;
@@ -228,13 +274,12 @@ async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
   if (tool) {
     generationConfig.responseMimeType = "application/json";
     if (contents.length)
-      contents[contents.length - 1].parts[0].text +=
-        `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`;
+      contents[contents.length - 1].parts[0].text += `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`;
   }
   const result = await model.generateContent({ contents, generationConfig });
   const text = result.response.text();
-  const inputTokens = result.response.usageMetadata?.promptTokenCount || 0,
-    outputTokens = result.response.usageMetadata?.candidatesTokenCount || 0;
+  const inputTokens = result.response.usageMetadata?.promptTokenCount || 0;
+  const outputTokens = result.response.usageMetadata?.candidatesTokenCount || 0;
   return tool
     ? message({
         model: modelId,
@@ -259,18 +304,15 @@ async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
         outputTokens,
       });
 }
-class OpenAICircuitBreaker {
+
+class PrimaryRuntimeCircuitBreaker {
   private state: "CLOSED" | "OPEN" | "HALF_OPEN" = "CLOSED";
   private failureCount = 0;
   private lastStateChange = Date.now();
   private readonly failureThreshold = 3;
-  private readonly cooldownPeriodMs = 30000; // 30 seconds
+  private readonly cooldownPeriodMs = 30_000;
 
-  constructor() {
-    log.info("[ai-circuit-breaker] Initialized in CLOSED state");
-  }
-
-  public isOpen(): boolean {
+  isOpen(): boolean {
     const now = Date.now();
     if (this.state === "OPEN") {
       if (now - this.lastStateChange > this.cooldownPeriodMs) {
@@ -282,72 +324,65 @@ class OpenAICircuitBreaker {
     return false;
   }
 
-  public recordSuccess() {
+  recordSuccess() {
     this.failureCount = 0;
-    if (this.state !== "CLOSED") {
-      this.transitionTo("CLOSED");
-    }
+    if (this.state !== "CLOSED") this.transitionTo("CLOSED");
   }
 
-  public recordFailure(error: unknown) {
+  recordFailure(error: unknown) {
     this.failureCount++;
-    log.warn(
-      `[ai-circuit-breaker] Failure recorded (#${this.failureCount}): ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    );
-    if (this.state === "HALF_OPEN" || this.failureCount >= this.failureThreshold) {
+    log.warn("[ai-circuit-breaker] primary failure recorded", {
+      failureCount: this.failureCount,
+      error: errorMessage(error),
+    });
+    if (this.state === "HALF_OPEN" || this.failureCount >= this.failureThreshold)
       this.transitionTo("OPEN");
-    }
   }
 
-  private transitionTo(newState: "CLOSED" | "OPEN" | "HALF_OPEN") {
-    log.info(`[ai-circuit-breaker] Transitioning state: ${this.state} -> ${newState}`);
-    this.state = newState;
-    this.lastStateChange = Date.now();
-    if (newState === "CLOSED") {
-      this.failureCount = 0;
-    }
-  }
-
-  public getState() {
+  getState() {
     return this.state;
+  }
+
+  private transitionTo(next: "CLOSED" | "OPEN" | "HALF_OPEN") {
+    this.state = next;
+    this.lastStateChange = Date.now();
+    if (next === "CLOSED") this.failureCount = 0;
   }
 }
 
-const circuitBreaker = new OpenAICircuitBreaker();
+const circuitBreaker = new PrimaryRuntimeCircuitBreaker();
 
 async function createWithFallbacks(
   body: RuntimeRequest,
   options?: RuntimeRequestOptions,
 ): Promise<RuntimeMessage> {
-  const skipOpenAI = circuitBreaker.isOpen();
+  const primary = isAIGatewayConfigured() ? callGateway : callOpenAI;
+  const primaryName = isAIGatewayConfigured() ? "AI Gateway" : "OpenAI";
 
-  if (!skipOpenAI) {
+  if (!circuitBreaker.isOpen()) {
     try {
-      const response = await callOpenAI(body, options);
+      const response = await primary(body, options);
       circuitBreaker.recordSuccess();
       return response;
-    } catch (openAiError) {
-      circuitBreaker.recordFailure(openAiError);
-      log.warn("[ai-runtime] OpenAI request failed; trying Gemini fallback", {
-        error: errorMessage(openAiError),
+    } catch (primaryError) {
+      circuitBreaker.recordFailure(primaryError);
+      log.warn(`[ai-runtime] ${primaryName} request failed; trying Gemini fallback`, {
+        error: errorMessage(primaryError),
         breakerState: circuitBreaker.getState(),
       });
     }
   } else {
-    log.info(
-      `[ai-runtime] Circuit breaker is ${circuitBreaker.getState()}. Bypassing OpenAI directly to Gemini fallback.`,
-    );
+    log.info(`[ai-runtime] primary circuit breaker is ${circuitBreaker.getState()}; using Gemini fallback`);
   }
 
   return callGemini(body);
 }
+
 function fallbackStream(promise: Promise<RuntimeMessage>) {
   return {
     async *[Symbol.asyncIterator]() {
-      const result = await promise,
-        block = result.content[0];
+      const result = await promise;
+      const block = result.content[0];
       yield { type: "content_block_start", index: 0, content_block: block };
       yield {
         type: "content_block_delta",
@@ -364,6 +399,7 @@ function fallbackStream(promise: Promise<RuntimeMessage>) {
     },
   };
 }
+
 export function getRuntimeClient(): RuntimeClient {
   if (!client)
     client = {
@@ -374,12 +410,14 @@ export function getRuntimeClient(): RuntimeClient {
     };
   return client;
 }
+
 export class RuntimeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable — configure OpenAI or Gemini.");
+    super("AI runtime is unavailable. Configure AI Gateway, OpenAI, or Gemini.");
     this.name = "RuntimeUnavailableError";
   }
 }
+
 export const isRuntimeAvailable = () =>
-  Boolean(process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY);
+  Boolean(process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY);
