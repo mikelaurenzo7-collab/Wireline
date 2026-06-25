@@ -88,21 +88,32 @@
 }
 
 @media (max-width: 640px) {
+  .wl-ui-caps {
+    --wl-caps-control-tracking: 0.045em;
+    --wl-caps-label-tracking: 0.1em;
+  }
+
   .wl-page-title {
-    font-size: clamp(1.9rem, 9vw, 3.05rem);
+    font-size: clamp(1.8rem, 8.4vw, 2.7rem);
     line-height: 1.02;
   }
 
   .wl-app-page-title {
-    font-size: clamp(1.08rem, 4.7vw, 1.38rem);
+    font-size: clamp(1.02rem, 4.25vw, 1.3rem);
+    line-height: 1.08;
   }
 
   .wl-section-title,
   .wl-stitch-display {
-    font-size: clamp(1.22rem, 6vw, 1.82rem);
+    font-size: clamp(1.16rem, 5.5vw, 1.68rem);
+  }
+
+  .wl-card-title {
+    font-size: clamp(0.95rem, 4.2vw, 1.1rem);
+    line-height: 1.12;
   }
 
   .wl-ui-caps :is(button, [role="button"], [data-slot="button"], .marketing-btn-primary, .marketing-btn-secondary) {
-    letter-spacing: 0.06em;
+    letter-spacing: var(--wl-caps-control-tracking);
   }
 }
