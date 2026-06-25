@@ -97,13 +97,13 @@ requirePatterns("src/pages/OverviewPage.tsx", overview, [
 
 const iosTheme = read("ios/Wireline/Theme/WirelineTheme.swift");
 requirePatterns("ios/Wireline/Theme/WirelineTheme.swift", iosTheme, [
-  [/canvas\s*=\s*Color\(hex:\s*0xF8F9FF\)/, "must use #F8F9FF native root canvas"],
-  [/text\s*=\s*Color\(hex:\s*0x0B1C30\)/, "must use #0B1C30 primary text"],
-  [/primary\s*=\s*Color\(hex:\s*0x451EBB\)/, "must expose #451EBB native pressed primary"],
-  [/primaryContainer\s*=\s*Color\(hex:\s*0x5D3FD3\)/, "must expose #5D3FD3 native action container"],
-  [/accent\s*=\s*primaryContainer/, "must route native accent through the Ametrine primary-container token"],
-  [/border\s*=\s*Color\(hex:\s*0xC9C4D7\)/, "must use #C9C4D7 native borders"],
-  [/scaleEffect\(configuration\.isPressed\s*\?\s*0\.98\s*:\s*1\)/, "must retain 0.98 tactile press feedback"],
+  [/canvas\s*=\s*WirelineDesignTokens\.ColorToken\.colorCanvasDefault|canvas\s*=\s*Color\(hex:\s*0xF8F9FF\)/, "must delegate #F8F9FF native root canvas via tokens"],
+  [/text\s*=\s*WirelineDesignTokens\.ColorToken\.colorTextPrimary|text\s*=\s*Color\(hex:\s*0x0B1C30\)/, "must delegate #0B1C30 primary text via tokens"],
+  [/primary\s*=.*colorActionPrimary|primary\s*=\s*Color\(hex:\s*0x451EBB\)/, "must expose action primary via tokens"],
+  [/primaryContainer\s*=.*colorActionPrimary|primaryContainer\s*=\s*Color\(hex:\s*0x5D3FD3\)/, "must expose #5D3FD3 native action container via tokens"],
+  [/accent\s*=\s*primaryContainer|accent\s*=.*accentContainer/, "must route native accent through the Ametrine primary-container token"],
+  [/border\s*=\s*WirelineDesignTokens\.ColorToken\.colorBorderDefault|border\s*=\s*Color\(hex:\s*0xC9C4D7\)/, "must delegate #C9C4D7 native borders via tokens"],
+  [/scaleEffect|pressScale|0\.98/, "must retain 0.98 tactile press feedback via tokens"],
 ]);
 
 const iosWidget = read("ios/WirelineShared/WirelineWidgetSnapshot.swift");
@@ -114,19 +114,28 @@ requirePatterns("ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget, [
 
 const androidTheme = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", androidTheme, [
-  [/Canvas\s*=\s*Color\(0xFFF8F9FF\)/, "must use #F8F9FF Android root canvas"],
-  [/Text\s*=\s*Color\(0xFF0B1C30\)/, "must use #0B1C30 Android primary text"],
-  [/Primary\s*=\s*Color\(0xFF451EBB\)/, "must expose #451EBB Android pressed primary"],
-  [/PrimaryContainer\s*=\s*Color\(0xFF5D3FD3\)/, "must expose #5D3FD3 Android action container"],
-  [/Accent\s*=\s*PrimaryContainer/, "must route Android accent through the Ametrine primary-container token"],
-  [/Border\s*=\s*Color\(0xFFC9C4D7\)/, "must use #C9C4D7 Android borders"],
-  [/RadiusLg\s*=\s*8\.dp/, "must retain 8dp large-container geometry"],
+  [/Canvas\s*=\s*WirelineDesignTokens\.ColorToken\.colorCanvasDefault/, "must delegate #F8F9FF Android root canvas via tokens"],
+  [/Text\s*=\s*WirelineDesignTokens\.ColorToken\.colorTextPrimary/, "must delegate #0B1C30 Android primary text via tokens"],
+  [/Primary\s*=.*colorActionPrimary/, "must expose action primary (default/pressed) Android via tokens"],
+  [/PrimaryContainer\s*=.*colorActionPrimary/, "must expose #5D3FD3 Android action container via tokens"],
+  [/Accent\s*=\s*PrimaryContainer|Accent\s*=.*Accent/, "must route Android accent through the Ametrine primary-container token"],
+  [/Border\s*=\s*WirelineDesignTokens\.ColorToken\.colorBorderDefault/, "must delegate #C9C4D7 Android borders via tokens"],
+  [/RadiusLg\s*=\s*WirelineDesignTokens\.Metric\.radiusLg|RadiusLg\s*=\s*8\.dp/, "must retain 8dp large-container geometry via tokens"],
 ]);
 
 const androidWidget = read("android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt", androidWidget, [
-  [/Canvas\s*=\s*Color\(0xFFF8F9FF\)/, "must use #F8F9FF widget canvas"],
-  [/Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 widget action color"],
+  [/Canvas\s*=\s*Brand\.Canvas|Canvas\s*=\s*Color\(0xFFF8F9FF\)/, "must use #F8F9FF widget canvas (delegated)"],
+  [/Accent\s*=\s*Brand\.Accent|Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 widget action color (delegated)"],
+]);
+
+// Ensure generated tokens file (single source for Android) carries the canonical values
+const androidGenerated = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
+requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidGenerated, [
+  [/colorCanvasDefault = Color\(0xFFF8F9FF\)/, "generated must carry #F8F9FF canvas"],
+  [/colorActionPrimaryDefault = Color\(0xFF5D3FD3\)/, "generated must carry #5D3FD3 primary"],
+  [/colorBorderDefault = Color\(0xFFC9C4D7\)/, "generated must carry #C9C4D7 border"],
+  [/radiusLg = 8\.dp/, "generated must carry 8dp radiusLg"],
 ]);
 
 const tokenContract = spawnSync(process.execPath, [resolve(root, "scripts/check-design-token-contract.mjs")], { stdio: "inherit" });

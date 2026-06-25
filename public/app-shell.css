@@ -1,13 +1,13 @@
 /* Tiny first-paint layer. React owns all product layout after hydration. */
 :root {
-  background: #f8f9ff;
+  background: var(--wireline-color-canvas-default);
   color-scheme: light;
 }
 
 body {
   min-height: 100dvh;
   margin: 0;
-  background: #f8f9ff;
-  color: #0b1c30;
+  background: var(--wireline-color-canvas-default);
+  color: var(--wireline-color-text-primary);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 }

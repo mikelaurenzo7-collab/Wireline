@@ -150,7 +150,7 @@
   border-radius: var(--radius-md);
   background: var(--wireline-color-surface-default);
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: var(--wireline-typography-body-size);
   font-weight: 500;
   color: var(--wireline-color-text-primary);
   transition: background-color 0.2s ease-out, border-color 0.2s ease-out, transform 0.2s ease-out;
@@ -172,7 +172,7 @@
   border-radius: var(--radius-md);
   background: var(--wireline-color-surface-default);
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: var(--wireline-typography-body-size);
   color: var(--wireline-color-text-primary);
   outline: none;
 }
@@ -196,7 +196,7 @@
   align-items: center;
   border-radius: var(--radius-md);
   font-family: var(--wireline-font-sans);
-  font-size: 14px;
+  font-size: var(--wireline-typography-body-size);
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -232,7 +232,7 @@
 
 .wl-stitch-stat-box strong {
   font-family: var(--wireline-font-display);
-  font-size: 20px;
+  font-size: var(--wireline-typography-h3-size);
   font-weight: 600;
   letter-spacing: -0.03em;
   color: var(--wireline-color-text-primary);
@@ -278,7 +278,7 @@
   background: var(--accent);
   padding: 4px 12px;
   font-family: var(--wireline-font-mono);
-  font-size: 11px;
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -308,7 +308,7 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 14px;
+  font-size: var(--wireline-typography-body-size);
 }
 
 .wl-stitch-data-table thead tr,
@@ -319,7 +319,7 @@
 .wl-stitch-data-table th {
   padding: 16px 20px;
   font-family: var(--wireline-font-mono);
-  font-size: 11px;
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -362,7 +362,7 @@
   border-bottom: 2px solid transparent;
   padding: 8px 4px;
   font-family: var(--wireline-font-mono);
-  font-size: 11px;
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -396,7 +396,7 @@
   border-radius: var(--radius-lg);
   background: var(--wireline-color-surface-default);
   padding: 14px 16px;
-  font-size: 14px;
+  font-size: var(--wireline-typography-body-size);
   line-height: 1.5;
   color: var(--wireline-color-text-primary);
 }
@@ -443,7 +443,7 @@
   align-items: center;
   gap: 12px;
   margin-block: 24px;
-  font-size: 14px;
+  font-size: var(--wireline-typography-body-size);
   color: var(--wireline-color-text-secondary);
 }
 

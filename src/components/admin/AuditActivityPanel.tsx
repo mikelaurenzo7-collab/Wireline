@@ -202,7 +202,10 @@ export function AuditActivityPanel() {
                       dataKey="date"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fontSize: 9, fill: "rgba(0,0,0,0.4)" }}
+                      tick={{
+                        fontSize: "var(--wireline-typography-overline-size)",
+                        fill: "rgba(0,0,0,0.4)",
+                      }}
                       tickFormatter={(val: any) =>
                         new Date(val).toLocaleDateString(undefined, {
                           month: "short",
@@ -217,7 +220,7 @@ export function AuditActivityPanel() {
                         border: "none",
                         borderRadius: 0,
                         boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-                        fontSize: "10px",
+                        fontSize: "var(--wireline-typography-overline-size)",
                       }}
                       formatter={(val: unknown) => [`$${Number(val ?? 0).toFixed(4)}`, "Cost"]}
                     />
