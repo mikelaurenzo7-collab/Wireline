@@ -7,8 +7,26 @@ const cssPath = resolve(root, "src/styles/tokens.generated.css");
 const tsPath = resolve(root, "src/constants/generated-design-tokens.ts");
 const foundationPath = resolve(root, "src/styles/foundation.css");
 const indexPath = resolve(root, "src/index.css");
+const extensionTokensPath = resolve(root, "apps/browser-extension/panel/tokens.generated.css");
+const extensionPanelPath = resolve(root, "apps/browser-extension/panel/index.html");
+const extensionStylesPath = resolve(root, "apps/browser-extension/panel/styles.css");
+const swiftTokensPath = resolve(root, "ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
+const swiftThemePath = resolve(root, "ios/Wireline/Theme/WirelineTheme.swift");
+const kotlinTokensPath = resolve(root, "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
 
-for (const path of [sourcePath, cssPath, tsPath, foundationPath, indexPath]) {
+for (const path of [
+  sourcePath,
+  cssPath,
+  tsPath,
+  foundationPath,
+  indexPath,
+  extensionTokensPath,
+  extensionPanelPath,
+  extensionStylesPath,
+  swiftTokensPath,
+  swiftThemePath,
+  kotlinTokensPath,
+]) {
   if (!existsSync(path)) throw new Error(`Missing Wireline token artifact: ${path}`);
 }
 
@@ -17,6 +35,12 @@ const css = readFileSync(cssPath, "utf8");
 const ts = readFileSync(tsPath, "utf8");
 const foundation = readFileSync(foundationPath, "utf8");
 const indexCss = readFileSync(indexPath, "utf8");
+const extensionTokens = readFileSync(extensionTokensPath, "utf8");
+const extensionPanel = readFileSync(extensionPanelPath, "utf8");
+const extensionStyles = readFileSync(extensionStylesPath, "utf8");
+const swiftTokens = readFileSync(swiftTokensPath, "utf8");
+const swiftTheme = readFileSync(swiftThemePath, "utf8");
+const kotlinTokens = readFileSync(kotlinTokensPath, "utf8");
 
 function flatten(group, path = [], output = {}) {
   for (const [key, value] of Object.entries(group)) {
@@ -58,7 +82,8 @@ for (const path of requiredPaths) {
 
 for (const [path, value] of Object.entries(values)) {
   const cssVariable = `--wireline-${path.replaceAll(".", "-")}: ${value};`;
-  if (!css.includes(cssVariable)) throw new Error(`Generated CSS is stale or missing token: ${path}`);
+  if (!css.includes(cssVariable)) throw new Error(`Generated web CSS is stale or missing token: ${path}`);
+  if (!extensionTokens.includes(cssVariable)) throw new Error(`Generated extension CSS is stale or missing token: ${path}`);
   if (!ts.includes(`"${path}"`)) throw new Error(`Generated TypeScript is stale or missing token: ${path}`);
 }
 
@@ -82,4 +107,20 @@ if (indexCss.indexOf(tokenImport) > indexCss.indexOf(designSystemImport)) {
   throw new Error("Generated token CSS must load before the design system runtime.");
 }
 
-console.log(`Wireline design token contract passed (${Object.keys(values).length} tokens).`);
+if (extensionPanel.indexOf("./tokens.generated.css") > extensionPanel.indexOf("./styles.css")) {
+  throw new Error("Extension must load generated tokens before panel styles.");
+}
+if (!extensionStyles.includes("--canvas: var(--wireline-color-canvas-default)")) {
+  throw new Error("Extension styles must consume semantic generated tokens.");
+}
+if (!swiftTokens.includes("public enum WirelineDesignTokens")) {
+  throw new Error("SwiftUI generated token artifact is invalid.");
+}
+if (!swiftTheme.includes("WirelineDesignTokens.ColorToken.colorCanvasDefault")) {
+  throw new Error("SwiftUI theme must consume generated semantic tokens.");
+}
+if (!kotlinTokens.includes("internal object WirelineDesignTokens")) {
+  throw new Error("Compose generated token artifact is invalid.");
+}
+
+console.log(`Wireline cross-surface token contract passed (${Object.keys(values).length} tokens).`);

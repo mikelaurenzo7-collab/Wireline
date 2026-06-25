@@ -8,6 +8,8 @@ const run = (command, args) => {
 const environment = process.env.VERCEL_ENV || process.env.NODE_ENV;
 const shouldMigrate = environment === "production" || process.env.WIRELINE_RUN_MIGRATIONS === "true";
 
+run("node", ["scripts/build-design-tokens.mjs"]);
+
 if (shouldMigrate) {
   run("npm", ["run", "db:migrate"]);
 } else {
