@@ -7,17 +7,17 @@ const DIFFERENCES = [
   {
     icon: PhoneCall,
     title: "It makes the call.",
-    copy: "Not another reminder or a directory of numbers. Wireline handles the phone conversation you would otherwise need to make yourself.",
+    copy: "Handles the full conversation for you.",
   },
   {
     icon: MessageSquare,
     title: "You explain it normally.",
-    copy: "Tell your assistant what you need in plain language. Add the rules that matter. Keep the setup simple.",
+    copy: "Plain language. Your custom voice and knowledge.",
   },
   {
     icon: Clock3,
     title: "You get the answer back.",
-    copy: "Wireline waits through the hold music and returns the useful result, so you can stay focused on your day.",
+    copy: "Result returned. Move on.",
   },
 ] as const;
 
@@ -44,7 +44,7 @@ export default function Compare() {
             Less phone tag. More of your day.
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            Wireline is built for everyday calls that should not take over your afternoon.
+            Make the calls. Get the results.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link

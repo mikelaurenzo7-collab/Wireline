@@ -6,16 +6,16 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const PRINCIPLES = [
   {
-    title: "Respect for your operations.",
-    copy: "Routine inquiries, booking requests, and outbound follow-ups should never halt your team's day or result in missed revenue.",
+    title: "Voice agents that sound like you.",
+    copy: "Custom-trained on your tone, scripts, and service knowledge.",
   },
   {
-    title: "Clear operational boundaries.",
-    copy: "You define the exact guidelines, calendar permissions, CRM sync behaviors, and when to transfer a live call to your representatives.",
+    title: "Deep customization per agent.",
+    copy: "Your knowledge base, boundaries, tools, and escalation paths — built in.",
   },
   {
-    title: "Intelligent customizability.",
-    copy: "Deploy highly specialized front-desk and sales agents trained on your specific business knowledge, documents, and rules.",
+    title: "One agent, complete context.",
+    copy: "Handles calls, follows up by text/email, books, and logs everything your way.",
   },
 ] as const;
 
@@ -32,13 +32,10 @@ export default function About() {
         <div className="max-w-3xl">
           <p className="wl-stitch-eyebrow">About Wireline</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            The AI Front Desk & Sales platform for business.
+            Custom voice agents for your business calls and workflows.
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            Phone lines, text messaging, and inbox responses are critical business pipelines.
-            Wireline empowers businesses to deploy fully customizable AI agents that handle inbound
-            front-desk reception, inbound and outbound sales qualification, and calendar scheduling,
-            seamlessly integrating with existing CRM databases.
+            Build custom voice agents with your knowledge, your voice, and your exact processes.
           </p>
         </div>
       </section>
@@ -56,9 +53,8 @@ export default function About() {
           </div>
           <div className="bg-card px-5 py-9 sm:px-8 sm:py-12 lg:px-10">
             <p className="max-w-xl text-base leading-7 text-muted-foreground">
-              Wireline is independently built and supported. Product feedback does not disappear
-              into a generic queue; it reaches the developers responsible for deciding what changes
-              next.
+              Independently built. Every voice agent is fully customizable — your knowledge, your
+              voice, your rules.
             </p>
             <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
               The goal is simple: empower businesses to automate customer interactions, capture hot
@@ -99,7 +95,7 @@ export default function About() {
               <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
                 {principle.title}
               </h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{principle.copy}</p>
+              {/* Details shown in action on other pages */}
             </article>
           ))}
         </div>

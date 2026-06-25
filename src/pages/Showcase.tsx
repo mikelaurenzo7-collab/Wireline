@@ -8,9 +8,9 @@ import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
 const STEPS = [
-  ["Try it", "Start a private browser conversation."],
-  ["Ask normally", "Say what you need help with."],
-  ["Hear the result", "Get a feel for how Wireline listens, responds, and moves to the next step."],
+  ["Try it", "Start conversation."],
+  ["Ask normally", "Say what you need."],
+  ["See result", "Clear next step."],
 ] as const;
 
 export default function Showcase() {
@@ -35,8 +35,7 @@ export default function Showcase() {
             Hear the assistant your customer meets first.
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            Try a short browser conversation. Your agent's specific brief and rules carry across
-            voice, email, and SMS.
+            Try a custom voice agent built for real conversations.
           </p>
         </div>
 

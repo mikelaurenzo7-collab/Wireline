@@ -133,9 +133,7 @@ export default function Pricing() {
               Build free. Add $5 when you are ready to go live.
             </h1>
             <p className="mx-auto mt-6 max-w-[650px] text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-              Personal assistants are free to create and test. Add Conversation Balance before live
-              work, then add a business plan when you need numbers, routing, and a shared team
-              workspace.
+              Build custom voice agents free. Add balance to go live.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link

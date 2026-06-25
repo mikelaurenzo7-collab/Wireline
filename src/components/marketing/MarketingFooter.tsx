@@ -40,7 +40,7 @@ export default function MarketingFooter({
           <div className="max-w-sm">
             <p className="wl-overline">Wireline</p>
             <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-              Agents that handle conversations your way.
+              Custom voice agents with your knowledge and voice.
             </p>
           </div>
           <nav aria-label="Product" className="flex flex-col items-start gap-1">
@@ -69,7 +69,7 @@ export default function MarketingFooter({
           </nav>
         </div>
         <div className="mt-8 flex flex-col gap-3 border-t border-border pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>Custom agents. Clear rules. Useful outcomes.</span>
+          <span>Voice agents. Fully customized. Real results.</span>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link to="/privacy" className="hover:text-foreground">
               Privacy

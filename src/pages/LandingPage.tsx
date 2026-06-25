@@ -17,7 +17,7 @@ export default function LandingPage() {
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Web, iOS, Android",
     description:
-      "Personal assistants and business agents that handle phone calls, messaging, scheduling, and hold times under your rules.",
+      "Custom voice agents built with your knowledge and voice. Handle calls, email, and text exactly your way.",
     offers: {
       "@type": "Offer",
       price: "0",

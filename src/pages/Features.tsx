@@ -50,7 +50,7 @@ const USE_CASES = [
   ],
   [
     "Custom workflows",
-    "Build a focused assistant around your knowledge, rules, connected accounts, and approval process.",
+    "Build a custom voice agent around your knowledge, voice, tools, and approval process.",
   ],
 ] as const;
 
@@ -122,7 +122,7 @@ export default function Features() {
               <ShieldCheck size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">You decide the boundaries</h2>
               <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-                Clear rules up front. It stops and escalates when needed.
+                Custom boundaries and escalation — exactly as you define.
               </p>
               <dl className="mt-7 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border">
                 {BOUNDARIES.map(([label, value]) => (
@@ -213,7 +213,7 @@ export default function Features() {
         <section className="border-t border-border px-5 py-12 text-center sm:px-6 sm:py-16">
           <p className="wl-stitch-eyebrow">Build specialized agents</p>
           <h2 className="mx-auto mt-3 max-w-2xl text-[clamp(28px,4vw,42px)] font-semibold leading-[1.08] tracking-[-.04em] text-foreground">
-            Your rules, your knowledge. Applied the same way on every channel.
+            Custom voice agents with your knowledge and voice. Works the same across channels.
           </h2>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link

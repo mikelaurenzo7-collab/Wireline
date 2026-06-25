@@ -4,6 +4,8 @@ import { ArrowRight, Check, Phone, ShieldCheck } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type VerticalKey, type VerticalConfig, WEDGES } from "../data/vertical-wedges";
+import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
+import HeroCallPreview from "../components/marketing/HeroCallPreview";
 
 function isExternalHref(href: string): boolean {
   return /^(tel:|mailto:|https?:)/.test(href);
@@ -87,8 +89,16 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <p className="wl-stitch-eyebrow">{isPersonal ? "Personal call help" : cfg.eyebrow}</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">{cfg.headline}</h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            {cfg.subhead}
+            {isPersonal
+              ? "Hand off the calls that follow you around."
+              : "Every important call gets a clear next step."}
           </p>
+          <div className="mt-4">
+            <BrowserCallWidget
+              agentName="Demo Voice Agent"
+              buttonLabel="Talk to the custom voice agent"
+            />
+          </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <CtaLink
               href={cfg.primaryCta.href}
@@ -148,10 +158,22 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 <h3 className="mt-5 text-lg font-semibold tracking-[-.025em] text-foreground">
                   {pain.title}
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{pain.body}</p>
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+        <div className="text-center mb-6">
+          <p className="wl-stitch-eyebrow">See it in action</p>
+          <h3 className="text-xl font-semibold">
+            Custom voice agent preview — tailored for this work.
+          </h3>
+        </div>
+        <HeroCallPreview />
+        <div className="mt-6 text-center">
+          <BrowserCallWidget agentName="Demo Assistant" buttonLabel="Talk to it live" />
         </div>
       </section>
 
@@ -165,9 +187,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 : "Your process, handled consistently."}
             </h2>
             <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
-              {isPersonal
-                ? "Give Wireline the task, what it may share, and where it should stop. You can review the outcome, take over, or keep the call private to your assistant."
-                : "Give the agent the approved facts, rules, and escalation path. It applies those exact boundaries on every conversation."}
+              Custom knowledge, voice, and boundaries — applied every time.
             </p>
           </div>
           <div className="wl-stitch-card border-l-4 border-l-primary p-6 sm:p-8">
@@ -176,9 +196,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               {cfg.scriptPreview}
             </blockquote>
             <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
-              {isPersonal
-                ? "Your assistant uses the instruction you approve before the call. It should never invent identity details, agree to a commitment, or go beyond the boundaries you set."
-                : "The script is grounded in the facts, rules, and escalation path you set for that specific agent in Studio and Knowledge."}
+              Your voice. Your knowledge. Your control.
             </p>
           </div>
         </div>

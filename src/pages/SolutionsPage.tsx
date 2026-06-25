@@ -13,39 +13,38 @@ import {
 } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
+import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
+import HeroCallPreview from "../components/marketing/HeroCallPreview";
 
 const SOLUTIONS = {
   sales: {
     eyebrow: "Sales conversations",
     title: "Every qualified lead gets a next step.",
     description:
-      "Wireline gives your team an assistant that responds across phone, email, and text, qualifies the opportunity, and moves the right person toward a meeting—without losing the context.",
+      "Build custom voice agents that qualify leads on calls, email, and text using your exact knowledge and sales process.",
     icon: PhoneOutgoing,
     primary: { href: "/signup?posture=business", label: "Create a sales agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
-      ["A lead reaches out", "Phone, email, or an opted-in text reply starts the conversation."],
+      ["A lead reaches out", "Custom voice agent answers on phone, email or text."],
       [
-        "Your agent qualifies",
-        "It asks the questions you define, follows your positioning, and respects the guardrails.",
+        "It qualifies using your playbook",
+        "Specialized knowledge, your voice, your exact criteria.",
       ],
-      [
-        "Your team gets momentum",
-        "Qualified opportunities are booked, handed off, or captured with a clear next action.",
-      ],
+      ["Clear next step delivered", "Booked, handed off, or logged — exactly as configured."],
     ],
     capabilities: [
       [
-        "Fast lead response",
-        "Reply to new inquiries while the prospect is still interested, then keep the conversation moving.",
+        "Custom voice on every call",
+        "Agents trained on your scripts, tone, and qualification criteria.",
       ],
       [
-        "SMS follow-up that earns a reply",
-        "Run approved, opt-in outreach, nurture active opportunities, and revive stalled conversations without losing your brand voice.",
+        "Multi-channel follow-up",
+        "Voice agents that continue the conversation via email and text.",
       ],
       [
-        "Appointments that show up",
-        "Offer real availability, schedule the meeting, and send the right confirmation or reminder.",
+        "Your calendar, your rules",
+        "Book real appointments without double-booking or overpromising.",
       ],
     ],
     proof: "Your team spends time with qualified people—not a pile of unanswered inquiries.",
@@ -54,36 +53,33 @@ const SOLUTIONS = {
     eyebrow: "Customer coverage",
     title: "A front desk that is ready when customers are.",
     description:
-      "Wireline becomes the reliable first response for your business: answer routine questions, collect the context that matters, schedule the next step, and bring a person in when the conversation needs one.",
+      "Deploy custom voice agents that handle inbound calls, texts, and email with your policies, knowledge, and escalation rules.",
     icon: Headphones,
     primary: { href: "/signup?posture=business", label: "Create a front desk agent" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
+      ["A customer reaches out", "Custom voice agent picks up on call, text or email."],
       [
-        "A customer reaches out",
-        "Your agent responds on the business line, inbox, or approved text thread.",
+        "Understands with your knowledge",
+        "Trained on your policies, services, and escalation paths.",
       ],
       [
-        "The issue gets context",
-        "It follows your knowledge and policies to answer, triage, or ask the right next question.",
-      ],
-      [
-        "The right handoff happens",
-        "Urgent cases reach your team; routine ones end with a complete answer, appointment, or follow-up.",
+        "Resolves or hands off perfectly",
+        "Complete context passed to the right person every time.",
       ],
     ],
     capabilities: [
       [
-        "A dependable first response",
-        "Cover after-hours questions, inbound calls, and common requests without making customers wait.",
+        "Custom voice front desk",
+        "Agents that answer with your tone, policies, and service knowledge.",
       ],
       [
-        "Appointments and confirmations",
-        "Find an available time, confirm the details, and keep the customer informed by text or email.",
+        "Seamless booking & updates",
+        "Voice agents that schedule and confirm across email and text.",
       ],
       [
-        "Your policies, not generic scripts",
-        "Give each agent its own approved language, service rules, escalation thresholds, and connected accounts.",
+        "Built for your business",
+        "Each agent customized with your exact rules, language, and tools.",
       ],
     ],
     proof: "Customers get a useful answer sooner. Your team only joins when its judgment matters.",
@@ -116,7 +112,7 @@ export default function SolutionsPage() {
             </div>
             <h1 className="wl-page-title mt-6 max-w-[13ch] text-balance">{page.title}</h1>
             <p className="mt-6 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-              {page.description}
+              Custom voice agents with your knowledge and processes.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -138,6 +134,15 @@ export default function SolutionsPage() {
         </div>
       </section>
 
+      <section className="wl-measure mx-auto px-5 py-8 sm:px-6">
+        <div className="flex justify-center">
+          <BrowserCallWidget agentName="Sales Support" />
+        </div>
+        <div className="mt-4 flex justify-center">
+          <HeroCallPreview />
+        </div>
+      </section>
+
       <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="max-w-2xl">
           <p className="wl-overline text-primary">One clear operating flow</p>
@@ -146,7 +151,7 @@ export default function SolutionsPage() {
           </h2>
         </div>
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
-          {page.sequence.map(([title, copy], index) => (
+          {page.sequence.map(([title], index) => (
             <li key={title} className="wl-stitch-card relative p-6 sm:p-7">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
@@ -154,9 +159,7 @@ export default function SolutionsPage() {
               <h3 className="wl-section-title mt-5 text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
                 {title}
               </h3>
-              <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-6 text-muted-foreground">
-                {copy}
-              </p>
+              {/* Visual step - details in demo */}
             </li>
           ))}
         </ol>
