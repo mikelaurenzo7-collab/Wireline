@@ -37,9 +37,9 @@ const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 
 function RouteLoading() {
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[var(--wireline-color-canvas-default)] z-[9999]">
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[var(--wireline-color-canvas-default)]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 rounded-full border-4 border-[var(--wireline-color-border-default)] border-t-[var(--wireline-color-action-primary-default)] animate-spin" />
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--wireline-color-border-default)] border-t-[var(--wireline-color-action-primary-default)]" />
         <span
           className="font-medium font-sans tracking-wide"
           style={{
@@ -101,7 +101,7 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden">
+    <div className="wl-ui-caps w-full max-w-[100vw] overflow-x-hidden">
       <BrowserRouter>
         <AuthProvider>
           <ThemeProvider>
