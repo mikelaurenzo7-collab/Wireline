@@ -1,0 +1,202 @@
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { Loader2, WandSparkles, X } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button, Input, NativeSelect, Textarea } from "./atoms";
+import { FormField } from "./molecules";
+import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
+import { authFetch, safeJson } from "../lib/api";
+
+const roles = [
+  ["scheduler", "Scheduler"],
+  ["receptionist", "Receptionist"],
+  ["customer_service", "Support"],
+  ["sales", "Sales"],
+  ["custom", "Custom"],
+] as const;
+
+const voices = [
+  ["", "Auto"],
+  ["pNInz6obpgDQGcFmaJgB", "Adam · Deep"],
+  ["VR6AewLTigWG4xSOukaG", "Arnold · Crisp"],
+  ["21m00Tcm4TlvDq8ikWAM", "Rachel · Warm"],
+  ["EXAVITQu4vr4xnSDxMaL", "Sarah · Gentle"],
+] as const;
+
+const personalities = ["Clear", "Warm", "Direct", "Polished", "Custom"] as const;
+
+type Role = (typeof roles)[number][0];
+type Personality = (typeof personalities)[number];
+
+export default function CreateAgentDialog({
+  open,
+  onClose,
+  initialBrief = "",
+  business = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialBrief?: string;
+  business?: boolean;
+}) {
+  const navigate = useNavigate();
+  const [, setParams] = useSearchParams();
+  const { refresh } = useAgents();
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<Role>(business ? "receptionist" : "scheduler");
+  const [voiceId, setVoiceId] = useState("");
+  const [personality, setPersonality] = useState<Personality>("Clear");
+  const [customPersonality, setCustomPersonality] = useState("");
+  const [brief, setBrief] = useState(initialBrief);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setRole(business ? "receptionist" : "scheduler");
+    setBrief((current) => current || initialBrief);
+    const frame = requestAnimationFrame(() => nameRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [business, initialBrief, open]);
+
+  function close() {
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete("create");
+      return next;
+    }, { replace: true });
+    onClose();
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLFormElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+    }
+  }
+
+  async function create(event: FormEvent) {
+    event.preventDefault();
+    if (!name.trim() || creating) return;
+    setCreating(true);
+    setError("");
+    try {
+      const response = await authFetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), role, deferPhoneProvision: true, is_business_agent: business }),
+      });
+      const body = (await safeJson(response)) as { id?: string; error?: string } | null;
+      if (!response.ok || !body?.id) {
+        setError(body?.error || "Agent could not be created.");
+        return;
+      }
+
+      if (voiceId) {
+        await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/voice`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ voiceId, provider: "11labs" }),
+        });
+      }
+
+      const personalityText = personality === "Custom" ? customPersonality.trim() : `${personality}. Concise. Useful. Business-ready.`;
+      if (personalityText) {
+        await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/manual`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "personality", content: personalityText }),
+        });
+      }
+
+      const firstTraining = [
+        `Role: ${role}.`,
+        personalityText ? `Personality: ${personalityText}` : "",
+        brief.trim() ? `First brief: ${brief.trim()}` : "",
+      ].filter(Boolean).join("\n");
+
+      if (firstTraining) {
+        await authFetch("/api/train/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agentId: body.id, message: firstTraining }),
+        });
+      }
+
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+      refresh();
+      navigate(`/training?agent=${encodeURIComponent(body.id)}`, { replace: true });
+      onClose();
+    } catch {
+      setError("Agent could not be created. Try again.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4" role="presentation">
+      <form
+        ref={formRef}
+        onSubmit={create}
+        onKeyDown={onKeyDown}
+        className="wl-stitch-auth-card max-h-[min(720px,calc(100dvh-2rem))] w-full max-w-xl overflow-y-auto shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-agent-title"
+        aria-describedby="create-agent-description"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="wl-stitch-label">Create agent</p>
+            <h2 id="create-agent-title" className="mt-1 text-2xl font-semibold tracking-[-.05em]">Simple intake.</h2>
+            <p id="create-agent-description" className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
+              Name, voice, personality, role. Train the rest after creation.
+            </p>
+          </div>
+          <Button type="button" variant="ghost" size="icon" onClick={close} aria-label="Close create agent dialog" className="shrink-0"><X aria-hidden="true" size={16} /></Button>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <FormField label="Name" htmlFor="create-agent-name" required>
+            <Input id="create-agent-name" ref={nameRef} value={name} onChange={(event) => setName(event.target.value)} placeholder="Casey" autoComplete="off" required />
+          </FormField>
+          <FormField label="Role" htmlFor="create-agent-role">
+            <NativeSelect id="create-agent-role" value={role} onChange={(event) => setRole(event.target.value as Role)}>
+              {roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </NativeSelect>
+          </FormField>
+          <FormField label="Voice" htmlFor="create-agent-voice">
+            <NativeSelect id="create-agent-voice" value={voiceId} onChange={(event) => setVoiceId(event.target.value)}>
+              {voices.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </NativeSelect>
+          </FormField>
+          <FormField label="Personality" htmlFor="create-agent-personality">
+            <NativeSelect id="create-agent-personality" value={personality} onChange={(event) => setPersonality(event.target.value as Personality)}>
+              {personalities.map((item) => <option key={item} value={item}>{item}</option>)}
+            </NativeSelect>
+          </FormField>
+        </div>
+
+        {personality === "Custom" ? (
+          <FormField className="mt-4" label="Custom personality" htmlFor="create-agent-custom-personality">
+            <Textarea id="create-agent-custom-personality" value={customPersonality} onChange={(event) => setCustomPersonality(event.target.value)} placeholder="Calm, concise, warm, and decisive." resize="none" />
+          </FormField>
+        ) : null}
+
+        <FormField className="mt-4" label="First brief" htmlFor="create-agent-brief" description="Optional. Documents and deeper rules live in Training.">
+          <Textarea id="create-agent-brief" value={brief} onChange={(event) => setBrief(event.target.value)} placeholder={business ? "Book qualified consultations and hand off urgent callers." : "Handle appointment calls and text me what needs review."} resize="none" />
+        </FormField>
+
+        {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
+        <Button type="submit" disabled={!name.trim() || creating} className="mt-5 w-full justify-center">
+          {creating ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <WandSparkles aria-hidden="true" size={16} />}
+          Create and train
+        </Button>
+      </form>
+    </div>
+  );
+}
