@@ -46,6 +46,19 @@ describe("Wireline product documentation contract", () => {
     expect(readme).toContain("Send an agent task");
   });
 
+  it("keeps product docs aligned with Training and agent-first copy", () => {
+    const customization = read("docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md");
+    const submission = read("docs/CHATGPT_APP_SUBMISSION.md");
+
+    expect(customization).toContain("Training");
+    expect(customization).not.toContain("Knowledge");
+    expect(submission).toContain("agent draft");
+    expect(submission).not.toContain("professional assistant");
+    expect(submission).not.toContain("I need an assistant");
+    expectNoTerms(customization, retiredProductTerms);
+    expectNoTerms(submission, retiredProductTerms);
+  });
+
   it("keeps native docs on the Wireline Mono contract", () => {
     const android = read("android/README.md");
     const ios = read("ios/README.md");

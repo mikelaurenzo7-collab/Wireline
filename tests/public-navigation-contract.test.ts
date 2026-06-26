@@ -27,7 +27,8 @@ describe("public navigation mobile regression contract", () => {
     expect(header).toContain('label: "Pricing"');
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to="/signup"');
-    expect(header).toContain(">Start<");
+    expect(header).toContain("Start");
+    expect(header).toContain("marketing-btn-primary");
   });
 
   it("keeps skip navigation visually hidden until keyboard focus", () => {

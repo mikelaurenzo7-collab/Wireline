@@ -42,6 +42,7 @@ const agentsPage = read("src/pages/AgentsPage.tsx");
 const overviewPage = read("src/pages/OverviewPage.tsx");
 const actionsPage = read("src/pages/ActionsPage.tsx");
 const pricingPage = read("src/pages/Pricing.tsx");
+const developersPage = read("src/pages/Developers.tsx");
 const settingsPage = read("src/pages/SettingsPage.tsx");
 const accountRoutes = read("src/routes/account-routes.ts");
 const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
@@ -51,7 +52,11 @@ const studioWorkroom = read("src/components/StudioWorkroom.tsx");
 const assetUpload = read("src/components/AgentAssetUpload.tsx");
 const trainingPage = read("src/pages/KnowledgePage.tsx");
 const knowledgeWorkspace = read("src/components/KnowledgeWorkspace.tsx");
+const assistantComposer = read("src/components/AssistantComposer.tsx");
 const browserCallWidget = read("src/components/marketing/BrowserCallWidget.tsx");
+const trustSignals = read("src/components/marketing/TrustSignals.tsx");
+const zipLanding = read("src/components/migration/ZipLanding.tsx");
+const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
 const webTokens = read("src/styles/tokens.generated.css");
 const browserTokens = read("apps/browser-extension/panel/tokens.generated.css");
 const extensionManifest = read("apps/browser-extension/manifest.base.json");
@@ -145,8 +150,16 @@ mustInclude("src/pages/Pricing.tsx", pricingPage, /Conversation Balance/, "prici
 mustInclude("src/pages/Pricing.tsx", pricingPage, /Wireline Team/, "pricing must position Wireline Team");
 mustInclude("src/pages/Pricing.tsx", pricingPage, /Wireline Business/, "pricing must position Wireline Business");
 mustInclude("src/pages/Pricing.tsx", pricingPage, /Wireline Enterprise/, "pricing must position Wireline Enterprise");
+mustInclude("src/pages/Developers.tsx", developersPage, /Programmatic agents/, "developer surface must position agents, not assistants");
+mustExclude("src/pages/Developers.tsx", developersPage, /\bassistant(s)?\b/i, "developer surface must use agent language");
 mustInclude("src/pages/SettingsPage.tsx", settingsPage, /Account deletion/, "settings must expose account deletion");
 mustInclude("src/routes/account-routes.ts", accountRoutes, /\/api\/account\/delete/, "account deletion route must exist");
+mustExclude("src/components/AssistantComposer.tsx", assistantComposer, /Ask your assistant/i, "shared composer must use agent copy");
+mustExclude("src/components/marketing/TrustSignals.tsx", trustSignals, /demo assistants/i, "trust strip must use agent language");
+mustExclude("src/components/migration/ZipLanding.tsx", zipLanding, /personal assistant|operating system for assistants/i, "Zip landing must use current agent language");
+mustInclude("src/data/wireline-knowledge.ts", wirelineKnowledge, /Conversation Balance/, "shared product knowledge must include Conversation Balance");
+mustInclude("src/data/wireline-knowledge.ts", wirelineKnowledge, /Wireline Personal[\s\S]*Wireline Team[\s\S]*Wireline Business[\s\S]*Wireline Enterprise/, "shared product knowledge must match the launch catalog");
+mustExclude("src/data/wireline-knowledge.ts", wirelineKnowledge, /Legacy Wireline|Wireline Plus|one Assistants|Assistants analytics/, "shared product knowledge must purge legacy catalog and assistant copy");
 for (const [file, source] of [
   ["src/styles/tokens.generated.css", webTokens],
   ["apps/browser-extension/panel/tokens.generated.css", browserTokens],
@@ -169,8 +182,13 @@ for (const [file, source] of [
   ["src/components/MobileBrowserUtilities.tsx", mobileBrowserUtilities],
   ["src/pages/AgentsPage.tsx", agentsPage],
   ["src/pages/SettingsPage.tsx", settingsPage],
+  ["src/pages/Developers.tsx", developersPage],
   ["src/components/KnowledgeWorkspace.tsx", knowledgeWorkspace],
+  ["src/components/AssistantComposer.tsx", assistantComposer],
   ["src/components/marketing/BrowserCallWidget.tsx", browserCallWidget],
+  ["src/components/marketing/TrustSignals.tsx", trustSignals],
+  ["src/components/migration/ZipLanding.tsx", zipLanding],
+  ["src/data/wireline-knowledge.ts", wirelineKnowledge],
   ["src/lib/chatgpt-mcp.ts", chatgptWidget],
   ["src/lib/chatgpt-mcp-account.ts", chatgptAccountWidget],
   ["public/static-legal.css", legalCss],

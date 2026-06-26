@@ -70,7 +70,7 @@ const WORKSPACE_TABS: {
   icon: typeof MessageSquare;
   help: string;
 }[] = [
-  { id: "chat", label: "Chat", icon: MessagesSquare, help: "Coach and direct this assistant" },
+  { id: "chat", label: "Chat", icon: MessagesSquare, help: "Coach and direct this agent" },
   {
     id: "training",
     label: "Training",
@@ -78,7 +78,7 @@ const WORKSPACE_TABS: {
     help: "Training, voice, flow & test calls",
   },
   { id: "connectors", label: "Connectors", icon: Plug, help: "Capabilities & integrations" },
-  { id: "memory", label: "Memory", icon: Brain, help: "What this assistant remembers" },
+  { id: "memory", label: "Memory", icon: Brain, help: "What this agent remembers" },
 ];
 
 function isWorkspaceTab(v: string | null): v is WorkspaceTab {
@@ -269,7 +269,7 @@ function ProposalCard({
               {busy ? (
                 <>
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  {busyLabel || "Executing…"}
+                  {busyLabel || "Executing..."}
                 </>
               ) : (
                 <>
@@ -576,7 +576,7 @@ export default function AgentWorkspace({
   const approveChange = useCallback(
     async (key: string, change: ProposedChange) => {
       setBusyKey(key);
-      setBusyLabel("Applying configuration…");
+      setBusyLabel("Applying configuration...");
       try {
         const r = await authFetch(
           `/api/agents/${encodeURIComponent(agentId)}/workspace/apply-change`,
@@ -601,7 +601,7 @@ export default function AgentWorkspace({
   const approveToggle = useCallback(
     async (key: string, toggle: ProposedToolToggle) => {
       setBusyKey(key);
-      setBusyLabel(toggle.enable ? "Connecting capability…" : "Disconnecting…");
+      setBusyLabel(toggle.enable ? "Connecting capability..." : "Disconnecting...");
       try {
         const r = await authFetch(
           `/api/agents/${encodeURIComponent(agentId)}/workspace/toggle-tool`,
@@ -630,10 +630,10 @@ export default function AgentWorkspace({
       setBusyKey(key);
       setBusyLabel(
         action.kind === "make_call"
-          ? "Connecting call…"
+          ? "Connecting call..."
           : action.kind === "send_text_message"
-            ? "Sending text…"
-            : "Sending email…",
+            ? "Sending text..."
+            : "Sending email...",
       );
       try {
         if (action.kind === "make_call") {
@@ -1086,8 +1086,8 @@ export default function AgentWorkspace({
                 rows={3}
                 placeholder={
                   IS_TOUCH
-                    ? `Message ${agentName}…`
-                    : `Message ${agentName}…  (${IS_APPLE ? "⌘" : "Ctrl"}+Enter to send)`
+                    ? `Message ${agentName}...`
+                    : `Message ${agentName}...  (${IS_APPLE ? "Cmd" : "Ctrl"}+Enter to send)`
                 }
                 disabled={isSending || isUploading}
                 className="w-full resize-none bg-transparent text-[var(--wireline-typography-body-size)] text-foreground dark:text-foreground placeholder:text-muted/50 outline-none px-5 py-4 leading-relaxed"

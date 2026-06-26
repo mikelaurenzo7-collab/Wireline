@@ -64,8 +64,8 @@ export function SupportPage() {
   return (
     <MarketingPageFrame stickyCta={false} mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="Support — Wireline"
-        description="Get help with Wireline for personal call assistance or business call coverage."
+        title="Support - Wireline"
+        description="Get help with Wireline for personal call support or business call coverage."
         path="/support"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
@@ -79,7 +79,7 @@ export function SupportPage() {
         <div className="mt-8 max-w-3xl">
           <p className="wl-stitch-eyebrow">Support</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            Help with your assistant, without the runaround.
+            Help with your agent, without the runaround.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
             We aim for a first response within one business day. For a service interruption or a
@@ -109,7 +109,7 @@ export function SupportPage() {
             <MessageSquare className="h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Open Studio</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Already signed in? Review your assistant and live activity in one place.
+              Already signed in? Review your agent and live activity in one place.
             </p>
           </Link>
         </section>

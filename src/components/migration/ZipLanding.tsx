@@ -126,7 +126,7 @@ export default function ZipLanding() {
               </h1>
               <p className="zip-hero-body">
                 Wireline answers, routes, logs, and follows up on calls for individuals and
-                businesses—from one personal assistant to a full fleet of trained AI agents.
+                businesses - from one personal agent to a full fleet of trained AI agents.
               </p>
               <div className="zip-stat-cards" aria-label="Wireline operating modes">
                 <Metric value="1" label="personal agent" />
@@ -177,7 +177,7 @@ export default function ZipLanding() {
               <p className="zip-eyebrow">How it works</p>
               <h2>Set the job. Keep the outcome.</h2>
               <p className="zip-section-copy">
-                Wireline gives you a real operating system for assistants—not another inbox to
+                Wireline gives you a real operating system for agents - not another inbox to
                 babysit.
               </p>
               <Link className="zip-inline-link" to="/features">

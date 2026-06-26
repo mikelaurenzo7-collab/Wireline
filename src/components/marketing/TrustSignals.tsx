@@ -127,7 +127,7 @@ export default function TrustSignals() {
       </div>
 
       {/* Vertical industry strip — explicit, honest list of the
-          8 wedges Wireline ships landing pages + demo assistants for.
+          8 wedges Wireline ships landing pages + demo agents for.
           Hover lifts each card subtly for the playful-but-grounded feel. */}
       <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mb-4">
         {VERTICALS.map(({ icon: Icon, label }) => (

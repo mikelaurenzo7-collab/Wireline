@@ -207,7 +207,7 @@ function safeMessage(payload: unknown, fallback: string) {
 
 function buildFlow(agentName: string, draft: BlueprintDraft): PhoneAgentFlowStep[] {
   const tone = tones.find((item) => item.value === draft.tone)?.label.toLowerCase() ?? "warm";
-  const prefix = agentName || "This assistant";
+  const prefix = agentName || "This agent";
   const stamp = `${Date.now()}`;
 
   return [

@@ -296,7 +296,7 @@ export default function LiveVoiceSandbox({
     });
     const session = (await response.json().catch(() => null)) as Session | null;
     if (!response.ok || !session?.token || !session.endpoint)
-      throw new Error("Live voice is unavailable for this assistant.");
+      throw new Error("Live voice is unavailable for this agent.");
     if (connectionGeneration !== generation.current || closedByUser.current) return;
     const endpoint = new URL(session.endpoint);
     if (resume && conversationId.current)

@@ -16,16 +16,16 @@ type Attachment = { id: string; name: string; kind: "image" | "file"; url?: stri
 type Tone = "light" | "dark";
 
 /**
- * Lightweight, keyword-driven reply generator so the assistant transcript feels
+ * Lightweight, keyword-driven reply generator so the agent transcript feels
  * alive in the product demo without wiring a live model. Deterministic per input.
  */
 export function simulateAssistantReply(input: string, attachmentCount = 0): string {
   const t = input.toLowerCase();
   if (attachmentCount > 0 && t.trim().length === 0) {
-    return `Got it — I've got ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}. Want me to summarize ${attachmentCount > 1 ? "them" : "it"} or pull out the key details?`;
+    return `Got it - I've got ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}. Want me to summarize ${attachmentCount > 1 ? "them" : "it"} or pull out the key details?`;
   }
   if (/(hold|wait)/.test(t))
-    return "On it. I'll wait on hold and bring you back the moment a real person picks up — you won't have to listen to the music.";
+    return "On it. I'll wait on hold and bring you back the moment a real person picks up - you won't have to listen to the music.";
   if (/(screen|spam|block|unknown)/.test(t))
     return "I'll screen incoming callers, filter the spam, and only put through the ones that look real. I'll log the rest.";
   if (/(summar|recap|notes?)/.test(t))
@@ -33,7 +33,7 @@ export function simulateAssistantReply(input: string, attachmentCount = 0): stri
   if (/(call|dial|phone|reschedul|book|appointment)/.test(t))
     return "Ready. I'll keep it brief, confirm the details before committing, and report back with what they said.";
   if (/(refund|billing|charge|invoice)/.test(t))
-    return "I'll handle the billing call carefully — I'll state the policy, stay calm if they push, and escalate to you before agreeing to anything.";
+    return "I'll handle the billing call carefully - I'll state the policy, stay calm if they push, and escalate to you before agreeing to anything.";
   if (/(train|improve|fix|better)/.test(t))
     return "Good call. I'll line up a few practice scenarios and flag exactly where the responses need tightening.";
   return "Got it. I'll take care of that and let you know the moment it's done.";
@@ -43,7 +43,7 @@ const cx = (...parts: Array<string | false | null | undefined>) => parts.filter(
 
 export function AssistantComposer({
   tone = "light",
-  placeholder = "Ask your assistant…",
+  placeholder = "Ask your agent...",
   sendLabel = "Send",
   models = DEFAULT_COMPOSER_MODELS,
   onSend,

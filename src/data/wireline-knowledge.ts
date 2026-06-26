@@ -1,109 +1,125 @@
 /**
- * Canonical Wireline product knowledge — the single source of truth that
- * gets:
- *   1. Injected into every Vapi assistant's system prompt as a
- *      "WIRELINE KNOWLEDGE" block (so all 10 landing-page agents answer
- *      questions about Wireline the same way).
- *   2. Rendered in the in-app /help route so signed-in account holders see
- *      the same product story.
- *   3. Surfaced in the public landing copy.
- *
- * Edit this file → run POST /api/admin/sync-vapi-knowledge → all live
- * agents get the updated prompt within seconds.
+ * Canonical Wireline product knowledge - the single source of truth that gets:
+ *   1. Injected into every Vapi agent system prompt as a "WIRELINE KNOWLEDGE" block.
+ *   2. Rendered in the in-app /help route so signed-in account holders see the same story.
+ *   3. Referenced by public-facing demo and marketing surfaces.
  */
-
-import { STRIPE_PLANS } from "../lib/plan-catalog";
 
 export const WIRELINE_URL = "https://trywireline.com";
 export const WIRELINE_SUPPORT_EMAIL = "support@trywireline.com";
 
 export const WIRELINE_ONE_LINER =
-  "Wireline runs your inbound support, outbound sales, and email follow-ups across one Assistants of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";
+  "Wireline runs calls, texts, follow-up, browser context, email, and integrations through trained agents that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
   "Live calls run through our voice bridge with low-latency speech-to-text and ElevenLabs voice synthesis. Wireline uses fast voice models for the phone runtime, while Claude powers coaching, written review, and higher-reasoning workflows.";
 
-const PLAN_BEST_FOR: Record<string, string> = {
-  personal: "Solo account holders, side hustles, founders testing the waters.",
-  starter: "Small teams running a single playbook: inbound support, outbound SDR, or scheduling.",
-  pro: "Growing account holders running multiple playbooks side by side: sales, support, and outbound.",
-  business: "Multi-team account holders who need supervisor visibility, SSO, and serious volume.",
-  enterprise: "Companies that need white-glove onboarding, dedicated support, and custom terms.",
-};
-
-function formatPlanPrice(plan: (typeof STRIPE_PLANS)[number]): string {
-  return plan.price_usd_monthly > 0 ? `$${plan.price_usd_monthly.toLocaleString()}/mo` : "Custom";
-}
-
-export const WIRELINE_PLANS = STRIPE_PLANS.map((plan) => ({
-  name: plan.name,
-  price: formatPlanPrice(plan),
-  bestFor: PLAN_BEST_FOR[plan.id],
-  includes: plan.features,
-})) as ReadonlyArray<{
-  name: string;
-  price: string;
-  bestFor: string;
-  includes: readonly string[];
-}>;
+export const WIRELINE_PLANS = [
+  {
+    name: "Wireline Personal",
+    price: "Create free, then fund live work with Conversation Balance",
+    bestFor: "Solo or founder use.",
+    includes: [
+      "One active agent and one number",
+      "All templates unlocked",
+      "Short Create intake with deeper setup in Training",
+      "Live work funded only when the account holder adds Conversation Balance",
+    ],
+  },
+  {
+    name: "Wireline Team",
+    price: "Shared capacity tier plus Conversation Balance",
+    bestFor: "Shared SMB coverage.",
+    includes: [
+      "Several active agents with shared inbox coverage",
+      "Routing, approvals, and core integrations",
+      "Connected numbers and follow-up controls",
+      "Conversation Balance alongside shared operations",
+    ],
+  },
+  {
+    name: "Wireline Business",
+    price: "Operating-capacity subscription plus pooled Conversation Balance",
+    bestFor: "Revenue, support, and front desk teams.",
+    includes: [
+      "CRM sync, policies, and role-aware controls",
+      "Approvals, analytics, and shared routing",
+      "Outbound, inbound, and follow-up in one workspace",
+      "Pooled live-work funding through Conversation Balance",
+    ],
+  },
+  {
+    name: "Wireline Enterprise",
+    price: "Annual committed usage and contract terms",
+    bestFor: "Governed rollout for larger organizations.",
+    includes: [
+      "SSO, SCIM, and audit support",
+      "Custom policy, telephony, and implementation support",
+      "Governed rollout planning",
+      "Committed annual usage structure",
+    ],
+  },
+  {
+    name: "Conversation Balance",
+    price: "One-time top-up funding for live work",
+    bestFor: "Customers who want direct control over usage funding.",
+    includes: [
+      "Web checkout only",
+      "One-time top-ups",
+      "Ledger-backed funding for calls, texts, and follow-up",
+      "No template lock or artificial seat wall",
+    ],
+  },
+] as const;
 
 export const WIRELINE_FEATURES = [
   {
-    title: "Inbound Support",
+    title: "Inbound support",
     blurb:
-      "Agents pick up 24/7 — answer questions, route urgent calls, schedule appointments, and capture intent.",
+      "Agents pick up 24/7, answer questions, route urgent calls, schedule appointments, and capture intent.",
   },
   {
-    title: "Outbound Sales",
+    title: "Outbound sales",
     blurb:
-      "Upload a CSV, pick a playbook, launch auto-dial campaigns. Qualified meetings on your calendar by morning.",
+      "Upload a CSV, pick a playbook, launch outbound campaigns, and hand qualified meetings to the calendar.",
   },
   {
-    title: "Email Agents",
+    title: "Email agents",
     blurb:
-      "Agents triage your inbox, reply on-brand, follow up, and escalate the ones you need to see personally.",
+      "Agents triage your inbox, reply on-brand, follow up, and escalate the threads you need to see personally.",
   },
   {
     title: "Two-way texting",
     blurb:
-      "Agents text customers and reply in-thread when customers text back. TCPA-clean with STOP/UNSUBSCRIBE handling.",
+      "Agents text customers and reply in-thread when customers text back, with STOP and UNSUBSCRIBE handling in place.",
   },
   {
-    title: "Recaps",
-    blurb:
-      "Unified Recaps — live callers on the floor, supervisor listen-in & whisper-coach, action queue, and Assistants analytics in one place.",
+    title: "Recaps and oversight",
+    blurb: "Unified recaps keep calls, texts, follow-up, and operating visibility in one place.",
   },
 ] as const;
 
 /**
- * The growth-engine story — Wireline's autonomous outbound + follow-up
- * stack, framed as the answer to "I need more leads / my pipeline is dry."
- * Agents reach for this the moment a caller mentions leads, pipeline,
- * follow-up, or growth. Kept truthful: every claim maps to a shipped
- * capability (outbound campaigns, multi-touch cadences, BANT lead
- * qualification, and the self-improvement loop that mines lessons from
- * high-scoring calls).
+ * The growth-engine story - Wireline's autonomous outbound and follow-up stack,
+ * framed as the answer to "I need more leads" or "my pipeline is dry."
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "Wireline's autonomous growth engine works your leads for you: upload a list or sync your CRM, and the Assistants dials out, qualifies with BANT, runs multi-touch cadences across calls, texts, and email, and books meetings straight onto your calendar — 24/7, no SDR headcount. Every call sharpens the next through the self-improvement loop, so the agents get better at booking the more they run.";
+  "Wireline's autonomous growth engine works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations.";
 
 /**
- * Pain → capability map. When a caller names a problem, the agent should
- * surface the matching Wireline capability without being asked — so it
- * never whiffs a layup like "I'm struggling with leads" (→ the growth
- * engine). Each solution is a one-breath spoken answer the agent
- * paraphrases in its own voice, never a list it reads aloud.
+ * Pain -> capability map. When a caller names a problem, the agent should
+ * surface the matching Wireline capability without being asked.
  */
 export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Struggling with leads, dry pipeline, or need more customers",
     solution:
-      "the autonomous growth engine — outbound campaigns that dial and qualify leads, multi-touch cadences, and qualified meetings booked onto their calendar without adding headcount",
+      "the autonomous growth engine - outbound campaigns that dial and qualify leads, run multi-touch follow-up, and book qualified meetings without adding SDR headcount",
   },
   {
     pain: "Missing calls or losing business after hours",
     solution:
-      "inbound agents that answer 24/7, capture intent, and book the job so no missed call ever goes to voicemail",
+      "inbound agents that answer 24/7, capture intent, and book or route the work so missed calls do not die in voicemail",
   },
   {
     pain: "No time to follow up or leads going cold",
@@ -118,12 +134,12 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Can't justify or afford more staff",
     solution:
-      "one Assistants covering inbound, outbound, and email for a fraction of a single hire — and it scales instantly",
+      "one operating layer of trained agents covering inbound, outbound, and email for a fraction of another full-time hire",
   },
   {
     pain: "Worried quality will slip or agents will go off-script",
     solution:
-      "a live supervisor cockpit with listen-in and whisper-coach, full transcripts, and a self-improvement loop that learns from every call",
+      "a supervised workroom with transcripts, approvals, and a feedback loop that keeps improving what the agents do",
   },
 ] as const;
 
@@ -149,8 +165,7 @@ export const WIRELINE_INTEGRATIONS = [
 
 /**
  * What Wireline has done and is planning for compliance. Updated honestly so
- * agents never over-promise on a sales call — a single false claim ends a
- * healthcare or finance deal at legal review.
+ * agents never over-promise on a sales call.
  */
 export const WIRELINE_COMPLIANCE_STATUS = {
   done: [
@@ -158,14 +173,14 @@ export const WIRELINE_COMPLIANCE_STATUS = {
     "TLS 1.2+ in transit",
     "Per-tenant data isolation enforced in application queries",
     "Append-only audit log on every state change",
-    "TCPA opt-in/opt-out ledger with state-by-state jurisdiction rules in code",
+    "TCPA opt-in and opt-out ledger with state-by-state jurisdiction rules in code",
     "DNC list honored automatically on outbound dialing",
-    "Account deletion + 30-day retention queue (GDPR-style)",
+    "Account deletion plus 30-day retention queue (GDPR-style)",
   ],
   inProgress: [
-    "SOC 2 Type II — auditor engaged, target Q4 2026",
-    "HIPAA BAA — Enterprise tier only, on request (~30 day onboarding)",
-    "Supabase RLS policy coverage + GraphQL exposure cleanup for all tenant tables",
-    "EU data residency — planned for the EU launch",
+    "SOC 2 Type II - auditor engaged, target Q4 2026",
+    "HIPAA BAA - Enterprise tier only, on request (~30 day onboarding)",
+    "Supabase RLS policy coverage and GraphQL exposure cleanup for all tenant tables",
+    "EU data residency - planned for the EU launch",
   ],
 } as const;

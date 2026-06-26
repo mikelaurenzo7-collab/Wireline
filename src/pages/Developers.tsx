@@ -19,7 +19,7 @@ const GETTING_STARTED = [
   {
     title: "1. Generate an API key",
     description:
-      "Sign in, open Settings → API Access, and create a key for your integration environment.",
+      "Sign in, open Settings -> API Access, and create a key for your integration environment.",
     icon: KeyRound,
   },
   {
@@ -34,25 +34,25 @@ const GETTING_STARTED = [
       "Use the OpenAPI spec or Swagger UI to inspect request and response shapes before you automate.",
     icon: BookOpen,
   },
-];
+] as const;
 
 const ENDPOINTS = [
   {
     path: "/api/agents",
-    description: "List voice assistants or create a new assistant configuration.",
+    description: "List agents or create a new agent configuration.",
   },
   { path: "/api/calls", description: "Queue outbound calls and retrieve call activity." },
   { path: "/api/campaigns", description: "Manage campaign definitions for outreach programs." },
-  { path: "/api/billing/plans", description: "Retrieve available pricing plans." },
+  { path: "/api/billing/plans", description: "Retrieve capacity tiers and billing configuration." },
   { path: "/api/openapi.json", description: "Download the machine-readable API contract." },
-];
+] as const;
 
 export default function Developers() {
   const [logs, setLogs] = useState<string[]>([
-    "[INFO] Initializing assistant connection...",
+    "[INFO] Initializing agent connection...",
     "[INFO] Voice session established with high-fidelity provider...",
-    "[DATA] Syncing knowledge base: 42 facts and preferences...",
-    "[INFO] Route verification complete: assistant ready to handle calls.",
+    "[DATA] Syncing Training context: 42 approved facts and policies...",
+    "[INFO] Route verification complete: agent ready to handle calls.",
   ]);
   const [copied, setCopied] = useState(false);
 
@@ -71,8 +71,8 @@ export default function Developers() {
   const handleRunRequest = () => {
     const newLogs = [
       ...logs,
-      `[DATA] Inbound request received at ${new Date().toLocaleTimeString()} · Status 200 OK`,
-      "[INFO] Assistant state synchronized successfully.",
+      `[DATA] Inbound request received at ${new Date().toLocaleTimeString()} - Status 200 OK`,
+      "[INFO] Agent state synchronized successfully.",
     ];
     if (newLogs.length > 8) newLogs.shift();
     setLogs(newLogs);
@@ -81,8 +81,8 @@ export default function Developers() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0" scroll={false}>
       <PageMeta
-        title="Developer Portal"
-        description="Wireline API documentation — OpenAPI spec, authentication guide, endpoint reference, and Swagger UI integration."
+        title="Developer Portal - Wireline"
+        description="Wireline API documentation - OpenAPI spec, authentication guide, endpoint reference, and Swagger UI integration."
         path="/developers"
       />
 
@@ -97,12 +97,11 @@ export default function Developers() {
                 </span>
               </div>
               <h1 className="font-display italic text-4xl sm:text-5xl text-foreground mb-4 leading-tight">
-                Programmatic Assistants
+                Programmatic agents
               </h1>
               <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
-                Establish programmatic controls for your Wireline assistants. Our world-class API
-                allows for real-time assistant provisioning, scheduling, custom routing triggers,
-                and automated call-activity retrieval.
+                Provision agents, shape Training context, trigger live work, and retrieve call
+                activity through the same API surface that powers Wireline.
               </p>
             </div>
 
@@ -141,7 +140,7 @@ export default function Developers() {
                 <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[var(--wireline-typography-caption-size)] text-brand">
                   Authorization
                 </code>{" "}
-                header. Tokens are created in your dashboard under Settings → API Access.
+                header. Tokens are created in your dashboard under Settings {"->"} API Access.
               </p>
               <div className="bg-ink p-4 rounded-sm font-mono text-[var(--wireline-typography-caption-size)] text-white/90 overflow-x-auto border border-white/10">
                 <code>Authorization: Bearer wl_YOUR_API_KEY</code>
@@ -219,7 +218,7 @@ export default function Developers() {
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
               </div>
               <span className="font-mono text-[var(--wireline-typography-overline-size)] text-white/50 tracking-wider">
-                bash — wireline-shell
+                bash - wireline-shell
               </span>
             </div>
             <span className="flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] text-brand font-mono font-semibold">

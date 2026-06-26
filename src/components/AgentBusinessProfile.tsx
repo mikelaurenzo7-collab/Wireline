@@ -619,12 +619,12 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             />
 
             {/* ── Escalation routing — per-agent override ──────────────────
-                When this assistant fires the escalate_to_human tool, where does
+                When this agent fires the escalate_to_human tool, where does
                 the alert go? Both fields are optional. If empty, the handler
                 falls back to the tenant-wide Manager Alert Number set in
                 Settings → Carrier. Setting these lets one tenant route a
-                sales assistant's escalations to the sales manager and a support
-                assistant's to the support lead. */}
+                sales agent's escalations to the sales manager and a support
+                agent's to the support lead. */}
             <div className="mt-4 pt-4 border-t border-border">
               <p className="text-eyebrow/65 font-semibold mb-1">
                 Route alerts to (this agent only)
@@ -676,7 +676,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               </div>
 
               {/* ── Warm-transfer toggle ─────────────────────────────────
-                  When ON + an escalation_phone is set, the assistant's
+                  When ON + an escalation_phone is set, the agent's
                   escalate_to_human tool will TRANSFER the live caller to
                   that number mid-call. Off (default) = async alert only.
                   This is the product-defining "AI receptionist that warm-

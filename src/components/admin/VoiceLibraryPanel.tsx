@@ -104,7 +104,7 @@ export default function VoiceLibraryPanel() {
       });
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Clone failed.");
-      toastSuccess("Voice ready", "You can select it for any assistant.");
+      toastSuccess("Voice ready", "You can select it for any agent.");
       resetClone();
       await loadVoices();
     } catch (error) {
@@ -137,8 +137,8 @@ export default function VoiceLibraryPanel() {
         <p className="wl-label text-brand">Wireline voice</p>
         <h2 className="mt-1 font-display text-2xl font-semibold text-foreground">Voice library</h2>
         <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted">
-          Create a recognizable sound for your assistants. Use only your own voice or a voice you
-          have explicit permission to use.
+          Create a recognizable sound for your agents. Use only your own voice or a voice you have
+          explicit permission to use.
         </p>
       </header>
 

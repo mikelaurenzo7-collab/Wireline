@@ -2,9 +2,9 @@
 
 ## Principle
 
-Wireline agents are **deeply customizable**. The rule is not that clients cannot customize them; the rule is that clients must not independently define what customization means at runtime.
+Wireline agents are deeply customizable. The rule is not that customers cannot customize them; the rule is that customers must not independently define what customization means at runtime.
 
-Every client—Web, ChatGPT MCP, iOS, and Android—edits the same canonical agent profile. The Wireline domain layer validates it, checks entitlement and tenant ownership, compiles runtime instructions, and determines the lifecycle transition.
+Every client - Web, ChatGPT MCP, iOS, and Android - edits the same canonical agent profile. The Wireline domain layer validates it, checks entitlement and tenant ownership, compiles runtime instructions, and determines the lifecycle transition.
 
 ## Agent profile
 
@@ -27,11 +27,12 @@ Behavior
 - intended actions
 - escalation policy
 
-Knowledge
-- account-holder supplied summary
+Training
+- account-holder supplied brief
+- approved facts, documents, and policies
 
 Lifecycle
-- draft → configured → simulated → test-ready → launch-ready → live → paused → archived
+- draft -> configured -> simulated -> test-ready -> launch-ready -> live -> paused -> archived
 ```
 
 The current persistence schema already supports the profile through `wireline_agents` fields plus `flow_config`, `business_variables`, `system_prompt_override`, `disallowed_topics`, `enabled_tools`, business-hours, voice, escalation, and integration fields.
@@ -40,7 +41,7 @@ The current persistence schema already supports the profile through `wireline_ag
 
 A user can say:
 
-> “Ava is a calm HVAC receptionist. She can gather ZIP code and urgency, offer an estimate callback, never quote prices, escalates active leaks when a handoff is configured, and only speaks after business hours.”
+> "Ava is a calm HVAC receptionist. She can gather ZIP code and urgency, offer an estimate callback, never quote prices, escalates active leaks when a handoff is configured, and only speaks after business hours."
 
 All clients may collect and edit that request. Only the domain compiler turns it into runtime instructions. This prevents the following failure mode:
 
@@ -54,12 +55,12 @@ Android has a different escalation rule
 Instead:
 
 ```text
-Every client → canonical profile → policy/entitlement checks → compiled runtime → same agent behavior
+Every client -> canonical profile -> policy/entitlement checks -> compiled runtime -> same agent behavior
 ```
 
 ## Intended actions are not permissions
 
-`allowedActions` expresses the account holder’s intended behavior. It does not automatically enable an external tool.
+`allowedActions` expresses the account holder's intended behavior. It does not automatically enable an external tool.
 
 Example:
 
@@ -70,7 +71,7 @@ Allowed action: offer an estimate callback
 The runtime can only complete that action when all of these are true:
 
 1. The user has configured the relevant Wireline connection.
-2. The agent’s policy permits it.
+2. The agent's policy permits it.
 3. The tenant entitlement permits it.
 4. The request passes applicable business-hour, compliance, consent, and escalation rules.
 5. The connected provider confirms success.
@@ -81,7 +82,7 @@ The compiled instructions explicitly prohibit claiming completion without a succ
 
 | Client | What it edits | What it must not own |
 | --- | --- | --- |
-| Web | Full agent builder, knowledge, integrations, business hours, launch controls | Independent prompt compilation or lifecycle enforcement |
+| Web | Full agent builder, Training, integrations, business hours, and launch controls | Independent prompt compilation or lifecycle enforcement |
 | ChatGPT MCP | Conversational drafting and refinement, private simulation | Guest-owned state, external action enablement, launch authority |
 | iOS | Quick edits, status, simulations, handoff, native control surfaces | Separate business rules or prompt logic |
 | Android | Quick edits, status, simulations, handoff, notifications | Separate business rules or prompt logic |
