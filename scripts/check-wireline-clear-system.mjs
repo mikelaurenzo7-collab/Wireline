@@ -50,6 +50,11 @@ const tokenConstants = read("src/constants/generated-design-tokens.ts");
 const androidTokens = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
 const iosTokens = read("ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
 const iosWidget = read("ios/WirelineShared/WirelineWidgetSnapshot.swift");
+const iosRootTabs = read("ios/Wireline/Views/RootTabView.swift");
+const iosWorkspace = read("ios/Wireline/Views/WorkspaceView.swift");
+const iosAgentLibrary = read("ios/Wireline/Views/AssistantLibraryView.swift");
+const iosTrainingWire = read("ios/Wireline/Views/AssistantSetupViews.swift");
+const iosCarPlay = read("ios/Wireline/CarPlay/CarPlaySceneDelegate.swift");
 const chatgptWidget = read("src/lib/chatgpt-mcp.ts");
 const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
 const legalCss = read("public/static-legal.css");
@@ -72,6 +77,15 @@ mustInclude("src/constants/generated-design-tokens.ts", tokenConstants, /"color\
 mustInclude("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens, /colorActionPrimaryDefault = Color\(0xFF111111\)/, "Android tokens must use Wireline Mono");
 mustInclude("ios/Wireline/Theme/WirelineDesignTokens.generated.swift", iosTokens, /colorActionPrimaryDefault = Color\(hex: 0x111111\)/, "iOS tokens must use Wireline Mono");
 mustInclude("ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget, /public static let accent = "111111"/, "iOS widget snapshot must use Wireline Mono");
+mustInclude("ios/Wireline/Views/RootTabView.swift", iosRootTabs, /Label\("Agents", systemImage: "person\.2"\)/, "iOS tab bar must use Agents");
+mustInclude("ios/Wireline/Views/RootTabView.swift", iosRootTabs, /Label\("Train", systemImage: "book\.closed"\)/, "iOS tab bar must use Train");
+mustInclude("ios/Wireline/Views/RootTabView.swift", iosRootTabs, /Label\("Wire", systemImage: "bolt"\)/, "iOS tab bar must use Wire");
+mustInclude("ios/Wireline/Views/WorkspaceView.swift", iosWorkspace, /Metric\(title: "Agents"/, "iOS workspace must show Agents metric");
+mustInclude("ios/Wireline/Views/AssistantLibraryView.swift", iosAgentLibrary, /navigationTitle\("Agents"\)/, "iOS agent library title must be Agents");
+mustInclude("ios/Wireline/Views/AssistantSetupViews.swift", iosTrainingWire, /navigationTitle\("Training"\)/, "iOS setup page must be Training");
+mustInclude("ios/Wireline/Views/AssistantSetupViews.swift", iosTrainingWire, /navigationTitle\("Wire"\)/, "iOS actions page must be Wire");
+mustInclude("ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /titleVariants: \["Agents", "Choose a line"\]/, "CarPlay must expose agent lines as Agents");
+mustInclude("ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay, /CPListTemplate\(title: "Agents"/, "CarPlay agent list title must be Agents");
 mustInclude("src/lib/chatgpt-mcp.ts", chatgptWidget, /button\.primary \{ background: #111111; color: white; border-color: #111111; \}/, "ChatGPT public widget must use monochrome chrome");
 mustInclude("src/lib/chatgpt-mcp-account.ts", chatgptAccountWidget, /button\.primary \{ background: #111111; color: white; border-color: #111111; \}/, "ChatGPT account widget must use monochrome chrome");
 mustInclude("public/static-legal.css", legalCss, /--wireline-color-action-primary-default: #111111/, "static legal pages must use Wireline Mono tokens");
@@ -88,6 +102,11 @@ for (const [file, source] of [
   ["android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens],
   ["ios/Wireline/Theme/WirelineDesignTokens.generated.swift", iosTokens],
   ["ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget],
+  ["ios/Wireline/Views/RootTabView.swift", iosRootTabs],
+  ["ios/Wireline/Views/WorkspaceView.swift", iosWorkspace],
+  ["ios/Wireline/Views/AssistantLibraryView.swift", iosAgentLibrary],
+  ["ios/Wireline/Views/AssistantSetupViews.swift", iosTrainingWire],
+  ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay],
   ["src/components/KnowledgeWorkspace.tsx", knowledgeWorkspace],
   ["src/components/marketing/BrowserCallWidget.tsx", browserCallWidget],
   ["src/lib/chatgpt-mcp.ts", chatgptWidget],
