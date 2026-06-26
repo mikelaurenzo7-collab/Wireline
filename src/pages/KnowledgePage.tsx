@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Database, FileText, GraduationCap, MessageSquareText, Mic2, ShieldCheck, WandSparkles } from "lucide-react";
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import WorkspaceShell from "../components/WorkspaceShell";
+import AgentAssetUpload from "../components/AgentAssetUpload";
 import KnowledgeWorkspace from "../components/KnowledgeWorkspace";
 import { useAgents } from "../contexts/AgentsContext";
 
@@ -53,6 +55,7 @@ function TrainingRail() {
 
 export default function KnowledgePage() {
   const [params, setParams] = useSearchParams();
+  const [trainingVersion, setTrainingVersion] = useState(0);
   const { agents, loading } = useAgents();
   const agentId = params.get("agent") || agents[0]?.id || "";
   const populated = !loading && agents.length > 0;
@@ -67,7 +70,10 @@ export default function KnowledgePage() {
       {!loading && !agents.length ? <EmptyTraining /> : (
         <div className="flex h-full min-h-0 gap-4">
           <TrainingRail />
-          <div className="min-w-0 flex-1"><KnowledgeWorkspace /></div>
+          <div className="grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-h-0"><KnowledgeWorkspace key={`${agentId}-${trainingVersion}`} /></div>
+            <div className="min-h-0"><AgentAssetUpload agentId={agentId} onComplete={() => setTrainingVersion((value) => value + 1)} /></div>
+          </div>
         </div>
       )}
     </WorkspaceShell>
