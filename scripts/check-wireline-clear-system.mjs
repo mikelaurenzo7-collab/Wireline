@@ -37,7 +37,12 @@ const foundationCss = read("src/styles/foundation.css");
 const designSystemCss = read("src/styles/design-system.css");
 const studioOperationsCss = read("src/styles/studio-operations.css");
 const workspaceShell = read("src/components/WorkspaceShell.tsx");
+const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
+const agentsPage = read("src/pages/AgentsPage.tsx");
+const settingsPage = read("src/pages/SettingsPage.tsx");
+const accountRoutes = read("src/routes/account-routes.ts");
 const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
+const studioOverview = read("src/components/StudioOverview.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
 const studioWorkroom = read("src/components/StudioWorkroom.tsx");
 const assetUpload = read("src/components/AgentAssetUpload.tsx");
@@ -104,6 +109,13 @@ mustInclude("public/wireline-icon.svg", publicIcon, /fill="#111111"/, "public ap
 mustInclude("public/favicon.svg", favicon, /fill="#111111"/, "favicon must be monochrome");
 mustInclude("apps/browser-extension/assets/icon.svg", extensionIcon, /fill="#111111"/, "browser extension icon must be monochrome");
 mustInclude("android/app/src/main/res/drawable/ic_launcher_background.xml", androidLauncherBg, /android:fillColor="#111111"/, "Android launcher background must be monochrome");
+mustInclude("src/components/MobileBrowserUtilities.tsx", mobileBrowserUtilities, /Billing[\s\S]*Usage \+ balance/, "mobile browser must expose billing and usage controls");
+mustInclude("src/components/MobileBrowserUtilities.tsx", mobileBrowserUtilities, /Integrations[\s\S]*Connected tools/, "mobile browser must expose integrations");
+mustInclude("src/components/WorkspaceShell.tsx", workspaceShell, /!nativeAppShell \? <MobileBrowserUtilities \/>/, "mobile browser utility control must mount outside native shells");
+mustInclude("src/pages/AgentsPage.tsx", agentsPage, /Configure number/, "agent roster must expose line/number configuration");
+mustInclude("src/pages/AgentsPage.tsx", agentsPage, /Usage/, "agent roster must link to usage");
+mustInclude("src/pages/SettingsPage.tsx", settingsPage, /Account deletion/, "settings must expose account deletion");
+mustInclude("src/routes/account-routes.ts", accountRoutes, /\/api\/account\/delete/, "account deletion route must exist");
 for (const [file, source] of [
   ["src/styles/tokens.generated.css", webTokens],
   ["apps/browser-extension/panel/tokens.generated.css", browserTokens],
@@ -118,6 +130,9 @@ for (const [file, source] of [
   ["ios/Wireline/Views/AssistantLibraryView.swift", iosAgentLibrary],
   ["ios/Wireline/Views/AssistantSetupViews.swift", iosTrainingWire],
   ["ios/Wireline/CarPlay/CarPlaySceneDelegate.swift", iosCarPlay],
+  ["src/components/MobileBrowserUtilities.tsx", mobileBrowserUtilities],
+  ["src/pages/AgentsPage.tsx", agentsPage],
+  ["src/pages/SettingsPage.tsx", settingsPage],
   ["src/components/KnowledgeWorkspace.tsx", knowledgeWorkspace],
   ["src/components/marketing/BrowserCallWidget.tsx", browserCallWidget],
   ["src/lib/chatgpt-mcp.ts", chatgptWidget],
@@ -136,6 +151,7 @@ mustExclude("src/components/WorkspaceShell.tsx", workspaceShell, /wl-workspace-s
 mustInclude("src/components/WorkspaceShell.tsx", workspaceShell, /label: "Train"/, "primary rail must include Training");
 mustInclude("src/components/WorkspaceShell.tsx", workspaceShell, /function isNativeAppShell/, "bottom dock must be gated by native app shell detection");
 mustInclude("src/components/WorkspaceShell.tsx", workspaceShell, /nativeAppShell \? <NativeDock/, "bottom dock must only render for native app shells");
+mustInclude("src/components/StudioOverview.tsx", studioOverview, /grid grid-cols-1 gap-2[\s\S]*sm:flex sm:overflow-x-auto/, "mobile Studio agent list must stack before desktop carousel behavior");
 mustInclude("src/routes/AppRoutes.tsx", appRoutes, /path="\/training" element=\{<KnowledgePage/, "Training must be first-class route");
 mustInclude("src/routes/AppRoutes.tsx", appRoutes, /path="\/knowledge" element=\{<Navigate to="\/training"/, "Knowledge must redirect to Training");
 mustInclude("src/components/CreateAgentDialog.tsx", createDialog, /Name, voice, personality, role/, "create flow must remain a short intake");
