@@ -27,9 +27,10 @@ export type StripePlan = {
 
 /**
  * Commercial contract:
- * - Personal is free to build and test; live work is funded through Conversation Balance.
- * - Business subscriptions buy the operating layer: numbers, routing, shared workspaces,
- *   integrations, and support. Live work remains independently funded.
+ * - Templates are not plan locks. Every customer can start from any agent template.
+ * - Plans sell the operating layer: agents, numbers, routing, collaboration,
+ *   integrations, support, and reliability.
+ * - Live work is funded through Conversation Balance so usage scales cleanly.
  * - Historical minute allowances are preserved for existing subscription compatibility but are
  *   no longer used as public acquisition language.
  */
@@ -91,7 +92,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID",
     features: [
-      "Up to 4 assistants and agents",
+      "Up to 4 agents",
+      "All agent templates unlocked",
       "Dedicated numbers for inbound and outbound",
       "Shared inbox and team handoff",
       "CRM and calendar connections",
@@ -113,7 +115,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PRO_OVERAGE_PRICE_ID",
     features: [
-      "Up to 8 assistants and agents",
+      "Up to 8 agents",
+      "All agent templates unlocked",
       "Intelligent routing and department transfers",
       "Outbound campaign templates",
       "Live activity and collaboration",
@@ -135,7 +138,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     features: [
-      "Unlimited assistants, agents, and lines",
+      "Unlimited agents and lines",
+      "All agent templates unlocked",
       "Full CRM deep-sync and custom webhook payloads",
       "Security review, SSO, and compliance audits",
       "Dedicated implementation and SLA support",
