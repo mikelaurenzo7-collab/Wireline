@@ -3,14 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import CreateAgentDialog from "../components/CreateAgentDialog";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { useAgents } from "../contexts/AgentsContext";
-import { browserCompanionBrief, clearBrowserCompanionHash, readBrowserCompanionContext } from "../lib/browser-companion-context";
+import { browserCommandBrief, clearBrowserCommandHash, readBrowserCommandContext } from "../lib/browser-command-context";
 
 export default function AgentStudioHome() {
   const [params] = useSearchParams();
   const { loading } = useAgents();
   const wantsBusinessAgent = params.get("posture") === "business";
-  const [browserContext] = useState(readBrowserCompanionContext);
-  const browserBrief = browserCompanionBrief(browserContext);
+  const [browserContext] = useState(readBrowserCommandContext);
+  const browserBrief = browserCommandBrief(browserContext);
   const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function AgentStudioHome() {
   useEffect(() => {
     if (!browserBrief) return;
     setShowCreate(true);
-    clearBrowserCompanionHash();
+    clearBrowserCommandHash();
   }, [browserBrief]);
 
   return (
