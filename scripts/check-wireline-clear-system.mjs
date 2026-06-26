@@ -49,6 +49,15 @@ const browserTokens = read("apps/browser-extension/panel/tokens.generated.css");
 const tokenConstants = read("src/constants/generated-design-tokens.ts");
 const androidTokens = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
 const iosTokens = read("ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
+const iosWidget = read("ios/WirelineShared/WirelineWidgetSnapshot.swift");
+const chatgptWidget = read("src/lib/chatgpt-mcp.ts");
+const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
+const legalCss = read("public/static-legal.css");
+const manifest = read("public/site.webmanifest");
+const publicIcon = read("public/wireline-icon.svg");
+const favicon = read("public/favicon.svg");
+const extensionIcon = read("apps/browser-extension/assets/icon.svg");
+const androidLauncherBg = read("android/app/src/main/res/drawable/ic_launcher_background.xml");
 
 mustInclude("package.json", packageJson, /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs"/, "design:check must run this file");
 mustInclude("design-tokens/wireline.tokens.json", tokenSource, /"\$description"\s*:\s*"Wireline Mono design tokens/, "token source must describe Wireline Mono");
@@ -62,14 +71,33 @@ mustInclude("apps/browser-extension/panel/tokens.generated.css", browserTokens, 
 mustInclude("src/constants/generated-design-tokens.ts", tokenConstants, /"color\.action\.primary\.default": "#111111"/, "TS tokens must use Wireline Mono");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens, /colorActionPrimaryDefault = Color\(0xFF111111\)/, "Android tokens must use Wireline Mono");
 mustInclude("ios/Wireline/Theme/WirelineDesignTokens.generated.swift", iosTokens, /colorActionPrimaryDefault = Color\(hex: 0x111111\)/, "iOS tokens must use Wireline Mono");
+mustInclude("ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget, /public static let accent = "111111"/, "iOS widget snapshot must use Wireline Mono");
+mustInclude("src/lib/chatgpt-mcp.ts", chatgptWidget, /button\.primary \{ background: #111111; color: white; border-color: #111111; \}/, "ChatGPT public widget must use monochrome chrome");
+mustInclude("src/lib/chatgpt-mcp-account.ts", chatgptAccountWidget, /button\.primary \{ background: #111111; color: white; border-color: #111111; \}/, "ChatGPT account widget must use monochrome chrome");
+mustInclude("public/static-legal.css", legalCss, /--wireline-color-action-primary-default: #111111/, "static legal pages must use Wireline Mono tokens");
+mustInclude("public/site.webmanifest", manifest, /"theme_color": "#111111"/, "manifest must use monochrome theme color");
+mustInclude("public/site.webmanifest", manifest, /"background_color": "#F7F7F4"/, "manifest must use warm monochrome background");
+mustInclude("public/wireline-icon.svg", publicIcon, /fill="#111111"/, "public app icon must be monochrome");
+mustInclude("public/favicon.svg", favicon, /fill="#111111"/, "favicon must be monochrome");
+mustInclude("apps/browser-extension/assets/icon.svg", extensionIcon, /fill="#111111"/, "browser extension icon must be monochrome");
+mustInclude("android/app/src/main/res/drawable/ic_launcher_background.xml", androidLauncherBg, /android:fillColor="#111111"/, "Android launcher background must be monochrome");
 for (const [file, source] of [
   ["src/styles/tokens.generated.css", webTokens],
   ["apps/browser-extension/panel/tokens.generated.css", browserTokens],
   ["src/constants/generated-design-tokens.ts", tokenConstants],
   ["android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens],
   ["ios/Wireline/Theme/WirelineDesignTokens.generated.swift", iosTokens],
+  ["ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget],
   ["src/components/KnowledgeWorkspace.tsx", knowledgeWorkspace],
   ["src/components/marketing/BrowserCallWidget.tsx", browserCallWidget],
+  ["src/lib/chatgpt-mcp.ts", chatgptWidget],
+  ["src/lib/chatgpt-mcp-account.ts", chatgptAccountWidget],
+  ["public/static-legal.css", legalCss],
+  ["public/site.webmanifest", manifest],
+  ["public/wireline-icon.svg", publicIcon],
+  ["public/favicon.svg", favicon],
+  ["apps/browser-extension/assets/icon.svg", extensionIcon],
+  ["android/app/src/main/res/drawable/ic_launcher_background.xml", androidLauncherBg],
 ]) {
   mustExclude(file, source, oldPalette, "old purple/blue palette must not appear in active design surfaces");
 }
@@ -90,6 +118,7 @@ mustInclude("src/pages/KnowledgePage.tsx", trainingPage, /AgentAssetUpload/, "Tr
 mustInclude("src/components/AgentAssetUpload.tsx", assetUpload, /\/api\/agent-config\/\$\{encodeURIComponent\(agentId\)\}\/assets/, "document intake must use asset ingestion API");
 mustBeDeleted("src/components/StudioAssistantWorkspace.tsx", "dead legacy Studio rail must stay deleted");
 mustBeDeleted("src/components/ui/NebulaPulse.tsx", "unused nebula visual primitive must stay deleted");
+mustBeDeleted("scripts/check-active-surface-drift.mjs", "retired Ametrine surface contract must stay deleted");
 
 if (failures.length) {
   console.error(`Wireline Clear System check failed:\n- ${failures.join("\n- ")}`);
