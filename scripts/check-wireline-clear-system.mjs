@@ -56,6 +56,7 @@ const extensionWorker = read("apps/browser-extension/background/service-worker.j
 const extensionPanel = read("apps/browser-extension/panel/index.html");
 const extensionPanelJs = read("apps/browser-extension/panel/panel.js");
 const extensionCommandCss = read("apps/browser-extension/panel/command.css");
+const extensionBuild = read("apps/browser-extension/scripts/build.mjs");
 const extensionReadme = read("apps/browser-extension/README.md");
 const tokenConstants = read("src/constants/generated-design-tokens.ts");
 const androidTokens = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
@@ -87,9 +88,9 @@ mustInclude("src/styles/design-system.css", designSystemCss, /Wireline Clear Sys
 mustInclude("src/styles/tokens.generated.css", webTokens, /--wireline-color-action-primary-default:\s*#111111/, "web tokens must use Wireline Mono");
 mustInclude("apps/browser-extension/panel/tokens.generated.css", browserTokens, /--wireline-color-action-primary-default:\s*#111111/, "browser tokens must use Wireline Mono");
 mustInclude("apps/browser-extension/manifest.base.json", extensionManifest, /"name": "Wireline Command"/, "browser extension must be positioned as Wireline Command");
-mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /requestForAction\("call"/, "extension must support call commands from browser context");
-mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /requestForAction\("text"/, "extension must support text commands from browser context");
-mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /hostPermissions\.length/, "extension policy must keep persistent host permissions out");
+mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /action === "call"/, "extension must support call commands from browser context");
+mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /action === "text"/, "extension must support text commands from browser context");
+mustInclude("apps/browser-extension/scripts/build.mjs", extensionBuild, /hostPermissions\.length/, "extension policy must keep persistent host permissions out");
 mustInclude("apps/browser-extension/panel/index.html", extensionPanel, /Call[\s\S]*Text[\s\S]*Follow-up[\s\S]*Agent task/, "extension panel must expose quick command actions");
 mustInclude("apps/browser-extension/panel/panel.js", extensionPanelJs, /actionPrompts[\s\S]*call[\s\S]*text[\s\S]*followup/, "extension panel must wire quick commands");
 mustInclude("apps/browser-extension/panel/command.css", extensionCommandCss, /\.quick-actions/, "extension quick actions must have dedicated styling");
