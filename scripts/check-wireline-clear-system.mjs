@@ -32,6 +32,7 @@ function mustBeDeleted(relativePath, message) {
 
 const packageJson = read("package.json");
 const indexHtml = read("index.html");
+const appRoot = read("src/App.tsx");
 const appRoutes = read("src/routes/AppRoutes.tsx");
 const tokenSource = read("design-tokens/wireline.tokens.json");
 const foundationCss = read("src/styles/foundation.css");
@@ -54,7 +55,11 @@ const solutionsPage = read("src/pages/SolutionsPage.tsx");
 const verticalLandingPage = read("src/pages/VerticalLanding.tsx");
 const landingPage = read("src/pages/LandingPage.tsx");
 const developersPage = read("src/pages/Developers.tsx");
+const authPortal = read("src/components/AuthPortal.tsx");
+const authRedirect = read("src/lib/auth-redirect.ts");
+const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
 const settingsPage = read("src/pages/SettingsPage.tsx");
+const billingSettingsPage = read("src/pages/BillingSettings.tsx");
 const accountRoutes = read("src/routes/account-routes.ts");
 const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
 const studioOverview = read("src/components/StudioOverview.tsx");
@@ -79,6 +84,7 @@ const verticalWedges = read("src/data/vertical-wedges.ts");
 const founderSeed = read("src/lib/founder-fleet-seed.ts");
 const wirelinePersonas = read("src/lib/wireline-agent-personas.ts");
 const stripeBillingCard = read("src/components/StripeBillingCard.tsx");
+const conversationBalanceCard = read("src/components/ConversationBalanceCard.tsx");
 const trialGateModal = read("src/components/TrialGateModal.tsx");
 const dbSchema = read("src/db/schema.ts");
 const creditWallet = read("src/lib/credit-wallet.ts");
@@ -537,6 +543,18 @@ mustInclude(
 mustInclude(
   "src/pages/OverviewPage.tsx",
   overviewPage,
+  /Create -> Train -> Run/,
+  "overview must reinforce the Create -> Train -> Run model",
+);
+mustInclude(
+  "src/pages/OverviewPage.tsx",
+  overviewPage,
+  /Open Studio/,
+  "overview must point active accounts into Studio",
+);
+mustInclude(
+  "src/pages/OverviewPage.tsx",
+  overviewPage,
   /Wire/,
   "overview shortcuts must use Wire naming",
 );
@@ -605,6 +623,12 @@ mustInclude(
   settingsPage,
   /Account deletion/,
   "settings must expose account deletion",
+);
+mustInclude(
+  "src/pages/BillingSettings.tsx",
+  billingSettingsPage,
+  /Start free\. Fund live work\./,
+  "billing must position Personal as start-free live-work funding",
 );
 mustInclude(
   "src/routes/account-routes.ts",
@@ -744,6 +768,18 @@ mustInclude(
   stripeBillingCard,
   /CONVERSATION_BALANCE_COPY/,
   "billing screen must expose Conversation Balance activation",
+);
+mustExclude(
+  "src/components/StripeBillingCard.tsx",
+  stripeBillingCard,
+  /Build and test for free/,
+  "billing screen must not revive retired Build-first billing copy",
+);
+mustExclude(
+  "src/components/ConversationBalanceCard.tsx",
+  conversationBalanceCard,
+  /Build and test for free/,
+  "Conversation Balance card must not revive retired Build-first activation copy",
 );
 mustInclude(
   "src/components/TrialGateModal.tsx",
@@ -947,6 +983,12 @@ mustInclude(
   /path="\/training" element=\{<KnowledgePage/,
   "Training must be first-class route",
 );
+mustExclude(
+  "src/App.tsx",
+  appRoot,
+  /path="\/training" element=\{<Navigate to="\/studio" replace \/>/,
+  "top-level router must not hijack Training before the authenticated shell loads",
+);
 mustInclude(
   "src/routes/AppRoutes.tsx",
   appRoutes,
@@ -956,8 +998,14 @@ mustInclude(
 mustInclude(
   "src/components/CreateAgentDialog.tsx",
   createDialog,
-  /Name, voice, personality, role/,
+  /Name, role, voice, personality, and a starting brief/,
   "create flow must remain a short intake",
+);
+mustInclude(
+  "src/components/CreateAgentDialog.tsx",
+  createDialog,
+  /Create and open Training/,
+  "create flow must hand cleanly into Training",
 );
 mustInclude(
   "src/components/CreateAgentDialog.tsx",
@@ -966,10 +1014,46 @@ mustInclude(
   "create flow must land in Training",
 );
 mustInclude(
+  "src/components/AuthPortal.tsx",
+  authPortal,
+  /preferredPlanId:\s*nextMode === "business" \? "business" : "personal"/,
+  "signup workspace choice must persist as preferred plan intent",
+);
+mustInclude(
+  "src/lib/auth-redirect.ts",
+  authRedirect,
+  /workspaceMode === "business" \? "\/studio\?create=1&posture=business" : "\/studio\?create=1"/,
+  "fresh signups must route directly into the real create dialog",
+);
+mustInclude(
+  "src/pages/OnboardingFlow.tsx",
+  onboardingFlow,
+  /Opening Create Agent/,
+  "legacy onboarding route must hand directly into the create flow",
+);
+mustExclude(
+  "src/pages/OnboardingFlow.tsx",
+  onboardingFlow,
+  /Link your phone|Verify your number|Name your agent/,
+  "legacy fake onboarding wizard must stay removed",
+);
+mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
   /StudioWorkroom/,
   "Studio must use chat-first workroom",
+);
+mustInclude(
+  "src/components/StudioWorkspaceV2.tsx",
+  studioWorkspace,
+  /next\.set\("mode", "workroom"\)/,
+  "Studio must open the workroom with current mode naming",
+);
+mustInclude(
+  "src/components/StudioWorkspaceV2.tsx",
+  studioWorkspace,
+  /mode === "workroom" \|\| mode === "assistant"/,
+  "Studio must preserve legacy assistant-mode links while preferring workroom mode",
 );
 mustExclude(
   "src/components/StudioWorkspaceV2.tsx",
@@ -982,6 +1066,36 @@ mustExclude(
   studioWorkroom,
   /PanelRightOpen|Working context|Detailed view/,
   "Workroom must not have a right context rail",
+);
+mustInclude(
+  "src/components/StudioWorkroom.tsx",
+  studioWorkroom,
+  /Direct the work\./,
+  "Studio workroom must frame itself as the run surface",
+);
+mustInclude(
+  "src/components/StudioWorkroom.tsx",
+  studioWorkroom,
+  /Run calls, draft texts, queue follow-up, review approvals, and prepare handoff\./,
+  "Studio workroom must position calls, texts, follow-up, approvals, and handoff",
+);
+mustExclude(
+  "src/components/StudioWorkroom.tsx",
+  studioWorkroom,
+  /Train by talking\.|what to learn or do/,
+  "Studio workroom must not use Training-first copy",
+);
+mustInclude(
+  "src/pages/KnowledgePage.tsx",
+  trainingPage,
+  /TrainingSurfaceMap/,
+  "Training must expose a visible surface map for facts, instructions, voice, test calls, and memory",
+);
+mustInclude(
+  "src/pages/KnowledgePage.tsx",
+  trainingPage,
+  /Facts, instructions, sources, voice, test calls, and memory\./,
+  "Training must make its full config surface explicit",
 );
 mustInclude(
   "src/pages/KnowledgePage.tsx",
@@ -1042,6 +1156,13 @@ for (const [file, source] of [
   ["src/components/CreateAgentDialog.tsx", createDialog],
   ["src/components/AgentMemoryPanel.tsx", agentMemoryPanel],
   ["src/components/StudioOverview.tsx", studioOverview],
+  ["src/components/AuthPortal.tsx", authPortal],
+  ["src/components/layout/AppShell.tsx", read("src/components/layout/AppShell.tsx")],
+  ["src/pages/OverviewPage.tsx", overviewPage],
+  ["src/pages/SettingsPage.tsx", settingsPage],
+  ["src/pages/BillingSettings.tsx", billingSettingsPage],
+  ["src/components/ConversationBalanceCard.tsx", conversationBalanceCard],
+  ["src/components/StudioWorkroom.tsx", studioWorkroom],
 ]) {
   mustExclude(file, source, /Â|â|�/, "authenticated surfaces must not expose mojibake");
 }

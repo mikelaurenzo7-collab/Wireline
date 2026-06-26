@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Loader2, Send, Sparkles, Trash2 } from "lucide-react";
-import { Button, Skeleton } from "../components/atoms";
+import { Button } from "../components/atoms";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 
@@ -15,6 +15,13 @@ type StudioMessage = {
     actions?: unknown[];
   };
 };
+
+const QUICK_PROMPTS = [
+  "Draft a follow-up text for today's missed calls.",
+  "Review open approvals and tell me what needs a decision.",
+  "Prepare a handoff note for the next human reply.",
+  "Queue the next follow-up steps for priority leads.",
+] as const;
 
 function proposalCount(message: StudioMessage) {
   return (
@@ -62,7 +69,9 @@ export default function StudioWorkroom({
     setLoading(true);
     setError(null);
     try {
-      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`);
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
+      );
       if (!response.ok) throw new Error("Conversation could not be loaded.");
       const payload = await response.json();
       setMessages(Array.isArray(payload.messages) ? payload.messages : []);
@@ -73,7 +82,11 @@ export default function StudioWorkroom({
     }
   }, [agentId]);
 
-  const { state: streamState, send: streamSend, reset: resetStream } = useStreamingChat(endpoint, {
+  const {
+    state: streamState,
+    send: streamSend,
+    reset: resetStream,
+  } = useStreamingChat(endpoint, {
     onComplete: (payload) => {
       setMessages((current) => [
         ...current,
@@ -100,7 +113,9 @@ export default function StudioWorkroom({
     },
   });
 
-  useEffect(() => { void loadMessages(); }, [loadMessages]);
+  useEffect(() => {
+    void loadMessages();
+  }, [loadMessages]);
 
   useEffect(() => {
     if (initialCommand?.trim()) {
@@ -119,7 +134,12 @@ export default function StudioWorkroom({
     if (!text || sending) return;
     setMessages((current) => [
       ...current,
-      { id: `account-${Date.now()}`, role: "Account Holder", content: text, createdAt: new Date().toISOString() },
+      {
+        id: `account-${Date.now()}`,
+        role: "Account Holder",
+        content: text,
+        createdAt: new Date().toISOString(),
+      },
     ]);
     setDraft("");
     setError(null);
@@ -132,7 +152,10 @@ export default function StudioWorkroom({
     setClearing(true);
     setError(null);
     try {
-      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`, { method: "DELETE" });
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
+        { method: "DELETE" },
+      );
       if (!response.ok) throw new Error("Conversation could not be cleared.");
       setMessages([]);
     } catch (reason) {
@@ -154,56 +177,116 @@ export default function StudioWorkroom({
   return (
     <main className="flex h-full min-h-0 flex-col bg-background">
       <header className="flex min-h-12 shrink-0 items-center gap-3 border-b border-border px-3 sm:px-4">
-        <button type="button" onClick={onBack} className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Back to Studio">
+        <button
+          type="button"
+          onClick={onBack}
+          className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Back to Studio"
+        >
           <ArrowLeft size={16} aria-hidden="true" />
         </button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{agentName}</p>
         </div>
-        <button type="button" disabled={!messages.length || clearing} onClick={() => void clearConversation()} className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40" aria-label="Clear conversation">
+        <button
+          type="button"
+          disabled={!messages.length || clearing}
+          onClick={() => void clearConversation()}
+          className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Clear conversation"
+        >
           {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
         </button>
       </header>
 
-      {error ? <div className="mx-4 mt-3 rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground" role="alert">{error}</div> : null}
+      {error ? (
+        <div
+          className="mx-4 mt-3 rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground"
+          role="alert"
+        >
+          {error}
+        </div>
+      ) : null}
 
       <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-        {loading ? <MessageSkeletons /> : messages.length ? (
+        {loading ? (
+          <MessageSkeletons />
+        ) : messages.length ? (
           <div className="mx-auto flex max-w-3xl flex-col gap-5">
             {messages.map((message) => {
               const isUser = message.role === "Account Holder";
               const suggestions = proposalCount(message);
               return (
-                <article key={message.id} className={isUser ? "ml-auto max-w-[86%]" : "max-w-[92%]"}>
-                  <p className={`mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] ${isUser ? "text-right text-muted-foreground" : "text-primary"}`}>{isUser ? "You" : agentName}</p>
-                  <div className={`rounded-2xl border px-4 py-3 text-[var(--wireline-typography-body-size)] leading-6 ${isUser ? "border-border bg-muted text-foreground" : "border-border bg-card text-foreground"}`}>
+                <article
+                  key={message.id}
+                  className={isUser ? "ml-auto max-w-[86%]" : "max-w-[92%]"}
+                >
+                  <p
+                    className={`mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] ${isUser ? "text-right text-muted-foreground" : "text-primary"}`}
+                  >
+                    {isUser ? "You" : agentName}
+                  </p>
+                  <div
+                    className={`rounded-2xl border px-4 py-3 text-[var(--wireline-typography-body-size)] leading-6 ${isUser ? "border-border bg-muted text-foreground" : "border-border bg-card text-foreground"}`}
+                  >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
-                  {suggestions ? <p className="mt-2 text-xs text-muted-foreground">{suggestions} suggestion{suggestions === 1 ? "" : "s"} saved for review.</p> : null}
+                  {suggestions ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {suggestions} suggestion{suggestions === 1 ? "" : "s"} saved for review.
+                    </p>
+                  ) : null}
                 </article>
               );
             })}
             {sending ? (
               <div className="max-w-[92%]">
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] text-primary">{agentName}</p>
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] text-primary">
+                  {agentName}
+                </p>
                 <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" /> {workingLabel}
+                  <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />{" "}
+                  {workingLabel}
                 </div>
               </div>
             ) : null}
           </div>
         ) : (
           <div className="mx-auto flex h-full max-w-xl flex-col justify-center py-10">
-            <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Sparkles size={18} aria-hidden="true" /></span>
-            <h1 className="mt-5 text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-none tracking-[-.06em] text-foreground">Train by talking.</h1>
-            <p className="mt-4 text-base leading-7 text-muted-foreground">Ask for drafts, plans, reviews, rules, or improvements. Heavy settings live in Training.</p>
+            <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Sparkles size={18} aria-hidden="true" />
+            </span>
+            <h1 className="mt-5 text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-none tracking-[-.06em] text-foreground">
+              Direct the work.
+            </h1>
+            <p className="mt-4 text-base leading-7 text-muted-foreground">
+              Run calls, draft texts, queue follow-up, review approvals, and prepare handoff. Heavy
+              setup stays in Training.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2.5">
+              {QUICK_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    setDraft(prompt);
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                  className="rounded-full border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </section>
 
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
         <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-[var(--wireline-elevation-sm)] focus-within:border-primary/35">
-          <label className="sr-only" htmlFor="studio-workroom-message">Message {agentName}</label>
+          <label className="sr-only" htmlFor="studio-workroom-message">
+            Message {agentName}
+          </label>
           <textarea
             id="studio-workroom-message"
             ref={inputRef}
@@ -217,12 +300,14 @@ export default function StudioWorkroom({
             }}
             rows={3}
             disabled={sending}
-            placeholder={`Tell ${agentName} what to learn or do…`}
+            placeholder={`Tell ${agentName} what to run, send, review, or hand off...`}
             className="min-h-[78px] w-full resize-none bg-transparent px-2 py-1 text-[var(--wireline-typography-body-size)] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
           />
           <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-            <p className="hidden text-[11px] text-muted-foreground sm:block">⌘ / Ctrl + Enter</p>
-            <Button type="button" disabled={!draft.trim() || sending} onClick={submit}>{sending ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />} Send</Button>
+            <p className="hidden text-[11px] text-muted-foreground sm:block">Ctrl/Cmd + Enter</p>
+            <Button type="button" disabled={!draft.trim() || sending} onClick={submit}>
+              {sending ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />} Send
+            </Button>
           </div>
         </div>
       </div>

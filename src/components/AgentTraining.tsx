@@ -421,7 +421,7 @@ export default function AgentTraining({
                     ) : (
                       <Activity className="w-3.5 h-3.5" />
                     )}
-                    {isOptimizing ? "Analyzing…" : "Analyze calls"}
+                    {isOptimizing ? "Analyzing..." : "Analyze calls"}
                   </ShadButton>
                 </div>
                 {optSuggestions && (
@@ -536,7 +536,7 @@ export default function AgentTraining({
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
                       className="w-full min-h-[180px] p-3 rounded-md bg-muted/20 border border-border text-sm text-foreground outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-foreground/55"
-                      placeholder="Define the core identity heuristics…"
+                      placeholder="Define the core identity heuristics..."
                     />
                   ) : (
                     <div className="p-4 rounded-md bg-black/20 border border-white/8">
@@ -619,7 +619,7 @@ export default function AgentTraining({
                                     disabled={isSavingEntry}
                                     className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25"
                                   >
-                                    {isSavingEntry ? "Saving…" : "Save"}
+                                    {isSavingEntry ? "Saving..." : "Save"}
                                   </ShadButton>
                                 </div>
                               </div>
@@ -782,7 +782,7 @@ export default function AgentTraining({
                                     disabled={isSavingEntry}
                                     className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25"
                                   >
-                                    {isSavingEntry ? "Saving…" : "Save"}
+                                    {isSavingEntry ? "Saving..." : "Save"}
                                   </ShadButton>
                                 </div>
                               </div>
@@ -991,7 +991,7 @@ export default function AgentTraining({
                         <PhoneCall className="w-3.5 h-3.5" />
                       )}
                       {simConnecting
-                        ? "Connecting…"
+                        ? "Connecting..."
                         : simConnected
                           ? "End call"
                           : "Start voice test"}

@@ -9,7 +9,11 @@ import StudioWorkroom from "./StudioWorkroom";
 
 function StudioLoadingState() {
   return (
-    <main className="grid min-h-[60vh] place-items-center bg-background px-6" aria-busy="true" aria-label="Loading Studio">
+    <main
+      className="grid min-h-[60vh] place-items-center bg-background px-6"
+      aria-busy="true"
+      aria-label="Loading Studio"
+    >
       <div className="w-full max-w-5xl space-y-4">
         <Skeleton shape="text" className="h-4 w-36" />
         <Skeleton shape="text" className="h-9 w-96 max-w-full" />
@@ -32,10 +36,16 @@ function StudioEmptyState() {
         action={
           <div className="flex flex-wrap gap-3">
             <Button asChild>
-              <Link to="/studio?create=1"><Plus aria-hidden="true" size={16} />{PRODUCT_POSTURE.personal.createCta}</Link>
+              <Link to="/studio?create=1">
+                <Plus aria-hidden="true" size={16} />
+                {PRODUCT_POSTURE.personal.createCta}
+              </Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link to="/studio?create=1&posture=business"><BriefcaseBusiness aria-hidden="true" size={16} />{PRODUCT_POSTURE.business.createCta}</Link>
+              <Link to="/studio?create=1&posture=business">
+                <BriefcaseBusiness aria-hidden="true" size={16} />
+                {PRODUCT_POSTURE.business.createCta}
+              </Link>
             </Button>
           </div>
         }
@@ -49,7 +59,8 @@ export default function StudioWorkspaceV2() {
   const [params, setParams] = useSearchParams();
   const requestedId = params.get("agent");
   const active = agents.find((agent) => agent.id === requestedId) || agents[0];
-  const isAssistantWorkspace = params.get("mode") === "assistant";
+  const mode = params.get("mode");
+  const isWorkroom = mode === "workroom" || mode === "assistant";
 
   function selectAgent(agentId: string) {
     const next = new URLSearchParams(params);
@@ -65,7 +76,7 @@ export default function StudioWorkspaceV2() {
   function openAssistant(agentId: string, command?: string) {
     const next = new URLSearchParams();
     next.set("agent", agentId);
-    next.set("mode", "assistant");
+    next.set("mode", "workroom");
     if (command?.trim()) {
       next.set("command", command.trim());
       next.set("commandNonce", String(Date.now()));
@@ -85,7 +96,7 @@ export default function StudioWorkspaceV2() {
   if (loading) return <StudioLoadingState />;
   if (!active) return <StudioEmptyState />;
 
-  if (isAssistantWorkspace) {
+  if (isWorkroom) {
     return (
       <div className="wl-studio-operations h-full min-h-0 overflow-hidden">
         <StudioWorkroom

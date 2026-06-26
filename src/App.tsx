@@ -83,7 +83,6 @@ function AppRouter() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/developers" element={<Navigate to="/features" replace />} />
-        <Route path="/training" element={<Navigate to="/studio" replace />} />
         <Route path="/signin/*" element={<AuthPortalRoute />} />
         <Route path="/signup/*" element={<AuthPortalRoute />} />
         <Route path="/get-started" element={<AuthPortalRoute />} />

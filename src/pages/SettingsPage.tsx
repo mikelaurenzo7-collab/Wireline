@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { ArrowRight, Cable, CreditCard, LogOut, MonitorDown, ShieldAlert, ShieldCheck, Trash2, UsersRound } from "lucide-react";
+import {
+  ArrowRight,
+  Cable,
+  CreditCard,
+  LogOut,
+  MonitorDown,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  UsersRound,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Badge, Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -8,10 +18,34 @@ import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
 
 const settingsDestinations = [
-  { href: "/settings/billing", icon: CreditCard, label: "Billing + usage", detail: "Plan, balance, invoices", action: "Open billing" },
-  { href: "/settings/team", icon: UsersRound, label: "Team", detail: "People and access", action: "Manage team" },
-  { href: "/actions", icon: Cable, label: "Integrations", detail: "Approved systems", action: "Review integrations" },
-  { href: "/settings/apps", icon: MonitorDown, label: "Apps", detail: "Every Wireline surface", action: "View apps" },
+  {
+    href: "/settings/billing",
+    icon: CreditCard,
+    label: "Billing + usage",
+    detail: "Plan, balance, invoices",
+    action: "Open billing",
+  },
+  {
+    href: "/settings/team",
+    icon: UsersRound,
+    label: "Team",
+    detail: "People and access",
+    action: "Manage team",
+  },
+  {
+    href: "/actions",
+    icon: Cable,
+    label: "Integrations",
+    detail: "Approved systems",
+    action: "Review integrations",
+  },
+  {
+    href: "/settings/apps",
+    icon: MonitorDown,
+    label: "Apps",
+    detail: "Every Wireline surface",
+    action: "View apps",
+  },
 ] as const;
 
 function DangerZone() {
@@ -33,7 +67,9 @@ function DangerZone() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body?.error || "Deletion request failed.");
-      const date = body?.scheduled_purge_at ? new Date(body.scheduled_purge_at).toLocaleDateString() : "after the grace window";
+      const date = body?.scheduled_purge_at
+        ? new Date(body.scheduled_purge_at).toLocaleDateString()
+        : "after the grace window";
       setMessage(`Deletion requested. Your account is scheduled for purge ${date}.`);
       setConfirmation("");
     } catch (err) {
@@ -49,9 +85,12 @@ function DangerZone() {
         <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-destructive" />
         <div className="min-w-0 flex-1">
           <p className="studio-kicker">Account deletion</p>
-          <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">Delete account.</h2>
+          <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">
+            Delete account.
+          </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            This starts a 30-day deletion queue for your account, agents, calls, messages, integrations, and training data.
+            This starts a 30-day deletion queue for your account, agents, calls, messages,
+            integrations, and training data.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <label className="grid gap-1.5 text-sm font-semibold text-foreground">
@@ -64,12 +103,26 @@ function DangerZone() {
                 inputMode="text"
               />
             </label>
-            <Button type="button" variant="secondary" disabled={confirmation !== "DELETE" || working} onClick={requestDeletion}>
-              <Trash2 aria-hidden="true" size={16} />{working ? "Requesting…" : "Request deletion"}
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={confirmation !== "DELETE" || working}
+              onClick={requestDeletion}
+            >
+              <Trash2 aria-hidden="true" size={16} />
+              {working ? "Requesting..." : "Request deletion"}
             </Button>
           </div>
-          {message ? <StatusNotice tone="info" className="mt-4" title="Deletion queued">{message}</StatusNotice> : null}
-          {error ? <StatusNotice tone="destructive" className="mt-4" title="Deletion unavailable">{error}</StatusNotice> : null}
+          {message ? (
+            <StatusNotice tone="info" className="mt-4" title="Deletion queued">
+              {message}
+            </StatusNotice>
+          ) : null}
+          {error ? (
+            <StatusNotice tone="destructive" className="mt-4" title="Deletion unavailable">
+              {error}
+            </StatusNotice>
+          ) : null}
         </div>
       </div>
     </section>
@@ -104,16 +157,34 @@ export default function SettingsPage() {
             <div className="min-w-0">
               <p className="studio-kicker">Account</p>
               <h2 className="wl-section-title mt-2 truncate">{displayName}</h2>
-              {user?.email ? <p data-wireline-preserve-case className="mt-1 text-sm text-muted-foreground">{user.email}</p> : null}
+              {user?.email ? (
+                <p data-wireline-preserve-case className="mt-1 text-sm text-muted-foreground">
+                  {user.email}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-col items-start gap-3 sm:items-end">
-              <Badge variant="success"><ShieldCheck aria-hidden="true" className="size-3.5" />Secure session</Badge>
-              <Button type="button" variant="secondary" size="sm" disabled={signingOut} onClick={handleSignOut}>
-                <LogOut aria-hidden="true" size={16} />{signingOut ? "Signing out…" : "Sign out"}
+              <Badge variant="success">
+                <ShieldCheck aria-hidden="true" className="size-3.5" />
+                Secure session
+              </Badge>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={signingOut}
+                onClick={handleSignOut}
+              >
+                <LogOut aria-hidden="true" size={16} />
+                {signingOut ? "Signing out..." : "Sign out"}
               </Button>
             </div>
           </div>
-          {error ? <StatusNotice tone="destructive" className="mt-5" title="Sign-out unavailable">{error}</StatusNotice> : null}
+          {error ? (
+            <StatusNotice tone="destructive" className="mt-5" title="Sign-out unavailable">
+              {error}
+            </StatusNotice>
+          ) : null}
         </section>
 
         <section>
@@ -123,13 +194,23 @@ export default function SettingsPage() {
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {settingsDestinations.map(({ href, icon: Icon, label, detail, action }) => (
-              <Link key={href} to={href} className="studio-card wl-card-action flex min-h-[164px] flex-col p-5">
-                <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary"><Icon aria-hidden="true" size={19} /></span>
+              <Link
+                key={href}
+                to={href}
+                className="studio-card wl-card-action flex min-h-[164px] flex-col p-5"
+              >
+                <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+                  <Icon aria-hidden="true" size={19} />
+                </span>
                 <div className="mt-5 flex-1">
-                  <h3 className="wl-card-title text-[var(--wireline-typography-body-size)]">{label}</h3>
+                  <h3 className="wl-card-title text-[var(--wireline-typography-body-size)]">
+                    {label}
+                  </h3>
                   <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
                 </div>
-                <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">{action} <ArrowRight aria-hidden="true" size={15} /></span>
+                <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                  {action} <ArrowRight aria-hidden="true" size={15} />
+                </span>
               </Link>
             ))}
           </div>
@@ -140,11 +221,25 @@ export default function SettingsPage() {
             <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
             <div>
               <p className="studio-kicker">Control by design</p>
-              <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">Connect only what the job needs.</h2>
+              <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">
+                Connect only what the job needs.
+              </h2>
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-                <Button asChild variant="link" className="h-auto px-0 text-sm"><Link to="/actions">Review integrations <ArrowRight aria-hidden="true" size={14} /></Link></Button>
-                <Button asChild variant="link" className="h-auto px-0 text-sm"><Link to="/settings/billing">Usage and balance <ArrowRight aria-hidden="true" size={14} /></Link></Button>
-                <Button asChild variant="link" className="h-auto px-0 text-sm"><Link to="/settings/team">Manage access <ArrowRight aria-hidden="true" size={14} /></Link></Button>
+                <Button asChild variant="link" className="h-auto px-0 text-sm">
+                  <Link to="/actions">
+                    Review integrations <ArrowRight aria-hidden="true" size={14} />
+                  </Link>
+                </Button>
+                <Button asChild variant="link" className="h-auto px-0 text-sm">
+                  <Link to="/settings/billing">
+                    Usage and balance <ArrowRight aria-hidden="true" size={14} />
+                  </Link>
+                </Button>
+                <Button asChild variant="link" className="h-auto px-0 text-sm">
+                  <Link to="/settings/team">
+                    Manage access <ArrowRight aria-hidden="true" size={14} />
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

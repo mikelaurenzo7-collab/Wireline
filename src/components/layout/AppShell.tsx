@@ -21,7 +21,7 @@ export default function AppShell() {
             <p className="font-[var(--wireline-font-display)] text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.02em] text-foreground">
               Opening Wireline
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">Preparing your workspace…</p>
+            <p className="mt-1 text-sm text-muted-foreground">Preparing your workspace...</p>
           </div>
         </div>
       </div>

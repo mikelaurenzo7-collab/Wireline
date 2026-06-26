@@ -175,7 +175,8 @@ export default function CreateAgentDialog({
               id="create-agent-description"
               className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground"
             >
-              Name, voice, personality, role. Train the rest after creation.
+              Name, role, voice, personality, and a starting brief. Train the deeper rules after
+              creation.
             </p>
           </div>
           <Button
@@ -293,7 +294,7 @@ export default function CreateAgentDialog({
           ) : (
             <WandSparkles aria-hidden="true" size={16} />
           )}
-          Create and train
+          Create and open Training
         </Button>
       </form>
     </div>

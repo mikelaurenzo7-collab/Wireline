@@ -19,6 +19,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import {
   captureSignupIntentFromLocation,
+  persistSignupIntent,
   sanitizeSignupIntent,
   syncSignupIntent,
   type SignupIntent,
@@ -76,7 +77,7 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
   const parts = [];
   if (intent.preferredPlanId) parts.push(`${intent.preferredPlanId} plan`);
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
-  return parts.join(" · ");
+  return parts.join(" / ");
 }
 
 function getPasswordStrengthLabel(password: string): string | null {
@@ -382,6 +383,20 @@ export default function AuthPortal() {
     else setMode((m) => (m === "reset" ? "reset" : "signin"));
   }, [pathname]);
 
+  const applyWorkspaceMode = (nextMode: WorkspaceMode) => {
+    setWorkspaceMode(nextMode);
+    persistWorkspaceMode(nextMode);
+    setSignupIntent((current) =>
+      persistSignupIntent(
+        sanitizeSignupIntent({
+          ...current,
+          preferredPlanId: nextMode === "business" ? "business" : "personal",
+          capturedAt: current?.capturedAt || new Date().toISOString(),
+        }),
+      ),
+    );
+  };
+
   const setIsSignUp = (value: boolean) => {
     setMode(value ? "signup" : "signin");
     setError(null);
@@ -506,7 +521,7 @@ export default function AuthPortal() {
   return (
     <>
       <PageMeta
-        title={`${pageTitle} — Wireline`}
+        title={`${pageTitle} - Wireline`}
         description={pageDescription}
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
@@ -523,13 +538,7 @@ export default function AuthPortal() {
         </div>
 
         {isSignUp && !isReset && (
-          <WorkspaceSelector
-            mode={workspaceMode}
-            setMode={(next) => {
-              setWorkspaceMode(next);
-              persistWorkspaceMode(next);
-            }}
-          />
+          <WorkspaceSelector mode={workspaceMode} setMode={applyWorkspaceMode} />
         )}
 
         <div>
@@ -711,7 +720,7 @@ export default function AuthPortal() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Working…
+                    Working...
                   </>
                 ) : isReset ? (
                   <>

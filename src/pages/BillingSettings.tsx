@@ -27,16 +27,31 @@ export default function BillingSettings() {
           <p className="studio-kicker">How billing works</p>
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div className="rounded-[var(--radius-lg)] border border-border bg-secondary p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary"><ShieldCheck className="size-4" />Payments</div>
-              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">Protected by Stripe</p>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+                <ShieldCheck className="size-4" />
+                Payments
+              </div>
+              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
+                Protected by Stripe
+              </p>
             </div>
             <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><CreditCard className="size-4 text-primary" />Personal</div>
-              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">Build free. Fund live work.</p>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <CreditCard className="size-4 text-primary" />
+                Personal
+              </div>
+              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
+                Start free. Fund live work.
+              </p>
             </div>
             <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><Receipt className="size-4 text-primary" />Business</div>
-              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">Plans for team coverage.</p>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Receipt className="size-4 text-primary" />
+                Business
+              </div>
+              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
+                Plans for team coverage.
+              </p>
             </div>
           </div>
         </section>
@@ -46,7 +61,9 @@ export default function BillingSettings() {
         <section>
           <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
             <CreditCard className="size-5 text-primary" />
-            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">Business plan</h2>
+            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
+              Business plan
+            </h2>
           </div>
           <StripeBillingCard />
         </section>

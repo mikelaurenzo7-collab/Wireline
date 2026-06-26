@@ -19,9 +19,14 @@ import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary } from "../lib/product-copy";
 
 const WORKSPACE_MOVES = [
-  { href: "/inbox", icon: Inbox, title: "Inbox", label: "Review outcomes" },
-  { href: "/training", icon: FileText, title: "Training", label: "Sources, policies, and voice" },
-  { href: "/actions", icon: Cable, title: "Wire", label: "Numbers, integrations, and routing" },
+  { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approvals and follow-up" },
+  {
+    href: "/training",
+    icon: FileText,
+    title: "Training",
+    label: "Rules, sources, and evaluation",
+  },
+  { href: "/actions", icon: Cable, title: "Wire", label: "Numbers, routing, and integrations" },
 ] as const;
 
 function RosterLoading() {
@@ -69,26 +74,26 @@ export default function OverviewPage() {
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
             <div>
-              <p className="studio-kicker">Your workspace</p>
+              <p className="studio-kicker">{"Create -> Train -> Run"}</p>
               <h2 className="wl-section-title mt-3 max-w-[18ch] text-[clamp(1.75rem,1.4rem+1.6vw,2.5rem)]">
-                {hasAgents ? "Keep work moving." : "Start with one agent."}
+                {hasAgents ? "Run the work." : "Create one useful agent."}
               </h2>
               <p className="wl-overview-hero-copy mt-3">
                 {hasAgents
-                  ? "Outcomes, rules, and actions in one place."
-                  : "A focused brief is enough to begin."}
+                  ? "Studio runs calls, texts, follow-up, approvals, and handoff. Training owns the heavy setup."
+                  : "Start with a short intake. Train the deeper rules after the agent exists."}
               </p>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild>
-                <Link to={hasAgents ? "/inbox" : "/studio?create=1"}>
-                  {hasAgents ? "Inbox" : "Create agent"}
+                <Link to={hasAgents ? "/studio" : "/studio?create=1"}>
+                  {hasAgents ? "Open Studio" : "Create agent"}
                   <ArrowRight aria-hidden="true" size={16} />
                 </Link>
               </Button>
               <Button asChild variant="secondary">
-                <Link to={hasAgents ? "/agents" : "/studio?create=1&posture=business"}>
-                  {hasAgents ? "Agents" : "Business agent"}
+                <Link to={hasAgents ? "/training" : "/studio?create=1&posture=business"}>
+                  {hasAgents ? "Training" : "Business agent"}
                 </Link>
               </Button>
             </div>
@@ -98,7 +103,7 @@ export default function OverviewPage() {
             <div>
               <p className="studio-kicker">Workspace status</p>
               <div className="mt-5 flex items-end gap-2">
-                <span className="wl-metric-value">{loading ? "–" : agents.length}</span>
+                <span className="wl-metric-value">{loading ? "--" : agents.length}</span>
                 <span className="pb-0.5 text-sm text-muted-foreground">
                   {agents.length === 1 ? "agent" : "agents"}
                 </span>

@@ -26,8 +26,11 @@ describe("Atomic Design completion contract", () => {
     expect(resetPassword).toContain("FormField, StatusNotice");
     expect(resetPassword).not.toContain("components/ui/shadcn");
 
-    expect(onboarding).toContain('from "../components/atoms"');
-    expect(onboarding).toContain("Card, FormField");
+    expect(onboarding).toContain('from "../lib/auth-redirect"');
+    expect(onboarding).toContain(
+      'workspaceMode === "business" ? "/studio?create=1&posture=business"',
+    );
+    expect(onboarding).toContain("Opening Create Agent");
     expect(onboarding).not.toContain("components/ui/shadcn");
 
     expect(developers).toContain('import { Button } from "../components/atoms"');

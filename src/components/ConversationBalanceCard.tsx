@@ -96,7 +96,7 @@ export default function ConversationBalanceCard() {
         <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
           <Loader2 className="size-4 animate-spin" />
         </span>
-        <p className="text-sm text-muted-foreground">Loading Conversation Balance…</p>
+        <p className="text-sm text-muted-foreground">Loading Conversation Balance...</p>
       </section>
     );
   }
@@ -104,9 +104,8 @@ export default function ConversationBalanceCard() {
   const presets = balance?.presets_usd?.length ? balance.presets_usd : [5, 10, 25, 50];
   const copy = balance?.copy ?? {
     title: "Conversation Balance",
-    subtitle: "Build and test for free. Add $5 when you are ready to put an agent to work.",
-    reassurance:
-      "No subscription for personal use. No automatic reload. You decide when to add more.",
+    subtitle: "Start free. Add balance when you are ready to run calls, texts, and follow-up.",
+    reassurance: "No automatic reload. Add more only when you want more live work.",
   };
   const balanceUsd = balance?.balance_usd ?? 0;
 

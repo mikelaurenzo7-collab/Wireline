@@ -56,7 +56,7 @@ export function resolvePostAuthDestination(
   }
 
   if (isFreshSignupSession()) {
-    return "/onboarding";
+    return workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
   }
 
   return "/studio";
