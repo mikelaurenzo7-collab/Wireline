@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Consumer-first native workspace. It follows the mobile Stitch hierarchy but
-/// keeps genuine Wireline actions: ask, place a call, review recaps, and manage assistants.
+/// keeps genuine Wireline actions: ask, place a call, review recaps, and manage agents.
 struct WorkspaceView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var router: WirelineRouter
@@ -25,7 +25,7 @@ struct WorkspaceView: View {
                             }
                             metrics
                             account(me)
-                            assistants(me)
+                            agentSection(me)
                             links
                         }
                         .padding(16)
@@ -37,7 +37,7 @@ struct WorkspaceView: View {
                     ProgressView("Loading Wireline…").tint(Brand.accent)
                 }
             }
-            .navigationTitle("Wireline AI")
+            .navigationTitle("Wireline")
             .navigationBarTitleDisplayMode(.inline)
             .wirelineBrand()
             .toolbar {
@@ -111,7 +111,7 @@ struct WorkspaceView: View {
             HStack(spacing: 8) {
                 Metric(title: "Calls now", value: "\(activeCalls)", icon: "phone.fill", active: activeCalls > 0)
                 Metric(title: "Follow-ups", value: "\(followUps)", icon: "bell.badge.fill", active: followUps > 0)
-                Metric(title: "Assistants", value: "\(agents.count)", icon: "person.2.fill", active: false)
+                Metric(title: "Agents", value: "\(agents.count)", icon: "person.2.fill", active: false)
             }
         }
     }
@@ -133,18 +133,18 @@ struct WorkspaceView: View {
     }
 
     @ViewBuilder
-    private func assistants(_ me: MobileMe) -> some View {
+    private func agentSection(_ me: MobileMe) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Assistants").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
+                Text("Agents").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
                 Spacer()
                 Text("\(agents.count)").font(.caption.weight(.semibold)).foregroundStyle(Brand.text2)
             }
             VStack(spacing: 0) {
                 if agents.isEmpty {
                     BrandEmptyState(
-                        title: "Personal assistants and business agents",
-                        message: "Open the Assistants tab to create a personal assistant or business agent.",
+                        title: "Personal and business agents",
+                        message: "Open the Agents tab to create a personal agent or business agent.",
                         systemImage: "person.wave.2"
                     )
                 } else {
@@ -155,7 +155,7 @@ struct WorkspaceView: View {
                 }
                 if me.agents.canAddMore, let price = me.extraAgent.priceUsd, me.extraAgent.configured {
                     Divider()
-                    Label("Add an assistant · $\(Int(price))/mo", systemImage: "plus.circle")
+                    Label("Add an agent · $\(Int(price))/mo", systemImage: "plus.circle")
                         .font(.subheadline.weight(.medium)).foregroundStyle(Brand.accent).padding(16)
                 }
             }
@@ -173,9 +173,9 @@ struct WorkspaceView: View {
     }
 
     private func quotaText(_ quota: MobileMe.AgentQuota) -> String {
-        if quota.unlimited { return "\(quota.count) assistants" }
-        if let cap = quota.effectiveCap { return "\(quota.count) of \(cap) assistants" }
-        return "\(quota.count) assistants"
+        if quota.unlimited { return "\(quota.count) agents" }
+        if let cap = quota.effectiveCap { return "\(quota.count) of \(cap) agents" }
+        return "\(quota.count) agents"
     }
 
     @MainActor private func load() async {
