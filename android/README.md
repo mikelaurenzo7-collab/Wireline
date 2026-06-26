@@ -2,19 +2,19 @@
 
 Native Kotlin + Jetpack Compose client for the Wireline mobile API.
 
-The Android app is the everyday control surface for a personal call assistant:
+The Android app is the everyday control surface for Wireline agents:
 
 - Sign in through `POST /api/auth/signin`, then reuse the `wireline_session` JWT as `Authorization: Bearer` on `/api/mobile/*`.
 - Register a Firebase Cloud Messaging token with `POST /api/mobile/devices`.
-- Ask Wireline to place a call, review call updates and recaps, manage callback handoff, and check the wallet.
+- Ask Wireline to place a call, review call updates and recaps, manage callback handoff, and check usage balance.
 - Present inbound Wireline calls through Android Telecom as a self-managed `ConnectionService`.
 - Dispatch supported in-call device actions to Maps, Calendar, or media search.
 
-## Consumer promise
+## Product promise
 
-> Ask Wireline to call the pharmacy, doctor, school, airline, landlord, restaurant, or support line. It calls, waits, asks, summarizes, and tells you what happened.
+> Agents that answer. Calls, texts, and follow-up. One workspace. Your rules.
 
-Business usage remains supported through the same backend and assistant configuration, but the native product must be understandable as personal help first.
+The native product is the daily control surface for agents, calls, recaps, and follow-up. Business and personal workflows use the same backend and assistant configuration, but the language must stay clear, practical, and agent-forward.
 
 ## Design contract
 
@@ -23,13 +23,13 @@ The Google Stitch project contains two implementation tracks:
 - **Desktop web deliverables** map to the React web application.
 - **Native mobile deliverables map to both this Compose app and the SwiftUI iOS app.** They are not mobile-web layouts.
 
-Android follows the Stitch Precision language while remaining Material-native:
+Android follows Wireline Mono while remaining Material-native:
 
-- pale slate-purple canvas `#F8F9FF`, white grouped cards `#FFFFFF`, secondary surfaces `#EFF4FF`, and dark navy primary text `#0B1C30`
-- Ametrine Purple primary action `#5D3FD3`, deep pressed state `#451EBB`
-- compact 4dp controls and 8dp cards, with a 4dp/8dp spacing rhythm
-- no retired forest heritage, legacy signal blue, cyan, mesh, or decorative gradients
-- consumer language: assistants, calls, recaps, and follow-ups—not Live Ops or operator dashboards
+- warm monochrome canvas `#F7F7F4`, white grouped cards `#FFFFFF`, secondary surfaces `#F1F1EE`, and primary text `#111111`
+- monochrome primary action `#111111`, pressed state `#000000`, and semantic status colors only where status is required
+- compact controls, restrained radius, and a clear 4dp/8dp spacing rhythm
+- no retired forest heritage, legacy signal blue, purple accents, cyan, mesh, or decorative gradients
+- agent language: agents, calls, texts, recaps, and follow-up—not Live Ops or operator dashboards
 - retain Material 3, TalkBack labels, dynamic font scaling, Android system insets, notification permission, and Telecom behavior
 
 ## Build
@@ -58,7 +58,7 @@ The app intentionally stays thin. The server owns:
 
 - outbound consent and DNC gates
 - assistant prompt construction
-- plan and wallet enforcement
+- plan and balance enforcement
 - live-call transfer
 - push fan-out and stale-token pruning
 
@@ -66,4 +66,4 @@ See `src/routes/mobile-routes.ts`, `src/lib/mobile-push.ts`, and `src/lib/fcm-pu
 
 ## Grok realtime voice
 
-Native apps support authenticated Grok realtime voice sessions (browser + mobile) for live tests with role-tuned, distinctive personalities. Production voice remains on Vapi. This enables the most unique and capable agent experiences on device without hype in UI. See docs/GROK_LIVE_VOICE.md and grok-voice-config.ts.
+Native apps support authenticated Grok realtime voice sessions for live tests with role-tuned, distinctive personalities. Production voice remains on the approved production voice provider until the product and compliance posture justify a change. See `docs/GROK_LIVE_VOICE.md` and `grok-voice-config.ts`.
