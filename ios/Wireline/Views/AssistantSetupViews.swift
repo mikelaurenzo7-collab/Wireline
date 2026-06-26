@@ -14,77 +14,28 @@ struct KnowledgeView: View {
         NavigationStack {
             Group {
                 if agents.isEmpty && !isLoading {
-                    BrandEmptyState(
-                        title: "Start with an agent",
-                        message: "Create an agent first, then add the facts, rules, and sources that make it useful.",
-                        systemImage: "book.closed"
-                    )
+                    BrandEmptyState(title: "Start with an agent", message: "Create an agent first, then add the facts, rules, and sources that make it useful.", systemImage: "book.closed")
                 } else {
                     List {
                         if agents.count > 1 {
-                            Section {
-                                Picker("Agent", selection: $selectedId) {
-                                    ForEach(agents) { agent in
-                                        Text(agent.name).tag(agent.id)
-                                    }
-                                }
-                            }
+                            Section { Picker("Agent", selection: $selectedId) { ForEach(agents) { agent in Text(agent.name).tag(agent.id) } } }
                         }
-
                         Section("Knowledge") {
-                            if let setup, setup.knowledge.isEmpty {
-                                Text("No saved details yet.")
-                                    .foregroundStyle(Brand.text2)
-                            } else {
-                                ForEach(setup?.knowledge ?? []) { entry in
-                                    Text(entry.content)
-                                }
-                            }
+                            if let setup, setup.knowledge.isEmpty { Text("No saved details yet.").foregroundStyle(Brand.text2) }
+                            else { ForEach(setup?.knowledge ?? []) { entry in Text(entry.content) } }
                         }
-
                         Section("Behavior") {
-                            if let setup, setup.directives.isEmpty {
-                                Text("No saved rules yet.")
-                                    .foregroundStyle(Brand.text2)
-                            } else {
-                                ForEach(setup?.directives ?? []) { entry in
-                                    Text(entry.content)
-                                }
-                            }
+                            if let setup, setup.directives.isEmpty { Text("No saved rules yet.").foregroundStyle(Brand.text2) }
+                            else { ForEach(setup?.directives ?? []) { entry in Text(entry.content) } }
                         }
-
                         Section("Add a detail") {
-                            Picker("Save as", selection: $entryType) {
-                                Text("Detail").tag("knowledge")
-                                Text("Rule").tag("directive")
-                            }
-                            .pickerStyle(.segmented)
-                            TextField(
-                                entryType == "knowledge" ? "A preference, fact, routine, or policy" : "What the agent should do or avoid",
-                                text: $draft,
-                                axis: .vertical
-                            )
-                            .lineLimit(3...6)
-                            Button {
-                                Task { await save() }
-                            } label: {
-                                if isSaving {
-                                    ProgressView().frame(maxWidth: .infinity)
-                                } else {
-                                    Label(entryType == "knowledge" ? "Save detail" : "Save rule", systemImage: "plus")
-                                        .frame(maxWidth: .infinity)
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Brand.accent)
-                            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving || selectedId.isEmpty)
+                            Picker("Save as", selection: $entryType) { Text("Detail").tag("knowledge"); Text("Rule").tag("directive") }.pickerStyle(.segmented)
+                            TextField(entryType == "knowledge" ? "A preference, fact, routine, or policy" : "What the agent should do or avoid", text: $draft, axis: .vertical).lineLimit(3...6)
+                            Button { Task { await save() } } label: { if isSaving { ProgressView().frame(maxWidth: .infinity) } else { Label(entryType == "knowledge" ? "Save detail" : "Save rule", systemImage: "plus").frame(maxWidth: .infinity) } }
+                                .buttonStyle(.borderedProminent).tint(Brand.accent).disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving || selectedId.isEmpty)
                         }
-
-                        if let error {
-                            Section { Text(error).foregroundStyle(Brand.destructive) }
-                        }
-                    }
-                    .scrollContentBackground(.hidden)
+                        if let error { Section { Text(error).foregroundStyle(Brand.destructive) } }
+                    }.scrollContentBackground(.hidden)
                 }
             }
             .navigationTitle("Training")
@@ -96,49 +47,28 @@ struct KnowledgeView: View {
     }
 
     @MainActor private func loadAgents() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            agents = try await WirelineAPI.shared.agents()
-            if selectedId.isEmpty { selectedId = agents.first?.id ?? "" }
-            await loadSetup()
-        } catch {
-            self.error = error.localizedDescription
-        }
+        isLoading = true; defer { isLoading = false }
+        do { agents = try await WirelineAPI.shared.agents(); if selectedId.isEmpty { selectedId = agents.first?.id ?? "" }; await loadSetup() }
+        catch { self.error = error.localizedDescription }
     }
 
     @MainActor private func loadSetup() async {
         guard !selectedId.isEmpty else { setup = nil; return }
-        do {
-            setup = try await MobileSetupAPI.load(agentId: selectedId)
-            error = nil
-        } catch {
-            self.error = error.localizedDescription
-        }
+        do { setup = try await MobileSetupAPI.load(agentId: selectedId); error = nil }
+        catch { self.error = error.localizedDescription }
     }
 
     @MainActor private func save() async {
         let value = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty, !selectedId.isEmpty else { return }
-        isSaving = true
-        defer { isSaving = false }
-        do {
-            try await MobileSetupAPI.save(agentId: selectedId, type: entryType, content: value)
-            draft = ""
-            await loadSetup()
-        } catch {
-            self.error = error.localizedDescription
-        }
+        isSaving = true; defer { isSaving = false }
+        do { try await MobileSetupAPI.save(agentId: selectedId, type: entryType, content: value); draft = ""; await loadSetup() }
+        catch { self.error = error.localizedDescription }
     }
 }
 
 struct ActionsView: View {
-    private struct Action: Identifiable {
-        let id: String
-        let title: String
-        let detail: String
-    }
-
+    private struct Action: Identifiable { let id: String; let title: String; let detail: String }
     private let personalActions = [
         Action(id: "view_recent_interactions", title: "Use recent context", detail: "Keeps a call or follow-up connected to what already happened."),
         Action(id: "escalate_to_human", title: "Ask me first", detail: "Brings anything sensitive, unclear, or high-stakes back to you."),
@@ -150,7 +80,6 @@ struct ActionsView: View {
         Action(id: "navigate_to", title: "Open directions", detail: "Sends navigation to your phone when a call gives you an address."),
         Action(id: "add_reminder", title: "Add a reminder", detail: "Creates a reminder for something you need to handle."),
     ]
-
     @State private var agents: [Agent] = []
     @State private var selectedId = ""
     @State private var enabled = Set<String>()
@@ -162,47 +91,19 @@ struct ActionsView: View {
         NavigationStack {
             Group {
                 if agents.isEmpty && !isLoading {
-                    BrandEmptyState(
-                        title: "Start with an agent",
-                        message: "Create an agent first, then choose what it is allowed to do.",
-                        systemImage: "slider.horizontal.3"
-                    )
+                    BrandEmptyState(title: "Start with an agent", message: "Create an agent first, then choose what it is allowed to do.", systemImage: "slider.horizontal.3")
                 } else {
                     List {
-                        if agents.count > 1 {
-                            Section {
-                                Picker("Agent", selection: $selectedId) {
-                                    ForEach(agents) { agent in
-                                        Text(agent.name).tag(agent.id)
-                                    }
-                                }
-                            }
-                        }
-
+                        if agents.count > 1 { Section { Picker("Agent", selection: $selectedId) { ForEach(agents) { agent in Text(agent.name).tag(agent.id) } } } }
                         Section("Ways your agent can help") {
                             ForEach(personalActions) { action in
-                                Toggle(isOn: binding(for: action.id)) {
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(action.title).foregroundStyle(Brand.text)
-                                        Text(action.detail).font(.caption).foregroundStyle(Brand.text2)
-                                    }
-                                }
-                                .tint(Brand.accent)
-                                .disabled(isSaving || selectedId.isEmpty)
+                                Toggle(isOn: binding(for: action.id)) { VStack(alignment: .leading, spacing: 3) { Text(action.title).foregroundStyle(Brand.text); Text(action.detail).font(.caption).foregroundStyle(Brand.text2) } }
+                                    .tint(Brand.accent).disabled(isSaving || selectedId.isEmpty)
                             }
                         }
-
-                        Section {
-                            Text("Business connections and specialized tools remain available on the web when you need them.")
-                                .font(.caption)
-                                .foregroundStyle(Brand.text2)
-                        }
-
-                        if let error {
-                            Section { Text(error).foregroundStyle(Brand.destructive) }
-                        }
-                    }
-                    .scrollContentBackground(.hidden)
+                        Section { Text("Business connections and specialized tools remain available on the web when you need them.").font(.caption).foregroundStyle(Brand.text2) }
+                        if let error { Section { Text(error).foregroundStyle(Brand.destructive) } }
+                    }.scrollContentBackground(.hidden)
                 }
             }
             .navigationTitle("Wire")
@@ -213,52 +114,24 @@ struct ActionsView: View {
         }
     }
 
-    private func binding(for action: String) -> Binding<Bool> {
-        Binding(
-            get: { enabled.contains(action) },
-            set: { next in
-                var updated = enabled
-                if next { updated.insert(action) } else { updated.remove(action) }
-                enabled = updated
-                Task { await persist(updated) }
-            }
-        )
-    }
+    private func binding(for action: String) -> Binding<Bool> { Binding(get: { enabled.contains(action) }, set: { next in var updated = enabled; if next { updated.insert(action) } else { updated.remove(action) }; enabled = updated; Task { await persist(updated) } }) }
 
     @MainActor private func loadAgents() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            agents = try await WirelineAPI.shared.agents()
-            if selectedId.isEmpty { selectedId = agents.first?.id ?? "" }
-            await loadSetup()
-        } catch {
-            self.error = error.localizedDescription
-        }
+        isLoading = true; defer { isLoading = false }
+        do { agents = try await WirelineAPI.shared.agents(); if selectedId.isEmpty { selectedId = agents.first?.id ?? "" }; await loadSetup() }
+        catch { self.error = error.localizedDescription }
     }
 
     @MainActor private func loadSetup() async {
         guard !selectedId.isEmpty else { enabled = []; return }
-        do {
-            let setup = try await MobileSetupAPI.load(agentId: selectedId)
-            enabled = Set(setup.enabledTools)
-            error = nil
-        } catch {
-            self.error = error.localizedDescription
-            await loadSetup()
-        }
+        do { let setup = try await MobileSetupAPI.load(agentId: selectedId); enabled = Set(setup.enabledTools); error = nil }
+        catch { self.error = error.localizedDescription }
     }
 
     @MainActor private func persist(_ updated: Set<String>) async {
         guard !selectedId.isEmpty else { return }
-        isSaving = true
-        defer { isSaving = false }
-        do {
-            try await MobileSetupAPI.updateActions(agentId: selectedId, enabled: updated.sorted())
-            error = nil
-        } catch {
-            self.error = error.localizedDescription
-            await loadSetup()
-        }
+        isSaving = true; defer { isSaving = false }
+        do { try await MobileSetupAPI.updateActions(agentId: selectedId, enabled: updated.sorted()); error = nil }
+        catch { self.error = error.localizedDescription; await loadSetup() }
     }
 }
