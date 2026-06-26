@@ -283,7 +283,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
           description={OPS_CHANNEL_EMPTY.sms.description}
           action={
             <Button asChild>
-              <a href="/actions">Open connections</a>
+              <a href="/actions">Open Integrations</a>
             </Button>
           }
           density="compact"

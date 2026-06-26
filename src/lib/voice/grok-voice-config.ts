@@ -85,13 +85,13 @@ export const WIRELINE_GROK_REALTIME_TOOLS: readonly GrokRealtimeFunction[] = [
     type: "function",
     name: "search_agent_knowledge",
     description:
-      "Search the selected assistant's approved facts, policies, and operating rules before answering a specific question.",
+      "Search the selected agent's approved facts, policies, and operating rules before answering a specific question.",
     parameters: {
       type: "object",
       properties: {
         query: {
           type: "string",
-          description: "The exact question or fact to look up in approved assistant knowledge.",
+          description: "The exact question or fact to look up in approved agent Training.",
         },
       },
       required: ["query"],

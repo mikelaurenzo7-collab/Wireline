@@ -100,7 +100,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
           {createdAgentId && (
             <div className="rounded-md wl-status-success border p-4 wl-text-success text-sm flex items-center gap-3">
               <Check className="w-4 h-4" />
-              Agent created. Open Assistants Topology to assign a phone number and voice.
+              Agent created. Open Agents to assign a phone number and voice.
             </div>
           )}
           <div className="rounded-md wl-panel-elevated border border-white/12 p-6 space-y-3">
@@ -134,7 +134,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
               ))}
             </ul>
           </ResultCard>
-          <ResultCard title="Seed Knowledge">
+          <ResultCard title="Training Seeds">
             <ul className="list-disc list-inside text-foreground/85 space-y-1">
               {design.seed_knowledge.map((k: string, i: number) => (
                 <li key={i}>{k}</li>

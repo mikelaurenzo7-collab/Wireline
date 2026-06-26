@@ -298,7 +298,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           action={
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild>
-                <Link to="/actions">Open connections</Link>
+                <Link to="/actions">Open Integrations</Link>
               </Button>
               <Button
                 type="button"

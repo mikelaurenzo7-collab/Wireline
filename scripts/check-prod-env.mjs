@@ -14,14 +14,22 @@
 //   2 - missing recommended vars and PRODUCTION_CHECK=1
 
 const required = [
-  ["POSTGRES_URL", "Postgres connection string for Drizzle-backed API routes", process.env.POSTGRES_URL],
+  [
+    "POSTGRES_URL",
+    "Postgres connection string for Drizzle-backed API routes",
+    process.env.POSTGRES_URL,
+  ],
   [
     "INTERNAL_JWT_SECRET",
     "Session JWT signing - canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
     process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET,
   ],
   ["OAUTH_STATE_SECRET", "HMAC secret for OAuth CSRF state tokens", process.env.OAUTH_STATE_SECRET],
-  ["UPSTASH_REDIS_REST_URL", "Distributed rate-limit store for Vercel", process.env.UPSTASH_REDIS_REST_URL],
+  [
+    "UPSTASH_REDIS_REST_URL",
+    "Distributed rate-limit store for Vercel",
+    process.env.UPSTASH_REDIS_REST_URL,
+  ],
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
   ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
 ];
@@ -41,17 +49,16 @@ const recommended = [
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
 
   // Current public subscription checkout is for shared capacity only.
-  // Runtime compatibility note: Wireline Team still uses historical
-  // STRIPE_BUSINESS_STARTER_* env names and Wireline Business still uses
-  // STRIPE_PRO_* env names until the final Stripe catalog lands.
-  ["STRIPE_BUSINESS_STARTER_PRICE_ID", "Wireline Team monthly capacity price (legacy env name)"],
-  ["STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID", "Wireline Team annual capacity price (legacy env name)"],
-  ["STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID", "Wireline Team extra-agent add-on (legacy env name)"],
-  ["STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID", "Wireline Team metered voice-overage price (legacy env name)"],
-  ["STRIPE_PRO_PRICE_ID", "Wireline Business monthly capacity price (legacy env name)"],
-  ["STRIPE_PRO_ANNUAL_PRICE_ID", "Wireline Business annual capacity price (legacy env name)"],
-  ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Wireline Business extra-agent add-on (legacy env name)"],
-  ["STRIPE_PRO_OVERAGE_PRICE_ID", "Wireline Business metered overage price (legacy env name)"],
+  // These env names are transitional code identifiers mapped to the live
+  // Wireline Team and Wireline Business products.
+  ["STRIPE_BUSINESS_STARTER_PRICE_ID", "Wireline Team monthly capacity price"],
+  ["STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID", "Wireline Team annual capacity price"],
+  ["STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID", "Wireline Team extra-agent add-on"],
+  ["STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID", "Wireline Team metered voice-overage price"],
+  ["STRIPE_PRO_PRICE_ID", "Wireline Business monthly capacity price"],
+  ["STRIPE_PRO_ANNUAL_PRICE_ID", "Wireline Business annual capacity price"],
+  ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Wireline Business extra-agent add-on"],
+  ["STRIPE_PRO_OVERAGE_PRICE_ID", "Wireline Business metered overage price"],
 
   ["STRIPE_VOICE_OVERAGE_METER_EVENT_NAME", "Stripe meter event name for voice-minute overage"],
   ["WIRELINE_DATA_KEY", "AES-256-GCM key for encrypting webhook secrets at rest"],
@@ -67,18 +74,16 @@ const optional = [
   ["SENTRY_DSN", "Backend error monitoring"],
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
   ["CLAUDE_MONTHLY_BUDGET_USD", "Optional rolling-24h Claude spend alert threshold"],
-  ["STRIPE_PERSONAL_PRICE_ID", "Legacy personal subscription compatibility"],
-  ["STRIPE_PERSONAL_ANNUAL_PRICE_ID", "Legacy personal annual subscription compatibility"],
-  ["STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID", "Legacy personal extra-agent compatibility"],
-  ["STRIPE_PERSONAL_OVERAGE_PRICE_ID", "Legacy personal overage compatibility"],
-  ["STRIPE_PERSONAL_PLUS_PRICE_ID", "Legacy Wireline Plus subscription compatibility"],
-  ["STRIPE_PERSONAL_PLUS_ANNUAL_PRICE_ID", "Legacy Wireline Plus annual compatibility"],
-  ["STRIPE_PERSONAL_PLUS_EXTRA_AGENT_PRICE_ID", "Legacy Wireline Plus extra-agent compatibility"],
-  ["STRIPE_PERSONAL_PLUS_OVERAGE_PRICE_ID", "Legacy Wireline Plus overage compatibility"],
-  ["STRIPE_BUSINESS_PRICE_ID", "Enterprise/contact-sales compatibility env name"],
-  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Enterprise/contact-sales annual compatibility env name"],
-  ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID", "Enterprise/contact-sales extra-agent compatibility env name"],
-  ["STRIPE_BUSINESS_OVERAGE_PRICE_ID", "Enterprise/contact-sales overage compatibility env name"],
+  ["STRIPE_BUSINESS_PRICE_ID", "Reserved only if Enterprise self-serve checkout is re-enabled"],
+  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Reserved only if Enterprise annual checkout is re-enabled"],
+  [
+    "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
+    "Reserved only if Enterprise add-on checkout is re-enabled",
+  ],
+  [
+    "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
+    "Reserved only if Enterprise metered checkout is re-enabled",
+  ],
 ];
 
 const jwtSecretConflict =

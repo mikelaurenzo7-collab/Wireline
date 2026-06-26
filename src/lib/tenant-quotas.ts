@@ -26,13 +26,7 @@ import { voiceMinutesDailyQuotaForTier } from "./plan-entitlements";
 // Plan defaults
 // ─────────────────────────────────────────────────────────────────
 
-export type PlanTier =
-  | "free"
-  | "personal"
-  | "personal-plus"
-  | "business-starter"
-  | "starter"
-  | "scale";
+export type PlanTier = "free" | "personal" | "team" | "business" | "enterprise";
 
 export interface QuotaProfile {
   /** Anthropic input+output tokens per UTC day. */
@@ -65,28 +59,21 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     knowledge_rows: 500,
     intake_rpm: 30,
   },
-  "personal-plus": {
-    claude_tokens_daily: 600_000,
-    voice_minutes_daily: 20,
-    concurrent_dials: 3,
-    knowledge_rows: 1_000,
-    intake_rpm: 45,
-  },
-  "business-starter": {
+  team: {
     claude_tokens_daily: 4_000_000,
     voice_minutes_daily: 36,
     concurrent_dials: 10,
     knowledge_rows: 5_000,
     intake_rpm: 100,
   },
-  starter: {
+  business: {
     claude_tokens_daily: 8_000_000,
     voice_minutes_daily: 120,
     concurrent_dials: 25,
     knowledge_rows: 20_000,
     intake_rpm: 240,
   },
-  scale: {
+  enterprise: {
     claude_tokens_daily: 20_000_000,
     voice_minutes_daily: 360,
     concurrent_dials: 50,

@@ -55,7 +55,7 @@ export function subscriptionCheckoutLineItems(
  * lets us ship usage tracking + visible UI before configuring the Stripe
  * Meter + metered Price in the dashboard.
  *
- * Stripe setup (automated via scripts/setup-stripe-billing.mjs):
+ * Stripe setup (automated via scripts/setup-stripe-catalog.mjs):
  *   1. Billing → Meters → voice_minutes_overage (SUM aggregation)
  *   2. Per-tier metered prices at each plan's overage_per_min_usd
  *   3. Checkout attaches flat + overage prices on new subscriptions

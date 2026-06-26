@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-/// Deep-link launcher for Assistant handoff — Wireline Precision styling.
+/// Deep-link launcher for agent handoff.
 struct AssistantWidget: Widget {
     let kind = "AssistantWidget"
 
@@ -11,7 +11,7 @@ struct AssistantWidget: Widget {
                 .widgetURL(URL(string: "assistant://route"))
                 .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("Assistant Coverage")
+        .configurationDisplayName("Agent Coverage")
         .description("View current call coverage rates and active screening status.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
     }
@@ -45,7 +45,7 @@ private struct AssistantWidgetView: View {
                 Image(systemName: "sparkles")
                     .font(Brand.h1)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Assistant")
+                    Text("Agents")
                         .font(Brand.h1)
                     Text("Tap to route call")
                         .font(Brand.caption)

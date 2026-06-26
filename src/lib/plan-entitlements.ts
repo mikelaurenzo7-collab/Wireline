@@ -9,29 +9,29 @@ import { planById, type StripePlanId } from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
 
-/** Platform owners dogfood on scale entitlements without a Stripe row. */
-export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "scale";
+/** Platform owners dogfood on enterprise entitlements without a Stripe row. */
+export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "enterprise";
 
-const OPENROUTER_PLANS = new Set<StripePlanId>(["starter", "scale"]);
+const OPENROUTER_PLANS = new Set<StripePlanId>(["business", "enterprise"]);
 
 /** Map wireline_subscriptions.plan → quota tier. */
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
   switch (planId) {
     case "enterprise":
     case "scale":
+    case "custom":
+      return "enterprise" as PlanTier;
     case "business":
-      return "scale" as PlanTier;
+    case "starter":
+    case "pro":
     case "business-growth":
-      return "starter" as PlanTier;
+      return "business" as PlanTier;
+    case "team":
     case "business-starter":
     case "business-lite":
     case "lite":
-      return "business-starter" as PlanTier;
-    case "pro":
-    case "starter":
-      return "starter" as PlanTier;
     case "personal-plus":
-      return "personal-plus" as PlanTier;
+      return "team" as PlanTier;
     case "personal":
       return "personal" as PlanTier;
     default:
@@ -77,13 +77,11 @@ export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
   switch (tier) {
     case "personal":
       return 15;
-    case "personal-plus":
-      return 25;
-    case "starter":
-      return 75;
-    case "business-starter":
+    case "team":
       return 45;
-    case "scale":
+    case "business":
+      return 75;
+    case "enterprise":
       return 500;
     default:
       return 5;

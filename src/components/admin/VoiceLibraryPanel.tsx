@@ -115,7 +115,7 @@ export default function VoiceLibraryPanel() {
   };
 
   const deleteClone = async (voice: ClonedVoice) => {
-    if (!confirm(`Delete "${voice.name}"? Assistants using it will return to an automatic voice.`))
+    if (!confirm(`Delete "${voice.name}"? Agents using it will return to an automatic voice.`))
       return;
     try {
       const response = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, {

@@ -153,9 +153,7 @@ export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(100).optional(),
-  preferredPlanId: z
-    .enum(["personal", "personal-plus", "business-starter", "starter", "scale"])
-    .optional(),
+  preferredPlanId: z.enum(["personal", "team", "business", "enterprise"]).optional(),
   signupWedge: z
     .enum([
       "home-services",
@@ -294,7 +292,7 @@ export const updateWebhookSchema = z.object({
 // ============================================================================
 
 export const createSubscriptionSchema = z.object({
-  planId: z.enum(["personal", "personal-plus", "starter", "scale"]),
+  planId: z.enum(["team", "business", "enterprise"]),
   extraAgents: z.number().int().min(0).max(100).default(0),
 });
 

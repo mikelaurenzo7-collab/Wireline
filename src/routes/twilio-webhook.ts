@@ -330,7 +330,7 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 
   // Generate TwiML for a professional offline experience
   let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-  twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached our AI assistant line. We are currently experiencing an unexpectedly high volume of calls and our cognitive systems are temporarily offline.</Say>\n`;
+  twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
 
   // Absolute URL to the brand transfer chime — Twilio's <Play> needs a
   // full URL because it fetches the media file itself. Falls back to the

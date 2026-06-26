@@ -1,12 +1,6 @@
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
-export const SIGNUP_PLAN_IDS = [
-  "personal",
-  "personal-plus",
-  "business-starter",
-  "starter",
-  "scale",
-] as const;
+export const SIGNUP_PLAN_IDS = ["personal", "team", "business", "enterprise"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const SIGNUP_WEDGE_KEYS = [
@@ -40,25 +34,25 @@ export type SignupWedgeRecommendation = {
 export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRecommendation> = {
   "home-services": {
     label: "home services",
-    defaultPlanId: "business-starter",
+    defaultPlanId: "team",
     templateId: "lead-qualifier-inbound",
     templateLabel: "Inbound Lead Qualifier",
   },
   medical: {
     label: "medical",
-    defaultPlanId: "starter",
+    defaultPlanId: "business",
     templateId: "scheduler-medical",
     templateLabel: "Medical Office Scheduler",
   },
   legal: {
     label: "legal",
-    defaultPlanId: "starter",
+    defaultPlanId: "business",
     templateId: "lead-qualifier-inbound",
     templateLabel: "Inbound Lead Qualifier",
   },
   "real-estate": {
     label: "real estate",
-    defaultPlanId: "business-starter",
+    defaultPlanId: "team",
     templateId: "scheduler-realestate",
     templateLabel: "Real Estate Tour Booker",
   },
@@ -70,19 +64,19 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   },
   insurance: {
     label: "insurance",
-    defaultPlanId: "starter",
+    defaultPlanId: "business",
     templateId: "lead-qualifier-inbound",
     templateLabel: "Inbound Lead Qualifier",
   },
   restaurants: {
     label: "restaurants",
-    defaultPlanId: "business-starter",
+    defaultPlanId: "team",
     templateId: "ecommerce-phone-order",
     templateLabel: "Phone Order Agent",
   },
   sales: {
     label: "sales",
-    defaultPlanId: "starter",
+    defaultPlanId: "business",
     templateId: "sales-sdr",
     templateLabel: "SDR — Outbound Prospecting",
   },
@@ -91,27 +85,30 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
 const PLAN_SET = new Set<string>(SIGNUP_PLAN_IDS);
 const WEDGE_SET = new Set<string>(SIGNUP_WEDGE_KEYS);
 const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
-  plus: "personal-plus",
-  personal_plus: "personal-plus",
-  personalplus: "personal-plus",
-  team: "business-starter",
-  shared: "business-starter",
-  lite: "business-starter",
-  business_lite: "business-starter",
-  businesslite: "business-starter",
-  business_starter: "business-starter",
-  businessstarter: "business-starter",
-  pro: "starter",
-  business: "starter",
-  custom: "scale",
-  enterprise: "scale",
+  plus: "team",
+  personal_plus: "team",
+  personalplus: "team",
+  shared: "team",
+  lite: "team",
+  business_lite: "team",
+  businesslite: "team",
+  business_starter: "team",
+  businessstarter: "team",
+  pro: "business",
+  starter: "business",
+  business_starter_plus: "business",
+  business_growth: "business",
+  businessgrowth: "business",
+  custom: "enterprise",
+  scale: "enterprise",
 };
 
 function normalizePlanId(value: string | null | undefined): SignupPlanId | undefined {
   const cleaned = value?.trim().toLowerCase();
   if (!cleaned) return undefined;
   if (PLAN_SET.has(cleaned)) return cleaned as SignupPlanId;
-  return LEGACY_PLAN_ALIASES[cleaned];
+  const aliasKey = cleaned.replace(/[-\s]+/g, "_");
+  return LEGACY_PLAN_ALIASES[aliasKey] || LEGACY_PLAN_ALIASES[cleaned];
 }
 
 /**
@@ -217,7 +214,7 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
   if (intent?.preferredPlanId) return intent.preferredPlanId;
   if (intent?.signupWedge) return SIGNUP_WEDGE_RECOMMENDATIONS[intent.signupWedge].defaultPlanId;
-  return "business-starter";
+  return "team";
 }
 
 export function getSignupWedgeRecommendation(

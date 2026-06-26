@@ -20,7 +20,7 @@ struct KnowledgeView: View {
                         if agents.count > 1 {
                             Section { Picker("Agent", selection: $selectedId) { ForEach(agents) { agent in Text(agent.name).tag(agent.id) } } }
                         }
-                        Section("Knowledge") {
+                        Section("Training details") {
                             if let setup, setup.knowledge.isEmpty { Text("No saved details yet.").foregroundStyle(Brand.text2) }
                             else { ForEach(setup?.knowledge ?? []) { entry in Text(entry.content) } }
                         }

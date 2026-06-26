@@ -4,9 +4,9 @@
  * AgentReadinessStage — the launch-readiness ribbon at the top of the Studio
  * canvas.
  *
- * Sits between the identity hero and the docked Assistant. A calm, always-visible
+ * Sits between the identity hero and the docked Studio workroom. A calm, always-visible
  * read on where the focused agent stands: how close it is to going live, and the
- * single next thing to do — without stealing the vertical space the Assistant
+ * single next thing to do — without stealing the vertical space Studio
  * needs to be the hero of the canvas. Readiness comes from the shared
  * `computeAgentReadiness` helper, so it always matches the rail's X/6 score.
  */
@@ -85,14 +85,14 @@ export default function AgentReadinessStage({
       {!ready ? (
         <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
           <Sparkles className="h-3 w-3 shrink-0 text-brand/60" />
-          Ask the Assistant below to handle it
+          Ask Studio below to handle it
           <ArrowDown className="h-3 w-3 shrink-0 text-muted/50" />
           or fine-tune it yourself in the rail on the right.
         </p>
       ) : isPersonal ? (
         <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
           <Smartphone className="h-3 w-3 shrink-0 text-brand/60" />
-          Use it from your phone — tap the widget, ask Siri, or route a live call to your assistant.
+          Use it from your phone — tap the widget, ask Siri, or route a live call to your agent.
         </p>
       ) : null}
     </div>

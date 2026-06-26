@@ -107,17 +107,17 @@ function getConfiguredVoiceId(value: unknown): string | null {
   const root = asRecord(value);
   const nested = asRecord(root.voice);
   const candidate =
-    root.grokVoiceId ||
-    root.grok_voice_id ||
-    nested.grokVoiceId ||
-    nested.grok_voice_id;
+    root.grokVoiceId || root.grok_voice_id || nested.grokVoiceId || nested.grok_voice_id;
   if (typeof candidate !== "string") return null;
   const voiceId = candidate.trim();
   return /^[A-Za-z0-9_-]{3,160}$/.test(voiceId) ? voiceId : null;
 }
 
 function resolveVoiceSelection(agent: AgentRow) {
-  const profile = resolveWirelineVoiceProfile(agent.role, getRequestedProfile(agent.businessVariables));
+  const profile = resolveWirelineVoiceProfile(
+    agent.role,
+    getRequestedProfile(agent.businessVariables),
+  );
   const configuredVoice = getConfiguredVoiceId(agent.businessVariables);
   return {
     profile,
@@ -128,7 +128,9 @@ function resolveVoiceSelection(agent: AgentRow) {
   };
 }
 
-function buildPronunciationReplacements(rows: Array<{ entries: unknown }>): Record<string, string> | undefined {
+function buildPronunciationReplacements(
+  rows: Array<{ entries: unknown }>,
+): Record<string, string> | undefined {
   const replacements: Record<string, string> = {};
   for (const row of rows) {
     if (!Array.isArray(row.entries)) continue;
@@ -153,8 +155,8 @@ function buildInstructions(
 ) {
   const customInstructions = trimLine(agent.systemPromptOverride, 8_000);
   const identity = [
-    `You are ${agent.name}, a Wireline voice assistant.`,
-    `Your role is ${agent.role || "assistant"}.`,
+    `You are ${agent.name}, a Wireline voice agent.`,
+    `Your role is ${agent.role || "agent"}.`,
     ...NON_NEGOTIABLE_RUNTIME_RULES,
   ].join("\n");
   const compliance = [
@@ -238,8 +240,14 @@ async function loadAgentRuntime(agentId: string, userId: string) {
       .catch(() => []),
   ]);
   const agent = agents[0] as AgentRow | undefined;
-  if (!agent) throw AppError.fromHttpStatus(404, "Assistant not found.");
-  return { agent, personality: personalities[0]?.content || "", directives, knowledge, dictionaries };
+  if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
+  return {
+    agent,
+    personality: personalities[0]?.content || "",
+    directives,
+    knowledge,
+    dictionaries,
+  };
 }
 
 export async function createGrokVoiceClientSession(input: CreateGrokVoiceSessionInput) {
@@ -328,8 +336,7 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
       model: GROK_VOICE_DEFAULT_MODEL,
       session,
       greeting:
-        runtime.agent.firstMessage?.trim() ||
-        `Hi, this is ${runtime.agent.name}. How can I help?`,
+        runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
       wireline: {
         agentId: runtime.agent.id,
         profile: selectedVoice.profile,
@@ -351,7 +358,12 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
 }
 
 function tokens(value: string): string[] {
-  return value.toLowerCase().match(/[a-z0-9]{2,}/g)?.slice(0, 16) || [];
+  return (
+    value
+      .toLowerCase()
+      .match(/[a-z0-9]{2,}/g)
+      ?.slice(0, 16) || []
+  );
 }
 
 export async function runGrokVoiceTool(input: {
@@ -368,7 +380,7 @@ export async function runGrokVoiceTool(input: {
       ? (input.arguments as Record<string, unknown>)
       : {};
   const query = trimLine(raw.query, 600);
-  if (!query) throw AppError.fromHttpStatus(400, "A knowledge search query is required.");
+  if (!query) throw AppError.fromHttpStatus(400, "A Training search query is required.");
   const { directives, knowledge } = await loadAgentRuntime(input.agentId, input.userId);
   const normalizedQuery = query.toLowerCase();
   const queryTokens = tokens(query);
@@ -405,7 +417,7 @@ export async function runGrokVoiceTool(input: {
         query,
         matches: [],
         guidance:
-          "No approved knowledge matched. Tell the caller you do not want to guess and offer a message or human follow-up.",
+          "No approved Training matched. Tell the caller you do not want to guess and offer a message or human follow-up.",
       };
 }
 

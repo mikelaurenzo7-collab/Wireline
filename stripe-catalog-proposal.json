@@ -1,187 +1,228 @@
 {
-  "generated_at": "2026-06-26T05:18:25.435Z",
+  "generated_at": "2026-06-26T17:11:35.738Z",
   "account_id": "acct_1TXb0SJohDtfy3Ik",
-  "status": "proposal_only",
+  "status": "applied_with_archive_warnings",
+  "api_version": "2026-02-25.clover",
   "audit_snapshot": {
-    "active_subscriptions": 0,
+    "live_subscriptions": 0,
     "active_payment_links": 0,
-    "active_products": [
-      "Custom Enterprise",
-      "Sales & Reception",
+    "open_checkout_sessions": 0,
+    "active_products_before": [
+      "Conversation Balance",
       "Front Desk",
       "Office Assistant",
-      "Solo Agent",
-      "Wireline Plus",
-      "Wireline Household",
-      "Wireline Custom",
+      "Sales & Reception",
       "Wireline Concierge",
-      "Wireline Everyday"
+      "Wireline Custom",
+      "Wireline Enterprise",
+      "Wireline Everyday",
+      "Wireline Household",
+      "Wireline Personal",
+      "Wireline Plus",
+      "Wireline Team"
+    ],
+    "active_products_after": [
+      "Conversation Balance",
+      "Wireline Business",
+      "Wireline Enterprise",
+      "Wireline Personal",
+      "Wireline Team"
     ]
   },
-  "proposed_writes": {
-    "create_products": [
+  "applied_writes": {
+    "meters": [
       {
-        "name": "Wireline Personal",
-        "active": true,
-        "metadata": {
-          "wireline_offer": "personal",
-          "wireline_billing_model": "conversation_balance_only",
-          "wireline_catalog_state": "launch_candidate",
-          "wireline_templates": "unlocked"
-        },
-        "prices": [],
-        "note": "Do not create a recurring Personal subscription price. Personal stays top-up led."
-      },
-      {
-        "name": "Wireline Team",
-        "active": true,
-        "metadata": {
-          "wireline_plan_id": "business-starter",
-          "wireline_billing_model": "capacity_plus_conversation_balance",
-          "wireline_catalog_state": "launch_candidate",
-          "wireline_templates": "unlocked"
-        },
-        "prices": [
-          {
-            "nickname": "Wireline Team - Monthly",
-            "type": "recurring",
-            "interval": "month",
-            "unit_amount_usd": 29,
-            "metadata": {
-              "wireline_plan_id": "business-starter",
-              "wireline_price_type": "base_monthly"
-            },
-            "env_target": "STRIPE_BUSINESS_STARTER_PRICE_ID"
-          },
-          {
-            "nickname": "Wireline Team - Annual",
-            "type": "recurring",
-            "interval": "year",
-            "unit_amount_usd": 278,
-            "metadata": {
-              "wireline_plan_id": "business-starter",
-              "wireline_price_type": "base_annual"
-            },
-            "env_target": "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID"
-          },
-          {
-            "nickname": "Wireline Team - Extra Agent",
-            "type": "recurring",
-            "interval": "month",
-            "unit_amount_usd": 9,
-            "metadata": {
-              "wireline_plan_id": "business-starter",
-              "wireline_price_type": "extra_agent"
-            },
-            "env_target": "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID"
-          },
-          {
-            "nickname": "Wireline Team - Voice Overage",
-            "type": "metered",
-            "unit_amount_usd": 0.16,
-            "metadata": {
-              "wireline_plan_id": "business-starter",
-              "wireline_price_type": "voice_overage"
-            },
-            "env_target": "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID"
-          }
-        ]
-      },
-      {
-        "name": "Wireline Business",
-        "active": true,
-        "metadata": {
-          "wireline_plan_id": "starter",
-          "wireline_billing_model": "capacity_plus_conversation_balance",
-          "wireline_catalog_state": "launch_candidate",
-          "wireline_templates": "unlocked"
-        },
-        "prices": [
-          {
-            "nickname": "Wireline Business - Monthly",
-            "type": "recurring",
-            "interval": "month",
-            "unit_amount_usd": 59,
-            "metadata": {
-              "wireline_plan_id": "starter",
-              "wireline_price_type": "base_monthly"
-            },
-            "env_target": "STRIPE_PRO_PRICE_ID"
-          },
-          {
-            "nickname": "Wireline Business - Annual",
-            "type": "recurring",
-            "interval": "year",
-            "unit_amount_usd": 566,
-            "metadata": {
-              "wireline_plan_id": "starter",
-              "wireline_price_type": "base_annual"
-            },
-            "env_target": "STRIPE_PRO_ANNUAL_PRICE_ID"
-          },
-          {
-            "nickname": "Wireline Business - Extra Agent",
-            "type": "recurring",
-            "interval": "month",
-            "unit_amount_usd": 12,
-            "metadata": {
-              "wireline_plan_id": "starter",
-              "wireline_price_type": "extra_agent"
-            },
-            "env_target": "STRIPE_PRO_EXTRA_AGENT_PRICE_ID"
-          },
-          {
-            "nickname": "Wireline Business - Voice Overage",
-            "type": "metered",
-            "unit_amount_usd": 0.14,
-            "metadata": {
-              "wireline_plan_id": "starter",
-              "wireline_price_type": "voice_overage"
-            },
-            "env_target": "STRIPE_PRO_OVERAGE_PRICE_ID"
-          }
-        ]
-      },
-      {
-        "name": "Wireline Enterprise",
-        "active": true,
-        "metadata": {
-          "wireline_plan_id": "scale",
-          "wireline_billing_model": "annual_committed_usage",
-          "wireline_catalog_state": "launch_candidate",
-          "wireline_templates": "unlocked"
-        },
-        "prices": [],
-        "note": "Keep Enterprise contact-sales only until contract workflow and committed-usage ops are live."
-      },
-      {
-        "name": "Conversation Balance",
-        "active": true,
-        "metadata": {
-          "wireline_price_type": "conversation_balance",
-          "wireline_billing_model": "one_time_top_up",
-          "wireline_catalog_state": "launch_candidate"
-        },
-        "prices": [],
-        "note": "Current checkout uses dynamic price_data, so fixed top-up prices are optional, not required for launch."
+        "id": "mtr_61Um29Q3iijxHAzug41JohDtfy3IkJyi",
+        "event_name": "voice_minutes_overage",
+        "action": "reused"
       }
     ],
-    "archive_candidates_when_repointed": [
-      "Wireline Plus",
-      "Wireline Household",
-      "Wireline Custom",
-      "Wireline Concierge",
-      "Wireline Everyday",
-      "Solo Agent",
-      "Office Assistant",
-      "Front Desk",
-      "Sales & Reception",
-      "Custom Enterprise"
+    "products": [
+      {
+        "key": "personal",
+        "id": "prod_UkpPBCs5NnzDNN",
+        "name": "Wireline Personal",
+        "action": "updated"
+      },
+      {
+        "key": "team",
+        "id": "prod_UmBdDKeqFPVfsZ",
+        "name": "Wireline Team",
+        "action": "updated"
+      },
+      {
+        "key": "business",
+        "id": "prod_UmBfLUSGnmawRb",
+        "name": "Wireline Business",
+        "action": "created"
+      },
+      {
+        "key": "enterprise",
+        "id": "prod_UkpP0IZWml8RV3",
+        "name": "Wireline Enterprise",
+        "action": "updated"
+      },
+      {
+        "key": "conversation_balance",
+        "id": "prod_UWeZKiWgtDtC6n",
+        "name": "Conversation Balance",
+        "action": "updated"
+      }
     ],
-    "do_not_write_yet": [
-      "No Stripe writes were applied from this repo.",
-      "Do not archive anything until new price ids are wired into Vercel and checkout plus webhook flows are re-verified.",
-      "Do not create Personal recurring pricing."
+    "prices": [
+      {
+        "key": "team_monthly",
+        "id": "price_1TmdGgJohDtfy3IkkHqc12sU",
+        "product": "Wireline Team",
+        "nickname": "Wireline Team - Monthly",
+        "action": "reused",
+        "env_target": "STRIPE_BUSINESS_STARTER_PRICE_ID"
+      },
+      {
+        "key": "team_annual",
+        "id": "price_1TmdGhJohDtfy3IkY9hnw43E",
+        "product": "Wireline Team",
+        "nickname": "Wireline Team - Annual",
+        "action": "reused",
+        "env_target": "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID"
+      },
+      {
+        "key": "team_extra_agent",
+        "id": "price_1TmdGhJohDtfy3Ikzgblw3Qx",
+        "product": "Wireline Team",
+        "nickname": "Wireline Team - Extra Agent",
+        "action": "reused",
+        "env_target": "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID"
+      },
+      {
+        "key": "team_voice_overage",
+        "id": "price_1TmdHjJohDtfy3Ik40LV69mU",
+        "product": "Wireline Team",
+        "nickname": "Wireline Team - Voice Overage",
+        "action": "created",
+        "env_target": "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID"
+      },
+      {
+        "key": "business_monthly",
+        "id": "price_1TmdHkJohDtfy3Ik2UTD8Bur",
+        "product": "Wireline Business",
+        "nickname": "Wireline Business - Monthly",
+        "action": "created",
+        "env_target": "STRIPE_PRO_PRICE_ID"
+      },
+      {
+        "key": "business_annual",
+        "id": "price_1TmdHkJohDtfy3IkOYlSAMEr",
+        "product": "Wireline Business",
+        "nickname": "Wireline Business - Annual",
+        "action": "created",
+        "env_target": "STRIPE_PRO_ANNUAL_PRICE_ID"
+      },
+      {
+        "key": "business_extra_agent",
+        "id": "price_1TmdHkJohDtfy3Ik5g6UijYD",
+        "product": "Wireline Business",
+        "nickname": "Wireline Business - Extra Agent",
+        "action": "created",
+        "env_target": "STRIPE_PRO_EXTRA_AGENT_PRICE_ID"
+      },
+      {
+        "key": "business_voice_overage",
+        "id": "price_1TmdHlJohDtfy3Ik7xEVAwgF",
+        "product": "Wireline Business",
+        "nickname": "Wireline Business - Voice Overage",
+        "action": "created",
+        "env_target": "STRIPE_PRO_OVERAGE_PRICE_ID"
+      },
+      {
+        "key": "balance_5",
+        "id": "price_1TmdHlJohDtfy3IkCw69mRvP",
+        "product": "Conversation Balance",
+        "nickname": "Conversation Balance - $5",
+        "action": "created",
+        "env_target": null
+      },
+      {
+        "key": "balance_10",
+        "id": "price_1TmdHmJohDtfy3Ikfxu8uEh5",
+        "product": "Conversation Balance",
+        "nickname": "Conversation Balance - $10",
+        "action": "created",
+        "env_target": null
+      },
+      {
+        "key": "balance_25",
+        "id": "price_1TmdHmJohDtfy3IkT8vKATIJ",
+        "product": "Conversation Balance",
+        "nickname": "Conversation Balance - $25",
+        "action": "created",
+        "env_target": null
+      },
+      {
+        "key": "balance_50",
+        "id": "price_1TmdHmJohDtfy3IkMUhaEQUJ",
+        "product": "Conversation Balance",
+        "nickname": "Conversation Balance - $50",
+        "action": "created",
+        "env_target": null
+      }
+    ],
+    "archived_products": [
+      {
+        "id": "prod_UjZVGqfP4qPgid",
+        "name": "Wireline Plus"
+      },
+      {
+        "id": "prod_UbraxB8Tgjie5S",
+        "name": "Wireline Household"
+      },
+      {
+        "id": "prod_UbrauGc4x1nHpX",
+        "name": "Wireline Custom"
+      },
+      {
+        "id": "prod_UbraSm3B5C4eT1",
+        "name": "Wireline Concierge"
+      },
+      {
+        "id": "prod_Ubra4guJCt6bWZ",
+        "name": "Wireline Everyday"
+      },
+      {
+        "id": "prod_UkpP3iQK6B7Ip5",
+        "name": "Office Assistant"
+      },
+      {
+        "id": "prod_UkpPRdmUIdxZJj",
+        "name": "Front Desk"
+      },
+      {
+        "id": "prod_UkpPP8BR7jarr2",
+        "name": "Sales & Reception"
+      }
+    ],
+    "archive_warnings": [
+      "Wireline Plus: kept default price price_1Tk6NOJohDtfy3IkY0tGVNrR active because Stripe blocks default-price archival",
+      "Wireline Household: kept default price price_1Tk6NZJohDtfy3IkTsjJfxft active because Stripe blocks default-price archival",
+      "Wireline Custom: kept default price price_1Tj1hiJohDtfy3IkPgH2SPa8 active because Stripe blocks default-price archival",
+      "Wireline Concierge: kept default price price_1Tk6NoJohDtfy3IksxWH7KIu active because Stripe blocks default-price archival",
+      "Wireline Everyday: kept default price price_1Tk6NBJohDtfy3IkR29dIaLF active because Stripe blocks default-price archival"
     ]
-  }
+  },
+  "generated_env": {
+    "STRIPE_BUSINESS_STARTER_PRICE_ID": "price_1TmdGgJohDtfy3IkkHqc12sU",
+    "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID": "price_1TmdGhJohDtfy3IkY9hnw43E",
+    "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID": "price_1TmdGhJohDtfy3Ikzgblw3Qx",
+    "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID": "price_1TmdHjJohDtfy3Ik40LV69mU",
+    "STRIPE_PRO_PRICE_ID": "price_1TmdHkJohDtfy3Ik2UTD8Bur",
+    "STRIPE_PRO_ANNUAL_PRICE_ID": "price_1TmdHkJohDtfy3IkOYlSAMEr",
+    "STRIPE_PRO_EXTRA_AGENT_PRICE_ID": "price_1TmdHkJohDtfy3Ik5g6UijYD",
+    "STRIPE_PRO_OVERAGE_PRICE_ID": "price_1TmdHlJohDtfy3Ik7xEVAwgF"
+  },
+  "guardrails": [
+    "No Personal recurring subscription price was created.",
+    "Templates remain unlocked across products.",
+    "Old products were only archived when no live subscription, active payment link, or open checkout dependency was found.",
+    "Default prices may remain active under inactive retired products because Stripe blocks default-price archival."
+  ]
 }

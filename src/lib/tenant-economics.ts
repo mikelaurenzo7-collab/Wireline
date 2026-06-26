@@ -98,8 +98,7 @@ export async function countAtRiskTenants(): Promise<number> {
 export function assertPlanMarginFloors(): { ok: boolean; violations: string[] } {
   const floors: Record<string, number> = {
     personal: 35,
-    starter: 28,
-    pro: 14,
+    team: 28,
     business: 8,
   };
   const violations: string[] = [];

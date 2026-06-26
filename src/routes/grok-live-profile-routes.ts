@@ -68,7 +68,7 @@ router.get(
       return res.status(400).json({ error: "agentId is required", code: "AGENT_ID_REQUIRED" });
     const selected = await loadProfile(req.user.id, agentId);
     if (!selected)
-      return res.status(404).json({ error: "Assistant not found", code: "ASSISTANT_NOT_FOUND" });
+      return res.status(404).json({ error: "Agent not found", code: "ASSISTANT_NOT_FOUND" });
     res.setHeader("Cache-Control", "no-store");
     res.json({
       profile: selected.profile,
@@ -86,7 +86,7 @@ router.patch(
   async (req: AuthenticatedRequest, res) => {
     const selected = await loadProfile(req.user.id, req.body.agentId);
     if (!selected)
-      return res.status(404).json({ error: "Assistant not found", code: "ASSISTANT_NOT_FOUND" });
+      return res.status(404).json({ error: "Agent not found", code: "ASSISTANT_NOT_FOUND" });
     const profile = req.body.profile as WirelineVoiceProfile;
     await drizzle
       .update(schema.agents)
@@ -111,7 +111,7 @@ router.patch(
   async (req: AuthenticatedRequest, res) => {
     const selected = await loadProfile(req.user.id, req.body.agentId);
     if (!selected)
-      return res.status(404).json({ error: "Assistant not found", code: "ASSISTANT_NOT_FOUND" });
+      return res.status(404).json({ error: "Agent not found", code: "ASSISTANT_NOT_FOUND" });
     const customVoiceId = req.body.customVoiceId;
     await drizzle
       .update(schema.agents)

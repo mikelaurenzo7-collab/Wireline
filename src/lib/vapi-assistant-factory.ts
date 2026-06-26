@@ -770,7 +770,7 @@ Today is ${currentDateTime}.
     // company name. Uses business_name variable so customers hear the
     // business ("Acme Plumbing"), not the agent's first name.
     // Saves LLM cost vs. having the model improvise.
-    voicemailMessage: `Hi, this is ${(bizVars.business_name as string) || agentConfigRow?.name || "your assistant"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
+    voicemailMessage: `Hi, this is ${(bizVars.business_name as string) || agentConfigRow?.name || "your Wireline agent"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
     // Always record so we can replay + retrain. Account Holder can disable per-
     // agent if HIPAA mode is on.
     recordingEnabled: true,

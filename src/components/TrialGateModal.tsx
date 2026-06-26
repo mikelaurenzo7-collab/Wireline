@@ -9,20 +9,27 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, CreditCard, AlertTriangle, Sparkles } from "lucide-react";
+import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Wallet } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import {
+  CONVERSATION_BALANCE_COPY,
+  CONVERSATION_BALANCE_PRESETS_USD,
+} from "../lib/conversation-balance";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const TIER_PITCH: Record<string, string> = {
-  personal: "One agent, one number, live work funded through Conversation Balance",
-  "business-starter": "Wireline Team - shared inbox, routing, and core integrations",
-  starter: "Wireline Business - approvals, analytics, and pooled live work",
-  scale: "Wireline Enterprise - governed rollout and committed usage",
+  team: "Shared inbox, routing, connected numbers, and core integrations",
+  business: "Approvals, analytics, CRM sync, roles, and pooled live work",
+  enterprise: "Governed rollout, security review, custom policy, and committed usage",
 };
+
+const PERSONAL_ACTIVATION_TOP_UP_USD = CONVERSATION_BALANCE_PRESETS_USD.includes(25)
+  ? 25
+  : CONVERSATION_BALANCE_PRESETS_USD[0];
 
 /** Public self-serve plans only. Retained plans stay serviceable but are never reacquired accidentally. */
 const SELF_SERVE_TIERS = STRIPE_PLANS.filter(
@@ -38,8 +45,8 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
   switch (detail.code) {
     case "ACTIVATION_REQUIRED":
       return {
-        title: "Choose operating capacity to activate Wireline",
-        body: "Your account is ready. Pick the shared capacity you want, then create and deploy your first agent. Live calls, texts, and follow-up stay usage-backed instead of hidden behind a trial window.",
+        title: "Activate live work",
+        body: "Your account is ready. Add Conversation Balance for Personal live work, or choose shared capacity when a team needs routing, numbers, approvals, and pooled operations.",
       };
     case "EMAIL_UNVERIFIED":
       return {
@@ -51,13 +58,13 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
         title: "Trial limit reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
-            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Pick operating capacity to keep going - your data and agent stay exactly as they are.`
-            : "You've hit your legacy trial limit. Pick operating capacity to keep going.",
+            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Add Conversation Balance or choose shared capacity to keep going - your data and agent stay exactly as they are.`
+            : "You've hit your legacy trial limit. Add Conversation Balance or choose shared capacity to keep going.",
       };
     case "TRIAL_EXPIRED":
       return {
         title: "Your legacy trial ended",
-        body: "Pick operating capacity to keep your agent live. Your number, settings, and call history stay exactly as you left them.",
+        body: "Add Conversation Balance or choose shared capacity to keep your agent live. Your number, settings, and call history stay exactly as you left them.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
@@ -101,7 +108,13 @@ export default function TrialGateModal() {
   const { title, body } = headlineForCode(detail);
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
   const eyebrow =
-    detail.code === "ACTIVATION_REQUIRED" ? "Choose operating capacity" : "Upgrade to keep going";
+    detail.code === "ACTIVATION_REQUIRED" ? "Activate live work" : "Upgrade to keep going";
+  const checkoutAllowed = detail.code !== "EMAIL_UNVERIFIED";
+  const showPersonalTopUp =
+    checkoutAllowed &&
+    (detail.code === "ACTIVATION_REQUIRED" ||
+      detail.code === "TRIAL_EXPIRED" ||
+      detail.code === "TRIAL_LIMIT_HIT");
 
   async function checkout(planId: string) {
     setPending(planId);
@@ -163,6 +176,36 @@ export default function TrialGateModal() {
     }
   }
 
+  async function topUpPersonalBalance(amountUsd: number) {
+    setPending(`balance-${amountUsd}`);
+    setError(null);
+    try {
+      const response = await authFetch("/api/conversation-balance/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount_usd: amountUsd }),
+      });
+      const data = (await safeJson<{ url?: string; error?: string }>(response)) as {
+        url?: string;
+        error?: string;
+      } | null;
+      const checkoutUrl = data?.url;
+      if (!response.ok || !checkoutUrl) {
+        setError(data?.error || "Conversation Balance checkout could not be opened.");
+        setPending(null);
+        return;
+      }
+      window.location.href = checkoutUrl;
+    } catch (checkoutError: unknown) {
+      setError(
+        checkoutError instanceof Error
+          ? checkoutError.message
+          : "Network error opening Conversation Balance checkout.",
+      );
+      setPending(null);
+    }
+  }
+
   return (
     <AnimatePresence>
       {detail && (
@@ -212,59 +255,100 @@ export default function TrialGateModal() {
             </div>
 
             <div className="px-6 pb-6 sm:px-8">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {SELF_SERVE_TIERS.map((tier) => {
-                  const isPending = pending === tier.id;
-                  const isRecommended = tier.id === recommendedPlanId;
-                  return (
+              {checkoutAllowed && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {showPersonalTopUp && (
                     <ShadButton
-                      key={tier.id}
                       type="button"
                       disableAnimations
                       variant="outline"
-                      onClick={() => checkout(tier.id)}
+                      onClick={() => topUpPersonalBalance(PERSONAL_ACTIVATION_TOP_UP_USD)}
                       disabled={!!pending}
-                      className={cn(
-                        "relative h-auto w-full justify-start rounded-md p-4 text-left touch-manipulation",
-                        isRecommended
-                          ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
-                          : "hover:border-brand/30 hover:bg-black/3",
-                      )}
+                      className="relative h-auto w-full justify-start rounded-md border-brand/50 bg-brand/5 p-4 text-left touch-manipulation hover:border-brand hover:bg-brand/10"
                     >
-                      {isRecommended && (
-                        <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
-                          Recommended
-                        </div>
-                      )}
+                      <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
+                        Personal
+                      </div>
                       <div className="mb-1 font-display text-lg italic text-foreground">
-                        {tier.label}
+                        {CONVERSATION_BALANCE_COPY.title}
                       </div>
                       <div className="mb-2 flex items-baseline gap-1">
                         <span className="font-display text-2xl italic text-foreground">
-                          ${tier.price}
+                          ${PERSONAL_ACTIVATION_TOP_UP_USD}
                         </span>
-                        <span className="wl-label-muted/70">/mo</span>
+                        <span className="wl-label-muted/70">top-up</span>
                       </div>
                       <p className="mb-3 text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
-                        {tier.pitch}
+                        One agent, one number, and live work funded only when you add balance.
                       </p>
                       <div className="inline-flex items-center gap-1.5 text-brand wl-label">
-                        {isPending ? (
+                        {pending === `balance-${PERSONAL_ACTIVATION_TOP_UP_USD}` ? (
                           <>
                             <Loader2 className="h-3 w-3 animate-spin" />
                             Opening
                           </>
                         ) : (
                           <>
-                            <CreditCard className="h-3 w-3" />
-                            Pick {tier.label}
+                            <Wallet className="h-3 w-3" />
+                            Add balance
                           </>
                         )}
                       </div>
                     </ShadButton>
-                  );
-                })}
-              </div>
+                  )}
+                  {SELF_SERVE_TIERS.map((tier) => {
+                    const isPending = pending === tier.id;
+                    const isRecommended = tier.id === recommendedPlanId;
+                    return (
+                      <ShadButton
+                        key={tier.id}
+                        type="button"
+                        disableAnimations
+                        variant="outline"
+                        onClick={() => checkout(tier.id)}
+                        disabled={!!pending}
+                        className={cn(
+                          "relative h-auto w-full justify-start rounded-md p-4 text-left touch-manipulation",
+                          isRecommended
+                            ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
+                            : "hover:border-brand/30 hover:bg-black/3",
+                        )}
+                      >
+                        {isRecommended && (
+                          <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
+                            Recommended
+                          </div>
+                        )}
+                        <div className="mb-1 font-display text-lg italic text-foreground">
+                          {tier.label}
+                        </div>
+                        <div className="mb-2 flex items-baseline gap-1">
+                          <span className="font-display text-2xl italic text-foreground">
+                            ${tier.price}
+                          </span>
+                          <span className="wl-label-muted/70">/mo</span>
+                        </div>
+                        <p className="mb-3 text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
+                          {tier.pitch}
+                        </p>
+                        <div className="inline-flex items-center gap-1.5 text-brand wl-label">
+                          {isPending ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Opening
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="h-3 w-3" />
+                              Pick {tier.label}
+                            </>
+                          )}
+                        </div>
+                      </ShadButton>
+                    );
+                  })}
+                </div>
+              )}
 
               {error && (
                 <div
@@ -276,18 +360,24 @@ export default function TrialGateModal() {
                 </div>
               )}
 
-              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
-                <span>Shared capacity checkout</span>
-                <span>&middot;</span>
-                <span>Cancel anytime</span>
-                <span>&middot;</span>
-                <a
-                  href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
-                  className="text-brand transition-colors hover:text-brand/80"
-                >
-                  Need Enterprise?
-                </a>
-              </div>
+              {checkoutAllowed && (
+                <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
+                  <span>
+                    {showPersonalTopUp
+                      ? "Personal balance or shared capacity"
+                      : "Shared capacity checkout"}
+                  </span>
+                  <span>&middot;</span>
+                  <span>Cancel anytime</span>
+                  <span>&middot;</span>
+                  <a
+                    href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
+                    className="text-brand transition-colors hover:text-brand/80"
+                  >
+                    Need Enterprise?
+                  </a>
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>

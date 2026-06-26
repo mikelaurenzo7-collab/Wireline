@@ -8,7 +8,7 @@ export const AUTH_REDIRECT_KEY = "wireline.auth.redirect";
 
 export function workspaceFromIntent(intent: SignupIntent | null | undefined): WorkspaceMode {
   const plan = intent ? recommendedPlanFromIntent(intent) : null;
-  if (plan && plan !== "personal" && plan !== "personal-plus") return "business";
+  if (plan && plan !== "personal") return "business";
   if (intent?.signupWedge && intent.signupWedge !== "personal") return "business";
   return "personal";
 }

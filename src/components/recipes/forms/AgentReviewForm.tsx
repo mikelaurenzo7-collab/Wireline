@@ -170,7 +170,7 @@ export function AgentReviewForm({
             ))}
           </div>
           {review.suggested_knowledge_entries?.length > 0 && (
-            <ResultCard title="Suggested Knowledge Entries">
+            <ResultCard title="Suggested Training Entries">
               <ul className="list-disc list-inside space-y-1">
                 {review.suggested_knowledge_entries.map((k: string, i: number) => (
                   <li key={i}>{k}</li>

@@ -49,7 +49,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "home-services",
     metaTitle: "Wireline for Home Services | AI Receptionist that Books Every Call",
     metaDescription:
-      "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up. 14-day free trial.",
+      "AI voice + email agent for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up through Conversation Balance.",
     eyebrow: "For Home Services Pros",
     headline: "Stop missing $500 after-hours calls.",
     subhead:
@@ -80,7 +80,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "24 / 7",
     statLabel:
       "Always answers. Including the 6pm pipe burst that books a $500 emergency job your competitor missed.",
-    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("home-services") },
+    primaryCta: { label: "Create home services agent", href: signupHrefForWedge("home-services") },
     secondaryCta: { label: "Call inbound CS demo", href: "tel:+16306425927" },
     trustLine:
       "Built on enterprise grade carrier infrastructure. White labeled. Customers hear your business name, not ours.",
@@ -99,7 +99,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline starts at nine dollars per month with the number plus thirty minutes included on Personal. And the agent actually books jobs instead of just taking messages.",
+        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline Personal starts with one active agent and Conversation Balance, while Team and Business sell shared operating capacity. The agent actually books jobs instead of just taking messages.",
       },
     ],
   },
@@ -140,7 +140,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Patients on hold drop calls. Wireline picks up before the first ring. Every call. Every hour.",
     primaryCta: { label: "Call medical demo", href: "tel:+16173134469" },
-    secondaryCta: { label: "Start trial", href: signupHrefForWedge("medical") },
+    secondaryCta: { label: "Create medical agent", href: signupHrefForWedge("medical") },
     trustLine:
       "Built on enterprise voice infrastructure. White labeled. Patients hear your practice name. Use Enterprise onboarding for workflows that require a signed BAA.",
     faqs: [
@@ -199,7 +199,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Captures the prospective client + the opposing party name; pings your paralegal in Slack before the consult lands on the attorney's calendar.",
     primaryCta: { label: "Call legal demo", href: "tel:+15727269365" },
-    secondaryCta: { label: "Start trial", href: signupHrefForWedge("legal") },
+    secondaryCta: { label: "Create legal intake agent", href: signupHrefForWedge("legal") },
     trustLine:
       "Audit log preserves every disclosure and opt-out. Not a substitute for legal counsel — Wireline is the intake layer, your attorneys deliver the advice.",
     faqs: [
@@ -226,7 +226,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "real-estate",
     metaTitle: "Wireline for Real Estate | AI Lead Qualifier on Every Listing Call",
     metaDescription:
-      "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes. 14-day free trial.",
+      "AI voice + email agent for real estate teams. Qualify buyers, book showings, revive cold leads, and sync CRM notes.",
     eyebrow: "For Real Estate Agents & Brokerages",
     headline: "Every lead worked. Every showing booked.",
     subhead:
@@ -257,7 +257,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Same day",
     statLabel:
       "Pre-qualified buyers get a same-day showing slot. Cold leads get nurtured via text until they're warm — your top agents only see the ready ones.",
-    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("real-estate") },
+    primaryCta: { label: "Create real estate agent", href: signupHrefForWedge("real-estate") },
     secondaryCta: { label: "Call real estate demo", href: "tel:+19733638874" },
     trustLine:
       "Connects to HubSpot, Salesforce, Google Calendar, Outlook. White-labeled — buyers hear your brokerage name.",
@@ -268,7 +268,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does it work for a single agent or full brokerage?",
-        a: "Both. Solo agents get one Wireline number + one agent on the Everyday tier ($7/mo). Brokerages on Account Holder or Custom packages assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
+        a: "Both. Solo operators can start with Personal: one Wireline number, one active agent, and Conversation Balance. Brokerages use Team, Business, or Enterprise capacity to assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
       },
       {
         q: "How does it qualify the buyer?",
@@ -285,7 +285,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
     metaDescription:
-      "Personal AI voice assistant for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $9/mo.",
+      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Personal live work runs through Conversation Balance.",
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:
@@ -317,7 +317,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Yours",
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
-    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("personal") },
+    primaryCta: { label: "Create personal agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
       "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your dashboard before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
@@ -336,7 +336,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from just having a friend or family member call for me?",
-        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Costs $9/mo on Personal — same call from a real human assistant can cost $25-50 per call. Privacy: nobody in your life needs to know you avoid these calls.",
+        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Personal live work is funded through Conversation Balance instead of a subscription. Privacy: nobody in your life needs to know you avoid these calls.",
       },
       {
         q: "What can't it do?",
@@ -349,7 +349,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "insurance",
     metaTitle: "Wireline for Insurance Agencies — AI Quote Intake + Renewal Follow-Up",
     metaDescription:
-      "AI voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow-up, and producer-ready notes. Free trial.",
+      "AI voice + email agent for insurance agencies. Capture quote intake, FNOL details, renewal follow-up, and producer-ready notes.",
     eyebrow: "For Insurance Agencies",
     headline: "Every quote request answered. Every renewal followed up.",
     subhead:
@@ -380,7 +380,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "60-day",
     statLabel:
       "Renewal cadence catches the customer who would have lapsed to a competitor — before they even shopped around.",
-    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("insurance") },
+    primaryCta: { label: "Create insurance agent", href: signupHrefForWedge("insurance") },
     secondaryCta: { label: "Call insurance demo", href: "tel:+19044601596" },
     trustLine:
       "White-labeled — your insureds hear your agency name, not ours. Recordings + transcripts archived for audit compliance.",
@@ -399,7 +399,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it compare to a 24/7 answering service?",
-        a: "Most answering services charge $400-1,200/month + per-call fees and just take messages. Wireline starts at $9/month on Personal, qualifies the lead, books the renewal review, and emails you a producer-ready intake — not a 'caller said something about insurance' sticky note.",
+        a: "Most answering services charge $400-1,200/month plus per-call fees and just take messages. Wireline agents qualify the lead, book the renewal review, and email you a producer-ready intake, with Personal funded through Conversation Balance and teams covered by shared capacity.",
       },
     ],
   },
@@ -408,7 +408,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "restaurants",
     metaTitle: "Wireline for Restaurants — AI Phone Host for Reservations + Takeout",
     metaDescription:
-      "AI voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS. Free trial.",
+      "AI voice + email host for restaurants. Take reservations, capture takeout orders, handle event inquiries, and follow up by SMS.",
     eyebrow: "For Restaurants + Hospitality",
     headline: "The phone rings during dinner rush. The agent picks up.",
     subhead:
@@ -439,14 +439,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Saturday 7pm",
     statLabel:
       "The hour your phone rings off the hook + your hostess can't get to it. Agent fields every call — books the booking, takes the takeout, sends you the events lead.",
-    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("restaurants") },
+    primaryCta: { label: "Create restaurant agent", href: signupHrefForWedge("restaurants") },
     secondaryCta: { label: "Call demo concierge", href: "tel:+15642389455" },
     trustLine:
       "Caller hears your restaurant's name + brand voice. We can clone your hostess's actual voice with consent — 60 seconds of sample audio.",
     faqs: [
       {
         q: "Will it integrate with Resy / OpenTable / Tock?",
-        a: 'Yes — connects via the platform API to read availability and write reservations. Caller hears "I have 7pm or 8:15pm — which works?" using your real floor map, not an estimate. Free trial includes one platform; multi-platform on Pro.',
+        a: 'Yes - connects via the platform API to read availability and write reservations. Caller hears "I have 7pm or 8:15pm - which works?" using your real floor map, not an estimate. Core integrations are available in Team and Business; custom reservation policy belongs in Enterprise.',
       },
       {
         q: "Can it handle dietary restrictions + allergens correctly?",
@@ -467,7 +467,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "sales",
     metaTitle: "Wireline for Sales Teams — AI SDR for Outbound + Inbound Lead Qualification",
     metaDescription:
-      "AI voice + email SDR for sales teams. Run outbound campaigns, qualify inbound leads, book meetings, and sync CRM activity. Free trial.",
+      "AI voice + email SDR for sales teams. Run outbound campaigns, qualify inbound leads, book meetings, and sync CRM activity.",
     eyebrow: "For Sales + SDR Teams",
     headline: "Your AI SDR works the list while your reps work the calls.",
     subhead:
@@ -498,7 +498,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "200 / day",
     statLabel:
       "Calls one AI agent can make in a 9-hour workday. Run 5 in parallel = 1,000 dials. No bathroom breaks, no Mondays.",
-    primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("sales") },
+    primaryCta: { label: "Create sales agent", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call outbound sales demo", href: "tel:+14692571581" },
     trustLine:
       "Integrates with Salesforce, HubSpot, Pipedrive, Apollo. Outbound list management + CRM activity logging out of the box.",

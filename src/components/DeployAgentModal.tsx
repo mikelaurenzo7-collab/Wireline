@@ -434,7 +434,7 @@ export default function DeployAgentModal({
                     </>
                   ) : (
                     <>
-                      Deploy {trimmedName || "Assistant"}
+                      Deploy {trimmedName || "Agent"}
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}

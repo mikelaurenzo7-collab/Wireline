@@ -99,6 +99,19 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             await addCredit(userId, creditUsd, "web_topup", {
               type: "stripe_session",
               id: session.id,
+              entryKind: "top_up",
+              source: "stripe",
+              provider: "stripe",
+              providerEventId: event.id,
+              providerObjectId: session.id,
+              customerReason: "Conversation Balance top-up",
+              metadata: {
+                checkout_session_id: session.id,
+                payment_intent:
+                  typeof session.payment_intent === "string"
+                    ? session.payment_intent
+                    : session.payment_intent?.id,
+              },
             });
             // Reconcile pricing/activation: a credit top-up activates a pending account!
             await drizzle
@@ -137,6 +150,13 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             await reverseCredit(userId, refundedUsd, "web_topup_refund", {
               type: "stripe_refund",
               id: charge.id,
+              entryKind: "refund",
+              source: "stripe",
+              provider: "stripe",
+              providerEventId: event.id,
+              providerObjectId: charge.id,
+              customerReason: "Conversation Balance refund",
+              metadata: { payment_intent_id: piId },
             });
           }
         }
@@ -160,6 +180,13 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             await reverseCredit(userId, disputedUsd, "web_topup_dispute", {
               type: "stripe_dispute",
               id: dispute.id,
+              entryKind: "reversal",
+              source: "stripe",
+              provider: "stripe",
+              providerEventId: event.id,
+              providerObjectId: dispute.id,
+              customerReason: "Conversation Balance dispute reversal",
+              metadata: { payment_intent_id: piId },
             });
           }
         }

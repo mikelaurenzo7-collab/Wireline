@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { STRIPE_PLANS, planById, VOICE_VARIABLE_COST_PER_MIN_USD } from "./plan-catalog";
 
 describe("plan-catalog", () => {
-  it("keeps legacy personal plans hidden behind the Conversation Balance model", () => {
+  it("keeps Personal hidden behind the Conversation Balance model", () => {
     const personal = planById("personal");
-    expect(personal?.name).toBe("Legacy Wireline Personal");
+    expect(personal?.name).toBe("Wireline Personal");
     expect(personal?.public).toBe(false);
-    expect(personal?.price_usd_monthly).toBe(7);
+    expect(personal?.price_usd_monthly).toBe(0);
   });
 
   it("maps the shared-capacity tiers to Team, Business, and Enterprise", () => {
@@ -18,15 +18,15 @@ describe("plan-catalog", () => {
     expect(planById("enterprise")?.name).toBe("Wireline Enterprise");
   });
 
-  it("keeps the canonical Stripe plan identifiers for subscriptions and migrations", () => {
-    expect(STRIPE_PLANS).toHaveLength(5);
+  it("keeps the canonical Stripe plan identifiers aligned to the commercial model", () => {
+    expect(STRIPE_PLANS).toHaveLength(4);
     expect(STRIPE_PLANS.map((plan) => plan.id)).toEqual([
       "personal",
-      "personal-plus",
-      "business-starter",
-      "starter",
-      "scale",
+      "team",
+      "business",
+      "enterprise",
     ]);
+    expect(planById("personal-plus")?.id).toBe("team");
   });
 
   it("keeps Enterprise as a contact-sales plan", () => {

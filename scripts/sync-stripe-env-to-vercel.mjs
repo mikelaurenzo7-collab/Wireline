@@ -5,7 +5,7 @@
  *
  * Usage:
  *   $env:VERCEL_TOKEN = "<token>"
- *   node scripts/setup-stripe-billing.mjs > scripts/.stripe-env.generated.json
+ *   node scripts/setup-stripe-catalog.mjs
  *   node scripts/sync-stripe-env-to-vercel.mjs
  *
  * Default JSON path: scripts/.stripe-env.generated.json
@@ -27,24 +27,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const defaultJsonPath = join(__dirname, ".stripe-env.generated.json");
 
 const FALLBACK_ENV = {
-  WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL: "x-ai/grok-4.3",
   STRIPE_VOICE_OVERAGE_METER_EVENT_NAME: "voice_minutes_overage",
-  STRIPE_PERSONAL_PRICE_ID: "",
-  STRIPE_PERSONAL_ANNUAL_PRICE_ID: "",
-  STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID: "",
-  STRIPE_STARTER_PRICE_ID: "",
-  STRIPE_STARTER_ANNUAL_PRICE_ID: "",
-  STRIPE_STARTER_EXTRA_AGENT_PRICE_ID: "",
+  STRIPE_BUSINESS_STARTER_PRICE_ID: "",
+  STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID: "",
+  STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID: "",
+  STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID: "",
   STRIPE_PRO_PRICE_ID: "",
   STRIPE_PRO_ANNUAL_PRICE_ID: "",
   STRIPE_PRO_EXTRA_AGENT_PRICE_ID: "",
-  STRIPE_BUSINESS_PRICE_ID: "",
-  STRIPE_BUSINESS_ANNUAL_PRICE_ID: "",
-  STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID: "",
-  STRIPE_PERSONAL_OVERAGE_PRICE_ID: "",
-  STRIPE_STARTER_OVERAGE_PRICE_ID: "",
   STRIPE_PRO_OVERAGE_PRICE_ID: "",
-  STRIPE_BUSINESS_OVERAGE_PRICE_ID: "",
 };
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
@@ -132,7 +123,7 @@ async function upsertEnv(key, value) {
   if (isSensitive && wantsPlain) {
     await deleteEnv(existing.id);
     await createEnv(key, value);
-    console.log(`  ↻ recreated ${key} (was sensitive → plain)`);
+    console.log(`  ~ recreated ${key} (was sensitive -> plain)`);
     return;
   }
 
@@ -148,12 +139,12 @@ async function upsertEnv(key, value) {
         }),
       },
     );
-    console.log(`  ↻ updated ${key}`);
+    console.log(`  ~ updated ${key}`);
   } catch (err) {
     if (/cannot change the type/i.test(String(err.message))) {
       await deleteEnv(existing.id);
       await createEnv(key, value);
-      console.log(`  ↻ recreated ${key} (type change)`);
+      console.log(`  ~ recreated ${key} (type change)`);
       return;
     }
     throw err;
@@ -163,11 +154,11 @@ async function upsertEnv(key, value) {
 async function main() {
   const envMap = loadEnvMap(process.argv[2]);
   writeFileSync(defaultJsonPath, JSON.stringify(envMap, null, 2) + "\n");
-  console.log("Syncing Stripe launch env vars to Vercel (plain · all targets)…\n");
+  console.log("Syncing Stripe launch env vars to Vercel (plain, all targets)...\n");
 
   for (const [key, value] of Object.entries(envMap)) {
     if (!value) {
-      console.log(`  · skip ${key} (empty — run stripe:setup to generate a launch price ID)`);
+      console.log(`  - skip ${key} (empty - run stripe:setup to generate a launch price ID)`);
       continue;
     }
     await upsertEnv(key, value);

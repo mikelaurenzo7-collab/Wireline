@@ -186,7 +186,7 @@ export default function AgentConfigPanel({
         aria-label="Back to agent list"
         className="mb-3 h-10 rounded-full wl-label text-foreground/80 md:hidden"
       >
-        <ChevronLeft className="h-3.5 w-3.5" /> Back to Assistants
+        <ChevronLeft className="h-3.5 w-3.5" /> Back to Agents
       </ShadButton>
 
       <div className="mx-auto max-w-[720px] space-y-3">
@@ -394,7 +394,7 @@ export default function AgentConfigPanel({
             <div>
               <p className="wl-label text-brand tracking-[0.2em]">Training moved out</p>
               <h4 className="mt-1 font-display text-xl italic text-foreground">
-                Workflows, knowledge, and tests
+                Training, workflows, and tests
               </h4>
             </div>
             <GraduationCap className="h-5 w-5 text-brand" />
@@ -404,8 +404,8 @@ export default function AgentConfigPanel({
             <QuickLink
               to={`${trainingHref}&tab=database`}
               icon={BookOpen}
-              title="Knowledge"
-              description={`${knowledgeCount} facts saved. Add FAQs, policies, services, prices, and business context.`}
+              title="Training sources"
+              description={`${knowledgeCount} source details saved. Add FAQs, policies, services, prices, and business context.`}
             />
             <QuickLink
               to={`${trainingHref}&tab=flow`}
@@ -444,7 +444,7 @@ export default function AgentConfigPanel({
           <ol className="mt-3 space-y-2 text-sm leading-relaxed text-foreground/72">
             <li>1. Create the agent name and role here.</li>
             <li>2. Pick the voice and model.</li>
-            <li>3. Add knowledge and workflows in Training.</li>
+            <li>3. Add sources and workflows in Training.</li>
             <li>4. Test in Simulator, then go live.</li>
           </ol>
         </section>

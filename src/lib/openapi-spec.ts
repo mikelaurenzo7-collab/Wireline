@@ -230,7 +230,7 @@ const Webhook: JsonSchema = {
 const TriageBucket: JsonSchema = {
   type: "object",
   description:
-    "One of the five Triage Inbox buckets — hot leads, compliance, knowledge gaps, tasks, escalations.",
+    "One of the five Triage Inbox buckets: hot leads, compliance, Training gaps, tasks, escalations.",
   properties: {
     hot_leads: { type: "array", items: { type: "object", additionalProperties: true } },
     compliance: { type: "array", items: { type: "object", additionalProperties: true } },
@@ -986,7 +986,7 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
     info: {
       title: "Wireline API",
       version: "1.0.0",
-      summary: "Carrier-grade omnichannel agent Assistants — voice + email autonomous agents.",
+      summary: "Carrier-grade omnichannel agents for voice, email, and follow-up.",
       description: [
         "Wireline's public API. Designed for three audiences:",
         "",

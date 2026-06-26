@@ -1,19 +1,27 @@
-import { ArrowRight, Mail, MessageSquareText, PhoneCall, Plug, ShieldCheck } from "lucide-react";
+import { ArrowRight, Mail, MessageSquareText, PhoneCall } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import HeroCallPreview from "./HeroCallPreview";
 
 const channels = [
-  { label: "Calls", title: "Answer.", icon: PhoneCall },
-  { label: "Text", title: "Reply.", icon: MessageSquareText },
-  { label: "Email", title: "Follow up.", icon: Mail },
-] as const;
-
-const system = [
-  { label: "Build", title: "Define the job." },
-  { label: "Wire", title: "Connect the tools." },
-  { label: "Run", title: "Review the work." },
+  {
+    label: "Calls",
+    title: "Answer in your voice.",
+    body: "Inbound, outbound, handoff, approvals, and clean summaries.",
+    icon: PhoneCall,
+  },
+  {
+    label: "Texts",
+    title: "Keep the thread moving.",
+    body: "Confirmations, follow-up, status updates, and handoff prompts.",
+    icon: MessageSquareText,
+  },
+  {
+    label: "Email",
+    title: "Close the loop.",
+    body: "Approved replies, recaps, next steps, and integration-backed work.",
+    icon: Mail,
+  },
 ] as const;
 
 export default function PrecisionLanding() {
@@ -21,79 +29,73 @@ export default function PrecisionLanding() {
     <div className="wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-        <section className="marketing-hero border-b border-border px-5 py-10 sm:px-6 lg:px-8">
-          <div className="wl-public-rail grid min-h-[calc(100dvh-4rem)] items-center gap-10 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(340px,.76fr)] lg:gap-14">
-            <div className="marketing-hero__content">
+        <section className="marketing-hero border-b border-border px-5 py-8 sm:px-6 lg:px-8">
+          <div className="wl-public-rail flex min-h-[calc(78dvh-4rem)] flex-col items-center justify-center py-6 text-center">
+            <div className="marketing-hero__content flex flex-col items-center">
               <p className="wl-overline text-primary">Wireline OS</p>
-              <h1 className="mt-4 max-w-[10ch] font-[var(--wireline-font-display)] text-[clamp(44px,6vw,76px)] font-semibold leading-[.98] tracking-[-.06em] text-foreground">
-                Agents that answer.
+              <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(46px,6.7vw,84px)] font-semibold leading-[.94] tracking-[-.055em] text-foreground">
+                Agents that answer calls, texts, and follow-up.
               </h1>
-              <p className="wl-public-copy mt-5 max-w-xl">
-                Calls, texts, and follow-up. One workspace. Your rules.
+              <p className="wl-public-copy mx-auto mt-5 max-w-5xl text-[clamp(17px,1.7vw,22px)] leading-[1.38]">
+                Create a short agent brief. Train it on your sources, behavior, voice, policies, and
+                evaluation. Run live work from Studio with approvals, handoff, integrations, browser
+                context, email, and native controls.
               </p>
-              <div className="marketing-hero__actions mt-8 flex flex-wrap gap-3">
-                <Link to="/signup" className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">
-                  Start <ArrowRight size={16} />
+              <div className="marketing-hero__actions mt-8 justify-center">
+                <Link
+                  to="/signup"
+                  className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+                >
+                  Create agent <ArrowRight size={16} />
                 </Link>
-                <Link to="/features" className="marketing-btn-secondary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">
-                  See system
+                <Link
+                  to="/features"
+                  className="marketing-btn-secondary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+                >
+                  See OS
                 </Link>
               </div>
             </div>
-            <HeroCallPreview />
+            <div className="marketing-hero-proof mt-7">
+              {["Create", "Train", "Run", "Calls", "Texts", "Follow-up"].map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
           </div>
         </section>
 
         <section className="border-b border-border px-5 py-12 sm:px-6 lg:px-8">
-          <div className="wl-public-rail">
-            <p className="wl-overline text-primary">Channels</p>
-            <h2 className="wl-public-section-heading mt-3">One brain. Every thread.</h2>
+          <div className="wl-public-rail text-center">
+            <div className="mx-auto max-w-3xl">
+              <p className="wl-overline text-primary">First run</p>
+              <h2 className="wl-public-section-heading mx-auto mt-3">
+                Watch one agent become the front desk.
+              </h2>
+              <p className="wl-public-copy mx-auto mt-4">
+                A call comes in. The agent answers, captures context, drafts the follow-up, and
+                leaves the next approval waiting in Studio.
+              </p>
+            </div>
             <div className="marketing-channel-grid mt-8">
-              {channels.map(({ label, title, icon: Icon }) => (
-                <article key={label} className="wl-stitch-card marketing-channel-card flex flex-col p-6 sm:p-7">
-                  <Icon className="size-5 text-primary" aria-hidden="true" />
-                  <p className="wl-overline mt-5 text-primary">{label}</p>
-                  <h3 className="wl-section-title mt-2 text-[clamp(24px,4vw,32px)]">{title}</h3>
+              {channels.map(({ label, title, body, icon: Icon }) => (
+                <article key={label} className="marketing-channel-row">
+                  <div className="marketing-channel-row__icon">
+                    <Icon className="size-4" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p className="wl-overline text-primary">{label}</p>
+                    <h3 className="wl-section-title mt-1 text-[clamp(22px,3vw,30px)]">{title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
+                  </div>
                 </article>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section className="border-b border-border bg-card px-5 py-12 sm:px-6 lg:px-8">
-          <div className="wl-public-rail grid gap-8 lg:grid-cols-[minmax(0,.7fr)_minmax(0,1fr)] lg:items-start">
-            <div>
-              <p className="wl-overline text-primary">Operating model</p>
-              <h2 className="wl-public-section-heading mt-3">Build. Wire. Run.</h2>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {system.map(({ label, title }) => (
-                <article key={label} className="wl-stitch-card p-5">
-                  <p className="wl-overline text-primary">{label}</p>
-                  <h3 className="wl-section-title mt-8 text-[clamp(20px,3vw,26px)]">{title}</h3>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="px-5 py-12 sm:px-6 lg:px-8">
-          <div className="wl-public-rail">
-            <div className="marketing-demo-surface">
-              <div>
-                <p className="wl-overline text-primary">Business-ready</p>
-                <h2 className="mt-2 font-[var(--wireline-font-display)] text-[clamp(28px,4vw,44px)] font-semibold tracking-[-.05em]">
-                  Useful work. Clean handoff.
-                </h2>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-[var(--wireline-typography-caption-size)] font-semibold text-foreground"><ShieldCheck size={15} /> Protected</span>
-                <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-[var(--wireline-typography-caption-size)] font-semibold text-foreground"><Plug size={15} /> Connected</span>
-                <Link to="/signup" className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]">
-                  Start <ArrowRight size={15} />
-                </Link>
-              </div>
-            </div>
+            <Link
+              to="/signup"
+              className="marketing-btn-primary mx-auto mt-8 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+            >
+              Start the run <ArrowRight size={15} />
+            </Link>
           </div>
         </section>
 

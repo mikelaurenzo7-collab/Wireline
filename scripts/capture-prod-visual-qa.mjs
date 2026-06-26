@@ -2,12 +2,19 @@ import { chromium } from "@playwright/test";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://trywireline.com").replace(/\/$/, "");
-const outputRoot = path.resolve(process.env.WIRELINE_VISUAL_OUTPUT_DIR || "artifacts/visual-qa-prod");
+const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://trywireline.com").replace(
+  /\/$/,
+  "",
+);
+const outputRoot = path.resolve(
+  process.env.WIRELINE_VISUAL_OUTPUT_DIR || "artifacts/visual-qa-prod",
+);
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const outputDir = path.join(outputRoot, timestamp);
-const signupEmail = process.env.WIRELINE_VISUAL_EMAIL?.trim() || `visual.qa.${Date.now()}@mailinator.com`;
-const signupPassword = process.env.WIRELINE_VISUAL_PASSWORD || `WirelineQA!${String(Date.now()).slice(-6)}`;
+const signupEmail =
+  process.env.WIRELINE_VISUAL_EMAIL?.trim() || `visual.qa.${Date.now()}@mailinator.com`;
+const signupPassword =
+  process.env.WIRELINE_VISUAL_PASSWORD || `WirelineQA!${String(Date.now()).slice(-6)}`;
 
 const marketingRoutes = [
   "/",
@@ -81,9 +88,15 @@ async function settle(page) {
 }
 
 async function assertStudioComposer(page, viewportName, issues) {
-  const composer = page.locator('textarea#studio-training-composer').first();
+  const composer = page.locator("textarea#studio-training-composer").first();
   if (!(await composer.isVisible().catch(() => false))) {
-    issues.push({ viewport: viewportName, route: "/studio", mode: "authenticated", kind: "layout", detail: "Studio composer is not visible." });
+    issues.push({
+      viewport: viewportName,
+      route: "/studio",
+      mode: "authenticated",
+      kind: "layout",
+      detail: "Studio composer is not visible.",
+    });
     return;
   }
   const box = await composer.boundingBox();
@@ -115,7 +128,11 @@ async function captureRoute(page, viewportName, route, issues, mode) {
   }
 
   const prefix = path.join(outputDir, `${viewportName}-${mode}-${fileName(route)}`);
-  await page.screenshot({ path: `${prefix}-viewport.png`, fullPage: false, animations: "disabled" });
+  await page.screenshot({
+    path: `${prefix}-viewport.png`,
+    fullPage: false,
+    animations: "disabled",
+  });
   await page.screenshot({ path: `${prefix}-full.png`, fullPage: true, animations: "disabled" });
 }
 
@@ -146,15 +163,24 @@ async function signUp(page, viewportName, issues) {
 }
 
 async function completeOnboardingIfNecessary(page, viewportName, issues) {
-  await page.waitForURL(/\/(overview|agents|studio|onboarding)(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
+  await page
+    .waitForURL(/\/(overview|agents|studio|onboarding)(?:\?|$)/, { timeout: 15_000 })
+    .catch(() => {});
   const url = page.url();
   if (url.includes("/onboarding")) {
-    console.log("[Onboarding Bypass] Onboarding page detected, selecting default Front Desk template...");
+    console.log(
+      "[Onboarding Bypass] Onboarding page detected, selecting default Front Desk template...",
+    );
     const frontDeskBtn = page.getByRole("button", { name: /Select Front Desk/i }).first();
     if (await frontDeskBtn.isVisible().catch(() => false)) {
       await frontDeskBtn.click();
-      await page.waitForURL(/\/(overview|ops|studio|agents)(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
-      console.log("[Onboarding Bypass] Workspace template selection complete. Current URL:", page.url());
+      await page
+        .waitForURL(/\/(overview|ops|studio|agents)(?:\?|$)/, { timeout: 15_000 })
+        .catch(() => {});
+      console.log(
+        "[Onboarding Bypass] Workspace template selection complete. Current URL:",
+        page.url(),
+      );
       await settle(page);
     } else {
       issues.push({
@@ -171,11 +197,23 @@ async function completeOnboardingIfNecessary(page, viewportName, issues) {
 function attachDiagnostics(page, viewportName, mode, issues) {
   page.on("console", (message) => {
     if (message.type() === "error" && !isBenignConsoleError(message.text())) {
-      issues.push({ viewport: viewportName, route: page.url(), mode, kind: "console", detail: message.text() });
+      issues.push({
+        viewport: viewportName,
+        route: page.url(),
+        mode,
+        kind: "console",
+        detail: message.text(),
+      });
     }
   });
   page.on("pageerror", (error) => {
-    issues.push({ viewport: viewportName, route: page.url(), mode, kind: "pageerror", detail: error.message });
+    issues.push({
+      viewport: viewportName,
+      route: page.url(),
+      mode,
+      kind: "pageerror",
+      detail: error.message,
+    });
   });
   page.on("response", (response) => {
     const status = response.status();
@@ -185,17 +223,21 @@ function attachDiagnostics(page, viewportName, mode, issues) {
         route: page.url(),
         mode,
         kind: "network",
-        detail: `Failed to load resource: ${response.url()} returned status ${status}`
+        detail: `Failed to load resource: ${response.url()} returned status ${status}`,
       });
     }
   });
 }
 
 async function captureMarketing(browser, viewport, issues) {
-  const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: 1 });
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    deviceScaleFactor: 1,
+  });
   const page = await context.newPage();
   attachDiagnostics(page, viewport.name, "public", issues);
-  for (const route of marketingRoutes) await captureRoute(page, viewport.name, route, issues, "public");
+  for (const route of marketingRoutes)
+    await captureRoute(page, viewport.name, route, issues, "public");
   await context.close();
 }
 
@@ -207,7 +249,8 @@ async function captureAuthenticated(browser, viewport, storageState, issues) {
   });
   const page = await context.newPage();
   attachDiagnostics(page, viewport.name, "authenticated", issues);
-  for (const route of authenticatedRoutes) await captureRoute(page, viewport.name, route, issues, "authenticated");
+  for (const route of authenticatedRoutes)
+    await captureRoute(page, viewport.name, route, issues, "authenticated");
   await context.close();
 }
 
@@ -231,19 +274,21 @@ let qaFocus = (process.env.WIRELINE_QA_FOCUS || "").trim().toLowerCase();
 if (!qaFocus || qaFocus === "auto") {
   const focuses = [
     "onboarding",
-    "create-assistant",
-    "knowledge-base",
+    "create-agent",
+    "training",
     "studio-compose",
     "billing-checkout",
     "connections-actions",
     "inbox-recaps",
     "telemetry-performance",
     "settings-team",
-    "mobile-responsive-smoke"
+    "mobile-responsive-smoke",
   ];
   const turnMod = (currentTurn - 1) % focuses.length;
   qaFocus = focuses[turnMod];
-  console.log(`[Evolving QA] Turn ${currentTurn} detected. Auto-selecting focus: '${qaFocus}' (highest-leverage check)`);
+  console.log(
+    `[Evolving QA] Turn ${currentTurn} detected. Auto-selecting focus: '${qaFocus}' (highest-leverage check)`,
+  );
 } else {
   console.log(`[Explicit QA] Using explicit focus override: '${qaFocus}'`);
 }
@@ -253,7 +298,10 @@ try {
 
   if (qaFocus === "onboarding") {
     console.log("Running onboarding flow focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -264,7 +312,9 @@ try {
       const frontDeskBtn = signupPage.getByRole("button", { name: /Select Front Desk/i });
       if (await frontDeskBtn.isVisible().catch(() => false)) {
         await frontDeskBtn.click();
-        await signupPage.waitForURL(/\/(overview|ops|studio)(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
+        await signupPage
+          .waitForURL(/\/(overview|ops|studio)(?:\?|$)/, { timeout: 15_000 })
+          .catch(() => {});
         console.log("After onboarding selection URL:", signupPage.url());
       } else {
         issues.push({
@@ -281,9 +331,12 @@ try {
       await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
     }
     await signupContext.close();
-  } else if (qaFocus === "create-assistant") {
-    console.log("Running create-assistant flow focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+  } else if (qaFocus === "create-agent") {
+    console.log("Running create-agent flow focused QA...");
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -294,8 +347,8 @@ try {
       await signupPage.goto(`${baseUrl}/agents`, { waitUntil: "domcontentloaded" });
       await settle(signupPage);
 
-      // Click "Create assistant" button or go to /studio?create=1
-      const createBtn = signupPage.getByRole("link", { name: /Create assistant/i }).first();
+      // Click "Create agent" button or go to /studio?create=1
+      const createBtn = signupPage.getByRole("link", { name: /Create agent/i }).first();
       if (await createBtn.isVisible().catch(() => false)) {
         await createBtn.click();
       } else {
@@ -311,15 +364,21 @@ try {
         if (await roleSelect.isVisible().catch(() => false)) {
           await roleSelect.selectOption("receptionist");
         }
-        const briefTextarea = signupPage.locator("textarea[placeholder*='Call my pharmacy']").first();
+        const briefTextarea = signupPage
+          .locator("textarea[placeholder*='Call my pharmacy']")
+          .first();
         if (await briefTextarea.isVisible().catch(() => false)) {
-          await briefTextarea.fill("Greet incoming business callers, answer office FAQs, and capture lead callback details.");
+          await briefTextarea.fill(
+            "Greet incoming business callers, answer office FAQs, and capture lead callback details.",
+          );
         }
-        const submitBtn = signupPage.getByRole("button", { name: /Create and open Studio/i }).first();
+        const submitBtn = signupPage
+          .getByRole("button", { name: /Create and open Studio/i })
+          .first();
         if (await submitBtn.isVisible().catch(() => false)) {
           await submitBtn.click();
           await signupPage.waitForURL(/\/studio\?agent=/, { timeout: 15_000 }).catch(() => {});
-          console.log("New assistant created successfully! Current URL:", signupPage.url());
+          console.log("New agent created successfully! Current URL:", signupPage.url());
           await settle(signupPage);
         }
       } else {
@@ -328,60 +387,70 @@ try {
           route: "/studio?create=1",
           mode: "authenticated",
           kind: "flow",
-          detail: "New assistant modal or inputs not visible.",
+          detail: "New agent modal or inputs not visible.",
         });
       }
 
-      const prefix = path.join(outputDir, `${desktop.name}-flow-create-assistant`);
+      const prefix = path.join(outputDir, `${desktop.name}-flow-create-agent`);
       await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
       await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
     }
     await signupContext.close();
-  } else if (qaFocus === "knowledge-base") {
-    console.log("Running knowledge-base flow focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+  } else if (qaFocus === "training") {
+    console.log("Running training flow focused QA...");
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
     if (await signUp(signupPage, desktop.name, issues)) {
       await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
 
-      // Navigate to /knowledge
-      await signupPage.goto(`${baseUrl}/knowledge`, { waitUntil: "domcontentloaded" });
+      // Navigate to /training
+      await signupPage.goto(`${baseUrl}/training`, { waitUntil: "domcontentloaded" });
       await settle(signupPage);
 
       const titleInput = signupPage.locator("input[placeholder*='Preferred pharmacy']").first();
-      const contentTextarea = signupPage.locator("textarea[placeholder*='Describe a fact']").first();
+      const contentTextarea = signupPage
+        .locator("textarea[placeholder*='Describe a fact']")
+        .first();
       const saveBtn = signupPage.getByRole("button", { name: /Save fact/i }).first();
 
       if (await contentTextarea.isVisible().catch(() => false)) {
         if (await titleInput.isVisible().catch(() => false)) {
           await titleInput.fill("Pricing & Packages");
         }
-        await contentTextarea.fill("Our standard business subscription starts at $49/month and includes 1000 minutes of receptionist calls.");
+        await contentTextarea.fill(
+          "Wireline Business uses shared operating capacity, approvals, analytics, CRM sync, roles, and pooled Conversation Balance.",
+        );
         if (await saveBtn.isVisible().catch(() => false)) {
           await saveBtn.click();
           await signupPage.waitForTimeout(1500);
-          console.log("New business fact added successfully to the Knowledge Base.");
+          console.log("New business fact added successfully to Training.");
         }
       } else {
         issues.push({
           viewport: desktop.name,
-          route: "/knowledge",
+          route: "/training",
           mode: "authenticated",
           kind: "flow",
           detail: "Add detail input elements not found on /knowledge.",
         });
       }
 
-      const prefix = path.join(outputDir, `${desktop.name}-flow-knowledge-base`);
+      const prefix = path.join(outputDir, `${desktop.name}-flow-training`);
       await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
       await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
     }
     await signupContext.close();
   } else if (qaFocus === "studio-compose") {
     console.log("Running studio composer focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -394,7 +463,9 @@ try {
 
       const composer = signupPage.locator("textarea#studio-training-composer").first();
       if (await composer.isVisible().catch(() => false)) {
-        await composer.fill("When a customer calls for sales, ask for their email address and phone number, and offer to schedule a callback.");
+        await composer.fill(
+          "When a customer calls for sales, ask for their email address and phone number, and offer to schedule a callback.",
+        );
         const saveBtn = signupPage.getByRole("button", { name: /Save|Deploy|Update/i }).first();
         if (await saveBtn.isVisible().catch(() => false)) {
           await saveBtn.click();
@@ -418,7 +489,10 @@ try {
     await signupContext.close();
   } else if (qaFocus === "billing-checkout") {
     console.log("Running billing checkout focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -428,7 +502,9 @@ try {
       await signupPage.goto(`${baseUrl}/settings/billing`, { waitUntil: "domcontentloaded" });
       await settle(signupPage);
 
-      const changePlanBtn = signupPage.getByRole("button", { name: /Change Plan|Upgrade|Subscribe/i }).first();
+      const changePlanBtn = signupPage
+        .getByRole("button", { name: /Change Plan|Upgrade|Subscribe/i })
+        .first();
       if (await changePlanBtn.isVisible().catch(() => false)) {
         await changePlanBtn.click();
         await signupPage.waitForTimeout(1000);
@@ -441,7 +517,10 @@ try {
     await signupContext.close();
   } else if (qaFocus === "connections-actions") {
     console.log("Running connections and actions focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -455,13 +534,15 @@ try {
       // Toggle first tool row if available and enabled
       const toolRow = signupPage.locator(".wl-stitch-tool-row").first();
       const isVisible = await toolRow.isVisible().catch(() => false);
-      const isEnabled = isVisible && await toolRow.isEnabled().catch(() => false);
+      const isEnabled = isVisible && (await toolRow.isEnabled().catch(() => false));
       if (isEnabled) {
         await toolRow.click();
         await signupPage.waitForTimeout(1500);
         console.log("Toggled an integration tool in Actions workspace successfully.");
       } else {
-        console.log(`[QA Note] First tool row is visible: ${isVisible}, enabled: ${isEnabled}. Skipping toggle click.`);
+        console.log(
+          `[QA Note] First tool row is visible: ${isVisible}, enabled: ${isEnabled}. Skipping toggle click.`,
+        );
         issues.push({
           viewport: desktop.name,
           route: "/actions",
@@ -478,7 +559,10 @@ try {
     await signupContext.close();
   } else if (qaFocus === "inbox-recaps") {
     console.log("Running inbox and email recaps focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -501,7 +585,10 @@ try {
     await signupContext.close();
   } else if (qaFocus === "telemetry-performance") {
     console.log("Running performance telemetry audit QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -515,14 +602,16 @@ try {
       console.log(`Page Load Telemetry: '/overview' loaded in ${loadTimeMs}ms`);
 
       // Collect window.performance indicators
-      const performanceMetrics = await signupPage.evaluate(() => {
-        const t = window.performance.timing;
-        return {
-          domContentLoaded: t.domContentLoadedEventEnd - t.navigationStart,
-          loadComplete: t.loadEventEnd - t.navigationStart,
-          totalResources: window.performance.getEntriesByType("resource").length,
-        };
-      }).catch(() => ({ domContentLoaded: -1, loadComplete: -1, totalResources: -1 }));
+      const performanceMetrics = await signupPage
+        .evaluate(() => {
+          const t = window.performance.timing;
+          return {
+            domContentLoaded: t.domContentLoadedEventEnd - t.navigationStart,
+            loadComplete: t.loadEventEnd - t.navigationStart,
+            totalResources: window.performance.getEntriesByType("resource").length,
+          };
+        })
+        .catch(() => ({ domContentLoaded: -1, loadComplete: -1, totalResources: -1 }));
 
       console.log(`Metrics harvested:`, performanceMetrics);
       if (performanceMetrics.loadComplete > 5000) {
@@ -541,7 +630,10 @@ try {
     await signupContext.close();
   } else if (qaFocus === "settings-team") {
     console.log("Running team settings roster focused QA...");
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -583,7 +675,10 @@ try {
     // Emulate iPhone viewport (390 x 844)
     const mobileWidth = 390;
     const mobileHeight = 844;
-    const mobileContext = await browser.newContext({ viewport: { width: mobileWidth, height: mobileHeight }, deviceScaleFactor: 2 });
+    const mobileContext = await browser.newContext({
+      viewport: { width: mobileWidth, height: mobileHeight },
+      deviceScaleFactor: 2,
+    });
     const mobilePage = await mobileContext.newPage();
     attachDiagnostics(mobilePage, "iphone", "public", issues);
 
@@ -591,7 +686,9 @@ try {
     await mobilePage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
     await settle(mobilePage);
 
-    const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+    const overflow = await mobilePage.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
+    );
     if (overflow) {
       issues.push({
         viewport: "iphone",
@@ -610,7 +707,10 @@ try {
     console.log("Running complete multi-viewport standard visual QA sweep...");
     await captureMarketing(browser, desktop, issues);
 
-    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupContext = await browser.newContext({
+      viewport: { width: desktop.width, height: desktop.height },
+      deviceScaleFactor: 1,
+    });
     const signupPage = await signupContext.newPage();
     attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
@@ -632,7 +732,9 @@ try {
   await browser.close();
 }
 
-const routeCount = marketingRoutes.length * viewports.length + (storageState ? authenticatedRoutes.length * viewports.length : 0);
+const routeCount =
+  marketingRoutes.length * viewports.length +
+  (storageState ? authenticatedRoutes.length * viewports.length : 0);
 const manifest = {
   baseUrl,
   outputDir,

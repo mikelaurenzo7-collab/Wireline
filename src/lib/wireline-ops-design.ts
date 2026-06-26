@@ -258,11 +258,11 @@ export const OPS_CHANNEL_EMPTY = {
   },
 } as const;
 
-/** Dense training / Assistants editor panel empties (nested sections, not route-level) */
+/** Dense Training / Agents editor panel empties (nested sections, not route-level) */
 export const OPS_TRAINING_PANEL = {
   rules: "No rules yet – add one below to set hard limits your agent always respects.",
   directives: "No directives yet – add tactical constraints below.",
-  facts: "No facts yet – add knowledge entries below.",
+  facts: "No facts yet – add Training entries below.",
   pronunciation: "No rules yet. Add a row below.",
   knowledge: {
     eyebrow: "Training documents",
@@ -304,7 +304,7 @@ export const OPS_TRIAGE_EMPTY = {
     actions: [{ label: "View action queue", to: "/overview?tab=intel" }],
   },
   knowledgeGaps: {
-    eyebrow: "Knowledge gaps",
+    eyebrow: "Training gaps",
     title: "Coverage looks solid",
     description: "Repeated stump questions will appear here so you can teach agents fast.",
     actions: [{ label: "Open training", to: "/studio" }],
@@ -413,8 +413,8 @@ export const OPS_STUDIO_ASSISTS_COPY = {
 } as const;
 
 /** Deep-link into Director chat with an agent focused and the composer prefilled. */
-export function directorAssistHref(assistantId: string, prompt: string): string {
-  return `/agents?agent=${encodeURIComponent(assistantId)}&prompt=${encodeURIComponent(prompt)}`;
+export function directorAssistHref(agentId: string, prompt: string): string {
+  return `/agents?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;
 }
 
 /** Deep-link into Director chat with only a prefilled prompt. */
@@ -570,7 +570,7 @@ export const OPS_FOUNDER = {
   broadcastSend: "Send to all 6",
 } as const;
 
-/** KPI / metric tiles – founder dashboard, recaps summaries */
+/** KPI / metric tiles - founder overview and recaps summaries */
 export const WL_STAT_CLASSES = {
   tile: "wl-stat-tile",
   tileBrand: "wl-stat-tile wl-stat-tile--brand",

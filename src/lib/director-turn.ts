@@ -562,17 +562,17 @@ export async function buildDirectorStreamContext(
 
   const transcript = input.history
     .slice(-12)
-    .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "Director"}: ${m.content}`)
+    .map((m) => `${m.role === "Account Holder" ? "Operator" : "Director"}: ${m.content}`)
     .join("\n");
   const user = appendResearchToUserPrompt(
-    `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${input.userMessage}`,
+    `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${input.userMessage}`,
     research?.block,
   );
 
   const tool = DIRECTOR_FLEET_TOOL;
 
   return {
-    mode: "Assistants",
+    mode: "Agents",
     system,
     user,
     tool,

@@ -20,8 +20,23 @@ export interface LedgerEntry {
   id: string;
   deltaUsd: number;
   balanceAfterUsd: number;
+  entryKind: string;
   reason: string;
+  customerReason: string | null;
   createdAt: string | null;
+}
+
+export interface LedgerRef {
+  type: string;
+  id: string;
+  entryKind?: "top_up" | "burn" | "refund" | "adjustment" | "grant" | "reversal";
+  idempotencyKey?: string;
+  source?: string;
+  provider?: string;
+  providerEventId?: string;
+  providerObjectId?: string;
+  customerReason?: string;
+  metadata?: Record<string, unknown>;
 }
 
 /** Current balance in USD (sum of all deltas; 0 when there are no rows). */
@@ -40,7 +55,9 @@ export async function getRecentLedger(userId: string, limit = 20): Promise<Ledge
       id: schema.creditLedger.id,
       deltaUsd: schema.creditLedger.deltaUsd,
       balanceAfterUsd: schema.creditLedger.balanceAfterUsd,
+      entryKind: schema.creditLedger.entryKind,
       reason: schema.creditLedger.reason,
+      customerReason: schema.creditLedger.customerReason,
       createdAt: schema.creditLedger.createdAt,
     })
     .from(schema.creditLedger)
@@ -51,7 +68,9 @@ export async function getRecentLedger(userId: string, limit = 20): Promise<Ledge
     id: r.id,
     deltaUsd: Number(r.deltaUsd),
     balanceAfterUsd: Number(r.balanceAfterUsd),
+    entryKind: r.entryKind,
     reason: r.reason,
+    customerReason: r.customerReason,
     createdAt: r.createdAt ? new Date(r.createdAt as unknown as string).toISOString() : null,
   }));
 }
@@ -65,7 +84,7 @@ async function appendLedger(
   userId: string,
   deltaUsd: number,
   reason: string,
-  ref?: { type: string; id: string },
+  ref?: LedgerRef,
 ): Promise<{ applied: number; balance: number }> {
   return drizzle.transaction(async (tx: any) => {
     // Serialize all wallet mutations for this user.
@@ -84,9 +103,17 @@ async function appendLedger(
         userId,
         deltaUsd: String(cents(deltaUsd)),
         balanceAfterUsd: String(balanceAfter),
+        entryKind: ref?.entryKind ?? (deltaUsd > 0 ? "top_up" : "burn"),
         reason,
+        customerReason: ref?.customerReason ?? reason,
         refType: ref?.type ?? null,
         refId: ref?.id ?? null,
+        idempotencyKey: ref?.idempotencyKey ?? (ref ? `${ref.type}:${ref.id}` : null),
+        source: ref?.source ?? "wireline",
+        provider: ref?.provider ?? null,
+        providerEventId: ref?.providerEventId ?? null,
+        providerObjectId: ref?.providerObjectId ?? null,
+        metadata: ref?.metadata ?? {},
       })
       .onConflictDoNothing()
       .returning({ id: schema.creditLedger.id });
@@ -105,7 +132,7 @@ export async function addCredit(
   userId: string,
   amountUsd: number,
   reason: string,
-  ref?: { type: string; id: string },
+  ref?: LedgerRef,
 ): Promise<number> {
   const amount = cents(amountUsd);
   if (!(amount > 0)) return getCreditBalanceUsd(userId);
@@ -131,7 +158,7 @@ export async function reverseCredit(
   userId: string,
   amountUsd: number,
   reason: string,
-  ref?: { type: string; id: string },
+  ref?: LedgerRef,
 ): Promise<number> {
   const amount = cents(amountUsd);
   if (!(amount > 0)) return getCreditBalanceUsd(userId);
@@ -176,9 +203,16 @@ export async function debitForOverage(
           userId,
           deltaUsd: String(-cost),
           balanceAfterUsd: String(cents(balance - cost)),
+          entryKind: "burn",
           reason: "voice_overage",
+          customerReason: "Voice overage covered by Conversation Balance",
           refType: "voice_overage",
           refId: vapiCallId,
+          idempotencyKey: `voice_overage:${vapiCallId}`,
+          source: "vapi",
+          provider: "vapi",
+          providerObjectId: vapiCallId,
+          metadata: { burn_reason: "voice_overage" },
         })
         .onConflictDoNothing()
         .returning({ id: schema.creditLedger.id });

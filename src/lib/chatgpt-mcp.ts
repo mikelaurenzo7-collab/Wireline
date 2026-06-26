@@ -43,7 +43,10 @@ function boundedText(value: unknown, max: number): string {
 }
 
 function safeRole(value: unknown): McpDemoRole {
-  return value === "scheduler" || value === "sales" || value === "customer_service" || value === "receptionist"
+  return value === "scheduler" ||
+    value === "sales" ||
+    value === "customer_service" ||
+    value === "receptionist"
     ? value
     : "receptionist";
 }
@@ -104,13 +107,16 @@ export function decodeDemoToken(token: unknown): McpDemoSpec {
   }
   const raw = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
   if (!raw || raw.v !== 1 || typeof raw.expiresAt !== "number" || raw.expiresAt < Date.now()) {
-    throw AppError.fromHttpStatus(400, "This Wireline demo session has expired. Start a fresh demo.");
+    throw AppError.fromHttpStatus(
+      400,
+      "This Wireline demo session has expired. Start a fresh demo.",
+    );
   }
   return {
     v: 1,
     issuedAt: Number(raw.issuedAt) || Date.now(),
     expiresAt: raw.expiresAt,
-    agentName: boundedText(raw.agentName, 120) || "Wireline Assistant",
+    agentName: boundedText(raw.agentName, 120) || "Wireline Agent",
     businessName: boundedText(raw.businessName, 120) || "Your business",
     role: safeRole(raw.role),
     primaryGoal: boundedText(raw.primaryGoal, 600),

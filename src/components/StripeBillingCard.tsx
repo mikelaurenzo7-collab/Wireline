@@ -5,7 +5,6 @@ import {
   CreditCard,
   Loader2,
   Check,
-  Sparkles,
   Shield,
   ArrowRight,
   AlertTriangle,
@@ -21,8 +20,12 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { BRAND } from "../constants/brand-colors";
 import { PRODUCT_VERSATILITY } from "../lib/product-copy";
+import {
+  CONVERSATION_BALANCE_COPY,
+  CONVERSATION_BALANCE_PRESETS_USD,
+} from "../lib/conversation-balance";
 
-type BillingPlanId = "personal" | "personal-plus" | "business-starter" | "starter" | "scale";
+type BillingPlanId = "team" | "business" | "enterprise";
 
 interface Plan {
   id: BillingPlanId;
@@ -49,29 +52,23 @@ interface SubscriptionState {
 }
 
 const PLAN_ICONS: Record<string, any> = {
-  personal: Sparkles,
-  "personal-plus": Sparkles,
-  "business-starter": Building2,
-  starter: Sparkles,
-  scale: Building2,
+  team: Building2,
+  business: CreditCard,
+  enterprise: Building2,
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
-  personal: BRAND.colors.primary,
-  "personal-plus": BRAND.colors.primary,
-  "business-starter": BRAND.colors.primary,
-  starter: BRAND.colors.primary,
-  scale: BRAND.colors.primary,
+  team: BRAND.colors.primary,
+  business: BRAND.colors.primary,
+  enterprise: BRAND.colors.primary,
 };
 
-// Conversion-tracking values (USD/mo). Mirror current consumer-pivot prices
-// from `plan-catalog.ts`; keep in sync if pricing moves again.
+// Conversion-tracking values (USD/mo). Personal activation is tracked through
+// Conversation Balance checkout, not subscription checkout.
 const CHECKOUT_VALUES: Record<string, number> = {
-  personal: 7,
-  "personal-plus": 15,
-  "business-starter": 29,
-  starter: 59,
-  scale: 0,
+  team: 29,
+  business: 59,
+  enterprise: 0,
 };
 
 export default function StripeBillingCard() {
@@ -115,7 +112,11 @@ export default function StripeBillingCard() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("billing") === "success" || params.get("credits") === "success") {
+    if (
+      params.get("billing") === "success" ||
+      params.get("credits") === "success" ||
+      params.get("balance") === "success"
+    ) {
       const t = setTimeout(refresh, 1500);
       window.history.replaceState({}, "", window.location.pathname);
       return () => clearTimeout(t);
@@ -175,7 +176,7 @@ export default function StripeBillingCard() {
     setCreditBusy(amountUsd);
     setError(null);
     try {
-      const r = await authFetch("/api/billing/credit-checkout", {
+      const r = await authFetch("/api/conversation-balance/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount_usd: amountUsd }),
@@ -208,7 +209,7 @@ export default function StripeBillingCard() {
       <div className="wl-panel flex items-center gap-4 p-10">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
         <span className="text-[var(--wireline-typography-body-size)] text-muted-foreground">
-          Loading your plan and balance…
+          Loading your plan and balance...
         </span>
       </div>
     );
@@ -227,7 +228,7 @@ export default function StripeBillingCard() {
         </div>
         <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
-          You can keep using Wireline — we'll email you the moment self-serve plan changes are
+          You can keep using Wireline. We'll email you the moment self-serve plan changes are
           available, or write to{" "}
           <a href="mailto:sales@trywireline.com" className="text-brand hover:underline">
             sales@trywireline.com
@@ -253,7 +254,11 @@ export default function StripeBillingCard() {
         />
       )}
       {hasActive && <UsageMeter onUpgrade={openPortal} />}
-      {hasActive && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
+      <CreditTopUpCard
+        mode={hasActive ? "topup" : "activation"}
+        busy={creditBusy}
+        onBuy={startCreditCheckout}
+      />
       {error && (
         <div
           role="alert"
@@ -324,25 +329,29 @@ export default function StripeBillingCard() {
 }
 
 function CreditTopUpCard({
+  mode,
   busy,
   onBuy,
 }: {
+  mode: "activation" | "topup";
   busy: number | null;
   onBuy: (amountUsd: number) => void;
 }) {
+  const isActivation = mode === "activation";
   return (
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
       <div className="border-b border-border pb-5">
         <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-          Add Conversation Balance
+          {isActivation ? CONVERSATION_BALANCE_COPY.title : "Add Conversation Balance"}
         </h3>
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          Fund live calls, texts, and follow-up only when you need more operating room. If usage is
-          consistently above plan capacity, move up a tier instead of relying on repeated top-ups.
+          {isActivation
+            ? `${CONVERSATION_BALANCE_COPY.subtitle} ${CONVERSATION_BALANCE_COPY.reassurance}`
+            : "Fund live calls, texts, and follow-up only when you need more operating room. If usage is consistently above plan capacity, move up a tier instead of relying on repeated top-ups."}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        {[25, 50, 100].map((a) => (
+        {CONVERSATION_BALANCE_PRESETS_USD.map((a) => (
           <ShadButton
             key={a}
             type="button"
@@ -362,7 +371,9 @@ function CreditTopUpCard({
         ))}
         <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
           <Shield className="w-3 h-3" />
-          Applied to overage automatically
+          {isActivation
+            ? "Personal activation without a subscription"
+            : "Applied to live-work usage"}
         </span>
       </div>
     </div>
@@ -387,12 +398,12 @@ function PlanPicker({
           Choose operating capacity
         </h3>
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          {PRODUCT_VERSATILITY.short} Start with a single agent and Conversation Balance, then move
-          into shared capacity when you need routing, numbers, approvals, and team operations.
-          Stripe-secured. Cancel anytime.
+          {PRODUCT_VERSATILITY.short} Build and test for free, activate Personal with Conversation
+          Balance, or move into shared capacity when you need routing, numbers, approvals, and team
+          operations. Stripe-secured. Cancel anytime.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 stagger-children">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">
         {plans
           .filter((p) => p.public !== false)
           .map((plan) => {
@@ -413,12 +424,12 @@ function PlanPicker({
                 )}
                 data-accent={accent}
               >
-                {!isSignupMatch && plan.id === "business-starter" && (
+                {!isSignupMatch && plan.id === "team" && (
                   <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
                     First shared tier
                   </div>
                 )}
-                {!isSignupMatch && plan.id === "starter" && (
+                {!isSignupMatch && plan.id === "business" && (
                   <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
                     Expanded operations
                   </div>
@@ -433,7 +444,7 @@ function PlanPicker({
                     <Icon className="w-6 h-6 wl-accent-text" />
                   </div>
                   <span className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                    {plan.max_agents} {plan.max_agents === 1 ? "slot" : "slots"}
+                    {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
                   </span>
                 </div>
                 <div>
@@ -562,8 +573,7 @@ function ActiveSubCard({
             <p className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
               {sub.max_agents ? (
                 <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
-                  {agentCount} / {sub.max_agents}{" "}
-                  {sub.max_agents === 1 ? "roster slot" : "roster slots"} in use
+                  {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "agent" : "agents"} in use
                 </span>
               ) : (
                 ""

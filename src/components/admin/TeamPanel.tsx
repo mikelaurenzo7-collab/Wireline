@@ -277,7 +277,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               {
                 label: "Admin",
                 role: "Operational Lead",
-                desc: "Can manage assistants, business agents, carriers, and activity views.",
+                desc: "Can manage agents, carriers, and activity views.",
                 color: "text-brand",
                 bg: "bg-brand/5 border-brand/10",
               },

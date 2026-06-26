@@ -35,7 +35,7 @@ async function run() {
       .insert(schema.subscriptions)
       .values({
         userId: newUser.id,
-        plan: "business-starter",
+        plan: "team",
         status: "active",
       })
       .returning();

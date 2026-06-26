@@ -111,7 +111,7 @@ export default function AgentMemoryPanel({
               <Brain className="size-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-eyebrow">Assistant context</p>
+              <p className="text-eyebrow">Agent context</p>
               <h3 className="mt-1 text-xl font-semibold tracking-[-.025em] text-foreground">
                 What {agentName} can reference
               </h3>
@@ -146,7 +146,7 @@ export default function AgentMemoryPanel({
         </div>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Clearing this thread removes the stored conversation context. It does not delete
-          configured rules, knowledge, or historical call records.
+          configured rules, Training sources, or historical call records.
         </p>
       </section>
 

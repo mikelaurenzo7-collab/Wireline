@@ -117,7 +117,7 @@ fun AskWirelineScreen(
                     }
                 }
                 else -> {
-                    "As your intelligent assistant, I've analyzed your system state: You have ${state.agents.size} active AI agents deployed, ${state.activeCalls.size} live calls running, and your billing subscription is active. Try asking me 'Summarize last call' or 'Show my agent roster'."
+                    "As your Wireline agent, I've analyzed your system state: You have ${state.agents.size} active agents deployed, ${state.activeCalls.size} live calls running, and your billing subscription is active. Try asking me 'Summarize last call' or 'Show my agent roster'."
                 }
             }
             inputText = ""
@@ -192,7 +192,7 @@ fun AskWirelineScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    "Wireline Assistant Response",
+                                    "Wireline Agent Response",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = Brand.Text2,
                                     fontWeight = FontWeight.Bold
@@ -423,7 +423,7 @@ fun AskWirelineScreen(
                 
                 Spacer(Modifier.height(8.dp))
                 
-                Text("• \"Which assistants do I have on my roster?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
+                Text("• \"Which agents do I have on my roster?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
                 Text("• \"What is my wallet credit balance?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
                 Text("• \"Show me which calls need attention\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
             }

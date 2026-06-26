@@ -53,9 +53,9 @@ const EVENT_DESCRIPTIONS: Record<string, string> = {
   "appointment.booked": "New appointment booked by an agent or via API",
   "slack.message_sent":
     "A notification was posted to your connected Slack workspace (includes booking alerts when configured)",
-  "task.created": "Assistants task created (follow-up, outreach, compliance, etc.)",
+  "task.created": "Agent task created (follow-up, outreach, compliance, etc.)",
   "compliance.flagged": "Call flagged for human compliance review",
-  knowledge_updated: "Knowledge base entry created, updated, or deleted",
+  knowledge_updated: "Training entry created, updated, or deleted",
   "spend.warning": "Month-to-date AI spend crossed your warning threshold",
   "spend.exceeded": "Month-to-date AI spend hit 100% of monthly limit",
   "subscription.changed": "Subscription status, plan, or renewal date changed",

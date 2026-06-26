@@ -23,56 +23,56 @@ Wireline sells operating capacity, not template access.
 
 - Active subscriptions: `0`
 - Active payment links: `0`
-- Active products still mixed across old and template-shaped catalog names.
+- Open checkout sessions: `0`
+- Active products now match the capacity catalog.
 
-Current active products:
+Current active products after reconciliation:
 
-- `Custom Enterprise`
-- `Sales & Reception`
-- `Front Desk`
-- `Office Assistant`
-- `Solo Agent`
-- `Wireline Plus`
-- `Wireline Household`
-- `Wireline Custom`
-- `Wireline Concierge`
-- `Wireline Everyday`
+- `Conversation Balance`
+- `Wireline Business`
+- `Wireline Enterprise`
+- `Wireline Personal`
+- `Wireline Team`
 
-## Exact proposed Stripe writes
+## Exact applied Stripe writes
 
-These writes were **not** applied. They are the exact proposal that should replace the mixed catalog:
+Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
 
-1. Create product `Wireline Personal`
+1. Updated product `Wireline Personal`
    Price writes: none
    Reason: Personal stays create-free and top-up led. Do not create a recurring personal subscription.
-2. Create product `Wireline Team`
+2. Updated product `Wireline Team`
    Prices:
    - Monthly recurring: `$29`
    - Annual recurring: `$278`
    - Extra agent recurring: `$9`
-   - Metered voice overage: `$0.16/min`
+   - Metered voice overage: `$0.16/min`, backed by Stripe Billing Meter `voice_minutes_overage`
    Metadata:
-   - `wireline_plan_id=business-starter`
+   - `wireline_plan_id=team`
    - `wireline_billing_model=capacity_plus_conversation_balance`
 3. Create product `Wireline Business`
    Prices:
    - Monthly recurring: `$59`
    - Annual recurring: `$566`
    - Extra agent recurring: `$12`
-   - Metered voice overage: `$0.14/min`
+   - Metered voice overage: `$0.14/min`, backed by Stripe Billing Meter `voice_minutes_overage`
    Metadata:
-   - `wireline_plan_id=starter`
+   - `wireline_plan_id=business`
    - `wireline_billing_model=capacity_plus_conversation_balance`
-4. Create product `Wireline Enterprise`
+4. Updated product `Wireline Enterprise`
    Price writes: none for self-serve
    Reason: keep Enterprise contact-sales only until contract and committed-usage operations are live.
-5. Create product `Conversation Balance`
-   Price writes: optional only
-   Reason: current checkout already uses dynamic `price_data`, so fixed `$25/$50/$100` top-up prices are not required for launch.
+5. Updated product `Conversation Balance`
+   Prices:
+   - One-time top-up: `$5`
+   - One-time top-up: `$10`
+   - One-time top-up: `$25`
+   - One-time top-up: `$50`
+   Reason: fixed top-up prices support catalog clarity while the app can still use dynamic Checkout `price_data` for controlled amounts.
 
-## Current env mapping after future Stripe writes
+## Current env mapping
 
-Keep the existing env contract until the app is refactored away from transitional ids:
+Vercel production, preview, and development envs were repointed to the live Team and Business price ids. Keep the existing env contract until the app is refactored away from transitional identifiers:
 
 - `STRIPE_BUSINESS_STARTER_PRICE_ID` -> `Wireline Team - Monthly`
 - `STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID` -> `Wireline Team - Annual`
@@ -83,7 +83,7 @@ Keep the existing env contract until the app is refactored away from transitiona
 - `STRIPE_PRO_EXTRA_AGENT_PRICE_ID` -> `Wireline Business - Extra Agent`
 - `STRIPE_PRO_OVERAGE_PRICE_ID` -> `Wireline Business - Voice Overage`
 
-No Vercel env changes are needed until those new Stripe prices actually exist.
+Retired Personal, Plus, Starter, and old Business/Enterprise price env vars were removed from Vercel. Stripe secrets and webhook secrets were left intact.
 
 ## Migration guardrails
 
@@ -93,23 +93,29 @@ No Vercel env changes are needed until those new Stripe prices actually exist.
 - Keep top-up funding idempotent through ledger references and Stripe invoice or session identifiers.
 - Do not mutate old SKUs in place unless the app is explicitly hardcoded to them.
 
-## Archive candidates after repoint and verification
+## Archived or retired products
+
+Archived products:
 
 - `Wireline Plus`
 - `Wireline Household`
 - `Wireline Custom`
 - `Wireline Concierge`
 - `Wireline Everyday`
-- `Solo Agent`
 - `Office Assistant`
 - `Front Desk`
 - `Sales & Reception`
+
+Previously retired or inactive products no longer active in the catalog:
+
+- `Solo Agent`
 - `Custom Enterprise`
+
+Stripe blocks archival of a product's default price. The retired consumer products are inactive, but their default price IDs may remain technically active under inactive products.
 
 ## Still required before live rollout
 
-1. Finalize the durable Conversation Balance ledger metadata and customer-facing reason taxonomy.
-2. Create the new Stripe products and prices.
-3. Repoint Vercel environment variables to the new Team and Business price ids.
-4. Re-run checkout, webhook, portal, and billing-status verification against production.
-5. Archive stale products only after the new catalog is live and verified.
+1. Re-run production checkout, webhook, portal, and billing-status verification after the next Vercel deployment reaches READY.
+2. Confirm metered overage event emission uses `voice_minutes_overage` with `stripe_customer_id` and `value` payload keys before enabling overage burn in production.
+3. Keep Enterprise contact-sales until contract, committed-usage operations, and implementation controls are ready.
+4. Enable Supabase leaked-password protection in the Auth dashboard before public launch.

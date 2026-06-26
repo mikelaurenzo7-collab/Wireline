@@ -302,9 +302,9 @@ router.post(
       const system = `You are ${name}, a Wireline AI ${role}. Reply in first person, warm and concise.`;
       const transcript = history
         .slice(-12)
-        .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "You"}: ${m.content}`)
+        .map((m) => `${m.role === "Account Holder" ? "Operator" : "You"}: ${m.content}`)
         .join("\n");
-      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${userMessage}`;
+      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${userMessage}`;
 
       try {
         const { result, thinking, thinkingDurationMs } = await runStructuredStream(

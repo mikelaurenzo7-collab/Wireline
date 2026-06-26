@@ -18,7 +18,7 @@ interface Props {
   isCreating: boolean;
   agents: any[];
   subscription: { status: string; max_agents: number | null };
-  /** Personal accounts create a single assistant — no Assistants/seed language. */
+  /** Personal accounts create a single agent without roster or seed language. */
   isPersonal?: boolean;
   onCreate: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
   onSeedAssistant: () => void;
@@ -152,7 +152,7 @@ export default function CreateAgentSection({
         ) : (
           <Plus className="w-3.5 h-3.5" />
         )}
-        {isPersonal ? "Create personal assistant" : "Create assistant or agent"}
+        {isPersonal ? "Create personal agent" : "Create agent"}
       </ShadButton>
     </motion.div>
   );

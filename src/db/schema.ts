@@ -1373,13 +1373,25 @@ export const creditLedger = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     deltaUsd: decimal("delta_usd", { precision: 12, scale: 4 }).notNull(),
     balanceAfterUsd: decimal("balance_after_usd", { precision: 12, scale: 4 }).notNull(),
+    entryKind: text("entry_kind").notNull().default("adjustment"),
     reason: text("reason").notNull(),
+    customerReason: text("customer_reason"),
     refType: text("ref_type"),
     refId: text("ref_id"),
+    idempotencyKey: text("idempotency_key"),
+    source: text("source").notNull().default("wireline"),
+    provider: text("provider"),
+    providerEventId: text("provider_event_id"),
+    providerObjectId: text("provider_object_id"),
+    metadata: jsonb("metadata")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t: any) => ({
     userIdx: sql`CREATE INDEX IF NOT EXISTS idx_credit_ledger_user ON wireline_credit_ledger (user_id, created_at DESC)`,
+    idempotencyIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS wireline_credit_ledger_idempotency_key ON wireline_credit_ledger (user_id, idempotency_key) WHERE idempotency_key IS NOT NULL`,
+    providerIdx: sql`CREATE INDEX IF NOT EXISTS idx_credit_ledger_provider ON wireline_credit_ledger (provider, provider_event_id, provider_object_id) WHERE provider IS NOT NULL`,
     // Idempotent top-ups/debits: a given (user, ref_type, ref_id) lands once.
     refUnique: unique("wireline_credit_ledger_ref_key").on(t.userId, t.refType, t.refId),
   }),

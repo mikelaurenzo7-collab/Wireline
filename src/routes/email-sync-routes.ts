@@ -56,7 +56,7 @@ router.post(
           ok: false,
           code: "EMAIL_ACCOUNT_NOT_CONNECTED",
           error:
-            "No email account is connected. Connect Gmail, Outlook, or iCloud in Connections to refresh this inbox.",
+            "No email account is connected. Connect Gmail, Outlook, or iCloud in Integrations to refresh this inbox.",
         });
       }
 

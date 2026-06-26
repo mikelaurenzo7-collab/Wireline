@@ -1,9 +1,9 @@
-/** Stripe-backed plan catalog. Internal ids remain transitional while public copy moves to Personal, Team, Business, and Enterprise. */
+/** Stripe-backed plan catalog. Public ids are canonical even when env names remain transitional. */
 
 /** Blended variable voice cost reserve used for pricing guardrails. */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
 
-export type StripePlanId = "personal" | "personal-plus" | "business-starter" | "starter" | "scale";
+export type StripePlanId = "personal" | "team" | "business" | "enterprise";
 
 export type StripePlan = {
   id: StripePlanId;
@@ -21,8 +21,29 @@ export type StripePlan = {
   price_usd_annual: number;
   annualPriceIdEnv: string;
   overagePriceIdEnv?: string;
-  /** Retained for existing subscribers but not offered as a public acquisition plan. */
+  /** Retained for internal flows but not necessarily offered in recurring checkout. */
   public?: boolean;
+};
+
+const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
+  personal: "personal",
+  "personal-plus": "team",
+  plus: "team",
+  team: "team",
+  shared: "team",
+  lite: "team",
+  "business-lite": "team",
+  businesslite: "team",
+  "business-starter": "team",
+  businessstarter: "team",
+  pro: "business",
+  starter: "business",
+  business: "business",
+  "business-growth": "business",
+  businessgrowth: "business",
+  scale: "enterprise",
+  enterprise: "enterprise",
+  custom: "enterprise",
 };
 
 /**
@@ -36,48 +57,27 @@ export type StripePlan = {
 export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "personal",
-    name: "Legacy Wireline Personal",
-    price_usd_monthly: 7,
+    name: "Wireline Personal",
+    price_usd_monthly: 0,
     max_agents: 1,
     voice_minutes_monthly: 60,
     overage_per_min_usd: 0.2,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
-    extra_agent_price_usd: 7,
+    extra_agent_price_usd: 0,
     extraAgentPriceIdEnv: "STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 67,
+    price_usd_annual: 0,
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PERSONAL_OVERAGE_PRICE_ID",
     public: false,
     features: [
-      "Legacy personal subscription",
-      "Retained only for backwards compatibility",
-      "Conversation Balance is the active personal funding model",
+      "Create and train for free before anything goes live",
+      "One active agent and one number",
+      "Live calls, texts, and follow-up funded through Conversation Balance",
     ],
   },
   {
-    id: "personal-plus",
-    name: "Legacy Wireline Plus",
-    price_usd_monthly: 15,
-    max_agents: 2,
-    voice_minutes_monthly: 180,
-    overage_per_min_usd: 0.18,
-    included_phone_numbers: 1,
-    priceIdEnv: "STRIPE_PERSONAL_PLUS_PRICE_ID",
-    extra_agent_price_usd: 7,
-    extraAgentPriceIdEnv: "STRIPE_PERSONAL_PLUS_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 144,
-    annualPriceIdEnv: "STRIPE_PERSONAL_PLUS_ANNUAL_PRICE_ID",
-    overagePriceIdEnv: "STRIPE_PERSONAL_PLUS_OVERAGE_PRICE_ID",
-    public: false,
-    features: [
-      "Legacy personal subscription",
-      "Retained only for backwards compatibility",
-      "Do not position this as an active acquisition tier",
-    ],
-  },
-  {
-    id: "business-starter",
+    id: "team",
     name: "Wireline Team",
     price_usd_monthly: 29,
     max_agents: 4,
@@ -99,7 +99,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     ],
   },
   {
-    id: "starter",
+    id: "business",
     name: "Wireline Business",
     price_usd_monthly: 59,
     max_agents: 8,
@@ -121,7 +121,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     ],
   },
   {
-    id: "scale",
+    id: "enterprise",
     name: "Wireline Enterprise",
     price_usd_monthly: 0,
     max_agents: 999,
@@ -143,6 +143,12 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
 ];
 
+export function canonicalPlanId(id: string | null | undefined): StripePlanId | null {
+  const cleaned = id?.trim().toLowerCase();
+  if (!cleaned) return null;
+  return PLAN_ID_ALIASES[cleaned] || null;
+}
+
 export function planByPriceId(priceId: string | null | undefined): StripePlan | null {
   if (!priceId) return null;
   return (
@@ -157,14 +163,9 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
 }
 
 export function planById(id: string | null | undefined): StripePlan | null {
-  if (!id) return null;
-  if (id === "team" || id === "lite" || id === "business-lite")
-    return STRIPE_PLANS.find((plan) => plan.id === "business-starter") || null;
-  if (id === "business" || id === "pro" || id === "business-growth")
-    return STRIPE_PLANS.find((plan) => plan.id === "starter") || null;
-  if (id === "enterprise" || id === "custom")
-    return STRIPE_PLANS.find((plan) => plan.id === "scale") || null;
-  return STRIPE_PLANS.find((plan) => plan.id === id) || null;
+  const canonical = canonicalPlanId(id);
+  if (!canonical) return null;
+  return STRIPE_PLANS.find((plan) => plan.id === canonical) || null;
 }
 
 /** Public API catalog: Personal is top-up-led; recurring checkout is for shared capacity tiers. */

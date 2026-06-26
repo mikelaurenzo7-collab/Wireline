@@ -33,12 +33,16 @@
 
 .marketing-hero {
   background:
-    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--wireline-color-action-primary-container) 10%, transparent), transparent 28rem),
+    radial-gradient(
+      circle at 88% 4%,
+      color-mix(in srgb, var(--wireline-color-action-primary-container) 10%, transparent),
+      transparent 28rem
+    ),
     var(--wireline-color-canvas-default);
 }
 
 .marketing-hero__content {
-  max-width: 43rem;
+  max-width: none;
 }
 
 .marketing-hero__actions {
@@ -52,20 +56,57 @@
   min-height: 3rem;
 }
 
+.marketing-hero-proof {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  border-block: 1px solid var(--wireline-color-border-default);
+}
+
+.marketing-hero-proof span {
+  min-height: 3.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--wireline-color-border-default);
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-mono);
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.marketing-hero-proof span:last-child {
+  border-right: 0;
+}
+
 .marketing-channel-grid {
   display: grid;
   gap: 1rem;
 }
 
-.marketing-channel-card {
-  min-height: 13.5rem;
-  justify-content: space-between;
-  border-radius: var(--radius-xl);
+.marketing-channel-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  min-height: 15rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--wireline-color-surface-default);
+  padding: 1.5rem;
+  text-align: center;
 }
 
-.marketing-channel-card .wl-section-title {
-  max-width: 14ch;
-  line-height: 1.08;
+.marketing-channel-row__icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--radius-md);
+  color: var(--wireline-color-text-primary);
+  background: var(--wireline-color-surface-default);
 }
 
 .marketing-demo-surface {
@@ -199,8 +240,22 @@
     width: 100%;
   }
 
-  .marketing-channel-card {
-    min-height: 11.25rem;
+  .marketing-hero-proof {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-hero-proof span {
+    min-height: 3rem;
+    justify-content: center;
+    padding-inline: 0.75rem;
+  }
+
+  .marketing-hero-proof span:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .marketing-hero-proof span:nth-child(n + 3) {
+    border-top: 1px solid var(--wireline-color-border-default);
   }
 
   .marketing-demo-surface {

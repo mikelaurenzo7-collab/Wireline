@@ -168,11 +168,11 @@ export async function sendDemoRecapEmail(args: {
         "",
         `What we discussed: ${args.summary}`,
         "",
-        `Start your free trial: ${args.signupUrl}`,
+        `Create your agent: ${args.signupUrl}`,
       ].join("\n"),
       html: `<p>Thanks for calling our live demo line.</p>
 <p><strong>What we discussed:</strong> ${safeSummary}</p>
-<p><a href="${safeSignupUrl}">Start your free trial</a> — we'll pre-load a starter agent matched to your use case.</p>`,
+<p><a href="${safeSignupUrl}">Create your agent</a> - we'll pre-load a starting brief matched to your use case.</p>`,
     });
     return result.ok;
   } catch {

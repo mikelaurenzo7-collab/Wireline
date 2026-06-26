@@ -109,15 +109,15 @@ export async function buildVapiAssistant({
     ? `\n## CALL FLOW\n${flow.map((step, index) => `${index + 1}. ${step.name || "Stage"}: ${step.instructions || ""}${step.transitionCondition ? ` (advance when ${step.transitionCondition})` : ""}${step.isEndNode ? " (end call after completion)" : ""}`).join("\n")}\n`
     : "";
   const systemPrompt = [
-    `You are ${configured.name}, a Wireline ${configured.role || "assistant"}.`,
+    `You are ${configured.name}, a Wireline ${configured.role || "agent"}.`,
     "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
     "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
     personality ? `\n## TONE\n${personality}\n` : "",
     promptItem("OPERATING RULES", directives),
-    promptItem("BUSINESS KNOWLEDGE", knowledge),
+    promptItem("APPROVED TRAINING", knowledge),
     flowBlock,
     configured.escalationPhone || configured.escalationEmail
-      ? "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by the approved knowledge.\n"
+      ? "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by approved Training.\n"
       : "",
   ]
     .filter(Boolean)

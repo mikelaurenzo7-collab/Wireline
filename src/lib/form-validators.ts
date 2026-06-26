@@ -161,12 +161,12 @@ export const DirectiveSchema = z.object({
 
 export type Directive = z.infer<typeof DirectiveSchema>;
 
-// Knowledge base entry
+// Training source entry
 export const KnowledgeSchema = z.object({
   id: z.string().optional(),
   content: z
     .string()
-    .min(1, "Knowledge entry cannot be empty")
+    .min(1, "Training entry cannot be empty")
     .max(2000, "Entry must be 2000 characters or less"),
 });
 

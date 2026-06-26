@@ -30,8 +30,8 @@ export default function PrecisionPublicHeader() {
         <a className="wl-skip-link" href="#main-content">
           Skip to content
         </a>
-        <div className="wl-measure mx-auto flex h-16 items-center justify-between gap-4 px-5 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-8">
+        <div className="wl-measure relative mx-auto flex h-16 items-center justify-between gap-4 px-5 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center">
             <Link
               to="/"
               className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
@@ -40,7 +40,10 @@ export default function PrecisionPublicHeader() {
               <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
               <span>Wireline</span>
             </Link>
-            <nav className="hidden h-full items-center gap-6 md:flex" aria-label="Site">
+            <nav
+              className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-6 md:flex"
+              aria-label="Site"
+            >
               {links.map((link) => {
                 const active = link.active(location.pathname);
                 return (
