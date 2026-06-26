@@ -55,9 +55,9 @@ struct AssistantRow: View {
     private func postureLabel(for agent: Agent) -> String {
         if agent.isBusinessAgent == true { return "Business agent" }
         if let role = agent.role {
-            return role.replacingOccurrences(of: "_", with: " ").capitalized
+            return role.replacingOccurrences(of: "_", with: " ").capitalized.replacingOccurrences(of: "Assistant", with: "Agent")
         }
-        return "Personal assistant"
+        return "Personal agent"
     }
 
     private func icon(for archetype: String?) -> String {
@@ -120,10 +120,10 @@ struct BrandEmptyState: View {
 
 #Preview("Components") {
     List {
-        AssistantRow(agent: Agent(id: "1", name: "Ava", role: "personal_assistant", archetype: "Personal Assistant", channels: ["voice", "email"], voiceId: nil))
+        AssistantRow(agent: Agent(id: "1", name: "Ava", role: "personal_agent", archetype: "Personal Agent", channels: ["voice", "email"], voiceId: nil))
         CallCard(call: ActiveCall(callId: "c1", agentId: "1", customerNumber: "+1 555 123 4567", status: "in-progress", label: nil, type: "inbound"))
         Button("Place a call") {}.buttonStyle(PrimaryButtonStyle())
-        BrandEmptyState(title: "No assistants yet", message: "Set up your first call assistant on the web to get started.")
+        BrandEmptyState(title: "No agents yet", message: "Set up your first call agent on the web to get started.")
     }
     .tint(Brand.accent)
     .wirelineBrand()
