@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Bot, Cable, GraduationCap, Inbox, LayoutDashboard, PenLine, Settings } from "lucide-react";
 
 import WirelineMark from "./brand/WirelineMark";
+import MobileBrowserUtilities from "./MobileBrowserUtilities";
 
 const primaryNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
@@ -175,6 +176,7 @@ export default function WorkspaceShell({
           </div>
         </main>
       </div>
+      {!nativeAppShell ? <MobileBrowserUtilities /> : null}
       {nativeAppShell ? <NativeDock pathname={location.pathname} /> : null}
     </div>
   );
