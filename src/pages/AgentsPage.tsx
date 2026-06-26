@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Bot, MessageSquare, Phone, Plus, Wrench, Zap } from "lucide-react";
+import { Bot, Cable, CreditCard, MessageSquare, Phone, Plus, Settings, Wrench, Zap } from "lucide-react";
 import { Badge, Button, Skeleton } from "../components/atoms";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { MetricCard, StatusNotice } from "../components/molecules";
@@ -12,7 +12,7 @@ function EmptyRoster() {
     <section className="wl-setup-surface place-items-start sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
       <span className="grid size-12 place-items-center rounded-[var(--radius-lg)] bg-accent text-primary"><Bot size={23} strokeWidth={1.8} /></span>
       <div>
-        <p className="wl-setup-surface__eyebrow">Your first assistant</p>
+        <p className="wl-setup-surface__eyebrow">Your first agent</p>
         <h2 className="wl-setup-surface__title mt-2">Start with one useful job.</h2>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button asChild><Link to="/studio?create=1"><Plus aria-hidden="true" size={16} />{PRODUCT_POSTURE.personal.createCta}</Link></Button>
@@ -41,16 +41,32 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
   const channel = agent.channel || "voice";
   const ChannelIcon = channel === "voice" ? Phone : MessageSquare;
   return (
-    <article className="studio-card wl-card-action flex min-h-[184px] flex-col p-5">
-      <div className="flex items-start justify-between gap-4">
+    <article className="studio-card wl-card-action flex min-h-[214px] flex-col p-5">
+      <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-base font-semibold text-primary">{agent.name.slice(0, 1).toUpperCase()}</span>
-        <div className="flex flex-wrap justify-end gap-1.5"><PostureBadge isBusiness={Boolean(agent.is_business_agent)} /><Badge variant="success"><span aria-hidden="true" className="size-1.5 rounded-full bg-current" />Ready</Badge></div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap gap-1.5"><PostureBadge isBusiness={Boolean(agent.is_business_agent)} /><Badge variant="success"><span aria-hidden="true" className="size-1.5 rounded-full bg-current" />Ready</Badge></div>
+          <h2 className="mt-3 truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-.02em] text-[var(--wireline-color-text-primary)]">{agent.name}</h2>
+          <p className="mt-1 inline-flex min-w-0 items-center gap-2 font-mono text-[var(--wireline-typography-overline-size)] capitalize tracking-[.035em] text-[var(--wireline-color-text-secondary)]"><span className="truncate">{formatAgentRoleLabel(agent.role)}</span><ChannelIcon className="shrink-0" size={12} /><span>{channel}</span></p>
+        </div>
       </div>
-      <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-.02em] text-[var(--wireline-color-text-primary)]">{agent.name}</h2>
-      <p className="mt-1 inline-flex items-center gap-2 font-mono text-[var(--wireline-typography-overline-size)] capitalize tracking-[.035em] text-[var(--wireline-color-text-secondary)]"><span>{formatAgentRoleLabel(agent.role)}</span><ChannelIcon size={12} /><span>{channel}</span></p>
-      <div className="mt-auto flex items-center justify-between gap-3 border-t border-border pt-3.5">
-        <Button asChild variant="link" className="h-auto px-0 text-sm"><Link to={`/studio?agent=${encodeURIComponent(agent.id)}`}><Wrench aria-hidden="true" size={15} />Studio</Link></Button>
-        <Button asChild variant="link" className="h-auto px-0 text-sm text-muted-foreground hover:text-foreground"><Link to={`/actions?agent=${encodeURIComponent(agent.id)}`}><Zap aria-hidden="true" size={15} />Connections</Link></Button>
+
+      <div className="mt-4 grid gap-2 rounded-[var(--radius-lg)] border border-border bg-background p-3 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground">Line</span>
+          <Link to="/settings/apps" className="font-semibold text-foreground hover:text-primary">Configure number</Link>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground">Integrations</span>
+          <Link to={`/actions?agent=${encodeURIComponent(agent.id)}`} className="font-semibold text-foreground hover:text-primary">Manage</Link>
+        </div>
+      </div>
+
+      <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-3.5 sm:flex sm:items-center sm:justify-between">
+        <Button asChild variant="link" className="h-auto justify-start px-0 text-sm"><Link to={`/studio?agent=${encodeURIComponent(agent.id)}`}><Wrench aria-hidden="true" size={15} />Studio</Link></Button>
+        <Button asChild variant="link" className="h-auto justify-start px-0 text-sm text-muted-foreground hover:text-foreground"><Link to={`/training?agent=${encodeURIComponent(agent.id)}`}><Settings aria-hidden="true" size={15} />Train</Link></Button>
+        <Button asChild variant="link" className="h-auto justify-start px-0 text-sm text-muted-foreground hover:text-foreground"><Link to="/settings/billing"><CreditCard aria-hidden="true" size={15} />Usage</Link></Button>
+        <Button asChild variant="link" className="h-auto justify-start px-0 text-sm text-muted-foreground hover:text-foreground"><Link to={`/actions?agent=${encodeURIComponent(agent.id)}`}><Zap aria-hidden="true" size={15} />Wire</Link></Button>
       </div>
     </article>
   );
@@ -76,12 +92,12 @@ export default function AgentsPage() {
   return (
     <WorkspaceShell
       eyebrow={PRODUCT_VERSATILITY.eyebrow}
-      title="Assistants"
+      title="Agents"
       contentClassName="py-6"
-      action={<Button asChild size="sm"><Link to="/studio?create=1"><Plus aria-hidden="true" size={16} />Create assistant</Link></Button>}
+      action={<Button asChild size="sm"><Link to="/studio?create=1"><Plus aria-hidden="true" size={16} />Create agent</Link></Button>}
     >
       <div className="flex w-full flex-col gap-6 pb-8">
-        {degraded ? <StatusNotice tone="destructive" title="Roster unavailable">Saved assistants are unchanged. Try again in a moment.</StatusNotice> : null}
+        {degraded ? <StatusNotice tone="destructive" title="Roster unavailable">Saved agents are unchanged. Try again in a moment.</StatusNotice> : null}
         {!loading && agents.length ? (
           <section className="grid gap-4 md:grid-cols-3">
             <MetricCard label="Roster" value={String(agents.length)} footer={rosterSummary(personalAgents.length, businessAgents.length)} />
