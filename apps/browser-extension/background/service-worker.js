@@ -1,6 +1,14 @@
 const api = globalThis.browser ?? globalThis.chrome;
 
 const STUDIO_URL = "https://trywireline.com/studio?create=1";
+const ROUTES = new Map([
+  ["studio", "https://trywireline.com/studio"],
+  ["agents", "https://trywireline.com/agents"],
+  ["training", "https://trywireline.com/training"],
+  ["wire", "https://trywireline.com/actions"],
+  ["billing", "https://trywireline.com/settings/billing"],
+  ["settings", "https://trywireline.com/settings"],
+]);
 const MAX_SELECTION_LENGTH = 1600;
 const MAX_DESCRIPTION_LENGTH = 320;
 
@@ -56,6 +64,22 @@ function openStudio(context, request = "") {
   return api.tabs.create({ url: `${STUDIO_URL}#browser-context=${fragment}` });
 }
 
+function requestForAction(action, context = {}) {
+  const link = typeof context.link === "string" ? context.link.replace(/^tel:/iu, "").trim() : "";
+  if (action === "call") {
+    return link
+      ? `Have a Wireline agent prepare a call to ${link}. Use this page as context, then ask me to confirm before any live call.`
+      : "Have a Wireline agent prepare a call using this page as context. Ask me for the number and confirmation before any live call.";
+  }
+  if (action === "text") {
+    return "Have a Wireline agent draft a text message using this page as context. Ask me to review before sending.";
+  }
+  if (action === "followup") {
+    return "Have a Wireline agent create a concise follow-up from this page and selected text. Include next step, owner, and timing.";
+  }
+  return "Use this page and selected text as context for a Wireline agent task.";
+}
+
 async function openCompanion(tab) {
   if (api.sidePanel?.open && tab?.windowId != null) {
     await api.sidePanel.open({ windowId: tab.windowId });
@@ -71,18 +95,33 @@ async function openCompanion(tab) {
 async function registerMenus() {
   await api.contextMenus.removeAll();
   api.contextMenus.create({
-    id: "wireline-capture-selection",
-    title: "Bring this selection into Wireline",
-    contexts: ["selection"],
-  });
-  api.contextMenus.create({
-    id: "wireline-capture-page",
-    title: "Bring this page into Wireline",
+    id: "wireline-agent-task",
+    title: "Ask Wireline about this page",
     contexts: ["page"],
   });
   api.contextMenus.create({
+    id: "wireline-capture-selection",
+    title: "Send selection to Wireline",
+    contexts: ["selection"],
+  });
+  api.contextMenus.create({
+    id: "wireline-call-from-page",
+    title: "Prepare a Wireline call from this page",
+    contexts: ["page", "selection"],
+  });
+  api.contextMenus.create({
+    id: "wireline-text-from-page",
+    title: "Draft a Wireline text from this page",
+    contexts: ["page", "selection"],
+  });
+  api.contextMenus.create({
+    id: "wireline-followup-from-page",
+    title: "Create Wireline follow-up",
+    contexts: ["page", "selection"],
+  });
+  api.contextMenus.create({
     id: "wireline-call-number",
-    title: "Have Wireline call this number",
+    title: "Prepare a Wireline call to this number",
     contexts: ["link"],
   });
 }
@@ -100,7 +139,7 @@ api.commands.onCommand.addListener((command) => {
   if (command !== "capture-current-page") return;
   void activeTab()
     .then((tab) => capturePageContext(tab))
-    .then((context) => openStudio(context, "Use this page as context for a new Wireline assistant."))
+    .then((context) => openStudio(context, requestForAction("task", context)))
     .catch(() => undefined);
 });
 
@@ -108,21 +147,15 @@ api.contextMenus.onClicked.addListener((info, tab) => {
   if (!tab?.id) return;
   void capturePageContext(tab, info.selectionText || "", info.linkUrl || "")
     .then((context) => {
-      if (info.menuItemId === "wireline-call-number") {
-        const phone = context.link.replace(/^tel:/iu, "").trim();
-        return openStudio(
-          context,
-          phone
-            ? `Create an assistant brief that can call ${phone}. Preserve the page context and ask me to confirm any call details in Studio.`
-            : "Use this linked contact as context for a Wireline call request.",
-        );
-      }
-      return openStudio(
-        context,
-        info.menuItemId === "wireline-capture-selection"
-          ? "Use my selected text and this page as context for a Wireline assistant."
-          : "Use this page as context for a new Wireline assistant.",
-      );
+      const action =
+        info.menuItemId === "wireline-call-number" || info.menuItemId === "wireline-call-from-page"
+          ? "call"
+          : info.menuItemId === "wireline-text-from-page"
+            ? "text"
+            : info.menuItemId === "wireline-followup-from-page"
+              ? "followup"
+              : "task";
+      return openStudio(context, requestForAction(action, context));
     })
     .catch(() => undefined);
 });
@@ -136,14 +169,20 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === "wireline:open-studio") {
       const tab = await activeTab();
       const context = await capturePageContext(tab, message.selection || "");
-      await openStudio(context, message.request || "");
+      await openStudio(context, message.request || requestForAction(message.action || "task", context));
+      return { opened: true };
+    }
+    if (message?.type === "wireline:open-route") {
+      const url = ROUTES.get(message.route || "studio");
+      if (!url) throw new Error("Unsupported Wireline route.");
+      await api.tabs.create({ url });
       return { opened: true };
     }
     if (message?.type === "wireline:open-workspace") {
       await api.tabs.create({ url: "https://trywireline.com/studio" });
       return { opened: true };
     }
-    throw new Error("Unsupported Wireline Companion request.");
+    throw new Error("Unsupported Wireline Command request.");
   };
 
   void run().then(
