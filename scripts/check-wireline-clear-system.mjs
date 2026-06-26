@@ -56,6 +56,8 @@ const assistantComposer = read("src/components/AssistantComposer.tsx");
 const browserCallWidget = read("src/components/marketing/BrowserCallWidget.tsx");
 const trustSignals = read("src/components/marketing/TrustSignals.tsx");
 const zipLanding = read("src/components/migration/ZipLanding.tsx");
+const precisionLanding = read("src/components/marketing/PrecisionLanding.tsx");
+const signalOrbFrame = read("src/components/ui/SignalOrbFrame.tsx");
 const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
 const verticalWedges = read("src/data/vertical-wedges.ts");
 const founderSeed = read("src/lib/founder-fleet-seed.ts");
@@ -506,6 +508,30 @@ mustExclude(
   "Zip landing must use current agent language",
 );
 mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /Your best front desk, follow-up rep, and operator\. Always on\./,
+  "landing hero must keep the short punchy subhero",
+);
+mustExclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /Create a short agent brief|Train it on your sources|Run live work from Studio/i,
+  "landing hero subcopy must stay short and enticing",
+);
+mustInclude(
+  "src/components/ui/SignalOrbFrame.tsx",
+  signalOrbFrame,
+  /SignalFrameRail/,
+  "active loading and empty states must use the minimal monochrome signal frame",
+);
+mustExclude(
+  "src/components/ui/SignalOrbFrame.tsx",
+  signalOrbFrame,
+  /AssistantConstellation|wireline-signal-design|wl-Assistants-constellation/,
+  "signal frame must not revive retired assistant constellation chrome",
+);
+mustInclude(
   "src/data/wireline-knowledge.ts",
   wirelineKnowledge,
   /Conversation Balance/,
@@ -810,6 +836,18 @@ mustBeDeleted(
 mustBeDeleted(
   "src/components/ui/NebulaPulse.tsx",
   "unused nebula visual primitive must stay deleted",
+);
+mustBeDeleted(
+  "src/components/ui/AssistantConstellation.tsx",
+  "unused assistant constellation visual primitive must stay deleted",
+);
+mustBeDeleted(
+  "src/components/ui/ConstellationField.tsx",
+  "unused constellation field visual primitive must stay deleted",
+);
+mustBeDeleted(
+  "src/lib/wireline-signal-design.ts",
+  "retired signal class bridge must stay deleted",
 );
 mustBeDeleted(
   "scripts/check-active-surface-drift.mjs",

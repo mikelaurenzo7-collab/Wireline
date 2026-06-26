@@ -37,9 +37,7 @@ export default function PrecisionLanding() {
                 Agents that answer calls, texts, and follow-up.
               </h1>
               <p className="wl-public-copy mx-auto mt-5 max-w-5xl text-[clamp(17px,1.7vw,22px)] leading-[1.38]">
-                Create a short agent brief. Train it on your sources, behavior, voice, policies, and
-                evaluation. Run live work from Studio with approvals, handoff, integrations, browser
-                context, email, and native controls.
+                Your best front desk, follow-up rep, and operator. Always on.
               </p>
               <div className="marketing-hero__actions mt-8 justify-center">
                 <Link

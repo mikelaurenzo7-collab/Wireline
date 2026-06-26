@@ -8,7 +8,6 @@ import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";
 import { ShadButton } from "./shadcn/ShadButton";
 
-import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
 import { SignalOrbFrame } from "./SignalOrbFrame";
 
 interface Action {
@@ -24,9 +23,9 @@ interface EmptyStateProps {
   description?: string;
   actions?: Action[];
   className?: string;
-  /** Soft bloom behind the medallion constellation */
+  /** Soft bloom behind the medallion */
   withHalo?: boolean;
-  /** Dormant Assistants constellation behind the medallion (off in compact panels) */
+  /** Minimal frame behind the medallion (off in compact panels) */
   withConstellation?: boolean;
   /** Eyebrow label above the title. Defaults to the canonical "No data yet". */
   eyebrow?: string;
@@ -78,7 +77,6 @@ export function EmptyState({
       transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "wl-empty-state flex flex-col items-center justify-center text-center px-6",
-        showConstellation && WL_SIGNAL_CLASSES.emptyStateSignal,
         compact ? "py-8" : "py-12",
         framed && "py-0",
         className,

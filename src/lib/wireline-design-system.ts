@@ -2,7 +2,6 @@
  * Wireline product design system — shared class constants for the web app.
  * Tokens: src/styles/foundation.css and src/styles/design-system.css
  */
-import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
 /** Wireline Mono accent used across shared UI surfaces. */
 export const WL_BRAND = {
@@ -39,9 +38,6 @@ export const WL_APP_CLASSES = {
   modalSurface: "wl-panel-elevated transition-all duration-300 ease-out",
   panelFrame:
     "relative rounded-xl wl-panel-elevated border border-border overflow-hidden transition-all duration-300 hover:shadow-sm",
-  signalOrbFrame: WL_SIGNAL_CLASSES.signalOrbFrame,
-  signalOrbRefined: WL_SIGNAL_CLASSES.signalOrbRefined,
-  emptyStateSignal: WL_SIGNAL_CLASSES.emptyStateSignal,
   proTitle: "wl-pro-title",
   proEyebrow: "wl-pro-eyebrow",
   insightStatCard:
@@ -73,7 +69,6 @@ export const WL_COMPOSER_CLASSES = {
   docBody: "wl-director-doc",
   liveFeedHeader: "wl-live-feed-header",
   heroOrb: "wl-director-hero-orb animate-pulse",
-  fleetConstellation: WL_SIGNAL_CLASSES.fleetConstellation,
   starterChip:
     "wl-starter-chip transition-all duration-200 hover:border-border active:scale-[0.98]",
   orchestrationStep: "wl-orchestration-step transition-all duration-200",

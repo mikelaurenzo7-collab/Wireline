@@ -5,7 +5,6 @@
  */
 
 import { WL_BRAND } from "./wireline-design-system";
-import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 import { BRAND } from "../constants/brand-colors";
 
 export const WL_OPS_CLASSES = {
@@ -26,8 +25,6 @@ export const WL_OPS_CLASSES = {
   triageGrid: "wl-ops-triage-grid",
   dotSep: "wl-dot-sep",
   divider: "wl-ops-divider",
-  /** Re-export for ops panels that embed signal chrome */
-  emptyStateSignal: WL_SIGNAL_CLASSES.emptyStateSignal,
   /** Insights tab section labels (mono instrument typography) */
   insightLabel: "wl-insight-label",
 } as const;

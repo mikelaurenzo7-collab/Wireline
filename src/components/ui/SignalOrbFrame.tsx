@@ -1,23 +1,22 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/utils";
-import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
-import { AssistantConstellation, type AssistantConstellationSize } from "./AssistantConstellation";
+import { SignalFrameRail, type SignalFrameSize } from "./SignalFrameRail";
 
 type SignalOrbFrameProps = {
   children: ReactNode;
   className?: string;
-  /** Orbit diameter preset */
-  size?: AssistantConstellationSize;
-  /** Minimal orbit frame behind the focal orb */
+  /** Frame diameter preset */
+  size?: SignalFrameSize;
+  /** Minimal line frame behind the focal mark */
   withConstellation?: boolean;
-  /** Soft brand bloom behind content (Director hero) */
+  /** Soft monochrome bloom behind content */
   withBloom?: boolean;
-  /** Calmer orbit frame + bloom for authenticated surfaces (default on) */
+  /** Calmer frame + bloom for authenticated surfaces (default on) */
   refined?: boolean;
 };
 
 /**
- * SignalOrbFrame — centers focal UI inside the shared monochrome orbit frame.
+ * SignalOrbFrame - centers focal UI inside the shared monochrome frame.
  */
 export function SignalOrbFrame({
   children,
@@ -30,13 +29,18 @@ export function SignalOrbFrame({
   return (
     <div
       className={cn(
-        WL_SIGNAL_CLASSES.signalOrbFrame,
-        refined && WL_SIGNAL_CLASSES.signalOrbRefined,
+        "relative isolate inline-flex items-center justify-center rounded-full",
+        refined ? "text-foreground" : "text-foreground/80",
         className,
       )}
     >
-      {withConstellation ? <AssistantConstellation size={size} refined={refined} /> : null}
-      {withBloom ? <div aria-hidden className="wl-signal-orb-bloom" /> : null}
+      {withConstellation ? <SignalFrameRail size={size} refined={refined} /> : null}
+      {withBloom ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-1/2 -z-20 size-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/[0.04] blur-xl"
+        />
+      ) : null}
       <div className="relative z-[1]">{children}</div>
     </div>
   );

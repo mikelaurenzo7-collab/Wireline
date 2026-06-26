@@ -102,7 +102,7 @@ export default function AgentIntegrationCanvas({
         </span>
       </div>
 
-      {/* ── Neural web constellation (sm+) ── */}
+      {/* Desktop integration map */}
       <div className="hidden sm:block select-none">
         <div className="relative mx-auto wl-canvas-stage">
           {/* SVG layer — lines + data packets */}

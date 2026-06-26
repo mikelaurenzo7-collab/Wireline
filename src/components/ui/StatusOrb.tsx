@@ -1,9 +1,8 @@
 /**
- * StatusOrb — Premium status indicator combining orbital rings + constellation glow.
+ * StatusOrb - compact Wireline status indicator.
  *
  * A compact, high-signal status element that renders a luminous orb with
- * optional orbital rings, pulsing core, and constellation-style node halo.
- * Designed as the ultimate "agent is alive / working / idle / error" indicator.
+ * optional rings and a pulsing core for active agent state.
  *
  * Replaces ad-hoc status dots with a unified, branded, motion-rich primitive.
  * Reduced-motion safe — degrades to a static glowing dot.
