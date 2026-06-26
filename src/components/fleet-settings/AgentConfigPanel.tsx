@@ -176,7 +176,7 @@ export default function AgentConfigPanel({
   const trainingHref = `/training?agent=${encodeURIComponent(selectedAgent.id)}`;
 
   return (
-    <main className="flex-1 wl-Assistants-config-drawer md:overflow-visible md:h-auto md:min-h-0 px-3 py-3">
+    <main className="flex-1 wl-agents-config-drawer md:overflow-visible md:h-auto md:min-h-0 px-3 py-3">
       <ShadButton
         type="button"
         variant="outline"

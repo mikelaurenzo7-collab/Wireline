@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * AgentListPanel — Agents sidebar showing all agents + create form.
- * Extracted from the monolithic AssistantSettings.tsx during the 2026 audit.
+ * AgentListPanel - Agents sidebar showing all agents + create form.
+ * Extracted from the monolithic agent settings surface during the 2026 audit.
  */
 import { Bot, Mail, Loader2, Shield, Trash2, ChevronRight, PanelLeftClose } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";

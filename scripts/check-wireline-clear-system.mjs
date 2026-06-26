@@ -50,6 +50,7 @@ const studioOverview = read("src/components/StudioOverview.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
 const studioWorkroom = read("src/components/StudioWorkroom.tsx");
 const assetUpload = read("src/components/AgentAssetUpload.tsx");
+const agentConfigPanel = read("src/components/fleet-settings/AgentConfigPanel.tsx");
 const trainingPage = read("src/pages/KnowledgePage.tsx");
 const knowledgeWorkspace = read("src/components/KnowledgeWorkspace.tsx");
 const assistantComposer = read("src/components/AssistantComposer.tsx");
@@ -59,6 +60,7 @@ const zipLanding = read("src/components/migration/ZipLanding.tsx");
 const precisionLanding = read("src/components/marketing/PrecisionLanding.tsx");
 const signalOrbFrame = read("src/components/ui/SignalOrbFrame.tsx");
 const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
+const wirelineOpsDesign = read("src/lib/wireline-ops-design.ts");
 const verticalWedges = read("src/data/vertical-wedges.ts");
 const founderSeed = read("src/lib/founder-fleet-seed.ts");
 const wirelinePersonas = read("src/lib/wireline-agent-personas.ts");
@@ -113,6 +115,12 @@ mustInclude(
   packageJson,
   /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs"/,
   "design:check must run this file",
+);
+mustExclude(
+  "package.json",
+  packageJson,
+  /stripe:sync-secrets|sync-stripe-secrets-to-vercel/,
+  "package scripts must not expose the retired Stripe secret sync helper",
 );
 mustInclude(
   "design-tokens/wireline.tokens.json",
@@ -531,6 +539,18 @@ mustExclude(
   /AssistantConstellation|wireline-signal-design|wl-Assistants-constellation/,
   "signal frame must not revive retired assistant constellation chrome",
 );
+mustExclude(
+  "src/components/fleet-settings/AgentConfigPanel.tsx",
+  agentConfigPanel,
+  /wl-Assistants-config-drawer/,
+  "agent config drawer class hooks must use current agent naming",
+);
+mustExclude(
+  "src/lib/wireline-ops-design.ts",
+  wirelineOpsDesign,
+  /wl-Assistants-agent|wl-help-assistant-card/,
+  "ops design class hooks must use current agent naming",
+);
 mustInclude(
   "src/data/wireline-knowledge.ts",
   wirelineKnowledge,
@@ -848,6 +868,10 @@ mustBeDeleted(
 mustBeDeleted(
   "src/lib/wireline-signal-design.ts",
   "retired signal class bridge must stay deleted",
+);
+mustBeDeleted(
+  "scripts/sync-stripe-secrets-to-vercel.mjs",
+  "retired Stripe secret sync helper must stay deleted",
 );
 mustBeDeleted(
   "scripts/check-active-surface-drift.mjs",

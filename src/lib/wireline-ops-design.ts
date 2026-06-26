@@ -556,7 +556,7 @@ export type OpsAdminTab = keyof typeof OPS_ADMIN.tabLabels;
 export const WL_ADMIN_CLASSES = {
   panel: "wl-admin-panel",
   saveBar: "wl-admin-save-bar",
-  helpCard: "wl-help-assistant-card",
+  helpCard: "wl-help-agent-card",
 } as const;
 
 /** Founder command surface copy */
@@ -582,13 +582,13 @@ export const WL_STAT_CLASSES = {
   label: "wl-stat-tile__label wl-label-muted",
 } as const;
 
-/** Assistants roster row class hooks (shared with AgentListPanel) */
+/** Agent roster row class hooks (shared with AgentListPanel) */
 export const WL_FLEET_CLASSES = {
-  agentRow: "wl-Assistants-agent-row touch-press",
-  agentRowActive: "wl-Assistants-agent-row--active",
-  agentRowList: "wl-Assistants-agent-row--list",
-  agentAvatar: "wl-Assistants-agent-avatar",
-  agentAvatarActive: "wl-Assistants-agent-avatar--active",
+  agentRow: "wl-agents-row touch-press",
+  agentRowActive: "wl-agents-row--active",
+  agentRowList: "wl-agents-row--list",
+  agentAvatar: "wl-agents-avatar",
+  agentAvatarActive: "wl-agents-avatar--active",
 } as const;
 
 /** Mobile drawer section labels */
