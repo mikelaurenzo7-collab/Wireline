@@ -25,7 +25,14 @@ function channelLabel(agent: WorkspaceAgentSummary) {
   return "Agent";
 }
 
-export default function StudioOverview({ active, agents, degraded, onSelect, onOpen, onCreate }: StudioOverviewProps) {
+export default function StudioOverview({
+  active,
+  agents,
+  degraded,
+  onSelect,
+  onOpen,
+  onCreate,
+}: StudioOverviewProps) {
   const [brief, setBrief] = useState("");
 
   return (
@@ -33,13 +40,22 @@ export default function StudioOverview({ active, agents, degraded, onSelect, onO
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="wl-overline">Build</p>
-            <h1 className="mt-1 truncate text-[clamp(1.9rem,4vw,3.4rem)] font-semibold leading-none tracking-[-.06em] text-foreground">{active.name}</h1>
-            <p className="mt-2 text-sm capitalize text-muted-foreground">{roleLabel(active)} · {channelLabel(active)}</p>
+            <p className="wl-overline">Studio</p>
+            <h1 className="mt-1 truncate text-[clamp(1.9rem,4vw,3.4rem)] font-semibold leading-none tracking-[-.06em] text-foreground">
+              {active.name}
+            </h1>
+            <p className="mt-2 text-sm capitalize text-muted-foreground">
+              {roleLabel(active)} - {channelLabel(active)}
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" onClick={onCreate}><Plus aria-hidden="true" size={15} />New</Button>
-            <Button type="button" onClick={() => onOpen(active.id)}>Open <ArrowRight aria-hidden="true" size={15} /></Button>
+            <Button type="button" variant="secondary" onClick={onCreate}>
+              <Plus aria-hidden="true" size={15} />
+              New
+            </Button>
+            <Button type="button" onClick={() => onOpen(active.id)}>
+              Open <ArrowRight aria-hidden="true" size={15} />
+            </Button>
           </div>
         </header>
 
@@ -59,24 +75,37 @@ export default function StudioOverview({ active, agents, degraded, onSelect, onO
           </p>
 
           <div className="mt-8 rounded-2xl border border-border bg-background p-3 focus-within:border-primary/35">
-            <label className="sr-only" htmlFor="studio-brief">What should this agent work on?</label>
+            <label className="sr-only" htmlFor="studio-brief">
+              What should this agent work on?
+            </label>
             <textarea
               id="studio-brief"
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
               rows={4}
-              placeholder={`Tell ${active.name} what to work on…`}
+              placeholder={`Tell ${active.name} what to work on...`}
               className="min-h-[128px] w-full resize-none bg-transparent px-3 py-2 text-[var(--wireline-typography-body-size)] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
             />
             <div className="flex flex-col gap-3 border-t border-border px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2">
                 {["Review conversations", "Draft follow-up", "Improve handoff"].map((prompt) => (
-                  <button key={prompt} type="button" onClick={() => setBrief(prompt)} className="rounded-full border border-border px-3 py-1.5 text-[var(--wireline-typography-caption-size)] text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground">
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => setBrief(prompt)}
+                    className="rounded-full border border-border px-3 py-1.5 text-[var(--wireline-typography-caption-size)] text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
+                  >
                     {prompt}
                   </button>
                 ))}
               </div>
-              <Button type="button" disabled={!brief.trim()} onClick={() => onOpen(active.id, brief)}>Continue <ArrowRight aria-hidden="true" size={15} /></Button>
+              <Button
+                type="button"
+                disabled={!brief.trim()}
+                onClick={() => onOpen(active.id, brief)}
+              >
+                Continue <ArrowRight aria-hidden="true" size={15} />
+              </Button>
             </div>
           </div>
         </section>
@@ -84,17 +113,41 @@ export default function StudioOverview({ active, agents, degraded, onSelect, onO
         <section className="rounded-2xl border border-border bg-card p-3">
           <div className="flex items-center justify-between gap-3 px-2 py-2">
             <p className="wl-overline">Agents</p>
-            <button type="button" onClick={onCreate} className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"><Plus size={14} />New</button>
+            <button
+              type="button"
+              onClick={onCreate}
+              className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Plus size={14} />
+              New
+            </button>
           </div>
           <div className="grid grid-cols-1 gap-2 px-1 pb-1 pt-2 sm:flex sm:overflow-x-auto">
             {agents.map((agent) => {
               const selected = agent.id === active.id;
               return (
-                <button key={agent.id} type="button" onClick={() => selected ? onOpen(agent.id) : onSelect(agent.id)} className={`flex w-full min-w-0 items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors sm:min-w-[220px] ${selected ? "border-primary/30 bg-primary/[0.06]" : "border-border bg-background hover:border-primary/25"}`}>
-                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-sm font-semibold text-foreground">{agent.name.slice(0, 1).toUpperCase()}</span>
+                <button
+                  key={agent.id}
+                  type="button"
+                  onClick={() => (selected ? onOpen(agent.id) : onSelect(agent.id))}
+                  className={`flex w-full min-w-0 items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors sm:min-w-[220px] ${selected ? "border-primary/30 bg-primary/[0.06]" : "border-border bg-background hover:border-primary/25"}`}
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-sm font-semibold text-foreground">
+                    {agent.name.slice(0, 1).toUpperCase()}
+                  </span>
                   <span className="min-w-0 flex-1 overflow-hidden">
-                    <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold text-foreground">{selected ? <CircleDot className="size-3 shrink-0 text-primary" /> : null}<span className="truncate">{agent.name}</span></span>
-                    <span className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs capitalize text-muted-foreground">{agent.is_business_agent ? <BriefcaseBusiness className="shrink-0" size={12} /> : null}<span className="truncate">{roleLabel(agent)} · {channelLabel(agent)}</span></span>
+                    <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold text-foreground">
+                      {selected ? <CircleDot className="size-3 shrink-0 text-primary" /> : null}
+                      <span className="truncate">{agent.name}</span>
+                    </span>
+                    <span className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs capitalize text-muted-foreground">
+                      {agent.is_business_agent ? (
+                        <BriefcaseBusiness className="shrink-0" size={12} />
+                      ) : null}
+                      <span className="truncate">
+                        {roleLabel(agent)} - {channelLabel(agent)}
+                      </span>
+                    </span>
                   </span>
                 </button>
               );

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  Brain,
   Database,
   FileText,
   GraduationCap,
-  MessageSquareText,
   Mic2,
+  PlayCircle,
   ShieldCheck,
   WandSparkles,
 } from "lucide-react";
@@ -16,12 +17,12 @@ import KnowledgeWorkspace from "../components/KnowledgeWorkspace";
 import { useAgents } from "../contexts/AgentsContext";
 
 const trainingNav = [
-  { label: "Basics", note: "Name, role, voice", icon: GraduationCap },
-  { label: "Training", note: "Facts and docs", icon: Database },
-  { label: "Behavior", note: "Rules and tone", icon: ShieldCheck },
-  { label: "Sources", note: "Files and context", icon: FileText },
-  { label: "Voice", note: "Sound and handoff", icon: Mic2 },
-  { label: "Chat", note: "Train by talking", icon: MessageSquareText },
+  { label: "Knowledge", note: "Facts and preferences", icon: Database, section: "facts" },
+  { label: "Instructions", note: "Rules and handoff", icon: ShieldCheck, section: "guidance" },
+  { label: "Sources", note: "Files and context", icon: FileText, section: "sources" },
+  { label: "Voice", note: "Sound and identity", icon: Mic2, studioSub: "voices" },
+  { label: "Test call", note: "Practice before live", icon: PlayCircle, studioSub: "simulator" },
+  { label: "Memory", note: "Thread and recall", icon: Brain, studioTab: "memory" },
 ] as const;
 
 function EmptyTraining() {
@@ -46,7 +47,8 @@ function EmptyTraining() {
   );
 }
 
-function TrainingRail() {
+function TrainingRail({ agentId }: { agentId: string }) {
+  const encodedAgentId = encodeURIComponent(agentId);
   return (
     <aside
       className="hidden min-h-0 w-[196px] shrink-0 rounded-2xl border border-border bg-card p-2 lg:block"
@@ -57,19 +59,28 @@ function TrainingRail() {
         <p className="mt-2 text-sm leading-5 text-muted-foreground">Deep controls live here.</p>
       </div>
       <nav className="mt-2 grid gap-1">
-        {trainingNav.map(({ label, note, icon: Icon }) => (
-          <button
-            key={label}
-            type="button"
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Icon size={16} aria-hidden="true" />
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">{label}</span>
-              <span className="block truncate text-[11px] text-muted-foreground">{note}</span>
-            </span>
-          </button>
-        ))}
+        {trainingNav.map((item) => {
+          const { label, note, icon: Icon } = item;
+          const href =
+            "section" in item
+              ? `/training?agent=${encodedAgentId}&section=${item.section}`
+              : "studioSub" in item
+                ? `/studio?agent=${encodedAgentId}&tab=training&sub=${item.studioSub}`
+                : `/studio?agent=${encodedAgentId}&tab=${item.studioTab}`;
+          return (
+            <Link
+              key={label}
+              to={href}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Icon size={16} aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">{label}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">{note}</span>
+              </span>
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );
@@ -91,7 +102,16 @@ export default function KnowledgePage() {
         populated ? (
           <NativeSelect
             value={agentId}
-            onChange={(event) => setParams({ agent: event.target.value })}
+            onChange={(event) =>
+              setParams(
+                (current) => {
+                  const updated = new URLSearchParams(current);
+                  updated.set("agent", event.target.value);
+                  return updated;
+                },
+                { replace: true },
+              )
+            }
             aria-label="Choose agent"
             className="min-w-[230px]"
           >
@@ -108,7 +128,7 @@ export default function KnowledgePage() {
         <EmptyTraining />
       ) : (
         <div className="flex h-full min-h-0 gap-4">
-          <TrainingRail />
+          <TrainingRail agentId={agentId} />
           <div className="grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="min-h-0">
               <KnowledgeWorkspace key={`${agentId}-${trainingVersion}`} />

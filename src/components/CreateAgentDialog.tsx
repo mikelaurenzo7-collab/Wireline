@@ -16,10 +16,10 @@ const roles = [
 
 const voices = [
   ["", "Auto"],
-  ["pNInz6obpgDQGcFmaJgB", "Adam · Deep"],
-  ["VR6AewLTigWG4xSOukaG", "Arnold · Crisp"],
-  ["21m00Tcm4TlvDq8ikWAM", "Rachel · Warm"],
-  ["EXAVITQu4vr4xnSDxMaL", "Sarah · Gentle"],
+  ["pNInz6obpgDQGcFmaJgB", "Adam - Deep"],
+  ["VR6AewLTigWG4xSOukaG", "Arnold - Crisp"],
+  ["21m00Tcm4TlvDq8ikWAM", "Rachel - Warm"],
+  ["EXAVITQu4vr4xnSDxMaL", "Sarah - Gentle"],
 ] as const;
 
 const personalities = ["Clear", "Warm", "Direct", "Polished", "Custom"] as const;
@@ -61,11 +61,14 @@ export default function CreateAgentDialog({
   }, [business, initialBrief, open]);
 
   function close() {
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      next.delete("create");
-      return next;
-    }, { replace: true });
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("create");
+        return next;
+      },
+      { replace: true },
+    );
     onClose();
   }
 
@@ -85,7 +88,12 @@ export default function CreateAgentDialog({
       const response = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), role, deferPhoneProvision: true, is_business_agent: business }),
+        body: JSON.stringify({
+          name: name.trim(),
+          role,
+          deferPhoneProvision: true,
+          is_business_agent: business,
+        }),
       });
       const body = (await safeJson(response)) as { id?: string; error?: string } | null;
       if (!response.ok || !body?.id) {
@@ -101,7 +109,10 @@ export default function CreateAgentDialog({
         });
       }
 
-      const personalityText = personality === "Custom" ? customPersonality.trim() : `${personality}. Concise. Useful. Business-ready.`;
+      const personalityText =
+        personality === "Custom"
+          ? customPersonality.trim()
+          : `${personality}. Concise. Useful. Business-ready.`;
       if (personalityText) {
         await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/manual`, {
           method: "POST",
@@ -114,7 +125,9 @@ export default function CreateAgentDialog({
         `Role: ${role}.`,
         personalityText ? `Personality: ${personalityText}` : "",
         brief.trim() ? `First brief: ${brief.trim()}` : "",
-      ].filter(Boolean).join("\n");
+      ]
+        .filter(Boolean)
+        .join("\n");
 
       if (firstTraining) {
         await authFetch("/api/train/extract", {
@@ -138,7 +151,10 @@ export default function CreateAgentDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4" role="presentation">
+    <div
+      className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4"
+      role="presentation"
+    >
       <form
         ref={formRef}
         onSubmit={create}
@@ -152,48 +168,131 @@ export default function CreateAgentDialog({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="wl-stitch-label">Create agent</p>
-            <h2 id="create-agent-title" className="mt-1 text-2xl font-semibold tracking-[-.05em]">Simple intake.</h2>
-            <p id="create-agent-description" className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground">
+            <h2 id="create-agent-title" className="mt-1 text-2xl font-semibold tracking-[-.05em]">
+              Simple intake.
+            </h2>
+            <p
+              id="create-agent-description"
+              className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground"
+            >
               Name, voice, personality, role. Train the rest after creation.
             </p>
           </div>
-          <Button type="button" variant="ghost" size="icon" onClick={close} aria-label="Close create agent dialog" className="shrink-0"><X aria-hidden="true" size={16} /></Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={close}
+            aria-label="Close create agent dialog"
+            className="shrink-0"
+          >
+            <X aria-hidden="true" size={16} />
+          </Button>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <FormField label="Name" htmlFor="create-agent-name" required>
-            <Input id="create-agent-name" ref={nameRef} value={name} onChange={(event) => setName(event.target.value)} placeholder="Casey" autoComplete="off" required />
+            <Input
+              id="create-agent-name"
+              ref={nameRef}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Casey"
+              autoComplete="off"
+              required
+            />
           </FormField>
           <FormField label="Role" htmlFor="create-agent-role">
-            <NativeSelect id="create-agent-role" value={role} onChange={(event) => setRole(event.target.value as Role)}>
-              {roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            <NativeSelect
+              id="create-agent-role"
+              value={role}
+              onChange={(event) => setRole(event.target.value as Role)}
+            >
+              {roles.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </NativeSelect>
           </FormField>
           <FormField label="Voice" htmlFor="create-agent-voice">
-            <NativeSelect id="create-agent-voice" value={voiceId} onChange={(event) => setVoiceId(event.target.value)}>
-              {voices.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            <NativeSelect
+              id="create-agent-voice"
+              value={voiceId}
+              onChange={(event) => setVoiceId(event.target.value)}
+            >
+              {voices.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </NativeSelect>
           </FormField>
           <FormField label="Personality" htmlFor="create-agent-personality">
-            <NativeSelect id="create-agent-personality" value={personality} onChange={(event) => setPersonality(event.target.value as Personality)}>
-              {personalities.map((item) => <option key={item} value={item}>{item}</option>)}
+            <NativeSelect
+              id="create-agent-personality"
+              value={personality}
+              onChange={(event) => setPersonality(event.target.value as Personality)}
+            >
+              {personalities.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </NativeSelect>
           </FormField>
         </div>
 
         {personality === "Custom" ? (
-          <FormField className="mt-4" label="Custom personality" htmlFor="create-agent-custom-personality">
-            <Textarea id="create-agent-custom-personality" value={customPersonality} onChange={(event) => setCustomPersonality(event.target.value)} placeholder="Calm, concise, warm, and decisive." resize="none" />
+          <FormField
+            className="mt-4"
+            label="Custom personality"
+            htmlFor="create-agent-custom-personality"
+          >
+            <Textarea
+              id="create-agent-custom-personality"
+              value={customPersonality}
+              onChange={(event) => setCustomPersonality(event.target.value)}
+              placeholder="Calm, concise, warm, and decisive."
+              resize="none"
+            />
           </FormField>
         ) : null}
 
-        <FormField className="mt-4" label="First brief" htmlFor="create-agent-brief" description="Optional. Documents and deeper rules live in Training.">
-          <Textarea id="create-agent-brief" value={brief} onChange={(event) => setBrief(event.target.value)} placeholder={business ? "Book qualified consultations and hand off urgent callers." : "Handle appointment calls and text me what needs review."} resize="none" />
+        <FormField
+          className="mt-4"
+          label="First brief"
+          htmlFor="create-agent-brief"
+          description="Optional. Documents and deeper rules live in Training."
+        >
+          <Textarea
+            id="create-agent-brief"
+            value={brief}
+            onChange={(event) => setBrief(event.target.value)}
+            placeholder={
+              business
+                ? "Book qualified consultations and hand off urgent callers."
+                : "Handle appointment calls and text me what needs review."
+            }
+            resize="none"
+          />
         </FormField>
 
-        {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
-        <Button type="submit" disabled={!name.trim() || creating} className="mt-5 w-full justify-center">
-          {creating ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <WandSparkles aria-hidden="true" size={16} />}
+        {error ? (
+          <p className="mt-3 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Button
+          type="submit"
+          disabled={!name.trim() || creating}
+          className="mt-5 w-full justify-center"
+        >
+          {creating ? (
+            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+          ) : (
+            <WandSparkles aria-hidden="true" size={16} />
+          )}
           Create and train
         </Button>
       </form>

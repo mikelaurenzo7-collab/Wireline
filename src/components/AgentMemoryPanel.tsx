@@ -235,7 +235,7 @@ export default function AgentMemoryPanel({
                 Configured rules, facts, and personality
               </h4>
               <p className="mt-1 text-sm text-muted-foreground">
-                {directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length}{" "}
+                {directives.length} rule{directives.length === 1 ? "" : "s"} - {knowledge.length}{" "}
                 fact{knowledge.length === 1 ? "" : "s"}
               </p>
             </div>

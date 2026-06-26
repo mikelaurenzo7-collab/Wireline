@@ -31,6 +31,10 @@ const labels: Record<View, string> = {
   sources: "Sources",
 };
 
+function isView(value: string | null): value is View {
+  return value === "facts" || value === "guidance" || value === "tone" || value === "sources";
+}
+
 function Card({
   title,
   icon,
@@ -190,18 +194,36 @@ function SourcesCard({ loading }: { loading: boolean }) {
 export default function KnowledgeWorkspace() {
   const { agents } = useAgents();
   const [params, setParams] = useSearchParams();
+  const initialSection = params.get("section");
   const [config, setConfig] = useState<Config>({});
   const [kind, setKind] = useState<EntryKind>("knowledge");
   const [title, setTitle] = useState("");
   const [entry, setEntry] = useState("");
   const [tags, setTags] = useState("");
-  const [view, setView] = useState<View>("facts");
+  const [view, setView] = useState<View>(isView(initialSection) ? initialSection : "facts");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const agentId = params.get("agent") || agents[0]?.id || "";
+
+  useEffect(() => {
+    const section = params.get("section");
+    if (isView(section)) setView(section);
+  }, [params]);
+
+  function chooseView(next: View) {
+    setView(next);
+    setParams(
+      (current) => {
+        const updated = new URLSearchParams(current);
+        updated.set("section", next);
+        return updated;
+      },
+      { replace: true },
+    );
+  }
   const facts = useMemo(
     () => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [],
     [config.knowledge],
@@ -311,7 +333,16 @@ export default function KnowledgeWorkspace() {
       <div className="flex shrink-0 items-center justify-end lg:hidden">
         <NativeSelect
           value={agentId}
-          onChange={(event) => setParams({ agent: event.target.value })}
+          onChange={(event) =>
+            setParams(
+              (current) => {
+                const updated = new URLSearchParams(current);
+                updated.set("agent", event.target.value);
+                return updated;
+              },
+              { replace: true },
+            )
+          }
           className="max-w-[260px]"
           aria-label="Choose agent"
         >
@@ -328,7 +359,7 @@ export default function KnowledgeWorkspace() {
             key={item}
             type="button"
             aria-selected={view === item}
-            onClick={() => setView(item)}
+            onClick={() => chooseView(item)}
             className={`min-h-10 border-r border-border px-2 text-[var(--wireline-typography-caption-size)] font-medium last:border-r-0 ${view === item ? "bg-card text-foreground" : "text-muted-foreground"}`}
           >
             {labels[item]}

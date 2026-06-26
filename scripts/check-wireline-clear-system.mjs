@@ -60,6 +60,8 @@ const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
 const studioOverview = read("src/components/StudioOverview.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
 const studioWorkroom = read("src/components/StudioWorkroom.tsx");
+const agentTraining = read("src/components/AgentTraining.tsx");
+const agentMemoryPanel = read("src/components/AgentMemoryPanel.tsx");
 const assetUpload = read("src/components/AgentAssetUpload.tsx");
 const agentConfigPanel = read("src/components/fleet-settings/AgentConfigPanel.tsx");
 const trainingPage = read("src/pages/KnowledgePage.tsx");
@@ -496,12 +498,36 @@ mustInclude(
   "mobile browser utility control must mount outside native shells",
 );
 mustInclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /label: "Studio"/,
+  "primary rail must expose Studio, not a vague build surface",
+);
+mustExclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /label: "Build"/,
+  "primary rail must not use retired Build naming",
+);
+mustInclude(
   "src/pages/AgentsPage.tsx",
   agentsPage,
   /Configure number/,
   "agent roster must expose line/number configuration",
 );
 mustInclude("src/pages/AgentsPage.tsx", agentsPage, /Usage/, "agent roster must link to usage");
+mustInclude(
+  "src/pages/AgentsPage.tsx",
+  agentsPage,
+  /Create\. Train\. Run\./,
+  "agent roster must state the Create -> Train -> Run model",
+);
+mustInclude(
+  "src/pages/AgentsPage.tsx",
+  agentsPage,
+  /section=facts[\s\S]*section=guidance[\s\S]*sub=voices[\s\S]*tab=memory/,
+  "agent roster must deep-link to Knowledge, Instructions, Voice, and Memory",
+);
 mustInclude(
   "src/pages/OverviewPage.tsx",
   overviewPage,
@@ -966,9 +992,59 @@ mustInclude(
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
+  /label: "Knowledge"[\s\S]*label: "Instructions"[\s\S]*label: "Voice"[\s\S]*label: "Memory"/,
+  "Training rail must expose Knowledge, Instructions, Voice, and Memory",
+);
+mustInclude(
+  "src/pages/KnowledgePage.tsx",
+  trainingPage,
+  /studioSub: "voices"[\s\S]*studioTab: "memory"/,
+  "Training rail must deep-link to Studio voice and memory surfaces",
+);
+mustInclude(
+  "src/pages/KnowledgePage.tsx",
+  trainingPage,
   /AgentAssetUpload/,
   "Training must own document ingestion",
 );
+mustInclude(
+  "src/components/KnowledgeWorkspace.tsx",
+  knowledgeWorkspace,
+  /params\.get\("section"\)/,
+  "Training workspace must read section from the URL",
+);
+mustInclude(
+  "src/components/KnowledgeWorkspace.tsx",
+  knowledgeWorkspace,
+  /updated\.set\("section", next\)/,
+  "Training workspace must persist section changes in the URL",
+);
+mustInclude(
+  "src/components/AgentTraining.tsx",
+  agentTraining,
+  /aria-label="Training views"/,
+  "Studio Training must expose sub-tab navigation",
+);
+mustInclude(
+  "src/components/AgentTraining.tsx",
+  agentTraining,
+  /label: "Knowledge"[\s\S]*label: "Voice"[\s\S]*label: "Pronunciation"[\s\S]*label: "Test call"[\s\S]*label: "Conversation flow"/,
+  "Studio Training must expose Knowledge, Voice, Pronunciation, Test call, and Conversation flow",
+);
+mustExclude(
+  "src/components/AgentTraining.tsx",
+  agentTraining,
+  /!onSubTabChange &&/,
+  "Studio Training sub-tabs must not disappear when embedded",
+);
+for (const [file, source] of [
+  ["src/components/AgentTraining.tsx", agentTraining],
+  ["src/components/CreateAgentDialog.tsx", createDialog],
+  ["src/components/AgentMemoryPanel.tsx", agentMemoryPanel],
+  ["src/components/StudioOverview.tsx", studioOverview],
+]) {
+  mustExclude(file, source, /Â|â|�/, "authenticated surfaces must not expose mojibake");
+}
 mustInclude(
   "src/components/AgentAssetUpload.tsx",
   assetUpload,
@@ -1003,18 +1079,12 @@ mustBeDeleted(
   "src/components/ui/ConstellationField.tsx",
   "unused constellation field visual primitive must stay deleted",
 );
-mustBeDeleted(
-  "src/lib/wireline-signal-design.ts",
-  "retired signal class bridge must stay deleted",
-);
+mustBeDeleted("src/lib/wireline-signal-design.ts", "retired signal class bridge must stay deleted");
 mustBeDeleted(
   "scripts/sync-stripe-secrets-to-vercel.mjs",
   "retired Stripe secret sync helper must stay deleted",
 );
-mustBeDeleted(
-  "scripts/og-image.svg",
-  "retired logo-only OG source must stay deleted",
-);
+mustBeDeleted("scripts/og-image.svg", "retired logo-only OG source must stay deleted");
 mustBeDeleted(
   "scripts/check-active-surface-drift.mjs",
   "retired Ametrine surface contract must stay deleted",

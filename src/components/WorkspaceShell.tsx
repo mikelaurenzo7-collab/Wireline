@@ -1,6 +1,14 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Cable, GraduationCap, Inbox, LayoutDashboard, PenLine, Settings } from "lucide-react";
+import {
+  Bot,
+  Cable,
+  GraduationCap,
+  Inbox,
+  LayoutDashboard,
+  PlayCircle,
+  Settings,
+} from "lucide-react";
 
 import WirelineMark from "./brand/WirelineMark";
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
@@ -8,7 +16,7 @@ import MobileBrowserUtilities from "./MobileBrowserUtilities";
 const primaryNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
   { href: "/agents", label: "Agents", icon: Bot },
-  { href: "/studio", label: "Build", icon: PenLine },
+  { href: "/studio", label: "Studio", icon: PlayCircle },
   { href: "/training", label: "Train", icon: GraduationCap },
   { href: "/actions", label: "Wire", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
@@ -17,7 +25,7 @@ const primaryNavigation = [
 const nativeNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
   { href: "/agents", label: "Agents", icon: Bot },
-  { href: "/studio", label: "Build", icon: PenLine },
+  { href: "/studio", label: "Studio", icon: PlayCircle },
   { href: "/actions", label: "Wire", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "More", icon: Settings },
@@ -73,15 +81,23 @@ function RailItem({
       className={
         compact
           ? `grid min-h-14 flex-1 place-items-center gap-0.5 rounded-xl px-2 py-1.5 text-[var(--wireline-typography-overline-size)] font-semibold transition-colors ${
-              active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              active
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`
           : `grid size-11 place-items-center rounded-xl transition-colors ${
-              active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              active
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`
       }
     >
       <Icon size={compact ? 17 : 18} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
-      {compact ? <span className="leading-none">{label}</span> : <span className="sr-only">{label}</span>}
+      {compact ? (
+        <span className="leading-none">{label}</span>
+      ) : (
+        <span className="sr-only">{label}</span>
+      )}
     </Link>
   );
 }
@@ -108,7 +124,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
       </nav>
 
       <nav className="mt-auto flex justify-center pt-4" aria-label="Account">
-        <RailItem href="/settings" label="Settings" icon={Settings} active={isActive(pathname, "/settings") || pathname.startsWith("/admin")} />
+        <RailItem
+          href="/settings"
+          label="Settings"
+          icon={Settings}
+          active={isActive(pathname, "/settings") || pathname.startsWith("/admin")}
+        />
       </nav>
     </aside>
   );
@@ -122,7 +143,15 @@ function NativeDock({ pathname }: { pathname: string }) {
     >
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
         {nativeNavigation.map((item) => (
-          <RailItem key={item.href} {...item} active={isActive(pathname, item.href) || (item.href === "/settings" && pathname.startsWith("/admin"))} compact />
+          <RailItem
+            key={item.href}
+            {...item}
+            active={
+              isActive(pathname, item.href) ||
+              (item.href === "/settings" && pathname.startsWith("/admin"))
+            }
+            compact
+          />
         ))}
       </div>
     </nav>

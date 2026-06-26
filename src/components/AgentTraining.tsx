@@ -62,7 +62,7 @@ type VapiInstance = {
 };
 
 interface AgentTrainingProps {
-  /** Always rendered inside an agent's chat workspace — receives the agent ID
+  /** Always rendered inside an agent's chat workspace - receives the agent ID
    *  directly and skips the page-level chrome (there is no standalone /train). */
   embeddedAgentId: string;
   /** The Training sub-tab to open on mount (driven by the ?sub= URL param the
@@ -206,7 +206,7 @@ export default function AgentTraining({
       setLessons(data.lessons || []);
       if (data.role) setAgentRole(data.role);
     } catch {
-      /* training fetch failures are non-fatal — UI shows empty state */
+      /* training fetch failures are non-fatal - UI shows empty state */
     }
   };
 
@@ -215,7 +215,7 @@ export default function AgentTraining({
       await authFetch(`/api/agent-config/${selectedAgentId}/${type}/${id}`, { method: "DELETE" });
       fetchKnowledge();
     } catch {
-      /* swallow — UI will reflect server state on next fetch */
+      /* swallow - UI will reflect server state on next fetch */
     }
   };
 
@@ -283,7 +283,7 @@ export default function AgentTraining({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-card/70 border-b-0">
-        {/* Director assists — deep-links that prefill Director chat with this
+        {/* Director assists - deep-links that prefill Director chat with this
             agent focused. Replaces the old recipe pop-out modals (mobile-safe,
             nothing to fail loading). */}
         <div className="max-w-[1400px] mx-auto w-full flex items-center gap-1.5 overflow-x-auto tab-strip-scroll tab-strip-scroll--fade scrollbar-hide py-0.5">
@@ -295,7 +295,7 @@ export default function AgentTraining({
               {OPS_TRAINING_ASSISTS_COPY.eyebrow}
             </span>
             <span className="hidden sm:inline text-[var(--wireline-typography-overline-size)] text-[var(--wireline-color-text-secondary)]/60 whitespace-nowrap">
-              — {OPS_TRAINING_ASSISTS_COPY.hint}
+              - {OPS_TRAINING_ASSISTS_COPY.hint}
             </span>
           </span>
           {OPS_TRAINING_ASSISTS.map((assist) => (
@@ -309,71 +309,69 @@ export default function AgentTraining({
           ))}
         </div>
 
-        {!onSubTabChange && (
-          <nav
-            role="tablist"
-            aria-label="Training views"
-            className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
-          >
-            {[
-              {
-                id: "database",
-                label: "Training",
-                icon: Database,
-                help: "View and edit everything this agent has learned: personality, directives, Training entries, and uploaded files.",
-              },
-              {
-                id: "voices",
-                label: "Voices",
-                icon: Mic,
-                help: "Voice library + cloning. Every agent's identity starts with the voice they speak in.",
-              },
-              {
-                id: "pronunciation",
-                label: "Pronunciation",
-                icon: BookOpen,
-                help: "Teach the voice engine how to pronounce industry jargon, brand names, and abbreviations correctly.",
-              },
-              {
-                id: "simulator",
-                label: "Test call",
-                icon: PlayCircle,
-                help: "Run simulated conversations to see how your agent will respond before customers call.",
-              },
-              {
-                id: "flow",
-                label: "Conversation flow",
-                icon: Workflow,
-                help: "Define linear conversation stages and transitions (advanced — most agents work great without this).",
-              },
-            ].map((tab) => (
-              <ShadButton
-                key={tab.id}
-                type="button"
-                variant="ghost"
-                disableAnimations
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`training-panel-${tab.id}`}
-                onClick={() => setActiveTab(tab.id as TrainingTab)}
-                className={cn(
-                  "h-auto px-2.5 py-1.5 rounded-md border wl-label gap-1.5",
-                  activeTab === tab.id
-                    ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/15 hover:text-brand"
-                    : "wl-panel border-border text-muted hover:border-brand/25 hover:text-foreground",
-                )}
-              >
-                <tab.icon className="w-3 h-3" />
-                <span>{tab.label}</span>
-                <HelpTooltip content={tab.help} placement="top">
-                  <span className="w-4 h-4 rounded-full border border-current/30 wl-micro-badge flex items-center justify-center opacity-70 hover:opacity-100">
-                    ?
-                  </span>
-                </HelpTooltip>
-              </ShadButton>
-            ))}
-          </nav>
-        )}
+        <nav
+          role="tablist"
+          aria-label="Training views"
+          className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
+        >
+          {[
+            {
+              id: "database",
+              label: "Knowledge",
+              icon: Database,
+              help: "View and edit the facts, personality, instructions, Training entries, and uploaded files this agent can use.",
+            },
+            {
+              id: "voices",
+              label: "Voice",
+              icon: Mic,
+              help: "Voice library and cloning. Every agent's identity starts with the voice they speak in.",
+            },
+            {
+              id: "pronunciation",
+              label: "Pronunciation",
+              icon: BookOpen,
+              help: "Teach the voice engine how to pronounce industry jargon, brand names, and abbreviations correctly.",
+            },
+            {
+              id: "simulator",
+              label: "Test call",
+              icon: PlayCircle,
+              help: "Run simulated conversations to see how your agent will respond before customers call.",
+            },
+            {
+              id: "flow",
+              label: "Conversation flow",
+              icon: Workflow,
+              help: "Define linear conversation stages and transitions. Most agents work well without this until the job becomes complex.",
+            },
+          ].map((tab) => (
+            <ShadButton
+              key={tab.id}
+              type="button"
+              variant="ghost"
+              disableAnimations
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`training-panel-${tab.id}`}
+              onClick={() => setActiveTab(tab.id as TrainingTab)}
+              className={cn(
+                "h-auto px-2.5 py-1.5 rounded-md border wl-label gap-1.5",
+                activeTab === tab.id
+                  ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/15 hover:text-brand"
+                  : "wl-panel border-border text-muted hover:border-brand/25 hover:text-foreground",
+              )}
+            >
+              <tab.icon className="w-3 h-3" />
+              <span>{tab.label}</span>
+              <HelpTooltip content={tab.help} placement="top">
+                <span className="w-4 h-4 rounded-full border border-current/30 wl-micro-badge flex items-center justify-center opacity-70 hover:opacity-100">
+                  ?
+                </span>
+              </HelpTooltip>
+            </ShadButton>
+          ))}
+        </nav>
       </header>
 
       <main className="flex-1 min-h-0 relative">
@@ -547,7 +545,7 @@ export default function AgentTraining({
                           `"${personality}"`
                         ) : (
                           <span className="text-foreground/55 not-italic text-base">
-                            No personality set yet — click Edit to describe how your agent should
+                            No personality set yet - click Edit to describe how your agent should
                             speak and behave.
                           </span>
                         )}
@@ -1001,7 +999,7 @@ export default function AgentTraining({
                     {simConnected && (
                       <div className="flex items-center justify-center gap-1.5 wl-label text-brand">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-                        Live — speak now
+                        Live - speak now
                       </div>
                     )}
                   </div>
