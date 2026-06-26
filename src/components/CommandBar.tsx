@@ -57,8 +57,8 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "agents",
-    label: "Assistants",
-    description: "Manage personal assistants and business agents.",
+    label: "Agents",
+    description: "Manage personal and business agents.",
     icon: Bot,
     href: "/agents",
     category: "Workspace",
@@ -66,23 +66,23 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "studio",
     label: "Studio",
-    description: "Build, direct, and refine an assistant.",
+    description: "Run agent work, approvals, calls, texts, and follow-up.",
     icon: PenLine,
     href: "/studio",
     category: "Workspace",
   },
   {
-    id: "knowledge",
-    label: "Knowledge",
-    description: "Manage the facts, context, and policies assistants use.",
+    id: "training",
+    label: "Training",
+    description: "Manage the facts, context, sources, and policies agents use.",
     icon: Database,
-    href: "/knowledge",
+    href: "/training",
     category: "Workspace",
   },
   {
-    id: "connections",
-    label: "Connections",
-    description: "Choose the accounts and actions an assistant can use.",
+    id: "wire",
+    label: "Wire",
+    description: "Choose the accounts, integrations, and actions an agent can use.",
     icon: Cable,
     href: "/actions",
     category: "Workspace",
@@ -98,15 +98,15 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "settings",
     label: "Settings",
-    description: "Manage workspace, billing, team, and client surfaces.",
+    description: "Manage workspace, billing, team, and connected surfaces.",
     icon: Settings,
     href: "/settings",
     category: "Workspace",
   },
   {
     id: "create-personal",
-    label: "Create a personal assistant",
-    description: "Start with a focused personal conversation to delegate.",
+    label: "Create a personal agent",
+    description: "Start with one focused job, then train the rest.",
     icon: Sparkles,
     href: "/studio?create=1",
     category: "Create",
@@ -114,7 +114,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "create-business",
     label: "Create a business agent",
-    description: "Set up an assistant for a professional conversation line.",
+    description: "Set up an agent for a professional conversation line.",
     icon: BriefcaseBusiness,
     href: "/studio?create=1&posture=business",
     category: "Create",
@@ -122,7 +122,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "create-brief",
     label: "Open a new Studio brief",
-    description: "Start an assistant creation flow in Studio.",
+    description: "Start an agent creation flow in Studio.",
     icon: WandSparkles,
     href: "/studio?create=1",
     category: "Create",
@@ -146,7 +146,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "client-apps",
     label: "Wireline everywhere",
-    description: "Open browser companion, native app, and ChatGPT connection settings.",
+    description: "Open Wireline Command, native app, and ChatGPT connection settings.",
     icon: MonitorDown,
     href: "/settings/apps",
     category: "Manage",
@@ -345,7 +345,7 @@ export default function CommandBar() {
                       : undefined
                   }
                   aria-autocomplete="list"
-                  placeholder="Search workspace or create an assistant…"
+                  placeholder="Search workspace or create an agent…"
                   className="h-8 border-none bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -452,7 +452,7 @@ export default function CommandBar() {
                     className="m-4 min-h-48 border-dashed"
                     icon={<Terminal className="size-5" />}
                     title="No matching commands."
-                    description="Try a workspace destination, assistant, connection, or setting."
+                    description="Try a workspace destination, agent, integration, or setting."
                   />
                 )}
               </ScrollArea>
