@@ -15,15 +15,15 @@ struct KnowledgeView: View {
             Group {
                 if agents.isEmpty && !isLoading {
                     BrandEmptyState(
-                        title: "Start with an assistant",
-                        message: "Create an assistant on the web first, then add the facts and boundaries that make it helpful.",
+                        title: "Start with an agent",
+                        message: "Create an agent first, then add the facts, rules, and sources that make it useful.",
                         systemImage: "book.closed"
                     )
                 } else {
                     List {
                         if agents.count > 1 {
                             Section {
-                                Picker("Assistant", selection: $selectedId) {
+                                Picker("Agent", selection: $selectedId) {
                                     ForEach(agents) { agent in
                                         Text(agent.name).tag(agent.id)
                                     }
@@ -31,7 +31,7 @@ struct KnowledgeView: View {
                             }
                         }
 
-                        Section("What they know") {
+                        Section("Knowledge") {
                             if let setup, setup.knowledge.isEmpty {
                                 Text("No saved details yet.")
                                     .foregroundStyle(Brand.text2)
@@ -42,7 +42,7 @@ struct KnowledgeView: View {
                             }
                         }
 
-                        Section("Boundaries & rules") {
+                        Section("Behavior") {
                             if let setup, setup.directives.isEmpty {
                                 Text("No saved rules yet.")
                                     .foregroundStyle(Brand.text2)
@@ -60,7 +60,7 @@ struct KnowledgeView: View {
                             }
                             .pickerStyle(.segmented)
                             TextField(
-                                entryType == "knowledge" ? "A preference, fact, routine, or policy" : "What the assistant should do or avoid",
+                                entryType == "knowledge" ? "A preference, fact, routine, or policy" : "What the agent should do or avoid",
                                 text: $draft,
                                 axis: .vertical
                             )
@@ -87,7 +87,7 @@ struct KnowledgeView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Knowledge")
+            .navigationTitle("Training")
             .wirelineBrand()
             .task { await loadAgents() }
             .onChange(of: selectedId) { _, _ in Task { await loadSetup() } }
@@ -163,15 +163,15 @@ struct ActionsView: View {
             Group {
                 if agents.isEmpty && !isLoading {
                     BrandEmptyState(
-                        title: "Start with an assistant",
-                        message: "Create an assistant first, then choose what it is allowed to do.",
+                        title: "Start with an agent",
+                        message: "Create an agent first, then choose what it is allowed to do.",
                         systemImage: "slider.horizontal.3"
                     )
                 } else {
                     List {
                         if agents.count > 1 {
                             Section {
-                                Picker("Assistant", selection: $selectedId) {
+                                Picker("Agent", selection: $selectedId) {
                                     ForEach(agents) { agent in
                                         Text(agent.name).tag(agent.id)
                                     }
@@ -179,7 +179,7 @@ struct ActionsView: View {
                             }
                         }
 
-                        Section("Ways your assistant can help") {
+                        Section("Ways your agent can help") {
                             ForEach(personalActions) { action in
                                 Toggle(isOn: binding(for: action.id)) {
                                     VStack(alignment: .leading, spacing: 3) {
@@ -205,7 +205,7 @@ struct ActionsView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Actions")
+            .navigationTitle("Wire")
             .wirelineBrand()
             .task { await loadAgents() }
             .onChange(of: selectedId) { _, _ in Task { await loadSetup() } }
@@ -245,6 +245,7 @@ struct ActionsView: View {
             error = nil
         } catch {
             self.error = error.localizedDescription
+            await loadSetup()
         }
     }
 
