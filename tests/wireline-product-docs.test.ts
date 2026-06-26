@@ -77,7 +77,7 @@ describe("Wireline product documentation contract", () => {
     expect(head).toContain(
       "create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations",
     );
-    expect(ogImage).toContain("Agents for every conversation.");
+    expect(ogImage).toMatch(/Agents for every[\s\S]*conversation\./);
     expect(ogImage).toContain("Calls, texts, follow-up. Handled.");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);

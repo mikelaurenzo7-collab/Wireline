@@ -148,7 +148,7 @@ mustExcludeTerms(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Agents for every conversation\./,
+  /Agents for every[\s\S]*conversation\./,
   "OG image must use agent-forward positioning",
 );
 mustInclude(

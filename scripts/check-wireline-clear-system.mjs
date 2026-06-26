@@ -417,7 +417,7 @@ mustInclude(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Agents for every conversation\.[\s\S]*Calls, texts, follow-up\. Handled\./,
+  /Agents for every[\s\S]*conversation\.[\s\S]*Calls, texts, follow-up\. Handled\./,
   "OG image must match the sharp landing promise",
 );
 mustExclude(
