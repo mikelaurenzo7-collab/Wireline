@@ -48,6 +48,8 @@ const webTokens = read("src/styles/tokens.generated.css");
 const browserTokens = read("apps/browser-extension/panel/tokens.generated.css");
 const tokenConstants = read("src/constants/generated-design-tokens.ts");
 const androidTokens = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
+const androidApp = read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt");
+const androidSetup = read("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt");
 const iosTokens = read("ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
 const iosWidget = read("ios/WirelineShared/WirelineWidgetSnapshot.swift");
 const iosRootTabs = read("ios/Wireline/Views/RootTabView.swift");
@@ -75,6 +77,13 @@ mustInclude("src/styles/tokens.generated.css", webTokens, /--wireline-color-acti
 mustInclude("apps/browser-extension/panel/tokens.generated.css", browserTokens, /--wireline-color-action-primary-default:\s*#111111/, "browser tokens must use Wireline Mono");
 mustInclude("src/constants/generated-design-tokens.ts", tokenConstants, /"color\.action\.primary\.default": "#111111"/, "TS tokens must use Wireline Mono");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens, /colorActionPrimaryDefault = Color\(0xFF111111\)/, "Android tokens must use Wireline Mono");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /object Assistants : Screen\("assistants", "Agents"\)/, "Android app tab model must use Agents");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /object Knowledge : Screen\("knowledge", "Train"\)/, "Android app tab model must use Train");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /object Actions : Screen\("actions", "Wire"\)/, "Android app tab model must use Wire");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /Text\("Agents for calls, texts, and follow-up\."\)/, "Android sign-in must use agent-forward product copy");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt", androidSetup, /title = \{ Text\("Training"/, "Android setup page must be Training");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt", androidSetup, /title = \{ Text\("Wire"/, "Android actions page must be Wire");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt", androidSetup, /WAYS YOUR AGENT CAN HELP/, "Android Wire screen must use agent language");
 mustInclude("ios/Wireline/Theme/WirelineDesignTokens.generated.swift", iosTokens, /colorActionPrimaryDefault = Color\(hex: 0x111111\)/, "iOS tokens must use Wireline Mono");
 mustInclude("ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget, /public static let accent = "111111"/, "iOS widget snapshot must use Wireline Mono");
 mustInclude("ios/Wireline/Views/RootTabView.swift", iosRootTabs, /Label\("Agents", systemImage: "person\.2"\)/, "iOS tab bar must use Agents");
@@ -100,6 +109,8 @@ for (const [file, source] of [
   ["apps/browser-extension/panel/tokens.generated.css", browserTokens],
   ["src/constants/generated-design-tokens.ts", tokenConstants],
   ["android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens],
+  ["android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp],
+  ["android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt", androidSetup],
   ["ios/Wireline/Theme/WirelineDesignTokens.generated.swift", iosTokens],
   ["ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget],
   ["ios/Wireline/Views/RootTabView.swift", iosRootTabs],
