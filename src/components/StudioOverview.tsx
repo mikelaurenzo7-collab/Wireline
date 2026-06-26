@@ -86,15 +86,15 @@ export default function StudioOverview({ active, agents, degraded, onSelect, onO
             <p className="wl-overline">Agents</p>
             <button type="button" onClick={onCreate} className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"><Plus size={14} />New</button>
           </div>
-          <div className="flex gap-2 overflow-x-auto px-1 pb-1 pt-2">
+          <div className="grid grid-cols-1 gap-2 px-1 pb-1 pt-2 sm:flex sm:overflow-x-auto">
             {agents.map((agent) => {
               const selected = agent.id === active.id;
               return (
-                <button key={agent.id} type="button" onClick={() => selected ? onOpen(agent.id) : onSelect(agent.id)} className={`flex min-w-[220px] items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${selected ? "border-primary/30 bg-primary/[0.06]" : "border-border bg-background hover:border-primary/25"}`}>
+                <button key={agent.id} type="button" onClick={() => selected ? onOpen(agent.id) : onSelect(agent.id)} className={`flex w-full min-w-0 items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors sm:min-w-[220px] ${selected ? "border-primary/30 bg-primary/[0.06]" : "border-border bg-background hover:border-primary/25"}`}>
                   <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-sm font-semibold text-foreground">{agent.name.slice(0, 1).toUpperCase()}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-foreground">{selected ? <CircleDot className="size-3 text-primary" /> : null}{agent.name}</span>
-                    <span className="mt-0.5 flex items-center gap-1 truncate text-xs capitalize text-muted-foreground">{agent.is_business_agent ? <BriefcaseBusiness size={12} /> : null}{roleLabel(agent)} · {channelLabel(agent)}</span>
+                  <span className="min-w-0 flex-1 overflow-hidden">
+                    <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold text-foreground">{selected ? <CircleDot className="size-3 shrink-0 text-primary" /> : null}<span className="truncate">{agent.name}</span></span>
+                    <span className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs capitalize text-muted-foreground">{agent.is_business_agent ? <BriefcaseBusiness className="shrink-0" size={12} /> : null}<span className="truncate">{roleLabel(agent)} · {channelLabel(agent)}</span></span>
                   </span>
                 </button>
               );
