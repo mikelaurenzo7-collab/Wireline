@@ -36,13 +36,22 @@ const appRoutes = read("src/routes/AppRoutes.tsx");
 const tokenSource = read("design-tokens/wireline.tokens.json");
 const foundationCss = read("src/styles/foundation.css");
 const designSystemCss = read("src/styles/design-system.css");
+const claritySystemCss = read("src/styles/clarity-system.css");
 const studioOperationsCss = read("src/styles/studio-operations.css");
 const workspaceShell = read("src/components/WorkspaceShell.tsx");
+const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
 const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
 const agentsPage = read("src/pages/AgentsPage.tsx");
 const overviewPage = read("src/pages/OverviewPage.tsx");
 const actionsPage = read("src/pages/ActionsPage.tsx");
 const pricingPage = read("src/pages/Pricing.tsx");
+const featuresPage = read("src/pages/Features.tsx");
+const aboutPage = read("src/pages/About.tsx");
+const comparePage = read("src/pages/Compare.tsx");
+const blogPage = read("src/pages/Blog.tsx");
+const showcasePage = read("src/pages/Showcase.tsx");
+const solutionsPage = read("src/pages/SolutionsPage.tsx");
+const verticalLandingPage = read("src/pages/VerticalLanding.tsx");
 const landingPage = read("src/pages/LandingPage.tsx");
 const developersPage = read("src/pages/Developers.tsx");
 const settingsPage = read("src/pages/SettingsPage.tsx");
@@ -160,6 +169,36 @@ mustInclude(
   designSystemCss,
   /Wireline Clear System \/ Wireline Mono/,
   "name the current monochrome system",
+);
+mustInclude(
+  "src/styles/clarity-system.css",
+  claritySystemCss,
+  /\.marketing-surface :is\(\.wl-public-rail, \.wl-marketing-center\) \{\s*text-align:\s*center;/,
+  "marketing pages must center public rails by design-system rule",
+);
+mustInclude(
+  "src/styles/clarity-system.css",
+  claritySystemCss,
+  /\.marketing-surface \.wl-marketing-actions,[\s\S]*\.marketing-hero__actions[\s\S]*justify-content:\s*center;/,
+  "marketing actions must center by default",
+);
+mustExclude(
+  "src/styles/clarity-system.css",
+  claritySystemCss,
+  /left-aligned reading rail/,
+  "clarity system must not describe the retired left-aligned marketing rail",
+);
+mustInclude(
+  "src/components/layout/MarketingPageFrame.tsx",
+  marketingPageFrame,
+  /scroll \? "grow" : "min-h-0 flex-1"/,
+  "scroll marketing pages must grow with content before the footer renders",
+);
+mustExclude(
+  "src/components/layout/MarketingPageFrame.tsx",
+  marketingPageFrame,
+  /"relative z-10 min-h-0 flex-1"/,
+  "scroll marketing pages must not constrain content under the footer",
 );
 mustInclude(
   "src/styles/tokens.generated.css",
@@ -499,6 +538,29 @@ mustInclude(
   pricingPage,
   /Wireline Enterprise/,
   "pricing must position Wireline Enterprise",
+);
+for (const [file, source] of [
+  ["src/pages/Features.tsx", featuresPage],
+  ["src/pages/Pricing.tsx", pricingPage],
+  ["src/pages/About.tsx", aboutPage],
+  ["src/pages/Compare.tsx", comparePage],
+  ["src/pages/Blog.tsx", blogPage],
+  ["src/pages/Showcase.tsx", showcasePage],
+  ["src/pages/SolutionsPage.tsx", solutionsPage],
+  ["src/pages/VerticalLanding.tsx", verticalLandingPage],
+]) {
+  mustInclude(
+    file,
+    source,
+    /text-center|wl-marketing-center/,
+    "public marketing page must explicitly center hero or section copy",
+  );
+}
+mustExclude(
+  "src/pages/SolutionsPage.tsx",
+  solutionsPage,
+  /HeroCallPreview|Sarah/,
+  "use-cases page must not render the retired Sarah call preview",
 );
 mustInclude(
   "src/pages/Developers.tsx",
@@ -912,6 +974,18 @@ mustInclude(
   assetUpload,
   /\/api\/agent-config\/\$\{encodeURIComponent\(agentId\)\}\/assets/,
   "document intake must use asset ingestion API",
+);
+mustBeDeleted(
+  "src/components/marketing/HeroCallPreview.tsx",
+  "retired Sarah call preview must stay deleted",
+);
+mustBeDeleted(
+  "docs/superpowers/plans/2026-06-24-visual-action-public-pages.md",
+  "stale visual-action plan that references the retired call preview must stay deleted",
+);
+mustBeDeleted(
+  "docs/superpowers/specs/2026-06-24-visual-action-public-pages.md",
+  "stale visual-action spec that references the retired call preview must stay deleted",
 );
 mustBeDeleted(
   "src/components/StudioAssistantWorkspace.tsx",

@@ -23,27 +23,27 @@ export default function Showcase() {
         path="/showcase"
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="max-w-3xl">
+      <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
+        <div className="mx-auto max-w-3xl">
           <p className="wl-stitch-eyebrow">Try Wireline</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
             Hear the agent your customer meets first.
           </h1>
-          <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
             A live example built for a real conversation.
           </p>
         </div>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,.85fr)]">
           <section className="wl-stitch-card p-2">
-            <div className="flex min-h-[300px] flex-col justify-between border border-border bg-muted/30 p-6 sm:p-8">
+            <div className="flex min-h-[300px] flex-col items-center justify-between border border-border bg-muted/30 p-6 text-center sm:p-8">
               <div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Volume2 className="h-4 w-4 text-primary" />
                   Live browser preview
                 </div>
                 <h2 className="wl-stitch-display mt-5 text-balance">Talk to an agent.</h2>
-                <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
                   Your microphone turns on only after you start.
                 </p>
               </div>
@@ -73,11 +73,11 @@ export default function Showcase() {
       </section>
 
       <section className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] lg:items-end">
-          <div>
+        <div className="mx-auto grid max-w-6xl gap-10 lg:items-end">
+          <div className="mx-auto max-w-2xl text-center">
             <p className="wl-stitch-eyebrow">More examples</p>
             <h2 className="wl-stitch-display mt-3 text-balance">Call a demo line.</h2>
-            <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-md text-base leading-7 text-muted-foreground">
               Role-play only. Never a real business or person.
             </p>
           </div>
@@ -88,7 +88,7 @@ export default function Showcase() {
                 href={`tel:${agent.tel}`}
                 className="group wl-stitch-card wl-stitch-card-hover p-5"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-center gap-4">
                   <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
                     <Phone className="h-4 w-4" />
                   </span>
@@ -109,13 +109,13 @@ export default function Showcase() {
 
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
         <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:p-10">
-          <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="grid justify-items-center gap-7 text-center">
             <div>
               <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
                 <Check className="h-4 w-4" />
                 Your agent starts private.
               </span>
-              <h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
+              <h2 className="mx-auto mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
                 Ready for the next conversation?
               </h2>
             </div>

@@ -83,8 +83,8 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="max-w-3xl">
+      <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
+        <div className="mx-auto flex max-w-3xl flex-col items-center">
           <p className="wl-stitch-eyebrow">{isPersonal ? "Personal call help" : cfg.eyebrow}</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">{cfg.headline}</h1>
           <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
@@ -92,10 +92,10 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               ? "Hand off the calls that follow you around."
               : "Every important call gets a clear next step."}
           </p>
-          <div className="mt-6 max-w-md">
+          <div className="mt-6 w-full max-w-md">
             <BrowserCallWidget agentName="Demo Voice Agent" buttonLabel="Talk to a live agent" />
           </div>
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <CtaLink
               href={cfg.primaryCta.href}
               className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
@@ -109,7 +109,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               <Phone className="h-4 w-4" /> {secondaryLabel}
             </CtaLink>
           </div>
-          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
+          <div className="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" />
               Your voice &amp; workflow
@@ -123,7 +123,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       <section className="border-y border-border bg-card px-5 py-8 sm:px-8 sm:py-10">
-        <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+        <div className="mx-auto grid max-w-3xl justify-items-center gap-4 text-center">
           <div className="wl-stitch-stat-box w-fit font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
             <span className="wl-stitch-status-dot" aria-hidden />
             <strong className="text-foreground">{cfg.statValue}</strong>
@@ -135,7 +135,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-        <div className="max-w-2xl">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="wl-stitch-eyebrow">Useful coverage</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
             {isPersonal
@@ -164,8 +164,8 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       <section className="border-y border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-start">
-          <div>
+        <div className="mx-auto grid max-w-4xl gap-8">
+          <div className="mx-auto max-w-2xl text-center">
             <p className="wl-stitch-eyebrow">Call behavior</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
               {isPersonal
@@ -186,7 +186,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       <section className="mx-auto max-w-4xl px-5 py-16 sm:px-8 sm:py-20">
-        <div className="max-w-2xl">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="wl-stitch-eyebrow">Frequently asked</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
             {isPersonal ? "Questions before you hand off a call." : "Questions before you go live."}
@@ -215,13 +215,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       <section className="border-t border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:p-10">
-            <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div>
+            <div className="grid justify-items-center gap-7 text-center">
+              <div className="max-w-2xl">
                 <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
                   <ShieldCheck className="h-4 w-4" />
                   You stay in control
                 </span>
-                <h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
+                <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
                   {isPersonal
                     ? "Start with the call you keep putting off."
                     : "Start with the workflow your team needs covered."}

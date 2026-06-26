@@ -4,7 +4,7 @@
 /*
  * Clarity system
  *
- * The product has one visual grammar: a left-aligned reading rail, concise
+ * The product has one visual grammar: centered public storytelling, concise
  * hierarchy, quiet surfaces, and a single obvious next action. Route-specific
  * components can add detail only when it changes a decision.
  */
@@ -45,10 +45,21 @@
   max-width: none;
 }
 
+.marketing-surface :is(.wl-public-rail, .wl-marketing-center) {
+  text-align: center;
+}
+
+.marketing-surface :is(.wl-public-copy, .wl-public-section-heading, .wl-page-title),
+.marketing-surface .wl-marketing-center > :is(h1, h2, h3, p, div) {
+  margin-inline: auto;
+}
+
+.marketing-surface .wl-marketing-actions,
 .marketing-hero__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
 }
 

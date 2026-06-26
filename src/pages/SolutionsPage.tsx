@@ -2,19 +2,16 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowRight,
   CalendarClock,
-  Check,
   CircleDot,
   Headphones,
   MessageSquareText,
   PhoneOutgoing,
   ShieldCheck,
-  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
-import HeroCallPreview from "../components/marketing/HeroCallPreview";
 
 const SOLUTIONS = {
   sales: {
@@ -81,7 +78,6 @@ const SOLUTIONS = {
 } as const;
 
 type SolutionKey = keyof typeof SOLUTIONS;
-type Solution = (typeof SOLUTIONS)[SolutionKey];
 
 export default function SolutionsPage() {
   const { wedge = "support" } = useParams<{ wedge: string }>();
@@ -98,17 +94,17 @@ export default function SolutionsPage() {
       />
 
       <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
-        <div className="wl-measure mx-auto grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,.75fr)] lg:items-center">
-          <div>
+        <div className="wl-measure wl-marketing-center mx-auto">
+          <div className="mx-auto max-w-4xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
               <Icon size={14} className="text-primary" />
               <span className="wl-overline text-foreground">{page.eyebrow}</span>
             </div>
-            <h1 className="wl-page-title mt-6 max-w-[13ch] text-balance">{page.title}</h1>
+            <h1 className="wl-page-title mx-auto mt-6 max-w-[13ch] text-balance">{page.title}</h1>
             <p className="mt-6 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
               Custom voice agents shaped around your voice, playbook, and processes.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="marketing-hero__actions mt-8">
               <Link
                 to={page.primary.href}
                 className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
@@ -122,23 +118,15 @@ export default function SolutionsPage() {
                 {page.secondary.label}
               </Link>
             </div>
+            <div className="mx-auto mt-8 max-w-md">
+              <BrowserCallWidget agentName={key === "sales" ? "Sales Agent" : "Front Desk"} />
+            </div>
           </div>
-
-          <WorkflowPanel page={page} />
-        </div>
-      </section>
-
-      <section className="wl-measure mx-auto px-5 py-8 sm:px-6">
-        <div className="flex justify-center">
-          <BrowserCallWidget agentName="Sales Support" />
-        </div>
-        <div className="mt-4 flex justify-center">
-          <HeroCallPreview />
         </div>
       </section>
 
       <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="max-w-2xl">
+        <div className="wl-marketing-center mx-auto max-w-2xl">
           <p className="wl-overline text-primary">One clear operating flow</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
             The conversation moves. Your team stays in control.
@@ -160,8 +148,8 @@ export default function SolutionsPage() {
       </section>
 
       <section className="border-y border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="wl-measure mx-auto grid gap-8 lg:grid-cols-[minmax(0,.72fr)_minmax(0,1.28fr)] lg:items-end">
-          <div>
+        <div className="wl-measure mx-auto">
+          <div className="wl-marketing-center mx-auto max-w-3xl">
             <p className="wl-overline">Built for useful business work</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
               The capabilities that make a conversation operational.
@@ -171,7 +159,7 @@ export default function SolutionsPage() {
               workflow only when it makes the outcome better.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="mt-9 grid gap-3 sm:grid-cols-3">
             {page.capabilities.map(([title, copy], index) => {
               const CapabilityIcon = [MessageSquareText, CalendarClock, ShieldCheck][
                 index
@@ -191,9 +179,9 @@ export default function SolutionsPage() {
       </section>
 
       <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="wl-stitch-card grid gap-6 border-primary/25 bg-[color:var(--wireline-color-action-primary-container)] p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="wl-stitch-card wl-marketing-center grid justify-items-center gap-6 border-primary/25 bg-[color:var(--wireline-color-action-primary-container)] p-6 sm:p-8">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 text-primary">
+            <div className="inline-flex items-center gap-2 text-primary">
               <CircleDot size={16} />
               <span className="wl-overline text-primary">The Wireline difference</span>
             </div>
@@ -210,44 +198,5 @@ export default function SolutionsPage() {
         </div>
       </section>
     </MarketingPageFrame>
-  );
-}
-
-function WorkflowPanel({ page }: { page: Solution }) {
-  return (
-    <aside className="wl-stitch-card overflow-hidden p-0">
-      <div className="border-b border-border bg-secondary px-5 py-4">
-        <div className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-[var(--radius-md)] bg-card text-primary">
-            <Workflow size={16} />
-          </span>
-          <div>
-            <p className="wl-overline">Wireline flow</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">
-              From first message to next step
-            </p>
-          </div>
-        </div>
-      </div>
-      <div className="space-y-4 p-5">
-        {page.sequence.map(([title, copy], index) => (
-          <div key={title} className="flex gap-3">
-            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-primary/25 bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-overline-size)] font-semibold text-primary">
-              {index + 1}
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-foreground">{title}</p>
-              <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-                {copy}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="border-t border-border px-5 py-4 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-        <Check size={15} className="mr-2 inline text-primary" />
-        You choose what the agent can say, access, and escalate.
-      </div>
-    </aside>
   );
 }

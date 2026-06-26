@@ -14,7 +14,7 @@ import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import { PageMeta } from "../lib/page-meta";
 
-const OUTCOMES = ["Answer", "Qualify", "Schedule"] as const;
+const OUTCOMES = ["Handle", "Qualify", "Schedule"] as const;
 const CUSTOMIZATION = [
   ["Voice & tone", "Yours"],
   ["Workflow & handoff", "Yours"],
@@ -31,7 +31,7 @@ const USE_CASES = [
 
 export default function Features() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="marketing-surface min-h-screen bg-background text-foreground">
       <PageMeta
         title="AI Voice, Email & SMS Agents | Wireline"
         description="AI agents for calls, email, and SMS. Shape the voice, workflow, and handoff for every conversation."
@@ -42,7 +42,7 @@ export default function Features() {
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
           <div className="wl-public-rail">
             <p className="wl-overline text-primary">How it works</p>
-            <h1 className="mt-4 max-w-[13ch] font-[var(--wireline-font-display)] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
+            <h1 className="mx-auto mt-4 max-w-[13ch] font-[var(--wireline-font-display)] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
               Give every conversation a clear next step.
             </h1>
             <p className="wl-public-copy mt-5">Make it yours. Keep the outcome.</p>
@@ -65,12 +65,12 @@ export default function Features() {
 
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail grid gap-3 lg:grid-cols-2 lg:gap-4">
-            <article className="wl-stitch-card flex min-h-[12rem] flex-col p-5 sm:min-h-[16rem] sm:p-8">
+            <article className="wl-stitch-card flex min-h-[12rem] flex-col items-center p-5 text-center sm:min-h-[16rem] sm:p-8">
               <MessageSquareText size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5 max-w-[16ch]">
                 Conversations that stay on task.
               </h2>
-              <div className="mt-auto flex flex-wrap gap-2 pt-6 sm:pt-8">
+              <div className="mt-auto flex flex-wrap justify-center gap-2 pt-6 sm:pt-8">
                 {OUTCOMES.map((outcome) => (
                   <span
                     key={outcome}
@@ -81,7 +81,7 @@ export default function Features() {
                 ))}
               </div>
             </article>
-            <article className="wl-stitch-card flex min-h-[12rem] flex-col p-5 sm:min-h-[16rem] sm:p-8">
+            <article className="wl-stitch-card flex min-h-[12rem] flex-col items-center p-5 text-center sm:min-h-[16rem] sm:p-8">
               <ShieldCheck size={22} className="text-primary" />
               <h2 className="wl-section-title mt-5">Made to fit your work.</h2>
               <dl className="mt-6 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border sm:mt-auto">
@@ -114,7 +114,7 @@ export default function Features() {
             <div className="mt-10 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1.2fr_auto_1fr]">
               <FlowNode icon={PhoneCall} label="Conversation" sub="Call, email, or text" />
               <FlowArrow />
-              <div className="flex items-center gap-3 rounded-[var(--radius-xl)] border border-primary bg-secondary p-6">
+              <div className="flex items-center justify-center gap-3 rounded-[var(--radius-xl)] border border-primary bg-secondary p-6 text-center">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
                   <Workflow size={22} />
                 </span>
@@ -144,7 +144,7 @@ export default function Features() {
               {USE_CASES.map((title) => (
                 <article
                   key={title}
-                  className="wl-stitch-card flex min-h-[9.5rem] flex-col justify-between p-5"
+                  className="wl-stitch-card flex min-h-[9.5rem] flex-col items-center justify-between p-5 text-center"
                 >
                   <SlidersHorizontal size={17} className="text-primary" />
                   <h3 className="wl-card-title mt-6">{title}</h3>
@@ -195,7 +195,7 @@ function FlowNode({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-secondary ${
+      className={`flex items-center justify-center gap-3 rounded-[var(--radius-xl)] border border-border bg-secondary text-center ${
         compact ? "px-4 py-3.5" : "px-6 py-6"
       }`}
     >

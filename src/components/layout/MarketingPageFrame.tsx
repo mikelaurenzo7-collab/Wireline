@@ -49,7 +49,8 @@ export default function MarketingPageFrame({
         id="main-content"
         tabIndex={-1}
         className={cn(
-          "relative z-10 min-h-0 flex-1",
+          "relative z-10",
+          scroll ? "grow" : "min-h-0 flex-1",
           scroll ? "scroll-viewport" : "flex flex-col overflow-hidden",
           stickyCta && scroll && "marketing-has-sticky-cta",
           scroll

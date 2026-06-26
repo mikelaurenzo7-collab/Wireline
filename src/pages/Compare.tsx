@@ -29,16 +29,16 @@ export default function Compare() {
         path="/compare"
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="max-w-3xl">
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
+        <div className="mx-auto max-w-3xl">
           <p className="wl-stitch-eyebrow">Why Wireline</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
             Less phone tag. More of your day.
           </h1>
-          <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
             Make the call. Keep the result.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               to="/pricing"
               className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
@@ -58,22 +58,24 @@ export default function Compare() {
       <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {DIFFERENCES.map(({ icon: Icon, title, copy }) => (
-            <article className="bg-card px-5 py-8 sm:px-7 sm:py-10" key={title}>
-              <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
+            <article className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10" key={title}>
+              <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary">
                 <Icon className="h-4 w-4" />
               </span>
               <h2 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
                 {title}
               </h2>
-              <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{copy}</p>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+                {copy}
+              </p>
             </article>
           ))}
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,.82fr)_minmax(0,1.18fr)] lg:items-start">
-          <div>
+        <div className="mx-auto grid max-w-4xl gap-8">
+          <div className="text-center">
             <p className="wl-stitch-eyebrow">A simpler default</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
               The routine call should not become a project.
@@ -99,13 +101,13 @@ export default function Compare() {
       </section>
 
       <section className="border-t border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="mx-auto grid max-w-4xl justify-items-center gap-9 text-center">
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-primary" />
               You shape the agent.
             </p>
-            <h2 className="wl-stitch-display mt-4 max-w-2xl text-balance">
+            <h2 className="wl-stitch-display mx-auto mt-4 max-w-2xl text-balance">
               You stay in control of every agent.
             </h2>
           </div>

@@ -66,7 +66,7 @@ const FAQ = [
 
 export default function Pricing() {
   return (
-    <div className="wl-pricing-page min-h-screen bg-background text-foreground">
+    <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
         title="Pricing | Create free, fund live work when ready | Wireline"
         description="Create and train a Wireline agent for free. Fund live work with Conversation Balance and move into Team, Business, or Enterprise capacity when operations become shared."
@@ -76,17 +76,17 @@ export default function Pricing() {
 
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto max-w-6xl">
-            <div className="max-w-3xl">
+          <div className="mx-auto max-w-6xl text-center">
+            <div className="mx-auto max-w-3xl">
               <p className="wl-overline text-primary">Pricing</p>
               <h1 className="mt-4 text-balance text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
                 Create free. Train deeply. Fund live work when it matters.
               </h1>
-              <p className="mt-5 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
+              <p className="mx-auto mt-5 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
                 Wireline starts with a focused intake, pushes heavy configuration into Training, and
                 keeps live calls, texts, and follow-up funded through Conversation Balance.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link
                   to="/signup"
                   className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
@@ -106,8 +106,8 @@ export default function Pricing() {
 
         <section className="px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
           <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_.9fr] lg:items-stretch">
-            <article className="wl-stitch-card p-6 sm:p-9">
-              <div className="flex items-center gap-2">
+            <article className="wl-stitch-card p-6 text-center sm:p-9">
+              <div className="flex items-center justify-center gap-2">
                 <Sparkles className="size-5 text-primary" />
                 <span className="wl-overline">Wireline Personal</span>
               </div>
@@ -115,13 +115,13 @@ export default function Pricing() {
                 <span className="wl-metric-value text-[clamp(2.5rem,6vw,3.5rem)]">$0</span>
                 <span className="wl-overline">to create and train</span>
               </div>
-              <p className="mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+              <p className="mx-auto mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
                 Start with one live agent, one number, and a short intake. Add Conversation Balance
                 only when you are ready for real work.
               </p>
               <div className="mt-7">
                 <p className="wl-overline mb-3">Suggested first top-ups</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {CONVERSATION_BALANCE_PRESETS_USD.map((amount, index) => (
                     <span
                       key={amount}
@@ -141,7 +141,7 @@ export default function Pricing() {
                 {PERSONAL_FEATURES.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2.5 text-[var(--wireline-typography-body-size)] leading-6 text-foreground"
+                    className="flex items-start justify-center gap-2.5 text-[var(--wireline-typography-body-size)] leading-6 text-foreground"
                   >
                     <Check size={16} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
                     <span>{feature}</span>
@@ -174,7 +174,10 @@ export default function Pricing() {
               ].map(([Icon, title, body]) => {
                 const CardIcon = Icon as typeof Wallet;
                 return (
-                  <article key={String(title)} className="wl-stitch-card flex gap-4 p-5">
+                  <article
+                    key={String(title)}
+                    className="wl-stitch-card flex flex-col items-center gap-4 p-5 text-center"
+                  >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
                       <CardIcon size={18} />
                     </span>
@@ -193,7 +196,7 @@ export default function Pricing() {
 
         <section className="border-t border-border bg-card px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
           <div className="mx-auto max-w-6xl">
-            <div className="max-w-2xl">
+            <div className="mx-auto max-w-2xl text-center">
               <p className="wl-overline text-primary">Capacity tiers</p>
               <h2 className="mt-4 text-balance text-[clamp(28px,3.6vw,42px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
                 Shared operations should buy capacity, not vague unlimited promises.
@@ -205,7 +208,7 @@ export default function Pricing() {
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               {CAPACITY_TIERS.map((tier) => (
-                <article key={tier.name} className="wl-stitch-card flex flex-col p-6">
+                <article key={tier.name} className="wl-stitch-card flex flex-col p-6 text-center">
                   <p className="wl-overline text-primary">{tier.eyebrow}</p>
                   <h3 className="wl-card-title mt-4 text-lg">{tier.name}</h3>
                   <p className="mt-4 flex-1 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
@@ -215,7 +218,7 @@ export default function Pricing() {
                     {tier.features.map((feature) => (
                       <li
                         key={feature}
-                        className="flex items-start gap-2.5 text-[var(--wireline-typography-caption-size)] leading-6 text-foreground"
+                        className="flex items-start justify-center gap-2.5 text-[var(--wireline-typography-caption-size)] leading-6 text-foreground"
                       >
                         <Check
                           size={15}
@@ -242,7 +245,7 @@ export default function Pricing() {
 
         <section className="border-t border-border px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
           <div className="mx-auto max-w-4xl">
-            <div className="max-w-2xl">
+            <div className="mx-auto max-w-2xl text-center">
               <p className="wl-overline">Questions</p>
               <h2 className="mt-3 text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
                 Straightforward before anything goes live.
@@ -266,7 +269,7 @@ export default function Pricing() {
                 </details>
               ))}
             </div>
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row sm:items-center">
               <p className="flex items-center gap-2 text-[var(--wireline-typography-caption-size)] text-muted-foreground">
                 <ShieldCheck size={15} className="text-primary" /> Stripe-secured web billing. You
                 stay in control.

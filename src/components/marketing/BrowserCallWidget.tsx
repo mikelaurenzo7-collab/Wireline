@@ -121,10 +121,10 @@ export default function BrowserCallWidget({
         disabled={connecting || !vapi}
         aria-label={callActive ? "End conversation" : "Talk to agent"}
         className={cn(
-          "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
+          "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:border-border disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none",
           callActive
             ? "border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-status-error)] text-white shadow-[var(--wireline-elevation-sm)]"
-            : "border-primary bg-primary text-white shadow-[var(--wireline-elevation-sm)] hover:border-[color:var(--wireline-color-action-primary-pressed)] hover:bg-[color:var(--wireline-color-action-primary-pressed)] hover:text-white",
+            : "border-[color:var(--wireline-color-action-primary-default)] bg-[color:var(--wireline-color-action-primary-default)] text-white shadow-[var(--wireline-elevation-sm)] hover:border-[color:var(--wireline-color-action-primary-pressed)] hover:bg-[color:var(--wireline-color-action-primary-pressed)] hover:text-white",
         )}
       >
         {connecting ? (
@@ -179,7 +179,7 @@ export default function BrowserCallWidget({
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wireline-status-error)] bg-[color:var(--wireline-surface-subtle)] px-3 py-1 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-destructive">
+        <div className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3 py-1 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-muted-foreground">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>
