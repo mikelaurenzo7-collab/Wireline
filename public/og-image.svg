@@ -53,74 +53,49 @@
       letter-spacing="2.4"
       fill="#111111"
     >
-      LIVE - ANSWERING NOW
-    </text>
-  </g>
-
-  <g transform="translate(80, 175)">
-    <rect
-      x="0"
-      y="0"
-      width="116"
-      height="116"
-      rx="14"
-      ry="14"
-      fill="#111111"
-      fill-opacity="0.03"
-      stroke="#111111"
-      stroke-opacity="0.25"
-      stroke-width="1.5"
-    />
-    <g transform="translate(11,11) scale(0.0918)">
-      <path
-        d="M 220 300 L 392 712 L 512 470 L 632 712 L 804 300"
-        fill="none"
-        stroke="#111111"
-        stroke-width="110"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </g>
-    <text
-      x="148"
-      y="93"
-      font-family="Inter, system-ui, sans-serif"
-      font-size="108"
-      font-weight="800"
-      letter-spacing="6"
-      fill="#111111"
-    >
-      WIRELINE
+      LIVE - RUNNING NOW
     </text>
   </g>
 
   <text
     x="80"
-    y="378"
+    y="236"
     font-family="Inter, system-ui, sans-serif"
-    font-size="40"
+    font-size="112"
+    font-weight="800"
+    letter-spacing="6"
+    fill="#111111"
+  >
+    WIRELINE
+  </text>
+
+  <text
+    x="80"
+    y="330"
+    font-family="Inter, system-ui, sans-serif"
+    font-size="42"
     font-weight="700"
     fill="#111111"
     letter-spacing="-0.5"
   >
-    Agents for calls, texts, and follow-up.
+    Agents for every conversation.
   </text>
   <text
     x="80"
-    y="428"
+    y="382"
     font-family="Inter, system-ui, sans-serif"
-    font-size="40"
+    font-size="38"
     font-weight="700"
     fill="#111111"
     fill-opacity="0.68"
     letter-spacing="-0.5"
   >
-    Create. Train. Run.
+    Calls, texts, follow-up. Handled.
   </text>
 
-  <g transform="translate(80, 482)">
+  <g transform="translate(80, 438)">
     <rect
-      width="744"
+      width="616"
       height="70"
       rx="35"
       ry="35"
@@ -140,8 +115,34 @@
       fill="#111111"
       letter-spacing="0.3"
     >
-      Call (630) 581-1834 - Liam picks up right now
+      Call (630) 581-1834 - Liam is live now
     </text>
+  </g>
+
+  <g transform="translate(770, 160)">
+    <rect
+      x="0"
+      y="0"
+      width="350"
+      height="350"
+      rx="36"
+      ry="36"
+      fill="#111111"
+      fill-opacity="0.03"
+      stroke="#111111"
+      stroke-opacity="0.25"
+      stroke-width="1.5"
+    />
+    <g transform="translate(-38,-18) scale(0.48)">
+      <path
+        d="M 220 300 L 392 712 L 512 470 L 632 712 L 804 300"
+        fill="none"
+        stroke="#111111"
+        stroke-width="110"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </g>
   </g>
 
   <line x1="80" y1="588" x2="1120" y2="588" stroke="#111111" stroke-opacity="0.12" stroke-width="1"/>

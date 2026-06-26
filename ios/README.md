@@ -15,7 +15,7 @@ surface for the agents.
 
 Wireline should be instantly understandable:
 
-> Agents that answer. Calls, texts, and follow-up. One workspace. Your rules.
+> Agents for every conversation. Calls, texts, follow-up. Handled.
 
 The native app is the everyday control surface: ask Wireline, check live calls,
 review recaps, manage callback handoff, and keep the account activated across

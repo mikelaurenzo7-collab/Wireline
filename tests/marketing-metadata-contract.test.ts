@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const positioning = "Agents for calls, texts, and follow-up";
+const positioning = "Agents for every conversation";
 const stalePositioning = "Personal & Business AI Assistants";
 
 describe("marketing metadata contract", () => {

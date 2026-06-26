@@ -64,7 +64,7 @@ describe("Wireline product documentation contract", () => {
     const ios = read("ios/README.md");
 
     for (const source of [android, ios]) {
-      expect(source).toContain("Agents that answer");
+      expect(source).toContain("Agents for every conversation");
       expect(source).toContain("Wireline Mono");
     }
   });
@@ -73,12 +73,12 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline - Agents for calls, texts, and follow-up");
+    expect(head).toContain("Wireline - Agents for every conversation");
     expect(head).toContain(
       "create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations",
     );
-    expect(ogImage).toContain("Agents for calls, texts, and follow-up.");
-    expect(ogImage).toContain("Create. Train. Run.");
+    expect(ogImage).toContain("Agents for every conversation.");
+    expect(ogImage).toContain("Calls, texts, follow-up. Handled.");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });

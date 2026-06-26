@@ -69,18 +69,12 @@ const SOLUTIONS = {
       ],
     ],
     capabilities: [
-      [
-        "Custom voice front desk",
-        "Agents that answer with your tone, policies, and service knowledge.",
-      ],
+      ["Custom voice front desk", "Agents that carry your tone, policies, and service knowledge."],
       [
         "Seamless booking & updates",
         "Voice agents that schedule and confirm across email and text.",
       ],
-      [
-        "Built for your business",
-        "Each agent customized with your voice, playbook, and tools.",
-      ],
+      ["Built for your business", "Each agent customized with your voice, playbook, and tools."],
     ],
     proof: "Customers get a useful answer sooner. Your team only joins when its judgment matters.",
   },

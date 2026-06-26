@@ -103,7 +103,7 @@ mustInclude(
 mustInclude(
   "android/README.md",
   androidReadme,
-  /Agents that answer/,
+  /Agents for every conversation/,
   "Android docs must use agent-forward promise",
 );
 mustInclude(
@@ -116,7 +116,7 @@ mustInclude(
 mustInclude(
   "ios/README.md",
   iosReadme,
-  /Agents that answer/,
+  /Agents for every conversation/,
   "iOS docs must use agent-forward promise",
 );
 mustInclude(
@@ -129,7 +129,7 @@ mustInclude(
 mustInclude(
   "index.html",
   staticHead,
-  /Wireline - Agents for calls, texts, and follow-up/,
+  /Wireline - Agents for every conversation/,
   "static metadata must use current positioning",
 );
 mustInclude(
@@ -148,14 +148,14 @@ mustExcludeTerms(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Agents for calls, texts, and follow-up\./,
+  /Agents for every conversation\./,
   "OG image must use agent-forward positioning",
 );
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Create\. Train\. Run\./,
-  "OG image must reinforce current product model",
+  /Calls, texts, follow-up\. Handled\./,
+  "OG image must reinforce the sharp landing promise",
 );
 mustExcludeTerms(
   "public/og-image.svg",

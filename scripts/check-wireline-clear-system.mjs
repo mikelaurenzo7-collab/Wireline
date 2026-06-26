@@ -31,6 +31,7 @@ function mustBeDeleted(relativePath, message) {
 }
 
 const packageJson = read("package.json");
+const indexHtml = read("index.html");
 const appRoutes = read("src/routes/AppRoutes.tsx");
 const tokenSource = read("design-tokens/wireline.tokens.json");
 const foundationCss = read("src/styles/foundation.css");
@@ -42,6 +43,7 @@ const agentsPage = read("src/pages/AgentsPage.tsx");
 const overviewPage = read("src/pages/OverviewPage.tsx");
 const actionsPage = read("src/pages/ActionsPage.tsx");
 const pricingPage = read("src/pages/Pricing.tsx");
+const landingPage = read("src/pages/LandingPage.tsx");
 const developersPage = read("src/pages/Developers.tsx");
 const settingsPage = read("src/pages/SettingsPage.tsx");
 const accountRoutes = read("src/routes/account-routes.ts");
@@ -60,6 +62,7 @@ const zipLanding = read("src/components/migration/ZipLanding.tsx");
 const precisionLanding = read("src/components/marketing/PrecisionLanding.tsx");
 const signalOrbFrame = read("src/components/ui/SignalOrbFrame.tsx");
 const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
+const pageMeta = read("src/lib/page-meta.tsx");
 const wirelineOpsDesign = read("src/lib/wireline-ops-design.ts");
 const verticalWedges = read("src/data/vertical-wedges.ts");
 const founderSeed = read("src/lib/founder-fleet-seed.ts");
@@ -269,7 +272,7 @@ mustInclude(
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
   androidApp,
-  /Agents for calls,\s*texts,\s*and\s*follow-up/,
+  /Agents for every conversation/,
   "Android sign-in must use agent-forward product copy",
 );
 mustInclude(
@@ -387,6 +390,18 @@ mustInclude(
   "manifest must use warm monochrome background",
 );
 mustInclude(
+  "public/site.webmanifest",
+  manifest,
+  /"name": "Wireline - Agents for every conversation"/,
+  "manifest name must match the current landing promise",
+);
+mustExclude(
+  "public/site.webmanifest",
+  manifest,
+  /Agents that answer|Agents for calls, texts, and follow-up/i,
+  "manifest must not use retired answer-only positioning",
+);
+mustInclude(
   "public/wireline-icon.svg",
   publicIcon,
   /fill="#111111"/,
@@ -398,6 +413,18 @@ mustInclude(
   ogImage,
   /fill="#F7F7F4"/,
   "OG image must use monochrome canvas",
+);
+mustInclude(
+  "public/og-image.svg",
+  ogImage,
+  /Agents for every conversation\.[\s\S]*Calls, texts, follow-up\. Handled\./,
+  "OG image must match the sharp landing promise",
+);
+mustExclude(
+  "public/og-image.svg",
+  ogImage,
+  /ANSWERING NOW|picks up right now/i,
+  "OG image must not use answer-only live-work copy",
 );
 mustInclude(
   "apps/browser-extension/assets/icon.svg",
@@ -527,12 +554,43 @@ mustInclude(
   /Calls, texts, follow-up\. Handled\./,
   "landing hero must keep the short punchy subhero",
 );
+mustInclude(
+  "index.html",
+  indexHtml,
+  /Wireline - Agents for every conversation/,
+  "static metadata title must match the current landing promise",
+);
+mustInclude(
+  "src/pages/LandingPage.tsx",
+  landingPage,
+  /Wireline \| Agents for every conversation/,
+  "runtime landing metadata title must match the current landing promise",
+);
+mustInclude(
+  "src/lib/page-meta.tsx",
+  pageMeta,
+  /Wireline - Agents for every conversation/,
+  "default metadata title must match the current landing promise",
+);
 mustExclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
   /Agents that answer calls, texts, and follow-up|Your best front desk|Create a short agent brief|Train it on your sources|Run live work from Studio/i,
   "landing hero subcopy must stay short and enticing",
 );
+for (const [file, source] of [
+  ["index.html", indexHtml],
+  ["src/pages/LandingPage.tsx", landingPage],
+  ["src/lib/page-meta.tsx", pageMeta],
+  ["public/og-image.svg", ogImage],
+]) {
+  mustExclude(
+    file,
+    source,
+    /Agents for calls, texts, and follow-up/i,
+    "public title surfaces must use the current landing promise",
+  );
+}
 mustInclude(
   "src/components/ui/SignalOrbFrame.tsx",
   signalOrbFrame,
@@ -878,6 +936,10 @@ mustBeDeleted(
 mustBeDeleted(
   "scripts/sync-stripe-secrets-to-vercel.mjs",
   "retired Stripe secret sync helper must stay deleted",
+);
+mustBeDeleted(
+  "scripts/og-image.svg",
+  "retired logo-only OG source must stay deleted",
 );
 mustBeDeleted(
   "scripts/check-active-surface-drift.mjs",

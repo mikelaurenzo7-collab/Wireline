@@ -1,7 +1,7 @@
 {
-  "name": "Wireline — Agents that answer",
+  "name": "Wireline - Agents for every conversation",
   "short_name": "Wireline",
-  "description": "Calls, texts, and follow-up. One workspace. Your rules.",
+  "description": "Calls, texts, follow-up. Handled.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",

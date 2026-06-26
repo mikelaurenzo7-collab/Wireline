@@ -1,4 +1,4 @@
-// Renders SVG sources in scripts/ to PNGs in public/.
+// Renders canonical SVG sources to PNGs in public/.
 // Runs as a prebuild step so og-image.png + apple-touch-icon.png are
 // always in sync with their SVG sources without committing binary blobs.
 //
@@ -18,7 +18,7 @@ const publicDir = resolve(root, "public");
 if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 
 const targets = [
-  { src: "scripts/og-image.svg",         out: "public/og-image.png",         width: 1200 },
+  { src: "public/og-image.svg",          out: "public/og-image.png",         width: 1200 },
   { src: "scripts/apple-touch-icon.svg", out: "public/apple-touch-icon.png", width: 180  },
   { src: "scripts/apple-touch-icon.svg", out: "public/wireline-icon-192.png", width: 192  },
 ];

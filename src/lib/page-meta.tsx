@@ -12,7 +12,7 @@ interface PageMetaProps {
 const BRAND_SUFFIX = " - Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "Wireline - Agents for calls, texts, and follow-up";
+const DEFAULT_TITLE = "Wireline - Agents for every conversation";
 const DEFAULT_DESCRIPTION =
   "Wireline helps teams create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations.";
 
