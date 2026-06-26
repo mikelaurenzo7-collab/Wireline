@@ -6,13 +6,13 @@ import WorkspaceShell from "../components/WorkspaceShell";
 const clientSurfaces = [
   {
     icon: MonitorDown,
-    title: "Browser Companion",
+    title: "Wireline Command",
     status: "Private preview",
     statusVariant: "warning" as const,
-    description: "Bring explicit page context into Studio.",
-    detail: "Selected text, title, URL, and linked numbers only when you invoke it.",
+    description: "Command agents from the browser tab you already have open.",
+    detail: "Call, text, follow-up, and agent tasks from selected text, page context, URLs, and linked numbers.",
     action: "Request browser preview",
-    href: "mailto:support@trywireline.com?subject=Wireline%20Browser%20Companion%20Preview",
+    href: "mailto:support@trywireline.com?subject=Wireline%20Command%20Preview",
   },
   {
     icon: Smartphone,
@@ -39,7 +39,7 @@ const clientSurfaces = [
     title: "Wireline in ChatGPT",
     status: "Developer mode",
     statusVariant: "outline" as const,
-    description: "Draft an assistant in ChatGPT, then finish setup here.",
+    description: "Draft an agent in ChatGPT, then finish setup here.",
     detail: "Requires a connected Wireline account and Developer Mode connection.",
     action: "Ask about ChatGPT access",
     href: "mailto:support@trywireline.com?subject=Wireline%20in%20ChatGPT",
@@ -53,9 +53,9 @@ export default function ClientAppsPage() {
         <section className="studio-card p-6 sm:p-7">
           <p className="studio-kicker">Your control surfaces</p>
           <h2 className="wl-section-title mt-2 max-w-3xl">
-            One assistant system, wherever the conversation starts.
+            One agent system, wherever the conversation starts.
           </h2>
-          <p className="wl-page-copy mt-3 max-w-2xl">Same assistants. Same setup. One protected workspace.</p>
+          <p className="wl-page-copy mt-3 max-w-2xl">Same agents. Same setup. One protected workspace.</p>
         </section>
 
         <section className="grid gap-3 md:grid-cols-2">
