@@ -47,14 +47,14 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap gap-1.5"><PostureBadge isBusiness={Boolean(agent.is_business_agent)} /><Badge variant="success"><span aria-hidden="true" className="size-1.5 rounded-full bg-current" />Ready</Badge></div>
           <h2 className="mt-3 truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-.02em] text-[var(--wireline-color-text-primary)]">{agent.name}</h2>
-          <p className="mt-1 inline-flex min-w-0 items-center gap-2 font-mono text-[var(--wireline-typography-overline-size)] capitalize tracking-[.035em] text-[var(--wireline-color-text-secondary)]"><span className="truncate">{formatAgentRoleLabel(agent.role)}</span><ChannelIcon className="shrink-0" size={12} /><span>{channel}</span></p>
+          <p className="mt-1 inline-flex min-w-0 items-center gap-2 font-mono text-[var(--wireline-typography-overline-size)] capitalize tracking-[.035em] text-[var(--wireline-color-text-secondary)]"><span>{formatAgentRoleLabel(agent.role)}</span><ChannelIcon size={12} /><span>{channel}</span></p>
         </div>
       </div>
 
       <div className="mt-4 grid gap-2 rounded-[var(--radius-lg)] border border-border bg-background p-3 text-sm">
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Line</span>
-          <Link to="/settings/apps" className="font-semibold text-foreground hover:text-primary">Configure number</Link>
+          <Link to="/settings/apps" className="font-semibold text-foreground hover:text-primary">{agent.phone_number || "Configure number"}</Link>
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground">Integrations</span>
