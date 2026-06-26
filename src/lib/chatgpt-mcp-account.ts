@@ -26,17 +26,17 @@ p { margin: 0; line-height: 1.45; }
 .meta span { display: block; margin-top: 2px; font-size: 13px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 button, a.button { appearance: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid color-mix(in srgb, CanvasText 24%, transparent); border-radius: 10px; padding: 10px 12px; background: transparent; color: inherit; font: inherit; font-weight: 650; cursor: pointer; text-decoration: none; }
-button.primary { background: #5d3fd3; color: white; border-color: #5d3fd3; }
+button.primary { background: #111111; color: white; border-color: #111111; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 .status { margin-top: 11px; min-height: 20px; font-size: 13px; opacity: .78; }
 .note { margin-top: 12px; font-size: 12px; opacity: .7; }
-.live { display: none; margin-top: 12px; border-radius: 10px; padding: 10px; background: color-mix(in srgb, #5d3fd3 12%, transparent); font-size: 13px; }
+.live { display: none; margin-top: 12px; border-radius: 10px; padding: 10px; background: color-mix(in srgb, CanvasText 7%, transparent); font-size: 13px; }
 .live.show { display: block; }
 @media (max-width: 460px) { .meta { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private AI phone agent</h2><p id="summary">Connect Wireline, then describe the agent you want to create in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create a private agent draft.</div><p class="note">Agent drafts are saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch are configured separately in Wireline.</p></div></div>
+<div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Connect Wireline, then describe the agent you want to create in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create a private agent draft.</div><p class="note">Agent drafts are saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch are configured separately in Wireline.</p></div></div>
 <script>
 (() => {
   const state = { agentId: null, peer: null, stream: null, audio: null, pending: new Map(), sequence: 0 };
