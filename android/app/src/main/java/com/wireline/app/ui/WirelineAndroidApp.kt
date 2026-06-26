@@ -49,9 +49,9 @@ import com.wireline.app.ui.theme.Brand
 
 sealed class Screen(val route: String, val title: String) {
     object Studio : Screen("studio", "Studio")
-    object Assistants : Screen("assistants", "Assistants")
-    object Knowledge : Screen("knowledge", "Knowledge")
-    object Actions : Screen("actions", "Actions")
+    object Assistants : Screen("assistants", "Agents")
+    object Knowledge : Screen("knowledge", "Train")
+    object Actions : Screen("actions", "Wire")
     object Recaps : Screen("recaps", "Recaps")
     object Wallet : Screen("wallet", "Wallet")
     object Settings : Screen("settings", "Settings")
@@ -60,9 +60,7 @@ sealed class Screen(val route: String, val title: String) {
 class NavigationActions(private val navController: NavHostController) {
     fun navigateTo(screen: Screen) {
         navController.navigate(screen.route) {
-            popUpTo(navController.graph.startDestinationId) {
-                saveState = true
-            }
+            popUpTo(navController.graph.startDestinationId) { saveState = true }
             launchSingleTop = true
             restoreState = true
         }
@@ -81,13 +79,13 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     val navController = rememberNavController()
     val navActions = remember(navController) { NavigationActions(navController) }
     var showAsk by rememberSaveable { mutableStateOf(false) }
-    var showCreateAssistant by rememberSaveable { mutableStateOf(false) }
+    var showCreateAgent by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         containerColor = Brand.Canvas,
         topBar = {
             WirelineTopBar(
-                title = "Wireline AI",
+                title = "Wireline",
                 onWallet = { navActions.navigateTo(Screen.Wallet) },
                 onSettings = { navActions.navigateTo(Screen.Settings) },
             )
@@ -104,11 +102,11 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                     shape = RoundedCornerShape(Brand.RadiusMd),
                 ) { Icon(Icons.Default.Mic, contentDescription = "Ask Wireline") }
                 Screen.Assistants.route -> FloatingActionButton(
-                    onClick = { showCreateAssistant = true },
+                    onClick = { showCreateAgent = true },
                     containerColor = Brand.Accent,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(Brand.RadiusMd),
-                ) { Icon(Icons.Default.Add, contentDescription = "Create assistant") }
+                ) { Icon(Icons.Default.Add, contentDescription = "Create agent") }
                 else -> Unit
             }
         },
@@ -126,20 +124,20 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                 NavigationBarItem(
                     selected = currentRoute == Screen.Assistants.route,
                     onClick = { navActions.navigateTo(Screen.Assistants) },
-                    icon = { Icon(Icons.Default.PhoneInTalk, contentDescription = "Assistants") },
-                    label = { Text("Assistants") },
+                    icon = { Icon(Icons.Default.PhoneInTalk, contentDescription = "Agents") },
+                    label = { Text("Agents") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Knowledge.route,
                     onClick = { navActions.navigateTo(Screen.Knowledge) },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Knowledge") },
-                    label = { Text("Knowledge") },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Train") },
+                    label = { Text("Train") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Actions.route,
                     onClick = { navActions.navigateTo(Screen.Actions) },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Actions") },
-                    label = { Text("Actions") },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Wire") },
+                    label = { Text("Wire") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Recaps.route,
@@ -150,32 +148,14 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             }
         },
     ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Studio.route,
-            modifier = Modifier.padding(padding)
-        ) {
-            composable(Screen.Studio.route) {
-                StudioScreen(PaddingValues(0.dp), state, model, onNavigateToSettings = { navActions.navigateTo(Screen.Settings) })
-            }
-            composable(Screen.Assistants.route) {
-                AssistantsScreen(PaddingValues(0.dp), state.agents, onCreate = { showCreateAssistant = true })
-            }
-            composable(Screen.Knowledge.route) {
-                KnowledgeScreen(PaddingValues(0.dp))
-            }
-            composable(Screen.Actions.route) {
-                ActionsScreen(PaddingValues(0.dp))
-            }
-            composable(Screen.Recaps.route) {
-                RecapsScreen(PaddingValues(0.dp), state.activeCalls, state.recentCalls, model::takeCall)
-            }
-            composable(Screen.Wallet.route) {
-                WalletScreen(PaddingValues(0.dp), state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
-            }
-            composable(Screen.Settings.route) {
-                SettingsScreen(PaddingValues(0.dp), state, model)
-            }
+        NavHost(navController = navController, startDestination = Screen.Studio.route, modifier = Modifier.padding(padding)) {
+            composable(Screen.Studio.route) { StudioScreen(PaddingValues(0.dp), state, model, onNavigateToSettings = { navActions.navigateTo(Screen.Settings) }) }
+            composable(Screen.Assistants.route) { AssistantsScreen(PaddingValues(0.dp), state.agents, onCreate = { showCreateAgent = true }) }
+            composable(Screen.Knowledge.route) { KnowledgeScreen(PaddingValues(0.dp)) }
+            composable(Screen.Actions.route) { ActionsScreen(PaddingValues(0.dp)) }
+            composable(Screen.Recaps.route) { RecapsScreen(PaddingValues(0.dp), state.activeCalls, state.recentCalls, model::takeCall) }
+            composable(Screen.Wallet.route) { WalletScreen(PaddingValues(0.dp), state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty()) }
+            composable(Screen.Settings.route) { SettingsScreen(PaddingValues(0.dp), state, model) }
         }
     }
 
@@ -185,12 +165,12 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
         }
     }
 
-    if (showCreateAssistant) {
-        ModalBottomSheet(onDismissRequest = { if (!state.isWorking) showCreateAssistant = false }, containerColor = Brand.Canvas) {
-            CreateAssistantSheet(
+    if (showCreateAgent) {
+        ModalBottomSheet(onDismissRequest = { if (!state.isWorking) showCreateAgent = false }, containerColor = Brand.Canvas) {
+            CreateAgentSheet(
                 state = state,
                 onCreate = { name, role, isBusinessAgent ->
-                    model.createAssistant(name, role, isBusinessAgent) { showCreateAssistant = false }
+                    model.createAssistant(name, role, isBusinessAgent) { showCreateAgent = false }
                 },
             )
         }
@@ -222,7 +202,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
         Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
         Text("WIRELINE", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
-        Text("Your personal call assistant.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text("Agents for calls, texts, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Spacer(Modifier.height(12.dp))
@@ -247,32 +227,21 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
     val agent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
     val followUps = state.recentCalls.count { it.outcomeTag == "followup" }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { AskWirelineHeroCard(onClick = { showAsk = true }) }
-        if (state.handoffPhone.isBlank()) {
-            item { CallbackNumberPromptCard(onClick = onNavigateToSettings) }
-        }
+        if (state.handoffPhone.isBlank()) { item { CallbackNumberPromptCard(onClick = onNavigateToSettings) } }
         item {
             AssistantCard {
                 Text("YOUR DAY", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     MetricStatCard(value = "${state.activeCalls.size}", label = "CALLS NOW", highlighted = state.activeCalls.isNotEmpty(), modifier = Modifier.weight(1f))
                     MetricStatCard(value = "$followUps", label = "FOLLOW-UPS", highlighted = followUps > 0, modifier = Modifier.weight(1f))
-                    MetricStatCard(value = "${state.agents.size}", label = "ASSISTANTS", highlighted = false, modifier = Modifier.weight(1f))
+                    MetricStatCard(value = "${state.agents.size}", label = "AGENTS", highlighted = false, modifier = Modifier.weight(1f))
                 }
             }
         }
         state.me?.let { me ->
-            item {
-                AssistantCard {
-                    Text(me.user.fullName ?: me.account.businessName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                    Text("${me.account.planName} · ${state.agents.size} assistants", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
-                }
-            }
+            item { AssistantCard { Text(me.user.fullName ?: me.account.businessName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} · ${state.agents.size} agents", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
         }
         item {
             AssistantCard {
@@ -287,54 +256,22 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
     }
 
     if (showAsk) {
-        ModalBottomSheet(onDismissRequest = { showAsk = false }, containerColor = Brand.Canvas) {
-            AskWirelineScreen(model = model, onBack = { showAsk = false })
-        }
+        ModalBottomSheet(onDismissRequest = { showAsk = false }, containerColor = Brand.Canvas) { AskWirelineScreen(model = model, onBack = { showAsk = false }) }
     }
 }
 
 @Composable
 private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCreate: () -> Unit) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Assistants", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                    Text("Personal assistants and business agents for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
-                }
-                TextButton(onClick = onCreate) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("New")
-                }
-            }
-        }
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Personal and business agents for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
         if (agents.isEmpty()) {
-            item {
-                AssistantCard {
-                    Text("Personal assistants and business agents", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
-                    Text("Start with a personal assistant for everyday calls, or add a business agent when work needs a professional line.", color = Brand.Text2)
-                    Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create assistant") }
-                }
-            }
+            item { AssistantCard { Text("Personal and business agents", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("Start with a personal agent for everyday calls, or add a business agent when work needs a professional line.", color = Brand.Text2); Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create agent") } } }
         } else {
             items(agents, key = { it.id }) { agent ->
                 AssistantCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Medallion(Icons.Default.PhoneInTalk, size = 40.dp)
-                        Column(Modifier.weight(1f)) {
-                            Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                            Text(
-                                if (agent.isBusinessAgent == true) "Business agent"
-                                else agent.role?.replace("_", " ") ?: "Personal assistant",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Brand.Text2,
-                            )
-                        }
+                        Column(Modifier.weight(1f)) { Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(if (agent.isBusinessAgent == true) "Business agent" else agent.role?.replace("_", " ")?.replace("assistant", "agent") ?: "Personal agent", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
                         Text("Ready", style = MaterialTheme.typography.labelSmall, color = Brand.Success)
                     }
                 }
@@ -344,91 +281,25 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
 }
 
 @Composable
-private fun CreateAssistantSheet(state: WirelineUiState, onCreate: (String, String, Boolean) -> Unit) {
+private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, Boolean) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var role by rememberSaveable { mutableStateOf("scheduler") }
     var isBusinessAgent by rememberSaveable { mutableStateOf(false) }
-    val choices = listOf(
-        "scheduler" to "Personal assistant",
-        "customer_service" to "Helpful caller",
-        "receptionist" to "Call concierge",
-        "custom" to "Something else",
-    )
-
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Text("Full versatility", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+    val choices = listOf("scheduler" to "Personal agent", "customer_service" to "Helpful caller", "receptionist" to "Call concierge", "custom" to "Something else")
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text("Agent type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            FilterChip(
-                selected = !isBusinessAgent,
-                onClick = { isBusinessAgent = false },
-                label = { Text("Personal assistant") },
-                modifier = Modifier.weight(1f),
-            )
-            FilterChip(
-                selected = isBusinessAgent,
-                onClick = {
-                    isBusinessAgent = true
-                    if (role == "scheduler") role = "receptionist"
-                },
-                label = { Text("Business agent") },
-                modifier = Modifier.weight(1f),
-            )
+            FilterChip(selected = !isBusinessAgent, onClick = { isBusinessAgent = false }, label = { Text("Personal agent") }, modifier = Modifier.weight(1f))
+            FilterChip(selected = isBusinessAgent, onClick = { isBusinessAgent = true; if (role == "scheduler") role = "receptionist" }, label = { Text("Business agent") }, modifier = Modifier.weight(1f))
         }
-        Text(
-            if (isBusinessAgent) "New business agent" else "New assistant",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = Brand.Text,
-        )
-        Text(
-            if (isBusinessAgent) {
-                "Name the agent and describe how it should represent your business. Refine policies in Studio next."
-            } else {
-                "Name the help you want. You can add its knowledge, actions, and voice in Studio next."
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = Brand.Text2,
-        )
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Name") },
-            placeholder = { Text("Casey") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(Brand.RadiusSm),
-        )
+        Text(if (isBusinessAgent) "New business agent" else "New personal agent", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+        Text(if (isBusinessAgent) "Name the agent and describe how it should represent your business. Refine policies in Studio next." else "Name the help you want. You can add knowledge, actions, and voice in Studio next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, placeholder = { Text("Casey") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Text("What kind of help?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
-        choices.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                row.forEach { (value, label) ->
-                    FilterChip(
-                        selected = role == value,
-                        onClick = { role = value },
-                        label = { Text(label, maxLines = 1) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
+        choices.chunked(2).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { row.forEach { (value, label) -> FilterChip(selected = role == value, onClick = { role = value }, label = { Text(label, maxLines = 1) }, modifier = Modifier.weight(1f)) }; if (row.size == 1) Spacer(Modifier.weight(1f)) } }
         ErrorText(state.error)
-        Button(
-            onClick = { onCreate(name, role, isBusinessAgent) },
-            enabled = name.isNotBlank() && !state.isWorking,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(Brand.RadiusSm),
-        ) {
-            if (state.isWorking) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
-            } else {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Create assistant")
-            }
+        Button(onClick = { onCreate(name, role, isBusinessAgent) }, enabled = name.isNotBlank() && !state.isWorking, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm)) {
+            if (state.isWorking) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White) else { Icon(Icons.Default.Add, contentDescription = null); Spacer(Modifier.width(8.dp)); Text("Create agent") }
         }
     }
 }
@@ -439,21 +310,9 @@ private fun RecapsScreen(padding: PaddingValues, activeCalls: List<ActiveCall>, 
         item { Text("Recaps", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text) }
         item { Text("On a call", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3) }
         if (activeCalls.isEmpty()) item { Text("No calls in progress.", color = Brand.Text2) }
-        items(activeCalls, key = { it.callId }) { call ->
-            SectionCard {
-                Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                Text(call.status?.replace("_", " ") ?: "In progress", color = Brand.Text2)
-                Button(onClick = { onTakeCall(call.callId) }, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Take this call") }
-            }
-        }
+        items(activeCalls, key = { it.callId }) { call -> SectionCard { Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(call.status?.replace("_", " ") ?: "In progress", color = Brand.Text2); Button(onClick = { onTakeCall(call.callId) }, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Take this call") } } }
         item { Text("Recent recaps", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3) }
-        items(recentCalls, key = { it.id }) { call ->
-            SectionCard {
-                Text(call.customerNumber ?: "Unknown caller", fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                Text(call.summary ?: "No summary yet.", color = Brand.Text2)
-                call.outcomeTag?.let { AssistChip(onClick = {}, label = { Text(it) }) }
-            }
-        }
+        items(recentCalls, key = { it.id }) { call -> SectionCard { Text(call.customerNumber ?: "Unknown caller", fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(call.summary ?: "No summary yet.", color = Brand.Text2); call.outcomeTag?.let { AssistChip(onClick = {}, label = { Text(it) }) } } }
     }
 }
 
@@ -469,12 +328,7 @@ private fun WalletScreen(padding: PaddingValues, balance: Double?, ledger: List<
 private fun SettingsScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel) {
     var phone by rememberSaveable(state.handoffPhone) { mutableStateOf(state.handoffPhone) }
     Column(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionCard {
-            Text("Callback number", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-            Text("Where Wireline should send a call when you take over.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
-            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("E.164 phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
-            Button(onClick = { model.saveHandoffPhone(phone) }, enabled = !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Save") }
-        }
+        SectionCard { Text("Callback number", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Where Wireline should send a call when you take over.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2); OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("E.164 phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm)); Button(onClick = { model.saveHandoffPhone(phone) }, enabled = !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Save") } }
         Button(onClick = { model.signOut() }, enabled = !state.isWorking, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Brand.Panel2, contentColor = Brand.Text), shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Sign out") }
         ErrorText(state.error)
     }
@@ -485,11 +339,7 @@ fun SectionCard(content: @Composable () -> Unit) = AssistantCard { content() }
 
 @Composable
 private fun AgentChips(agents: List<Agent>, selectedId: String?, onSelect: (String) -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        agents.take(3).forEach { agent ->
-            AssistChip(onClick = { onSelect(agent.id) }, label = { Text(agent.name) }, modifier = Modifier.padding(vertical = 4.dp), colors = AssistChipDefaults.assistChipColors(containerColor = if (agent.id == selectedId) Brand.AccentSoft else Brand.Panel2))
-        }
-    }
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { agents.take(3).forEach { agent -> AssistChip(onClick = { onSelect(agent.id) }, label = { Text(agent.name) }, modifier = Modifier.padding(vertical = 4.dp), colors = AssistChipDefaults.assistChipColors(containerColor = if (agent.id == selectedId) Brand.AccentSoft else Brand.Panel2)) } }
 }
 
 @Composable
