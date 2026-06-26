@@ -34,8 +34,8 @@ export default function AppRoutes() {
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/agents" element={<AgentsPage />} />
         <Route path="/studio" element={<AgentStudioHome />} />
-        <Route path="/knowledge" element={<KnowledgePage />} />
-        <Route path="/training" element={<Navigate to="/knowledge" replace />} />
+        <Route path="/training" element={<KnowledgePage />} />
+        <Route path="/knowledge" element={<Navigate to="/training" replace />} />
         <Route path="/actions" element={<ActionsPage />} />
         <Route path="/actions/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/connections" element={<LegacyConnectionsRedirect />} />
