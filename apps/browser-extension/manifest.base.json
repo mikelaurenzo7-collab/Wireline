@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Wireline Companion",
+  "name": "Wireline Command",
   "version": "0.1.0",
-  "description": "Bring the page, selected text, and call context you choose into Wireline Studio.",
+  "description": "Command Wireline from the page you are already viewing. Send context to agents for calls, texts, follow-up, and tasks.",
   "action": {
-    "default_title": "Open Wireline Companion",
+    "default_title": "Open Wireline Command",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",
@@ -29,7 +29,7 @@
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       },
-      "description": "Bring the current page into Wireline Studio"
+      "description": "Command Wireline from the current page"
     }
   }
 }
