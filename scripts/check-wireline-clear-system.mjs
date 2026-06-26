@@ -30,6 +30,7 @@ const workspaceShell = read("src/components/WorkspaceShell.tsx");
 const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
 const studioWorkroom = read("src/components/StudioWorkroom.tsx");
+const assetUpload = read("src/components/AgentAssetUpload.tsx");
 const trainingPage = read("src/pages/KnowledgePage.tsx");
 
 mustInclude("package.json", packageJson, /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs"/, "design:check must run this file");
@@ -49,6 +50,8 @@ mustInclude("src/components/StudioWorkspaceV2.tsx", studioWorkspace, /StudioWork
 mustExclude("src/components/StudioWorkspaceV2.tsx", studioWorkspace, /StudioAssistantWorkspace/, "old Studio assistant rail must not be active");
 mustExclude("src/components/StudioWorkroom.tsx", studioWorkroom, /PanelRightOpen|Working context|Detailed view/, "Workroom must not have a right context rail");
 mustInclude("src/pages/KnowledgePage.tsx", trainingPage, /TrainingRail/, "Training must own heavy controls in a side rail");
+mustInclude("src/pages/KnowledgePage.tsx", trainingPage, /AgentAssetUpload/, "Training must own document ingestion");
+mustInclude("src/components/AgentAssetUpload.tsx", assetUpload, /\/api\/agent-config\/\$\{encodeURIComponent\(agentId\)\}\/assets/, "document intake must use asset ingestion API");
 
 if (failures.length) {
   console.error(`Wireline Clear System check failed:\n- ${failures.join("\n- ")}`);
