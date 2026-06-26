@@ -22,12 +22,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 /**
- * Native Android translation of the current Ametrine Precision source system.
- * Material remains native; Wireline supplies pale lavender-tinted surfaces,
- * precise outlines, compact geometry, and a single ametrine action language.
+ * Native Android translation of Wireline Mono.
+ * Material remains native; Wireline supplies warm monochrome surfaces,
+ * sharp black actions, compact geometry, and calm system hierarchy.
  */
 object Brand {
-    // Delegate to generated tokens for single source of truth — flawless cross-surface parity
     val Canvas = WirelineDesignTokens.ColorToken.colorCanvasDefault
     val Panel = WirelineDesignTokens.ColorToken.colorSurfaceDefault
     val Panel2 = WirelineDesignTokens.ColorToken.colorSurfaceSubtle
@@ -51,7 +50,6 @@ object Brand {
     val Destructive = WirelineDesignTokens.ColorToken.colorStatusError
     val Success = WirelineDesignTokens.ColorToken.colorStatusSuccess
 
-    // Geometry from tokens
     val RadiusSm = WirelineDesignTokens.Metric.radiusSm
     val RadiusMd = WirelineDesignTokens.Metric.radiusMd
     val RadiusLg = WirelineDesignTokens.Metric.radiusLg
@@ -84,7 +82,7 @@ private val LightColors: ColorScheme = lightColorScheme(
 val WirelineTypography = Typography(
     displayLarge = androidx.compose.ui.text.TextStyle(
         fontSize = WirelineDesignTokens.Metric.typographyDisplaySize.sp,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.SemiBold,
         lineHeight = (WirelineDesignTokens.Metric.typographyDisplaySize * 1.15f).sp,
     ),
     headlineLarge = androidx.compose.ui.text.TextStyle(
@@ -109,11 +107,9 @@ val WirelineTypography = Typography(
     ),
 )
 
-/** Masterful, past-modern typography using shared design tokens for unique, consistent, sexy hierarchy across surfaces. */
 private val AppTypography = WirelineTypography.copy(
     displayLarge = WirelineTypography.displayLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.64).sp),
     displayMedium = WirelineTypography.displayMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.56).sp),
-    // ... (rest inherit token sizes, weights from WirelineTypography for flawless parity)
     bodyLarge = WirelineTypography.bodyLarge.copy(fontFamily = FontFamily.SansSerif),
     bodyMedium = WirelineTypography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
     labelSmall = WirelineTypography.labelSmall.copy(fontFamily = FontFamily.SansSerif),
@@ -142,7 +138,7 @@ fun WirelineTheme(content: @Composable () -> Unit) {
                 small = RoundedCornerShape(Brand.RadiusMd),
                 medium = RoundedCornerShape(Brand.RadiusLg),
                 large = RoundedCornerShape(Brand.RadiusLg),
-                extraLarge = RoundedCornerShape(24.dp),
+                extraLarge = RoundedCornerShape(Brand.RadiusXl),
             ),
             typography = AppTypography,
             content = content,
