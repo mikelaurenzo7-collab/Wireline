@@ -78,10 +78,7 @@ fun KnowledgeScreen(padding: PaddingValues) {
 
     LaunchedEffect(Unit) {
         runCatching { api.agents().agents }
-            .onSuccess { rows ->
-                agents = rows
-                selectedId = rows.firstOrNull()?.id.orEmpty()
-            }
+            .onSuccess { rows -> agents = rows; selectedId = rows.firstOrNull()?.id.orEmpty() }
             .onFailure { error = it.message }
         loading = false
     }
@@ -89,25 +86,23 @@ fun KnowledgeScreen(padding: PaddingValues) {
 
     Column(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding)) {
         TopAppBar(
-            title = { Text("Knowledge", fontWeight = FontWeight.SemiBold) },
+            title = { Text("Training", fontWeight = FontWeight.SemiBold) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Brand.Canvas, titleContentColor = Brand.Text),
         )
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.padding(24.dp), color = Brand.Accent)
         } else if (agents.isEmpty()) {
-            Text("Create an assistant on the web first, then add the facts and boundaries that make it helpful.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
+            Text("Create an agent first, then add the facts, rules, and sources that make it useful.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
         } else {
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (agents.size > 1) item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        agents.forEach { agent ->
-                            FilterChip(selected = agent.id == selectedId, onClick = { selectedId = agent.id }, label = { Text(agent.name) })
-                        }
+                        agents.forEach { agent -> FilterChip(selected = agent.id == selectedId, onClick = { selectedId = agent.id }, label = { Text(agent.name) }) }
                     }
                 }
                 item {
                     SectionCard {
-                        Text("WHAT THEY KNOW", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                        Text("KNOWLEDGE", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                         val facts = setup?.knowledge.orEmpty()
                         if (facts.isEmpty()) Text("No saved details yet.", color = Brand.Text2)
                         facts.forEach { Text(it.content, color = Brand.Text) }
@@ -115,7 +110,7 @@ fun KnowledgeScreen(padding: PaddingValues) {
                 }
                 item {
                     SectionCard {
-                        Text("BOUNDARIES & RULES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                        Text("BEHAVIOR", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                         val rules = setup?.directives.orEmpty()
                         if (rules.isEmpty()) Text("No saved rules yet.", color = Brand.Text2)
                         rules.forEach { Text(it.content, color = Brand.Text) }
@@ -131,7 +126,7 @@ fun KnowledgeScreen(padding: PaddingValues) {
                         OutlinedTextField(
                             value = draft,
                             onValueChange = { draft = it },
-                            label = { Text(if (kind == "knowledge") "A fact, preference, routine, or policy" else "What the assistant should do or avoid") },
+                            label = { Text(if (kind == "knowledge") "A fact, preference, routine, or policy" else "What the agent should do or avoid") },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 3,
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(Brand.RadiusMd),
@@ -191,13 +186,13 @@ fun ActionsScreen(padding: PaddingValues) {
 
     Column(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding)) {
         TopAppBar(
-            title = { Text("Actions", fontWeight = FontWeight.SemiBold) },
+            title = { Text("Wire", fontWeight = FontWeight.SemiBold) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Brand.Canvas, titleContentColor = Brand.Text),
         )
         if (loading) {
             CircularProgressIndicator(modifier = Modifier.padding(24.dp), color = Brand.Accent)
         } else if (agents.isEmpty()) {
-            Text("Create an assistant first, then choose what it is allowed to do.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
+            Text("Create an agent first, then choose what it is allowed to do.", modifier = Modifier.padding(20.dp), color = Brand.Text2)
         } else {
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (agents.size > 1) item {
@@ -207,7 +202,7 @@ fun ActionsScreen(padding: PaddingValues) {
                 }
                 item {
                     SectionCard {
-                        Text("WAYS YOUR ASSISTANT CAN HELP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                        Text("WAYS YOUR AGENT CAN HELP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                         personalActions.forEach { action ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
