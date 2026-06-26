@@ -518,13 +518,19 @@ mustExclude(
 mustInclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
-  /Your best front desk, follow-up rep, and operator\. Always on\./,
+  /Agents for every conversation\./,
+  "landing hero must frame agents across inbound and outbound conversations",
+);
+mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /Calls, texts, follow-up\. Handled\./,
   "landing hero must keep the short punchy subhero",
 );
 mustExclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
-  /Create a short agent brief|Train it on your sources|Run live work from Studio/i,
+  /Agents that answer calls, texts, and follow-up|Your best front desk|Create a short agent brief|Train it on your sources|Run live work from Studio/i,
   "landing hero subcopy must stay short and enticing",
 );
 mustInclude(

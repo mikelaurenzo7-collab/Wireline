@@ -34,10 +34,10 @@ export default function PrecisionLanding() {
             <div className="marketing-hero__content flex flex-col items-center">
               <p className="wl-overline text-primary">Wireline OS</p>
               <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(46px,6.7vw,84px)] font-semibold leading-[.94] tracking-[-.055em] text-foreground">
-                Agents that answer calls, texts, and follow-up.
+                Agents for every conversation.
               </h1>
               <p className="wl-public-copy mx-auto mt-5 max-w-5xl text-[clamp(17px,1.7vw,22px)] leading-[1.38]">
-                Your best front desk, follow-up rep, and operator. Always on.
+                Calls, texts, follow-up. Handled.
               </p>
               <div className="marketing-hero__actions mt-8 justify-center">
                 <Link
