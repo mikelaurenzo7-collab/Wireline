@@ -1,14 +1,11 @@
 import { wirelineTokenValues as token } from "./generated-design-tokens";
 
 /*
- * Wireline Design Tokens — compatibility manifest and strategy layer.
+ * Wireline Mono compatibility manifest.
  *
- * Source of truth: design-tokens/wireline.tokens.json
- * Generated runtime artifacts: src/styles/tokens.generated.css and
- * src/constants/generated-design-tokens.ts.
- *
- * This compatibility object intentionally retains existing imports while
- * redirecting color decisions to stable semantic token paths.
+ * Runtime source of truth: generated semantic token artifacts.
+ * This object keeps older imports alive while redirecting visual decisions
+ * to the clean monochrome system.
  */
 export const BRAND = {
   colors: {
@@ -39,20 +36,17 @@ export const BRAND = {
   spacing: {
     base: token["space.050"],
     scale: "semantic 4px rhythm with fluid layout allowances",
-    strategy:
-      "Strict semantic spacing steps with fluid layout only where a route needs responsive breathing room.",
+    strategy: "Strict semantic spacing with fluid layout only where responsive breathing room is necessary.",
     component: `${token["space.200"]} | ${token["space.300"]}`,
     section: "clamp(3rem, 2rem + 5vw, 6rem)",
   },
 
   typography: {
-    display: `${token["font.family.display"]} — sharp display typography for Wireline headings`,
+    display: `${token["font.family.display"]} — clean interface headings`,
     body: `${token["font.family.body"]} — neutral, highly legible interface copy`,
     mono: `${token["font.family.mono"]} — metadata, status, and technical labels`,
     scale: "Fluid modular steps with clamp() for responsive hierarchy",
-    headingStrategy:
-      "Short, single-layer headings only. Concise and purposeful across the app shell.",
-    // Full semantic scale from tokens for perfect cross-surface symmetry
+    headingStrategy: "Short, single-layer headings only. Concise and purposeful across the app shell.",
     sizes: {
       display: token["typography.display.size"],
       h1: token["typography.h1.size"],
@@ -65,11 +59,10 @@ export const BRAND = {
   },
 
   elevation: {
-    strategy:
-      "Subtle tonal layering and restrained box-shadow. Avoid excessive glow, noise, or glassmorphism.",
-    card: "0 1px 3px rgba(0,0,0,0.05) + subtle border",
-    panel: "0 2px 8px rgba(93,63,211,0.06)",
-    modal: "0 10px 25px -5px rgba(93,63,211,0.08)",
+    strategy: "Subtle monochrome layering. Avoid glow, glassmorphism, noisy gradients, and decorative shadow color.",
+    card: token["elevation.sm"],
+    panel: token["elevation.md"],
+    modal: token["elevation.lg"],
   },
 
   zIndex: {
@@ -86,25 +79,23 @@ export const BRAND = {
     lg: token["radius.lg"],
     xl: token["radius.xl"],
     pill: token["radius.pill"],
-    note: "4px inputs/controls (sm), 6px compact (md), 8px standard cards/buttons (lg), 16px larger panels (xl). Pills reserved for status/avatars. Sourced from design-tokens/wireline.tokens.json via generated wirelineTokenValues.",
+    note: "Monochrome OS geometry sourced from generated Wireline tokens.",
   },
 
   accessibility: {
-    contrastStandard: "WCAG 2.2 AA minimum; target AAA where content and brand constraints permit.",
+    contrastStandard: "WCAG 2.2 AA minimum; target AAA where content and product constraints permit.",
     dynamicApproach: "Static high-contrast baseline with room for future perceptual tooling.",
     targetSize: "Minimum 24×24px for compact controls; 44px target for primary touch actions.",
     reducedMotion: "Respect prefers-reduced-motion globally",
   },
 
   theming: {
-    current: "Light operator-grade baseline with tonal layering",
+    current: "Wireline Mono light operating baseline",
     planned: "High-contrast mode plus density variants via semantic token sets",
   },
 
-  governance:
-    "Changes require a semantic-token review, accessibility validation, generated artifact refresh, and consumer adoption in the same pull request.",
-  pipeline:
-    "DTCG-style JSON source -> dependency-free generator -> CSS custom properties and typed TypeScript. Native adapters follow once their consumers are active.",
+  governance: "Changes require semantic-token review, accessibility validation, generated artifact refresh, and consumer adoption in the same pull request.",
+  pipeline: "DTCG-style JSON source -> dependency-free generator -> CSS custom properties and typed TypeScript. Native adapters follow once active.",
 } as const;
 
 export type BrandTokenCategory = keyof typeof BRAND;
