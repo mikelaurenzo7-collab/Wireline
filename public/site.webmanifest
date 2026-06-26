@@ -1,24 +1,24 @@
 {
-  "name": "Wireline — AI Call Assistant",
+  "name": "Wireline — Agents that answer",
   "short_name": "Wireline",
-  "description": "Wireline makes the calls, waits on hold, captures the answer, and handles follow-ups so you get time back.",
+  "description": "Calls, texts, and follow-up. One workspace. Your rules.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "theme_color": "#5D3FD3",
-  "background_color": "#F8F9FF",
+  "theme_color": "#111111",
+  "background_color": "#F7F7F4",
   "lang": "en-US",
   "categories": ["productivity", "utilities", "communications"],
   "icons": [
     { "src": "/wireline-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Studio", "short_name": "Studio", "description": "Ask Wireline to handle a call or follow-up", "url": "/studio" },
-    { "name": "Assistants", "short_name": "Assistants", "description": "See the assistants you have set up", "url": "/agents" },
-    { "name": "Knowledge", "short_name": "Knowledge", "description": "Add facts, preferences, and boundaries", "url": "/knowledge" }
+    { "name": "Studio", "short_name": "Studio", "description": "Open the chat-first workroom", "url": "/studio" },
+    { "name": "Agents", "short_name": "Agents", "description": "See your agents", "url": "/agents" },
+    { "name": "Training", "short_name": "Training", "description": "Add facts, sources, rules, and tone", "url": "/training" }
   ],
   "prefer_related_applications": false
 }
