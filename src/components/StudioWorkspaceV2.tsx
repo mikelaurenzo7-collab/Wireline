@@ -4,8 +4,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { useAgents } from "../contexts/AgentsContext";
 import { PRODUCT_POSTURE } from "../lib/product-copy";
-import StudioAssistantWorkspace from "./StudioAssistantWorkspace";
 import StudioOverview from "./StudioOverview";
+import StudioWorkroom from "./StudioWorkroom";
 
 function StudioLoadingState() {
   return (
@@ -27,8 +27,8 @@ function StudioEmptyState() {
         density="default"
         className="studio-card w-full max-w-2xl px-8 py-12 text-left"
         icon={<Sparkles size={30} strokeWidth={1.7} />}
-        title="Start with one useful job."
-        description="Name the assistant. Set the first brief. Refine the work as it grows."
+        title="Create one useful agent."
+        description="Name it, pick a voice, set a role, then train it in one place."
         action={
           <div className="flex flex-wrap gap-3">
             <Button asChild>
@@ -88,12 +88,11 @@ export default function StudioWorkspaceV2() {
   if (isAssistantWorkspace) {
     return (
       <div className="wl-studio-operations h-full min-h-0 overflow-hidden">
-        <StudioAssistantWorkspace
+        <StudioWorkroom
           agentId={active.id}
           agentName={active.name}
           initialCommand={params.get("command") || undefined}
           onBack={returnToOverview}
-          onOpenDetailed={returnToOverview}
         />
       </div>
     );
