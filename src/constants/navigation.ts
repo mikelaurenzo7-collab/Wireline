@@ -1,5 +1,5 @@
 import type { CSSProperties, ComponentType } from "react";
-import { Plug, Settings2, Sparkles } from "lucide-react";
+import { Cable, GraduationCap, Settings2, Sparkles } from "lucide-react";
 
 export type NavItem = {
   label: string;
@@ -10,8 +10,9 @@ export type NavItem = {
 };
 
 const STUDIO_NAV: NavItem[] = [
-  { label: "Assistants & agents", path: "/agents", icon: Sparkles, matches: ["/agents", "/training"] },
-  { label: "Actions", path: "/actions", icon: Plug, matches: ["/actions", "/actions"] },
+  { label: "Agents", path: "/agents", icon: Sparkles, matches: ["/agents"] },
+  { label: "Training", path: "/training", icon: GraduationCap, matches: ["/training", "/knowledge"] },
+  { label: "Wire", path: "/actions", icon: Cable, matches: ["/actions", "/connections"] },
   { label: "Settings", path: "/settings", icon: Settings2, matches: ["/settings", "/admin"] },
 ];
 
@@ -29,22 +30,22 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 }
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/agents": "Assistants & agents",
-  "/actions": "Actions",
+  "/agents": "Agents",
+  "/training": "Training",
+  "/actions": "Wire",
   "/settings": "Settings",
 };
 
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   A: "/agents",
-  I: "/actions",
+  T: "/training",
+  W: "/actions",
   S: "/settings",
 };
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/agents": "g a",
-  "/actions": "g i",
+  "/training": "g t",
+  "/actions": "g w",
   "/settings": "g s",
 };
-
-// Navigation uses Ametrine Precision accent system from brand-colors.ts
-// No legacy signal/purple references remain.
