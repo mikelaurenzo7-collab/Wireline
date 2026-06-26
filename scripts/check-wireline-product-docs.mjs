@@ -3,8 +3,11 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
-const retiredProductLanguage = /Ametrine Precision|Browser Companion|browser companion/i;
-const retiredPalette = /#5D3FD3|#451EBB|#F8F9FF|#EFF4FF|#E5EEFF|#0B1C30/i;
+const retiredProductTerms = [
+  ["Ametrine", "Precision"].join(" "),
+  ["Browser", "Companion"].join(" "),
+];
+const retiredPaletteTerms = ["#5D3FD3", "#451EBB", "#F8F9FF", "#EFF4FF", "#E5EEFF", "#0B1C30"];
 
 function read(relativePath) {
   const path = resolve(root, relativePath);
@@ -19,8 +22,10 @@ function mustInclude(file, source, pattern, message) {
   if (!pattern.test(source)) failures.push(`${file}: ${message}`);
 }
 
-function mustExclude(file, source, pattern, message) {
-  if (pattern.test(source)) failures.push(`${file}: ${message}`);
+function mustExcludeTerms(file, source, terms, message) {
+  const lower = source.toLowerCase();
+  const found = terms.filter((term) => lower.includes(term.toLowerCase()));
+  if (found.length) failures.push(`${file}: ${message}: ${found.join(", ")}`);
 }
 
 const rootReadme = read("README.md");
@@ -31,18 +36,18 @@ const extensionReadme = read("apps/browser-extension/README.md");
 mustInclude("README.md", rootReadme, /Wireline Command/, "must use current browser extension naming");
 mustInclude("README.md", rootReadme, /Wireline Mono design system/, "must name the current design system");
 mustInclude("README.md", rootReadme, /Create → Train → Run/, "must describe the current product model");
-mustExclude("README.md", rootReadme, retiredProductLanguage, "must not use retired product/design language");
+mustExcludeTerms("README.md", rootReadme, retiredProductTerms, "must not use retired product/design language");
 
 mustInclude("apps/browser-extension/README.md", extensionReadme, /# Wireline Command/, "extension docs must use Wireline Command naming");
 mustInclude("apps/browser-extension/README.md", extensionReadme, /Call[\s\S]*Text[\s\S]*Follow-up[\s\S]*Agent task/, "extension docs must describe command actions");
 
 mustInclude("android/README.md", androidReadme, /Agents that answer/, "Android docs must use agent-forward promise");
 mustInclude("android/README.md", androidReadme, /Wireline Mono/, "Android docs must use Wireline Mono language");
-mustExclude("android/README.md", androidReadme, retiredPalette, "Android docs must not document the retired palette");
+mustExcludeTerms("android/README.md", androidReadme, retiredPaletteTerms, "must not document the retired palette");
 
 mustInclude("ios/README.md", iosReadme, /Agents that answer/, "iOS docs must use agent-forward promise");
 mustInclude("ios/README.md", iosReadme, /Wireline Mono/, "iOS docs must use Wireline Mono language");
-mustExclude("ios/README.md", iosReadme, retiredPalette, "iOS docs must not document the retired palette");
+mustExcludeTerms("ios/README.md", iosReadme, retiredPaletteTerms, "must not document the retired palette");
 
 if (failures.length) {
   console.error(`Wireline product docs check failed:\n- ${failures.join("\n- ")}`);
