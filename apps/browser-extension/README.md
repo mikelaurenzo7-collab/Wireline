@@ -1,14 +1,24 @@
-# Wireline Companion
+# Wireline Command
 
-Wireline Companion is a privacy-minimal browser control surface for Wireline Studio.
+Wireline Command is a privacy-minimal browser command surface for Wireline Studio.
 
-It does **not** create a second assistant runtime in the browser. It lets a signed-in Wireline customer deliberately bring the active page, text they select, or a linked contact into the existing Studio workflow, where all assistant configuration, authorization, consent, billing, and launch controls remain server-owned.
+The website remains the full operating system for setup, billing, training, integrations, launch, and review. The extension exists for the moment when a customer is already inside a browser tab and wants Wireline to act with that page as context.
+
+It lets a signed-in Wireline customer deliberately bring the active page, text they select, or a linked contact into the existing Studio workflow, where all agent configuration, authorization, consent, billing, and launch controls remain server-owned.
 
 ## What it supports
 
 - **Chrome, Microsoft Edge, and Opera:** one Chromium Manifest V3 artifact using the browser side-panel API when available.
 - **Firefox:** one Manifest V3 overlay using Firefox's native sidebar action.
 - **Fallback:** opening Studio in a tab if a sidebar cannot be opened by the host browser.
+
+## Product role
+
+- Prepare a call from the current page or a `tel:` link.
+- Draft a text from page context.
+- Create a follow-up from selected text.
+- Send an agent task into Studio.
+- Jump to Agents, Integrations, Usage, or Studio.
 
 ## Privacy contract
 
@@ -46,8 +56,9 @@ The build generates the browser-required PNG icon sizes from `assets/icon.svg` a
 2. Load `dist/chromium` as an unpacked extension in Chrome, Edge, or Opera.
 3. Load `dist/firefox` as a temporary add-on in Firefox.
 4. Test the toolbar action, selected-text context menu, page context menu, `tel:` link context menu, and `Ctrl/Command+Shift+Y` shortcut.
-5. Confirm Studio opens with the prefilled **First brief**, the context is visibly labeled as reference, and the URL fragment is removed.
-6. Confirm restricted pages do not break the extension and cannot be silently inspected.
+5. Confirm quick commands exist for Call, Text, Follow-up, and Agent task.
+6. Confirm Studio opens with the prefilled brief, the context is visibly labeled as reference, and the URL fragment is removed.
+7. Confirm restricted pages do not break the extension and cannot be silently inspected.
 
 ## Store release checklist
 
@@ -56,5 +67,5 @@ Before any store upload:
 - Replace preview status in `/settings/apps` only after the matching store listing is live.
 - Create browser-specific store screenshots from real extension UI.
 - Supply the exact privacy disclosure: active-tab data is read only after an explicit user action and is not retained by the extension.
-- Complete Chrome, Edge, Firefox, and Opera store metadata separately; package artifacts are shared where browser policy permits, but store review and listing requirements are not.
+- Complete Chrome, Edge, Firefox, and Opera store metadata separately; package artifacts are shared where browser policy permits, but store review and listing requirements do not replace each other.
 - Run `npm run verify:full`, then manually test the production Studio handoff in each browser.
