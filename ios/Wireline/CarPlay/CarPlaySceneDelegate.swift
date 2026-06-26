@@ -3,7 +3,7 @@ import UIKit
 
 /// Driving-safe Communication template. CallKit remains responsible for native
 /// call UI; this scene contains only high-glanceability active-call, callback,
-/// and assistant-line controls once Apple grants the CarPlay entitlement.
+/// and agent-line controls once Apple grants the CarPlay entitlement.
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     private var interfaceController: CPInterfaceController?
 
@@ -36,16 +36,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func refresh() async {
         guard KeychainStore.loadToken() != nil else { return }
         async let recentsRequest = WirelineAPI.shared.recentCalls(limit: 8)
-        async let assistantsRequest = WirelineAPI.shared.agents()
+        async let agentsRequest = WirelineAPI.shared.agents()
         async let activeRequest = WirelineAPI.shared.activeCalls()
         async let meRequest = WirelineAPI.shared.me()
 
         let recents = (try? await recentsRequest)?.calls ?? []
-        let assistants = (try? await assistantsRequest) ?? []
+        let agents = (try? await agentsRequest) ?? []
         let active = (try? await activeRequest) ?? []
         let me = try? await meRequest
 
-        let template = rootTemplate(me: me, activeCalls: active, recents: recents, assistants: assistants)
+        let template = rootTemplate(me: me, activeCalls: active, recents: recents, agents: agents)
         interfaceController?.setRootTemplate(template, animated: true, completion: nil)
     }
 
@@ -55,7 +55,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         me: MobileMe?,
         activeCalls: [ActiveCall],
         recents: [RecentCall],
-        assistants: [Agent]
+        agents: [Agent]
     ) -> CPTemplate {
         var buttons: [CPGridButton] = []
 
@@ -82,19 +82,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 image: symbol("phone.arrow.up.right")
             ) { [weak self] _ in
                 Task {
-                    await self?.callBack(number: number, assistantId: assistants.first?.id)
+                    await self?.callBack(number: number, agentId: agents.first?.id)
                     await self?.refresh()
                 }
             }
             buttons.append(button)
         }
 
-        if !assistants.isEmpty {
+        if !agents.isEmpty {
             let button = CPGridButton(
-                titleVariants: ["Assistants", "Choose a line"],
+                titleVariants: ["Agents", "Choose a line"],
                 image: symbol("person.2")
             ) { [weak self] _ in
-                self?.showAssistants(assistants)
+                self?.showAgents(agents)
             }
             buttons.append(button)
         }
@@ -108,11 +108,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return CPListTemplate(title: "Wireline", sections: [CPListSection(items: [item])])
     }
 
-    private func showAssistants(_ assistants: [Agent]) {
-        let items = assistants.map { assistant -> CPListItem in
+    private func showAgents(_ agents: [Agent]) {
+        let items = agents.map { agent -> CPListItem in
             let item = CPListItem(
-                text: assistant.name,
-                detailText: assistant.role?.replacingOccurrences(of: "_", with: " ").capitalized
+                text: agent.name,
+                detailText: agent.role?.replacingOccurrences(of: "_", with: " ").capitalized
             )
             item.handler = { [weak self] _, completion in
                 self?.interfaceController?.popTemplate(animated: true, completion: nil)
@@ -120,13 +120,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             }
             return item
         }
-        let template = CPListTemplate(title: "Assistants", sections: [CPListSection(items: items)])
+        let template = CPListTemplate(title: "Agents", sections: [CPListSection(items: items)])
         interfaceController?.pushTemplate(template, animated: true, completion: nil)
     }
 
-    private func callBack(number: String, assistantId: String?) async {
-        guard let assistantId else { return }
-        _ = try? await WirelineAPI.shared.placeCall(agentId: assistantId, to: number, context: nil)
+    private func callBack(number: String, agentId: String?) async {
+        guard let agentId else { return }
+        _ = try? await WirelineAPI.shared.placeCall(agentId: agentId, to: number, context: nil)
     }
 
     private func symbol(_ name: String) -> UIImage {
