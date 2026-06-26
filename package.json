@@ -31,6 +31,7 @@
     "design:contract": "npm run design:check",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
+    "launch:check": "node scripts/check-launch-blockers.mjs",
     "runtime:policy:check": "node scripts/check-openai-runtime-policy.mjs",
     "stripe:setup": "node scripts/setup-stripe-catalog.mjs",
     "stripe:sync-vercel": "node scripts/sync-stripe-env-to-vercel.mjs",
