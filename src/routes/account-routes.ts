@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from "express";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody } from "../lib/api-validation";
@@ -8,7 +9,9 @@ import {
   getAccountById,
   getPrimaryAccount,
 } from "../lib/account-service";
-import { log } from "../lib/server-context";
+import { computeScheduledPurgeAt } from "../lib/account-deletion";
+import { drizzle, log } from "../lib/server-context";
+import * as schema from "../db/schema";
 
 type AuthedRequest = Request & { user?: { id: string } };
 
@@ -17,6 +20,10 @@ const router = Router();
 const createAccountSchema = z.object({
   type: z.enum(["personal", "business"]),
   label: z.string().max(120).optional(),
+});
+
+const deleteAccountSchema = z.object({
+  confirmation: z.literal("DELETE"),
 });
 
 function authenticatedUserId(req: Request): string {
@@ -41,6 +48,42 @@ router.get("/api/accounts/:id", authenticateUser, async (req: Request, res: Resp
   if (!account) return res.status(404).json({ code: "NOT_FOUND", error: "Account not found" });
   res.json({ account });
 });
+
+router.post(
+  "/api/account/delete",
+  authenticateUser,
+  validateBody(deleteAccountSchema),
+  async (req: Request, res: Response) => {
+    const userId = authenticatedUserId(req);
+    const requestedAt = new Date();
+    const scheduledPurgeAt = computeScheduledPurgeAt(requestedAt);
+
+    const [existing] = await drizzle
+      .select({ id: schema.deletionQueue.id, scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt })
+      .from(schema.deletionQueue)
+      .where(and(eq(schema.deletionQueue.userId, userId), eq(schema.deletionQueue.status, "pending")))
+      .limit(1);
+
+    if (existing) {
+      return res.json({ ok: true, already_pending: true, scheduled_purge_at: existing.scheduledPurgeAt });
+    }
+
+    const [row] = await drizzle
+      .insert(schema.deletionQueue)
+      .values({
+        userId,
+        requestedAt,
+        scheduledPurgeAt,
+        status: "pending",
+        ip: req.ip,
+        userAgent: req.get("user-agent") || null,
+      })
+      .returning({ id: schema.deletionQueue.id, scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt });
+
+    log.warn("account deletion requested", { userId, deletionRequestId: row?.id });
+    res.status(202).json({ ok: true, scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt });
+  },
+);
 
 router.post(
   "/api/accounts",
