@@ -19,26 +19,37 @@ export default function Showcase() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
         title="Try Wireline"
-        description="Hear the AI call assistant your customers will meet first, then build an assistant for voice, email, and text."
+        description="Hear the AI agent your customers will meet first, then build an agent for voice, email, and text."
         path="/showcase"
       />
 
       <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
         <div className="max-w-3xl">
           <p className="wl-stitch-eyebrow">Try Wireline</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">Hear the assistant your customer meets first.</h1>
-          <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">A live example built for a real conversation.</p>
+          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
+            Hear the agent your customer meets first.
+          </h1>
+          <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
+            A live example built for a real conversation.
+          </p>
         </div>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,.85fr)]">
           <section className="wl-stitch-card p-2">
             <div className="flex min-h-[300px] flex-col justify-between border border-border bg-muted/30 p-6 sm:p-8">
               <div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground"><Volume2 className="h-4 w-4 text-primary" />Live browser preview</div>
-                <h2 className="wl-stitch-display mt-5 text-balance">Talk to an assistant.</h2>
-                <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">Your microphone turns on only after you start.</p>
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Volume2 className="h-4 w-4 text-primary" />
+                  Live browser preview
+                </div>
+                <h2 className="wl-stitch-display mt-5 text-balance">Talk to an agent.</h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                  Your microphone turns on only after you start.
+                </p>
               </div>
-              <div className="mt-10"><BrowserCallWidget agentName={primaryDemo.name} buttonLabel="Start live demo" /></div>
+              <div className="mt-10">
+                <BrowserCallWidget agentName={primaryDemo.name} buttonLabel="Start live demo" />
+              </div>
             </div>
           </section>
 
@@ -47,12 +58,16 @@ export default function Showcase() {
             <ol className="mt-6 space-y-5">
               {STEPS.map((step, index) => (
                 <li className="flex items-center gap-4" key={step}>
-                  <span className="grid h-7 w-7 flex-none place-items-center rounded bg-muted text-xs font-semibold text-primary">{index + 1}</span>
+                  <span className="grid h-7 w-7 flex-none place-items-center rounded bg-muted text-xs font-semibold text-primary">
+                    {index + 1}
+                  </span>
                   <strong className="text-sm font-semibold text-foreground">{step}</strong>
                 </li>
               ))}
             </ol>
-            <p className="mt-9 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">In Studio, you shape the job, voice, and handoff.</p>
+            <p className="mt-9 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">
+              In Studio, you shape the job, voice, and handoff.
+            </p>
           </aside>
         </div>
       </section>
@@ -62,15 +77,30 @@ export default function Showcase() {
           <div>
             <p className="wl-stitch-eyebrow">More examples</p>
             <h2 className="wl-stitch-display mt-3 text-balance">Call a demo line.</h2>
-            <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">Role-play only. Never a real business or person.</p>
+            <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
+              Role-play only. Never a real business or person.
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
-              <a key={agent.tel} href={`tel:${agent.tel}`} className="group wl-stitch-card wl-stitch-card-hover p-5">
-                <div className="flex items-start justify-between gap-4"><span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary"><Phone className="h-4 w-4" /></span><ArrowRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" /></div>
-                <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">{agent.name}</h3>
+              <a
+                key={agent.tel}
+                href={`tel:${agent.tel}`}
+                className="group wl-stitch-card wl-stitch-card-hover p-5"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
+                    <Phone className="h-4 w-4" />
+                  </span>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+                </div>
+                <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
+                  {agent.name}
+                </h3>
                 <p className="mt-1 text-sm text-muted-foreground">{agent.role}</p>
-                <p className="mt-4 font-mono text-sm font-semibold text-foreground">{agent.display}</p>
+                <p className="mt-4 font-mono text-sm font-semibold text-foreground">
+                  {agent.display}
+                </p>
               </a>
             ))}
           </div>
@@ -81,10 +111,20 @@ export default function Showcase() {
         <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:p-10">
           <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75"><Check className="h-4 w-4" />Your assistant starts private.</span>
-              <h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">Ready for the next conversation?</h2>
+              <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
+                <Check className="h-4 w-4" />
+                Your agent starts private.
+              </span>
+              <h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
+                Ready for the next conversation?
+              </h2>
             </div>
-            <Link to="/signup" className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-white px-5 text-sm font-semibold text-primary">Create your assistant <ArrowRight className="h-4 w-4" /></Link>
+            <Link
+              to="/signup"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-white px-5 text-sm font-semibold text-primary"
+            >
+              Create agent <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-/** Stripe-backed plan catalog. Backend billing source of truth. */
+/** Stripe-backed plan catalog. Internal ids remain transitional while public copy moves to Personal, Team, Business, and Enterprise. */
 
 /** Blended variable voice cost reserve used for pricing guardrails. */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
@@ -30,14 +30,13 @@ export type StripePlan = {
  * - Templates are not plan locks. Every customer can start from any agent template.
  * - Plans sell the operating layer: agents, numbers, routing, collaboration,
  *   integrations, support, and reliability.
- * - Live work is funded through Conversation Balance so usage scales cleanly.
- * - Historical minute allowances are preserved for existing subscription compatibility but are
- *   no longer used as public acquisition language.
+ * - Personal remains top-up-led through Conversation Balance.
+ * - Historical minute allowances are preserved for compatibility but are not public promises.
  */
 export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "personal",
-    name: "Legacy Solo Agent",
+    name: "Legacy Wireline Personal",
     price_usd_monthly: 7,
     max_agents: 1,
     voice_minutes_monthly: 60,
@@ -52,13 +51,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     public: false,
     features: [
       "Legacy personal subscription",
-      "Retained for existing subscribers",
-      "Conversation Balance is now the personal entry point",
+      "Retained only for backwards compatibility",
+      "Conversation Balance is the active personal funding model",
     ],
   },
   {
     id: "personal-plus",
-    name: "Legacy Office Assistant",
+    name: "Legacy Wireline Plus",
     price_usd_monthly: 15,
     max_agents: 2,
     voice_minutes_monthly: 180,
@@ -73,13 +72,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     public: false,
     features: [
       "Legacy personal subscription",
-      "Retained for existing subscribers",
-      "Conversation Balance is now the personal entry point",
+      "Retained only for backwards compatibility",
+      "Do not position this as an active acquisition tier",
     ],
   },
   {
     id: "business-starter",
-    name: "Front Desk",
+    name: "Wireline Team",
     price_usd_monthly: 29,
     max_agents: 4,
     voice_minutes_monthly: 500,
@@ -92,17 +91,16 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID",
     features: [
-      "Up to 4 agents",
-      "All agent templates unlocked",
-      "Dedicated numbers for inbound and outbound",
-      "Shared inbox and team handoff",
-      "CRM and calendar connections",
-      "Conversation Balance for live work",
+      "Shared operating capacity for a small team",
+      "Several active agents with one inbox",
+      "Routing, approvals, and connected numbers",
+      "Core integrations and follow-up controls",
+      "Conversation Balance alongside shared operations",
     ],
   },
   {
     id: "starter",
-    name: "Sales & Reception",
+    name: "Wireline Business",
     price_usd_monthly: 59,
     max_agents: 8,
     voice_minutes_monthly: 1_200,
@@ -115,17 +113,16 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PRO_OVERAGE_PRICE_ID",
     features: [
-      "Up to 8 agents",
-      "All agent templates unlocked",
-      "Intelligent routing and department transfers",
-      "Outbound campaign templates",
-      "Live activity and collaboration",
-      "Conversation Balance alongside the platform plan",
+      "Operating capacity for revenue and support teams",
+      "Shared routing, approvals, and analytics",
+      "CRM sync, policies, and role-aware controls",
+      "Outbound, inbound, and follow-up in one workspace",
+      "Conversation Balance pooled with the platform plan",
     ],
   },
   {
     id: "scale",
-    name: "Custom Enterprise",
+    name: "Wireline Enterprise",
     price_usd_monthly: 0,
     max_agents: 999,
     voice_minutes_monthly: 0,
@@ -138,11 +135,10 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     features: [
-      "Unlimited agents and lines",
-      "All agent templates unlocked",
-      "Full CRM deep-sync and custom webhook payloads",
-      "Security review, SSO, and compliance audits",
-      "Dedicated implementation and SLA support",
+      "Annual committed usage and rollout planning",
+      "SSO, audit support, and governed policy controls",
+      "Custom integrations, telephony, and implementation support",
+      "Enterprise approvals, reporting, and security review",
     ],
   },
 ];
@@ -162,16 +158,16 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
 
 export function planById(id: string | null | undefined): StripePlan | null {
   if (!id) return null;
-  if (id === "lite" || id === "business-lite")
+  if (id === "team" || id === "lite" || id === "business-lite")
     return STRIPE_PLANS.find((plan) => plan.id === "business-starter") || null;
-  if (id === "pro" || id === "business-growth")
+  if (id === "business" || id === "pro" || id === "business-growth")
     return STRIPE_PLANS.find((plan) => plan.id === "starter") || null;
-  if (id === "business" || id === "enterprise")
+  if (id === "enterprise" || id === "custom")
     return STRIPE_PLANS.find((plan) => plan.id === "scale") || null;
   return STRIPE_PLANS.find((plan) => plan.id === id) || null;
 }
 
-/** Public API catalog: only sell current business platform plans. */
+/** Public API catalog: Personal is top-up-led; recurring checkout is for shared capacity tiers. */
 export function plansForClient() {
   return STRIPE_PLANS.filter((plan) => plan.public !== false).map((plan) => ({
     id: plan.id,
@@ -186,6 +182,6 @@ export function plansForClient() {
     annual_configured: !!process.env[plan.annualPriceIdEnv],
     contact_sales: plan.price_usd_monthly === 0,
     public: true,
-    pricing_model: "platform_plus_conversation_balance" as const,
+    pricing_model: "capacity_plus_conversation_balance" as const,
   }));
 }

@@ -48,7 +48,7 @@ export default function OnboardingFlow() {
     setLoading(true);
     try {
       await markOnboardingCompleted();
-      success("Setup complete", `Your assistant ${assistantName} is ready.`);
+      success("Setup complete", `Your agent ${assistantName} is ready.`);
       navigate("/studio", { replace: true });
     } catch (_error) {
       error("Failed to complete setup", "Please try again.");
@@ -59,14 +59,14 @@ export default function OnboardingFlow() {
 
   return (
     <>
-      <PageMeta title="Set up your personal assistant — Wireline" noIndex />
-      <div className="min-h-screen bg-background paper-texture flex flex-col items-center justify-center p-6 text-foreground relative overflow-hidden">
-        <div className="w-full max-w-md relative z-10">
+      <PageMeta title="Set up your personal agent - Wireline" noIndex />
+      <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-6 text-foreground paper-texture">
+        <div className="relative z-10 w-full max-w-md">
           <div className="mb-10 flex flex-col items-center justify-center">
-            <div className="w-12 h-12 bg-brand/10 text-brand rounded-full flex items-center justify-center mb-4">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand/10 text-brand">
               <span className="font-display text-2xl font-bold">W</span>
             </div>
-            <ol className="flex gap-2 items-center" aria-label="Onboarding progress">
+            <ol className="flex items-center gap-2" aria-label="Onboarding progress">
               {ONBOARDING_STEPS.map((progressStep) => (
                 <li key={progressStep} aria-current={progressStep === step ? "step" : undefined}>
                   <span
@@ -83,7 +83,10 @@ export default function OnboardingFlow() {
             </ol>
           </div>
 
-          <Card elevation="0" className="border-border shadow-xl shadow-brand/5 rounded-2xl overflow-hidden relative">
+          <Card
+            elevation="0"
+            className="relative overflow-hidden rounded-2xl border-border shadow-xl shadow-brand/5"
+          >
             <AnimatePresence mode="wait">
               {step === 1 ? (
                 <motion.div
@@ -93,13 +96,14 @@ export default function OnboardingFlow() {
                   exit={{ opacity: 0, x: -20 }}
                   className="p-8 md:p-10"
                 >
-                  <div className="w-12 h-12 bg-brand/5 text-brand rounded-xl flex items-center justify-center mb-6">
-                    <Smartphone className="w-6 h-6" />
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-brand/5 text-brand">
+                    <Smartphone className="h-6 w-6" />
                   </div>
-                  <h1 className="font-display text-2xl font-semibold mb-2">Link your phone</h1>
-                  <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-                    Wireline starts with personal assistants for your day. Add business agents later when work
-                    needs a professional line. We will text this number for caller and task updates.
+                  <h1 className="mb-2 font-display text-2xl font-semibold">Link your phone</h1>
+                  <p className="mb-8 text-sm leading-relaxed text-muted-foreground">
+                    Wireline starts with one personal agent for your day. Add business agents later
+                    when work needs a professional line. We will text this number for caller and
+                    task updates.
                   </p>
                   <form onSubmit={handleSendCode} className="space-y-6">
                     <FormField label="Mobile number" htmlFor="onboarding-phone" required>
@@ -118,9 +122,13 @@ export default function OnboardingFlow() {
                     <Button
                       type="submit"
                       disabled={phone.length < 10 || loading}
-                      className="w-full h-12 text-base font-semibold transition-all shadow-md hover:shadow-brand/20 hover:scale-[1.02] touch-press"
+                      className="h-12 w-full touch-press text-base font-semibold transition-all hover:scale-[1.02] hover:shadow-brand/20"
                     >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send verification code"}
+                      {loading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        "Send verification code"
+                      )}
                     </Button>
                   </form>
                 </motion.div>
@@ -134,13 +142,13 @@ export default function OnboardingFlow() {
                   exit={{ opacity: 0, x: -20 }}
                   className="p-8 md:p-10"
                 >
-                  <div className="w-12 h-12 bg-brand/5 text-brand rounded-xl flex items-center justify-center mb-6">
-                    <ShieldCheck className="w-6 h-6" />
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-brand/5 text-brand">
+                    <ShieldCheck className="h-6 w-6" />
                   </div>
-                  <h1 className="font-display text-2xl font-semibold mb-2">Verify your number</h1>
-                  <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
+                  <h1 className="mb-2 font-display text-2xl font-semibold">Verify your number</h1>
+                  <p className="mb-8 text-sm leading-relaxed text-muted-foreground">
                     Enter the 6-digit code we just sent to{" "}
-                    <span className="font-mono text-foreground font-medium">{phone}</span>
+                    <span className="font-mono font-medium text-foreground">{phone}</span>
                   </p>
                   <form onSubmit={handleVerify} className="space-y-6">
                     <FormField label="6-digit code" htmlFor="onboarding-code" required>
@@ -154,15 +162,15 @@ export default function OnboardingFlow() {
                         value={code}
                         onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
                         autoFocus
-                        className="h-12 font-mono tracking-widest text-lg text-center"
+                        className="h-12 text-center text-lg tracking-widest font-mono"
                       />
                     </FormField>
                     <Button
                       type="submit"
                       disabled={code.length !== 6 || loading}
-                      className="w-full h-12 text-base font-semibold transition-all shadow-md hover:shadow-brand/20 hover:scale-[1.02] touch-press"
+                      className="h-12 w-full touch-press text-base font-semibold transition-all hover:scale-[1.02] hover:shadow-brand/20"
                     >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify code"}
+                      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify code"}
                     </Button>
                   </form>
                 </motion.div>
@@ -176,15 +184,15 @@ export default function OnboardingFlow() {
                   exit={{ opacity: 0, x: -20 }}
                   className="p-8 md:p-10"
                 >
-                  <div className="w-12 h-12 bg-brand/5 text-brand rounded-xl flex items-center justify-center mb-6">
-                    <User className="w-6 h-6" />
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-brand/5 text-brand">
+                    <User className="h-6 w-6" />
                   </div>
-                  <h1 className="font-display text-2xl font-semibold mb-2">Name your assistant</h1>
-                  <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-                    Give your new personal assistant a name. You can change this later in Studio.
+                  <h1 className="mb-2 font-display text-2xl font-semibold">Name your agent</h1>
+                  <p className="mb-8 text-sm leading-relaxed text-muted-foreground">
+                    Give your new personal agent a name. You can change this later in Studio.
                   </p>
                   <form onSubmit={handleComplete} className="space-y-6">
-                    <FormField label="Assistant name" htmlFor="onboarding-assistant-name" required>
+                    <FormField label="Agent name" htmlFor="onboarding-assistant-name" required>
                       <Input
                         id="onboarding-assistant-name"
                         type="text"
@@ -199,13 +207,13 @@ export default function OnboardingFlow() {
                     <Button
                       type="submit"
                       disabled={!assistantName.trim() || loading}
-                      className="w-full h-12 text-base font-semibold transition-all shadow-md hover:shadow-brand/20 hover:scale-[1.02] touch-press"
+                      className="h-12 w-full touch-press text-base font-semibold transition-all hover:scale-[1.02] hover:shadow-brand/20"
                     >
                       {loading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         <>
-                          Finish setup <ArrowRight className="w-4 h-4 ml-2" />
+                          Finish setup <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
                     </Button>

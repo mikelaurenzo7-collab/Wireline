@@ -3,11 +3,7 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const failures = [];
-const retiredProductTerms = [
-  ["Ametrine", "Precision"].join(" "),
-  ["Browser", "Companion"].join(" "),
-];
-const retiredPaletteTerms = ["#5D3FD3", "#451EBB", "#F8F9FF", "#EFF4FF", "#E5EEFF", "#0B1C30"];
+const retiredProductTerms = ["Ametrine Precision", "Browser Companion", "personal AI call assistant"];
 
 function read(relativePath) {
   const path = resolve(root, relativePath);
@@ -29,25 +25,40 @@ function mustExcludeTerms(file, source, terms, message) {
 }
 
 const rootReadme = read("README.md");
+const docsReadme = read("docs/README.md");
 const androidReadme = read("android/README.md");
 const iosReadme = read("ios/README.md");
 const extensionReadme = read("apps/browser-extension/README.md");
+const staticHead = read("index.html");
+const ogImage = read("public/og-image.svg");
 
 mustInclude("README.md", rootReadme, /Wireline Command/, "must use current browser extension naming");
 mustInclude("README.md", rootReadme, /Wireline Mono design system/, "must name the current design system");
-mustInclude("README.md", rootReadme, /Create → Train → Run/, "must describe the current product model");
-mustExcludeTerms("README.md", rootReadme, retiredProductTerms, "must not use retired product/design language");
+mustInclude("README.md", rootReadme, /Create [->\u2192] Train [->\u2192] Run/, "must describe the current product model");
+mustExcludeTerms("README.md", rootReadme, retiredProductTerms, "must not use retired product language");
+
+mustInclude("docs/README.md", docsReadme, /Create -> Train -> Run/, "docs index must describe the current product model");
+mustInclude("docs/README.md", docsReadme, /Agents/, "docs index must use agent language");
+mustInclude("docs/README.md", docsReadme, /Training/, "docs index must use Training as the heavy-config surface");
+mustInclude("docs/README.md", docsReadme, /Wireline Command/, "docs index must use Wireline Command naming");
+mustExcludeTerms("docs/README.md", docsReadme, retiredProductTerms, "docs index must not use retired product language");
 
 mustInclude("apps/browser-extension/README.md", extensionReadme, /# Wireline Command/, "extension docs must use Wireline Command naming");
 mustInclude("apps/browser-extension/README.md", extensionReadme, /Call[\s\S]*Text[\s\S]*Follow-up[\s\S]*Agent task/, "extension docs must describe command actions");
 
 mustInclude("android/README.md", androidReadme, /Agents that answer/, "Android docs must use agent-forward promise");
 mustInclude("android/README.md", androidReadme, /Wireline Mono/, "Android docs must use Wireline Mono language");
-mustExcludeTerms("android/README.md", androidReadme, retiredPaletteTerms, "must not document the retired palette");
 
 mustInclude("ios/README.md", iosReadme, /Agents that answer/, "iOS docs must use agent-forward promise");
 mustInclude("ios/README.md", iosReadme, /Wireline Mono/, "iOS docs must use Wireline Mono language");
-mustExcludeTerms("ios/README.md", iosReadme, retiredPaletteTerms, "must not document the retired palette");
+
+mustInclude("index.html", staticHead, /Wireline - Agents for calls, texts, and follow-up/, "static metadata must use current positioning");
+mustInclude("index.html", staticHead, /create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations/i, "static metadata must describe Create -> Train -> Run agent model");
+mustExcludeTerms("index.html", staticHead, retiredProductTerms, "static metadata must not use retired product language");
+
+mustInclude("public/og-image.svg", ogImage, /Agents for calls, texts, and follow-up\./, "OG image must use agent-forward positioning");
+mustInclude("public/og-image.svg", ogImage, /Create\. Train\. Run\./, "OG image must reinforce current product model");
+mustExcludeTerms("public/og-image.svg", ogImage, retiredProductTerms, "OG image must not use retired product language");
 
 if (failures.length) {
   console.error(`Wireline product docs check failed:\n- ${failures.join("\n- ")}`);

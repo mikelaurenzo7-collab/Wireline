@@ -1,7 +1,7 @@
 /**
  * Wireline Recaps – instrument-grade design contract.
  * Copy + class hooks for Recaps, floor, and setup nudges.
- * Palette: Ametrine Precision (see foundation.css).
+ * Palette: Wireline Mono (see foundation.css).
  */
 
 import { WL_BRAND } from "./wireline-design-system";
@@ -32,7 +32,7 @@ export const WL_OPS_CLASSES = {
   insightLabel: "wl-insight-label",
 } as const;
 
-/** Sentiment chart – active green positive; Ametrine primary neutral; rose negative */
+/** Sentiment chart – active green positive; monochrome neutral; rose negative */
 export const OPS_SENTIMENT_COLORS = {
   positive: WL_BRAND.accentHex,
   neutral: BRAND.colors.outline,
@@ -42,7 +42,7 @@ export const OPS_SENTIMENT_COLORS = {
 export const OPS_PULSE_METRICS = {
   live: { label: "Live callers", mono: true },
   pending: { label: "Pending actions", mono: true },
-  Assistants: { label: "Assistants", mono: true },
+  Assistants: { label: "Agents", mono: true },
   escalations: { label: "Escalations", mono: true },
 } as const;
 
@@ -52,20 +52,20 @@ export const OPS_COPY = {
   floorTitle: (n: number) => (n === 0 ? "Active calls" : `${n} live caller${n === 1 ? "" : "s"}`),
   intelHub: "Action queue",
   intelEmpty: "All clear – no Account Holder approvals waiting.",
-  telemetryTitle: "Assistant activity",
+  telemetryTitle: "Agent activity",
   telemetryActive: "Streaming",
   growthTitle: "Autonomous outreach",
-  growthBody: "Queue an outreach run when your assistant is deployed.",
+  growthBody: "Queue an outreach run when your agent is deployed.",
   growthCta: "Queue outreach",
   growthCtaBusy: "Queuing…",
-  growthDeployFirst: "Deploy an assistant first",
-  analyticsSection: "Assistant analytics",
+  growthDeployFirst: "Deploy an agent first",
+  analyticsSection: "Agent analytics",
   sentimentEmptyTitle: "No conversations yet",
   sentimentEmptyHint: "Run a test call to populate sentiment.",
-  roiLabel: "Assistant efficiency",
-  setupEyebrow: "Assistant setup",
+  roiLabel: "Agent efficiency",
+  setupEyebrow: "Agent setup",
   setupBody: (done: number, total: number) =>
-    `${done} of ${total} complete – assistant, knowledge, number, and first useful call.`,
+    `${done} of ${total} complete – agent, Training, number, and first useful call.`,
   setupHint: "Activation = one real phone conversation, not browser test alone.",
   testCallNumber: "(630) 642-5661",
   testCallHref: "tel:+16306425661",
@@ -85,33 +85,32 @@ export const OPS_CHANNEL_EMPTY = {
   },
   fleetRail: {
     eyebrow: "Full versatility",
-    title: "No personal assistants or business agents yet",
-    description:
-      "Create a personal assistant or business agent to see availability and assignments.",
+    title: "No agents yet",
+    description: "Create your first agent to see availability and assignments.",
     actions: [{ label: "Open roster", to: "/agents", primary: true }],
   },
   fleetAgents: {
     eyebrow: "Full versatility",
     title: "No roster yet",
     description:
-      "Create a personal assistant for everyday calls or a business agent for your company line — voice, email, and text under your rules.",
+      "Create an agent for calls, texts, follow-up, email, and browser context under your rules.",
   },
   agentRecall: {
     eyebrow: "Recall",
     title: "No calls yet",
     description:
-      "Once this assistant takes calls, conversation summaries appear here as follow-up context.",
+      "Once this agent takes calls, conversation summaries appear here as follow-up context.",
   },
   agentDockCalls: {
     eyebrow: "Latest calls",
     title: "No calls yet",
-    description: "When this assistant starts taking calls, the latest outcomes show here.",
+    description: "When this agent starts taking calls, the latest outcomes show here.",
   },
   phone: {
     eyebrow: "Call history",
     title: "No calls yet",
     description:
-      "When your personal assistants and business agents handle calls, recaps and analytics appear here. Configure a number in Settings to go live.",
+      "When your agents handle calls, recaps and analytics appear here. Configure a number in Settings to go live.",
     actions: [
       { label: "Configure a number", to: "/settings", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
@@ -126,7 +125,7 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "SMS",
     title: "No SMS yet",
     description:
-      "Conversations land here when an assistant sends a text or a customer replies. Configure your sender in Settings, then run outbound.",
+      "Conversations land here when an agent sends a text or a customer replies. Configure your sender in Settings, then run outbound.",
     actions: [
       { label: "Configure SMS sender", to: "/settings?tab=carrier", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
@@ -135,10 +134,10 @@ export const OPS_CHANNEL_EMPTY = {
   email: {
     eyebrow: "Email",
     title: "No threads yet",
-    description: "Connect Gmail, Outlook, or Yahoo in Actions so assistants can triage and reply.",
+    description: "Connect Gmail, Outlook, or Yahoo in Wire so agents can triage and reply.",
     actions: [
       { label: "Connect email", to: "/actions", primary: true },
-      { label: "Ask Assistant", to: "/agents" },
+      { label: "Open Agents", to: "/agents" },
     ],
   },
   inboxDetail: {
@@ -153,28 +152,27 @@ export const OPS_CHANNEL_EMPTY = {
       "Track outbound leads. Upload a CSV in Outbound or capture leads from inbound calls.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Connect actions", to: "/actions" },
+      { label: "Open Wire", to: "/actions" },
     ],
   },
   training: {
     eyebrow: "Training",
-    title: "No assistants to train yet",
-    description:
-      "Create your first assistant in Assistants, then return here for knowledge, voice, and flow.",
-    actions: [{ label: "Open Assistants", to: "/agents", primary: true }],
+    title: "No agents to train yet",
+    description: "Create your first agent, then return here for Training, voice, and behavior.",
+    actions: [{ label: "Open Agents", to: "/agents", primary: true }],
   },
   integrations: {
     eyebrow: "Email carriers",
     title: "No carriers linked",
-    description: "Connect Gmail, Outlook, or Yahoo – assistants triage and reply from there.",
+    description: "Connect Gmail, Outlook, or Yahoo – agents triage and reply from there.",
   },
   audit: {
     eyebrow: "Audit",
     title: "Audit trail is quiet",
     description:
-      "Every assistant action, callback, and policy check writes here. Deploy an assistant to start the feed.",
+      "Every agent action, callback, and policy check writes here. Deploy an agent to start the feed.",
     actions: [
-      { label: "Deploy an assistant", to: "/agents", primary: true },
+      { label: "Deploy an agent", to: "/agents", primary: true },
       { label: "Open Recaps", to: "/overview" },
     ],
   },
@@ -187,14 +185,14 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Action queue",
     title: "All clear",
     description:
-      "No Account Holder approvals waiting. Autonomous actions land here when assistants need your sign-off.",
+      "No Account Holder approvals waiting. Autonomous actions land here when agents need your sign-off.",
     actions: [
       { label: "Open Recaps", to: "/overview", primary: true },
-      { label: "Coach in chat", to: "/agents" },
+      { label: "Open Studio", to: "/studio" },
     ],
   },
   sentiment: {
-    eyebrow: "Assistant analytics",
+    eyebrow: "Agent analytics",
     title: "No conversations yet",
     description: "Run a test call to populate sentiment and unit economics.",
     actions: [{ label: "Call test line", to: "tel:+16306425661", primary: true }],
@@ -213,7 +211,7 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Outbound queue",
     title: "Queue is idle",
     description:
-      "Upload a CSV of contacts and your assistant will dial through them with full call notes saved to the CRM.",
+      "Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM.",
   },
   campaignLeads: {
     eyebrow: "Campaign leads",
@@ -225,7 +223,7 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Callbacks",
     title: "No scheduled callbacks",
     description:
-      "When assistants schedule callbacks during a call, those contacts appear here and are auto-dialed.",
+      "When agents schedule callbacks during a call, those contacts appear here and are auto-dialed.",
   },
   cadences: {
     eyebrow: "Sequences",
@@ -236,7 +234,7 @@ export const OPS_CHANNEL_EMPTY = {
   appointmentsUpcoming: {
     eyebrow: "Appointments",
     title: "No active commitments",
-    description: "Book manually or let assistants schedule during calls.",
+    description: "Book manually or let agents schedule during calls.",
   },
   appointmentsHistory: {
     eyebrow: "History",
@@ -246,13 +244,13 @@ export const OPS_CHANNEL_EMPTY = {
   contactNotFound: {
     eyebrow: "Contact",
     title: "Contact not found",
-    description: "This number may have been merged, removed, or never synced to your assistant.",
+    description: "This number may have been merged, removed, or never synced to your agent.",
     actions: [{ label: "Back to pipeline", to: "/pipeline", primary: true }],
   },
   contactTimeline: {
     eyebrow: "Timeline",
     title: "No interactions yet",
-    description: "Calls and appointments with this contact appear here once assistants engage.",
+    description: "Calls and appointments with this contact appear here once agents engage.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "View call history", to: "/phone" },
@@ -262,19 +260,19 @@ export const OPS_CHANNEL_EMPTY = {
 
 /** Dense training / Assistants editor panel empties (nested sections, not route-level) */
 export const OPS_TRAINING_PANEL = {
-  rules: "No rules yet – add one below to set hard limits your assistant always respects.",
+  rules: "No rules yet – add one below to set hard limits your agent always respects.",
   directives: "No directives yet – add tactical constraints below.",
   facts: "No facts yet – add knowledge entries below.",
   pronunciation: "No rules yet. Add a row below.",
   knowledge: {
-    eyebrow: "Knowledge base",
+    eyebrow: "Training documents",
     title: "No entries yet",
     description:
-      "Upload a PDF, paste a policy, or add a FAQ below so this assistant answers consistently.",
+      "Upload a PDF, paste a policy, or add a FAQ below so this agent answers consistently.",
   },
 } as const;
 
-/** Triage panel accent rails – Ametrine Purple + status tokens */
+/** Triage panel accent rails – monochrome neutrals + status tokens */
 export const OPS_TRIAGE_ACCENTS = {
   hotLeads: WL_BRAND.accentHex,
   openTasks: BRAND.colors.primary,
@@ -308,7 +306,7 @@ export const OPS_TRIAGE_EMPTY = {
   knowledgeGaps: {
     eyebrow: "Knowledge gaps",
     title: "Coverage looks solid",
-    description: "Repeated stump questions will appear here so you can teach assistants fast.",
+    description: "Repeated stump questions will appear here so you can teach agents fast.",
     actions: [{ label: "Open training", to: "/studio" }],
   },
   escalations: {
@@ -324,98 +322,97 @@ export const OPS_TRIAGE_COPY = {
   allClearStat: "All clear",
   allClearBannerTitle: "Nothing needs attention",
   allClearBannerBody:
-    "Tasks, compliance flags, and escalations will surface here as your assistants run. Hot leads are worked autonomously by your assistants.",
+    "Tasks, compliance flags, and escalations will surface here as your agents run. Hot leads are worked autonomously by your agents.",
   allClearBannerCta: "Monitor Active calls",
   /** Slim hot-lead signal strip – replaces the old full-height Hot Leads panel. */
   hotStripLabel: (n: number) => `${n} hot lead${n === 1 ? "" : "s"}`,
-  hotStripHint: "Assistants are following up autonomously",
-  hotStripCta: "Brief Assistant",
+  hotStripHint: "Agents are following up autonomously",
+  hotStripCta: "Brief agent",
   hotStripPrompt: (n: number) =>
-    `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now – who they are, why they're hot, and what the assistant is doing to close them.`,
+    `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now – who they are, why they're hot, and what the agent is doing to close them.`,
   escalationCoachPrompt: (number: string, summary: string) =>
     `Coach me through the escalated call from ${number}. Context: ${summary.slice(0, 400)}`,
 } as const;
 
 /**
- * Training "Assistant assists" – replaces the old recipe pop-out modals with
+ * Training assists – replaces the old recipe pop-out modals with
  * deep-links that prefill Director chat (mobile-safe, no modal to fail).
  */
 export const OPS_TRAINING_ASSISTS = [
   {
     label: "Performance review",
     prompt:
-      "Review this assistant's recent calls and give me a performance read: wins, misses, and the top 3 coaching directives to add.",
+      "Review this agent's recent calls and give me a performance read: wins, misses, and the top 3 coaching directives to add.",
   },
   {
     label: "Clone persona",
     prompt:
-      "Clone this assistant's persona into a new assistant – keep the voice and tone, and summarize what carries over.",
+      "Clone this agent's persona into a new agent – keep the voice and tone, and summarize what carries over.",
   },
   {
     label: "Ingest a URL",
-    prompt: "Ingest this URL into the assistant's knowledge base: ",
+    prompt: "Ingest this URL into this agent's Training sources: ",
   },
   {
     label: "Objection drills",
     prompt:
-      "Run objection drills against this assistant: throw the 5 most common objections for its vertical and grade the responses.",
+      "Run objection drills against this agent: throw the 5 most common objections for its vertical and grade the responses.",
   },
   {
     label: "Call playbook",
     prompt:
-      "Draft a call playbook for this assistant: opening, discovery, objection handling, and close.",
+      "Draft a call playbook for this agent: opening, discovery, objection handling, and close.",
   },
   {
     label: "Pre-call brief",
-    prompt: "Prepare a pre-call brief for this assistant's next outbound call.",
+    prompt: "Prepare a pre-call brief for this agent's next outbound call.",
   },
 ] as const;
 
 export const OPS_TRAINING_ASSISTS_COPY = {
-  eyebrow: "Assistant assists",
-  hint: "Runs in Assistant chat",
+  eyebrow: "Training assists",
+  hint: "Runs in Studio chat",
 } as const;
 
 /**
- * Studio co-pilot assists – setup-oriented prompts on the assistant canvas.
- * Where Training assists review performance, these help BUILD the assistant:
- * each deep-links into Director coach mode scoped to the focused assistant,
+ * Studio co-pilot assists – setup-oriented prompts on the agent canvas.
+ * Where Training assists review performance, these help BUILD the agent:
+ * each deep-links into Director coach mode scoped to the focused agent,
  * where the Director proposes config changes the Account Holder approves.
  */
 export const OPS_STUDIO_ASSISTS = [
   {
     label: "Write the greeting",
     prompt:
-      "Write a warm, on-brand opening greeting for this assistant and propose it as the first message.",
+      "Write a warm, on-brand opening greeting for this agent and propose it as the first message.",
   },
   {
     label: "Sharpen the persona",
     prompt:
-      "Rewrite this assistant's personality block – keep the role, make it sharper, warmer, and more specific to my business.",
+      "Rewrite this agent's personality block – keep the role, make it sharper, warmer, and more specific to my business.",
   },
   {
     label: "Set the schedule",
-    prompt:
-      "Help me set this assistant's business hours and an out-of-hours message for my timezone.",
+    prompt: "Help me set this agent's business hours and an out-of-hours message for my timezone.",
   },
   {
     label: "Pick the right tools",
     prompt:
-      "Review this assistant's enabled tools for its role and propose which to turn on or off, with one-line reasons.",
+      "Review this agent's enabled tools for its role and propose which to turn on or off, with one-line reasons.",
   },
   {
     label: "Prep a test call",
     prompt:
-      "Give me a 60-second test-call script to verify this assistant's greeting, knowledge, and escalation handling.",
+      "Give me a 60-second test-call script to verify this agent's greeting, Training, and escalation handling.",
   },
 ] as const;
 
 export const OPS_STUDIO_ASSISTS_COPY = {
-  eyebrow: "Assistant co-pilot",
-  hint: "Opens Assistant scoped to this assistant",
+  eyebrow: "Studio co-pilot",
+  hint: "Opens Studio scoped to this agent",
 } as const;
 
-/** Deep-link into Director chat with an assistant focused and the composer prefilled. */
+/** Deep-link into Director chat with an agent focused and the composer prefilled. */
 export function directorAssistHref(assistantId: string, prompt: string): string {
   return `/agents?agent=${encodeURIComponent(assistantId)}&prompt=${encodeURIComponent(prompt)}`;
 }
@@ -427,15 +424,15 @@ export function directorPromptHref(prompt: string): string {
 
 /** In-app help route – quick paths + page chrome */
 export const OPS_HELP = {
-  title: "Help & demos",
+  title: "Help and demos",
   eyebrow: "Support",
   subtitle: "Team lines, demos, and shortcuts back into Wireline.",
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
-    { label: "Assistant Chat", to: "/agents", hint: "Deploy assistants & ask questions" },
-    { label: "Actions", to: "/actions", hint: "Gmail, Outlook, Yahoo" },
-    { label: "Studio", to: "/studio", hint: "Knowledge, voice, flows" },
+    { label: "Agents", to: "/agents", hint: "Open the agent roster" },
+    { label: "Wire", to: "/actions", hint: "Numbers, email, and integrations" },
+    { label: "Studio", to: "/studio", hint: "Training, voice, and run controls" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },
   ],
 } as const;
@@ -475,7 +472,7 @@ export const OPS_CHANNEL_TOOLBAR = {
     loading: "Syncing Recaps",
     floor: (n: number) => `${n} live caller${n === 1 ? "" : "s"}`,
     intel: (n: number) => `${n} pending action${n === 1 ? "" : "s"}`,
-    analytics: "Assistant analytics",
+    analytics: "Agent analytics",
     triage: (n: number) => OPS_CHANNEL_TOOLBAR.triage.stat(n),
   },
   insights: {
@@ -484,7 +481,7 @@ export const OPS_CHANNEL_TOOLBAR = {
   },
   training: {
     loading: "Loading Studio",
-    stat: (n: number) => `${n} assistant${n === 1 ? "" : "s"}`,
+    stat: (n: number) => `${n} agent${n === 1 ? "" : "s"}`,
   },
   appointments: {
     loading: "Loading appointments",
@@ -506,7 +503,7 @@ export const OPS_CHANNEL_TOOLBAR = {
   },
   Assistants: {
     templatesStat: (n: number) => `${n} template${n === 1 ? "" : "s"}`,
-    agentsStat: (n: number) => `${n} assistant${n === 1 ? "" : "s"}`,
+    agentsStat: (n: number) => `${n} agent${n === 1 ? "" : "s"}`,
   },
   integrations: {
     loading: "Loading integrations",
@@ -568,7 +565,7 @@ export const WL_ADMIN_CLASSES = {
 /** Founder command surface copy */
 export const OPS_FOUNDER = {
   loading: "Loading staff",
-  stat: (n: number) => `${n} staff assistant${n === 1 ? "" : "s"}`,
+  stat: (n: number) => `${n} staff agent${n === 1 ? "" : "s"}`,
   broadcastPlaceholder: "e.g. From today, always confirm the caller's email by spelling it back.",
   broadcastSend: "Send to all 6",
 } as const;
@@ -663,7 +660,7 @@ export const OPS_SUPPORT_EMPTY = {
     eyebrow: "Do-Not-Call",
     title: "No numbers blocked",
     description:
-      "Add numbers manually or import a CSV to prevent them from being dialed by any assistant.",
+      "Add numbers manually or import a CSV to prevent them from being dialed by any agent.",
   },
   dncNoMatch: {
     eyebrow: "Do-Not-Call",
@@ -687,8 +684,7 @@ export const OPS_INSIGHTS_EMPTY = {
   funnel: {
     eyebrow: "Conversion",
     title: "No funnel data yet",
-    description:
-      "Your funnel populates as assistants handle calls – try a test call or outbound dial.",
+    description: "Your funnel populates as agents handle calls – try a test call or outbound dial.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Recaps", to: "/overview" },
@@ -696,10 +692,10 @@ export const OPS_INSIGHTS_EMPTY = {
   },
   leaderboard: {
     eyebrow: "Leaderboard",
-    title: "No ranked assistants yet",
-    description: "Assistants appear here once they run calls in the selected window.",
+    title: "No ranked agents yet",
+    description: "Agents appear here once they run calls in the selected window.",
     actions: [
-      { label: "Deploy assistant", to: "/agents", primary: true },
+      { label: "Deploy agent", to: "/agents", primary: true },
       { label: "View call history", to: "/phone" },
     ],
   },
@@ -726,9 +722,9 @@ export const OPS_INSIGHTS_EMPTY = {
     eyebrow: "AI spend",
     title: "No AI usage in this window",
     description:
-      "Try a longer date range, or run Assistant recipes and live calls to accumulate usage.",
+      "Try a longer date range, or run Studio recipes and live calls to accumulate usage.",
     actions: [
-      { label: "Ask Assistant", to: "/agents", primary: true },
+      { label: "Open Studio", to: "/studio", primary: true },
       { label: "Recaps", to: "/overview" },
     ],
   },
@@ -764,7 +760,7 @@ export const OPS_INSIGHTS_EMPTY = {
   failureModesOk: {
     eyebrow: "Failure modes",
     title: "No failure clusters",
-    description: "When assistants stumble, patterns cluster here with recommended fixes.",
+    description: "When agents stumble, patterns cluster here with recommended fixes.",
     actions: [{ label: "Monitor floor", to: "/overview", primary: true }],
   },
 } as const;

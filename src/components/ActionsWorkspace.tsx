@@ -77,7 +77,7 @@ const CONSUMER_COPY: Partial<Record<AgentToolName, { label: string; description:
   },
   lookup_phone_number: {
     label: "Check a phone number",
-    description: "Verifies a phone number before your assistant uses it.",
+    description: "Verifies a phone number before your agent uses it.",
   },
 };
 
@@ -170,7 +170,7 @@ function LoadingPermissions() {
     <div
       className="flex h-full min-h-0 flex-col"
       aria-busy="true"
-      aria-label="Loading assistant permissions"
+      aria-label="Loading agent permissions"
     >
       <div className="mb-5 flex items-end justify-between gap-3">
         <div className="space-y-3">
@@ -232,14 +232,11 @@ export default function ActionsWorkspace() {
               Array.isArray(agentBody?.agent?.enabledTools) ? agentBody.agent.enabledTools : [],
             );
           } else if (!cancelled && !agentResponse.ok) {
-            setNotice(
-              agentBody?.error || "The assistant's action settings could not be loaded yet.",
-            );
+            setNotice(agentBody?.error || "This agent's Wire settings could not be loaded yet.");
           }
         }
       } catch {
-        if (!cancelled && agentId)
-          setNotice("The assistant's action settings could not be loaded yet.");
+        if (!cancelled && agentId) setNotice("This agent's Wire settings could not be loaded yet.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -304,11 +301,11 @@ export default function ActionsWorkspace() {
           density="default"
           className="studio-card w-full max-w-[560px] px-8 py-12 sm:px-10"
           icon={<Sparkles size={29} />}
-          title="Create the assistant before you give it actions."
-          description="Start with one useful job. In Studio, you can decide what the assistant should know, which actions it can take, and where it must ask you first."
+          title="Create the agent before you configure Wire."
+          description="Start with one useful job. In Training and Studio, decide what the agent should know, which actions it can take, and where it must ask you first."
           action={
             <Button asChild>
-              <Link to="/studio?create=1">Create an assistant</Link>
+              <Link to="/studio?create=1">Create an agent</Link>
             </Button>
           }
         />
@@ -324,10 +321,10 @@ export default function ActionsWorkspace() {
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-5 flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="studio-kicker">Assistant permissions</p>
+          <p className="studio-kicker">Wire permissions</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h2 className="wl-section-title">
-              Choose how {selectedAgent?.name || "this assistant"} can help.
+              Choose how {selectedAgent?.name || "this agent"} can help.
             </h2>
             {!loading ? (
               <Badge
@@ -339,15 +336,15 @@ export default function ActionsWorkspace() {
             ) : null}
           </div>
           <p className="mt-2 max-w-2xl text-[var(--wireline-typography-body-size)] leading-6 text-[var(--wireline-color-text-secondary)]">
-            Turn on only the actions this assistant should take. You can change the scope whenever
-            the role changes.
+            Turn on only the actions this agent should take. You can change the scope whenever the
+            role changes.
           </p>
         </div>
         <NativeSelect
           value={agentId}
           onChange={(event) => chooseAgent(event.target.value)}
           className="max-w-[240px]"
-          aria-label="Choose assistant or agent"
+          aria-label="Choose agent"
         >
           {agents.map((agent) => (
             <option key={agent.id} value={agent.id}>
@@ -364,7 +361,7 @@ export default function ActionsWorkspace() {
       ) : null}
       {saveState === "saved" ? (
         <StatusNotice className="mb-5" tone="success" title="Permissions saved.">
-          {selectedAgent?.name || "This assistant"} can now use the selected actions.
+          {selectedAgent?.name || "This agent"} can now use the selected actions.
         </StatusNotice>
       ) : null}
 
@@ -393,7 +390,7 @@ export default function ActionsWorkspace() {
               </summary>
               <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-5 text-[var(--wireline-color-text-secondary)]">
                 Optional controls for sales, customer records, teams, and commerce. Enable only what
-                this assistant needs for its current role.
+                this agent needs for its current role.
               </p>
               <div className="mt-5 space-y-5">
                 {Object.entries(businessGroups).map(([group, tools]) => (
@@ -428,8 +425,8 @@ export default function ActionsWorkspace() {
           <p className="studio-kicker">Connected apps</p>
           <h2 className="wl-section-title mt-2">Add context when it helps.</h2>
           <p className="mt-2 text-[var(--wireline-typography-body-size)] leading-6 text-[var(--wireline-color-text-secondary)]">
-            Connect only the accounts and tools that make this assistant more useful. A connection
-            is not permission by itself.
+            Connect only the accounts and tools that make this agent more useful. A connection is
+            not permission by itself.
           </p>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {
@@ -471,7 +468,7 @@ export default function ActionsWorkspace() {
             })}
           </div>
           <Button asChild variant="secondary" className="mt-4 w-full">
-            <Link to="/actions">Manage connections</Link>
+            <Link to="/actions">Open Wire</Link>
           </Button>
         </aside>
       </div>

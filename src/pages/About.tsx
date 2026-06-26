@@ -10,7 +10,7 @@ const PRINCIPLES = [
     copy: "Custom-trained on your tone, scripts, and service knowledge.",
   },
   {
-    title: "Built around every assistant.",
+    title: "Built around every agent.",
     copy: "Your knowledge. Your playbook. Your tools. Built in.",
   },
   {
@@ -23,8 +23,8 @@ export default function About() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="About Wireline | AI Business Front Desk & Sales Agents"
-        description="Wireline is a customizable AI Front Desk & Sales Agent platform built to automate business reception, qualify leads, and sync with your CRM."
+        title="About Wireline | AI Agents for Calls and Follow-up"
+        description="Wireline is a customizable agent platform built for calls, texts, follow-up, browser context, email, and integrations."
         path="/about"
       />
 
@@ -32,10 +32,10 @@ export default function About() {
         <div className="max-w-3xl">
           <p className="wl-stitch-eyebrow">About Wireline</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            Custom voice agents for your business calls and workflows.
+            Custom agents for your business calls and workflows.
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            Build custom voice agents with your knowledge, your voice, and your exact processes.
+            Build custom agents with your Training, your voice, and your exact processes.
           </p>
         </div>
       </section>
@@ -53,8 +53,8 @@ export default function About() {
           </div>
           <div className="bg-card px-5 py-9 sm:px-8 sm:py-12 lg:px-10">
             <p className="max-w-xl text-base leading-7 text-muted-foreground">
-              Independently built. Every voice agent is fully customizable. Your knowledge. Your
-              voice. Your playbook.
+              Independently built. Every agent is fully customizable. Your Training. Your voice.
+              Your playbook.
             </p>
             <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
               The goal is simple: empower businesses to automate customer interactions, capture hot
@@ -77,7 +77,7 @@ export default function About() {
           <div>
             <p className="wl-stitch-eyebrow">What guides the product</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              A business agent should be completely predictable, custom-trained, and brand-safe.
+              A business agent should be completely predictable, trained, and brand-safe.
             </h2>
           </div>
           <p className="max-w-xl text-base leading-7 text-muted-foreground">

@@ -104,7 +104,7 @@ export default function ConversationBalanceCard() {
   const presets = balance?.presets_usd?.length ? balance.presets_usd : [5, 10, 25, 50];
   const copy = balance?.copy ?? {
     title: "Conversation Balance",
-    subtitle: "Build and test for free. Add $5 when you are ready to put an assistant to work.",
+    subtitle: "Build and test for free. Add $5 when you are ready to put an agent to work.",
     reassurance:
       "No subscription for personal use. No automatic reload. You decide when to add more.",
   };

@@ -259,7 +259,7 @@ export async function enforceTrialAgentCap(req: Request, res: Response, next: Ne
     return trialBlock(
       res,
       "ACTIVATION_REQUIRED",
-      "Choose a plan before creating or deploying an agent.",
+      "Choose operating capacity before creating or deploying an agent.",
       {},
     );
   }
@@ -328,7 +328,12 @@ export async function enforceTrialOutboundCap(req: Request, res: Response, next:
   const t = await getTrialState(userId);
 
   if (t.status === "pending_activation") {
-    return trialBlock(res, "ACTIVATION_REQUIRED", "Choose a plan before placing a call.", {});
+    return trialBlock(
+      res,
+      "ACTIVATION_REQUIRED",
+      "Choose operating capacity before placing a call.",
+      {},
+    );
   }
   if (t.status === "trial_expired" || t.status === "canceled") {
     return trialBlock(res, "TRIAL_EXPIRED", "Your trial has ended — pick a plan to keep dialing.", {

@@ -1,15 +1,25 @@
 # Wireline Documentation
 
-Wireline is a personal AI call assistant. The authenticated product begins in **Agent Studio**: create an agent, teach it through a conversation, and connect the services it needs.
+Wireline is one agent platform across web, browser, mobile, and ChatGPT. The product model is `Create -> Train -> Run`.
 
 ## Active product surface
 
 | Area | Source | Purpose |
 | --- | --- | --- |
-| Agent Studio | `src/pages/AgentStudioHome.tsx` | Create an agent, save its instructions, review its essentials, and connect integrations. |
-| Product foundation | `src/index.css`, `src/styles/foundation.css` | Small warm-native token layer and Studio primitives. |
-| Routing | `src/routes/AppRoutes.tsx` | Studio-first routing. Historical operations URLs redirect to `/agents`. |
-| Agent configuration | `src/routes/agent-routes.ts` | Authenticated creation, ownership enforcement, and instruction extraction. |
+| Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
+| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx` | Deep configuration for sources, documents, behavior, voice, policies, and evaluation. |
+| Run | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` | Chat-first execution for calls, texts, follow-up, approvals, and handoff. |
+| Wire | `src/pages/ActionsPage.tsx`, `src/components/ActionsWorkspace.tsx` | Numbers, integrations, routing, connected tools, and launch controls. |
+| Browser | `apps/browser-extension/` | Wireline Command: explicit page-context handoff into Studio. |
+| Native | `ios/`, `android/` | Call-first control surfaces, widgets, notifications, and native approvals. |
+
+## Current product rules
+
+- User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, and `Conversation Balance`.
+- Training owns the heavy configuration surface and document ingestion.
+- Studio is a chat-first workroom and does not have the old right context rail.
+- Wireline Command is the browser surface name; do not restore the retired extension name.
+- The design system is Wireline Mono / Wireline Clear System. Product chrome stays monochrome.
 
 ## System references
 
@@ -19,11 +29,12 @@ Wireline is a personal AI call assistant. The authenticated product begins in **
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Database connection and migration guidance. |
 | [DEPLOY.md](../DEPLOY.md) | Deployment and environment runbook. |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution and verification guidance. |
+| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
+| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Billing model and Stripe catalog direction. |
 
 ## Verification
 
-- `npm run verify` — production build plus bundled-server import smoke.
-- `npm run verify:full` — type checks, authorization coverage, CSP policy consistency, docs/pricing check, tests, build, and smoke.
-- `GET /api/health` — deployment health probe.
-
-The repository deliberately has no visual contract, UI-ratchet baseline, design-preview layer, or hotfix stylesheet. Keep functional and security tests intact; do not create a new design gate until the product direction is stable.
+- `npm run verify` - design check, build, and bundled-server smoke.
+- `npm run verify:full` - lint, design/authz/CSP checks, tests, build, and smoke.
+- `node apps/browser-extension/scripts/build.mjs --check` - browser extension contract and packaging smoke.
+- `GET /api/health` - deployment health probe.

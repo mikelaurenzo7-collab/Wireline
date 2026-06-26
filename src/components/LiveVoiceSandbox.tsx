@@ -67,18 +67,18 @@ function voiceActivity(state: VoiceState) {
     return {
       state: "pending" as const,
       title: "Connecting live voice",
-      detail: "Setting up a private browser session for this assistant.",
+      detail: "Setting up a private browser session for this agent.",
     };
   if (state === "thinking")
     return {
       state: "active" as const,
       title: "Checking approved knowledge",
-      detail: "Wireline is using only the assistant’s approved tools and context.",
+      detail: "Wireline is using only the agent's approved tools and context.",
     };
   if (state === "speaking")
     return {
       state: "active" as const,
-      title: "Assistant speaking",
+      title: "Agent speaking",
       detail: "You can interrupt naturally at any time.",
     };
   if (state === "listening")
@@ -90,7 +90,7 @@ function voiceActivity(state: VoiceState) {
   return {
     state: "pending" as const,
     title: "Ready for a private live test",
-    detail: "Start a test to speak with this assistant using its configured rules and knowledge.",
+    detail: "Start a test to speak with this agent using its configured rules and Training facts.",
   };
 }
 
@@ -427,7 +427,7 @@ export default function LiveVoiceSandbox({
 
     ws.onerror = () => {
       if (connectionGeneration === generation.current && !closedByUser.current)
-        setError("The live voice connection was interrupted. Reconnecting…");
+        setError("The live voice connection was interrupted. Reconnecting...");
     };
   };
 
@@ -494,8 +494,8 @@ export default function LiveVoiceSandbox({
             Speak with {agentName}
           </h3>
           <p className="mt-1 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-            A private browser test using this assistant’s rules, facts, voice profile, and
-            pronunciation guidance.
+            A private browser test using this agent's rules, facts, voice profile, and pronunciation
+            guidance.
           </p>
         </div>
         <button
@@ -542,7 +542,7 @@ export default function LiveVoiceSandbox({
           <div className="grid min-h-[96px] place-items-center text-center">
             <p className="max-w-md text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               Start a test, ask a real question, and interrupt naturally. This safe channel can
-              search approved knowledge but cannot perform external actions.
+              search approved Training facts but cannot perform external actions.
             </p>
           </div>
         )}

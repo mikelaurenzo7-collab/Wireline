@@ -36,7 +36,6 @@ export interface CardProps
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, elevation, interactive = false, ...props }, ref) => {
     const sharedProps = {
-      "data-slot": "card",
       "data-elevation": elevation ?? "1",
       className: cn(cardVariants({ elevation, className })),
     };
@@ -49,6 +48,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       return (
         <MotionDiv
           ref={ref}
+          data-slot="card"
           whileHover={{
             y: -1,
             transition: { type: "spring", stiffness: 380, damping: 28 },
@@ -59,7 +59,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       );
     }
 
-    return <div ref={ref} {...sharedProps} {...props} />;
+    return <div ref={ref} data-slot="card" {...sharedProps} {...props} />;
   },
 );
 Card.displayName = "Card";

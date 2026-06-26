@@ -1,65 +1,48 @@
-# Sustainable Business Usage Migration
+# Wireline Billing Catalog Direction
 
-## Decision
+## Product model
 
-Wireline business plans should give customers more usable live-work capacity, but the product must not turn a low-priced platform subscription into an open-ended voice-cost subsidy.
+Wireline sells operating capacity, not template access.
 
-The current catalog contains historical internal allowances of 500 minutes for Front Desk and 1,200 minutes for Sales & Reception. The catalog's own blended reserve is `$0.128/minute`. At that reserve, the legacy allowances imply approximately `$64` and `$153.60` of voice cost against `$29` and `$59` monthly plans, before telephony, messaging, storage, support, payment fees, or profit.
+- All templates are unlocked.
+- Personal starts with free build and training, then funds live work through Conversation Balance.
+- Team, Business, and Enterprise add shared operating capacity, routing, governance, and deeper integration controls.
+- Live work should always reconcile through a durable ledger instead of vague "unlimited" promises.
 
-**Do not increase raw minute allowances on the current $29 / $59 prices.** That would worsen an already unsound unit-economics position.
+## Target commercial structure
 
-## Product model going forward
+| Offer | Commercial role | Current billing expectation |
+| --- | --- | --- |
+| Personal | Solo or founder use | No required subscription; live work funded through Conversation Balance top-ups |
+| Team | Shared SMB coverage | Recurring capacity tier plus Conversation Balance |
+| Business | Revenue, support, and front desk teams | Recurring capacity tier plus pooled Conversation Balance |
+| Enterprise | Governed rollout, SSO, policy, audit, BYO telephony | Annual committed usage and contract terms |
+| Conversation Balance | One-time funding | Web checkout only; customer-controlled top-ups |
 
-Business plans sell the operating layer:
+## Stripe direction
 
-- shared assistants, roles, routing, inbox, phone lines, connections, governance, reporting, and support;
-- live conversation work remains usage-funded through Conversation Balance;
-- business plans should include a deliberate recurring **Conversation Balance grant** only once the grant is backed by an idempotent invoice-success workflow and a revised price floor.
+Create clean new Stripe products for the commercial model instead of reviving mixed legacy names.
 
-This is better than public minute bundles because it works across voice, SMS, email, and future channels without pretending every minute has the same cost.
+- `Wireline Personal`
+- `Wireline Team`
+- `Wireline Business`
+- `Wireline Enterprise`
+- `Conversation Balance`
 
-## Recommended commercial migration
+Each recurring offer should have explicit metadata for the internal plan id and price type. Top-ups should be one-time checkout products or price points, not template-gated subscriptions.
 
-### Preserve current plans for existing subscribers
+## Migration guardrails
 
-- Do not silently reprice or remove existing subscriptions.
-- Keep the current Stripe prices as legacy prices.
-- Preserve their existing entitlement and support behavior.
-- Do not add a recurring grant to legacy plans until the grant accounting and margin policy have passed acceptance tests.
+- Do not archive or delete anything tied to active subscriptions.
+- Do not archive or delete anything tied to active payment links until replacements exist.
+- Preserve internal plan ids in code until subscription storage, entitlements, and webhook sync are migrated safely.
+- Keep top-up funding idempotent through ledger references and Stripe invoice or session identifiers.
 
-### New acquisition plans
+## Still required before live rollout
 
-| Plan | Proposed platform price | Included recurring Conversation Balance | Intended job |
-| --- | ---: | ---: | --- |
-| Front Desk | $79/month | $20/month | One shared reception workflow, inbound coverage, appointment and lead handoff |
-| Sales & Reception | $199/month | $75/month | Multi-assistant coverage, routing, campaigns, shared operations |
-| Custom Enterprise | Contract | Contract | Multi-location operations, governed rollout, custom commercial terms |
-
-The balance grant is not a cash withdrawal. It is a platform usage allowance recorded in Wireline's append-only credit ledger only after the related subscription invoice succeeds.
-
-At the existing blended reserve, the initial grants equate to roughly 156 and 586 voice-equivalent minutes before channel-specific variation. That creates materially more useful capacity while retaining room for platform, telephony, support, payment, and margin costs.
-
-## Required implementation before new prices go live
-
-1. Add `included_conversation_credit_usd` to the plan catalog and public plan payload.
-2. On `invoice.payment_succeeded`, resolve the active Wireline plan from the synced subscription and grant the plan's recurring balance with a reference key tied to `invoice.id`.
-3. Use the existing unique ledger reference constraint for idempotency; duplicate webhooks must never duplicate a grant.
-4. Do not grant on failed, void, uncollectible, or non-subscription invoices.
-5. Add refund/dispute policy for subscriptions separately from one-time top-up reversal. A recurring entitlement grant should normally stop future grants on non-payment; it should not automatically claw back already-spent service without an explicit policy.
-6. Create *new* Stripe recurring prices for new acquisition; existing subscribers remain on legacy Stripe prices unless they opt in.
-7. Update environment references only after Stripe price creation succeeds and checkout/portal migration is exercised in test mode.
-8. Update pricing UI only after the backend grant workflow is live. The UI must name the grant as Conversation Balance, not a generic number of minutes.
-
-## Acceptance tests
-
-- First subscription checkout grants the included balance once after a paid invoice.
-- Renewal grants exactly once despite duplicate Stripe webhook delivery.
-- Invoice retry / payment failure grants nothing.
-- Subscription cancellation prevents the next cycle grant.
-- A customer changing plans gets only the grant associated with the paid invoice and final active plan; no double grant from proration events.
-- Mobile clients can display balance but cannot sell or grant it; web remains the billing surface.
-- Stripe dashboard, Wireline billing status, credit ledger, and usage snapshot reconcile to the same customer and invoice identifiers.
-
-## Adjustment rule
-
-Do not ship the proposed $79/$199 price changes until a test-mode lifecycle proves checkout, invoice renewal, grant idempotency, portal changes, cancellation, payment failure, and support visibility. If actual blended usage costs differ materially from the current reserve, revise grant sizes before touching acquisition prices—not after.
+1. Finalize the durable Conversation Balance ledger and renewal grant behavior.
+2. Decide which recurring tiers remain self-serve versus contact-sales only.
+3. Create the new Stripe products and prices.
+4. Repoint environment variables and checkout flows to the new prices.
+5. Archive stale consumer-style products only after the new catalog is verified.
+6. Re-run Vercel env coverage, Stripe checkout, webhook, and portal verification after the live swap.

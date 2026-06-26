@@ -12,6 +12,7 @@ const quickActions = [...document.querySelectorAll(".quick-action")];
 const agentsButton = document.querySelector("#open-agents");
 const wireButton = document.querySelector("#open-wire");
 const billingButton = document.querySelector("#open-billing");
+const studioButton = document.querySelector("#open-studio");
 
 const actionPrompts = {
   call: "Have a Wireline agent prepare a call from this page. Ask me for the number and confirmation before any live call.",
@@ -46,12 +47,12 @@ function toHost(value) {
 }
 
 function compact(value, length) {
-  return value.length > length ? `${value.slice(0, length - 1)}…` : value;
+  return value.length > length ? `${value.slice(0, length - 1)}...` : value;
 }
 
 async function loadContext() {
   refreshButton.disabled = true;
-  title.textContent = "Loading page context…";
+  title.textContent = "Loading page context...";
   host.textContent = "Only this tab is inspected when you ask.";
   selectionPreview.hidden = true;
   status.textContent = "";
@@ -62,7 +63,7 @@ async function loadContext() {
     host.textContent = toHost(context.url);
 
     if (context.selection) {
-      selectionPreview.textContent = `Selected text: “${compact(context.selection, 280)}”`;
+      selectionPreview.textContent = `Selected text: "${compact(context.selection, 280)}"`;
       selectionPreview.hidden = false;
     }
   } catch (error) {
@@ -79,7 +80,7 @@ async function sendToStudio(action = "task") {
   quickActions.forEach((button) => {
     button.disabled = true;
   });
-  status.textContent = "Opening Studio with this context…";
+  status.textContent = "Opening Studio with this context...";
 
   try {
     const fallbackPrompt = actionPrompts[action] || actionPrompts.task;
@@ -113,8 +114,17 @@ quickActions.forEach((button) => {
 });
 
 refreshButton.addEventListener("click", () => void loadContext());
-agentsButton.addEventListener("click", () => void sendMessage({ type: "wireline:open-route", route: "agents" }));
-wireButton.addEventListener("click", () => void sendMessage({ type: "wireline:open-route", route: "wire" }));
-billingButton.addEventListener("click", () => void sendMessage({ type: "wireline:open-route", route: "billing" }));
+agentsButton.addEventListener("click", () =>
+  void sendMessage({ type: "wireline:open-route", route: "agents" }),
+);
+wireButton.addEventListener("click", () =>
+  void sendMessage({ type: "wireline:open-route", route: "wire" }),
+);
+billingButton.addEventListener("click", () =>
+  void sendMessage({ type: "wireline:open-route", route: "billing" }),
+);
+studioButton.addEventListener("click", () =>
+  void sendMessage({ type: "wireline:open-route", route: "studio" }),
+);
 
 void loadContext();

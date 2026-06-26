@@ -36,37 +36,41 @@ function defaultIcon(author: NonNullable<ConversationMessageProps["author"]>) {
 
 const defaultLabel: Record<NonNullable<ConversationMessageProps["author"]>, string> = {
   customer: "Customer",
-  assistant: "Wireline assistant",
+  assistant: "Wireline agent",
   system: "System record",
 };
 
 const ConversationMessage = React.forwardRef<HTMLElement, ConversationMessageProps>(
-  ({ author = "customer", label, timestamp, channel, className, children, ...props }, ref) => (
-    <article
-      ref={ref}
-      data-slot="conversation-message"
-      data-author={author}
-      data-channel={channel}
-      className={cn(conversationMessageVariants({ author }), className)}
-      {...props}
-    >
-      <div className="mb-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.08em] text-muted-foreground">
-        <span className="inline-flex size-4 items-center justify-center" aria-hidden="true">
-          {defaultIcon(author)}
-        </span>
-        <span>{label ?? defaultLabel[author]}</span>
-        {channel ? <span className="text-muted-foreground/75">· {channel}</span> : null}
-      </div>
-      <div data-wireline-preserve-case className="whitespace-pre-wrap">
-        {children}
-      </div>
-      {timestamp ? (
-        <p className="mt-2 text-[var(--wireline-typography-overline-size)] text-muted-foreground">
-          {timestamp}
-        </p>
-      ) : null}
-    </article>
-  ),
+  ({ author = "customer", label, timestamp, channel, className, children, ...props }, ref) => {
+    const resolvedAuthor = author ?? "customer";
+
+    return (
+      <article
+        ref={ref}
+        data-slot="conversation-message"
+        data-author={resolvedAuthor}
+        data-channel={channel}
+        className={cn(conversationMessageVariants({ author: resolvedAuthor }), className)}
+        {...props}
+      >
+        <div className="mb-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.08em] text-muted-foreground">
+          <span className="inline-flex size-4 items-center justify-center" aria-hidden="true">
+            {defaultIcon(resolvedAuthor)}
+          </span>
+          <span>{label ?? defaultLabel[resolvedAuthor]}</span>
+          {channel ? <span className="text-muted-foreground/75">. {channel}</span> : null}
+        </div>
+        <div data-wireline-preserve-case className="whitespace-pre-wrap">
+          {children}
+        </div>
+        {timestamp ? (
+          <p className="mt-2 text-[var(--wireline-typography-overline-size)] text-muted-foreground">
+            {timestamp}
+          </p>
+        ) : null}
+      </article>
+    );
+  },
 );
 ConversationMessage.displayName = "ConversationMessage";
 

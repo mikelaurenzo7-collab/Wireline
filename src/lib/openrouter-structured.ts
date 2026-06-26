@@ -2,8 +2,11 @@
 /**
  * OpenRouter chat completions — OpenAI-compatible tool calling for Director.
  */
-import type { ToolSchema } from "./claude-structured";
-import type { StreamCallbacks, StructuredResult } from "./claude-structured";
+import type {
+  StructuredToolSchema as ToolSchema,
+  StreamCallbacks,
+  StructuredResult,
+} from "./ai-structured";
 import { recordOpenRouterUsage } from "./claude-audit";
 import { estimateOpenRouterCostUsd } from "./openrouter-models";
 

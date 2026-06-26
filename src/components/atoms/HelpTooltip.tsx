@@ -1,12 +1,7 @@
 import * as React from "react";
 import { HelpCircle } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/shadcn/Tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/shadcn/Tooltip";
 import { cn } from "@/lib/utils";
 
 export const helpTooltipVariants = cva("max-w-xs whitespace-normal text-xs leading-relaxed", {
@@ -59,7 +54,7 @@ export function HelpTooltip({
         <TooltipTrigger asChild>{trigger}</TooltipTrigger>
         <TooltipContent
           side={side}
-          align={align}
+          align={align ?? undefined}
           data-slot="help-tooltip"
           className={cn(helpTooltipVariants({ align }), className)}
         >

@@ -117,7 +117,7 @@ export default function AgentMemoryPanel({
               </h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Wireline separates active conversation context, call-derived recall, and the rules
-                and facts you configure for this assistant.
+                and facts you configure for this agent.
               </p>
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function AgentMemoryPanel({
             <div>
               <h4 className="font-semibold text-foreground">Conversation thread</h4>
               <p className="mt-1 text-sm text-muted-foreground">
-                {messageCount} message{messageCount === 1 ? "" : "s"} available in this assistant’s
+                {messageCount} message{messageCount === 1 ? "" : "s"} available in this agent's
                 current thread.
               </p>
             </div>
@@ -170,7 +170,7 @@ export default function AgentMemoryPanel({
                 className="rounded-[var(--radius-md)] border border-border bg-[var(--wireline-color-surface-subtle)] p-3"
               >
                 <p className="text-sm leading-6 text-foreground">
-                  {call.summary || "Call handled — no summary was captured."}
+                  {call.summary || "Call handled - no summary was captured."}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {call.intent ? <Badge variant="info">{call.intent}</Badge> : null}

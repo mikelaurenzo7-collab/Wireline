@@ -8,15 +8,15 @@ Wireline is not an anonymous demo surface. A connected user can create, read, re
 
 ```text
 ChatGPT conversation
-→ Wireline OAuth account connection
-→ confirmed agent draft creation
-→ private voice simulation
-→ full configuration / testing / launch in Wireline
+-> Wireline OAuth account connection
+-> confirmed agent draft creation
+-> private voice simulation
+-> full Training / testing / launch in Wireline
 ```
 
 ## What ChatGPT owns
 
-- Conversational discovery of the user’s business need.
+- Conversational discovery of the user's business need.
 - Turning a natural-language request into a structured customization profile.
 - Collecting explicit confirmation before a private draft is created or changed.
 - Private voice simulation of a saved draft.
@@ -26,8 +26,8 @@ ChatGPT conversation
 - Tenant isolation and account ownership.
 - Entitlement and capacity checks.
 - Agent profile normalization and prompt compilation.
-- Knowledge sources, phone numbers, integrations, business hours, compliance, billing, and launch.
-- Every external action and every lifecycle transition beyond draft/simulation.
+- Training sources, phone numbers, integrations, business hours, compliance, billing, and launch.
+- Every external action and every lifecycle transition beyond draft and simulation.
 
 ## Public endpoints
 
@@ -48,7 +48,7 @@ Every client edits the same bounded canonical profile:
 Identity: name, business, role, tone
 Mission: primary goal, success criteria
 Behavior: rules, prohibited topics, intended actions, escalation policy
-Knowledge: account-holder summary
+Training facts: account-holder summary
 Lifecycle: draft
 ```
 
@@ -62,7 +62,7 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 | `get_agent_draft` | `agents.read` | Reads a private draft. |
 | `update_agent_draft` | `agents.write` | Applies a confirmed private customization update. |
 | `start_private_voice_simulation` | `demo.voice` | Starts a short, tool-free private simulation. |
-| `list_wireline_agents` | `agents.read` | Lists the connected user’s agents. |
+| `list_wireline_agents` | `agents.read` | Lists the connected user's agents. |
 
 ### Non-goals for this transport
 
@@ -86,7 +86,7 @@ OPENAI_API_KEY=
 
 ## ChatGPT registration
 
-Use Client Identifier Metadata Document (CIMD) registration. Do not configure Dynamic Client Registration or OIDC for V1. The exact production registration is recorded in `docs/CHATGPT_APP_DASHBOARD_CONFIG.md`.
+Use Client Identifier Metadata Document registration. Do not configure Dynamic Client Registration or OIDC for V1. The exact production registration is recorded in `docs/CHATGPT_APP_DASHBOARD_CONFIG.md`.
 
 ## Release verification
 
@@ -96,7 +96,7 @@ Run the public, unauthenticated protocol probe against the deployed environment:
 node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
 ```
 
-The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization, the full tool inventory, the account-bound widget resource, and the widget’s explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
+The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization, the full tool inventory, the account-bound widget resource, and the widget's explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
 
 ## Private rollout and App Directory readiness
 

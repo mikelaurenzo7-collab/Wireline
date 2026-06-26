@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { ToolSchema } from "./claude-structured";
+import type { StructuredToolSchema as ToolSchema } from "./ai-structured";
 import { wantsLogoCreativePath, wantsWebsiteDeliverable } from "./director-deliverables";
 
 export const DIRECTOR_TOOL_SCHEMAS: Record<string, ToolSchema> = {

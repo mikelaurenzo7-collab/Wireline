@@ -22,13 +22,15 @@ describe("cross-surface design token generation", () => {
   });
 
   it("keeps generated native and extension artifacts present and semantically aligned", () => {
-    for (const output of Object.values(outputs)) expect(existsSync(resolve(root, output))).toBe(true);
+    for (const output of Object.values(outputs))
+      expect(existsSync(resolve(root, output))).toBe(true);
 
     const extension = read(outputs.extension);
     const swift = read(outputs.swift);
     const kotlin = read(outputs.kotlin);
 
-    expect(extension).toContain("--wireline-color-canvas-default: #F8F9FF;");
+    expect(extension).toContain("--wireline-color-canvas-default: #F7F7F4;");
+    expect(extension).toContain("--wireline-color-action-primary-default: #111111;");
     expect(extension).toContain("--wireline-interaction-target-comfortable: 44px;");
     expect(swift).toContain("WirelineDesignTokens");
     expect(swift).toContain("colorActionPrimaryDefault");

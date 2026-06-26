@@ -194,7 +194,7 @@ export default function SalesforceIntegrationPage() {
 
   return (
     <WorkspaceShell
-      eyebrow="Connections"
+      eyebrow="Integrations"
       title="Salesforce"
       contentClassName="pt-6"
       action={
@@ -304,7 +304,7 @@ export default function SalesforceIntegrationPage() {
                   tone="warning"
                   title="Connect Salesforce to control delivery"
                 >
-                  Complete OAuth from Connections before Wireline can create or pause Salesforce
+                  Complete OAuth from Integrations before Wireline can create or pause Salesforce
                   call activities.
                 </StatusNotice>
               ) : null}

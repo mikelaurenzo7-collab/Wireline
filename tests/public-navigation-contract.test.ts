@@ -11,7 +11,7 @@ describe("public navigation mobile regression contract", () => {
 
     expect(header).toContain("DialogContent");
     expect(header).toContain("DialogTrigger");
-    expect(header).toContain("DialogClose");
+    expect(header).toContain("DialogDescription");
     expect(header).toContain('presentation="navigation"');
     expect(header).toContain("showClose={false}");
     expect(header).toContain('id="wireline-mobile-navigation"');
@@ -22,21 +22,23 @@ describe("public navigation mobile regression contract", () => {
   it("keeps all primary navigation and account actions visible in the mobile dialog", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
-    expect(header).toContain('label: "Product"');
-    expect(header).toContain('label: "Features"');
+    expect(header).toContain('label: "Use cases"');
+    expect(header).toContain('label: "System"');
     expect(header).toContain('label: "Pricing"');
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to="/signup"');
-    expect(header).toContain("Create your assistant");
+    expect(header).toContain(">Start<");
   });
 
   it("keeps skip navigation visually hidden until keyboard focus", () => {
     const foundation = source("src/styles/foundation.css");
 
     expect(foundation).toContain(".wl-skip-link {");
-    expect(foundation).toContain("transform: translateY(calc(-100% - 1.5rem))");
+    expect(foundation).toContain("top: -5rem");
+    expect(foundation).toContain("opacity: 0");
     expect(foundation).toContain(".wl-skip-link:focus-visible");
-    expect(foundation).toContain("transform: translateY(0)");
+    expect(foundation).toContain("top: max(0.75rem, env(safe-area-inset-top))");
+    expect(foundation).toContain("opacity: 1");
   });
 
   it("keeps Dialog capable of route-safe overlay, close-control, and navigation composition", () => {

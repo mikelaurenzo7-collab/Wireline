@@ -48,7 +48,7 @@ const blueprints: Array<{
 }> = [
   {
     value: "personal",
-    label: "Personal assistant",
+    label: "Personal agent",
     detail: "Routine calls, appointments, follow-through.",
     defaults: {
       purpose: "Handle routine personal calls and appointment requests.",

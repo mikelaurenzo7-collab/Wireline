@@ -22,7 +22,7 @@ import {
   runStructuredWithThinking,
   type StructuredToolSchema as ToolSchema,
 } from "./ai-structured";
-import { CLAUDE_MODELS } from "./ai-models";
+import { CLAUDE_MODELS } from "./claude-models";
 import {
   AGENT_TOOL_CATALOG,
   AGENT_TOOL_NAME_VALUES,

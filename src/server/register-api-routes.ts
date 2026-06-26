@@ -2,7 +2,8 @@ import type { Express } from "express";
 import authRouter from "../routes/auth-routes";
 import authOAuthRouter from "../routes/auth-oauth-routes";
 import oauthRouter from "../routes/oauth";
-import agentRouter from "../routes/agent-routes";
+import agentRouter from "../routes/agent-routes-v2";
+import agentWorkspaceRouter from "../routes/agent-workspace-routes";
 import qaRouter from "../routes/qa-routes";
 import vapiRouter from "../routes/vapi-v2";
 import healthRouter from "../routes/health-routes";
@@ -43,6 +44,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(authRouter);
   app.use(oauthRouter);
   app.use(agentRouter);
+  app.use(agentWorkspaceRouter);
   app.use("/api/qa", qaRouter);
   app.use(vapiRouter);
   app.use(voicesRouter);

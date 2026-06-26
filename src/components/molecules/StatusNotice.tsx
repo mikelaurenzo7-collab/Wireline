@@ -25,7 +25,9 @@ export const statusNoticeVariants = cva(
 );
 
 export interface StatusNoticeProps
-  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof statusNoticeVariants> {
+  extends
+    Omit<React.HTMLAttributes<HTMLDivElement>, "title">,
+    VariantProps<typeof statusNoticeVariants> {
   title?: React.ReactNode;
   icon?: React.ReactNode;
   action?: React.ReactNode;
@@ -62,24 +64,28 @@ function defaultIcon(tone: NonNullable<StatusNoticeProps["tone"]>) {
 }
 
 const StatusNotice = React.forwardRef<HTMLDivElement, StatusNoticeProps>(
-  ({ tone = "info", title, icon, action, className, children, ...props }, ref) => (
-    <div
-      ref={ref}
-      data-slot="status-notice"
-      role={tone === "destructive" ? "alert" : "status"}
-      className={cn(statusNoticeVariants({ tone }), className)}
-      {...props}
-    >
-      {icon ?? defaultIcon(tone)}
-      <div className="min-w-0 flex-1">
-        {title ? <p className="font-semibold text-foreground">{title}</p> : null}
-        <div className={title ? "mt-1 text-muted-foreground" : "text-muted-foreground"}>
-          {children}
+  ({ tone = "info", title, icon, action, className, children, ...props }, ref) => {
+    const resolvedTone = tone ?? "info";
+
+    return (
+      <div
+        ref={ref}
+        data-slot="status-notice"
+        role={tone === "destructive" ? "alert" : "status"}
+        className={cn(statusNoticeVariants({ tone: resolvedTone }), className)}
+        {...props}
+      >
+        {icon ?? defaultIcon(resolvedTone)}
+        <div className="min-w-0 flex-1">
+          {title ? <p className="font-semibold text-foreground">{title}</p> : null}
+          <div className={title ? "mt-1 text-muted-foreground" : "text-muted-foreground"}>
+            {children}
+          </div>
         </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
-    </div>
-  ),
+    );
+  },
 );
 StatusNotice.displayName = "StatusNotice";
 

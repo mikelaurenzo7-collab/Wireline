@@ -24,7 +24,9 @@ export const conversationActivityVariants = cva(
 );
 
 export interface ConversationActivityProps
-  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof conversationActivityVariants> {
+  extends
+    Omit<React.HTMLAttributes<HTMLDivElement>, "title">,
+    VariantProps<typeof conversationActivityVariants> {
   title: React.ReactNode;
   detail?: React.ReactNode;
   timestamp?: React.ReactNode;
@@ -57,22 +59,26 @@ function defaultIcon(state: NonNullable<ConversationActivityProps["state"]>) {
 }
 
 const ConversationActivity = React.forwardRef<HTMLDivElement, ConversationActivityProps>(
-  ({ state = "pending", title, detail, timestamp, icon, className, ...props }, ref) => (
-    <div
-      ref={ref}
-      data-slot="conversation-activity"
-      data-state={state}
-      className={cn(conversationActivityVariants({ state }), className)}
-      {...props}
-    >
-      {icon ?? defaultIcon(state)}
-      <div className="min-w-0">
-        <p className="font-semibold text-foreground">{title}</p>
-        {detail ? <p className="mt-1 leading-5 text-muted-foreground">{detail}</p> : null}
-        {timestamp ? <p className="mt-2 text-xs text-muted-foreground">{timestamp}</p> : null}
+  ({ state = "pending", title, detail, timestamp, icon, className, ...props }, ref) => {
+    const resolvedState = state ?? "pending";
+
+    return (
+      <div
+        ref={ref}
+        data-slot="conversation-activity"
+        data-state={resolvedState}
+        className={cn(conversationActivityVariants({ state: resolvedState }), className)}
+        {...props}
+      >
+        {icon ?? defaultIcon(resolvedState)}
+        <div className="min-w-0">
+          <p className="font-semibold text-foreground">{title}</p>
+          {detail ? <p className="mt-1 leading-5 text-muted-foreground">{detail}</p> : null}
+          {timestamp ? <p className="mt-2 text-xs text-muted-foreground">{timestamp}</p> : null}
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
 );
 ConversationActivity.displayName = "ConversationActivity";
 

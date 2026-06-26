@@ -12,7 +12,7 @@ describe("live voice trust surface", () => {
     expect(voice).toContain("function voiceActivity(state: VoiceState)");
     expect(voice).toContain("Connecting live voice");
     expect(voice).toContain("Checking approved knowledge");
-    expect(voice).toContain("Assistant speaking");
+    expect(voice).toContain("Agent speaking");
     expect(voice).toContain("Live voice needs attention");
     expect(voice).toContain("<ConversationActivity");
   });
@@ -32,7 +32,8 @@ describe("live voice trust surface", () => {
     expect(voice).toContain("cannot perform external actions");
     expect(voice).toContain("Live voice interrupted");
     expect(voice).toContain("Reset live voice");
-    expect(voice).toContain('action={<button type="button"');
+    expect(voice).toContain("<StatusNotice");
+    expect(voice).toContain('aria-label="Reset live voice"');
   });
 
   it("retains the existing live voice transport and approved tool contracts", () => {

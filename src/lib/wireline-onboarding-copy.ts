@@ -9,17 +9,17 @@ export const ONBOARDING_WELCOME = {
   title: "Get to your first",
   titleAccent: "real call",
   subtitle:
-    "Wireline wins when a customer talks to your assistant on a live line. Fast Setup gets you provisioned — then we help you land that first useful conversation.",
+    "Wireline wins when a customer reaches your agent on a live line. Fast Setup gets you provisioned — then we help you land that first useful conversation.",
   bullets: [
-    { label: "Assistant", detail: "Name, role, and script generated from your description" },
-    { label: "Knowledge", detail: "Optional website scrape for services and policies" },
+    { label: "Agent", detail: "Name, role, and starting brief generated from your description" },
+    { label: "Training", detail: "Optional website scrape plus sources, documents, and policies" },
     {
       label: "Activate",
       detail: "Provision a US line, dial in, and complete one real conversation",
     },
   ],
   ctaPrimary: "Start Fast Setup",
-  ctaSecondary: "Explore the console",
+  ctaSecondary: "Explore Studio",
   timeHint: "~3 min setup",
 } as const;
 
@@ -31,24 +31,24 @@ export function onboardingWelcomeSubtitle(signupWedge: string | null): string {
 
 /** Replaces the old auto Product Tour — shown once after Fast Start completes. */
 export const CONSOLE_MAP = {
-  sectionTitle: "Your console",
+  sectionTitle: "Your workspace",
   items: [
     {
       id: "agents",
-      label: "Studio",
-      detail: "Build, voice & tune your assistants",
+      label: "Agents",
+      detail: "Create agents and shape the operating brief",
       path: "/agents",
     },
     {
       id: "ops",
       label: "Recaps",
-      detail: "Live callers, approvals, and Assistants pulse",
+      detail: "Live callers, approvals, and follow-up in motion",
       path: "/ops",
     },
     {
       id: "chat",
-      label: "Chat",
-      detail: "Director + per-assistant coaching",
+      label: "Studio",
+      detail: "Chat-first run surface for calls, texts, and handoff",
       path: "/chat",
     },
     {
@@ -62,43 +62,40 @@ export const CONSOLE_MAP = {
 
 /** Editorial panel on auth — first impression before the Account Holder console. */
 export const AUTH_PORTAL_SHOWCASE = {
-  eyebrow: "Account Holder console",
+  eyebrow: "Account workspace",
   title: "Mission control for your",
-  titleAccent: "AI Assistants",
+  titleAccent: "Wireline agents",
   subtitle:
-    "Wireline runs phone, email, and SMS assistants on real numbers — trained on your playbook, supervised from one calm cockpit.",
+    "Wireline runs phone, email, and SMS agents on real numbers — trained on your playbook and supervised from one calm workspace.",
   features: [
     {
       id: "studio",
-      label: "The Studio",
-      detail:
-        "Shape each assistant's voice character, pick its brain — Claude, Gemini, GPT, or Grok — and put it on a real number.",
+      label: "Training",
+      detail: "Shape voice, behavior, documents, and policy before anything goes live.",
     },
     {
       id: "director",
-      label: "Director co-pilot",
-      detail:
-        "Plan hires, coach assistants, draft deliverables, and approve actions in one thread.",
+      label: "Studio",
+      detail: "Run calls, texts, approvals, and handoff in one chat-first workroom.",
     },
     {
       id: "live-ops",
       label: "Recaps floor",
-      detail:
-        "Listen in, whisper-coach, approve CRM writes, and watch Assistants pulse in real time.",
+      detail: "Listen in, approve CRM writes, and monitor live work in real time.",
     },
   ],
 } as const;
 
 export const YOURE_LIVE_COPY = {
-  eyebrow: "Assistants live",
+  eyebrow: "Agent live",
   title: "You're live",
   subtitle: (agentName: string) => `${agentName} is ready to take calls.`,
   nextLabel: "What to do next",
   testCallTitle: "Run a browser test call",
-  testCallDetail: "Hear your assistant without dialing — tune tone and script in Chat.",
-  testCallAction: "Open Chat",
+  testCallDetail: "Hear your agent without dialing — tune tone and script in Studio.",
+  testCallAction: "Open Studio",
   opsTitle: "Watch Recaps",
-  opsDetail: "See active callers, approve actions, and monitor Assistants pulse.",
+  opsDetail: "See active callers, approve actions, and monitor live work.",
   opsAction: "Open Recaps",
 } as const;
 
@@ -113,8 +110,8 @@ export const ACTIVATION_PENDING_COPY = {
   dialCta: "Call now to activate",
   browserTestTitle: "Browser test (optional)",
   browserTestDetail:
-    "Preview voice and script in Chat — simulator calls do not count toward activation.",
-  browserTestAction: "Open Chat",
+    "Preview voice and script in Studio — simulator calls do not count toward activation.",
+  browserTestAction: "Open Studio",
   opsTitle: "Watch Recaps",
   opsDetail: "See the call land in real time once you dial in.",
   opsAction: "Open Recaps",

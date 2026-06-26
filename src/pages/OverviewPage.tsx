@@ -20,8 +20,8 @@ import { formatAgentRoleLabel, rosterSummary } from "../lib/product-copy";
 
 const WORKSPACE_MOVES = [
   { href: "/inbox", icon: Inbox, title: "Inbox", label: "Review outcomes" },
-  { href: "/knowledge", icon: FileText, title: "Knowledge", label: "Keep context current" },
-  { href: "/actions", icon: Cable, title: "Connections", label: "Connect useful actions" },
+  { href: "/training", icon: FileText, title: "Training", label: "Sources, policies, and voice" },
+  { href: "/actions", icon: Cable, title: "Wire", label: "Numbers, integrations, and routing" },
 ] as const;
 
 function RosterLoading() {
@@ -59,7 +59,7 @@ export default function OverviewPage() {
         <Button asChild size="sm">
           <Link to="/studio?create=1">
             <Plus aria-hidden="true" size={16} />
-            New assistant
+            New agent
           </Link>
         </Button>
       }
@@ -71,22 +71,24 @@ export default function OverviewPage() {
             <div>
               <p className="studio-kicker">Your workspace</p>
               <h2 className="wl-section-title mt-3 max-w-[18ch] text-[clamp(1.75rem,1.4rem+1.6vw,2.5rem)]">
-                {hasAgents ? "Keep work moving." : "Start with one assistant."}
+                {hasAgents ? "Keep work moving." : "Start with one agent."}
               </h2>
               <p className="wl-overview-hero-copy mt-3">
-                {hasAgents ? "Outcomes, rules, and actions in one place." : "A focused brief is enough to begin."}
+                {hasAgents
+                  ? "Outcomes, rules, and actions in one place."
+                  : "A focused brief is enough to begin."}
               </p>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild>
                 <Link to={hasAgents ? "/inbox" : "/studio?create=1"}>
-                  {hasAgents ? "Inbox" : "Create assistant"}
+                  {hasAgents ? "Inbox" : "Create agent"}
                   <ArrowRight aria-hidden="true" size={16} />
                 </Link>
               </Button>
               <Button asChild variant="secondary">
                 <Link to={hasAgents ? "/agents" : "/studio?create=1&posture=business"}>
-                  {hasAgents ? "Assistants" : "Business assistant"}
+                  {hasAgents ? "Agents" : "Business agent"}
                 </Link>
               </Button>
             </div>
@@ -98,7 +100,7 @@ export default function OverviewPage() {
               <div className="mt-5 flex items-end gap-2">
                 <span className="wl-metric-value">{loading ? "–" : agents.length}</span>
                 <span className="pb-0.5 text-sm text-muted-foreground">
-                  {agents.length === 1 ? "assistant" : "assistants"}
+                  {agents.length === 1 ? "agent" : "agents"}
                 </span>
               </div>
               <p className="mt-3 text-sm text-muted-foreground">
@@ -106,7 +108,7 @@ export default function OverviewPage() {
                   ? "Check your connections."
                   : hasAgents
                     ? rosterSummary(personalCount, businessCount)
-                    : "No assistants yet."}
+                    : "No agents yet."}
               </p>
             </div>
             <div className="mt-6 border-t border-border pt-4">
@@ -137,7 +139,7 @@ export default function OverviewPage() {
               <div className="mt-5">
                 <p className="studio-kicker">For you</p>
                 <h2 className="wl-section-title mt-2 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
-                  Personal assistant
+                  Personal agent
                 </h2>
               </div>
               <Button asChild variant="secondary" size="sm" className="mt-6 w-fit">
@@ -151,7 +153,7 @@ export default function OverviewPage() {
               <div className="mt-5">
                 <p className="studio-kicker">For business</p>
                 <h2 className="wl-section-title mt-2 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
-                  Business assistant
+                  Business agent
                 </h2>
               </div>
               <Button asChild variant="secondary" size="sm" className="mt-6 w-fit">
@@ -170,7 +172,7 @@ export default function OverviewPage() {
             {hasAgents ? (
               <Button asChild variant="link" className="h-auto px-0 text-sm">
                 <Link to="/agents">
-                  View assistants <ArrowRight aria-hidden="true" className="size-4" />
+                  View agents <ArrowRight aria-hidden="true" className="size-4" />
                 </Link>
               </Button>
             ) : null}
@@ -198,12 +200,14 @@ export default function OverviewPage() {
         <section className="studio-card p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
             <div>
-              <p className="studio-kicker">Your assistants</p>
-              <h2 className="wl-section-title mt-2">{hasAgents ? "Ready for work" : "No assistants yet"}</h2>
+              <p className="studio-kicker">Your agents</p>
+              <h2 className="wl-section-title mt-2">
+                {hasAgents ? "Ready for work" : "No agents yet"}
+              </h2>
             </div>
             <Button asChild variant="secondary" size="sm">
               <Link to={hasAgents ? "/agents" : "/studio?create=1"}>
-                {hasAgents ? "Manage" : "Create assistant"}
+                {hasAgents ? "Manage" : "Create agent"}
               </Link>
             </Button>
           </div>
@@ -230,14 +234,18 @@ export default function OverviewPage() {
                     </div>
                   </div>
                   <h3 className="wl-card-title">{agent.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{formatAgentRoleLabel(agent.role)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {formatAgentRoleLabel(agent.role)}
+                  </p>
                 </Link>
               ))}
             </div>
           ) : (
             <div className="flex min-h-[152px] flex-col items-start justify-center gap-3 py-6">
               <Sparkles aria-hidden="true" className="size-6 text-primary" />
-              <p className="text-sm text-muted-foreground">Create your first assistant from a focused brief.</p>
+              <p className="text-sm text-muted-foreground">
+                Create your first agent from a focused brief.
+              </p>
             </div>
           )}
         </section>

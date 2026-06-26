@@ -7,7 +7,7 @@ export default function HeroCallPreview() {
   return (
     <div
       className="wl-hero-call-preview relative mx-auto w-full max-w-xl text-left"
-      aria-label="Live call preview: a Wireline assistant answering an inbound call and booking an appointment"
+      aria-label="Live call preview: a Wireline agent answering an inbound call and booking an appointment"
     >
       <div className="overflow-hidden border border-border bg-card">
         <div className="flex items-center gap-3 border-b border-border px-4 py-3.5 sm:px-5">
@@ -22,7 +22,7 @@ export default function HeroCallPreview() {
               </span>
             </div>
             <p className="mt-0.5 text-[var(--wireline-typography-caption-size)] text-muted-foreground">
-              Front desk · inbound support
+              Front desk - inbound support
             </p>
           </div>
           <span className="hidden shrink-0 items-center gap-2 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.08em] text-muted-foreground sm:inline-flex">
@@ -31,7 +31,10 @@ export default function HeroCallPreview() {
           </span>
         </div>
 
-        <div className="flex h-12 items-end justify-center gap-[3px] border-b border-border bg-secondary px-4" aria-hidden="true">
+        <div
+          className="flex h-12 items-end justify-center gap-[3px] border-b border-border bg-secondary px-4"
+          aria-hidden="true"
+        >
           {Array.from({ length: BAR_COUNT }).map((_, index) => (
             <span
               key={index}
@@ -78,7 +81,7 @@ export default function HeroCallPreview() {
 
         <div className="flex items-center gap-2 border-t border-border bg-secondary px-4 py-2.5 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.1em] text-primary sm:px-5">
           <PhoneCall className="h-3 w-3" aria-hidden="true" />
-          Active call · handled by assistant
+          Active call - handled by agent
         </div>
       </div>
     </div>

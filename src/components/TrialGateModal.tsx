@@ -1,5 +1,5 @@
 /**
- * SubscriptionGateModal — the direct paid-activation path.
+ * SubscriptionGateModal - the direct paid-activation path.
  *
  * Listens for the global `wireline:trial-gate-block` event emitted by authFetch
  * when a paid action receives a 402. Legacy trial tenants retain their existing
@@ -18,10 +18,10 @@ import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const TIER_PITCH: Record<string, string> = {
-  personal: "Everyday calls · 1 agent · dedicated number",
-  "business-starter": "Two agents · 300 minutes · hours, routing, and follow-up",
-  starter: "Five agents · 1,000 minutes · live operations and outbound workflows",
-  scale: "Ten agents · 3,000 minutes · multi-location coverage",
+  personal: "One agent, one number, live work funded through Conversation Balance",
+  "business-starter": "Wireline Team - shared inbox, routing, and core integrations",
+  starter: "Wireline Business - approvals, analytics, and pooled live work",
+  scale: "Wireline Enterprise - governed rollout and committed usage",
 };
 
 /** Public self-serve plans only. Retained plans stay serviceable but are never reacquired accidentally. */
@@ -38,34 +38,34 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
   switch (detail.code) {
     case "ACTIVATION_REQUIRED":
       return {
-        title: "Choose a plan to activate Wireline",
-        body: "Your account is ready. Pick the call capacity you want, then create and deploy your first assistant. There is no hidden trial or surprise usage window.",
+        title: "Choose operating capacity to activate Wireline",
+        body: "Your account is ready. Pick the shared capacity you want, then create and deploy your first agent. Live calls, texts, and follow-up stay usage-backed instead of hidden behind a trial window.",
       };
     case "EMAIL_UNVERIFIED":
       return {
         title: "Verify your email first",
-        body: "We sent you a link from Wireline — click it to unlock paid activation and agent deployment. Check your inbox and spam folder; you can resend from the banner at the top.",
+        body: "We sent you a link from Wireline. Click it to unlock paid activation and agent deployment. Check your inbox and spam folder; you can resend from the banner at the top.",
       };
     case "TRIAL_LIMIT_HIT":
       return {
         title: "Trial limit reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
-            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Pick a plan to keep going — your data and agent stay exactly as they are.`
-            : "You've hit your legacy trial limit. Pick a plan to keep going.",
+            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Pick operating capacity to keep going - your data and agent stay exactly as they are.`
+            : "You've hit your legacy trial limit. Pick operating capacity to keep going.",
       };
     case "TRIAL_EXPIRED":
       return {
         title: "Your legacy trial ended",
-        body: "Pick a plan to keep your agent live. Your number, settings, and call history stay exactly as you left them.",
+        body: "Pick operating capacity to keep your agent live. Your number, settings, and call history stay exactly as you left them.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
         title: "Subscription paused",
-        body: "Your subscription is past due — update your card or choose a plan to keep your agent live.",
+        body: "Your subscription is past due. Update your card or choose operating capacity to keep your agent live.",
       };
     default:
-      return { title: "Plan required", body: detail.error };
+      return { title: "Capacity required", body: detail.error };
   }
 }
 
@@ -101,7 +101,7 @@ export default function TrialGateModal() {
   const { title, body } = headlineForCode(detail);
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
   const eyebrow =
-    detail.code === "ACTIVATION_REQUIRED" ? "Choose a plan to activate" : "Upgrade to keep going";
+    detail.code === "ACTIVATION_REQUIRED" ? "Choose operating capacity" : "Upgrade to keep going";
 
   async function checkout(planId: string) {
     setPending(planId);
@@ -277,15 +277,15 @@ export default function TrialGateModal() {
               )}
 
               <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
-                <span>Phone number included</span>
-                <span>·</span>
+                <span>Shared capacity checkout</span>
+                <span>&middot;</span>
                 <span>Cancel anytime</span>
-                <span>·</span>
+                <span>&middot;</span>
                 <a
                   href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
                   className="text-brand transition-colors hover:text-brand/80"
                 >
-                  Need Custom? →
+                  Need Enterprise?
                 </a>
               </div>
             </div>

@@ -73,7 +73,7 @@ export function ContactPage() {
     <MarketingPageFrame stickyCta={false} mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
         title="Contact Wireline"
-        description="Talk to Wireline about your personal call assistant, business coverage, partnerships, or support."
+        description="Talk to Wireline about personal call coverage, team rollout, partnerships, or support."
         path="/contact"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">

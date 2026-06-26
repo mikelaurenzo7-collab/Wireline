@@ -37,24 +37,26 @@ describe("canonical mobile overlay system", () => {
     }
   });
 
-  it("keeps WorkspaceShell on the canonical sidebar presentation", () => {
+  it("keeps WorkspaceShell on the canonical desktop rail plus native/mobile utility split", () => {
     const shell = source("src/components/WorkspaceShell.tsx");
 
-    expect(shell).toContain("WorkspaceNavigationContent");
-    expect(shell).toContain('presentation="sidebar"');
-    expect(shell).toContain("DialogTrigger");
-    expect(shell).toContain("DialogClose");
+    expect(shell).toContain("function DesktopRail");
+    expect(shell).toContain("function NativeDock");
+    expect(shell).toContain("function isNativeAppShell");
+    expect(shell).toContain("!nativeAppShell ? <MobileBrowserUtilities />");
+    expect(shell).toContain("nativeAppShell ? <NativeDock");
     expect(shell).not.toContain("document.body.style.overflow");
     expect(shell).not.toContain("window.addEventListener");
-    expect(shell).not.toContain("aria-modal={drawerOpen");
   });
 
   it("documents the intended public navigation and workspace action split", () => {
     const plan = source("references/design-system-navigation-plan.md");
 
     expect(plan).toContain("Mobile marketing navigation");
-    expect(plan).toContain("Mobile workspace actions");
+    expect(plan).toContain("Mobile page and toolbar actions");
     expect(plan).toContain("Persistent workspace routing");
-    expect(plan).toContain("Delegate Escape, focus trapping, focus restoration, and body scroll locking to Radix.");
+    expect(plan).toContain(
+      "Delegate Escape, focus trapping, focus restoration, and body scroll locking to Radix.",
+    );
   });
 });

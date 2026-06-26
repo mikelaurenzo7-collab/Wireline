@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 105  
-**Protected:** 75  
+**Routes scanned:** 128  
+**Protected:** 98  
 **Public (allowlisted):** 30  
 **Violations:** 0
 
@@ -48,10 +48,33 @@
 
 | File | Method | Path | Auth | RBAC | Public | Status |
 |------|--------|------|------|------|--------|--------|
+| account-routes.ts | POST | `/api/account/delete` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts` | inline | — | — | Protected |
 | account-routes.ts | POST | `/api/accounts` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/primary` | inline | — | — | Protected |
+| agent-routes-v2.ts | GET | `/api/agent-config/:id` | inline | — | — | Protected |
+| agent-routes-v2.ts | DELETE | `/api/agent-config/:id/:type/:rowId` | inline | — | — | Protected |
+| agent-routes-v2.ts | POST | `/api/agent-config/:id/assets` | inline | — | — | Protected |
+| agent-routes-v2.ts | PATCH | `/api/agent-config/:id/business` | inline | — | — | Protected |
+| agent-routes-v2.ts | POST | `/api/agent-config/:id/manual` | inline | — | — | Protected |
+| agent-routes-v2.ts | PATCH | `/api/agent-config/:id/runtime` | inline | — | — | Protected |
+| agent-routes-v2.ts | PATCH | `/api/agent-config/:id/voice` | inline | — | — | Protected |
+| agent-routes-v2.ts | GET | `/api/agents` | inline | — | — | Protected |
+| agent-routes-v2.ts | POST | `/api/agents` | inline | — | — | Protected |
+| agent-routes-v2.ts | POST | `/api/agents/:id/import` | inline | — | — | Protected |
+| agent-routes-v2.ts | GET | `/api/agents/openrouter-models` | inline | — | — | Protected |
+| agent-routes-v2.ts | GET | `/api/agents/voice-models` | inline | — | — | Protected |
+| agent-routes-v2.ts | POST | `/api/train/extract` | inline | — | — | Protected |
+| agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/apply-change` | inline | — | — | Protected |
+| agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/files` | inline | — | — | Protected |
+| agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/messages` | inline | — | — | Protected |
+| agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/messages` | inline | — | — | Protected |
+| agent-workspace-routes.ts | DELETE | `/api/agents/:id/workspace/messages` | inline | — | — | Protected |
+| agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/messages/stream` | inline | — | — | Protected |
+| agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/overview` | inline | — | — | Protected |
+| agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/run-action` | inline | — | — | Protected |
+| agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
 | auth-oauth-routes.ts | GET | `/api/auth/google/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/google/url` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/callback` | — | — | yes | Public (allowlisted) |

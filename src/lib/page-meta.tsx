@@ -1,46 +1,20 @@
-/**
- * PageMeta — React 19 compatible per-route document title + meta + Open Graph.
- *
- * Each route renders <PageMeta> to update the browser tab title, meta
- * description, canonical URL, Open Graph tags, and optional JSON-LD.
- * We update the existing document head nodes directly so static tags from
- * index.html never win over route-specific canonical/robots values.
- *
- * Usage:
- *   function PrivacyPolicy() {
- *     return (
- *       <>
- *         <PageMeta
- *           title="Privacy Policy"
- *           description="How Wireline handles your data."
- *           path="/privacy"
- *         />
- *         ...content
- *       </>
- *     );
- *   }
- */
 import { useEffect } from "react";
 
 interface PageMetaProps {
-  /** Plain title — " · Wireline" suffix is appended automatically. */
   title: string;
   description?: string;
-  /** Route path (e.g. "/pricing") — used to build canonical URL and og:url. */
   path?: string;
-  /** Override the default OG image URL. Defaults to /og-image.png. */
   image?: string;
-  /** Add noindex for utility/auth routes that should not appear in search. */
   noIndex?: boolean;
-  /** Optional page-level JSON-LD object. */
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const BRAND_SUFFIX = " · Wireline";
+const BRAND_SUFFIX = " - Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "Wireline — Personal & Business AI Assistants";
-const DEFAULT_DESCRIPTION = "AI assistants for voice, email, and text—shaped around your voice, priorities, and workflow.";
+const DEFAULT_TITLE = "Wireline - Agents for calls, texts, and follow-up";
+const DEFAULT_DESCRIPTION =
+  "Wireline helps teams create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;

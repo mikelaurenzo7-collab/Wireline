@@ -3,8 +3,8 @@ import {
   runStructuredWithThinking,
   type StreamCallbacks,
   type StructuredResult,
-  type ToolSchema,
-} from "./claude-structured";
+  type StructuredToolSchema as ToolSchema,
+} from "./ai-structured";
 import { runOpenRouterStructured, runOpenRouterStructuredStream } from "./openrouter-structured";
 import type { DirectorStreamContext } from "./director-turn";
 

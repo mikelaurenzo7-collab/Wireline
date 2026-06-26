@@ -17,8 +17,8 @@ const SHORTCUTS = [
     category: "Build",
     items: [
       { keys: ["G", "A"], description: "Go to Studio" },
-      { keys: ["G", "K"], description: "Go to Knowledge" },
-      { keys: ["G", "C"], description: "Go to Integrations" },
+      { keys: ["G", "K"], description: "Go to Training" },
+      { keys: ["G", "C"], description: "Go to Wire" },
     ],
   },
   {
@@ -34,8 +34,8 @@ const SHORTCUTS = [
     ],
   },
   {
-    category: "Assistant",
-    items: [{ keys: ["?"], description: "Open Assistant co-pilot (in Studio)" }],
+    category: "Studio",
+    items: [{ keys: ["?"], description: "Open Studio co-pilot" }],
   },
   {
     category: "Actions",

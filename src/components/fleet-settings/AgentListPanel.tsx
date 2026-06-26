@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * AgentListPanel — Assistants sidebar showing all agents + create form.
+ * AgentListPanel — Agents sidebar showing all agents + create form.
  * Extracted from the monolithic AssistantSettings.tsx during the 2026 audit.
  */
 import { Bot, Mail, Loader2, Shield, Trash2, ChevronRight, PanelLeftClose } from "lucide-react";
@@ -24,7 +24,7 @@ interface Props {
   isDeletingAgent: string | null;
   agentStats: Record<string, any>;
   subscription: { status: string; max_agents: number | null };
-  /** Personal accounts get a single-assistant framing (no Assistants/seed language). */
+  /** Personal accounts get a single-agent framing (no legacy assistant framing). */
   isPersonal?: boolean;
   onSelectAgent: (agent: any) => void;
   onDeleteAgent: (agent: { id: string; name: string }) => void;
@@ -65,7 +65,7 @@ export default function AgentListPanel({
           disableAnimations
           onClick={onToggleCollapse}
           title="Show roster"
-          aria-label="Show assistant and agent roster"
+          aria-label="Show agent roster"
           className="w-9 h-9 rounded-md text-foreground/50 hover:text-foreground touch-press hover:scale-[1.05]"
         >
           <ChevronRight className="w-4 h-4" />
@@ -116,7 +116,7 @@ export default function AgentListPanel({
           <p className="app-section-title mb-0.5">{PRODUCT_VERSATILITY.eyebrow}</p>
           <h2 className="font-display italic text-2xl text-foreground leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
-            {isPersonal ? "Your personal assistant" : "Personal assistants & business agents"}
+            {isPersonal ? "Your personal agent" : "Agents"}
           </h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">

@@ -84,7 +84,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     ariaLabel: "Training modules",
     layoutIdPrefix: "training-module",
     tabs: [
-      { id: "database", label: "Knowledge", icon: Database },
+      { id: "database", label: "Training", icon: Database },
       { id: "voices", label: "Voices", icon: Mic },
       { id: "pronunciation", label: "Pronunciation", icon: BookOpen },
       { id: "simulator", label: "Simulator", icon: PlayCircle },

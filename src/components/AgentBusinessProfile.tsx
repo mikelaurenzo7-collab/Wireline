@@ -111,7 +111,7 @@ const COMPLIANCE_OPTIONS: { value: ComplianceMode; label: string; hint: string }
 ];
 
 const KPI_OPTIONS: { value: KpiFocus; label: string; hint: string }[] = [
-  { value: "general", label: "General", hint: "No specific outcome focus — balanced assistant" },
+  { value: "general", label: "General", hint: "No specific outcome focus — balanced agent" },
   {
     value: "conversions",
     label: "Conversions",
@@ -293,10 +293,10 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-sm">
         <div className="min-w-0">
           <h3 className="font-display italic text-base text-[var(--wireline-color-text-primary)] leading-tight">
-            Personal assistant or business agent
+            Personal agent or business agent
           </h3>
           <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-relaxed mt-0.5">
-            Choose whether this is a personal assistant for your day or a business agent for your
+            Choose whether this is a personal agent for your day or a business agent for your
             company.
           </p>
         </div>
@@ -315,7 +315,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             )}
           >
             <User className="w-3.5 h-3.5 text-[var(--wireline-color-action-primary-default)]" />
-            Personal assistant
+            Personal agent
           </ShadButton>
           <ShadButton
             type="button"
@@ -341,7 +341,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-xl border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-8 text-center space-y-6 max-w-2xl mx-auto my-4 shadow-sm relative overflow-hidden"
         >
-          {/* Subtle top indicator using Ametrine Purple */}
+          {/* Subtle top indicator using the primary monochrome accent */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-[var(--wireline-color-action-primary-default)]" />
 
           <div className="mx-auto w-14 h-14 rounded-full bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-border-default)]/80 flex items-center justify-center text-[var(--wireline-color-action-primary-default)]">
@@ -350,11 +350,11 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
 
           <div className="space-y-2">
             <h2 className="font-display italic text-xl text-[var(--wireline-color-text-primary)] tracking-tight">
-              Personal assistant
+              Personal agent
             </h2>
             <p className="text-[var(--wireline-typography-body-size)] text-[var(--wireline-color-text-secondary)] max-w-md mx-auto leading-relaxed">
-              This personal assistant manages your daily tasks, scheduling, and communication from
-              your device.
+              This personal agent manages your daily tasks, scheduling, and communication from your
+              device.
             </p>
           </div>
 
@@ -379,7 +379,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
 
             <div className="p-3.5 rounded-lg border border-[var(--wireline-color-border-default)]/40 bg-[var(--wireline-color-canvas-default)] space-y-1">
               <span className="text-[var(--wireline-typography-caption-size)] font-semibold text-[var(--wireline-color-text-primary)] block">
-                Knowledge & Reminders
+                Training & reminders
               </span>
               <span className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-normal block">
                 Keeps track of important details like family preferences, school info, and
@@ -410,7 +410,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               className="h-8 px-4 rounded-md inline-flex items-center gap-2 bg-[var(--wireline-color-action-primary-container)] border-[var(--wireline-color-border-default)] text-[var(--wireline-color-text-primary)] text-[var(--wireline-typography-caption-size)] font-semibold hover:bg-[var(--wireline-color-action-primary-default)] hover:text-[var(--wireline-color-text-onAction)] transition-all touch-press hover:scale-[1.02]"
             >
               <Briefcase className="w-3.5 h-3.5 text-[var(--wireline-color-action-primary-default)] group-hover:text-[var(--wireline-color-text-onAction)]" />
-              Configure as Business Assistant
+              Configure as Business agent
             </ShadButton>
           </div>
         </motion.div>
@@ -420,7 +420,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={Clock}
             title="Business hours"
-            hint="When this assistant should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
+            hint="When this agent should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
           >
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <PresetButton onClick={() => presetCopy("mf-9-5")} label="Mon–Fri 9–5" />
@@ -515,7 +515,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={ShieldCheck}
             title="Compliance preset"
-            hint="Auto-injects required disclosures into the assistant's system prompt. Pick the regime your business is regulated under."
+            hint="Auto-injects required disclosures into the agent system prompt. Pick the regime your business is regulated under."
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {COMPLIANCE_OPTIONS.map((opt) => {
@@ -551,7 +551,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={Target}
             title="Optimization target"
-            hint="Subtle nudge to bias the assistant toward the outcome that matters for this surface."
+            hint="Subtle nudge to bias the agent toward the outcome that matters for this surface."
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {KPI_OPTIONS.map((opt) => {
@@ -587,7 +587,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={MessageSquareWarning}
             title="Do-not-discuss topics"
-            hint="The assistant refuses or redirects when these come up. Up to 24."
+            hint="The agent refuses or redirects when these come up. Up to 24."
           >
             <ChipList chips={value.disallowed_topics ?? []} onRemove={removeTopic} tone="rose" />
             <ChipDraftInput
@@ -627,7 +627,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 assistant's to the support lead. */}
             <div className="mt-4 pt-4 border-t border-border">
               <p className="text-eyebrow/65 font-semibold mb-1">
-                Route alerts to (this assistant only)
+                Route alerts to (this agent only)
               </p>
               <p className="wl-micro-meta mb-3 leading-relaxed">
                 Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
@@ -707,7 +707,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   </p>
                   <p className="text-[var(--wireline-typography-overline-size)] text-foreground/55 leading-relaxed mt-0.5">
                     {value.escalation_phone
-                      ? "When this assistant escalates, the live call transfers to the phone above instead of just sending an alert. The assistant will say a brief handoff line before transferring."
+                      ? "When this agent escalates, the live call transfers to the phone above instead of just sending an alert. The agent will say a brief handoff line before transferring."
                       : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
                   </p>
                   {value.escalation_handoff_enabled && value.escalation_phone && (
@@ -734,8 +734,8 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   <code className="text-foreground/80">business_name</code>,{" "}
                   <code className="text-foreground/80">website</code>,{" "}
                   <code className="text-foreground/80">support_email</code>, then reference them as{" "}
-                  <code className="text-foreground/80">{"{business_name}"}</code> in your
-                  assistant's content.
+                  <code className="text-foreground/80">{"{business_name}"}</code> in your agent's
+                  content.
                 </div>
               )}
               {variableEntries.map(([k, v]) => (

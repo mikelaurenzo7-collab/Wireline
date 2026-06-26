@@ -39,6 +39,9 @@ const studioOperationsCss = read("src/styles/studio-operations.css");
 const workspaceShell = read("src/components/WorkspaceShell.tsx");
 const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
 const agentsPage = read("src/pages/AgentsPage.tsx");
+const overviewPage = read("src/pages/OverviewPage.tsx");
+const actionsPage = read("src/pages/ActionsPage.tsx");
+const pricingPage = read("src/pages/Pricing.tsx");
 const settingsPage = read("src/pages/SettingsPage.tsx");
 const accountRoutes = read("src/routes/account-routes.ts");
 const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
@@ -58,6 +61,7 @@ const extensionPanelJs = read("apps/browser-extension/panel/panel.js");
 const extensionCommandCss = read("apps/browser-extension/panel/command.css");
 const extensionBuild = read("apps/browser-extension/scripts/build.mjs");
 const extensionReadme = read("apps/browser-extension/README.md");
+const docsReadme = read("docs/README.md");
 const tokenConstants = read("src/constants/generated-design-tokens.ts");
 const androidTokens = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
 const androidApp = read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt");
@@ -75,6 +79,7 @@ const legalCss = read("public/static-legal.css");
 const manifest = read("public/site.webmanifest");
 const publicIcon = read("public/wireline-icon.svg");
 const favicon = read("public/favicon.svg");
+const ogImage = read("public/og-image.svg");
 const extensionIcon = read("apps/browser-extension/assets/icon.svg");
 const androidLauncherBg = read("android/app/src/main/res/drawable/ic_launcher_background.xml");
 
@@ -92,15 +97,18 @@ mustInclude("apps/browser-extension/background/service-worker.js", extensionWork
 mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /action === "text"/, "extension must support text commands from browser context");
 mustInclude("apps/browser-extension/scripts/build.mjs", extensionBuild, /hostPermissions\.length/, "extension policy must keep persistent host permissions out");
 mustInclude("apps/browser-extension/panel/index.html", extensionPanel, /Call[\s\S]*Text[\s\S]*Follow-up[\s\S]*Agent task/, "extension panel must expose quick command actions");
+mustInclude("apps/browser-extension/panel/index.html", extensionPanel, /Agents[\s\S]*(Wire|Integrations)[\s\S]*Usage[\s\S]*Studio/, "extension panel must expose Agents, Wire or Integrations, Usage, and Studio jumps");
 mustInclude("apps/browser-extension/panel/panel.js", extensionPanelJs, /actionPrompts[\s\S]*call[\s\S]*text[\s\S]*followup/, "extension panel must wire quick commands");
+mustInclude("apps/browser-extension/panel/panel.js", extensionPanelJs, /open-studio/, "extension panel must wire the Studio jump");
 mustInclude("apps/browser-extension/panel/command.css", extensionCommandCss, /\.quick-actions/, "extension quick actions must have dedicated styling");
 mustInclude("apps/browser-extension/README.md", extensionReadme, /# Wireline Command/, "extension docs must use Wireline Command naming");
+mustInclude("docs/README.md", docsReadme, /Create -> Train -> Run/, "docs index must describe the Create -> Train -> Run model");
 mustInclude("src/constants/generated-design-tokens.ts", tokenConstants, /"color\.action\.primary\.default": "#111111"/, "TS tokens must use Wireline Mono");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens, /colorActionPrimaryDefault = Color\(0xFF111111\)/, "Android tokens must use Wireline Mono");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /object Assistants : Screen\("assistants", "Agents"\)/, "Android app tab model must use Agents");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /object Knowledge : Screen\("knowledge", "Train"\)/, "Android app tab model must use Train");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /object Actions : Screen\("actions", "Wire"\)/, "Android app tab model must use Wire");
-mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /Text\("Agents for calls, texts, and follow-up\."\)/, "Android sign-in must use agent-forward product copy");
+mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /Agents for calls,\s*texts,\s*and\s*follow-up/, "Android sign-in must use agent-forward product copy");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt", androidSetup, /title = \{ Text\("Training"/, "Android setup page must be Training");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt", androidSetup, /title = \{ Text\("Wire"/, "Android actions page must be Wire");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt", androidSetup, /WAYS YOUR AGENT CAN HELP/, "Android Wire screen must use agent language");
@@ -122,6 +130,7 @@ mustInclude("public/site.webmanifest", manifest, /"theme_color": "#111111"/, "ma
 mustInclude("public/site.webmanifest", manifest, /"background_color": "#F7F7F4"/, "manifest must use warm monochrome background");
 mustInclude("public/wireline-icon.svg", publicIcon, /fill="#111111"/, "public app icon must be monochrome");
 mustInclude("public/favicon.svg", favicon, /fill="#111111"/, "favicon must be monochrome");
+mustInclude("public/og-image.svg", ogImage, /fill="#F7F7F4"/, "OG image must use monochrome canvas");
 mustInclude("apps/browser-extension/assets/icon.svg", extensionIcon, /fill="#111111"/, "browser extension icon must be monochrome");
 mustInclude("android/app/src/main/res/drawable/ic_launcher_background.xml", androidLauncherBg, /android:fillColor="#111111"/, "Android launcher background must be monochrome");
 mustInclude("src/components/MobileBrowserUtilities.tsx", mobileBrowserUtilities, /Billing[\s\S]*Usage \+ balance/, "mobile browser must expose billing and usage controls");
@@ -129,6 +138,13 @@ mustInclude("src/components/MobileBrowserUtilities.tsx", mobileBrowserUtilities,
 mustInclude("src/components/WorkspaceShell.tsx", workspaceShell, /!nativeAppShell \? <MobileBrowserUtilities \/>/, "mobile browser utility control must mount outside native shells");
 mustInclude("src/pages/AgentsPage.tsx", agentsPage, /Configure number/, "agent roster must expose line/number configuration");
 mustInclude("src/pages/AgentsPage.tsx", agentsPage, /Usage/, "agent roster must link to usage");
+mustInclude("src/pages/OverviewPage.tsx", overviewPage, /Training/, "overview shortcuts must use Training naming");
+mustInclude("src/pages/OverviewPage.tsx", overviewPage, /Wire/, "overview shortcuts must use Wire naming");
+mustInclude("src/pages/ActionsPage.tsx", actionsPage, /Wire/, "Wire route must use current naming");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Conversation Balance/, "pricing must position Conversation Balance");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Wireline Team/, "pricing must position Wireline Team");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Wireline Business/, "pricing must position Wireline Business");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Wireline Enterprise/, "pricing must position Wireline Enterprise");
 mustInclude("src/pages/SettingsPage.tsx", settingsPage, /Account deletion/, "settings must expose account deletion");
 mustInclude("src/routes/account-routes.ts", accountRoutes, /\/api\/account\/delete/, "account deletion route must exist");
 for (const [file, source] of [
@@ -161,6 +177,7 @@ for (const [file, source] of [
   ["public/site.webmanifest", manifest],
   ["public/wireline-icon.svg", publicIcon],
   ["public/favicon.svg", favicon],
+  ["public/og-image.svg", ogImage],
   ["apps/browser-extension/assets/icon.svg", extensionIcon],
   ["android/app/src/main/res/drawable/ic_launcher_background.xml", androidLauncherBg],
 ]) {

@@ -12,7 +12,7 @@ export default function ActionsPage() {
   return (
     <WorkspaceShell
       eyebrow="Workspace"
-      title="Connections"
+      title="Wire"
       contentClassName="py-6"
       action={
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
@@ -25,7 +25,7 @@ export default function ActionsPage() {
           <Button asChild size="sm" className="min-w-0">
             <Link to="/studio?create=1">
               <Plus aria-hidden="true" size={15} />
-              <span className="truncate">New assistant</span>
+              <span className="truncate">New agent</span>
             </Link>
           </Button>
         </div>

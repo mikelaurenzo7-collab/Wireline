@@ -2,30 +2,20 @@ import { describe, expect, it } from "vitest";
 import { STRIPE_PLANS, planById, VOICE_VARIABLE_COST_PER_MIN_USD } from "./plan-catalog";
 
 describe("plan-catalog", () => {
-  it("keeps legacy personal plans for existing subscribers only", () => {
+  it("keeps legacy personal plans hidden behind the Conversation Balance model", () => {
     const personal = planById("personal");
-    expect(personal?.name).toBe("Legacy Solo Agent");
+    expect(personal?.name).toBe("Legacy Wireline Personal");
     expect(personal?.public).toBe(false);
     expect(personal?.price_usd_monthly).toBe(7);
-    expect(personal?.voice_minutes_monthly).toBe(60);
-    expect(personal?.extra_agent_price_usd).toBe(7);
   });
 
-  it("makes Household the practical multi-assistant tier", () => {
-    const household = planById("business-starter");
-    expect(household?.name).toBe("Front Desk");
-    expect(household?.price_usd_monthly).toBe(29);
-    expect(household?.max_agents).toBe(4);
-    expect(household?.voice_minutes_monthly).toBe(500);
-    expect(household?.included_phone_numbers).toBe(2);
-    expect(household?.extra_agent_price_usd).toBe(9);
-  });
-
-  it("keeps Concierge as the expanded personal or work tier", () => {
-    const concierge = planById("starter");
-    expect(concierge?.name).toBe("Sales & Reception");
-    expect(concierge?.price_usd_monthly).toBe(59);
-    expect(concierge?.max_agents).toBe(8);
+  it("maps the shared-capacity tiers to Team, Business, and Enterprise", () => {
+    expect(planById("business-starter")?.name).toBe("Wireline Team");
+    expect(planById("team")?.name).toBe("Wireline Team");
+    expect(planById("starter")?.name).toBe("Wireline Business");
+    expect(planById("business")?.name).toBe("Wireline Business");
+    expect(planById("scale")?.name).toBe("Wireline Enterprise");
+    expect(planById("enterprise")?.name).toBe("Wireline Enterprise");
   });
 
   it("keeps the canonical Stripe plan identifiers for subscriptions and migrations", () => {
@@ -39,9 +29,9 @@ describe("plan-catalog", () => {
     ]);
   });
 
-  it("keeps Custom as a contact-sales plan", () => {
+  it("keeps Enterprise as a contact-sales plan", () => {
     const scale = planById("scale");
-    expect(scale?.name).toBe("Custom Enterprise");
+    expect(scale?.name).toBe("Wireline Enterprise");
     expect(scale?.price_usd_monthly).toBe(0);
     expect(scale?.max_agents).toBe(999);
   });

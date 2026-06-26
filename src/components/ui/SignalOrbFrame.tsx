@@ -6,25 +6,24 @@ import { AssistantConstellation, type AssistantConstellationSize } from "./Assis
 type SignalOrbFrameProps = {
   children: ReactNode;
   className?: string;
-  /** Constellation diameter preset */
+  /** Orbit diameter preset */
   size?: AssistantConstellationSize;
-  /** Dormant Assistants nodes behind the focal orb */
+  /** Minimal orbit frame behind the focal orb */
   withConstellation?: boolean;
   /** Soft brand bloom behind content (Director hero) */
   withBloom?: boolean;
-  /** Calmer constellation + bloom for authenticated surfaces (default on) */
+  /** Calmer orbit frame + bloom for authenticated surfaces (default on) */
   refined?: boolean;
 };
 
 /**
- * SignalOrbFrame — centers focal UI (Medallion, compass, loading dots) inside
- * the shared Assistants constellation motif.
+ * SignalOrbFrame — centers focal UI inside the shared monochrome orbit frame.
  */
 export function SignalOrbFrame({
   children,
   className,
   size = "md",
-  withConstellation = true,
+  withConstellation = false,
   withBloom = false,
   refined = true,
 }: SignalOrbFrameProps) {

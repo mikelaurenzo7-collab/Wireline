@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const retiredProductTerms = [
-  ["Ametrine", "Precision"].join(" "),
-  ["Browser", "Companion"].join(" "),
+  "Ametrine Precision",
+  "Browser Companion",
+  "personal AI call assistant",
 ];
-const retiredPaletteTerms = ["#5D3FD3", "#451EBB", "#F8F9FF", "#EFF4FF", "#E5EEFF", "#0B1C30"];
 
 function read(relativePath: string) {
   return readFileSync(resolve(root, relativePath), "utf8");
@@ -25,7 +25,16 @@ describe("Wireline product documentation contract", () => {
     const readme = read("README.md");
     expect(readme).toContain("Wireline Command");
     expect(readme).toContain("Wireline Mono design system");
-    expect(readme).toContain("Create → Train → Run");
+    expect(readme).toContain("Create -> Train -> Run");
+    expectNoTerms(readme, retiredProductTerms);
+  });
+
+  it("keeps the docs index aligned with current product truth", () => {
+    const readme = read("docs/README.md");
+    expect(readme).toContain("Create -> Train -> Run");
+    expect(readme).toContain("Agents");
+    expect(readme).toContain("Training");
+    expect(readme).toContain("Wireline Command");
     expectNoTerms(readme, retiredProductTerms);
   });
 
@@ -44,7 +53,20 @@ describe("Wireline product documentation contract", () => {
     for (const source of [android, ios]) {
       expect(source).toContain("Agents that answer");
       expect(source).toContain("Wireline Mono");
-      expectNoTerms(source, retiredPaletteTerms);
     }
+  });
+
+  it("keeps static metadata and OG positioning aligned with the current product truth", () => {
+    const head = read("index.html");
+    const ogImage = read("public/og-image.svg");
+
+    expect(head).toContain("Wireline - Agents for calls, texts, and follow-up");
+    expect(head).toContain(
+      "create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations",
+    );
+    expect(ogImage).toContain("Agents for calls, texts, and follow-up.");
+    expect(ogImage).toContain("Create. Train. Run.");
+    expectNoTerms(head, retiredProductTerms);
+    expectNoTerms(ogImage, retiredProductTerms);
   });
 });

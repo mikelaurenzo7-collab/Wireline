@@ -30,7 +30,7 @@ import {
   type ProposedToolToggle,
   type WorkspacePlan,
 } from "./workspace-planner";
-import type { ToolSchema } from "./claude-structured";
+import type { StructuredToolSchema as ToolSchema } from "./ai-structured";
 import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 import {
   DEFAULT_DIRECTOR_MODEL_SELECTION,

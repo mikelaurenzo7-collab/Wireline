@@ -94,13 +94,16 @@ const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
   plus: "personal-plus",
   personal_plus: "personal-plus",
   personalplus: "personal-plus",
+  team: "business-starter",
+  shared: "business-starter",
   lite: "business-starter",
   business_lite: "business-starter",
   businesslite: "business-starter",
   business_starter: "business-starter",
   businessstarter: "business-starter",
   pro: "starter",
-  business: "scale",
+  business: "starter",
+  custom: "scale",
   enterprise: "scale",
 };
 

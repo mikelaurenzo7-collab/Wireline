@@ -30,7 +30,7 @@ import {
   normalizeEnabledTools,
 } from "../lib/agent-capabilities";
 import { executeAction } from "../lib/action-engine";
-import { runStructuredStream } from "../lib/claude-structured";
+import { runStructuredStream } from "../lib/ai-structured";
 
 const router = express.Router();
 

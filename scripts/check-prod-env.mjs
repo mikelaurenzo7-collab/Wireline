@@ -9,15 +9,15 @@
 //   PRODUCTION_CHECK=1 npm run check-prod-env
 //
 // Exit codes:
-//   0 — all required vars present, recommended vars present
-//   1 — missing required vars
-//   2 — missing recommended vars and PRODUCTION_CHECK=1
+//   0 - all required vars present, recommended vars present
+//   1 - missing required vars
+//   2 - missing recommended vars and PRODUCTION_CHECK=1
 
 const required = [
   ["POSTGRES_URL", "Postgres connection string for Drizzle-backed API routes", process.env.POSTGRES_URL],
   [
     "INTERNAL_JWT_SECRET",
-    "Session JWT signing — canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
+    "Session JWT signing - canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
     process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET,
   ],
   ["OAUTH_STATE_SECRET", "HMAC secret for OAuth CSRF state tokens", process.env.OAUTH_STATE_SECRET],
@@ -27,8 +27,8 @@ const required = [
 ];
 
 const recommended = [
-  ["ANTHROPIC_API_KEY", "Claude — required for /api/claude/* recipes"],
-  ["OPENROUTER_API_KEY", "OpenRouter — required for default Grok tenant voice routing"],
+  ["ANTHROPIC_API_KEY", "Claude - required for /api/claude/* recipes"],
+  ["OPENROUTER_API_KEY", "OpenRouter - required for default Grok tenant voice routing"],
   ["WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL", "Launch default: x-ai/grok-4.3"],
   ["GEMINI_API_KEY", "Gemini Flash fallback when OpenRouter/Grok is unavailable"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
@@ -40,35 +40,18 @@ const recommended = [
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
 
-  // Current customer-facing plan catalog:
-  // personal, personal-plus, starter(Business Growth), scale.
-  // Runtime compatibility note: Business Growth currently uses historical
-  // STRIPE_PRO_* env names and Scale uses historical STRIPE_BUSINESS_* env
-  // names until new Stripe prices are created and synced.
-  ["STRIPE_PERSONAL_PRICE_ID", "Personal monthly price ($9/mo)"],
-  ["STRIPE_PERSONAL_ANNUAL_PRICE_ID", "Personal annual price ($86/yr)"],
-  ["STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID", "Personal extra-agent add-on"],
-  ["STRIPE_PERSONAL_OVERAGE_PRICE_ID", "Personal metered voice-overage price"],
-
-  ["STRIPE_PERSONAL_PLUS_PRICE_ID", "Personal+ monthly price ($19/mo) — currently missing blocks self-serve checkout for this tier"],
-  ["STRIPE_PERSONAL_PLUS_ANNUAL_PRICE_ID", "Personal+ annual price ($182/yr)"],
-  ["STRIPE_PERSONAL_PLUS_EXTRA_AGENT_PRICE_ID", "Personal+ extra-agent add-on"],
-  ["STRIPE_PERSONAL_PLUS_OVERAGE_PRICE_ID", "Personal+ metered voice-overage price"],
-
-  ["STRIPE_BUSINESS_STARTER_PRICE_ID", "Business Starter monthly price ($99/mo)"],
-  ["STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID", "Business Starter annual price ($950/yr)"],
-  ["STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID", "Business Starter extra-agent add-on"],
-  ["STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID", "Business Starter metered voice-overage price"],
-
-  ["STRIPE_PRO_PRICE_ID", "Business Growth monthly price ($249/mo), legacy env name"],
-  ["STRIPE_PRO_ANNUAL_PRICE_ID", "Business Growth annual price ($2,390/yr), legacy env name"],
-  ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Business Growth extra-agent add-on, legacy env name"],
-  ["STRIPE_PRO_OVERAGE_PRICE_ID", "Business Growth metered overage, legacy env name"],
-
-  ["STRIPE_BUSINESS_PRICE_ID", "Scale monthly price ($699/mo), legacy env name"],
-  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Scale annual price ($6,710/yr), legacy env name"],
-  ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID", "Scale extra-agent add-on, legacy env name"],
-  ["STRIPE_BUSINESS_OVERAGE_PRICE_ID", "Scale metered overage, legacy env name"],
+  // Current public subscription checkout is for shared capacity only.
+  // Runtime compatibility note: Wireline Team still uses historical
+  // STRIPE_BUSINESS_STARTER_* env names and Wireline Business still uses
+  // STRIPE_PRO_* env names until the final Stripe catalog lands.
+  ["STRIPE_BUSINESS_STARTER_PRICE_ID", "Wireline Team monthly capacity price (legacy env name)"],
+  ["STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID", "Wireline Team annual capacity price (legacy env name)"],
+  ["STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID", "Wireline Team extra-agent add-on (legacy env name)"],
+  ["STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID", "Wireline Team metered voice-overage price (legacy env name)"],
+  ["STRIPE_PRO_PRICE_ID", "Wireline Business monthly capacity price (legacy env name)"],
+  ["STRIPE_PRO_ANNUAL_PRICE_ID", "Wireline Business annual capacity price (legacy env name)"],
+  ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Wireline Business extra-agent add-on (legacy env name)"],
+  ["STRIPE_PRO_OVERAGE_PRICE_ID", "Wireline Business metered overage price (legacy env name)"],
 
   ["STRIPE_VOICE_OVERAGE_METER_EVENT_NAME", "Stripe meter event name for voice-minute overage"],
   ["WIRELINE_DATA_KEY", "AES-256-GCM key for encrypting webhook secrets at rest"],
@@ -77,13 +60,25 @@ const recommended = [
 
 const optional = [
   ["OPENAI_API_KEY", "Optional GPT second-tier fallback / degraded-mode recovery"],
-  ["GOOGLE_CLIENT_ID", "Gmail OAuth — disables email integration when unset"],
+  ["GOOGLE_CLIENT_ID", "Gmail OAuth - disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
   ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
   ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
   ["SENTRY_DSN", "Backend error monitoring"],
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
   ["CLAUDE_MONTHLY_BUDGET_USD", "Optional rolling-24h Claude spend alert threshold"],
+  ["STRIPE_PERSONAL_PRICE_ID", "Legacy personal subscription compatibility"],
+  ["STRIPE_PERSONAL_ANNUAL_PRICE_ID", "Legacy personal annual subscription compatibility"],
+  ["STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID", "Legacy personal extra-agent compatibility"],
+  ["STRIPE_PERSONAL_OVERAGE_PRICE_ID", "Legacy personal overage compatibility"],
+  ["STRIPE_PERSONAL_PLUS_PRICE_ID", "Legacy Wireline Plus subscription compatibility"],
+  ["STRIPE_PERSONAL_PLUS_ANNUAL_PRICE_ID", "Legacy Wireline Plus annual compatibility"],
+  ["STRIPE_PERSONAL_PLUS_EXTRA_AGENT_PRICE_ID", "Legacy Wireline Plus extra-agent compatibility"],
+  ["STRIPE_PERSONAL_PLUS_OVERAGE_PRICE_ID", "Legacy Wireline Plus overage compatibility"],
+  ["STRIPE_BUSINESS_PRICE_ID", "Enterprise/contact-sales compatibility env name"],
+  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Enterprise/contact-sales annual compatibility env name"],
+  ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID", "Enterprise/contact-sales extra-agent compatibility env name"],
+  ["STRIPE_BUSINESS_OVERAGE_PRICE_ID", "Enterprise/contact-sales overage compatibility env name"],
 ];
 
 const jwtSecretConflict =
@@ -105,32 +100,32 @@ const missingRequired = jwtSecretConflict
 const missingRecommended = missing(recommended);
 const missingOptional = missing(optional);
 
-const banner = (s) => `\n${"━".repeat(64)}\n  ${s}\n${"━".repeat(64)}`;
+const banner = (s) => `\n${"-".repeat(64)}\n  ${s}\n${"-".repeat(64)}`;
 
-console.log(banner("Wireline · production env check"));
+console.log(banner("Wireline - production env check"));
 
 if (missingRequired.length === 0 && missingRecommended.length === 0) {
-  console.log("✓ All required and recommended env vars are set.\n");
+  console.log("OK: all required and recommended env vars are set.\n");
   if (missingOptional.length) {
     console.log("  Optional (informational only):");
-    missingOptional.forEach(([k, d]) => console.log(`    · ${k} — ${d}`));
+    missingOptional.forEach(([k, d]) => console.log(`    - ${k} - ${d}`));
   }
   process.exit(0);
 }
 
 if (missingRequired.length) {
-  console.log("✗ MISSING REQUIRED env vars (deploy will fail):\n");
-  missingRequired.forEach(([k, d]) => console.log(`    · ${k}\n      ${d}`));
+  console.log("MISSING REQUIRED env vars (deploy will fail):\n");
+  missingRequired.forEach(([k, d]) => console.log(`    - ${k}\n      ${d}`));
 }
 
 if (missingRecommended.length) {
-  console.log("\n⚠ MISSING RECOMMENDED env vars (features will be degraded):\n");
-  missingRecommended.forEach(([k, d]) => console.log(`    · ${k}\n      ${d}`));
+  console.log("\nMISSING RECOMMENDED env vars (features will be degraded):\n");
+  missingRecommended.forEach(([k, d]) => console.log(`    - ${k}\n      ${d}`));
 }
 
 if (missingOptional.length) {
-  console.log("\n· Missing optional env vars (informational):");
-  missingOptional.forEach(([k]) => console.log(`    · ${k}`));
+  console.log("\nMissing optional env vars (informational):");
+  missingOptional.forEach(([k]) => console.log(`    - ${k}`));
 }
 
 console.log("");

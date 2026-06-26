@@ -235,8 +235,8 @@ function AuthShell({
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {mode === "personal"
-                ? "Sign in to manage your call assistant."
-                : "Sign in to your assistant workspace."}
+                ? "Sign in to manage your agent and live work."
+                : "Sign in to manage your agent workspace."}
             </p>
           </div>
           <div className="wl-stitch-auth-card">{children}</div>
@@ -248,7 +248,7 @@ function AuthShell({
               Hear a demo
             </Link>
             <Link to="/pricing" className="hover:text-primary hover:underline">
-              Compare plans
+              View pricing
             </Link>
           </div>
         </div>
@@ -284,13 +284,13 @@ function WorkspaceSelector({
     {
       id: "personal",
       title: "Personal",
-      text: "One private assistant that makes calls for you, waits on hold, and texts you the answer.",
+      text: "One private agent for calls, texts, and follow-up on your terms.",
       icon: <User className="h-4 w-4" />,
     },
     {
       id: "business",
       title: "Business",
-      text: "A workspace for multiple agents, team training, integrations, and analytics.",
+      text: "Shared capacity for several agents, Training, integrations, approvals, and analytics.",
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
@@ -498,7 +498,7 @@ export default function AuthPortal() {
   const pageDescription = isReset
     ? "Enter your email and Wireline will send a secure password reset link."
     : isSignUp
-      ? "Create your Wireline account and set up your personal assistant."
+      ? "Create your Wireline account and set up your first agent."
       : "Sign in to your Wireline account.";
 
   const headerActive = isSignUp ? "signup" : "signin";

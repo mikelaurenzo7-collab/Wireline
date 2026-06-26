@@ -398,7 +398,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
             eyebrow={embedded ? undefined : "Channels · Messaging"}
             title={embedded ? "" : "SMS Inbox"}
             subtitle={
-              embedded ? undefined : "Two-way text conversations with customers and assistants."
+              embedded ? undefined : "Two-way text conversations with customers and agents."
             }
           >
             <Panel

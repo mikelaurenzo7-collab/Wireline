@@ -46,7 +46,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const isPersonal = slug === "personal";
   if (!cfg) return null;
 
-  const primaryLabel = isPersonal ? "Create your assistant" : "Build your call coverage";
+  const primaryLabel = isPersonal ? "Create your agent" : "Build your call coverage";
   const secondaryLabel = isPersonal ? "Hear a personal demo" : cfg.secondaryCta.label;
   const structuredData = {
     "@context": "https://schema.org",
@@ -88,10 +88,12 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <p className="wl-stitch-eyebrow">{isPersonal ? "Personal call help" : cfg.eyebrow}</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">{cfg.headline}</h1>
           <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
-            {isPersonal ? "Hand off the calls that follow you around." : "Every important call gets a clear next step."}
+            {isPersonal
+              ? "Hand off the calls that follow you around."
+              : "Every important call gets a clear next step."}
           </p>
           <div className="mt-6 max-w-md">
-            <BrowserCallWidget agentName="Demo Voice Agent" buttonLabel="Talk to a live assistant" />
+            <BrowserCallWidget agentName="Demo Voice Agent" buttonLabel="Talk to a live agent" />
           </div>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <CtaLink
@@ -136,18 +138,25 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="max-w-2xl">
           <p className="wl-stitch-eyebrow">Useful coverage</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
-            {isPersonal ? "Hand off the calls that keep following you around." : "Give every important call a clear next step."}
+            {isPersonal
+              ? "Hand off the calls that keep following you around."
+              : "Give every important call a clear next step."}
           </h2>
         </div>
         <div className="mt-9 grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
             const Icon = pain.icon;
             return (
-              <article key={pain.title} className="wl-stitch-card flex items-center gap-4 p-5 sm:p-6">
+              <article
+                key={pain.title}
+                className="wl-stitch-card flex items-center gap-4 p-5 sm:p-6"
+              >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-muted text-primary">
                   <Icon className="h-4 w-4" />
                 </span>
-                <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">{pain.title}</h3>
+                <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">
+                  {pain.title}
+                </h3>
               </article>
             );
           })}
@@ -159,13 +168,19 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div>
             <p className="wl-stitch-eyebrow">Call behavior</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              {isPersonal ? "You shape the voice and the handoff." : "Your process, handled consistently."}
+              {isPersonal
+                ? "You shape the voice and the handoff."
+                : "Your process, handled consistently."}
             </h2>
           </div>
           <div className="wl-stitch-card border-l-4 border-l-primary p-6 sm:p-8">
             <p className="wl-stitch-label">Example opening</p>
-            <blockquote className="mt-4 text-lg leading-8 tracking-[-.02em] text-foreground">{cfg.scriptPreview}</blockquote>
-            <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">Your voice. Your knowledge. Your control.</p>
+            <blockquote className="mt-4 text-lg leading-8 tracking-[-.02em] text-foreground">
+              {cfg.scriptPreview}
+            </blockquote>
+            <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
+              Your voice. Your knowledge. Your control.
+            </p>
           </div>
         </div>
       </section>
@@ -182,10 +197,16 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             <details key={faq.q} className="group wl-stitch-card overflow-hidden">
               <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
                 <span>{faq.q}</span>
-                <span aria-hidden="true" className="text-lg text-muted-foreground transition-transform group-open:rotate-45">+
+                <span
+                  aria-hidden="true"
+                  className="text-lg text-muted-foreground transition-transform group-open:rotate-45"
+                >
+                  +
                 </span>
               </summary>
-              <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">{faq.a}</p>
+              <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">
+                {faq.a}
+              </p>
             </details>
           ))}
         </div>
@@ -201,7 +222,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                   You stay in control
                 </span>
                 <h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-                  {isPersonal ? "Start with the call you keep putting off." : "Start with the workflow your team needs covered."}
+                  {isPersonal
+                    ? "Start with the call you keep putting off."
+                    : "Start with the workflow your team needs covered."}
                 </h2>
               </div>
               <CtaLink

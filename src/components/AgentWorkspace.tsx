@@ -13,7 +13,7 @@
  *
  * Each agent has its own workspace with four verb tabs:
  *   - Chat       — coach/direct the agent; persistent thread (the memory)
- *   - Training   — teach it: knowledge, voice, pronunciation, flow, test calls
+ *   - Training   — teach it: Training sources, voice, pronunciation, flow, test calls
  *   - Connectors — wire it to the world: capabilities + integrations
  *   - Memory     — what it carries between calls (thread + recall + lessons)
  */
@@ -75,7 +75,7 @@ const WORKSPACE_TABS: {
     id: "training",
     label: "Training",
     icon: GraduationCap,
-    help: "Knowledge, voice, flow & test calls",
+    help: "Training, voice, flow & test calls",
   },
   { id: "connectors", label: "Connectors", icon: Plug, help: "Capabilities & integrations" },
   { id: "memory", label: "Memory", icon: Brain, help: "What this assistant remembers" },

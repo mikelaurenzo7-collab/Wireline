@@ -723,26 +723,4 @@ router.post(
   },
 );
 
-router.get(
-  "/api/agents/:id/workspace/messages",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
-    const [agent] = await drizzle
-      .select({
-        id: schema.agents.id,
-        name: schema.agents.name,
-        role: schema.agents.role,
-        enabledTools: schema.agents.enabledTools,
-      })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-      .limit(1);
-    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    res.json({
-      agent: { ...agent, enabledTools: normalizeEnabledTools(agent.enabledTools) },
-      messages: [],
-    });
-  },
-);
-
 export default router;

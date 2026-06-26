@@ -334,12 +334,11 @@ function CreditTopUpCard({
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
       <div className="border-b border-border pb-5">
         <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-          Add call credits
+          Add Conversation Balance
         </h3>
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          Most months your plan's minutes are plenty — credits are an optional safety net for the
-          occasional spike. They cover overage at your plan rate before it's invoiced; if you're
-          regularly over, upgrading your plan is the more economical move.
+          Fund live calls, texts, and follow-up only when you need more operating room. If usage is
+          consistently above plan capacity, move up a tier instead of relying on repeated top-ups.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -384,11 +383,13 @@ function PlanPicker({
   return (
     <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-8">
       <div className="border-b border-border pb-6">
-        <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Choose a plan</h3>
+        <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">
+          Choose operating capacity
+        </h3>
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          {PRODUCT_VERSATILITY.short} Start with personal assistants on a Conversation Balance, then
-          add a business plan when you need numbers, routing, and team tools. Stripe-secured. Cancel
-          anytime.
+          {PRODUCT_VERSATILITY.short} Start with a single agent and Conversation Balance, then move
+          into shared capacity when you need routing, numbers, approvals, and team operations.
+          Stripe-secured. Cancel anytime.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 stagger-children">
@@ -414,12 +415,12 @@ function PlanPicker({
               >
                 {!isSignupMatch && plan.id === "business-starter" && (
                   <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
-                    Best entry
+                    First shared tier
                   </div>
                 )}
                 {!isSignupMatch && plan.id === "starter" && (
                   <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
-                    Most popular
+                    Expanded operations
                   </div>
                 )}
                 {isSignupMatch && (
@@ -482,7 +483,7 @@ function PlanPicker({
                 </ShadButton>
                 {!plan.configured && (
                   <p className="text-[var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
-                    Stripe price pending — contact us to start on this tier
+                    Stripe catalog still being consolidated for this tier
                   </p>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />

@@ -3,27 +3,16 @@ import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
 
 const NODES: { cx: number; cy: number; delay: number }[] = [
   { cx: 100, cy: 28, delay: 0 },
-  { cx: 158, cy: 52, delay: 0.6 },
-  { cx: 172, cy: 108, delay: 1.2 },
-  { cx: 142, cy: 158, delay: 1.8 },
-  { cx: 58, cy: 158, delay: 2.4 },
-  { cx: 28, cy: 108, delay: 3.0 },
-];
-
-const ARCS: string[] = [
-  "M 100 28 L 158 52 L 172 108",
-  "M 172 108 L 142 158 L 58 158",
-  "M 58 158 L 28 108 L 100 28",
-  "M 158 52 L 100 100",
-  "M 28 108 L 100 100",
-  "M 142 158 L 100 100",
+  { cx: 158, cy: 100, delay: 0.6 },
+  { cx: 100, cy: 172, delay: 1.2 },
+  { cx: 42, cy: 100, delay: 1.8 },
 ];
 
 export type AssistantConstellationSize = "sm" | "md" | "lg" | "xl";
 
 /**
- * AssistantConstellation — dormant agent nodes around a focal orb.
- * Decorative only; shared across Director, empty states, and loading chrome.
+ * AssistantConstellation — minimal orbit frame around a focal orb.
+ * Decorative only; shared across empty states and loading chrome.
  */
 export function AssistantConstellation({
   className,
@@ -53,28 +42,19 @@ export function AssistantConstellation({
         r="72"
         strokeWidth="0.75"
       />
-      {ARCS.map((d, i) => (
-        <path
-          key={i}
-          className="wl-Assistants-constellation-arc"
-          d={d}
-          strokeWidth="0.65"
-          strokeLinecap="round"
-        />
-      ))}
       {NODES.map((node, i) => (
         <g key={i} className="wl-Assistants-constellation-node" data-delay={`${node.delay}s`}>
           <circle
             className="wl-Assistants-constellation-node-halo"
             cx={node.cx}
             cy={node.cy}
-            r="5"
+            r="4"
           />
           <circle
             className="wl-Assistants-constellation-node-core"
             cx={node.cx}
             cy={node.cy}
-            r="2.25"
+            r="1.5"
           />
         </g>
       ))}

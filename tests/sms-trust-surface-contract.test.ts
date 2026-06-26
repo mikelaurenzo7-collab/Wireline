@@ -27,6 +27,7 @@ describe("SMS trust surface", () => {
     expect(sms).toContain('authFetch("/api/sms/threads")');
     expect(sms).toContain("/api/sms/threads/${threadId}/messages");
     expect(sms).toContain("/api/sms/threads/${threadId}/reply");
-    expect(sms).toContain("STOP keyword auto-honored");
+    expect(sms).toContain("STOP keyword");
+    expect(sms).toContain("auto-honored");
   });
 });

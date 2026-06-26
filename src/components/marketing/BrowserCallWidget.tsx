@@ -93,7 +93,7 @@ export default function BrowserCallWidget({
       setConnecting(true);
       setError(null);
       const response = await fetch(`/api/public/assistant/${agentName}`);
-      if (!response.ok) throw new Error("Could not load the demo assistant.");
+      if (!response.ok) throw new Error("Could not load the demo agent.");
       const assistantPayload = await response.json();
 
       if (navigator.mediaDevices?.getUserMedia) {
@@ -119,7 +119,7 @@ export default function BrowserCallWidget({
         variant={callActive ? "destructive" : "outline"}
         onClick={handleToggleCall}
         disabled={connecting || !vapi}
-        aria-label={callActive ? "End conversation" : "Talk to assistant"}
+        aria-label={callActive ? "End conversation" : "Talk to agent"}
         className={cn(
           "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
           callActive
@@ -130,7 +130,7 @@ export default function BrowserCallWidget({
         {connecting ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Connecting…</span>
+            <span>Connecting...</span>
           </>
         ) : callActive ? (
           <>
@@ -173,7 +173,7 @@ export default function BrowserCallWidget({
             })}
           </div>
           <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-wider text-muted-foreground">
-            {speakerActive ? "Assistant speaking" : "Listening"}
+            {speakerActive ? "Agent speaking" : "Listening"}
           </span>
         </div>
       )}

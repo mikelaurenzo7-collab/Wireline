@@ -66,19 +66,19 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jun 4, 2026",
     tag: "polish",
     title: "Design-system consistency locked in repo-wide",
-    body: "Every interactive control now routes through one canonical Button — proper focus rings, a 44px touch target, and consistent press feedback everywhere. The razor-edged flat-corner aesthetic is enforced by an automated guard so it can’t quietly drift back. The result is a tighter, more uniform surface on every screen.",
+    body: "Every interactive control now routes through one canonical Button - proper focus rings, a 44px touch target, and consistent press feedback everywhere. The razor-edged flat-corner aesthetic is enforced by an automated guard so it cannot quietly drift back. The result is a tighter, more uniform surface on every screen.",
   },
   {
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Warm-transfer escalation",
-    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Knowledge → Business Profile → Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default — explicit opt-in.",
+    body: "Every agent can now warm-transfer a live caller to a human mid-call when it escalates. Per-agent setting: turn it on in Training -> Business Profile -> Immediate-escalation triggers. The agent speaks a brief handoff line, then transfers the call to the configured phone. Off by default - explicit opt-in.",
   },
   {
     date: "Jan 28, 2026",
     tag: "feature",
     title: "Per-agent escalation routing",
-    body: "Sales agents can now route their escalations to the sales lead; support agents to the support lead. Two new fields per agent — escalation phone (SMS) and escalation email — override the tenant-wide Manager Alert Number when set. Email is a new channel: opt-in, branded, sent via Resend.",
+    body: "Sales agents can now route their escalations to the sales lead; support agents to the support lead. Two new fields per agent - escalation phone (SMS) and escalation email - override the tenant-wide Manager Alert Number when set. Email is a new channel: opt-in, branded, sent via Resend.",
   },
   {
     date: "Jan 27, 2026",

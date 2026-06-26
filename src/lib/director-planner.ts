@@ -16,7 +16,7 @@
  *     to Opus without adaptive thinking.
  *   - Adaptive thinking (Deep analysis) runs only when the Account Holder toggles Deep.
  */
-import { runStructuredWithThinking } from "./claude-structured";
+import { runStructuredWithThinking } from "./ai-structured";
 import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 import {
   DIRECTOR_FLEET_TOOL,

@@ -17,19 +17,14 @@ export default function LandingPage() {
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Web, iOS, Android",
     description:
-      "Custom voice agents built with your knowledge and voice. Handle calls, email, and text exactly your way.",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
+      "Create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations.",
   };
 
   return (
     <>
       <PageMeta
-        title="Wireline | AI Voice + Messaging"
-        description="Personal assistants and business agents that handle calls, messages, follow-ups, and hold time — for life and work."
+        title="Wireline | Agents for calls, texts, and follow-up"
+        description="Create, train, and run agents that handle calls, texts, follow-up, browser context, email, and integrations."
         image="/og-image.png"
       />
       <script

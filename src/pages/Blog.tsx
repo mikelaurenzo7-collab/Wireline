@@ -11,7 +11,7 @@ const NOTES = [
   {
     icon: MessageSquare,
     title: "Write down the boundaries.",
-    copy: "Tell your assistant what it can say, what it should not do, and when it should stop and ask you to take over.",
+    copy: "Tell your agent what it can say, what it should not do, and when it should stop and ask you to take over.",
   },
   {
     icon: Check,
@@ -25,7 +25,7 @@ export default function Blog() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
         title="Wireline Notes"
-        description="Practical notes for handing routine phone work to an AI call assistant."
+        description="Practical notes for handing routine phone work to an AI call agent."
         path="/blog"
       />
 
@@ -37,7 +37,7 @@ export default function Blog() {
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
             Wireline is keeping this library small until each guide earns its place. Start with the
-            basics that make an assistant useful from day one.
+            basics that make an agent useful from day one.
           </p>
         </div>
       </section>
@@ -65,7 +65,7 @@ export default function Blog() {
               <ShieldCheck className="h-4 w-4" />A private draft is a good place to begin.
             </div>
             <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-              Teach an assistant the call you keep putting off.
+              Teach an agent the call you keep putting off.
             </h2>
             <p className="mt-4 max-w-xl text-base leading-7 text-primary-foreground/75">
               Name it, describe the task in plain language, and refine the rules as you go.
