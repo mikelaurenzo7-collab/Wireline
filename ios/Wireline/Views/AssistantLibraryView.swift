@@ -15,14 +15,14 @@ struct AssistantLibraryView: View {
             Group {
                 if let loadError {
                     BrandEmptyState(
-                        title: "Couldn't load assistants",
+                        title: "Couldn't load agents",
                         message: loadError,
                         systemImage: "wifi.exclamationmark"
                     )
                 } else if agents.isEmpty {
                     BrandEmptyState(
-                        title: "Personal assistants and business agents",
-                        message: "Start with a personal assistant for everyday calls, or add a business agent when work needs a professional line.",
+                        title: "Personal and business agents",
+                        message: "Start with a personal agent for everyday calls, or add a business agent when work needs a professional line.",
                         systemImage: "person.wave.2"
                     )
                 } else {
@@ -33,12 +33,12 @@ struct AssistantLibraryView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Assistants")
+            .navigationTitle("Agents")
             .wirelineBrand()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showCreate = true } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("Create assistant")
+                        .accessibilityLabel("Create agent")
                 }
             }
             .sheet(isPresented: $showCreate) { createSheet }
@@ -50,9 +50,9 @@ struct AssistantLibraryView: View {
     private var createSheet: some View {
         NavigationStack {
             Form {
-                Section("Full versatility") {
+                Section("Agent type") {
                     Picker("Posture", selection: $isBusinessAgent) {
-                        Text("Personal assistant").tag(false)
+                        Text("Personal agent").tag(false)
                         Text("Business agent").tag(true)
                     }
                     .pickerStyle(.segmented)
@@ -63,7 +63,7 @@ struct AssistantLibraryView: View {
                 Section("Start with one clear job") {
                     TextField("Name", text: $name)
                     Picker("Help with", selection: $role) {
-                        Text("Personal assistant").tag("scheduler")
+                        Text("Personal agent").tag("scheduler")
                         Text("Helpful caller").tag("customer_service")
                         Text("Call concierge").tag("receptionist")
                         Text("Something else").tag("custom")
@@ -76,7 +76,7 @@ struct AssistantLibraryView: View {
                         if isCreating {
                             ProgressView().frame(maxWidth: .infinity)
                         } else {
-                            Label("Create assistant", systemImage: "wand.and.stars")
+                            Label("Create agent", systemImage: "wand.and.stars")
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -88,7 +88,7 @@ struct AssistantLibraryView: View {
                     Section { Text(creationError).foregroundStyle(Brand.destructive) }
                 }
             }
-            .navigationTitle(isBusinessAgent ? "New business agent" : "New assistant")
+            .navigationTitle(isBusinessAgent ? "New business agent" : "New personal agent")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
