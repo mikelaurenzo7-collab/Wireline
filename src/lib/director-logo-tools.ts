@@ -193,16 +193,17 @@ export function sanitizeLogoSvgForExport(svg: string): string {
 
 function paletteFromColors(colors: string): [string, string, string] {
   const presets: Array<[RegExp, [string, string, string]]> = [
-    [/cream|#f9f9f7|#f4f4f2|warm/i, ["#5D3FD3", "#F8F9FF", "#484554"]],
-    [/blue|navy|indigo/i, ["#5D3FD3", "#E6DEFF", "#451EBB"]],
-    [/green|emerald|mint|wireline|forest/i, ["#5D3FD3", "#E6DEFF", "#451EBB"]],
-    [/red|rose|crimson/i, ["#BA1A1A", "#F8F9FF", "#451EBB"]],
-    [/blue|violet/i, ["#5D3FD3", "#E6DEFF", "#451EBB"]],
+    [/cream|#f9f9f7|#f4f4f2|warm/i, ["#111111", "#F7F7F4", "#6B6B66"]],
+    [/blue|navy|indigo/i, ["#0F172A", "#DBEAFE", "#1D4ED8"]],
+    [/green|emerald|mint|forest/i, ["#064E3B", "#D1FAE5", "#047857"]],
+    [/red|rose|crimson/i, ["#7F1D1D", "#FEE2E2", "#B91C1C"]],
+    [/wireline|mono|black|graphite|minimal/i, ["#111111", "#F7F7F4", "#6B6B66"]],
+    [/violet|purple/i, ["#312E81", "#EDE9FE", "#6D28D9"]],
   ];
   for (const [rx, palette] of presets) {
     if (rx.test(colors)) return palette;
   }
-  return ["#111827", "#6d28d9", "#f59e0b"];
+  return ["#111111", "#F7F7F4", "#6B6B66"];
 }
 
 function makeSvgConcept(index: number, brief: DirectorCreativeBrief): DirectorLogoConcept {
@@ -350,7 +351,7 @@ function buildZip(files: Array<{ name: string; data: Buffer }>): Buffer {
     const local = Buffer.alloc(30);
     local.writeUInt32LE(0x04034b50, 0);
     local.writeUInt16LE(20, 4);
-    local.writeUInt16LE(0, 6);
+    local.writeUInt16LE(20, 6);
     local.writeUInt16LE(0, 8);
     local.writeUInt16LE(0, 10);
     local.writeUInt16LE(0, 12);
