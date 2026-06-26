@@ -4,11 +4,11 @@
  */
 import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
-/** Wireline purple accent used across shared UI surfaces. */
+/** Wireline Mono accent used across shared UI surfaces. */
 export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */
-  accentHex: "#5D3FD3",
+  accentHex: "#111111",
 } as const;
 
 /** Workspace surfaces, settings, insights, ops panels */
