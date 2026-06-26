@@ -35,7 +35,7 @@ import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 // ────────────────────────────────────────────────────────────────────────────
-// Template definitions
+// Template definitions — unlocked starting points, not plan locks.
 // ────────────────────────────────────────────────────────────────────────────
 
 const AGENT_TEMPLATES = [
@@ -88,14 +88,14 @@ const AGENT_TEMPLATES = [
     category: "Customer Support",
     name: "Tier 1 — General Support",
     description:
-      "Handles FAQs, account questions, and basic troubleshooting. Escalates to human when needed.",
+      "Handles FAQs, account questions, and basic troubleshooting. Escalates to a human when needed.",
     role: "customer_service",
     channel: "voice" as const,
     icon: Headphones,
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Thank you for calling support. I'm your AI assistant — how can I help you today?",
+      "Thank you for calling support. I'm your agent — how can I help you today?",
   },
   {
     id: "support-email",
@@ -117,7 +117,7 @@ const AGENT_TEMPLATES = [
     category: "Scheduling",
     name: "Medical Office Scheduler",
     description:
-      "Books patient appointments, handles cancellations, sends reminders. HIPAA-aware communication style.",
+      "Books patient appointments, handles cancellations, sends reminders, and follows a careful healthcare communication style.",
     role: "scheduler",
     channel: "voice" as const,
     icon: Calendar,
@@ -138,7 +138,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Welcome to [Salon Name]! I'm your virtual receptionist. Would you like to book an appointment or ask about our services?",
+      "Welcome to [Salon Name]! I can help book an appointment or answer questions about services.",
   },
   {
     id: "scheduler-realestate",
@@ -242,22 +242,20 @@ const AGENT_TEMPLATES = [
       "Hi, welcome to our store! I can help you place an order right over the phone. What are you looking for today?",
   },
   // === PERSONAL & LIFESTYLE ===
-  // For individuals on the Personal tier ($9/mo, 1 agent) — agents
-  // represent a single human rather than a business. Versatile concierge
-  // by default plus three specialty sub-types for high-value individual
-  // use cases (call screening, errand-running, bill negotiation).
+  // Personal templates are unlocked starting points. They represent a single
+  // person rather than a business, and they can be upgraded through Training.
   {
     id: "personal-concierge",
     category: "Personal & Lifestyle",
     name: "Personal Concierge",
     description:
-      "Super-versatile personal assistant. Books appointments, handles follow-ups, screens calls, and takes messages — on your behalf.",
+      "Versatile personal agent. Books appointments, handles follow-ups, screens calls, and takes messages on your behalf.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: User,
-    accent: BRAND.chromeGlow,
+    accent: BRAND.colors.primary,
     badge: "Personal · most versatile",
-    firstMessage: "Hi, this is [Your Name]'s assistant. How can I help you today?",
+    firstMessage: "Hi, this is [Your Name]'s agent. How can I help you today?",
   },
   {
     id: "personal-screener",
@@ -268,21 +266,21 @@ const AGENT_TEMPLATES = [
     role: "personal_assistant",
     channel: "voice" as const,
     icon: PhoneIncoming,
-    accent: BRAND.chromeGlow,
+    accent: BRAND.colors.primary,
     badge: "Personal · inbound",
     firstMessage:
-      "Hi, you've reached [Your Name]'s line — I'm their assistant. Can I take a quick message or let them know what this is about?",
+      "Hi, you've reached [Your Name]'s line — I'm their agent. Can I take a quick message or let them know what this is about?",
   },
   {
     id: "personal-errand",
     category: "Personal & Lifestyle",
     name: "Errand Caller",
     description:
-      "Calls dentists, plumbers, hairdressers, restaurants, and government offices to book, confirm, or reschedule on your behalf.",
+      "Calls dentists, plumbers, hairdressers, restaurants, and offices to book, confirm, or reschedule on your behalf.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: ClipboardList,
-    accent: BRAND.chromeGlow,
+    accent: BRAND.colors.primary,
     badge: "Personal · outbound",
     firstMessage:
       "Hi, I'm calling on behalf of [Your Name] — they asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
@@ -296,8 +294,8 @@ const AGENT_TEMPLATES = [
     role: "personal_assistant",
     channel: "voice" as const,
     icon: Receipt,
-    accent: BRAND.chromeGlow,
-    badge: "Personal · saves $$",
+    accent: BRAND.colors.primary,
+    badge: "Personal · saves money",
     firstMessage:
       "Hi, I'm calling on behalf of [Your Name], account [Account #] — they've asked me to discuss their current plan and pricing.",
   },
@@ -316,10 +314,8 @@ const CATEGORIES = [
   "Personal & Lifestyle",
 ] as const;
 
-// Recommended default voice gender per template. Account Holder can override in
-// the deploy modal — this is just a smart starting point so the toggle
-// lands on a sensible default for the use case (e.g. assertive collections
-// reads better as male, salon receptionist as female).
+// Recommended default voice gender per template. The account holder can override
+// in the deploy modal. This is just a smart starting point for the use case.
 const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
   "sales-sdr": "male",
   "sales-closer": "male",
@@ -340,14 +336,6 @@ const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
   "personal-errand": "female",
   "personal-negotiator": "male",
 };
-
-// ────────────────────────────────────────────────────────────────────────────
-// Template Card
-// ────────────────────────────────────────────────────────────────────────────
-
-// ────────────────────────────────────────────────────────────────────────────
-// Template Card
-// ────────────────────────────────────────────────────────────────────────────
 
 function TemplateCard({
   template,
@@ -380,32 +368,28 @@ function TemplateCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Accent glow on hover — desktop only */}
       <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none wl-accent-halo hidden md:block" />
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
-        {/* Header row */}
         <div className="flex items-start justify-between gap-2">
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
             <Icon className="w-5 h-5 wl-accent-text" />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {/* Deployed-in-Assistants badge */}
             {alreadyDeployed && (
               <span
                 className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success border wl-text-success"
                 title={
                   deployedCount === 1
-                    ? "Already in your Assistants"
-                    : `${deployedCount} in your Assistants`
+                    ? "Already in your agents"
+                    : `${deployedCount} in your agents`
                 }
               >
                 <Check className="w-2.5 h-2.5" />
                 {deployedCount === 1 ? "Deployed" : `Deployed ×${deployedCount}`}
               </span>
             )}
-            {/* Channel badge — hide on narrow screens when deployed badge shows */}
             <span
               className={cn(
                 "px-1.5 py-0.5 rounded-full border wl-label leading-none",
@@ -417,7 +401,6 @@ function TemplateCard({
             >
               {template.channel}
             </span>
-            {/* Extra badge — desktop only to reduce chip noise on mobile */}
             {template.badge && (
               <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-muted border border-border wl-label leading-none text-foreground/70">
                 {template.badge}
@@ -426,7 +409,6 @@ function TemplateCard({
           </div>
         </div>
 
-        {/* Name */}
         <div>
           <h3 className="text-base font-semibold text-foreground leading-tight tracking-[-0.01em]">
             {template.name}
@@ -434,7 +416,6 @@ function TemplateCard({
           <p className="text-xs text-foreground/70 leading-relaxed mt-1">{template.description}</p>
         </div>
 
-        {/* First-message speech bubble on hover */}
         <AnimatePresence>
           {hovered && (
             <motion.div
@@ -450,7 +431,6 @@ function TemplateCard({
         </AnimatePresence>
       </div>
 
-      {/* Deploy button */}
       <div className="relative z-10 px-4 pb-4">
         <ShadButton
           type="button"
@@ -461,16 +441,12 @@ function TemplateCard({
           className="w-full !py-2 !text-[var(--wireline-typography-overline-size)] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
         >
           {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-          {alreadyDeployed ? "Deploy Another" : "Deploy Assistant"}
+          {alreadyDeployed ? "Deploy another" : "Deploy agent"}
         </ShadButton>
       </div>
     </motion.div>
   );
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Custom Assistant card
-// ────────────────────────────────────────────────────────────────────────────
 
 function CustomAssistantCard() {
   return (
@@ -485,20 +461,16 @@ function CustomAssistantCard() {
       </div>
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">
-          Custom Assistant
+          Custom Agent
         </h3>
         <p className="text-xs text-foreground/70 leading-relaxed max-w-[200px]">
-          Let Wireline Forge design a bespoke assistant for your exact use case.
+          Let Wireline Forge design a bespoke agent for your exact use case.
         </p>
       </div>
-      <ClaudeRecipeButton recipe="agent-forge" label="Open Assistant Forge" variant="ghost" />
+      <ClaudeRecipeButton recipe="agent-forge" label="Open Agent Forge" variant="ghost" />
     </motion.div>
   );
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Main component
-// ────────────────────────────────────────────────────────────────────────────
 
 export default function AgentTemplates() {
   const navigate = useNavigate();
@@ -510,9 +482,6 @@ export default function AgentTemplates() {
   const [deployedNames, setDeployedNames] = useState<string[]>([]);
   const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
 
-  // Pull the current Assistants so each template card can render a 'Deployed'
-  // badge + 'Deploy Another' button when an agent with the matching name
-  // already exists. Refetches after every successful deploy below.
   const refetchAgents = async () => {
     try {
       const r = await authFetch("/api/agents");
@@ -557,10 +526,6 @@ export default function AgentTemplates() {
     return matchesCategory && matchesSearch;
   });
 
-  // Step 1: clicking "Deploy" opens the modal so the Account Holder can name
-  // the agent and pick a voice (male / female + specific voice). Step 2
-  // (handleConfirmedDeploy) actually POSTs to /api/agents with the
-  // values the Account Holder chose.
   const handleOpenDeploy = (template: Template) => {
     if (deploying) return;
     setModalTemplate(template);
@@ -576,16 +541,10 @@ export default function AgentTemplates() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: uniqueId,
-          // Account Holder-chosen name (defaults to template.name, fully editable)
           name: values.name,
           channel: modalTemplate.channel,
           role: modalTemplate.role,
-          // Account Holder-chosen voice — 11labs/OpenAI id selected by gender
-          // toggle + optional specific voice picker in the modal.
           voice_id: values.voiceId,
-          // templateId drives the server-side personality overlay; firstMessage
-          // is the opener with {{businessName}}-style placeholders substituted
-          // server-side from the Account Holder's settings row.
           templateId: modalTemplate.id,
           firstMessage: modalTemplate.firstMessage,
         }),
@@ -597,7 +556,7 @@ export default function AgentTemplates() {
         setDeploying(null);
         return;
       }
-      toastSuccess("Assistant deployed", values.name);
+      toastSuccess("Agent deployed", values.name);
       setModalTemplate(null);
       setDeploying(null);
       await refetchAgents();
@@ -606,8 +565,6 @@ export default function AgentTemplates() {
         typeof data === "object" && data && "id" in data && typeof data.id === "string"
           ? data.id
           : uniqueId;
-      // Templates are starting points, not destinations: land on the Studio
-      // canvas with the new agent in focus, ready to voice and tune.
       navigate(`/agents?agent=${encodeURIComponent(createdId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
@@ -617,10 +574,7 @@ export default function AgentTemplates() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      {/* Top bar — page title removed per design direction; the left
-          nav already labels this "Templates". Search stays. */}
       <div className="px-4 py-3 border-b border-border flex flex-col gap-3 shrink-0">
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none" />
           <Input
@@ -633,7 +587,6 @@ export default function AgentTemplates() {
           />
         </div>
 
-        {/* Category tabs */}
         <div className="flex gap-1.5 flex-wrap">
           {CATEGORIES.map((cat) => (
             <ShadButton
@@ -656,7 +609,6 @@ export default function AgentTemplates() {
         </div>
       </div>
 
-      {/* Grid */}
       <div className="flex-1 min-h-0 scroll-viewport px-4 py-4">
         <AnimatePresence mode="popLayout">
           {visible.length === 0 && (
@@ -683,7 +635,6 @@ export default function AgentTemplates() {
             ))}
           </AnimatePresence>
 
-          {/* Custom assistant card always at the end */}
           <CustomAssistantCard />
         </div>
       </div>
@@ -700,7 +651,6 @@ export default function AgentTemplates() {
                 role: modalTemplate.role,
                 channel: modalTemplate.channel,
                 firstMessage: modalTemplate.firstMessage,
-                // Recommend a default gender per template — Account Holder can override
                 defaultGender: DEFAULT_GENDER_BY_TEMPLATE[modalTemplate.id] ?? "female",
               }
             : null
