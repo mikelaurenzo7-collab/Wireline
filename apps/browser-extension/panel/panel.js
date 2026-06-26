@@ -8,7 +8,17 @@ const status = document.querySelector("#status");
 const handoffForm = document.querySelector("#handoff-form");
 const handoffButton = document.querySelector("#handoff-button");
 const refreshButton = document.querySelector("#refresh-context");
-const workspaceButton = document.querySelector("#open-workspace");
+const quickActions = [...document.querySelectorAll(".quick-action")];
+const agentsButton = document.querySelector("#open-agents");
+const wireButton = document.querySelector("#open-wire");
+const billingButton = document.querySelector("#open-billing");
+
+const actionPrompts = {
+  call: "Have a Wireline agent prepare a call from this page. Ask me for the number and confirmation before any live call.",
+  text: "Have a Wireline agent draft a text from this page. Ask me to review before sending.",
+  followup: "Create a concise follow-up from this page with next step, owner, and timing.",
+  task: "Use this page and selected text as context for a Wireline agent task.",
+};
 
 function sendMessage(message) {
   return new Promise((resolve, reject) => {
@@ -19,7 +29,7 @@ function sendMessage(message) {
         return;
       }
       if (!response?.ok) {
-        reject(new Error(response?.error || "Wireline Companion could not complete that request."));
+        reject(new Error(response?.error || "Wireline Command could not complete that request."));
         return;
       }
       resolve(response.result);
@@ -64,31 +74,47 @@ async function loadContext() {
   }
 }
 
-handoffForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
+async function sendToStudio(action = "task") {
   handoffButton.disabled = true;
+  quickActions.forEach((button) => {
+    button.disabled = true;
+  });
   status.textContent = "Opening Studio with this context…";
 
   try {
-    await sendMessage({ type: "wireline:open-studio", request: request.value });
-    status.textContent = "Studio is open in a new tab.";
+    const fallbackPrompt = actionPrompts[action] || actionPrompts.task;
+    await sendMessage({
+      type: "wireline:open-studio",
+      action,
+      request: request.value.trim() || fallbackPrompt,
+    });
+    status.textContent = "Studio is open with this command.";
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : "Unable to open Studio.";
   } finally {
     handoffButton.disabled = false;
+    quickActions.forEach((button) => {
+      button.disabled = false;
+    });
   }
+}
+
+handoffForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  void sendToStudio("task");
+});
+
+quickActions.forEach((button) => {
+  button.addEventListener("click", () => {
+    const action = button.dataset.action || "task";
+    request.value = actionPrompts[action] || actionPrompts.task;
+    void sendToStudio(action);
+  });
 });
 
 refreshButton.addEventListener("click", () => void loadContext());
-workspaceButton.addEventListener("click", async () => {
-  workspaceButton.disabled = true;
-  try {
-    await sendMessage({ type: "wireline:open-workspace" });
-  } catch (error) {
-    status.textContent = error instanceof Error ? error.message : "Unable to open the Wireline workspace.";
-  } finally {
-    workspaceButton.disabled = false;
-  }
-});
+agentsButton.addEventListener("click", () => void sendMessage({ type: "wireline:open-route", route: "agents" }));
+wireButton.addEventListener("click", () => void sendMessage({ type: "wireline:open-route", route: "wire" }));
+billingButton.addEventListener("click", () => void sendMessage({ type: "wireline:open-route", route: "billing" }));
 
 void loadContext();
