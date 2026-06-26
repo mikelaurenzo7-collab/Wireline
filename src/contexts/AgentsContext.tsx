@@ -16,6 +16,7 @@ export interface WorkspaceAgentSummary {
   role: string | null;
   channel?: "voice" | "email" | "omnichannel";
   is_business_agent?: boolean;
+  phone_number?: string | null;
 }
 
 interface AgentsContextValue {
@@ -43,6 +44,7 @@ function isAgentLike(value: unknown): value is {
   role?: string | null;
   channel?: string | null;
   isBusinessAgent?: boolean | null;
+  phone_number?: string | null;
 } {
   return (
     typeof value === "object" &&
@@ -58,7 +60,22 @@ function normalizeChannel(raw: string | null | undefined): WorkspaceAgentSummary
   return undefined;
 }
 
-function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
+function parsePhoneNumberMap(data: unknown): Map<string, string> {
+  const rows = Array.isArray((data as Record<string, unknown>)?.numbers)
+    ? ((data as Record<string, unknown>).numbers as unknown[])
+    : [];
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const record = row as Record<string, unknown>;
+    const agentId = typeof record.agent_id === "string" ? record.agent_id : "";
+    const phoneNumber = typeof record.phone_number === "string" ? record.phone_number : "";
+    if (agentId && phoneNumber) map.set(agentId, phoneNumber);
+  }
+  return map;
+}
+
+function parseAgentsPayload(data: unknown, numbersByAgent = new Map<string, string>()): WorkspaceAgentSummary[] {
   const list = Array.isArray((data as Record<string, unknown>)?.agents)
     ? ((data as Record<string, unknown>).agents as unknown[])
     : [];
@@ -68,6 +85,7 @@ function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
     role: agent.role ?? null,
     channel: normalizeChannel(agent.channel),
     is_business_agent: !!agent.isBusinessAgent,
+    phone_number: agent.phone_number ?? numbersByAgent.get(agent.id) ?? null,
   }));
 }
 
@@ -80,11 +98,14 @@ async function fetchAgentsWithRetry(attempts = 2): Promise<{
     try {
       const response = await authFetch("/api/agents");
       const body = await response.json().catch(() => null);
+      const numbersResponse = await authFetch("/api/phone-numbers").catch(() => null);
+      const numbersBody = numbersResponse?.ok ? await numbersResponse.json().catch(() => null) : null;
+      const numbersByAgent = parsePhoneNumberMap(numbersBody);
       if (response.ok && body) {
-        return { agents: parseAgentsPayload(body), degraded: body.degraded === true };
+        return { agents: parseAgentsPayload(body, numbersByAgent), degraded: body.degraded === true };
       }
       if (body && (response.status === 503 || body.degraded === true)) {
-        return { agents: parseAgentsPayload(body), degraded: true };
+        return { agents: parseAgentsPayload(body, numbersByAgent), degraded: true };
       }
       lastError = new Error(`HTTP ${response.status}`);
     } catch (error) {
