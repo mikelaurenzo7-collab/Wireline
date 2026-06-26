@@ -165,17 +165,17 @@ p { margin: 0; line-height: 1.45; }
 .meta span { display: block; margin-top: 2px; font-size: 13px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 button { appearance: none; border: 1px solid color-mix(in srgb, CanvasText 24%, transparent); border-radius: 10px; padding: 10px 12px; background: transparent; color: inherit; font: inherit; font-weight: 650; cursor: pointer; }
-button.primary { background: #5d3fd3; color: white; border-color: #5d3fd3; }
+button.primary { background: #111111; color: white; border-color: #111111; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 .status { margin-top: 11px; min-height: 20px; font-size: 13px; opacity: .78; }
 .note { margin-top: 12px; font-size: 12px; opacity: .7; }
-.live { display: none; margin-top: 12px; border-radius: 10px; padding: 10px; background: color-mix(in srgb, #5d3fd3 12%, transparent); font-size: 13px; }
+.live { display: none; margin-top: 12px; border-radius: 10px; padding: 10px; background: color-mix(in srgb, CanvasText 7%, transparent); font-size: 13px; }
 .live.show { display: block; }
 @media (max-width: 460px) { .meta { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-<div id="app"><div class="card"><div class="eyebrow">Wireline Agent Preview</div><h2 id="name">Your AI phone agent</h2><p id="summary">Describe the assistant you want and Wireline will prepare a live preview.</p><div class="meta"><div><strong>Role</strong><span id="role">Receptionist</span></div><div><strong>Business</strong><span id="business">Your business</span></div></div><div class="actions"><button id="voice" class="primary" type="button">Try live voice</button><button id="save" type="button">Save to Wireline</button></div><div class="live" id="live">Microphone session ready. Speak naturally; this preview cannot place calls, access records, or take actions.</div><div class="status" id="status" aria-live="polite"></div><p class="note">No account is needed to preview. A Wireline account is required to save this agent, test it on your phone, or launch it.</p></div></div>
+<div id="app"><div class="card"><div class="eyebrow">Wireline Agent Preview</div><h2 id="name">Your phone agent</h2><p id="summary">Describe the agent you want and Wireline will prepare a live preview.</p><div class="meta"><div><strong>Role</strong><span id="role">Receptionist</span></div><div><strong>Business</strong><span id="business">Your business</span></div></div><div class="actions"><button id="voice" class="primary" type="button">Try live voice</button><button id="save" type="button">Save to Wireline</button></div><div class="live" id="live">Microphone session ready. Speak naturally; this preview cannot place calls, access records, or take actions.</div><div class="status" id="status" aria-live="polite"></div><p class="note">No account is needed to preview. A Wireline account is required to save this agent, test it on your phone, or launch it.</p></div></div>
 <script>
 (() => {
   const state = { demoToken: null, peer: null, stream: null, audio: null, pending: new Map(), sequence: 0 };
@@ -218,7 +218,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
       return;
     }
     if (msg.method === "ui/notifications/tool-result") update(msg.params || {});
-  }, { passive: true });
+  });
   $("save").addEventListener("click", async () => {
     if (!state.demoToken) { status("Start the agent preview in chat first."); return; }
     $("save").disabled = true; status("Saving your agent to Wireline…");
