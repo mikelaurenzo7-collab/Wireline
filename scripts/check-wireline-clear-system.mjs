@@ -51,6 +51,12 @@ const knowledgeWorkspace = read("src/components/KnowledgeWorkspace.tsx");
 const browserCallWidget = read("src/components/marketing/BrowserCallWidget.tsx");
 const webTokens = read("src/styles/tokens.generated.css");
 const browserTokens = read("apps/browser-extension/panel/tokens.generated.css");
+const extensionManifest = read("apps/browser-extension/manifest.base.json");
+const extensionWorker = read("apps/browser-extension/background/service-worker.js");
+const extensionPanel = read("apps/browser-extension/panel/index.html");
+const extensionPanelJs = read("apps/browser-extension/panel/panel.js");
+const extensionCommandCss = read("apps/browser-extension/panel/command.css");
+const extensionReadme = read("apps/browser-extension/README.md");
 const tokenConstants = read("src/constants/generated-design-tokens.ts");
 const androidTokens = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
 const androidApp = read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt");
@@ -80,6 +86,14 @@ mustInclude("src/styles/foundation.css", foundationCss, /overflow:\s*hidden/, "o
 mustInclude("src/styles/design-system.css", designSystemCss, /Wireline Clear System \/ Wireline Mono/, "name the current monochrome system");
 mustInclude("src/styles/tokens.generated.css", webTokens, /--wireline-color-action-primary-default:\s*#111111/, "web tokens must use Wireline Mono");
 mustInclude("apps/browser-extension/panel/tokens.generated.css", browserTokens, /--wireline-color-action-primary-default:\s*#111111/, "browser tokens must use Wireline Mono");
+mustInclude("apps/browser-extension/manifest.base.json", extensionManifest, /"name": "Wireline Command"/, "browser extension must be positioned as Wireline Command");
+mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /requestForAction\("call"/, "extension must support call commands from browser context");
+mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /requestForAction\("text"/, "extension must support text commands from browser context");
+mustInclude("apps/browser-extension/background/service-worker.js", extensionWorker, /hostPermissions\.length/, "extension policy must keep persistent host permissions out");
+mustInclude("apps/browser-extension/panel/index.html", extensionPanel, /Call[\s\S]*Text[\s\S]*Follow-up[\s\S]*Agent task/, "extension panel must expose quick command actions");
+mustInclude("apps/browser-extension/panel/panel.js", extensionPanelJs, /actionPrompts[\s\S]*call[\s\S]*text[\s\S]*followup/, "extension panel must wire quick commands");
+mustInclude("apps/browser-extension/panel/command.css", extensionCommandCss, /\.quick-actions/, "extension quick actions must have dedicated styling");
+mustInclude("apps/browser-extension/README.md", extensionReadme, /# Wireline Command/, "extension docs must use Wireline Command naming");
 mustInclude("src/constants/generated-design-tokens.ts", tokenConstants, /"color\.action\.primary\.default": "#111111"/, "TS tokens must use Wireline Mono");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens, /colorActionPrimaryDefault = Color\(0xFF111111\)/, "Android tokens must use Wireline Mono");
 mustInclude("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp, /object Assistants : Screen\("assistants", "Agents"\)/, "Android app tab model must use Agents");
@@ -119,6 +133,11 @@ mustInclude("src/routes/account-routes.ts", accountRoutes, /\/api\/account\/dele
 for (const [file, source] of [
   ["src/styles/tokens.generated.css", webTokens],
   ["apps/browser-extension/panel/tokens.generated.css", browserTokens],
+  ["apps/browser-extension/manifest.base.json", extensionManifest],
+  ["apps/browser-extension/background/service-worker.js", extensionWorker],
+  ["apps/browser-extension/panel/index.html", extensionPanel],
+  ["apps/browser-extension/panel/panel.js", extensionPanelJs],
+  ["apps/browser-extension/panel/command.css", extensionCommandCss],
   ["src/constants/generated-design-tokens.ts", tokenConstants],
   ["android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt", androidTokens],
   ["android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", androidApp],
