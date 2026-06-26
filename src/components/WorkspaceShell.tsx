@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Cable, Database, Inbox, LayoutDashboard, PenLine, Settings } from "lucide-react";
+import { Bot, Cable, GraduationCap, Inbox, LayoutDashboard, PenLine, Settings } from "lucide-react";
 
 import WirelineMark from "./brand/WirelineMark";
 
@@ -8,7 +8,7 @@ const primaryNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/studio", label: "Build", icon: PenLine },
-  { href: "/knowledge", label: "Know", icon: Database },
+  { href: "/training", label: "Train", icon: GraduationCap },
   { href: "/actions", label: "Wire", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
@@ -46,6 +46,7 @@ function isNativeAppShell() {
 function isActive(pathname: string, href: string) {
   if (pathname === href) return true;
   if (href === "/overview") return false;
+  if (href === "/training" && pathname.startsWith("/knowledge")) return true;
   return pathname.startsWith(`${href}/`);
 }
 
