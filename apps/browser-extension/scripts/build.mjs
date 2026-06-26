@@ -39,7 +39,7 @@ function assertExtensionPolicy(manifest, target) {
     throw new Error(`${target}: broad all-URLs access is prohibited.`);
   }
   if (hostPermissions.length) {
-    throw new Error(`${target}: no persistent host permissions are permitted in the companion baseline.`);
+    throw new Error(`${target}: no persistent host permissions are permitted in the command baseline.`);
   }
   if (!permissions.has("activeTab") || !permissions.has("scripting")) {
     throw new Error(`${target}: explicit active-tab capture permissions are required.`);
