@@ -1,0 +1,231 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Loader2, Send, Sparkles, Trash2 } from "lucide-react";
+import { Button, Skeleton } from "../components/atoms";
+import { useStreamingChat } from "../hooks/useStreamingChat";
+import { authFetch } from "../lib/api";
+
+type StudioMessage = {
+  id: string;
+  role: "Account Holder" | "agent";
+  content: string;
+  createdAt: string;
+  proposals?: {
+    changes?: unknown[];
+    toolToggles?: unknown[];
+    actions?: unknown[];
+  };
+};
+
+function proposalCount(message: StudioMessage) {
+  return (
+    (message.proposals?.changes?.length || 0) +
+    (message.proposals?.toolToggles?.length || 0) +
+    (message.proposals?.actions?.length || 0)
+  );
+}
+
+function MessageSkeletons() {
+  return (
+    <div className="space-y-4 px-5 py-8" aria-label="Loading conversation" aria-busy="true">
+      <div className="ml-auto h-16 w-3/5 rounded-xl bg-muted" />
+      <div className="h-28 w-4/5 rounded-xl border border-border bg-card" />
+    </div>
+  );
+}
+
+export default function StudioWorkroom({
+  agentId,
+  agentName,
+  initialCommand,
+  onBack,
+}: {
+  agentId: string;
+  agentName: string;
+  initialCommand?: string;
+  onBack: () => void;
+}) {
+  const [messages, setMessages] = useState<StudioMessage[]>([]);
+  const [draft, setDraft] = useState(initialCommand || "");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const endpoint = useMemo(
+    () => `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`,
+    [agentId],
+  );
+
+  const loadMessages = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`);
+      if (!response.ok) throw new Error("Conversation could not be loaded.");
+      const payload = await response.json();
+      setMessages(Array.isArray(payload.messages) ? payload.messages : []);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Conversation could not be loaded.");
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  const { state: streamState, send: streamSend, reset: resetStream } = useStreamingChat(endpoint, {
+    onComplete: (payload) => {
+      setMessages((current) => [
+        ...current,
+        {
+          id: `agent-${Date.now()}`,
+          role: "agent",
+          content: typeof payload.reply === "string" ? payload.reply : "Done.",
+          createdAt: new Date().toISOString(),
+          proposals: {
+            changes: Array.isArray(payload.changes) ? payload.changes : [],
+            toolToggles: Array.isArray(payload.toolToggles) ? payload.toolToggles : [],
+            actions: Array.isArray(payload.actions) ? payload.actions : [],
+          },
+        },
+      ]);
+      setSending(false);
+      resetStream();
+      requestAnimationFrame(() => inputRef.current?.focus());
+    },
+    onError: (message) => {
+      setError(message);
+      setSending(false);
+      resetStream();
+    },
+  });
+
+  useEffect(() => { void loadMessages(); }, [loadMessages]);
+
+  useEffect(() => {
+    if (initialCommand?.trim()) {
+      setDraft(initialCommand);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [initialCommand]);
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, streamState.phase]);
+
+  const submit = useCallback(() => {
+    const text = draft.trim();
+    if (!text || sending) return;
+    setMessages((current) => [
+      ...current,
+      { id: `account-${Date.now()}`, role: "Account Holder", content: text, createdAt: new Date().toISOString() },
+    ]);
+    setDraft("");
+    setError(null);
+    setSending(true);
+    void streamSend({ content: text });
+  }, [draft, sending, streamSend]);
+
+  const clearConversation = useCallback(async () => {
+    if (clearing || !window.confirm("Clear this conversation?")) return;
+    setClearing(true);
+    setError(null);
+    try {
+      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Conversation could not be cleared.");
+      setMessages([]);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Conversation could not be cleared.");
+    } finally {
+      setClearing(false);
+    }
+  }, [agentId, clearing]);
+
+  const workingLabel =
+    streamState.phase === "connecting" || streamState.phase === "preparing"
+      ? "Preparing"
+      : streamState.phase === "thinking"
+        ? "Thinking"
+        : streamState.phase === "replying"
+          ? "Writing"
+          : "Working";
+
+  return (
+    <main className="flex h-full min-h-0 flex-col bg-background">
+      <header className="flex min-h-12 shrink-0 items-center gap-3 border-b border-border px-3 sm:px-4">
+        <button type="button" onClick={onBack} className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Back to Studio">
+          <ArrowLeft size={16} aria-hidden="true" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-foreground">{agentName}</p>
+        </div>
+        <button type="button" disabled={!messages.length || clearing} onClick={() => void clearConversation()} className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40" aria-label="Clear conversation">
+          {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+        </button>
+      </header>
+
+      {error ? <div className="mx-4 mt-3 rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground" role="alert">{error}</div> : null}
+
+      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+        {loading ? <MessageSkeletons /> : messages.length ? (
+          <div className="mx-auto flex max-w-3xl flex-col gap-5">
+            {messages.map((message) => {
+              const isUser = message.role === "Account Holder";
+              const suggestions = proposalCount(message);
+              return (
+                <article key={message.id} className={isUser ? "ml-auto max-w-[86%]" : "max-w-[92%]"}>
+                  <p className={`mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] ${isUser ? "text-right text-muted-foreground" : "text-primary"}`}>{isUser ? "You" : agentName}</p>
+                  <div className={`rounded-2xl border px-4 py-3 text-[var(--wireline-typography-body-size)] leading-6 ${isUser ? "border-border bg-muted text-foreground" : "border-border bg-card text-foreground"}`}>
+                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  </div>
+                  {suggestions ? <p className="mt-2 text-xs text-muted-foreground">{suggestions} suggestion{suggestions === 1 ? "" : "s"} saved for review.</p> : null}
+                </article>
+              );
+            })}
+            {sending ? (
+              <div className="max-w-[92%]">
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] text-primary">{agentName}</p>
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" /> {workingLabel}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mx-auto flex h-full max-w-xl flex-col justify-center py-10">
+            <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Sparkles size={18} aria-hidden="true" /></span>
+            <h1 className="mt-5 text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-none tracking-[-.06em] text-foreground">Train by talking.</h1>
+            <p className="mt-4 text-base leading-7 text-muted-foreground">Ask for drafts, plans, reviews, rules, or improvements. Heavy settings live in Training.</p>
+          </div>
+        )}
+      </section>
+
+      <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-[var(--wireline-elevation-sm)] focus-within:border-primary/35">
+          <label className="sr-only" htmlFor="studio-workroom-message">Message {agentName}</label>
+          <textarea
+            id="studio-workroom-message"
+            ref={inputRef}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                event.preventDefault();
+                submit();
+              }
+            }}
+            rows={3}
+            disabled={sending}
+            placeholder={`Tell ${agentName} what to learn or do…`}
+            className="min-h-[78px] w-full resize-none bg-transparent px-2 py-1 text-[var(--wireline-typography-body-size)] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
+          />
+          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+            <p className="hidden text-[11px] text-muted-foreground sm:block">⌘ / Ctrl + Enter</p>
+            <Button type="button" disabled={!draft.trim() || sending} onClick={submit}>{sending ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />} Send</Button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
