@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wireline Companion</title>
+    <title>Wireline Command</title>
     <link rel="stylesheet" href="./tokens.generated.css" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -11,7 +11,7 @@
     <main class="panel-shell">
       <header class="panel-header">
         <div class="wordmark" aria-label="Wireline">WIRELINE</div>
-        <p>Bring the context you choose into Studio.</p>
+        <p>Command agents from the page you already have open.</p>
       </header>
 
       <section class="context-card" aria-labelledby="page-context-title">
@@ -24,21 +24,32 @@
         <p id="selection-preview" class="selection-preview" hidden></p>
       </section>
 
+      <section class="quick-actions" aria-label="Quick commands">
+        <button class="quick-action" type="button" data-action="call">Call</button>
+        <button class="quick-action" type="button" data-action="text">Text</button>
+        <button class="quick-action" type="button" data-action="followup">Follow-up</button>
+        <button class="quick-action" type="button" data-action="task">Agent task</button>
+      </section>
+
       <form id="handoff-form" class="handoff-form">
-        <label for="request">What should Wireline help with?</label>
+        <label for="request">What should Wireline do?</label>
         <textarea
           id="request"
           rows="5"
           maxlength="800"
-          placeholder="Example: build an assistant brief that can answer questions about this service and collect the information I need."
+          placeholder="Example: have an agent call this business, ask about availability, then create a follow-up."
         ></textarea>
-        <p class="privacy-note">Your page title, URL, description, and explicit selection are included only when you choose <strong>Bring into Studio</strong>.</p>
-        <button id="handoff-button" class="primary-button" type="submit">Bring into Studio</button>
+        <p class="privacy-note">Page title, URL, description, and explicit selection are included only when you choose <strong>Send to Studio</strong>.</p>
+        <button id="handoff-button" class="primary-button" type="submit">Send to Studio</button>
         <p id="status" class="status" role="status" aria-live="polite"></p>
       </form>
 
       <footer class="panel-footer">
-        <button id="open-workspace" class="text-button" type="button">Open Wireline workspace</button>
+        <button id="open-agents" class="text-button" type="button">Agents</button>
+        <span aria-hidden="true">·</span>
+        <button id="open-wire" class="text-button" type="button">Integrations</button>
+        <span aria-hidden="true">·</span>
+        <button id="open-billing" class="text-button" type="button">Usage</button>
         <span aria-hidden="true">·</span>
         <a href="https://trywireline.com/privacy" target="_blank" rel="noreferrer">Privacy</a>
       </footer>
