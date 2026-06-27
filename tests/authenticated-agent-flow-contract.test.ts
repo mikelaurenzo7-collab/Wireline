@@ -57,6 +57,7 @@ describe("authenticated agent flow", () => {
     expect(overview).toContain("Direct live work");
     expect(overview).toContain("Open Studio");
     expect(overview).toContain("Approvals and follow-up");
+    expect(overview).toContain("Brand, voice, and authority");
 
     expect(studioWorkspace).toContain('next.set("mode", "workroom")');
     expect(studioWorkspace).toContain('mode === "workroom" || mode === "assistant"');
@@ -121,13 +122,34 @@ describe("authenticated agent flow", () => {
 
   it("keeps settings focused on explicit controls", () => {
     const settings = read("src/pages/SettingsPage.tsx");
+    const routes = read("src/routes/AppRoutes.tsx");
 
     expect(settings).toContain("Set the operating rules.");
+    expect(settings).toContain("Customization");
+    expect(settings).toContain("Make every surface feel like one system.");
+    expect(settings).toContain("One profile everywhere.");
+    expect(settings).toContain("Sound intentional.");
+    expect(settings).toContain("Show where autonomy stops.");
+    expect(settings).toContain("Give the system a target.");
     expect(settings).toContain("Connect, review, remove.");
     expect(settings).toContain("Only what the job needs.");
     expect(settings).toContain("Every action has a surface.");
     expect(settings).toContain("Exit paths stay obvious.");
     expect(settings).toContain("Account deletion");
+    expect(routes).toContain('/settings/customization" element={<CustomizationSettings />}');
+  });
+
+  it("gives customization a dedicated authenticated surface", () => {
+    const customization = read("src/pages/CustomizationSettings.tsx");
+
+    expect(customization).toContain("One profile for brand, voice, rules, and goals.");
+    expect(customization).toContain("Customize the system, not just a screen.");
+    expect(customization).toContain("Brand profile");
+    expect(customization).toContain("Voice identity");
+    expect(customization).toContain("Operating authority");
+    expect(customization).toContain("Success targets");
+    expect(customization).toContain("Same taste, every surface.");
+    expect(customization).toContain("Customization contract");
   });
 
   it("does not ship mojibake in the authenticated first-run path", () => {
@@ -140,6 +162,7 @@ describe("authenticated agent flow", () => {
       "src/pages/OverviewPage.tsx",
       "src/pages/SettingsPage.tsx",
       "src/pages/BillingSettings.tsx",
+      "src/pages/CustomizationSettings.tsx",
       "src/components/ConversationBalanceCard.tsx",
       "src/components/StudioWorkroom.tsx",
       "src/components/layout/AppShell.tsx",
