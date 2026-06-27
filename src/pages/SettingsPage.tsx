@@ -48,6 +48,24 @@ const settingsDestinations = [
   },
 ] as const;
 
+const controlPrinciples = [
+  {
+    label: "Connect",
+    title: "Only what the job needs.",
+    detail: "Give agents the minimum systems, numbers, and people required for the work.",
+  },
+  {
+    label: "Review",
+    title: "Every action has a surface.",
+    detail: "Billing, access, integrations, and approvals stay visible before they become risk.",
+  },
+  {
+    label: "Remove",
+    title: "Exit paths stay obvious.",
+    detail: "Disconnect systems, sign out, or queue deletion without hunting through menus.",
+  },
+] as const;
+
 function DangerZone() {
   const [confirmation, setConfirmation] = useState("");
   const [working, setWorking] = useState(false);
@@ -191,6 +209,10 @@ export default function SettingsPage() {
           <div className="mb-4 max-w-2xl">
             <p className="studio-kicker">Workspace controls</p>
             <h2 className="wl-section-title mt-2">Set the operating rules.</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Billing, people, integrations, and app surfaces stay grouped by the control they
+              change.
+            </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {settingsDestinations.map(({ href, icon: Icon, label, detail, action }) => (
@@ -217,31 +239,45 @@ export default function SettingsPage() {
         </section>
 
         <section className="studio-card border-primary/20 bg-secondary p-5 sm:p-6">
-          <div className="flex gap-3">
-            <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
-            <div>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-xl">
               <p className="studio-kicker">Control by design</p>
               <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">
-                Connect only what the job needs.
+                Connect, review, remove.
               </h2>
-              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-                <Button asChild variant="link" className="h-auto px-0 text-sm">
-                  <Link to="/actions">
-                    Review integrations <ArrowRight aria-hidden="true" size={14} />
-                  </Link>
-                </Button>
-                <Button asChild variant="link" className="h-auto px-0 text-sm">
-                  <Link to="/settings/billing">
-                    Usage and balance <ArrowRight aria-hidden="true" size={14} />
-                  </Link>
-                </Button>
-                <Button asChild variant="link" className="h-auto px-0 text-sm">
-                  <Link to="/settings/team">
-                    Manage access <ArrowRight aria-hidden="true" size={14} />
-                  </Link>
-                </Button>
-              </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Settings should make authority legible: what is connected, who can act, what costs
+                money, and how to shut it down.
+              </p>
             </div>
+            <div className="grid min-w-0 flex-1 gap-2 md:grid-cols-3">
+              {controlPrinciples.map(({ label, title, detail }) => (
+                <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
+                  <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
+                    {label}
+                  </p>
+                  <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-4">
+            <Button asChild variant="link" className="h-auto px-0 text-sm">
+              <Link to="/actions">
+                Review integrations <ArrowRight aria-hidden="true" size={14} />
+              </Link>
+            </Button>
+            <Button asChild variant="link" className="h-auto px-0 text-sm">
+              <Link to="/settings/billing">
+                Usage and balance <ArrowRight aria-hidden="true" size={14} />
+              </Link>
+            </Button>
+            <Button asChild variant="link" className="h-auto px-0 text-sm">
+              <Link to="/settings/team">
+                Manage access <ArrowRight aria-hidden="true" size={14} />
+              </Link>
+            </Button>
           </div>
         </section>
 
