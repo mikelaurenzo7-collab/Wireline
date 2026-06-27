@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
   Cable,
   CreditCard,
@@ -23,7 +24,7 @@ const settingsDestinations = [
     href: "/settings/billing",
     icon: CreditCard,
     label: "Billing",
-    detail: "Plan, balance, invoices",
+    detail: "Plan and balance",
     action: "Open",
   },
   {
@@ -37,14 +38,14 @@ const settingsDestinations = [
     href: "/settings/customization",
     icon: SlidersHorizontal,
     label: "Customize",
-    detail: "Brand, voice, rules",
+    detail: "Brand and voice",
     action: "Tune",
   },
   {
     href: "/actions",
     icon: Cable,
     label: "Integrations",
-    detail: "Connected systems",
+    detail: "Approved systems",
     action: "Review",
   },
   {
@@ -92,7 +93,7 @@ function DangerZone() {
       <div className="flex gap-3">
         <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-destructive" />
         <div className="min-w-0 flex-1">
-          <p className="studio-kicker">Danger zone</p>
+          <p className="studio-kicker">Danger</p>
           <h2 className="mt-2 text-base font-semibold tracking-[-.02em] text-foreground">
             Delete account.
           </h2>
@@ -157,6 +158,21 @@ export default function SettingsPage() {
   return (
     <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="py-3 sm:py-6">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="studio-kicker">Workspace</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-[-.045em] text-foreground sm:text-3xl">
+              Settings
+            </h1>
+          </div>
+          <Button asChild variant="secondary" size="sm" className="shrink-0">
+            <Link to="/studio">
+              <ArrowLeft aria-hidden="true" size={15} />
+              Studio
+            </Link>
+          </Button>
+        </header>
+
         <section className="studio-card p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -194,7 +210,7 @@ export default function SettingsPage() {
 
         <section>
           <div className="mb-3">
-            <p className="studio-kicker">Settings</p>
+            <p className="studio-kicker">Controls</p>
             <h2 className="text-xl font-semibold tracking-[-.035em] text-foreground">
               Choose a control.
             </h2>
@@ -204,18 +220,20 @@ export default function SettingsPage() {
               <Link
                 key={href}
                 to={href}
-                className="studio-card flex items-center gap-3 p-4 transition-colors hover:border-primary/30 hover:bg-accent"
+                className="studio-card flex items-center gap-3 p-3 transition-colors hover:border-primary/30 hover:bg-accent sm:p-4"
               >
-                <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
+                <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-muted text-primary sm:size-10">
                   <Icon aria-hidden="true" size={18} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-base font-semibold tracking-[-.02em] text-foreground">
+                  <span className="block text-sm font-semibold tracking-[-.02em] text-foreground sm:text-base">
                     {label}
                   </span>
-                  <span className="mt-0.5 block truncate text-sm text-muted-foreground">{detail}</span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground sm:text-sm">
+                    {detail}
+                  </span>
                 </span>
-                <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary sm:text-sm">
                   {action} <ArrowRight aria-hidden="true" size={14} />
                 </span>
               </Link>
