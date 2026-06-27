@@ -237,6 +237,7 @@
 
   main:has(#studio-brief) :is(p, span, button, a, textarea, input, label),
   main:has(#studio-workroom-message) :is(p, span, button, a, textarea, input, label),
+  main[data-wireline-route^="/settings"] :is(p, span, button, a, input, label, h1, h2, h3),
   form[aria-labelledby="create-agent-title"] :is(p, span, button, textarea, input, select, label) {
     text-transform: none;
     letter-spacing: 0;
@@ -245,18 +246,20 @@
   main:has(#studio-brief) h1,
   main:has(#studio-brief) h2,
   main:has(#studio-workroom-message) h1,
+  main[data-wireline-route^="/settings"] h1,
+  main[data-wireline-route^="/settings"] h2,
   form[aria-labelledby="create-agent-title"] h2 {
     text-transform: none;
   }
 
   main:has(#studio-brief) h1 {
-    font-size: clamp(1.8rem, 8vw, 2.35rem);
+    font-size: clamp(1.7rem, 7.5vw, 2.2rem);
     letter-spacing: -0.045em;
   }
 
   main:has(#studio-brief) h2,
   main:has(#studio-workroom-message) h1 {
-    font-size: clamp(1.45rem, 6.5vw, 1.95rem);
+    font-size: clamp(1.32rem, 5.8vw, 1.75rem);
     letter-spacing: -0.04em;
   }
 
@@ -267,7 +270,7 @@
   }
 
   main:has(#studio-brief) textarea {
-    min-height: 7rem;
+    min-height: 6rem;
   }
 
   main:has(#studio-brief) .studio-card button,
@@ -277,11 +280,11 @@
   }
 
   main:has(#studio-workroom-message) section {
-    padding-block: 1rem;
+    padding-block: 0.75rem;
   }
 
   main:has(#studio-workroom-message) textarea {
-    min-height: 6rem;
+    min-height: 5rem;
   }
 
   form[aria-labelledby="create-agent-title"] {
@@ -305,6 +308,51 @@
 
   form[aria-labelledby="create-agent-title"] textarea {
     min-height: 6rem;
+  }
+
+  /* -----------------------------------------------------------------------
+   * Settings: compact controls, no floating-menu overlap, no giant account card.
+   * --------------------------------------------------------------------- */
+  main[data-wireline-route^="/settings"] {
+    padding-inline: 1rem;
+  }
+
+  main[data-wireline-route^="/settings"] .wl-workspace-content {
+    padding-top: 0.75rem;
+  }
+
+  main[data-wireline-route^="/settings"] .studio-card {
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+  }
+
+  main[data-wireline-route^="/settings"] .studio-kicker {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+  }
+
+  main[data-wireline-route^="/settings"] [data-wireline-preserve-case] {
+    text-transform: none !important;
+  }
+
+  main[data-wireline-route^="/settings"] h1 {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    letter-spacing: -0.045em;
+    line-height: 1.04;
+  }
+
+  main[data-wireline-route^="/settings"] h2 {
+    font-size: 1.1rem;
+    line-height: 1.15;
+  }
+
+  main[data-wireline-route^="/settings"] section {
+    scroll-margin-top: 1rem;
+  }
+
+  main[data-wireline-route^="/settings"] a.studio-card,
+  main[data-wireline-route^="/settings"] section.studio-card {
+    border-color: color-mix(in srgb, var(--wireline-color-border-default) 82%, transparent);
   }
 
   /* -----------------------------------------------------------------------
