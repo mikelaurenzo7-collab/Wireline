@@ -24,8 +24,9 @@ describe("authenticated agent flow", () => {
     expect(agentsPage).toContain("tab=memory");
     expect(agentsPage).toContain("/settings/billing");
 
-    expect(createDialog).toContain("Name, role, voice, personality, and a starting brief.");
-    expect(createDialog).toContain("Create and open Training");
+    expect(createDialog).toContain("Start with the job.");
+    expect(createDialog).toContain("Give it a name, a role, and a first useful outcome.");
+    expect(createDialog).toContain("Create and train");
   });
 
   it("routes fresh signups into the real create flow", () => {
@@ -46,6 +47,7 @@ describe("authenticated agent flow", () => {
 
   it("keeps overview and Studio aligned with the create-train-run model", () => {
     const overview = read("src/pages/OverviewPage.tsx");
+    const studioOverview = read("src/components/StudioOverview.tsx");
     const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
 
@@ -58,6 +60,12 @@ describe("authenticated agent flow", () => {
     expect(overview).toContain("Open Studio");
     expect(overview).toContain("Approvals and follow-up");
     expect(overview).toContain("Brand, voice, and authority");
+
+    expect(studioOverview).toContain("Give {active.name} the next job.");
+    expect(studioOverview).toContain("Ready to direct");
+    expect(studioOverview).toContain("Open workroom");
+    expect(studioOverview).toContain("Tap once to switch");
+    expect(studioOverview).not.toContain("WHAT SHOULD IT DO?");
 
     expect(studioWorkspace).toContain('next.set("mode", "workroom")');
     expect(studioWorkspace).toContain('mode === "workroom" || mode === "assistant"');
