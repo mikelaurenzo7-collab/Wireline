@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
   ArrowRight,
   Bot,
   Brain,
@@ -8,14 +7,12 @@ import {
   Mic2,
   MonitorDown,
   Palette,
-  ShieldCheck,
   SlidersHorizontal,
   Smartphone,
   Target,
 } from "lucide-react";
 
 import { Button } from "../components/atoms";
-import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const customizationLayers = [
@@ -23,7 +20,7 @@ const customizationLayers = [
     label: "Brand",
     title: "Brand profile",
     detail: "Name. Color. Assets.",
-    action: "Review apps",
+    action: "Review",
     href: "/settings/apps",
     icon: Palette,
   },
@@ -31,7 +28,7 @@ const customizationLayers = [
     label: "Voice",
     title: "Voice identity",
     detail: "Choice. Pace. Personality.",
-    action: "Open Training",
+    action: "Train",
     href: "/training",
     icon: Mic2,
   },
@@ -39,7 +36,7 @@ const customizationLayers = [
     label: "Authority",
     title: "Operating authority",
     detail: "Rules. Handoff. Escalation.",
-    action: "Review controls",
+    action: "Open",
     href: "/settings",
     icon: SlidersHorizontal,
   },
@@ -47,7 +44,7 @@ const customizationLayers = [
     label: "Goals",
     title: "Success targets",
     detail: "KPIs. Follow-up. Offer.",
-    action: "Set guidance",
+    action: "Set",
     href: "/training?section=guidance",
     icon: Target,
   },
@@ -56,7 +53,7 @@ const customizationLayers = [
 const appCarryover = [
   {
     label: "Studio",
-    detail: "Same profile. Everywhere.",
+    detail: "Same profile.",
     icon: Bot,
   },
   {
@@ -78,24 +75,12 @@ const appCarryover = [
 
 export default function CustomizationSettings() {
   return (
-    <WorkspaceShell
-      eyebrow="Workspace"
-      title="Customization"
-      contentClassName="pt-1 pb-8"
-      action={
-        <Button asChild variant="secondary" size="sm" className="shrink-0">
-          <Link to="/settings" aria-label="Back to Settings">
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline">Settings</span>
-          </Link>
-        </Button>
-      }
-    >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-8">
-        <section className="studio-card grid gap-5 border-primary/20 bg-secondary p-6 sm:p-7 xl:grid-cols-[minmax(0,.8fr)_minmax(320px,.55fr)] xl:items-end">
+    <WorkspaceShell eyebrow="Workspace" title="Customization" contentClassName="pt-1 pb-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 pb-8">
+        <section className="studio-card grid gap-4 border-primary/20 bg-secondary p-5 sm:p-6 xl:grid-cols-[minmax(0,.8fr)_minmax(300px,.55fr)] xl:items-center">
           <div className="text-center">
             <p className="studio-kicker">Profile</p>
-            <h2 className="wl-section-title mt-1">One voice, everywhere.</h2>
+            <h2 className="wl-section-title mt-1">One voice.</h2>
           </div>
           <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
             <div className="flex items-start gap-3">
@@ -113,16 +98,12 @@ export default function CustomizationSettings() {
         </section>
 
         <section>
-          <div className="mb-3 text-center">
-            <p className="studio-kicker">Layers</p>
-            <h2 className="wl-section-title mt-1">System taste, not screens.</h2>
-          </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {customizationLayers.map(({ label, title, detail, action, href, icon: Icon }) => (
               <Link
                 key={label}
                 to={href}
-                className="studio-card wl-card-action flex min-h-[218px] flex-col p-5"
+                className="studio-card wl-card-action flex min-h-[172px] flex-col p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
@@ -132,13 +113,13 @@ export default function CustomizationSettings() {
                     <Icon aria-hidden="true" size={18} />
                   </span>
                 </div>
-                <div className="mt-6 flex-1">
+                <div className="mt-5 flex-1">
                   <h3 className="wl-card-title text-[var(--wireline-typography-body-size)]">
                     {title}
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
                 </div>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                   {action} <ArrowRight aria-hidden="true" size={15} />
                 </span>
               </Link>
@@ -148,7 +129,7 @@ export default function CustomizationSettings() {
 
         <section className="studio-card p-5 sm:p-6">
           <div className="flex flex-col items-center gap-2 border-b border-border pb-3 text-center sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-center w-full sm:w-auto sm:text-left">
+            <div className="w-full text-center sm:w-auto sm:text-left">
               <p className="studio-kicker">Carryover</p>
               <h2 className="wl-section-title mt-1">Taste travels.</h2>
             </div>
@@ -170,14 +151,6 @@ export default function CustomizationSettings() {
             ))}
           </div>
         </section>
-
-        <StatusNotice
-          tone="info"
-          title="One profile."
-          icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
-        >
-          Override only where needed.
-        </StatusNotice>
       </div>
     </WorkspaceShell>
   );
