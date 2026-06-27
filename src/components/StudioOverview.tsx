@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   CircleDot,
   MessageSquareText,
-  Mic2,
   Phone,
   Plus,
   ShieldCheck,
