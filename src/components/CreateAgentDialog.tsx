@@ -1,5 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Loader2, WandSparkles, X } from "lucide-react";
+import { Loader2, Phone, WandSparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input, NativeSelect, Textarea } from "./atoms";
 import { FormField } from "./molecules";
@@ -47,6 +47,7 @@ export default function CreateAgentDialog({
   const [personality, setPersonality] = useState<Personality>("Clear");
   const [customPersonality, setCustomPersonality] = useState("");
   const [brief, setBrief] = useState(initialBrief);
+  const [provisionNumber, setProvisionNumber] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
@@ -55,6 +56,7 @@ export default function CreateAgentDialog({
   useEffect(() => {
     if (!open) return;
     setRole(business ? "receptionist" : "scheduler");
+    setProvisionNumber(false);
     setBrief((current) => current || initialBrief);
     const frame = requestAnimationFrame(() => nameRef.current?.focus());
     return () => cancelAnimationFrame(frame);
@@ -91,7 +93,7 @@ export default function CreateAgentDialog({
         body: JSON.stringify({
           name: name.trim(),
           role,
-          deferPhoneProvision: true,
+          deferPhoneProvision: !provisionNumber,
           is_business_agent: business,
         }),
       });
@@ -241,6 +243,31 @@ export default function CreateAgentDialog({
             </NativeSelect>
           </FormField>
         </div>
+
+        <label
+          className={`mt-3 flex cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border p-3 text-left transition-colors ${
+            provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-background hover:bg-muted"
+          }`}
+        >
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={provisionNumber}
+            onChange={(event) => setProvisionNumber(event.target.checked)}
+          />
+          <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-card text-foreground">
+            <Phone size={16} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-foreground">Phone number</span>
+            <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+              Twilio number. Usage may bill.
+            </span>
+          </span>
+          <span className="shrink-0 rounded-full border border-border bg-card px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            {provisionNumber ? "Now" : "Later"}
+          </span>
+        </label>
 
         {personality === "Custom" ? (
           <FormField
