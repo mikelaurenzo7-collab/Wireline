@@ -24,9 +24,9 @@ describe("authenticated agent flow", () => {
     expect(agentsPage).toContain("tab=memory");
     expect(agentsPage).toContain("/settings/billing");
 
-    expect(createDialog).toContain("Start with the job.");
-    expect(createDialog).toContain("Give it a name, a role, and a first useful outcome.");
-    expect(createDialog).toContain("Create and train");
+    expect(createDialog).toContain("New agent.");
+    expect(createDialog).toContain("Name it. Pick a role. Train next.");
+    expect(createDialog).toContain("Create agent");
   });
 
   it("routes fresh signups into the real create flow", () => {
@@ -61,19 +61,21 @@ describe("authenticated agent flow", () => {
     expect(overview).toContain("Approvals and follow-up");
     expect(overview).toContain("Brand, voice, and authority");
 
-    expect(studioOverview).toContain("Give {active.name} the next job.");
-    expect(studioOverview).toContain("Ready to direct");
-    expect(studioOverview).toContain("Open workroom");
-    expect(studioOverview).toContain("Tap once to switch");
+    expect(studioOverview).toContain("Next job.");
+    expect(studioOverview).toContain("Describe the outcome. Approvals stay visible.");
+    expect(studioOverview).toContain("Ready");
+    expect(studioOverview).toContain('to="/settings"');
+    expect(studioOverview).toContain("Settings");
     expect(studioOverview).not.toContain("WHAT SHOULD IT DO?");
+    expect(studioOverview).not.toContain("Give {active.name} the next job.");
+    expect(studioOverview).not.toContain("Tap once to switch");
 
     expect(studioWorkspace).toContain('next.set("mode", "workroom")');
     expect(studioWorkspace).toContain('mode === "workroom" || mode === "assistant"');
 
-    expect(workroom).toContain("Direct the work.");
-    expect(workroom).toContain(
-      "Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.",
-    );
+    expect(workroom).toContain("Direct work.");
+    expect(workroom).toContain("Run, draft, review, or hand off. Training holds setup.");
+    expect(workroom).toContain('to="/settings"');
     expect(workroom).not.toContain("Train by talking.");
     expect(workroom).not.toContain("what to learn or do");
   });
