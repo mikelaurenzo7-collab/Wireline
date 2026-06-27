@@ -107,12 +107,12 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
       {/* Clear system requirements (concise, sr-only for polish) */}
       <span className="sr-only">agent roster line/number configuration usage Create → Train → Run deep-link Knowledge Instructions Voice Memory</span>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {controls.map(({ label, icon: Icon, to }) => (
           <Link
             key={label}
             to={to}
-            className="flex min-h-[38px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-card px-2 text-[var(--wireline-typography-body-size)] font-semibold text-foreground transition-colors hover:border-primary/25 hover:bg-accent"
+            className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-card px-2 text-[var(--wireline-typography-body-size)] font-semibold text-foreground transition-colors hover:border-primary/25 hover:bg-accent active:scale-[0.985]"
           >
             <Icon aria-hidden="true" size={13} />
             <span>{label}</span>

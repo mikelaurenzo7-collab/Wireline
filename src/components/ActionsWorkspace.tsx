@@ -165,13 +165,13 @@ function LoadingPermissions() {
         </div>
         <Skeleton shape="control" className="h-10 w-44" />
       </div>
-      <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
+      <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px] lg:gap-6">
         <div className="space-y-5">
           {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton key={index} shape="surface" className="h-[176px] w-full" />
+            <Skeleton key={index} shape="surface" className="h-40 sm:h-[176px] w-full" />
           ))}
         </div>
-        <Skeleton shape="surface" className="h-[320px] w-full" />
+        <Skeleton shape="surface" className="h-64 sm:h-[320px] w-full" />
       </div>
     </div>
   );
@@ -346,12 +346,12 @@ export default function ActionsWorkspace() {
         </StatusNotice>
       ) : null}
 
-      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
+      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px] lg:gap-6">
         <section className="wl-scroll min-h-0 overflow-y-auto pr-0.5">
           <div className="space-y-5">
             {loading
               ? Array.from({ length: 3 }, (_, index) => (
-                  <Skeleton key={index} shape="surface" className="h-[176px] w-full" />
+                  <Skeleton key={index} shape="surface" className="h-40 sm:h-[176px] w-full" />
                 ))
               : Object.entries(everydayGroups).map(([group, tools]) => (
                   <ToolGroup

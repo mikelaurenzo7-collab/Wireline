@@ -216,7 +216,7 @@ export default function KnowledgePage() {
           <TrainingSurfaceMap agentId={agentId} activeSection={activeSection} />
           <div className="flex min-h-0 gap-4">
             <TrainingRail agentId={agentId} activeSection={activeSection} />
-            <div className="grid min-w-0 flex-1 gap-4 2xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid min-w-0 flex-1 gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
               <div className="min-h-0">
                 <KnowledgeWorkspace key={`${agentId}-${trainingVersion}`} />
               </div>

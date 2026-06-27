@@ -234,7 +234,7 @@ export default function StudioWorkroom({
         {loading ? (
           <MessageSkeletons />
         ) : messages.length ? (
-          <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          <div className="mx-auto flex max-w-3xl xl:max-w-5xl 2xl:max-w-6xl flex-col gap-5">
             {messages.map((message) => {
               const isUser = message.role === "Account Holder";
               const suggestions = proposalCount(message);
@@ -266,7 +266,7 @@ export default function StudioWorkroom({
                             key={key}
                             type="button"
                             onClick={() => setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))}
-                            className={`w-full rounded-xl border px-3 py-2 text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
+                            className={`w-full rounded-xl border px-3 py-2 min-h-[44px] text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
                             aria-pressed={isApplied}
                           >
                             <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">CHANGE</span>
@@ -283,7 +283,7 @@ export default function StudioWorkroom({
                             key={key}
                             type="button"
                             onClick={() => setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))}
-                            className={`w-full rounded-xl border px-3 py-2 text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
+                            className={`w-full rounded-xl border px-3 py-2 min-h-[44px] text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
                             aria-pressed={isApplied}
                           >
                             <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">INTEGRATION</span>
@@ -299,7 +299,7 @@ export default function StudioWorkroom({
                             key={key}
                             type="button"
                             onClick={() => setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))}
-                            className={`w-full rounded-xl border px-3 py-2 text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
+                            className={`w-full rounded-xl border px-3 py-2 min-h-[44px] text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
                             aria-pressed={isApplied}
                           >
                             <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">ACTION</span>
@@ -334,7 +334,7 @@ export default function StudioWorkroom({
 
       {/* Outcome Ledger — makes the conversation moat visible and actionable (extreme usefulness + MOAT #1) */}
       {!loading && (
-        <div className="mx-auto max-w-3xl px-4 pb-3 sm:px-6">
+        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl px-4 pb-3 sm:px-6">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground">Recent outcomes (ledger)</div>
             <Link to={`/training?agent=${encodeURIComponent(agentId)}`} className="text-[10px] text-muted-foreground hover:text-foreground">View in Training →</Link>
@@ -371,7 +371,7 @@ export default function StudioWorkroom({
       )}
 
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary/40">
+        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary/40">
           {!loading && !messages.length ? (
             <div className="mb-2 flex flex-wrap gap-1.5">
               {QUICK_PROMPTS.map((prompt) => (
