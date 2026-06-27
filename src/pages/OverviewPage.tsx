@@ -8,6 +8,7 @@ import {
   Inbox,
   PlayCircle,
   Plus,
+  SlidersHorizontal,
   Sparkles,
   User,
 } from "lucide-react";
@@ -28,6 +29,12 @@ const WORKSPACE_MOVES = [
     label: "Rules, sources, and evaluation",
   },
   { href: "/actions", icon: Cable, title: "Wire", label: "Numbers, routing, and integrations" },
+  {
+    href: "/settings/customization",
+    icon: SlidersHorizontal,
+    title: "Customize",
+    label: "Brand, voice, and authority",
+  },
 ] as const;
 
 function operatingSteps(activeAgentId: string | null) {
@@ -260,7 +267,7 @@ export default function OverviewPage() {
               </Button>
             ) : null}
           </div>
-          <div className="grid gap-4 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {WORKSPACE_MOVES.map(({ href, icon: Icon, title, label }) => (
               <Link
                 key={href}

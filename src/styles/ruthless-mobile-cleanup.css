@@ -228,6 +228,79 @@
   }
 
   /* -----------------------------------------------------------------------
+   * Authenticated Studio: directive surfaces should feel calm and operational.
+   * --------------------------------------------------------------------- */
+  main:has(#studio-brief),
+  main:has(#studio-workroom-message) {
+    padding-inline: 1rem;
+  }
+
+  main:has(#studio-brief) button,
+  main:has(#studio-workroom-message) button,
+  form[aria-labelledby="create-agent-title"] button {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  main:has(#studio-brief) h1 {
+    font-size: clamp(1.9rem, 9vw, 2.5rem);
+    letter-spacing: -0.045em;
+  }
+
+  main:has(#studio-brief) h2,
+  main:has(#studio-workroom-message) h1 {
+    font-size: clamp(1.55rem, 7vw, 2.1rem);
+    letter-spacing: -0.045em;
+  }
+
+  main:has(#studio-brief) .studio-card,
+  form[aria-labelledby="create-agent-title"] {
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+  }
+
+  main:has(#studio-brief) textarea {
+    min-height: 7.5rem;
+  }
+
+  main:has(#studio-brief) .studio-card button,
+  main:has(#studio-workroom-message) section button {
+    font-size: 0.8125rem;
+    line-height: 1.25;
+  }
+
+  main:has(#studio-workroom-message) section {
+    padding-block: 1rem;
+  }
+
+  main:has(#studio-workroom-message) textarea {
+    min-height: 6rem;
+  }
+
+  form[aria-labelledby="create-agent-title"] {
+    max-height: calc(100dvh - 1rem);
+    padding: 1rem;
+  }
+
+  form[aria-labelledby="create-agent-title"] h2 {
+    font-size: 1.45rem;
+    letter-spacing: -0.035em;
+  }
+
+  form[aria-labelledby="create-agent-title"] [data-slot="form-field"] {
+    gap: 0.45rem;
+  }
+
+  form[aria-labelledby="create-agent-title"] label {
+    font-size: 0.8125rem;
+    line-height: 1.15;
+  }
+
+  form[aria-labelledby="create-agent-title"] textarea {
+    min-height: 7rem;
+  }
+
+  /* -----------------------------------------------------------------------
    * Public drawer: no miniature landing page inside a navigation sheet.
    * --------------------------------------------------------------------- */
   #wireline-mobile-navigation > div {

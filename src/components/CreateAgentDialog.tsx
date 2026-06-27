@@ -152,31 +152,33 @@ export default function CreateAgentDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4"
+      className="fixed inset-0 z-[70] grid place-items-center bg-black/65 p-4"
       role="presentation"
     >
       <form
         ref={formRef}
         onSubmit={create}
         onKeyDown={onKeyDown}
-        className="wl-stitch-auth-card max-h-[min(720px,calc(100dvh-2rem))] w-full max-w-xl overflow-y-auto shadow-2xl"
+        className="studio-card max-h-[min(680px,calc(100dvh-2rem))] w-full max-w-lg overflow-y-auto p-5 shadow-2xl sm:p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-agent-title"
         aria-describedby="create-agent-description"
       >
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="wl-stitch-label">Create agent</p>
-            <h2 id="create-agent-title" className="mt-1 text-2xl font-semibold tracking-[-.05em]">
-              Simple intake.
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-muted-foreground">New agent</p>
+            <h2
+              id="create-agent-title"
+              className="mt-1 font-[var(--wireline-font-family-display)] text-2xl font-semibold leading-tight tracking-[-.04em] text-foreground"
+            >
+              Start with the job.
             </h2>
             <p
               id="create-agent-description"
               className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground"
             >
-              Name, role, voice, personality, and a starting brief. Train the deeper rules after
-              creation.
+              Give it a name, a role, and a first useful outcome. The deeper rules stay in Training.
             </p>
           </div>
           <Button
@@ -191,7 +193,7 @@ export default function CreateAgentDialog({
           </Button>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <FormField label="Name" htmlFor="create-agent-name" required>
             <Input
               id="create-agent-name"
@@ -246,7 +248,7 @@ export default function CreateAgentDialog({
 
         {personality === "Custom" ? (
           <FormField
-            className="mt-4"
+            className="mt-3"
             label="Custom personality"
             htmlFor="create-agent-custom-personality"
           >
@@ -261,10 +263,10 @@ export default function CreateAgentDialog({
         ) : null}
 
         <FormField
-          className="mt-4"
+          className="mt-3"
           label="First brief"
           htmlFor="create-agent-brief"
-          description="Optional. Documents and deeper rules live in Training."
+          description="Optional. Add documents, policies, and edge cases in Training."
         >
           <Textarea
             id="create-agent-brief"
@@ -294,7 +296,7 @@ export default function CreateAgentDialog({
           ) : (
             <WandSparkles aria-hidden="true" size={16} />
           )}
-          Create and open Training
+          Create and train
         </Button>
       </form>
     </div>
