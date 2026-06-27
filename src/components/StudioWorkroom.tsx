@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Loader2, Send, Sparkles, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Loader2, Send, Settings as SettingsIcon, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "../components/atoms";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
@@ -17,10 +18,10 @@ type StudioMessage = {
 };
 
 const QUICK_PROMPTS = [
-  "Draft a follow-up text for today's missed calls.",
-  "Review open approvals and tell me what needs a decision.",
-  "Prepare a handoff note for the next human reply.",
-  "Queue the next follow-up steps for priority leads.",
+  "Draft missed-call follow-up.",
+  "Review approvals.",
+  "Prepare handoff.",
+  "Queue priority leads.",
 ] as const;
 
 function proposalCount(message: StudioMessage) {
@@ -188,6 +189,14 @@ export default function StudioWorkroom({
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{agentName}</p>
         </div>
+        <Link
+          to="/settings"
+          className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Open Settings"
+          title="Settings"
+        >
+          <SettingsIcon className="size-4" aria-hidden="true" />
+        </Link>
         <button
           type="button"
           disabled={!messages.length || clearing}
@@ -256,12 +265,11 @@ export default function StudioWorkroom({
             <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
               <Sparkles size={18} aria-hidden="true" />
             </span>
-            <h1 className="mt-5 text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-none tracking-[-.06em] text-foreground">
-              Direct the work.
+            <h1 className="mt-5 text-[clamp(1.8rem,7vw,2.6rem)] font-semibold leading-none tracking-[-.05em] text-foreground">
+              Direct work.
             </h1>
             <p className="mt-4 text-base leading-7 text-muted-foreground">
-              Run calls, draft texts, queue follow-up, review approvals, and prepare handoff. Heavy
-              setup stays in Training.
+              Run, draft, review, or hand off. Training holds setup.
             </p>
             <div className="mt-6 flex flex-wrap gap-2.5">
               {QUICK_PROMPTS.map((prompt) => (
@@ -300,7 +308,7 @@ export default function StudioWorkroom({
             }}
             rows={3}
             disabled={sending}
-            placeholder={`Tell ${agentName} what to run, send, review, or hand off...`}
+            placeholder={`Message ${agentName}...`}
             className="min-h-[78px] w-full resize-none bg-transparent px-2 py-1 text-[var(--wireline-typography-body-size)] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
           />
           <div className="flex items-center justify-between gap-3 border-t border-border pt-3">

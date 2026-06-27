@@ -235,22 +235,29 @@
     padding-inline: 1rem;
   }
 
-  main:has(#studio-brief) button,
-  main:has(#studio-workroom-message) button,
-  form[aria-labelledby="create-agent-title"] button {
+  main:has(#studio-brief) :is(p, span, button, a, textarea, input, label),
+  main:has(#studio-workroom-message) :is(p, span, button, a, textarea, input, label),
+  form[aria-labelledby="create-agent-title"] :is(p, span, button, textarea, input, select, label) {
     text-transform: none;
     letter-spacing: 0;
   }
 
+  main:has(#studio-brief) h1,
+  main:has(#studio-brief) h2,
+  main:has(#studio-workroom-message) h1,
+  form[aria-labelledby="create-agent-title"] h2 {
+    text-transform: none;
+  }
+
   main:has(#studio-brief) h1 {
-    font-size: clamp(1.9rem, 9vw, 2.5rem);
+    font-size: clamp(1.8rem, 8vw, 2.35rem);
     letter-spacing: -0.045em;
   }
 
   main:has(#studio-brief) h2,
   main:has(#studio-workroom-message) h1 {
-    font-size: clamp(1.55rem, 7vw, 2.1rem);
-    letter-spacing: -0.045em;
+    font-size: clamp(1.45rem, 6.5vw, 1.95rem);
+    letter-spacing: -0.04em;
   }
 
   main:has(#studio-brief) .studio-card,
@@ -260,7 +267,7 @@
   }
 
   main:has(#studio-brief) textarea {
-    min-height: 7.5rem;
+    min-height: 7rem;
   }
 
   main:has(#studio-brief) .studio-card button,
@@ -278,12 +285,12 @@
   }
 
   form[aria-labelledby="create-agent-title"] {
-    max-height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 2rem);
     padding: 1rem;
   }
 
   form[aria-labelledby="create-agent-title"] h2 {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
     letter-spacing: -0.035em;
   }
 
@@ -297,7 +304,7 @@
   }
 
   form[aria-labelledby="create-agent-title"] textarea {
-    min-height: 7rem;
+    min-height: 6rem;
   }
 
   /* -----------------------------------------------------------------------
