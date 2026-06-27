@@ -50,6 +50,11 @@ describe("authenticated agent flow", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
 
     expect(overview).toContain("Create -> Train -> Run");
+    expect(overview).toContain("Next best move");
+    expect(overview).toContain("Create, train, then run without guessing.");
+    expect(overview).toContain("Short intake");
+    expect(overview).toContain("Make it trustworthy");
+    expect(overview).toContain("Direct live work");
     expect(overview).toContain("Open Studio");
     expect(overview).toContain("Approvals and follow-up");
 
@@ -100,7 +105,10 @@ describe("authenticated agent flow", () => {
     const balance = read("src/components/ConversationBalanceCard.tsx");
     const stripeBilling = read("src/components/StripeBillingCard.tsx");
 
+    expect(billing).toContain("Fund the work. Keep the ledger clean.");
     expect(billing).toContain("Start free. Fund live work.");
+    expect(billing).toContain("Use balance first.");
+    expect(billing).toContain("Stripe keeps the receipt.");
     expect(balance).toContain(
       "Start free. Add balance when you are ready to run calls, texts, and follow-up.",
     );
@@ -109,6 +117,17 @@ describe("authenticated agent flow", () => {
     expect(billing).not.toContain("Build free");
     expect(balance).not.toContain("Build and test for free");
     expect(stripeBilling).not.toContain("Build and test for free");
+  });
+
+  it("keeps settings focused on explicit controls", () => {
+    const settings = read("src/pages/SettingsPage.tsx");
+
+    expect(settings).toContain("Set the operating rules.");
+    expect(settings).toContain("Connect, review, remove.");
+    expect(settings).toContain("Only what the job needs.");
+    expect(settings).toContain("Every action has a surface.");
+    expect(settings).toContain("Exit paths stay obvious.");
+    expect(settings).toContain("Account deletion");
   });
 
   it("does not ship mojibake in the authenticated first-run path", () => {
