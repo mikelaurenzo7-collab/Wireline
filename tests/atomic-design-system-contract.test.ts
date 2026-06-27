@@ -30,7 +30,8 @@ describe("Atomic Design completion contract", () => {
     expect(onboarding).toContain(
       'workspaceMode === "business" ? "/studio?create=1&posture=business"',
     );
-    expect(onboarding).toContain("Opening Create Agent");
+    expect(onboarding).toContain('from "../components/TransitionSurface"');
+    expect(onboarding).toContain("Opening your first agent");
     expect(onboarding).not.toContain("components/ui/shadcn");
 
     expect(developers).toContain('import { Button } from "../components/atoms"');

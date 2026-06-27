@@ -1028,8 +1028,14 @@ mustInclude(
 mustInclude(
   "src/pages/OnboardingFlow.tsx",
   onboardingFlow,
-  /Opening Create Agent/,
+  /Opening your first agent/,
   "legacy onboarding route must hand directly into the create flow",
+);
+mustInclude(
+  "src/pages/OnboardingFlow.tsx",
+  onboardingFlow,
+  /Continue now/,
+  "onboarding handoff must offer a manual continue fallback",
 );
 mustExclude(
   "src/pages/OnboardingFlow.tsx",

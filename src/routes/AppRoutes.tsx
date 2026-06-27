@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import TransitionSurface from "../components/TransitionSurface";
 
 const OverviewPage = lazy(() => import("../pages/OverviewPage"));
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
@@ -16,9 +17,12 @@ const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 
 const loading = (
-  <div className="grid min-h-dvh place-items-center bg-background px-6 text-foreground">
-    <p className="wl-overline">Opening workspace</p>
-  </div>
+  <TransitionSurface
+    eyebrow="Workspace"
+    title="Loading the next screen"
+    description="Keeping your workspace context in place while this surface loads."
+    busyLabel="Loading route"
+  />
 );
 
 function LegacyConnectionsRedirect() {

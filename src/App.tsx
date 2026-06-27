@@ -6,6 +6,7 @@ import { AgentsProvider } from "./contexts/AgentsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { AccountProvider } from "./contexts/AccountContext";
+import TransitionSurface from "./components/TransitionSurface";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Features = lazy(() => import("./pages/Features"));
@@ -37,19 +38,13 @@ const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 
 function RouteLoading() {
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[var(--wireline-color-canvas-default)]">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--wireline-color-border-default)] border-t-[var(--wireline-color-action-primary-default)]" />
-        <span
-          className="font-medium font-sans tracking-wide"
-          style={{
-            fontSize: "var(--wireline-typography-caption-size)",
-            color: "var(--wireline-color-text-secondary)",
-          }}
-        >
-          Loading Wireline...
-        </span>
-      </div>
+    <div className="fixed inset-0 z-[9999]">
+      <TransitionSurface
+        eyebrow="Wireline"
+        title="Loading the next screen"
+        description="Bringing the next part of Wireline into view."
+        busyLabel="Loading"
+      />
     </div>
   );
 }
