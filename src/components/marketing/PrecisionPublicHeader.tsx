@@ -30,36 +30,34 @@ export default function PrecisionPublicHeader() {
         <a className="wl-skip-link" href="#main-content">
           Skip to content
         </a>
-        <div className="wl-measure relative mx-auto flex h-16 items-center justify-between gap-4 px-5 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center">
-            <Link
-              to="/"
-              className="flex min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
-              aria-label="Wireline home"
-            >
-              <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
-              <span>Wireline</span>
-            </Link>
-            <nav
-              className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-6 md:flex"
-              aria-label="Site"
-            >
-              {links.map((link) => {
-                const active = link.active(location.pathname);
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    aria-current={active ? "page" : undefined}
-                    className={`flex h-full items-center border-b-2 text-[var(--wireline-typography-caption-size)] font-medium transition-colors ${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          <div className="hidden items-center gap-5 md:flex">
+        <div className="wl-measure relative mx-auto flex h-16 items-center gap-4 px-5 sm:px-6 lg:px-8">
+          <Link
+            to="/"
+            className="flex shrink-0 items-center gap-2.5 rounded-[var(--radius-md)] font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground focus-visible:outline-none"
+            aria-label="Wireline home"
+          >
+            <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
+            <span>Wireline</span>
+          </Link>
+          <nav
+            className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-6 md:flex"
+            aria-label="Site"
+          >
+            {links.map((link) => {
+              const active = link.active(location.pathname);
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex h-full items-center border-b-2 text-[var(--wireline-typography-caption-size)] font-medium transition-colors ${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="ml-auto hidden items-center gap-5 md:flex">
             <Link
               to="/signin"
               className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground transition-colors hover:text-primary"

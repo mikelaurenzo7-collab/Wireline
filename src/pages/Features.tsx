@@ -22,12 +22,12 @@ const CUSTOMIZATION = [
   ["Connected tools", "Approved"],
 ] as const;
 const USE_CASES = [
-  "Personal calls",
-  "Appointments",
-  "Business front desk",
-  "SMS follow-up",
-  "Lead qualification",
-  "Custom workflows",
+  { title: "Personal calls", icon: PhoneCall },
+  { title: "Appointments", icon: CalendarClock },
+  { title: "Business front desk", icon: Contact },
+  { title: "SMS follow-up", icon: MessageSquareText },
+  { title: "Lead qualification", icon: SlidersHorizontal },
+  { title: "Custom workflows", icon: Workflow },
 ] as const;
 
 export default function Features() {
@@ -115,21 +115,17 @@ export default function Features() {
             <p className="wl-public-copy mt-5">
               Calendars, inboxes, and systems - only when you approve them.
             </p>
-            <div className="mt-10 grid items-stretch gap-3 md:grid-cols-[1fr_auto_1.2fr_auto_1fr]">
+            <div className="mt-10 grid items-center gap-4 sm:grid-cols-3">
               <FlowNode icon={PhoneCall} label="Conversation" sub="Call, email, or text" />
-              <FlowArrow />
-              <div className="flex items-center justify-center gap-3 rounded-[var(--radius-xl)] border border-primary bg-secondary p-6 text-center">
+              <div className="flex flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-primary bg-secondary p-6 text-center">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
                   <Workflow size={22} />
                 </span>
-                <div>
-                  <span className="block text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.01em] text-foreground">
-                    Your agent
-                  </span>
-                  <span className="wl-overline mt-2 block">Handles - qualifies - books</span>
-                </div>
+                <span className="block text-[var(--wireline-typography-body-size)] font-semibold tracking-[-.01em] text-foreground">
+                  Your agent
+                </span>
+                <span className="wl-overline block">Handles &middot; Qualifies &middot; Books</span>
               </div>
-              <FlowArrow />
               <div className="grid gap-3">
                 <FlowNode icon={CalendarClock} label="Calendar" sub="Check and book" compact />
                 <FlowNode icon={Contact} label="Systems" sub="Approved access" compact />
@@ -145,16 +141,16 @@ export default function Features() {
               Start with the job you want off your plate.
             </h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {USE_CASES.map((title) => (
+              {USE_CASES.map((uc) => (
                 <article
-                  key={title}
+                  key={uc.title}
                   className="wl-stitch-card group flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-primary/30 hover:shadow-sm"
                 >
                   <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/5 text-primary transition group-hover:bg-primary/10">
-                    <SlidersHorizontal size={18} />
+                    <uc.icon size={18} />
                   </div>
                   <h3 className="text-[1.05rem] font-semibold leading-tight tracking-[-0.015em] text-foreground">
-                    {title}
+                    {uc.title}
                   </h3>
                 </article>
               ))}
@@ -218,15 +214,6 @@ function FlowNode({
           {sub}
         </span>
       </div>
-    </div>
-  );
-}
-
-function FlowArrow() {
-  return (
-    <div className="grid place-items-center text-muted-foreground">
-      <ArrowRight size={18} className="hidden md:block" />
-      <span className="block h-5 w-px bg-border md:hidden" />
     </div>
   );
 }

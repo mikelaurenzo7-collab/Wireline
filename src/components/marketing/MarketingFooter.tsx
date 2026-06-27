@@ -13,6 +13,8 @@ const RESOURCE_LINKS = [
   { to: "/security", label: "Security" },
   { to: "/support", label: "Support" },
   { to: "/status", label: "Status" },
+  { to: "/privacy", label: "Privacy" },
+  { to: "/terms", label: "Terms" },
 ] as const;
 
 type Props = {
@@ -70,16 +72,8 @@ export default function MarketingFooter({
             ))}
           </nav>
         </div>
-        <div className="mt-7 flex flex-col gap-3 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>Your voice. Your playbook. Useful outcomes.</span>
-          <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link to="/privacy" className="hover:text-foreground">
-              Privacy
-            </Link>
-            <Link to="/terms" className="hover:text-foreground">
-              Terms
-            </Link>
-          </div>
+        <div className="mt-7 border-t border-border pt-4 text-sm text-muted-foreground">
+          <span>&copy; {new Date().getFullYear()} Wireline</span>
         </div>
       </div>
     </footer>

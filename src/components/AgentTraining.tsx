@@ -282,20 +282,17 @@ export default function AgentTraining({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-card/70 border-b-0">
-        {/* Director assists - deep-links that prefill Director chat with this
-            agent focused. Replaces the old recipe pop-out modals (mobile-safe,
-            nothing to fail loading). */}
+      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-card/80 border-b border-border">
         <div className="max-w-[1400px] mx-auto w-full flex items-center gap-1.5 overflow-x-auto tab-strip-scroll tab-strip-scroll--fade scrollbar-hide py-0.5">
           <span className="shrink-0 inline-flex items-center gap-1.5 pr-1">
-            <span className="w-6 h-6 rounded-md bg-brand flex items-center justify-center shrink-0">
+            <span className="w-5 h-5 rounded bg-brand flex items-center justify-center shrink-0">
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </span>
             <span className="wl-label text-brand whitespace-nowrap">
               {OPS_TRAINING_ASSISTS_COPY.eyebrow}
             </span>
             <span className="hidden sm:inline text-[var(--wireline-typography-overline-size)] text-[var(--wireline-color-text-secondary)]/60 whitespace-nowrap">
-              - {OPS_TRAINING_ASSISTS_COPY.hint}
+              &middot; {OPS_TRAINING_ASSISTS_COPY.hint}
             </span>
           </span>
           {OPS_TRAINING_ASSISTS.map((assist) => (
@@ -312,7 +309,7 @@ export default function AgentTraining({
         <nav
           role="tablist"
           aria-label="Training views"
-          className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-2"
+          className="flex flex-wrap gap-1.5 max-w-[1400px] mx-auto w-full mt-1.5 pt-1.5 border-t border-border/50"
         >
           {[
             {
@@ -374,7 +371,7 @@ export default function AgentTraining({
         </nav>
       </header>
 
-      <main className="flex-1 min-h-0 relative">
+      <main className="flex-1 min-h-0 relative overflow-hidden">
         <AnimatePresence mode="wait">
           {activeTab === "database" && (
             <motion.div
@@ -385,7 +382,7 @@ export default function AgentTraining({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full overflow-y-auto p-4 space-y-4"
+              className="h-full overflow-y-auto p-4 md:p-5 space-y-5"
             >
               {selectedAgentId !== "default-agent" && (
                 <SupervisedAgentTuner agentId={selectedAgentId} />
@@ -431,7 +428,7 @@ export default function AgentTraining({
                     animate={{ opacity: 1, scale: 1 }}
                     className="space-y-3"
                   >
-                    <div className="rounded-md bg-black/20 border border-white/8 p-4">
+                    <div className="rounded-md bg-muted/40 border border-border p-4">
                       <h4 className="wl-label text-foreground/55 mb-2">Analysis</h4>
                       <p className="font-display italic text-lg text-foreground leading-snug">
                         "{optSuggestions.analysis}"
@@ -539,7 +536,7 @@ export default function AgentTraining({
                       placeholder="Define the core identity heuristics..."
                     />
                   ) : (
-                    <div className="p-4 rounded-md bg-black/20 border border-white/8">
+                    <div className="p-4 rounded-md bg-muted/40 border border-border">
                       <p className="font-display italic text-xl md:text-2xl text-foreground leading-snug">
                         {personality ? (
                           `"${personality}"`
@@ -556,10 +553,10 @@ export default function AgentTraining({
               </section>
 
               {/* Directives + Training */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
                 {/* Rules */}
                 <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
-                  <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
+                  <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-border/60">
                     <div>
                       <h3 className="font-display italic text-lg text-foreground leading-none">
                         Rules
@@ -685,7 +682,7 @@ export default function AgentTraining({
                       )}
                     </AnimatePresence>
                   </div>
-                  <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
+                  <div className="mt-auto pt-3 border-t border-border/60 space-y-1.5">
                     <label className="wl-label text-foreground/55">Add directive</label>
                     <div className="flex gap-1.5">
                       <Input
@@ -716,7 +713,7 @@ export default function AgentTraining({
 
                 {/* Fact Archive */}
                 <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
-                  <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
+                  <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-border/60">
                     <div>
                       <h3 className="font-display italic text-lg text-foreground leading-none">
                         Fact archive
@@ -822,7 +819,7 @@ export default function AgentTraining({
                       )}
                     </AnimatePresence>
                   </div>
-                  <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
+                  <div className="mt-auto pt-3 border-t border-border/60 space-y-1.5">
                     <label className="wl-label text-foreground/55">Add fact</label>
                     <div className="flex gap-1.5">
                       <Input
@@ -880,7 +877,7 @@ export default function AgentTraining({
                         <p className="text-sm text-foreground/90 leading-relaxed">
                           {lesson.lesson}
                         </p>
-                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/60">
                           <Clock className="w-3 h-3 text-foreground/55" />
                           <span className="wl-label text-foreground/55">
                             {formatDate(lesson.created_at)}
