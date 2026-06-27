@@ -13,6 +13,7 @@ describe("authenticated agent flow", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const agentsPage = read("src/pages/AgentsPage.tsx");
     const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
 
     expect(shell).toContain('label: "Studio"');
     expect(shell).not.toContain('label: "Build"');
@@ -27,6 +28,10 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("New agent.");
     expect(createDialog).toContain("Name it. Pick a role. Train next.");
     expect(createDialog).toContain("Create agent");
+
+    expect(mobileUtilities).toContain('pathname === "/studio"');
+    expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');
+    expect(mobileUtilities).toContain('pathname.startsWith("/settings")');
   });
 
   it("routes fresh signups into the real create flow", () => {
@@ -61,21 +66,25 @@ describe("authenticated agent flow", () => {
     expect(overview).toContain("Approvals and follow-up");
     expect(overview).toContain("Brand, voice, and authority");
 
-    expect(studioOverview).toContain("Next job.");
-    expect(studioOverview).toContain("Describe the outcome. Approvals stay visible.");
-    expect(studioOverview).toContain("Ready");
+    expect(studioOverview).toContain("Give it work.");
+    expect(studioOverview).toContain('placeholder={`Ask ${active.name} to...`}');
+    expect(studioOverview).toContain("Open chat");
     expect(studioOverview).toContain('to="/settings"');
     expect(studioOverview).toContain("Settings");
     expect(studioOverview).not.toContain("WHAT SHOULD IT DO?");
     expect(studioOverview).not.toContain("Give {active.name} the next job.");
     expect(studioOverview).not.toContain("Tap once to switch");
+    expect(studioOverview).not.toContain("Describe the outcome. Approvals stay visible.");
+    expect(studioOverview).not.toContain("Ready to direct");
 
     expect(studioWorkspace).toContain('next.set("mode", "workroom")');
     expect(studioWorkspace).toContain('mode === "workroom" || mode === "assistant"');
 
-    expect(workroom).toContain("Direct work.");
-    expect(workroom).toContain("Run, draft, review, or hand off. Training holds setup.");
+    expect(workroom).toContain("Start with a task.");
+    expect(workroom).toContain("Draft reply");
     expect(workroom).toContain('to="/settings"');
+    expect(workroom).not.toContain("Direct work.");
+    expect(workroom).not.toContain("Training holds setup.");
     expect(workroom).not.toContain("Train by talking.");
     expect(workroom).not.toContain("what to learn or do");
   });
@@ -134,18 +143,19 @@ describe("authenticated agent flow", () => {
     const settings = read("src/pages/SettingsPage.tsx");
     const routes = read("src/routes/AppRoutes.tsx");
 
-    expect(settings).toContain("Set the operating rules.");
-    expect(settings).toContain("Customization");
-    expect(settings).toContain("Make every surface feel like one system.");
-    expect(settings).toContain("One profile everywhere.");
-    expect(settings).toContain("Sound intentional.");
-    expect(settings).toContain("Show where autonomy stops.");
-    expect(settings).toContain("Give the system a target.");
-    expect(settings).toContain("Connect, review, remove.");
-    expect(settings).toContain("Only what the job needs.");
-    expect(settings).toContain("Every action has a surface.");
-    expect(settings).toContain("Exit paths stay obvious.");
-    expect(settings).toContain("Account deletion");
+    expect(settings).toContain("Choose a control.");
+    expect(settings).toContain("Plan and balance");
+    expect(settings).toContain("People and access");
+    expect(settings).toContain("Brand and voice");
+    expect(settings).toContain("Approved systems");
+    expect(settings).toContain("Mobile and browser");
+    expect(settings).toContain("Queues account deletion.");
+    expect(settings).toContain('to="/studio"');
+    expect(settings).not.toContain("Set the operating rules.");
+    expect(settings).not.toContain("Make every surface feel like one system.");
+    expect(settings).not.toContain("Connect, review, remove.");
+    expect(settings).not.toContain("Every action has a surface.");
+    expect(settings).not.toContain("Exit paths stay obvious.");
     expect(routes).toContain('/settings/customization" element={<CustomizationSettings />}');
   });
 
