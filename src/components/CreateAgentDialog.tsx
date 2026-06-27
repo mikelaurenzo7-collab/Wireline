@@ -152,14 +152,14 @@ export default function CreateAgentDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[70] grid place-items-center bg-black/65 p-4"
+      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/65 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
       role="presentation"
     >
       <form
         ref={formRef}
         onSubmit={create}
         onKeyDown={onKeyDown}
-        className="studio-card max-h-[min(680px,calc(100dvh-2rem))] w-full max-w-lg overflow-y-auto p-5 shadow-2xl sm:p-6"
+        className="studio-card my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto p-5 shadow-2xl sm:p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-agent-title"
@@ -172,13 +172,13 @@ export default function CreateAgentDialog({
               id="create-agent-title"
               className="mt-1 font-[var(--wireline-font-family-display)] text-2xl font-semibold leading-tight tracking-[-.04em] text-foreground"
             >
-              Start with the job.
+              New agent.
             </h2>
             <p
               id="create-agent-description"
               className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground"
             >
-              Give it a name, a role, and a first useful outcome. The deeper rules stay in Training.
+              Name it. Pick a role. Train next.
             </p>
           </div>
           <Button
@@ -266,7 +266,7 @@ export default function CreateAgentDialog({
           className="mt-3"
           label="First brief"
           htmlFor="create-agent-brief"
-          description="Optional. Add documents, policies, and edge cases in Training."
+          description="Optional. Add details in Training."
         >
           <Textarea
             id="create-agent-brief"
@@ -296,7 +296,7 @@ export default function CreateAgentDialog({
           ) : (
             <WandSparkles aria-hidden="true" size={16} />
           )}
-          Create and train
+          Create agent
         </Button>
       </form>
     </div>
