@@ -223,7 +223,7 @@ export default function WorkspaceShell({
                 </div>
               </div>
               {action ? (
-                <div className="mt-3 flex min-w-0 items-center justify-center gap-2 md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2 md:justify-end lg:right-[calc((100%-1480px)/2)]">
+                <div className="mt-3 flex min-w-0 items-center justify-center gap-2 md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2 md:justify-end">
                   {action}
                 </div>
               ) : null}
