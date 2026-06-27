@@ -4,9 +4,13 @@ import {
   Cable,
   CreditCard,
   LogOut,
+  Mic2,
   MonitorDown,
+  Palette,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
+  Target,
   Trash2,
   UsersRound,
 } from "lucide-react";
@@ -33,6 +37,13 @@ const settingsDestinations = [
     action: "Manage team",
   },
   {
+    href: "/settings/customization",
+    icon: SlidersHorizontal,
+    label: "Customization",
+    detail: "Brand, voice, rules",
+    action: "Tune profile",
+  },
+  {
     href: "/actions",
     icon: Cable,
     label: "Integrations",
@@ -45,6 +56,33 @@ const settingsDestinations = [
     label: "Apps",
     detail: "Every Wireline surface",
     action: "View apps",
+  },
+] as const;
+
+const customizationPrinciples = [
+  {
+    label: "Brand",
+    title: "One profile everywhere.",
+    detail: "Name, color, blurb, assets, and design context should travel across every app surface.",
+    icon: Palette,
+  },
+  {
+    label: "Voice",
+    title: "Sound intentional.",
+    detail: "Voice, pronunciation, tone, pace, and personality should live beside the agent's training.",
+    icon: Mic2,
+  },
+  {
+    label: "Authority",
+    title: "Show where autonomy stops.",
+    detail: "Defaults, approvals, escalation, handoff, retention, and CSAT need one readable home.",
+    icon: SlidersHorizontal,
+  },
+  {
+    label: "Goals",
+    title: "Give the system a target.",
+    detail: "Offers, audiences, KPIs, and success thresholds should shape recommendations and follow-up.",
+    icon: Target,
   },
 ] as const;
 
@@ -169,7 +207,7 @@ export default function SettingsPage() {
 
   return (
     <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="py-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-8">
         <section className="studio-card p-6 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div className="min-w-0">
@@ -210,11 +248,11 @@ export default function SettingsPage() {
             <p className="studio-kicker">Workspace controls</p>
             <h2 className="wl-section-title mt-2">Set the operating rules.</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Billing, people, integrations, and app surfaces stay grouped by the control they
-              change.
+              Billing, people, customization, integrations, and app surfaces stay grouped by the
+              control they change.
             </p>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {settingsDestinations.map(({ href, icon: Icon, label, detail, action }) => (
               <Link
                 key={href}
@@ -235,6 +273,40 @@ export default function SettingsPage() {
                 </span>
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section className="studio-card border-primary/20 bg-secondary p-5 sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-xl">
+              <p className="studio-kicker">Customization</p>
+              <h2 className="wl-section-title mt-2">Make every surface feel like one system.</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                The next layer is not more settings. It is one operating profile: brand, voice,
+                authority, and goals that every agent and app can read.
+              </p>
+              <Button asChild variant="secondary" size="sm" className="mt-5 w-fit">
+                <Link to="/settings/customization">
+                  Open customization <ArrowRight aria-hidden="true" size={15} />
+                </Link>
+              </Button>
+            </div>
+            <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {customizationPrinciples.map(({ label, title, detail, icon: Icon }) => (
+                <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
+                      {label}
+                    </p>
+                    <span className="grid size-8 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
+                      <Icon aria-hidden="true" size={15} />
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
