@@ -19,7 +19,7 @@ function StudioLoadingState() {
         <Skeleton shape="text" className="h-8 w-80 max-w-full" />
         <Skeleton shape="text" className="h-3 w-64" />
         <div className="pt-3">
-          <Skeleton shape="surface" className="h-[280px] w-full rounded-[var(--radius-xl)]" />
+          <Skeleton shape="surface" className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]" />
         </div>
         <div className="flex gap-2 pt-1">
           <Skeleton shape="text" className="h-8 w-28 rounded-full" />

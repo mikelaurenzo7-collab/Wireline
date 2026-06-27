@@ -265,7 +265,15 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Personal, front desk, sales, support, and operations agents.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
         if (agents.isEmpty()) {
-            item { AssistantCard { Text("Build your agent bench", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("Add agents for personal calls, reception, sales, support, and operations.", color = Brand.Text2); Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create agent") } } }
+            item {
+              AssistantCard {
+                Text("No agents yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
+                Spacer(Modifier.height(4.dp))
+                Text("Forge your first agent for calls, texts, or follow-up. One fleet, one voice across every channel.", color = Brand.Text2, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create agent") }
+              }
+            }
         } else {
             items(agents, key = { it.id }) { agent ->
                 AssistantCard {

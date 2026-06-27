@@ -114,7 +114,7 @@ struct BrandEmptyState: View {
             Text(message).font(Brand.body).foregroundStyle(Brand.text2).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
+        .padding(.vertical, 28) // consistent with web 4px rhythm + token feel
     }
 }
 

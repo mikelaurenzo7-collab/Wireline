@@ -34,7 +34,7 @@
   border: 1px solid var(--primary);
   background: var(--primary);
   color: var(--primary-foreground) !important;
-  box-shadow: 0 8px 18px -14px rgba(69, 30, 187, 0.68);
+  box-shadow: var(--wireline-elevation-md); /* mono only */
 }
 
 .workspace-btn-primary :where(svg, span, strong) {

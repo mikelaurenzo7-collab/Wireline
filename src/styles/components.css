@@ -47,7 +47,7 @@
     border-color: var(--wireline-color-action-primary-default);
     background: var(--wireline-color-action-primary-default);
     color: var(--wireline-color-text-onAction);
-    box-shadow: 0 8px 18px -15px rgba(67, 35, 177, 0.58);
+    box-shadow: var(--wireline-elevation-md); /* mono only per brand contract */
 
     &:hover:not(:disabled) {
       border-color: var(--wireline-color-action-primary-pressed);
