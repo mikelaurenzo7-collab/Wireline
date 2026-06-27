@@ -33,6 +33,8 @@ export default function AppShell() {
     return <Navigate to={`/signin?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
 
+  // Authenticated: render routes (see AppRoutes.tsx). Post-login destination resolved in
+  // AuthPortal/OAuthComplete via resolvePostAuthDestination -> defaults to /overview.
   return (
     <>
       <AppRoutes />

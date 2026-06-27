@@ -59,6 +59,7 @@ export default function OAuthComplete() {
         }
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
+        // Resolve post-OAuth destination (defaults to /overview for logged-in; studio create for fresh signup session).
         navigate(resolvePostAuthDestination(readStoredWorkspaceMode(), location.search), {
           replace: true,
         });

@@ -325,8 +325,22 @@ router.post(
         );
 
         const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
+        // Normalize to client-expected keys (changes/toolToggles/actions) so
+        // StudioWorkroom onComplete can populate interactive proposals.
+        // The structured tool uses config_changes / tool_toggles in raw LLM output.
+        const changes = (result as any)?.config_changes ?? (result as any)?.changes ?? [];
+        const toolToggles = (result as any)?.tool_toggles ?? (result as any)?.toolToggles ?? [];
+        const actions = (result as any)?.actions ?? [];
 
-        sse.write("done", { reply, reasoning: thinking, thinkingDurationMs });
+        sse.write("reply", { reply, changes, toolToggles, actions });
+        sse.write("done", {
+          reply,
+          changes,
+          toolToggles,
+          actions,
+          reasoning: thinking,
+          thinkingDurationMs,
+        });
         sse.end();
         void drizzle
           .insert(schema.agentConversationMessages)

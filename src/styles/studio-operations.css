@@ -62,6 +62,29 @@
   text-wrap: balance;
 }
 
+/* Upgraded Workroom + Overview polish: proposals, composer, flow cards - pure tokens, responsive, a11y */
+.wl-studio-operations .wl-centered-header,
+.wl-workspace-shell .wl-centered-header {
+  text-align: center;
+}
+
+.wl-flow-card:focus-visible,
+.wl-overview-roster-card .wl-card-action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.wl-studio-operations textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+/* Clean proposal chips in workroom */
+.wl-studio-operations [role="group"][aria-label*="Proposals"] span {
+  font-feature-settings: "tnum";
+  transition: background .1s ease, border-color .1s ease;
+}
+
 .wl-studio-operations button,
 .wl-studio-operations a {
   min-width: 0;

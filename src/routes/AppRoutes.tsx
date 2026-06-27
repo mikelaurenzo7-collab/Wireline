@@ -31,6 +31,8 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={loading}>
       <Routes>
+        {/* /overview is the default authenticated home for logged-in users.
+            Studio is a tool surface (create/train/run) accessed via nav or specific links (e.g. /studio?create=1). */}
         <Route path="/" element={<Navigate to="/overview" replace />} />
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/agents" element={<AgentsPage />} />
@@ -43,6 +45,7 @@ export default function AppRoutes() {
         <Route path="/connections/*" element={<LegacyConnectionsRedirect />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<Navigate to="/inbox" replace />} />
+        {/* Legacy /ops alias kept pointing at Studio (tool surface); not a default home. */}
         <Route path="/ops" element={<Navigate to="/studio" replace />} />
         <Route path="/ops/*" element={<Navigate to="/studio" replace />} />
         <Route path="/settings" element={<SettingsPage />} />

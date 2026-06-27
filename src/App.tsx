@@ -92,6 +92,8 @@ function AppRouter() {
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
         <Route path="/onboarding" element={<OnboardingFlow />} />
+        {/* All other paths under AppShell (authenticated workspace). Inside AppShell/AppRoutes,
+            unauthenticated -> signin with redirect; authenticated default to /overview (Home). */}
         <Route path="/*" element={<AppShell />} />
       </Routes>
     </Suspense>

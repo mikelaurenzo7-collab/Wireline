@@ -328,9 +328,25 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   return (
     <section className={`${frameClass} min-h-0`}>
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
-        <div className="text-center sm:text-left">
+        <div className="text-center sm:text-left wl-centered-header">
           <p className="studio-kicker">Inbox</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">Own the outcome.</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Own the outcome. Calls. Texts. Follow-up.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            to="/training"
+            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            Forge
+          </Link>
+          <Link
+            to="/studio"
+            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
+          >
+            Workroom
+          </Link>
         </div>
         <Button
           type="button"

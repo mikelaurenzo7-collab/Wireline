@@ -56,13 +56,36 @@ export default function StudioOverview({
   return (
     <main className="h-full min-h-0 overflow-y-auto bg-background px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-5 sm:gap-6">
-        <header className="flex flex-col items-center gap-3 text-center">
+        {/* Quick path actions — purposeful, centered, better than passive lists */}
+        <div className="flex flex-wrap justify-center gap-2 text-center">
+          <Link
+            to={`/studio?agent=${encodeURIComponent(active.id)}&mode=workroom`}
+            className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold tracking-wide hover:border-primary/30 hover:bg-accent active:scale-[0.985]"
+          >
+            Direct
+          </Link>
+          <Link
+            to={`/training?agent=${encodeURIComponent(active.id)}`}
+            className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold tracking-wide hover:border-primary/30 hover:bg-accent active:scale-[0.985]"
+          >
+            Train
+          </Link>
+          <Link
+            to="/actions"
+            className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold tracking-wide hover:border-primary/30 hover:bg-accent active:scale-[0.985]"
+          >
+            Wire
+          </Link>
+        </div>
+        <header className="flex flex-col items-center gap-3 text-center wl-centered-header">
           <div>
             <p className="studio-kicker">Studio</p>
             <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h1-size)] font-semibold leading-none tracking-[-0.05em] text-foreground">
               {active.name}
             </h1>
-            <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground/70">{activeDescription}</p>
+            <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground/70">
+              {activeDescription}
+            </p>
           </div>
           <div className="flex flex-wrap justify-center gap-2">
             <Button type="button" variant="secondary" onClick={onCreate} className="justify-center">
@@ -84,7 +107,7 @@ export default function StudioOverview({
           </div>
         ) : null}
 
-        <section className="studio-card p-5 sm:p-6 text-center">
+        <section className="studio-card p-5 sm:p-6 text-center wl-centered-header">
           <div>
             <p className="studio-kicker">Brief</p>
             <h2 className="mt-1.5 font-[var(--wireline-font-family-display)] text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-[-0.035em] text-foreground">
@@ -93,11 +116,13 @@ export default function StudioOverview({
           </div>
 
           <div className="mt-4 flex flex-col items-center gap-4 rounded-[var(--radius-lg)] border border-border bg-background p-3.5 sm:p-4">
-            <img 
-              src="/assets/wireline/studio-direct-work.jpg" 
-              alt="Wireline agent directing work across channels" 
-              className="w-full max-w-md rounded-lg opacity-95" 
-            />
+            {/* Pure code visual cue for directing (no external asset dependency for core flow) */}
+            <div
+              className="w-full max-w-md h-20 rounded-lg bg-muted/60 flex items-center justify-center text-[10px] font-mono tracking-[0.12em] text-muted-foreground border border-border/60"
+              aria-hidden="true"
+            >
+              DIRECT • CALL • TEXT • HANDOFF
+            </div>
             <label className="sr-only" htmlFor="studio-brief">
               What should this agent work on?
             </label>
@@ -107,7 +132,13 @@ export default function StudioOverview({
               onChange={(event) => setBrief(event.target.value)}
               rows={3}
               placeholder={`Ask ${active.name} to...`}
-              className="min-h-[90px] w-full resize-none bg-transparent px-1 py-0.5 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/60"
+              className="min-h-[90px] w-full resize-none bg-transparent px-1 py-0.5 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary/40"
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  onOpen(active.id, trimmedBrief || undefined);
+                }
+              }}
             />
             <div className="flex flex-col gap-3 border-t border-border/70 pt-3 w-full sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-1.5">
@@ -116,7 +147,7 @@ export default function StudioOverview({
                     key={prompt}
                     type="button"
                     onClick={() => setBrief(prompt)}
-                    className="rounded-full border border-border/70 bg-card px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground"
+                    className="rounded-full border border-border/70 bg-card px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground active:scale-[0.985]"
                   >
                     {prompt}
                   </button>
@@ -124,23 +155,24 @@ export default function StudioOverview({
               </div>
               <Button
                 type="button"
-                className="w-full justify-center sm:w-auto"
+                className="w-full justify-center sm:w-auto active:scale-[0.985] transition-transform"
                 onClick={() => onOpen(active.id, trimmedBrief || undefined)}
+                aria-label={trimmedBrief ? "Send brief and open workroom" : "Open workroom"}
               >
-                {trimmedBrief ? "Start" : "Workroom"}
+                {trimmedBrief ? "Send to Workroom" : "Open Workroom"}
                 <ArrowRight aria-hidden="true" size={15} />
               </Button>
             </div>
           </div>
         </section>
 
-        <section className="studio-card p-4 sm:p-5 text-center">
+        <section className="studio-card p-4 sm:p-5 text-center wl-centered-header">
           <div className="flex items-center justify-between px-0.5 pb-2">
             <p className="studio-kicker">Fleet</p>
             <button
               type="button"
               onClick={onCreate}
-              className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-accent"
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-accent active:scale-[0.985]"
             >
               <Plus size={13} /> New
             </button>
@@ -160,7 +192,7 @@ export default function StudioOverview({
                     type="button"
                     onClick={() => onSelect(agent.id)}
                     aria-current={selected ? "page" : undefined}
-                    className="flex items-center gap-3 text-left w-full"
+                    className="flex items-center gap-3 text-left w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary rounded"
                   >
                     <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-sm font-semibold text-foreground">
                       {agent.name.slice(0, 1).toUpperCase()}
@@ -171,33 +203,37 @@ export default function StudioOverview({
                         <span className="truncate">{agent.name}</span>
                       </span>
                       <span className="mt-px flex items-center gap-1 truncate text-[11px] text-muted-foreground">
-                        {agent.is_business_agent && <BriefcaseBusiness className="shrink-0" size={11} />}
+                        {agent.is_business_agent && (
+                          <BriefcaseBusiness className="shrink-0" size={11} />
+                        )}
                         <AgentIcon className="shrink-0" size={11} />
                         <span className="truncate capitalize">{description}</span>
                       </span>
                     </span>
-                    {selected && <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />}
+                    {selected && (
+                      <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                    )}
                   </button>
 
-                  {/* Quick actions for better user flow */}
-                  <div className="mt-2 flex gap-1 border-t border-border/50 pt-2 text-[10px]">
+                  {/* Quick actions + seamless Workroom entry with context */}
+                  <div className="mt-2 flex gap-1 border-t border-border/50 pt-2 text-[10px] text-center">
                     <Link
                       to={`/studio?agent=${encodedId}`}
-                      className="flex-1 rounded px-2 py-1 text-center font-medium hover:bg-background/50"
+                      className="flex-1 rounded px-2 py-1 font-medium hover:bg-background/50 focus-visible:outline focus-visible:outline-1"
                     >
                       Direct
                     </Link>
                     <Link
                       to={`/training?agent=${encodedId}`}
-                      className="flex-1 rounded px-2 py-1 text-center font-medium hover:bg-background/50"
+                      className="flex-1 rounded px-2 py-1 font-medium hover:bg-background/50 focus-visible:outline focus-visible:outline-1"
                     >
-                      Train
+                      Forge
                     </Link>
                     <Link
-                      to={`/actions?agent=${encodedId}`}
-                      className="flex-1 rounded px-2 py-1 text-center font-medium hover:bg-background/50"
+                      to={`/studio?agent=${encodedId}&mode=workroom`}
+                      className="flex-1 rounded px-2 py-1 font-semibold text-primary hover:bg-primary/5 focus-visible:outline focus-visible:outline-1"
                     >
-                      Wire
+                      Workroom
                     </Link>
                   </div>
                 </div>

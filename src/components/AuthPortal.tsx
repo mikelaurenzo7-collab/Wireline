@@ -375,6 +375,8 @@ export default function AuthPortal() {
 
   useEffect(() => {
     if (authLoading || !user) return;
+    // After successful auth (email/OAuth), navigate to resolved post-auth dest.
+    // Default is /overview (Home) for logged-in users. See auth-redirect.ts.
     navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
   }, [authLoading, user, navigate, workspaceMode, location.search]);
 
@@ -500,6 +502,7 @@ export default function AuthPortal() {
         }
         if (isSignUp) markFreshSignupSession();
         signIn({ user: data.user });
+        // Explicit post-auth navigate (also covered by user effect above).
         navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
       }
     } catch (err: unknown) {

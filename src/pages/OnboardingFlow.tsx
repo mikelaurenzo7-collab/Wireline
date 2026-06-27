@@ -8,6 +8,9 @@ import { readStoredWorkspaceMode } from "../lib/auth-redirect";
 export default function OnboardingFlow() {
   const navigate = useNavigate();
   const workspaceMode = readStoredWorkspaceMode();
+  // Dedicated entry for direct-to-create flows (e.g. ?onboarding or explicit links).
+  // Default post-login (even for fresh) is /overview (Home). Use /studio?create or this flow
+  // to go straight to create in Studio when appropriate for signup or dedicated flows.
   const target =
     workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
 
@@ -28,8 +31,8 @@ export default function OnboardingFlow() {
               Opening Create Agent
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Fresh signups go straight into the short intake. Training opens right after the first
-              agent exists.
+              This flow opens Studio create directly. The default logged-in destination is /overview
+              (Home). Fresh signups and create links can target Studio create when appropriate.
             </p>
           </div>
           <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden="true" />

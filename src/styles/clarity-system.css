@@ -194,6 +194,75 @@
   margin-top: 1.125rem;
 }
 
+/* Overview flow upgrades: clean card feedback, centered, short purposeful */
+.wl-overview-shortcut,
+.wl-overview-roster-card {
+  position: relative;
+}
+
+.wl-overview-shortcut::after,
+.wl-overview-roster-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--wireline-color-action-primary-default) 0%, transparent);
+  transition: box-shadow .2s ease;
+  pointer-events: none;
+}
+
+.wl-overview-shortcut:hover::after,
+.wl-overview-roster-card:hover::after {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wireline-color-action-primary-default) 18%, transparent);
+}
+
+/* A11y & responsive polish for all upgraded auth flows: use tokens, min targets, clean focus */
+.wl-flow-card,
+.wl-status-card,
+.wl-overview-shortcut,
+.wl-overview-roster-card,
+.studio-card a,
+.studio-card button {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .wl-flow-card,
+  .wl-overview-shortcut,
+  .wl-overview-roster-card {
+    min-height: 128px;
+  }
+}
+
+:focus-visible {
+  outline-color: var(--wireline-color-action-primary-default);
+}
+
+/* Enforce centered titles/headers for authenticated workspace surfaces (Overview, Studio, Training).
+ * Clean Wireline Mono: centered, concise, purposeful. Tokens only. */
+.wl-centered-header,
+.wl-workspace-shell .wl-section-title,
+.wl-workspace-shell .studio-kicker + h2,
+.wl-workspace-shell header > div > h1,
+.wl-workspace-shell .wl-overview-hero > div > h2,
+.studio-card > div > h2,
+.wl-studio-operations header > div,
+.wl-studio-operations .studio-card > div:first-child {
+  text-align: center;
+}
+
+.wl-centered-header .wl-kicker,
+.studio-kicker {
+  display: block;
+  text-align: center;
+  margin-inline: auto;
+}
+
+.wl-flow-card,
+.wl-status-card {
+  text-align: center;
+}
+
 @media (min-width: 768px) {
   .marketing-channel-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

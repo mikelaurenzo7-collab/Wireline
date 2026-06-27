@@ -26,9 +26,9 @@ type EntryKind = "knowledge" | "directive";
 
 const labels: Record<View, string> = {
   facts: "Facts",
-  guidance: "Guidance",
-  tone: "Tone",
-  sources: "Sources",
+  guidance: "Rules",
+  tone: "Voice",
+  sources: "Context",
 };
 
 function isView(value: string | null): value is View {
@@ -48,16 +48,16 @@ function Card({
 }) {
   return (
     <article className="flex min-h-[280px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--wireline-elevation-sm)]">
-      <header className="flex items-start gap-3 border-b border-border px-4 py-4 justify-center text-center">
+      <header className="flex flex-col items-center gap-2 border-b border-border px-4 py-4 text-center">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-sm bg-muted text-muted-foreground">
           {icon}
         </span>
         <div>
-          <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.02em] text-foreground text-center">
+          <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.02em] text-foreground">
             {title}
           </h2>
           {meta ? (
-            <p className="mt-1 font-mono text-[var(--wireline-typography-overline-size)] leading-4 text-muted-foreground text-center">
+            <p className="mt-0.5 font-mono text-[var(--wireline-typography-overline-size)] leading-4 text-muted-foreground">
               {meta}
             </p>
           ) : null}
@@ -123,9 +123,9 @@ function ItemsCard({
       ) : (
         <EmptyState
           density="compact"
-          className="min-h-[190px] border-dashed"
+          className="min-h-[190px] border-dashed text-center"
           icon={icon}
-          title="Nothing here yet"
+          title="Empty"
           description={empty}
         />
       )}
@@ -175,10 +175,10 @@ function SourcesCard({ loading }: { loading: boolean }) {
         <div className="flex min-h-[190px] flex-col justify-center">
           <EmptyState
             density="compact"
-            className="min-h-0 border-dashed"
+            className="min-h-0 border-dashed text-center"
             icon={<Database size={16} />}
-            title="Sources live here"
-            description="Ingest docs and images."
+            title="Sources"
+            description="Upload docs."
           />
         </div>
       )}
@@ -409,11 +409,7 @@ export default function KnowledgeWorkspace() {
           <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
             <FormField
               label="Title"
-              description={
-                kind === "knowledge"
-                  ? "Name for easy scan."
-                  : "Rule or handoff."
-              }
+              description={kind === "knowledge" ? "Name for easy scan." : "Rule or handoff."}
             >
               <Input
                 value={title}
@@ -426,11 +422,7 @@ export default function KnowledgeWorkspace() {
             <FormField
               label="Content"
               required
-              description={
-                kind === "knowledge"
-                  ? "Fact or detail."
-                  : "How to handle."
-              }
+              description={kind === "knowledge" ? "Fact or detail." : "How to handle."}
               error={saveError || undefined}
               className="flex min-h-0 flex-1 flex-col"
             >
@@ -446,10 +438,7 @@ export default function KnowledgeWorkspace() {
                 }
               />
             </FormField>
-            <FormField
-              label="Tags"
-              description="Tags (optional)."
-            >
+            <FormField label="Tags" description="Tags (optional).">
               <Input
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}

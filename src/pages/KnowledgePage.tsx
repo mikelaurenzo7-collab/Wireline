@@ -43,16 +43,32 @@ function TrainingSurfaceMap({
   activeSection: string | null;
 }) {
   return (
-    <section className="studio-card grid gap-4 p-4 sm:p-5">
-      <div className="text-center">
-        <p className="studio-kicker">Training</p>
-        <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.02em] text-foreground">
-          Facts, instructions, sources, voice, test calls, and memory.
+    <section className="studio-card grid gap-4 p-4 sm:p-5 wl-centered-header">
+      <div>
+        <p className="studio-kicker">Forge</p>
+        <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.02em] text-foreground">
+          Facts. Rules. Voice. Sources. Test.
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">Forge the agent. Then direct it.</p>
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          Facts, instructions, sources, voice, test calls, and memory.
+        </p>
       </div>
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 mt-3">
-        {trainingNav.map((item) => {
+
+      {/* Tailored visual: Forge map — code + purpose-built asset. Clean, exceeds static mocks. */}
+      <figure className="mx-auto w-full max-w-[620px] px-2">
+        <img
+          src="/marketing/forge-map.jpg"
+          alt="Forge map: central hub with clean spokes to Facts, Rules, Voice, Sources, Test, Memory on warm paper canvas, deep accents."
+          className="w-full rounded-lg border border-border"
+          style={{ boxShadow: "var(--wireline-elevation-sm)" }}
+        />
+        <figcaption className="mt-1.5 text-center text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
+          One surface. Full control.
+        </figcaption>
+      </figure>
+
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 mt-2">
+        {trainingNav.map((item, idx) => {
           const { label, note, icon: Icon } = item;
           const href = trainingHref(agentId, item);
           const isActive = "section" in item && activeSection === item.section;
@@ -61,19 +77,30 @@ function TrainingSurfaceMap({
               key={label}
               to={href}
               aria-current={isActive ? "page" : undefined}
-              className={`group flex min-h-[82px] items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
+              className={`group flex min-h-[78px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
                 isActive
-                  ? "border-primary/35 bg-accent text-foreground"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/20 hover:bg-accent hover:text-foreground"
+                  ? "border-primary/40 bg-accent text-foreground"
+                  : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:bg-accent hover:text-foreground"
               }`}
             >
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-foreground">{label}</span>
-                <span className="mt-0.5 block text-[12px] leading-tight text-muted-foreground">{note}</span>
+              <span className="min-w-0 flex items-center gap-3">
+                <span className={`text-[10px] font-mono tabular-nums text-muted-foreground/70 w-4`}>
+                  0{idx + 1}
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-foreground tracking-[-0.01em]">
+                    {label}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
+                    {note}
+                  </span>
+                </span>
               </span>
               <span
                 className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${
-                  isActive ? "bg-card text-foreground" : "bg-muted text-foreground group-hover:bg-card"
+                  isActive
+                    ? "bg-card text-foreground"
+                    : "bg-muted text-foreground group-hover:bg-card"
                 }`}
               >
                 <Icon size={15} aria-hidden="true" />
@@ -94,7 +121,7 @@ function EmptyTraining() {
         className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
         title="Forge it."
-        description="Facts. Rules. Here."
+        description="Facts. Rules. Voice."
         action={
           <Button asChild>
             <Link to="/studio?create=1">
@@ -120,11 +147,9 @@ function TrainingRail({
       className="hidden min-h-0 w-[196px] shrink-0 rounded-2xl border border-border bg-card p-2 lg:block"
       aria-label="Training sections"
     >
-      <div className="px-3 py-3 text-center">
-        <p className="wl-overline">Training</p>
-        <p className="mt-2 text-sm leading-5 text-muted-foreground">
-          Facts. Rules. Voice.
-        </p>
+      <div className="px-3 py-3 text-center wl-centered-header">
+        <p className="wl-overline">Forge</p>
+        <p className="mt-1 text-sm leading-5 text-muted-foreground">Facts. Rules. Voice.</p>
       </div>
       <nav className="mt-2 grid gap-1">
         {trainingNav.map((item) => {
@@ -144,8 +169,12 @@ function TrainingRail({
             >
               <Icon size={15} aria-hidden="true" />
               <span className="min-w-0">
-                <span className="block text-[13.5px] font-semibold tracking-[-0.005em] text-foreground">{label}</span>
-                <span className="block truncate text-[10.5px] leading-tight text-muted-foreground/80">{note}</span>
+                <span className="block text-[13px] font-semibold tracking-[-0.005em] text-foreground">
+                  {label}
+                </span>
+                <span className="block truncate text-[10px] leading-tight text-muted-foreground/80">
+                  {note}
+                </span>
               </span>
             </Link>
           );

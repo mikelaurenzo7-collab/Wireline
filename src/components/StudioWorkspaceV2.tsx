@@ -31,12 +31,12 @@ function StudioEmptyState() {
     <main className="grid min-h-[55vh] place-items-center bg-background px-6 py-8">
       <EmptyState
         density="default"
-        className="studio-card w-full max-w-xl px-8 py-10 text-left"
+        className="studio-card w-full max-w-xl px-8 py-10 text-center"
         icon={<Sparkles size={28} strokeWidth={1.6} />}
-        title="Create one useful agent."
+        title="Forge one."
         description="Name. Voice. Direct."
         action={
-          <div className="flex flex-wrap gap-3 pt-1">
+          <div className="flex flex-wrap gap-3 pt-1 justify-center">
             <Button asChild>
               <Link to="/studio?create=1">
                 <Plus aria-hidden="true" size={15} />
@@ -101,6 +101,7 @@ export default function StudioWorkspaceV2() {
   if (isWorkroom) {
     return (
       <div className="wl-studio-operations h-full min-h-0 overflow-hidden">
+        {/* Seamless context: agent + command passed from Overview/StudioOverview */}
         <StudioWorkroom
           agentId={active.id}
           agentName={active.name}

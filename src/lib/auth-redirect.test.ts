@@ -8,8 +8,9 @@ describe("auth-redirect", () => {
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
   });
 
-  it("defaults to overview for returning users, studio create for fresh signups", () => {
+  it("defaults to /overview (Home) for returning users; fresh signups are sent to Studio create once then default to overview", () => {
     expect(resolvePostAuthDestination("business", "")).toBe("/overview");
     expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
+    // Note: testing the fresh branch requires mocking sessionStorage; it consumes the flag and returns studio create.
   });
 });

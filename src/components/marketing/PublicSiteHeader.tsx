@@ -32,7 +32,9 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
   const { user, loading: authLoading } = useAuth();
   const isAuth = active === "signin" || active === "signup";
   const signedIn = Boolean(user) && !authLoading;
-  const homeTo = signedIn ? "/studio" : "/";
+  // Logged-in default "home" is /overview (Home surface). Studio is the dedicated
+  // tool/create surface, reached via primary nav, command palette, or explicit CTAs.
+  const homeTo = signedIn ? "/overview" : "/";
 
   useEffect(() => setMenuOpen(false), [active, location.pathname]);
 

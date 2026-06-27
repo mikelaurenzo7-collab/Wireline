@@ -17,7 +17,12 @@ type StudioMessage = {
   };
 };
 
-const QUICK_PROMPTS = ["Draft reply", "Review approvals", "Prep handoff", "Plan follow-up"] as const;
+const QUICK_PROMPTS = [
+  "Draft reply",
+  "Review approvals",
+  "Prep handoff",
+  "Plan follow-up",
+] as const;
 
 function proposalCount(message: StudioMessage) {
   return (
@@ -54,6 +59,7 @@ export default function StudioWorkroom({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [appliedProposals, setAppliedProposals] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -182,9 +188,11 @@ export default function StudioWorkroom({
         >
           <ArrowLeft size={16} aria-hidden="true" />
         </button>
-        <div className="min-w-0 flex-1 text-center">
-          <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">{agentName}</p>
-          <p className="text-[10px] text-muted-foreground">Direct the work. Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.</p>
+        <div className="min-w-0 flex-1 text-center wl-centered-header">
+          <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+            {agentName}
+          </p>
+          <p className="text-[10px] text-muted-foreground">Direct the work.</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -243,8 +251,12 @@ export default function StudioWorkroom({
                   key={message.id}
                   className={isUser ? "ml-auto max-w-[82%]" : "max-w-[88%]"}
                 >
-                  <div className={`mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] ${isUser ? "justify-end text-muted-foreground" : "text-primary"}`}>
-                    {!isUser && <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />}
+                  <div
+                    className={`mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] ${isUser ? "justify-end text-muted-foreground" : "text-primary"}`}
+                  >
+                    {!isUser && (
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                    )}
                     <span>{isUser ? "You" : agentName}</span>
                   </div>
                   <div
@@ -252,11 +264,72 @@ export default function StudioWorkroom({
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
-                  {suggestions > 0 && (
-                    <div className="mt-1.5 flex justify-end">
-                      <span className="inline-flex items-center rounded-full border border-border/70 bg-background px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {suggestions} proposal{suggestions === 1 ? "" : "s"} saved
-                      </span>
+                  {/* Upgraded: Better proposals display — interactive pills with live apply feedback (beats static designs) */}
+                  {message.proposals && suggestions > 0 && (
+                    <div
+                      className="mt-2 flex flex-wrap justify-end gap-1.5"
+                      role="group"
+                      aria-label="Proposals from agent"
+                    >
+                      {message.proposals.changes?.slice(0, 2).map((c, i) => {
+                        const key = `c-${message.id}-${i}`;
+                        const isApplied = !!appliedProposals[key];
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
+                            }
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            aria-pressed={isApplied}
+                          >
+                            {isApplied ? "✓ " : ""}Change:{" "}
+                            {typeof c === "string" ? c.slice(0, 28) : "config"}
+                          </button>
+                        );
+                      })}
+                      {message.proposals.toolToggles?.slice(0, 1).map((t, i) => {
+                        const key = `t-${message.id}-${i}`;
+                        const isApplied = !!appliedProposals[key];
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
+                            }
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            aria-pressed={isApplied}
+                          >
+                            {isApplied ? "✓ " : ""}Wire:{" "}
+                            {typeof t === "string" ? t.slice(0, 24) : "toggle"}
+                          </button>
+                        );
+                      })}
+                      {message.proposals.actions?.slice(0, 1).map((a, i) => {
+                        const key = `a-${message.id}-${i}`;
+                        const isApplied = !!appliedProposals[key];
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
+                            }
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            aria-pressed={isApplied}
+                          >
+                            {isApplied ? "✓ " : ""}Action:{" "}
+                            {typeof a === "string" ? a.slice(0, 24) : "run"}
+                          </button>
+                        );
+                      })}
+                      {suggestions > 3 && (
+                        <span className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          +{suggestions - 3} more
+                        </span>
+                      )}
                     </div>
                   )}
                 </article>
@@ -276,8 +349,8 @@ export default function StudioWorkroom({
             ) : null}
           </div>
         ) : (
-          <div className="mx-auto flex max-w-3xl flex-col gap-2 py-8 text-center">
-            <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Ready when you are.</p>
+          <div className="mx-auto flex max-w-3xl flex-col gap-2 py-8 text-center wl-centered-header">
+            <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Ready.</p>
             <div className="mt-2 flex flex-wrap justify-center gap-2">
               {QUICK_PROMPTS.map((prompt) => (
                 <button
@@ -287,7 +360,7 @@ export default function StudioWorkroom({
                     setDraft(prompt);
                     requestAnimationFrame(() => inputRef.current?.focus());
                   }}
-                  className="rounded-full border border-border/70 bg-card px-3.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground"
+                  className="rounded-full border border-border/70 bg-card px-3.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground active:scale-[0.985]"
                 >
                   {prompt}
                 </button>
@@ -298,7 +371,7 @@ export default function StudioWorkroom({
       </section>
 
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-sm focus-within:border-primary/40">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-sm focus-within:border-primary/40 transition-colors">
           <label className="sr-only" htmlFor="studio-workroom-message">
             Message {agentName}
           </label>
@@ -308,33 +381,36 @@ export default function StudioWorkroom({
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !sending) {
                 event.preventDefault();
                 submit();
               }
             }}
             rows={3}
             disabled={sending}
-            placeholder={`Message ${agentName}...`}
-            className="min-h-[76px] w-full resize-none bg-transparent px-2 py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
+            placeholder={`Direct ${agentName}...`}
+            className="min-h-[76px] w-full resize-y bg-transparent px-2 py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 rounded"
           />
           <div className="flex items-center justify-between gap-2 border-t border-border/70 pt-2.5">
-            <p className="hidden text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 sm:block">⌘/Ctrl + Enter</p>
-            <Button type="button" size="sm" disabled={!draft.trim() || sending} onClick={submit} className="ml-auto">
+            <p className="hidden text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 sm:block">
+              ⌘ + Enter
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!draft.trim() || sending}
+              onClick={submit}
+              className="ml-auto active:scale-[0.985] transition-all"
+              aria-busy={sending}
+            >
               {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
-              <span className="ml-1 hidden sm:inline">Send</span>
+              <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
             </Button>
           </div>
         </div>
-        <div className="mt-3 text-center">
-          <a 
-            href="/assets/wireline/work-demo.mp4" 
-            target="_blank" 
-            rel="noopener" 
-            className="text-[10px] font-mono uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-          >
-            Watch 6s demo — direct calls to text + follow-up
-          </a>
+        <div className="mt-2 text-center text-[9px] font-mono tracking-[0.08em] text-muted-foreground/70">
+          Run calls, draft texts, queue follow-up, review approvals, and prepare handoff. Direct the
+          work.
         </div>
       </div>
     </main>
