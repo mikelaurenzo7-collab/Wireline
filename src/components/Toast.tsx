@@ -13,7 +13,11 @@ const META = {
     border: "border-[color-mix(in_srgb,var(--wireline-signal)_35%,transparent)]",
     bg: "wl-status-success",
   },
-  error: { icon: XCircle, border: "border-rose-500/30", bg: "bg-rose-500/10" },
+  error: {
+    icon: XCircle,
+    border: "border-[var(--wireline-color-feedback-error-border)]",
+    bg: "bg-[var(--wireline-color-feedback-error-surface)]",
+  },
   warning: {
     icon: AlertTriangle,
     border: "border-brand/35",

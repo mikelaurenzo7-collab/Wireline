@@ -41,7 +41,7 @@ export const dialogContentVariants = cva(
         drawer:
           "inset-x-0 bottom-0 z-[70] max-h-[min(70dvh,40rem)] w-auto max-w-none gap-0 overflow-y-auto rounded-t-[var(--radius-xl)] border border-b-0 border-x-0 border-border bg-[var(--wireline-color-surface-default)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[var(--wireline-elevation-lg)] data-[state=closed]:slide-out-to-bottom-0 data-[state=open]:slide-in-from-bottom-0",
         sidebar:
-          "inset-y-0 left-0 z-[70] h-[100dvh] w-[min(84vw,20rem)] max-w-none gap-0 overflow-y-auto rounded-none border-y-0 border-l-0 border-r border-border bg-[var(--wireline-color-surface-default)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[18px_0_44px_-28px_rgba(17,28,50,0.42)] data-[state=closed]:slide-out-to-left-0 data-[state=open]:slide-in-from-left-0",
+          "inset-y-0 left-0 z-[70] h-[100dvh] w-[min(84vw,20rem)] max-w-none gap-0 overflow-y-auto rounded-none border-y-0 border-l-0 border-r border-border bg-[var(--wireline-color-surface-default)] p-0 pb-[env(safe-area-inset-bottom)] shadow-[18px_0_44px_-28px_rgba(17,17,17,0.34)] data-[state=closed]:slide-out-to-left-0 data-[state=open]:slide-in-from-left-0",
       },
     },
     defaultVariants: {
@@ -108,10 +108,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     data-slot="dialog-title"
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight wl-page-title text-xl",
-      className,
-    )}
+    className={cn("font-semibold leading-none tracking-tight wl-card-title", className)}
     {...props}
   />
 ));

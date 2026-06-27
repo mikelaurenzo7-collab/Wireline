@@ -117,7 +117,7 @@ export default function WorkspaceSidebar({
       <aside
         aria-label="Workspace navigation"
         className={cn(
-          "hidden md:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-[#C9C4D7] bg-[#F0F3FF] transition-[width] duration-200 ease-out",
+          "hidden md:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] transition-[width] duration-200 ease-out",
           className,
         )}
         style={{ width: `${railWidth}px` }}
@@ -125,7 +125,7 @@ export default function WorkspaceSidebar({
         data-collapsed={isCollapsed}
       >
         {/* Top Logo / Collapse Toggle — flawless edge alignment */}
-        <div className="flex items-center justify-between px-3 h-16 border-b border-[#C9C4D7]">
+        <div className="flex items-center justify-between px-3 h-16 border-b border-[var(--wireline-color-border-default)]">
           <Link to="/overview" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center overflow-hidden">
               <WirelineMark className="w-4 h-4 text-white" strokeWidth={140} />
@@ -227,7 +227,7 @@ export default function WorkspaceSidebar({
         </nav>
 
         {/* Bottom */}
-        <div className="shrink-0 border-t border-[#C9C4D7] px-2 py-3 space-y-1">
+        <div className="shrink-0 border-t border-[var(--wireline-color-border-default)] px-2 py-3 space-y-1">
           <Link
             to="/help"
             className={cn(

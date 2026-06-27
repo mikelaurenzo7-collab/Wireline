@@ -79,7 +79,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             </div>
             <div className="flex items-baseline gap-2 mb-1">
               <span className="text-2xl font-display text-foreground">MFA</span>
-              <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">
+              <span className="text-xs font-bold text-[var(--wireline-color-status-success)] uppercase tracking-wider">
                 Enforced
               </span>
             </div>
@@ -193,7 +193,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                             </p>
                             {m.user_id ? (
                               <span
-                                className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                                className="w-1.5 h-1.5 rounded-full bg-[var(--wireline-color-status-success)] shadow-[0_0_8px_color-mix(in_srgb,var(--wireline-color-status-success)_50%,transparent)]"
                                 title="Active Session Verified"
                               />
                             ) : (

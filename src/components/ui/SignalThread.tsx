@@ -54,12 +54,12 @@ const COLOR_MAP: Record<ThreadColor, { stroke: string; pulse: string; glow: stri
   },
   rose: {
     stroke: "rgba(232, 70, 106, 0.2)",
-    pulse: "#DC2626",
+    pulse: "var(--wireline-color-status-error)",
     glow: "rgba(232, 70, 106, 0.6)",
   },
   muted: {
     stroke: "rgba(90, 83, 74, 0.15)",
-    pulse: "#6E6584",
+    pulse: "var(--wireline-color-text-secondary)",
     glow: "rgba(90, 83, 74, 0.4)",
   },
 };

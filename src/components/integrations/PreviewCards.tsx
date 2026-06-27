@@ -189,10 +189,7 @@ export function SMSPreviewCard() {
           <div className="flex justify-end">
             <div className="wl-preview-sms-bubble-out flex gap-1 items-center px-3.5 py-2.5 rounded-md rounded-tr-sm">
               {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="wl-preview-typing-dot w-1.5 h-1.5 rounded-full bg-[#FFFFFF]"
-                />
+                <div key={i} className="wl-preview-typing-dot w-1.5 h-1.5 rounded-full bg-white" />
               ))}
             </div>
           </div>

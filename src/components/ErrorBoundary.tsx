@@ -54,7 +54,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       <div className="min-h-[70svh] flex items-center justify-center p-6">
         <div className={cn(WL_APP_CLASSES.panelFrame, "max-w-xl w-full")}>
           <div className="relative p-8 md:p-10 space-y-6">
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none bg-[radial-gradient(circle,#DC2626,transparent)]" />
+            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none bg-[radial-gradient(circle,var(--wireline-color-status-error),transparent)]" />
             <div className="relative z-10 flex items-center gap-4">
               <div className="w-14 h-14 rounded-md flex items-center justify-center bg-rose-500/15 border border-rose-500/30">
                 <AlertOctagon className="w-7 h-7 text-rose-500" />

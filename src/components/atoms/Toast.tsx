@@ -10,7 +10,8 @@ export const toastVariants = cva(
   {
     variants: {
       variant: {
-        success: "border-emerald-500/30 bg-emerald-950 text-emerald-50",
+        success:
+          "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]",
         error: "border-destructive/30 bg-destructive text-destructive-foreground",
         info: "border-border bg-card text-foreground",
       },

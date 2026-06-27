@@ -281,7 +281,7 @@ export default function StudioWorkroom({
                             onClick={() =>
                               setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
                             }
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
                             aria-pressed={isApplied}
                           >
                             {isApplied ? "✓ " : ""}Change:{" "}
@@ -299,7 +299,7 @@ export default function StudioWorkroom({
                             onClick={() =>
                               setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
                             }
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
                             aria-pressed={isApplied}
                           >
                             {isApplied ? "✓ " : ""}Wire:{" "}
@@ -317,7 +317,7 @@ export default function StudioWorkroom({
                             onClick={() =>
                               setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
                             }
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
                             aria-pressed={isApplied}
                           >
                             {isApplied ? "✓ " : ""}Action:{" "}
