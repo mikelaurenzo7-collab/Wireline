@@ -72,6 +72,7 @@ function RailItem({
   active: boolean;
   compact?: boolean;
 }) {
+  const isDesktopLabeled = !compact;
   return (
     <Link
       to={href}
@@ -85,19 +86,19 @@ function RailItem({
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`
-          : `grid size-11 place-items-center rounded-xl transition-colors ${
+          : `relative flex w-full flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-[6px] text-[10px] font-medium tracking-[0.01em] transition-all ${
               active
-                ? "bg-primary/10 text-primary"
+                ? "bg-primary/10 text-primary after:absolute after:left-[2px] after:top-1/2 after:h-3.5 after:w-[2.5px] after:-translate-y-1/2 after:rounded-full after:bg-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`
       }
     >
-      <Icon size={compact ? 17 : 18} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
-      {compact ? (
-        <span className="leading-none">{label}</span>
-      ) : (
-        <span className="sr-only">{label}</span>
-      )}
+      <Icon size={compact ? 17 : 17} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
+      {compact || isDesktopLabeled ? (
+        <span className={compact ? "leading-none" : "leading-[1.05] text-[9.5px] text-current/80"}>
+          {label}
+        </span>
+      ) : null}
     </Link>
   );
 }
@@ -106,24 +107,24 @@ function DesktopRail({ pathname }: { pathname: string }) {
   return (
     <aside
       aria-label="Workspace navigation"
-      className="hidden h-[100dvh] w-[72px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-2 lg:py-5"
+      className="hidden h-[100dvh] w-[80px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-1 lg:py-3"
     >
       <Link
         to="/overview"
         aria-label="Wireline home"
         title="Wireline"
-        className="grid size-11 place-items-center rounded-xl text-primary transition-colors hover:bg-muted focus-visible:outline-none"
+        className="mt-0.5 grid size-9 place-items-center rounded-lg text-primary transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border"
       >
-        <WirelineMark className="h-6 w-6 shrink-0" />
+        <WirelineMark className="h-[19px] w-[19px] shrink-0" />
       </Link>
 
-      <nav className="mt-8 flex flex-col items-center gap-2" aria-label="Workspace">
+      <nav className="mt-5 flex w-full flex-col items-stretch gap-px px-0.5" aria-label="Workspace">
         {primaryNavigation.map((item) => (
           <RailItem key={item.href} {...item} active={isActive(pathname, item.href)} />
         ))}
       </nav>
 
-      <nav className="mt-auto flex justify-center pt-4" aria-label="Account">
+      <nav className="mt-auto flex w-full justify-center border-t border-border/50 pt-2.5" aria-label="Account">
         <RailItem
           href="/settings"
           label="Settings"
@@ -163,7 +164,7 @@ export default function WorkspaceShell({
   eyebrow,
   action,
   children,
-  contentClassName = "py-6",
+  contentClassName = "pt-2 pb-8",
 }: {
   title: string;
   eyebrow: string;
@@ -180,20 +181,39 @@ export default function WorkspaceShell({
       <a className="wl-skip-link" href="#workspace-main">
         Skip to content
       </a>
-      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[72px_minmax(0,1fr)]">
+      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[80px_minmax(0,1fr)]">
         <DesktopRail pathname={location.pathname} />
         <main
           id="workspace-main"
           data-wireline-route={location.pathname}
-          className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pb-6 lg:pt-6 xl:px-10 ${
+          className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pt-2 sm:px-6 sm:pt-3 lg:px-8 lg:pb-6 lg:pt-3 xl:px-10 ${
             nativeAppShell ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]" : "pb-4 sm:pb-5"
           }`}
         >
-          <div className="sr-only">
-            {eyebrow ? <p>{eyebrow}</p> : null}
-            <h1>{title}</h1>
-            {action}
-          </div>
+          {!isStudioRoute && (title || eyebrow || action) && (
+            <div className="relative mb-4 pb-3 lg:mb-5">
+              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-0">
+                <div className="flex min-w-0 flex-col items-center text-center">
+                  {eyebrow ? (
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/70">
+                      {eyebrow}
+                    </p>
+                  ) : null}
+                  {title ? (
+                    <h1 className="truncate font-[var(--wireline-font-family-display)] text-[21px] font-semibold leading-[1.05] tracking-[-0.025em] text-foreground">
+                      {title}
+                    </h1>
+                  ) : null}
+                </div>
+              </div>
+              {action ? (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 lg:right-[calc((100%-1480px)/2)]">
+                  {action}
+                </div>
+              ) : null}
+              <div className="absolute bottom-0 left-0 right-0 border-b border-border/50" />
+            </div>
+          )}
           <div
             className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${
               isStudioRoute ? "overflow-hidden" : ""

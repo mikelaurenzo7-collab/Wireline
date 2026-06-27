@@ -29,9 +29,10 @@ function proposalCount(message: StudioMessage) {
 
 function MessageSkeletons() {
   return (
-    <div className="space-y-4 px-5 py-8" aria-label="Loading conversation" aria-busy="true">
-      <div className="ml-auto h-16 w-3/5 rounded-xl bg-muted" />
-      <div className="h-28 w-4/5 rounded-xl border border-border bg-card" />
+    <div className="space-y-5 px-4 py-8 sm:px-6" aria-label="Loading conversation" aria-busy="true">
+      <div className="ml-auto h-14 w-1/2 max-w-[260px] rounded-2xl bg-muted" />
+      <div className="h-24 w-4/5 max-w-md rounded-2xl border border-border bg-card" />
+      <div className="ml-auto h-10 w-2/5 max-w-[180px] rounded-2xl bg-muted" />
     </div>
   );
 }
@@ -172,35 +173,37 @@ export default function StudioWorkroom({
 
   return (
     <main className="flex h-full min-h-0 flex-col bg-background">
-      <header className="flex min-h-12 shrink-0 items-center gap-3 border-b border-border px-3 sm:px-4">
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-3 backdrop-blur sm:gap-3 sm:px-4">
         <button
           type="button"
           onClick={onBack}
-          className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Back to Studio"
+          className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Back to Studio overview"
         >
           <ArrowLeft size={16} aria-hidden="true" />
         </button>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{agentName}</p>
+        <div className="min-w-0 flex-1 text-center">
+          <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">{agentName}</p>
         </div>
-        <Link
-          to="/settings"
-          className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Open Settings"
-          title="Settings"
-        >
-          <SettingsIcon className="size-4" aria-hidden="true" />
-        </Link>
-        <button
-          type="button"
-          disabled={!messages.length || clearing}
-          onClick={() => void clearConversation()}
-          className="grid size-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Clear conversation"
-        >
-          {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/settings"
+            className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Open Settings"
+            title="Settings"
+          >
+            <SettingsIcon className="size-4" aria-hidden="true" />
+          </Link>
+          <button
+            type="button"
+            disabled={!messages.length || clearing}
+            onClick={() => void clearConversation()}
+            className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Clear conversation"
+          >
+            {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+          </button>
+        </div>
       </header>
 
       {error ? (
@@ -223,42 +226,44 @@ export default function StudioWorkroom({
               return (
                 <article
                   key={message.id}
-                  className={isUser ? "ml-auto max-w-[86%]" : "max-w-[92%]"}
+                  className={isUser ? "ml-auto max-w-[82%]" : "max-w-[88%]"}
                 >
-                  <p
-                    className={`mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] ${isUser ? "text-right text-muted-foreground" : "text-primary"}`}
-                  >
-                    {isUser ? "You" : agentName}
-                  </p>
+                  <div className={`mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] ${isUser ? "justify-end text-muted-foreground" : "text-primary"}`}>
+                    {!isUser && <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />}
+                    <span>{isUser ? "You" : agentName}</span>
+                  </div>
                   <div
-                    className={`rounded-2xl border px-4 py-3 text-[var(--wireline-typography-body-size)] leading-6 ${isUser ? "border-border bg-muted text-foreground" : "border-border bg-card text-foreground"}`}
+                    className={`rounded-2xl border px-4 py-3.5 text-[15px] leading-[1.55] ${isUser ? "border-border bg-muted text-foreground" : "border-border bg-card text-foreground shadow-sm"}`}
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
-                  {suggestions ? (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {suggestions} suggestion{suggestions === 1 ? "" : "s"} saved for review.
-                    </p>
-                  ) : null}
+                  {suggestions > 0 && (
+                    <div className="mt-1.5 flex justify-end">
+                      <span className="inline-flex items-center rounded-full border border-border/70 bg-background px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {suggestions} proposal{suggestions === 1 ? "" : "s"} saved
+                      </span>
+                    </div>
+                  )}
                 </article>
               );
             })}
             {sending ? (
-              <div className="max-w-[92%]">
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] text-primary">
-                  {agentName}
-                </p>
-                <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />{" "}
-                  {workingLabel}
+              <div className="max-w-[88%]">
+                <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span>{agentName}</span>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+                  {workingLabel}…
                 </div>
               </div>
             ) : null}
           </div>
         ) : (
-          <div className="mx-auto flex max-w-3xl flex-col gap-3 py-2">
-            <p className="text-sm font-semibold text-foreground">Start with a task.</p>
-            <div className="flex flex-wrap gap-2">
+          <div className="mx-auto flex max-w-3xl flex-col gap-2 py-8 text-center">
+            <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Ready when you are.</p>
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
               {QUICK_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
@@ -267,7 +272,7 @@ export default function StudioWorkroom({
                     setDraft(prompt);
                     requestAnimationFrame(() => inputRef.current?.focus());
                   }}
-                  className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
+                  className="rounded-full border border-border/70 bg-card px-3.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground"
                 >
                   {prompt}
                 </button>
@@ -277,8 +282,8 @@ export default function StudioWorkroom({
         )}
       </section>
 
-      <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-[var(--wireline-elevation-sm)] focus-within:border-primary/35">
+      <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-sm focus-within:border-primary/40">
           <label className="sr-only" htmlFor="studio-workroom-message">
             Message {agentName}
           </label>
@@ -296,12 +301,13 @@ export default function StudioWorkroom({
             rows={3}
             disabled={sending}
             placeholder={`Message ${agentName}...`}
-            className="min-h-[78px] w-full resize-none bg-transparent px-2 py-1 text-[var(--wireline-typography-body-size)] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
+            className="min-h-[76px] w-full resize-none bg-transparent px-2 py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
           />
-          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-            <p className="hidden text-[11px] text-muted-foreground sm:block">Ctrl/Cmd + Enter</p>
-            <Button type="button" disabled={!draft.trim() || sending} onClick={submit}>
-              {sending ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />} Send
+          <div className="flex items-center justify-between gap-2 border-t border-border/70 pt-2.5">
+            <p className="hidden text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 sm:block">⌘/Ctrl + Enter</p>
+            <Button type="button" size="sm" disabled={!draft.trim() || sending} onClick={submit} className="ml-auto">
+              {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+              <span className="ml-1 hidden sm:inline">Send</span>
             </Button>
           </div>
         </div>

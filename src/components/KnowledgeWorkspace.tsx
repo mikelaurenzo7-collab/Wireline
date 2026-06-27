@@ -148,8 +148,7 @@ function ToneCard({ personality, loading }: { personality?: string; loading: boo
       ) : (
         <>
           <blockquote className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3 text-[var(--wireline-typography-body-size)] italic leading-6 text-muted-foreground">
-            {personality ||
-              "Define how your agent should sound. Keep it clear, confident, concise, and appropriate to every conversation."}
+            {personality || "Clear. Confident. Concise."}
           </blockquote>
           <p className="mt-7 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[.05em] text-muted-foreground">
             Key traits
@@ -179,12 +178,8 @@ function SourcesCard({ loading }: { loading: boolean }) {
             className="min-h-0 border-dashed"
             icon={<Database size={16} />}
             title="Sources live here"
-            description="Use the Training source panel to ingest documents and images."
+            description="Ingest docs and images."
           />
-          <p className="mt-4 rounded-md border border-border bg-muted/40 px-3 py-3 text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-            Sources become facts, rules, and handoff guidance. Keep them specific and
-            business-useful.
-          </p>
         </div>
       )}
     </Card>

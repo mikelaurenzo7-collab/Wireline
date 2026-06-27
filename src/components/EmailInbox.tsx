@@ -328,11 +328,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   return (
     <section className={`${frameClass} min-h-0`}>
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
-        <div>
-          <p className="studio-kicker">Outcome center · email</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Inspect the conversation, choose the next state, and make the handoff durable.
-          </p>
+        <div className="text-center sm:text-left">
+          <p className="studio-kicker">Inbox</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">Own the outcome.</p>
         </div>
         <Button
           type="button"
@@ -361,7 +359,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         ) : null}
       </div>
 
-      <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(320px,.95fr)_minmax(0,1.35fr)]">
+      <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(340px,1fr)_minmax(0,1.4fr)]">
         <div className="wl-scroll min-h-0 overflow-y-auto border-b border-border p-3 xl:border-b-0 xl:border-r sm:p-4">
           <div className="mb-3 flex items-center gap-3">
             <SearchField

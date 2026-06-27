@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, CreditCard, PlayCircle, Receipt, ShieldCheck, WalletCards } from "lucide-react";
+import { ArrowLeft, PlayCircle, Receipt, ShieldCheck, WalletCards } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -45,17 +45,13 @@ export default function BillingSettings() {
     >
       <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-6 pb-6">
         <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(240px,.62fr)_minmax(0,1fr)] xl:items-center">
-          <div>
-            <p className="studio-kicker">Billing model</p>
-            <h2 className="wl-section-title mt-2">Fund the work. Keep the ledger clean.</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-              Conversation Balance covers personal live work. Stripe Billing covers shared team
-              capacity, invoices, and payment methods.
-            </p>
+          <div className="text-center xl:text-left">
+            <p className="studio-kicker">Billing</p>
+            <h2 className="wl-section-title mt-1">Fund the work.</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {BILLING_FLOW.map(({ label, title, detail, icon: Icon }) => (
-              <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
+              <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4 text-center">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
                     {label}
@@ -76,14 +72,10 @@ export default function BillingSettings() {
         <ConversationBalanceCard />
 
         <section>
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
-            <div className="flex items-center gap-2">
-              <CreditCard className="size-5 text-primary" />
-              <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
-                Business plan
-              </h2>
-            </div>
-            <span className="text-sm text-muted-foreground">Capacity, team coverage, invoices.</span>
+          <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-2">
+            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
+              Team capacity
+            </h2>
           </div>
           <StripeBillingCard />
         </section>

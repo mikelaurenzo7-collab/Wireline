@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Check, CircleDot, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { authFetch, safeJson } from "../lib/api";
 import { useAgents } from "../contexts/AgentsContext";
 import { AGENT_TOOL_CATALOG, type AgentToolName } from "../lib/agent-capabilities";
@@ -105,26 +105,17 @@ function ToolGroup({
 
   return (
     <section className="studio-card p-5">
-      <header className="flex items-center justify-between gap-3 border-b border-border pb-4">
+      <header className="flex items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid h-8 w-8 place-items-center rounded-[var(--wireline-radius-md)] bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-secondary)]">
-            <CircleDot size={16} />
-          </span>
-          <h3
-            className="wl-card-title"
-            style={{ fontSize: "var(--wireline-typography-body-size)" }}
-          >
+          <h3 className="font-semibold tracking-[-0.01em] text-foreground">
             {title}
           </h3>
         </div>
-        <Badge
-          variant="info"
-          className="shrink-0 text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
-        >
+        <Badge variant="info" className="shrink-0 text-[10px] font-mono uppercase tracking-[0.06em]">
           {activeCount} on
         </Badge>
       </header>
-      <div className="mt-4 space-y-1">
+      <div className="mt-3 space-y-px">
         {tools.map((tool) => {
           const active = enabled.includes(tool.name);
           const copy = CONSUMER_COPY[tool.name];
@@ -135,27 +126,21 @@ function ToolGroup({
               aria-pressed={active}
               disabled={disabled}
               onClick={() => onToggle(tool.name)}
-              className="wl-stitch-tool-row flex w-full items-start gap-3 rounded-[var(--radius-md)] px-2 py-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-accent/60 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span
-                className={`wl-stitch-tool-check mt-0.5 ${active ? "text-primary-foreground" : ""}`}
+                className={`mt-1 grid h-[15px] w-[15px] shrink-0 place-items-center rounded border text-[10px] ${active ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
                 aria-hidden="true"
               >
-                {active ? <Check size={11} strokeWidth={3} /> : null}
+                {active ? <Check size={10} strokeWidth={3.5} /> : null}
               </span>
               <span className="min-w-0">
-                <strong
-                  className="block"
-                  style={{
-                    fontSize: "var(--wireline-typography-bodyStrong-size)",
-                    fontWeight: "var(--wireline-typography-bodyStrong-weight)",
-                  }}
-                >
+                <span className="block text-[14.5px] font-semibold tracking-[-0.005em] text-foreground">
                   {copy?.label || tool.label}
-                </strong>
-                <small className="mt-1 block text-[var(--wireline-typography-body-size)] leading-5 text-[var(--wireline-color-text-secondary)]">
+                </span>
+                <span className="mt-px block text-[12.5px] leading-snug text-muted-foreground">
                   {copy?.description || tool.description}
-                </small>
+                </span>
               </span>
             </button>
           );
@@ -302,7 +287,7 @@ export default function ActionsWorkspace() {
           className="studio-card w-full max-w-[560px] px-8 py-12 sm:px-10"
           icon={<Sparkles size={29} />}
           title="Create the agent before you configure Wire."
-          description="Start with one useful job. In Training and Studio, decide what the agent should know, which actions it can take, and where it must ask you first."
+          description="Create an agent first. Then wire it."
           action={
             <Button asChild>
               <Link to="/studio?create=1">Create an agent</Link>
@@ -319,26 +304,19 @@ export default function ActionsWorkspace() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="mb-5 flex shrink-0 flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="studio-kicker">Wire permissions</p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2 className="wl-section-title">
-              Choose how {selectedAgent?.name || "this agent"} can help.
+      <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0 text-center sm:text-left">
+          <p className="studio-kicker">Wire</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 justify-center sm:justify-start">
+            <h2 className="text-[19px] font-semibold tracking-[-0.02em] leading-tight text-foreground">
+              Arm {selectedAgent?.name || "your agent"}.
             </h2>
             {!loading ? (
-              <Badge
-                variant="info"
-                className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[.06em]"
-              >
-                {enabledTools.length} enabled
+              <Badge variant="info" className="text-[10px] font-mono uppercase tracking-[0.06em]">
+                {enabledTools.length} on
               </Badge>
             ) : null}
           </div>
-          <p className="mt-2 max-w-2xl text-[var(--wireline-typography-body-size)] leading-6 text-[var(--wireline-color-text-secondary)]">
-            Turn on only the actions this agent should take. You can change the scope whenever the
-            role changes.
-          </p>
         </div>
         <NativeSelect
           value={agentId}
@@ -422,12 +400,10 @@ export default function ActionsWorkspace() {
         </section>
 
         <aside className="mt-6 min-h-0 lg:mt-0">
-          <p className="studio-kicker">Connected apps</p>
-          <h2 className="wl-section-title mt-2">Add context when it helps.</h2>
-          <p className="mt-2 text-[var(--wireline-typography-body-size)] leading-6 text-[var(--wireline-color-text-secondary)]">
-            Connect only the accounts and tools that make this agent more useful. A connection is
-            not permission by itself.
-          </p>
+          <div className="text-center">
+            <p className="studio-kicker">Integrations</p>
+            <h2 className="wl-section-title mt-1">Wire the world.</h2>
+          </div>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {
               const connected =

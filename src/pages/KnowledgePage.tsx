@@ -45,15 +45,12 @@ function TrainingSurfaceMap({
   return (
     <section className="studio-card grid gap-4 p-4 sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="wl-overline">Training map</p>
-          <h2 className="mt-2 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.03em] text-foreground">
-            Facts, instructions, sources, voice, test calls, and memory.
+        <div className="text-center sm:text-left">
+          <p className="studio-kicker">Training</p>
+          <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.02em] text-foreground">
+            Facts. Rules. Voice. Memory.
           </h2>
         </div>
-        <p className="max-w-xl text-sm leading-5 text-muted-foreground">
-          Create stays short. Training owns the detailed setup before anything goes live.
-        </p>
       </div>
       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {trainingNav.map((item) => {
@@ -65,24 +62,22 @@ function TrainingSurfaceMap({
               key={label}
               to={href}
               aria-current={isActive ? "page" : undefined}
-              className={`group flex min-h-[84px] items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+              className={`group flex min-h-[82px] items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all ${
                 isActive
-                  ? "border-primary/30 bg-accent text-foreground"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:bg-accent hover:text-foreground"
+                  ? "border-primary/35 bg-accent text-foreground"
+                  : "border-border bg-background text-muted-foreground hover:border-primary/20 hover:bg-accent hover:text-foreground"
               }`}
             >
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-foreground">{label}</span>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">{note}</span>
+                <span className="mt-0.5 block text-[12px] leading-tight text-muted-foreground">{note}</span>
               </span>
               <span
-                className={`grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] transition-colors ${
-                  isActive
-                    ? "bg-card text-foreground"
-                    : "bg-muted text-foreground group-hover:bg-card"
+                className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${
+                  isActive ? "bg-card text-foreground" : "bg-muted text-foreground group-hover:bg-card"
                 }`}
               >
-                <Icon size={16} aria-hidden="true" />
+                <Icon size={15} aria-hidden="true" />
               </span>
             </Link>
           );
@@ -100,7 +95,7 @@ function EmptyTraining() {
         className="studio-card w-full max-w-[512px] px-8 py-12 text-left sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
         title="Train the agent."
-        description="Add facts, rules, tone, and sources once an agent exists."
+        description="Facts and rules live here."
         action={
           <Button asChild>
             <Link to="/studio?create=1">
@@ -142,16 +137,16 @@ function TrainingRail({
               key={label}
               to={href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-[9px] text-left transition-all ${
                 isActive
-                  ? "bg-accent text-foreground"
+                  ? "bg-primary/10 text-primary font-medium"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
-              <Icon size={16} aria-hidden="true" />
+              <Icon size={15} aria-hidden="true" />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-foreground">{label}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{note}</span>
+                <span className="block text-[13.5px] font-semibold tracking-[-0.005em] text-foreground">{label}</span>
+                <span className="block truncate text-[10.5px] leading-tight text-muted-foreground/80">{note}</span>
               </span>
             </Link>
           );
@@ -172,8 +167,8 @@ export default function KnowledgePage() {
   return (
     <WorkspaceShell
       eyebrow="Operating system"
-      title="Training"
-      contentClassName={populated ? "pt-5" : "pt-0"}
+      title="Forge"
+      contentClassName={populated ? "pt-1 pb-6" : "pt-0"}
       action={
         populated ? (
           <NativeSelect

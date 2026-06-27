@@ -78,13 +78,7 @@ export default function PersonalDashboard() {
           <div className="flex flex-col items-start gap-4 rounded-xl border border-dashed border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-8 py-16 text-left">
             <User className="size-8 text-[var(--wireline-color-action-primary-default)]" />
             <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                Start by creating your first agent
-              </h3>
-              <p className="mt-1 max-w-lg text-sm leading-relaxed text-muted-foreground">
-                Define what your agent should handle: reservations, support hold times, pharmacy
-                pickups, or custom checklists.
-              </p>
+              <h3 className="text-lg font-semibold text-foreground">Create your first agent.</h3>
             </div>
             <Link to="/studio?create=1" className="studio-primary-button mt-2 text-sm">
               <Plus size={16} /> Create agent

@@ -156,22 +156,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="py-3 sm:py-6">
+    <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="pt-1 pb-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="studio-kicker">Workspace</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-[-.045em] text-foreground sm:text-3xl">
-              Settings
-            </h1>
-          </div>
+        <div className="flex items-center justify-end">
           <Button asChild variant="secondary" size="sm" className="shrink-0">
             <Link to="/studio">
               <ArrowLeft aria-hidden="true" size={15} />
-              Studio
+              Back to Studio
             </Link>
           </Button>
-        </header>
+        </div>
 
         <section className="studio-card p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -209,10 +203,10 @@ export default function SettingsPage() {
         </section>
 
         <section>
-          <div className="mb-3">
+          <div className="mb-3 text-center">
             <p className="studio-kicker">Controls</p>
             <h2 className="text-xl font-semibold tracking-[-.035em] text-foreground">
-              Choose a control.
+              Pick your path.
             </h2>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">

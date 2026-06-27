@@ -73,18 +73,18 @@ function operatingSteps(activeAgentId: string | null) {
 function RosterLoading() {
   return (
     <div
-      className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+      className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
       aria-busy="true"
       aria-label="Loading roster"
     >
       {Array.from({ length: 4 }, (_, index) => (
-        <div key={index} className="studio-card min-h-[172px] p-4">
+        <div key={index} className="studio-card min-h-[168px] p-4">
           <div className="flex items-start justify-between gap-3">
             <Skeleton shape="circle" className="size-9" />
             <Skeleton shape="text" className="h-3 w-12" />
           </div>
-          <Skeleton shape="text" className="mt-5 h-5 w-3/4" />
-          <Skeleton shape="text" className="mt-2 h-4 w-1/2" />
+          <Skeleton shape="text" className="mt-4 h-5 w-3/4" />
+          <Skeleton shape="text" className="mt-1.5 h-4 w-1/2" />
         </div>
       ))}
     </div>
@@ -94,35 +94,31 @@ function RosterLoading() {
 function OperatingPath({ activeAgentId }: { activeAgentId: string | null }) {
   const steps = operatingSteps(activeAgentId);
   return (
-    <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(240px,.7fr)_minmax(0,1fr)] xl:items-center">
-      <div>
-        <p className="studio-kicker">Next best move</p>
-        <h2 className="wl-section-title mt-2">Create, train, then run without guessing.</h2>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-          Each route has one job. Studio starts and runs work. Training makes the agent reliable.
-          Wire and Inbox keep the operating loop accountable.
-        </p>
+    <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(220px,.65fr)_minmax(0,1fr)] xl:items-center">
+      <div className="text-center sm:text-left">
+        <p className="studio-kicker">Loop</p>
+        <h2 className="mt-1 font-semibold tracking-[-0.02em]">Create. Train. Run.</h2>
       </div>
       <div className="grid gap-2 md:grid-cols-3">
         {steps.map(({ step, label, title, detail, href, action, icon: Icon }) => (
           <Link
             key={label}
             to={href}
-            className="group flex min-h-[158px] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-background p-4 text-left transition-colors hover:border-primary/30 hover:bg-accent"
+            className="group flex min-h-[148px] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-background p-4 text-left transition-colors hover:border-primary/25 hover:bg-accent"
           >
             <div className="flex items-start justify-between gap-3">
-              <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
                 {step} / {label}
               </span>
-              <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-foreground transition-colors group-hover:bg-card">
-                <Icon aria-hidden="true" size={16} />
+              <span className="grid size-8 place-items-center rounded-md bg-muted text-foreground transition-colors group-hover:bg-card">
+                <Icon aria-hidden="true" size={15} />
               </span>
             </div>
-            <div className="mt-5">
-              <h3 className="wl-card-title">{title}</h3>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">{detail}</p>
-              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                {action} <ArrowRight aria-hidden="true" size={14} />
+            <div className="mt-3.5">
+              <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h3>
+              <p className="mt-1 text-xs leading-snug text-muted-foreground">{detail}</p>
+              <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                {action} <ArrowRight aria-hidden="true" size={13} className="transition group-hover:translate-x-px" />
               </span>
             </div>
           </Link>
@@ -141,7 +137,7 @@ export default function OverviewPage() {
 
   return (
     <WorkspaceShell
-      title="Overview"
+      title="Home"
       eyebrow="Workspace"
       action={
         <Button asChild size="sm">
@@ -151,27 +147,22 @@ export default function OverviewPage() {
           </Link>
         </Button>
       }
-      contentClassName="py-5"
+      contentClassName="pt-0.5 pb-8"
     >
       <div className="wl-overview flex w-full max-w-none flex-col pb-8">
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
-            <div>
-              <p className="studio-kicker">{"Create -> Train -> Run"}</p>
-              <h2 className="wl-section-title mt-3 max-w-[18ch] text-[clamp(1.75rem,1.4rem+1.6vw,2.5rem)]">
-                {hasAgents ? "Run the work." : "Create one useful agent."}
+            <div className="text-center sm:text-left">
+              <p className="studio-kicker">Create → Train → Run</p>
+              <h2 className="mt-2 max-w-[18ch] font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.4vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em]">
+                {hasAgents ? "Run the work." : "Build your agent."}
               </h2>
-              <p className="wl-overview-hero-copy mt-3">
-                {hasAgents
-                  ? "Studio runs calls, texts, follow-up, approvals, and handoff. Training owns the heavy setup."
-                  : "Start with a short intake. Train the deeper rules after the agent exists."}
-              </p>
             </div>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild>
                 <Link to={hasAgents ? "/studio" : "/studio?create=1"}>
                   {hasAgents ? "Open Studio" : "Create agent"}
-                  <ArrowRight aria-hidden="true" size={16} />
+                  <ArrowRight aria-hidden="true" size={15} />
                 </Link>
               </Button>
               <Button asChild variant="secondary">
@@ -255,9 +246,9 @@ export default function OverviewPage() {
 
         <section>
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="studio-kicker">Workspace</p>
-              <h2 className="wl-section-title mt-2">Where to work next.</h2>
+            <div className="text-center sm:text-left">
+              <p className="studio-kicker">Next</p>
+              <h2 className="wl-section-title mt-1">Work here.</h2>
             </div>
             {hasAgents ? (
               <Button asChild variant="link" className="h-auto px-0 text-sm">
@@ -272,15 +263,15 @@ export default function OverviewPage() {
               <Link
                 key={href}
                 to={href}
-                className="wl-overview-shortcut studio-card wl-card-action group flex flex-col p-5 text-left"
+                className="wl-overview-shortcut studio-card wl-card-action group flex flex-col p-5 text-left transition-colors hover:border-primary/20"
               >
                 <Icon aria-hidden="true" className="size-5 text-primary" />
                 <div className="mt-auto flex items-end justify-between gap-3">
                   <div>
-                    <h3 className="wl-card-title">{title}</h3>
+                    <h3 className="wl-card-title tracking-[-0.01em]">{title}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{label}</p>
                   </div>
-                  <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                  <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
                 </div>
               </Link>
             ))}
@@ -305,26 +296,26 @@ export default function OverviewPage() {
           {loading ? (
             <RosterLoading />
           ) : hasAgents ? (
-            <div className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {agents.slice(0, 8).map((agent) => (
                 <Link
                   key={agent.id}
                   to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-                  className="wl-overview-roster-card studio-card wl-card-action group p-4"
+                  className="wl-overview-roster-card studio-card wl-card-action group flex flex-col p-4 transition-colors hover:border-primary/20"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                       <Bot aria-hidden="true" size={18} />
                     </span>
-                    <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex flex-col items-end gap-1">
                       <span className="wl-overline text-[var(--wireline-typography-overline-size)]">
                         {agent.channel || "voice"}
                       </span>
                       <PostureBadge isBusiness={Boolean(agent.is_business_agent)} compact />
                     </div>
                   </div>
-                  <h3 className="wl-card-title">{agent.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <h3 className="mt-2 wl-card-title tracking-[-0.01em]">{agent.name}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {formatAgentRoleLabel(agent.role)}
                   </p>
                 </Link>

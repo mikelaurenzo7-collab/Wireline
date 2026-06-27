@@ -10,15 +10,17 @@ import StudioWorkroom from "./StudioWorkroom";
 function StudioLoadingState() {
   return (
     <main
-      className="grid min-h-[60vh] place-items-center bg-background px-6"
+      className="grid min-h-[55vh] place-items-center bg-background px-6"
       aria-busy="true"
       aria-label="Loading Studio"
     >
-      <div className="w-full max-w-5xl space-y-4">
-        <Skeleton shape="text" className="h-4 w-36" />
-        <Skeleton shape="text" className="h-9 w-96 max-w-full" />
-        <Skeleton shape="text" className="h-4 w-full max-w-2xl" />
-        <Skeleton shape="surface" className="h-[320px] w-full" />
+      <div className="w-full max-w-5xl space-y-3">
+        <Skeleton shape="text" className="h-3 w-20" />
+        <Skeleton shape="text" className="h-8 w-80 max-w-full" />
+        <Skeleton shape="text" className="h-3 w-64" />
+        <div className="pt-2">
+          <Skeleton shape="surface" className="h-[280px] w-full rounded-[var(--radius-xl)]" />
+        </div>
       </div>
     </main>
   );
@@ -26,24 +28,24 @@ function StudioLoadingState() {
 
 function StudioEmptyState() {
   return (
-    <main className="grid min-h-[60vh] place-items-center bg-background px-6 py-10">
+    <main className="grid min-h-[55vh] place-items-center bg-background px-6 py-8">
       <EmptyState
         density="default"
-        className="studio-card w-full max-w-2xl px-8 py-12 text-left"
-        icon={<Sparkles size={30} strokeWidth={1.7} />}
+        className="studio-card w-full max-w-xl px-8 py-10 text-left"
+        icon={<Sparkles size={28} strokeWidth={1.6} />}
         title="Create one useful agent."
-        description="Name it, pick a voice, set a role, then train it in one place."
+        description="Name it. Voice it. Direct it."
         action={
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 pt-1">
             <Button asChild>
               <Link to="/studio?create=1">
-                <Plus aria-hidden="true" size={16} />
+                <Plus aria-hidden="true" size={15} />
                 {PRODUCT_POSTURE.personal.createCta}
               </Link>
             </Button>
             <Button asChild variant="secondary">
               <Link to="/studio?create=1&posture=business">
-                <BriefcaseBusiness aria-hidden="true" size={16} />
+                <BriefcaseBusiness aria-hidden="true" size={15} />
                 {PRODUCT_POSTURE.business.createCta}
               </Link>
             </Button>

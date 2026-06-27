@@ -690,7 +690,7 @@ export default function AgentWorkspace({
           icon={MessageSquare}
           eyebrow="Workspace"
           title="Select an agent above"
-          description="Each agent has its own private workspace. Pick one from the rail to open its chat thread, training, connectors, and memory."
+          description="Pick an agent to start."
         />
       </div>
     );

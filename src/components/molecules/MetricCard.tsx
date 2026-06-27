@@ -53,15 +53,15 @@ export function MetricCard({
   return (
     <section
       data-slot="metric-card"
-      className={cn(metricCardVariants({ tone }), className)}
+      className={cn(metricCardVariants({ tone }), "transition-colors", className)}
       {...props}
     >
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <p className="min-w-0 text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="min-w-0 text-[13px] font-medium tracking-[0.005em] text-muted-foreground">{label}</p>
         {icon ? <span className="shrink-0 text-muted-foreground">{icon}</span> : null}
       </div>
       <div className="flex min-w-0 items-end justify-between gap-3">
-        <output className="min-w-0 truncate text-2xl font-semibold tracking-tight text-foreground">
+        <output className="min-w-0 truncate text-[26px] font-semibold tracking-[-0.025em] text-foreground tabular-nums">
           {value}
         </output>
         {delta ? (
@@ -77,7 +77,7 @@ export function MetricCard({
         ) : null}
       </div>
       {footer ? (
-        <div className="border-t border-border pt-3 text-xs text-muted-foreground">{footer}</div>
+        <div className="border-t border-border/70 pt-2.5 text-[12px] text-muted-foreground">{footer}</div>
       ) : null}
     </section>
   );

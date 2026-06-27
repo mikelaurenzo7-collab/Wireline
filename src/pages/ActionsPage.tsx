@@ -13,7 +13,7 @@ export default function ActionsPage() {
     <WorkspaceShell
       eyebrow="Workspace"
       title="Wire"
-      contentClassName="py-6"
+      contentClassName="pt-1 pb-8"
       action={
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
           <Button asChild variant="secondary" size="sm" className="shrink-0">

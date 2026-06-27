@@ -74,7 +74,7 @@ export default function AgentAssetUpload({ agentId, onComplete }: { agentId: str
         <div>
           <p className="wl-overline">Sources</p>
           <h2 className="mt-1 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.03em] text-foreground">Upload documents</h2>
-          <p className="mt-1 text-sm leading-5 text-muted-foreground">Teach the agent from text files or images.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ingest files. Feed facts.</p>
         </div>
         <FileText className="size-5 text-muted-foreground" aria-hidden="true" />
       </div>

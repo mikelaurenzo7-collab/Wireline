@@ -54,19 +54,17 @@ export default function StudioOverview({
   const trimmedBrief = brief.trim();
 
   return (
-    <main className="h-full min-h-0 overflow-y-auto bg-background px-4 py-4 sm:px-6 sm:py-7 lg:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:gap-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-muted-foreground">Studio</p>
-            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[clamp(2rem,10vw,3rem)] font-semibold leading-none tracking-[-.055em] text-foreground">
+    <main className="h-full min-h-0 overflow-y-auto bg-background px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-5 sm:gap-6">
+        <header className="flex flex-col items-center gap-3 text-center">
+          <div>
+            <p className="studio-kicker">Studio</p>
+            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.9rem,7vw,2.75rem)] font-semibold leading-none tracking-[-0.05em] text-foreground">
               {active.name}
             </h1>
-            <p className="mt-2 text-base capitalize leading-6 text-muted-foreground">
-              {activeDescription}
-            </p>
+            <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground/70">{activeDescription}</p>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <div className="flex flex-wrap justify-center gap-2">
             <Button type="button" variant="secondary" onClick={onCreate} className="justify-center">
               <Plus aria-hidden="true" size={15} />
               New
@@ -81,20 +79,20 @@ export default function StudioOverview({
         </header>
 
         {degraded ? (
-          <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm leading-5 text-muted-foreground">
-            Agent list is delayed. The selected agent can still open.
-          </p>
+          <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm leading-5 text-muted-foreground">
+            Agent list is delayed. The selected agent can still open the workroom.
+          </div>
         ) : null}
 
-        <section className="studio-card p-4 sm:p-5 lg:p-6">
-          <div className="max-w-xl">
-            <p className="text-xs font-semibold text-muted-foreground">Task</p>
-            <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,6vw,2.25rem)] font-semibold leading-[1.02] tracking-[-.04em] text-foreground">
-              Give it work.
+        <section className="studio-card p-5 sm:p-6 text-center">
+          <div>
+            <p className="studio-kicker">Brief</p>
+            <h2 className="mt-1.5 font-[var(--wireline-font-family-display)] text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-[-0.035em] text-foreground">
+              Task it.
             </h2>
           </div>
 
-          <div className="mt-4 rounded-[var(--radius-lg)] border border-border bg-background p-3 focus-within:border-primary/35 sm:p-4">
+          <div className="mt-4 rounded-[var(--radius-lg)] border border-border bg-background p-3.5 focus-within:border-primary/40 sm:p-4">
             <label className="sr-only" htmlFor="studio-brief">
               What should this agent work on?
             </label>
@@ -104,16 +102,16 @@ export default function StudioOverview({
               onChange={(event) => setBrief(event.target.value)}
               rows={4}
               placeholder={`Ask ${active.name} to...`}
-              className="min-h-[104px] w-full resize-none bg-transparent px-2 py-1 text-base leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 sm:min-h-[132px]"
+              className="min-h-[110px] w-full resize-none bg-transparent px-1 py-0.5 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 sm:min-h-[128px]"
             />
-            <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-3 border-t border-border/70 pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-1.5">
                 {WORK_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => setBrief(prompt)}
-                    className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
+                    className="rounded-full border border-border/70 bg-card px-3 py-1 text-xs font-semibold text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground"
                   >
                     {prompt}
                   </button>
@@ -124,29 +122,25 @@ export default function StudioOverview({
                 className="w-full justify-center sm:w-auto"
                 onClick={() => onOpen(active.id, trimmedBrief || undefined)}
               >
-                {trimmedBrief ? "Start" : "Open chat"}
+                {trimmedBrief ? "Start" : "Workroom"}
                 <ArrowRight aria-hidden="true" size={15} />
               </Button>
             </div>
           </div>
         </section>
 
-        <section className="studio-card p-3 sm:p-4">
-          <div className="flex items-center justify-between gap-3 px-1 py-1.5">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground">Agents</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{agents.length} agents</p>
-            </div>
+        <section className="studio-card p-4 sm:p-5 text-center">
+          <div className="flex items-center justify-between px-0.5 pb-2">
+            <p className="studio-kicker">Fleet</p>
             <button
               type="button"
               onClick={onCreate}
-              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full border border-border px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-background px-3 text-xs font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-accent"
             >
-              <Plus size={14} />
-              New
+              <Plus size={13} /> New
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-2 pt-3 sm:flex sm:overflow-x-auto">
+          <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:gap-3 xl:grid xl:grid-cols-2 xl:overflow-visible xl:gap-3 2xl:grid-cols-3">
             {agents.map((agent) => {
               const selected = agent.id === active.id;
               const AgentIcon = agent.channel === "email" ? MessageSquareText : Phone;
@@ -156,26 +150,24 @@ export default function StudioOverview({
                   key={agent.id}
                   type="button"
                   onClick={() => (selected ? onOpen(agent.id) : onSelect(agent.id))}
-                  aria-current={selected ? "true" : undefined}
-                  className={`flex w-full min-w-0 items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-3 text-left transition-colors sm:min-w-[240px] ${selected ? "border-primary/35 bg-accent" : "border-border bg-background hover:border-primary/25 hover:bg-accent"}`}
+                  aria-current={selected ? "page" : undefined}
+                  className={`flex min-w-[210px] flex-1 items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all sm:min-w-[230px] xl:min-w-0 ${selected ? "border-primary/40 bg-accent shadow-sm" : "border-border bg-background hover:border-primary/20 hover:bg-accent"}`}
                 >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-foreground">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-sm font-semibold text-foreground">
                     {agent.name.slice(0, 1).toUpperCase()}
                   </span>
-                  <span className="min-w-0 flex-1 overflow-hidden">
-                    <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold text-foreground">
-                      {selected ? <CircleDot className="size-3 shrink-0 text-primary" /> : null}
+                  <span className="min-w-0 flex-1 overflow-hidden text-left">
+                    <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-foreground">
+                      {selected && <CircleDot className="size-3.5 shrink-0 text-primary" />}
                       <span className="truncate">{agent.name}</span>
                     </span>
-                    <span className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-xs capitalize text-muted-foreground">
-                      {agent.is_business_agent ? (
-                        <BriefcaseBusiness className="shrink-0" size={12} />
-                      ) : null}
-                      <AgentIcon className="shrink-0" size={12} />
-                      <span className="truncate">{description}</span>
+                    <span className="mt-px flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                      {agent.is_business_agent && <BriefcaseBusiness className="shrink-0" size={11} />}
+                      <AgentIcon className="shrink-0" size={11} />
+                      <span className="truncate capitalize">{description}</span>
                     </span>
                   </span>
-                  {selected ? <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" /> : null}
+                  {selected && <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />}
                 </button>
               );
             })}

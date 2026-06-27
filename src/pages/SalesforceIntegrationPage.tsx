@@ -243,13 +243,8 @@ export default function SalesforceIntegrationPage() {
                     <Send className="size-5 text-primary" />
                     <h2 className="font-semibold text-foreground">Call activity delivery</h2>
                   </div>
-                  <p
-                    id="salesforce-activity-sync-description"
-                    className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground"
-                  >
-                    When enabled, Wireline creates a completed Salesforce Task for an eligible call
-                    after enrichment resolves its outcome. Turning this off pauses future automatic
-                    Task delivery; it does not remove past Salesforce activities.
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Push call outcomes as Salesforce Tasks. Toggle to pause.
                   </p>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>

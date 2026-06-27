@@ -81,7 +81,7 @@ export default function CustomizationSettings() {
     <WorkspaceShell
       eyebrow="Workspace"
       title="Customization"
-      contentClassName="py-6"
+      contentClassName="pt-1 pb-8"
       action={
         <Button asChild variant="secondary" size="sm" className="shrink-0">
           <Link to="/settings" aria-label="Back to Settings">
@@ -93,15 +93,9 @@ export default function CustomizationSettings() {
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-8">
         <section className="studio-card grid gap-5 border-primary/20 bg-secondary p-6 sm:p-7 xl:grid-cols-[minmax(0,.8fr)_minmax(320px,.55fr)] xl:items-end">
-          <div>
-            <p className="studio-kicker">Operating profile</p>
-            <h2 className="wl-section-title mt-2 max-w-3xl">
-              One profile for brand, voice, rules, and goals.
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Customization should feel calm: set the system identity once, then let every agent,
-              app, workflow, and generated artifact inherit the same clear defaults.
-            </p>
+          <div className="text-center xl:text-left">
+            <p className="studio-kicker">Profile</p>
+            <h2 className="wl-section-title mt-1">One voice, everywhere.</h2>
           </div>
           <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
             <div className="flex items-start gap-3">
@@ -110,21 +104,18 @@ export default function CustomizationSettings() {
               </span>
               <div>
                 <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
-                  Design rule
+                  Rule
                 </p>
-                <p className="mt-2 text-sm leading-6 text-foreground">
-                  Add power where users expect it, but keep everyday pages readable enough to trust
-                  in a ten-second scan.
-                </p>
+                <p className="mt-1 text-sm text-foreground">Power where needed. Clarity everywhere.</p>
               </div>
             </div>
           </div>
         </section>
 
         <section>
-          <div className="mb-4 max-w-2xl">
-            <p className="studio-kicker">What belongs here</p>
-            <h2 className="wl-section-title mt-2">Customize the system, not just a screen.</h2>
+          <div className="mb-3 text-center">
+            <p className="studio-kicker">Layers</p>
+            <h2 className="wl-section-title mt-1">System taste, not screens.</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {customizationLayers.map(({ label, title, detail, action, href, icon: Icon }) => (
@@ -156,14 +147,14 @@ export default function CustomizationSettings() {
         </section>
 
         <section className="studio-card p-5 sm:p-6">
-          <div className="flex flex-col gap-2 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col items-center gap-2 border-b border-border pb-3 text-center sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="studio-kicker">Carryover</p>
-              <h2 className="wl-section-title mt-2">Same taste, every surface.</h2>
+              <h2 className="wl-section-title mt-1">Taste travels.</h2>
             </div>
             <Button asChild variant="link" className="h-auto w-fit px-0 text-sm">
               <Link to="/settings/apps">
-                View app surfaces <ArrowRight aria-hidden="true" size={14} />
+                Surfaces <ArrowRight aria-hidden="true" size={14} />
               </Link>
             </Button>
           </div>

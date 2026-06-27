@@ -166,7 +166,7 @@ export default function CreateAgentDialog({
         aria-describedby="create-agent-description"
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 text-center sm:text-left">
             <p className="text-xs font-semibold text-muted-foreground">New agent</p>
             <h2
               id="create-agent-title"
@@ -174,12 +174,7 @@ export default function CreateAgentDialog({
             >
               New agent.
             </h2>
-            <p
-              id="create-agent-description"
-              className="mt-2 max-w-sm text-sm leading-5 text-muted-foreground"
-            >
-              Name it. Pick a role. Train next.
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Name it. Pick a role. Train next.</p>
           </div>
           <Button
             type="button"

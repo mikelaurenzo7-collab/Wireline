@@ -81,13 +81,13 @@ export default function TeamSettings() {
       <div className="min-h-0 flex-1 pb-12">
         <div className="mx-auto max-w-[920px] space-y-6">
           <section className="studio-card flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+            <div className="text-center sm:text-left">
               <Badge variant="info">
                 <ShieldCheck size={14} />
-                Business workspace
+                Business
               </Badge>
-              <h2 className="mt-3 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.01em] text-foreground">
-                People and access.
+              <h2 className="mt-2 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.01em] text-foreground">
+                Your team.
               </h2>
             </div>
             <Button type="button" onClick={() => setIsInviteOpen(true)}>

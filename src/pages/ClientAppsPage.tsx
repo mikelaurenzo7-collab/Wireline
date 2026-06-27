@@ -48,14 +48,11 @@ const clientSurfaces = [
 
 export default function ClientAppsPage() {
   return (
-    <WorkspaceShell eyebrow="Workspace" title="Wireline everywhere" contentClassName="py-6">
+    <WorkspaceShell eyebrow="Workspace" title="Wireline everywhere" contentClassName="pt-1 pb-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 pb-8">
-        <section className="studio-card p-6 sm:p-7">
-          <p className="studio-kicker">Your control surfaces</p>
-          <h2 className="wl-section-title mt-2 max-w-3xl">
-            One agent system, wherever the conversation starts.
-          </h2>
-          <p className="wl-page-copy mt-3 max-w-2xl">Same agents. Same setup. One protected workspace.</p>
+        <section className="studio-card p-6 sm:p-7 text-center">
+          <p className="studio-kicker">Surfaces</p>
+          <h2 className="wl-section-title mt-1">Everywhere you talk.</h2>
         </section>
 
         <section className="grid gap-3 md:grid-cols-2">

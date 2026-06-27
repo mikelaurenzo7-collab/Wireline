@@ -192,7 +192,7 @@ export default function AgentMemoryPanel({
             icon={<Phone className="size-5" />}
             eyebrow={OPS_CHANNEL_EMPTY.agentRecall.eyebrow}
             title={OPS_CHANNEL_EMPTY.agentRecall.title}
-            description={`Once ${agentName} takes calls, conversation summaries appear here as recall context.`}
+            description={`Summaries will appear here after live calls.`}
             density="compact"
           />
         )}

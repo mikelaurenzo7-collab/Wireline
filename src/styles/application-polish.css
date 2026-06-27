@@ -181,3 +181,38 @@
     padding-inline: 0.25rem;
   }
 }
+
+/* Professional, sharp, purposeful authenticated workspace polish */
+.wl-ui-caps .wl-workspace-main .studio-card,
+.wl-ui-caps .wl-workspace-main .wl-card-action {
+  transition: border-color .12s ease, box-shadow .12s ease, transform .08s ease;
+}
+
+.wl-ui-caps .wl-workspace-main .studio-card:hover,
+.wl-ui-caps .wl-workspace-main .wl-card-action:hover {
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 55%, var(--wireline-color-action-primary-container));
+}
+
+.wl-ui-caps .wl-workspace-main h1,
+.wl-ui-caps .wl-workspace-main .wl-section-title {
+  letter-spacing: -0.025em;
+}
+
+.wl-ui-caps .wl-workspace-main .studio-kicker {
+  letter-spacing: .085em;
+  opacity: .75;
+}
+
+/* Crisp rail + header details */
+.wl-ui-caps .wl-workspace-main > div:first-child {
+  /* header area already styled inline for precision */
+}
+
+/* Sharper tool rows and integration lists */
+.wl-stitch-tool-row {
+  transition: background-color .08s ease;
+}
+
+.wl-stitch-tool-row:hover {
+  background-color: color-mix(in srgb, var(--wireline-color-action-primary-container) 6%, transparent);
+}
