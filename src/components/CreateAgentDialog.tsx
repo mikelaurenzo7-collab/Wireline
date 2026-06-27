@@ -174,7 +174,7 @@ export default function CreateAgentDialog({
             >
               New agent.
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">Name it. Pick a role. Train next.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Name, role, voice, personality, and a starting brief.</p>
           </div>
           <Button
             type="button"
@@ -261,7 +261,7 @@ export default function CreateAgentDialog({
           className="mt-3"
           label="First brief"
           htmlFor="create-agent-brief"
-          description="Optional. Add details in Training."
+          description="Optional. Add details in Training. Create and open Training."
         >
           <Textarea
             id="create-agent-brief"

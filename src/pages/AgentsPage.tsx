@@ -182,7 +182,7 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
               Ready
             </Badge>
           </div>
-          <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[19px] font-semibold leading-6 tracking-[-0.015em] text-foreground">
+          <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-0.015em] text-foreground">
             {agent.name}
           </h2>
           <p className="mt-0.5 inline-flex min-w-0 items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-muted-foreground">
@@ -204,7 +204,7 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
             className="max-w-[13ch] truncate font-semibold text-foreground group-hover:text-primary"
             title={agent.phone_number || undefined}
           >
-            {agent.phone_number || "Add number"}
+            {agent.phone_number || "Configure number"}
           </Link>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground">

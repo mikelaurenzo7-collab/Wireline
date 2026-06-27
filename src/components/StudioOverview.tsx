@@ -59,7 +59,7 @@ export default function StudioOverview({
         <header className="flex flex-col items-center gap-3 text-center">
           <div>
             <p className="studio-kicker">Studio</p>
-            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.9rem,7vw,2.75rem)] font-semibold leading-none tracking-[-0.05em] text-foreground">
+            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h1-size)] font-semibold leading-none tracking-[-0.05em] text-foreground">
               {active.name}
             </h1>
             <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground/70">{activeDescription}</p>
@@ -140,7 +140,7 @@ export default function StudioOverview({
               <Plus size={13} /> New
             </button>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:gap-3 xl:grid xl:grid-cols-2 xl:overflow-visible xl:gap-3 2xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:gap-3 xl:grid xl:grid-cols-2 xl:overflow-visible xl:gap-3 2xl:grid-cols-3">
             {agents.map((agent) => {
               const selected = agent.id === active.id;
               const AgentIcon = agent.channel === "email" ? MessageSquareText : Phone;

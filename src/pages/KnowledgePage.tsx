@@ -48,7 +48,7 @@ function TrainingSurfaceMap({
         <div className="text-center w-full">
           <p className="studio-kicker">Training</p>
           <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.02em] text-foreground">
-            Facts. Rules. Voice. Memory.
+            Facts, instructions, sources, voice, test calls, and memory.
           </h2>
         </div>
       </div>

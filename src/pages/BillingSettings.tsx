@@ -10,7 +10,7 @@ import ConversationBalanceCard from "../components/ConversationBalanceCard";
 const BILLING_FLOW = [
   {
     label: "Fund",
-    title: "Start free.",
+    title: "Start free. Fund live work.",
     detail: "Balance, not plans.",
     icon: WalletCards,
   },

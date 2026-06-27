@@ -184,6 +184,7 @@ export default function StudioWorkroom({
         </button>
         <div className="min-w-0 flex-1 text-center">
           <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">{agentName}</p>
+          <p className="text-[10px] text-muted-foreground">Direct the work. Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.</p>
         </div>
         <div className="flex items-center gap-2">
           <Link

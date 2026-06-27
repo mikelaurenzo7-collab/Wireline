@@ -95,7 +95,7 @@ function DangerZone() {
         <div className="min-w-0 flex-1">
           <p className="studio-kicker">Danger</p>
           <h2 className="mt-2 text-base font-semibold tracking-[-.02em] text-foreground">
-            Delete account.
+            Account deletion.
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">Delete queued.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
