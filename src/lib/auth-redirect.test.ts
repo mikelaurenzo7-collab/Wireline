@@ -8,8 +8,8 @@ describe("auth-redirect", () => {
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
   });
 
-  it("defaults to studio", () => {
-    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
-    expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
+  it("defaults to overview for returning users, studio create for fresh signups", () => {
+    expect(resolvePostAuthDestination("business", "")).toBe("/overview");
+    expect(resolvePostAuthDestination("personal", "")).toBe("/overview");
   });
 });

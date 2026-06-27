@@ -175,6 +175,7 @@ export default function CreateAgentDialog({
               New agent.
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">Name, role, voice, personality, and a starting brief.</p>
+            <p className="mt-1 text-[10px] text-muted-foreground/70">Short intake. Train next. Run immediately.</p>
           </div>
           <Button
             type="button"

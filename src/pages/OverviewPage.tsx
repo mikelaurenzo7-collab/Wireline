@@ -81,7 +81,7 @@ function RosterLoading() {
     >
       {Array.from({ length: 4 }, (_, index) => (
         <div key={index} className="studio-card min-h-[168px] p-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <Skeleton shape="circle" className="size-9" />
             <Skeleton shape="text" className="h-3 w-12" />
           </div>
@@ -100,15 +100,16 @@ function OperatingPath({ activeAgentId }: { activeAgentId: string | null }) {
       <div className="text-center">
         <p className="studio-kicker">Loop</p>
         <h2 className="mt-1 font-semibold tracking-[-0.02em]">Create. Train. Run.</h2>
+        <p className="mt-1 text-xs text-muted-foreground">One surface for each job.</p>
       </div>
       <div className="grid gap-2 md:grid-cols-3">
         {steps.map(({ step, label, title, detail, href, action, icon: Icon }) => (
           <Link
             key={label}
             to={href}
-            className="group flex min-h-[148px] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-background p-4 text-left transition-colors hover:border-primary/25 hover:bg-accent"
+            className="group flex min-h-[148px] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-background p-4 text-center transition-colors hover:border-primary/25 hover:bg-accent"
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
                 {step} / {label}
               </span>
@@ -154,9 +155,9 @@ export default function OverviewPage() {
       <div className="wl-overview flex w-full max-w-none flex-col pb-8">
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
-            <div className="text-center sm:text-left">
+            <div className="text-center">
               <p className="studio-kicker">{CREATE_TRAIN_RUN}</p>
-              <h2 className="mt-2 max-w-[18ch] font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.4vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em] text-center sm:text-left">
+              <h2 className="mt-2 max-w-[18ch] font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.4vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em]">
                 {hasAgents ? "Run the work." : "Build your agent."}
               </h2>
             </div>
@@ -281,10 +282,10 @@ export default function OverviewPage() {
         </section>
 
         <section className="studio-card p-5 sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
-            <div className="text-center sm:text-left w-full sm:w-auto">
+          <div className="flex flex-col items-center gap-3 border-b border-border pb-4 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+            <div>
               <p className="studio-kicker">Your agents</p>
-              <h2 className="wl-section-title mt-2 text-center sm:text-left">
+              <h2 className="wl-section-title mt-1">
                 {hasAgents ? "Ready for work." : "No agents yet."}
               </h2>
             </div>
@@ -305,7 +306,7 @@ export default function OverviewPage() {
                   to={`/studio?agent=${encodeURIComponent(agent.id)}`}
                   className="wl-overview-roster-card studio-card wl-card-action group flex flex-col p-4 transition-colors hover:border-primary/20"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                       <Bot aria-hidden="true" size={18} />
                     </span>
@@ -316,8 +317,8 @@ export default function OverviewPage() {
                       <PostureBadge isBusiness={Boolean(agent.is_business_agent)} compact />
                     </div>
                   </div>
-                  <h3 className="mt-2 wl-card-title tracking-[-0.01em]">{agent.name}</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
+                  <h3 className="mt-2 wl-card-title tracking-[-0.01em] text-center">{agent.name}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground text-center">
                     {formatAgentRoleLabel(agent.role)}
                   </p>
                 </Link>

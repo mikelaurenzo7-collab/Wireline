@@ -306,7 +306,7 @@ export default function ActionsWorkspace() {
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 text-center sm:text-left">
-          <p className="studio-kicker">Wire</p>
+          <p className="studio-kicker text-center sm:text-left">Wire</p>
           <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 justify-center sm:justify-start">
             <h2 className="text-[19px] font-semibold tracking-[-0.02em] leading-tight text-foreground text-center sm:text-left">
               Arm {selectedAgent?.name || "your agent"}.
@@ -400,8 +400,10 @@ export default function ActionsWorkspace() {
 
         <aside className="mt-6 min-h-0 lg:mt-0">
           <div className="text-center">
-            <p className="studio-kicker">Integrations</p>
-            <h2 className="wl-section-title mt-1">Wire the world.</h2>
+            <div className="text-center">
+              <p className="studio-kicker">Integrations</p>
+              <h2 className="wl-section-title mt-1">Wire the world.</h2>
+            </div>
           </div>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {

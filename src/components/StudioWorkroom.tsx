@@ -188,6 +188,20 @@ export default function StudioWorkroom({
         </div>
         <div className="flex items-center gap-2">
           <Link
+            to={`/training?agent=${encodeURIComponent(agentId)}`}
+            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
+            title="Train this agent"
+          >
+            Train
+          </Link>
+          <Link
+            to={`/actions?agent=${encodeURIComponent(agentId)}`}
+            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
+            title="Wire integrations"
+          >
+            Wire
+          </Link>
+          <Link
             to="/settings"
             className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="Open Settings"
@@ -311,6 +325,16 @@ export default function StudioWorkroom({
               <span className="ml-1 hidden sm:inline">Send</span>
             </Button>
           </div>
+        </div>
+        <div className="mt-3 text-center">
+          <a 
+            href="/assets/wireline/work-demo.mp4" 
+            target="_blank" 
+            rel="noopener" 
+            className="text-[10px] font-mono uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+          >
+            Watch 6s demo — direct calls to text + follow-up
+          </a>
         </div>
       </div>
     </main>

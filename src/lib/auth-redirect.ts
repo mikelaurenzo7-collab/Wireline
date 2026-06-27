@@ -59,5 +59,5 @@ export function resolvePostAuthDestination(
     return workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1";
   }
 
-  return "/studio";
+  return "/overview";
 }

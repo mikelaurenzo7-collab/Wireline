@@ -27,9 +27,18 @@ import {
 function EmptyRoster() {
   return (
     <section className="wl-setup-surface place-items-start sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
-      <span className="grid size-12 place-items-center rounded-[var(--radius-lg)] bg-accent text-primary">
-        <Bot size={23} strokeWidth={1.8} />
-      </span>
+      <div className="flex justify-center sm:justify-start gap-4">
+        <img 
+          src="/assets/wireline/agent-personal.jpg" 
+          alt="Wireline personal agent ready to start" 
+          className="h-20 w-20 rounded-[var(--radius-lg)] object-cover opacity-95" 
+        />
+        <img 
+          src="/assets/wireline/agent-business.jpg" 
+          alt="Wireline business agent" 
+          className="h-20 w-20 rounded-[var(--radius-lg)] object-cover opacity-95" 
+        />
+      </div>
       <div className="text-center">
         <p className="wl-setup-surface__eyebrow">First agent</p>
         <h2 className="wl-setup-surface__title mt-2">Start simple.</h2>

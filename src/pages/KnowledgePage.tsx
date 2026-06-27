@@ -44,15 +44,14 @@ function TrainingSurfaceMap({
 }) {
   return (
     <section className="studio-card grid gap-4 p-4 sm:p-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="text-center w-full">
-          <p className="studio-kicker">Training</p>
-          <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.02em] text-foreground">
-            Facts, instructions, sources, voice, test calls, and memory.
-          </h2>
-        </div>
+      <div className="text-center">
+        <p className="studio-kicker">Training</p>
+        <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.02em] text-foreground">
+          Facts, instructions, sources, voice, test calls, and memory.
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">Forge the agent. Then direct it.</p>
       </div>
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 mt-3">
         {trainingNav.map((item) => {
           const { label, note, icon: Icon } = item;
           const href = trainingHref(agentId, item);
