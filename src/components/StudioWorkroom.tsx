@@ -283,7 +283,7 @@ export default function StudioWorkroom({
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
                             aria-pressed={isApplied}
                           >
-                            {isApplied ? "✓ " : ""}Change:{" "}
+                            {isApplied ? "Applied " : ""}Change:{" "}
                             {typeof c === "string" ? c.slice(0, 28) : "config"}
                           </button>
                         );
@@ -301,7 +301,7 @@ export default function StudioWorkroom({
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
                             aria-pressed={isApplied}
                           >
-                            {isApplied ? "✓ " : ""}Wire:{" "}
+                            {isApplied ? "Applied " : ""}Wire:{" "}
                             {typeof t === "string" ? t.slice(0, 24) : "toggle"}
                           </button>
                         );
@@ -319,7 +319,7 @@ export default function StudioWorkroom({
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
                             aria-pressed={isApplied}
                           >
-                            {isApplied ? "✓ " : ""}Action:{" "}
+                            {isApplied ? "Applied " : ""}Action:{" "}
                             {typeof a === "string" ? a.slice(0, 24) : "run"}
                           </button>
                         );
@@ -342,7 +342,7 @@ export default function StudioWorkroom({
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
-                  {workingLabel}…
+                  {workingLabel}...
                 </div>
               </div>
             ) : null}

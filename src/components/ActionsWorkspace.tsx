@@ -370,8 +370,8 @@ export default function ActionsWorkspace() {
               <summary className="cursor-pointer text-[var(--wireline-typography-body-size)] font-semibold text-[var(--wireline-color-text-primary)]">
                 Business tools
               </summary>
-              <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-5 text-[var(--wireline-color-text-secondary)] text-center">
-                Business tools. Enable what fits.
+              <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-5 text-[var(--wireline-color-text-secondary)]">
+                Enable the business tools this agent is allowed to use.
               </p>
               <div className="mt-5 space-y-5">
                 {Object.entries(businessGroups).map(([group, tools]) => (
@@ -404,10 +404,8 @@ export default function ActionsWorkspace() {
 
         <aside className="mt-6 min-h-0 lg:mt-0">
           <div className="text-center">
-            <div className="text-center">
-              <p className="studio-kicker">Integrations</p>
-              <h2 className="wl-section-title mt-1">Wire the world.</h2>
-            </div>
+            <p className="studio-kicker">Integrations</p>
+            <h2 className="wl-section-title mt-1">Wire the world.</h2>
           </div>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {

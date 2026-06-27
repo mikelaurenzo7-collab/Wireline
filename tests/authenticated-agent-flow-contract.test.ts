@@ -64,7 +64,7 @@ describe("authenticated agent flow", () => {
 
     expect(overview).toContain("Create -> Train -> Run");
     expect(overview).toContain("WORKSPACE_VOICE");
-    expect(overview).toContain("WORKSPACE_VOICE.forgeHeadline");
+    expect(overview).toContain("WORKSPACE_VOICE.createHeadline");
     expect(overview).toContain("WORKSPACE_VOICE.runHeadline");
     expect(overview).toContain("WORKSPACE_VOICE.emptyCue");
     expect(overview).toContain("wl-composer-dock");
@@ -76,7 +76,9 @@ describe("authenticated agent flow", () => {
     expect(studioOverview).toContain("placeholder={`Ask ${active.name} to...`}");
     expect(studioOverview).toContain("Open Workroom");
     expect(studioOverview).toContain("Workroom");
-    expect(studioOverview).toContain("Forge");
+    expect(studioOverview).toContain("Train");
+    expect(studioOverview).not.toContain("Pure code visual cue");
+    expect(studioOverview).not.toContain("DIRECT");
     expect(studioOverview).toContain('to="/settings"');
     expect(studioOverview).toContain("Settings");
     expect(studioOverview).not.toContain("WHAT SHOULD IT DO?");
@@ -84,6 +86,11 @@ describe("authenticated agent flow", () => {
     expect(studioOverview).not.toContain("Tap once to switch");
     expect(studioOverview).not.toContain("Describe the outcome. Approvals stay visible.");
     expect(studioOverview).not.toContain("Ready to direct");
+    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("Create one.");
+    expect(read("src/components/StudioWorkspaceV2.tsx")).not.toContain("Forge one.");
+    expect(read("src/lib/product-copy.ts")).toContain('createHeadline: "Create an agent."');
+    expect(read("src/lib/product-copy.ts")).toContain('emptyCue: "Brief it. Train it. Run it."');
+    expect(read("src/lib/product-copy.ts")).not.toContain("Forge an agent.");
 
     expect(studioWorkspace).toContain('next.set("mode", "workroom")');
     expect(studioWorkspace).toContain('mode === "workroom" || mode === "assistant"');
@@ -114,7 +121,9 @@ describe("authenticated agent flow", () => {
     expect(app).not.toContain('path="/training" element={<Navigate to="/studio" replace />}');
 
     expect(trainingPage).toContain("TrainingSurfaceMap");
+    expect(trainingPage).toContain("Train it.");
     expect(trainingPage).toContain("Facts, instructions, sources, voice, test calls, and memory.");
+    expect(trainingPage).not.toContain("Forge");
     expect(trainingPage).toContain('label: "Knowledge"');
     expect(trainingPage).toContain('label: "Instructions"');
     expect(trainingPage).toContain('studioSub: "voices"');

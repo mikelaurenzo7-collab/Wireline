@@ -1,4 +1,4 @@
-/** Shared product voice — one workspace for personal and business agents. */
+/** Shared product voice: one workspace for personal and business agents. */
 
 export const MARKETING_VOICE = {
   eyebrow: "Wireline OS",
@@ -10,9 +10,9 @@ export const MARKETING_VOICE = {
 } as const;
 
 export const WORKSPACE_VOICE = {
-  forgeHeadline: "Forge an agent.",
+  createHeadline: "Create an agent.",
   runHeadline: "Run the work.",
-  emptyCue: "Brief it. Forge it. Task it.",
+  emptyCue: "Brief it. Train it. Run it.",
   commandPrompts: ["Review calls", "Draft reply", "Prep handoff"],
   directAgent: (name?: string | null) => `Direct ${name?.trim() || "your agent"}...`,
 } as const;
@@ -53,5 +53,5 @@ export function rosterSummary(personalCount: number, businessCount: number): str
   if (businessCount > 0) {
     parts.push(`${businessCount} business agent${businessCount === 1 ? "" : "s"}`);
   }
-  return parts.length ? parts.join(" · ") : "No agents yet";
+  return parts.length ? parts.join(" / ") : "No agents yet";
 }

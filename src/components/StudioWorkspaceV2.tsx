@@ -19,7 +19,10 @@ function StudioLoadingState() {
         <Skeleton shape="text" className="h-8 w-80 max-w-full" />
         <Skeleton shape="text" className="h-3 w-64" />
         <div className="pt-3">
-          <Skeleton shape="surface" className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]" />
+          <Skeleton
+            shape="surface"
+            className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]"
+          />
         </div>
         <div className="flex gap-2 pt-1">
           <Skeleton shape="text" className="h-8 w-28 rounded-full" />
@@ -37,7 +40,7 @@ function StudioEmptyState() {
         density="default"
         className="studio-card w-full max-w-xl px-8 py-10 text-center"
         icon={<Sparkles size={28} strokeWidth={1.6} />}
-        title="Forge one."
+        title="Create one."
         description="Name. Voice. Direct."
         action={
           <div className="flex flex-wrap gap-3 pt-1 justify-center">

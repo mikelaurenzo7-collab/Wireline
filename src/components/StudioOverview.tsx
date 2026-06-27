@@ -56,7 +56,7 @@ export default function StudioOverview({
   return (
     <main className="h-full min-h-0 overflow-y-auto bg-background px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-5 sm:gap-6">
-        {/* Quick path actions — purposeful, centered, better than passive lists */}
+        {/* Quick path actions stay compact so the work composer owns the page. */}
         <div className="flex flex-wrap justify-center gap-2 text-center">
           <Link
             to={`/studio?agent=${encodeURIComponent(active.id)}&mode=workroom`}
@@ -116,13 +116,6 @@ export default function StudioOverview({
           </div>
 
           <div className="mt-4 flex flex-col items-center gap-4 rounded-[var(--radius-lg)] border border-border bg-background p-3.5 sm:p-4">
-            {/* Pure code visual cue for directing (no external asset dependency for core flow) */}
-            <div
-              className="w-full max-w-md h-20 rounded-lg bg-muted/60 flex items-center justify-center text-[10px] font-mono tracking-[0.12em] text-muted-foreground border border-border/60"
-              aria-hidden="true"
-            >
-              DIRECT • CALL • TEXT • HANDOFF
-            </div>
             <label className="sr-only" htmlFor="studio-brief">
               What should this agent work on?
             </label>
@@ -227,7 +220,7 @@ export default function StudioOverview({
                       to={`/training?agent=${encodedId}`}
                       className="flex-1 rounded px-2 py-1 font-medium hover:bg-background/50 focus-visible:outline focus-visible:outline-1"
                     >
-                      Forge
+                      Train
                     </Link>
                     <Link
                       to={`/studio?agent=${encodedId}&mode=workroom`}

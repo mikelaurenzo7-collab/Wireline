@@ -46,7 +46,7 @@ function TrainingSurfaceMap({
   return (
     <section className="studio-card grid gap-3 p-4 sm:p-5">
       <div className="wl-centered-header">
-        <p className="studio-kicker">Forge</p>
+        <p className="studio-kicker">Train</p>
         <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.02em] text-foreground">
           Pick a lane.
         </h2>
@@ -114,7 +114,7 @@ function EmptyTraining() {
         density="default"
         className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
-        title="Forge it."
+        title="Train it."
         description="Facts. Rules. Voice."
         action={
           <Button asChild>
@@ -142,7 +142,7 @@ function TrainingRail({
       aria-label="Training sections"
     >
       <div className="px-3 py-3 text-center wl-centered-header">
-        <p className="wl-overline">Forge</p>
+        <p className="wl-overline">Train</p>
         <p className="mt-1 text-sm leading-5 text-muted-foreground">Facts. Rules. Voice.</p>
       </div>
       <nav className="mt-2 grid gap-1">
@@ -189,7 +189,7 @@ export default function KnowledgePage() {
   return (
     <WorkspaceShell
       eyebrow="Operating system"
-      title="Forge"
+      title="Training"
       contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}
       action={
         populated ? (

@@ -93,7 +93,7 @@ export default function OverviewPage() {
             <div className="wl-centered-header">
               <p className="studio-kicker">{`Create -> Train -> Run`}</p>
               <h2 className="mt-1 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-semibold leading-tight tracking-[-0.03em]">
-                {hasAgents ? WORKSPACE_VOICE.runHeadline : WORKSPACE_VOICE.forgeHeadline}
+                {hasAgents ? WORKSPACE_VOICE.runHeadline : WORKSPACE_VOICE.createHeadline}
               </h2>
             </div>
 
@@ -240,7 +240,7 @@ export default function OverviewPage() {
           <div className="flex flex-col items-center gap-3 border-b border-border pb-4 text-center">
             <div>
               <p className="studio-kicker">Fleet</p>
-              <h2 className="wl-section-title mt-1">{hasAgents ? "Ready." : "Forge one."}</h2>
+              <h2 className="wl-section-title mt-1">{hasAgents ? "Ready." : "Create one."}</h2>
             </div>
             <Button asChild variant="secondary" size="sm">
               <Link to={hasAgents ? "/agents" : "/studio?create=1"}>

@@ -88,14 +88,22 @@ async function settle(page) {
 }
 
 async function assertStudioComposer(page, viewportName, issues) {
-  const composer = page.locator("textarea#studio-training-composer").first();
-  if (!(await composer.isVisible().catch(() => false))) {
+  const studioBrief = page.locator("textarea#studio-brief").first();
+  const workroomComposer = page.locator("textarea#studio-workroom-message").first();
+  const emptyCreate = page.getByRole("link", { name: /Create personal agent/i }).first();
+  const composer = (await studioBrief.isVisible().catch(() => false))
+    ? studioBrief
+    : (await workroomComposer.isVisible().catch(() => false))
+      ? workroomComposer
+      : null;
+  if (!composer) {
+    if (await emptyCreate.isVisible().catch(() => false)) return;
     issues.push({
       viewport: viewportName,
       route: "/studio",
       mode: "authenticated",
       kind: "layout",
-      detail: "Studio composer is not visible.",
+      detail: "Studio entry point is not visible.",
     });
     return;
   }
@@ -107,7 +115,7 @@ async function assertStudioComposer(page, viewportName, issues) {
       route: "/studio",
       mode: "authenticated",
       kind: "layout",
-      detail: "Studio composer falls outside the visible viewport.",
+      detail: "Studio entry point falls outside the visible viewport.",
     });
   }
 }
@@ -461,7 +469,7 @@ try {
       await signupPage.goto(`${baseUrl}/studio`, { waitUntil: "domcontentloaded" });
       await settle(signupPage);
 
-      const composer = signupPage.locator("textarea#studio-training-composer").first();
+      const composer = signupPage.locator("textarea#studio-brief").first();
       if (await composer.isVisible().catch(() => false)) {
         await composer.fill(
           "When a customer calls for sales, ask for their email address and phone number, and offer to schedule a callback.",
