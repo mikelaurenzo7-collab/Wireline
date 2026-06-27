@@ -38,7 +38,7 @@
   --wl-status-error: var(--wl-error);
   --wl-surface-hover: var(--wireline-color-surface-subtle);
   --wl-text-primary: var(--wireline-color-text-primary);
-  --wl-text-tertiary: var(--wireline-color-text-secondary);
+  --wl-text-tertiary: var(--wireline-color-text-tertiary);
   --wl-border: var(--wireline-color-border-default);
   --wl-accent-deep: var(--wireline-color-action-primary-pressed);
   --wl-brand-primary: var(--wireline-color-action-primary-default);

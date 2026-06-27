@@ -295,7 +295,7 @@ export default function OverviewPage() {
           ) : (
             <div className="flex min-h-[152px] flex-col items-center justify-center gap-3 py-6 text-center">
               <Sparkles aria-hidden="true" className="size-6 text-primary" />
-              <p className="text-sm text-muted-foreground">Brief it. Forge it. Task it.</p>
+              <p className="text-sm text-muted-foreground">{WORKSPACE_VOICE.emptyCue}</p>
             </div>
           )}
         </section>

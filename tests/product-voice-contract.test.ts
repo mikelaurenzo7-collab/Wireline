@@ -22,8 +22,10 @@ describe("product voice cohesion", () => {
   it("wires landing and overview surfaces to shared voice constants", () => {
     const landing = read("src/components/marketing/PrecisionLanding.tsx");
     const overview = read("src/pages/OverviewPage.tsx");
+    const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE");
     expect(overview).toContain("WORKSPACE_VOICE");
     expect(overview).toContain("wl-composer-dock");
+    expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 });

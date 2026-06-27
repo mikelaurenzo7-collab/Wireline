@@ -123,6 +123,8 @@ const androidAssistantWidget = read(
 const chatgptWidget = read("src/lib/chatgpt-mcp.ts");
 const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
 const productCopy = read("src/lib/product-copy.ts");
+const designVision = read("src/lib/wireline-design-vision.ts");
+const wirelineDesignSystem = read("src/lib/wireline-design-system.ts");
 const legalCss = read("public/static-legal.css");
 const manifest = read("public/site.webmanifest");
 const publicIcon = read("public/wireline-icon.svg");
@@ -697,6 +699,60 @@ mustInclude(
   designSystemCss,
   /\.wl-composer-dock/,
   "design system must expose shared composer dock utility",
+);
+mustInclude(
+  "src/styles/design-system.css",
+  designSystemCss,
+  /\.wl-panel-elevated/,
+  "design system must expose elevated panel primitive",
+);
+mustInclude(
+  "src/styles/design-system.css",
+  designSystemCss,
+  /\.wl-chip-suggestion/,
+  "design system must expose composer suggestion chips",
+);
+mustInclude(
+  "src/styles/foundation.css",
+  foundationCss,
+  /--wl-text-tertiary:\s*var\(--wireline-color-text-tertiary\)/,
+  "foundation must map tertiary text to generated token",
+);
+mustInclude(
+  "design-tokens/wireline.tokens.json",
+  tokenSource,
+  /"tertiary"/,
+  "token source must define tertiary text role",
+);
+mustInclude(
+  "src/lib/wireline-design-vision.ts",
+  designVision,
+  /WIRELINE_DESIGN_VISION/,
+  "design vision manifest must exist",
+);
+mustInclude(
+  "src/lib/wireline-design-system.ts",
+  wirelineDesignSystem,
+  /WL_VISION/,
+  "design system module must re-export vision manifest",
+);
+mustInclude(
+  "src/lib/product-copy.ts",
+  productCopy,
+  /WORKSPACE_VOICE/,
+  "workspace voice must live in product-copy module",
+);
+mustInclude(
+  "apps/browser-extension/panel/index.html",
+  extensionPanel,
+  /Command agents from the page you're on\. Create, train, and run with mono clarity\./,
+  "extension hero must match shared marketing voice",
+);
+mustInclude(
+  "src/lib/wireline-mcp-widget-styles.ts",
+  read("src/lib/wireline-mcp-widget-styles.ts"),
+  /tertiary/,
+  "MCP widget styles must expose tertiary hint color",
 );
 mustInclude(
   "index.html",

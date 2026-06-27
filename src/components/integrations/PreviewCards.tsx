@@ -21,7 +21,7 @@ import { type ToolIntegration } from "../../lib/agent-capabilities";
 import { BRAND } from "../../constants/brand-colors";
 import "./preview-cards.css";
 
-/** Orbit / playbook chrome — brand purple; preview thumbnails keep vendor demo colors */
+/** Orbit / playbook chrome — mono accent; preview thumbnails keep vendor demo colors */
 const INTEGRATION_ORBIT_COLOR = BRAND.colors.primary;
 
 // ── Animated Preview Cards ────────────────────────────────────────────────────

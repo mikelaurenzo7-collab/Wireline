@@ -17,7 +17,7 @@ interface MedallionProps {
   shimmer?: boolean;
   /**
    * Optional accent override (hex/rgb). When provided the gradient + halo are
-   * tinted to this colour instead of the brand purple. Used by callers that
+   * tinted to this colour instead of the mono accent. Used by callers that
    * theme empty states to a contextual accent.
    */
   accent?: string;

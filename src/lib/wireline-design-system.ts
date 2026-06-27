@@ -1,7 +1,13 @@
 /**
  * Wireline product design system — shared class constants for the web app.
+ * Vision: src/lib/wireline-design-vision.ts
  * Tokens: src/styles/foundation.css and src/styles/design-system.css
  */
+
+import { WIRELINE_DESIGN_VISION } from "./wireline-design-vision";
+
+/** Canonical vision metadata for tooling and contracts. */
+export const WL_VISION = WIRELINE_DESIGN_VISION;
 
 /** Wireline Mono accent used across shared UI surfaces. */
 export const WL_BRAND = {
@@ -69,8 +75,7 @@ export const WL_COMPOSER_CLASSES = {
   docBody: "wl-director-doc",
   liveFeedHeader: "wl-live-feed-header",
   heroOrb: "wl-director-hero-orb animate-pulse",
-  starterChip:
-    "wl-starter-chip transition-all duration-200 hover:border-border active:scale-[0.98]",
+  starterChip: "wl-chip-suggestion transition-all duration-200 active:scale-[0.98]",
   orchestrationStep: "wl-orchestration-step transition-all duration-200",
   liveOutput: "wl-live-output",
   threadHeader: "wl-director-thread-header",

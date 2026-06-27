@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, ChevronDown, Cpu, FileText, ImagePlus, Paperclip, X } from "lucide-react";
+import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 
 export type ComposerModel = { id: string; label: string; hint?: string };
 
@@ -129,14 +130,14 @@ export function AssistantComposer({
   };
 
   const shell = dark
-    ? "border-white/10 bg-charcoal/60 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner"
-    : "border-border bg-background focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50";
+    ? "border-white/10 bg-charcoal/60 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner rounded-[18px] border"
+    : `${WL_COMPOSER_CLASSES.composerDock} flex flex-col gap-2 px-2.5 py-2`;
   const iconBtn = dark
     ? "text-white/55 hover:text-white hover:bg-white/10"
-    : "text-muted-foreground hover:text-brand hover:bg-brand/5";
+    : "text-muted-foreground hover:text-foreground hover:bg-accent";
   const chipBg = dark
     ? "border-white/10 bg-white/5 text-white/80"
-    : "border-border bg-card-deep text-foreground";
+    : "border-border bg-card text-foreground";
   const menuBg = dark
     ? "border-white/10 bg-charcoal text-white shadow-[0_18px_40px_rgba(0,0,0,.5)]"
     : "border-border bg-card text-foreground shadow-lg";
@@ -196,9 +197,9 @@ export function AssistantComposer({
           addFiles(e.dataTransfer.files);
         }}
         className={cx(
-          "relative flex flex-col gap-2 rounded-[18px] border px-2.5 py-2 transition-colors",
+          "relative flex flex-col transition-colors",
           shell,
-          dragOver && "border-brand ring-2 ring-brand/40",
+          dragOver && (dark ? "border-brand ring-2 ring-brand/40" : "ring-2 ring-ring/35"),
         )}
       >
         {dragOver && (
@@ -325,7 +326,9 @@ export function AssistantComposer({
             className={cx(
               "ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
               canSend
-                ? "bg-brand text-paper hover:brightness-110 active:scale-95 shadow-sm"
+                ? dark
+                  ? "bg-brand text-paper hover:brightness-110 active:scale-95 shadow-sm"
+                  : "bg-primary text-primary-foreground hover:brightness-95 active:scale-95 shadow-sm"
                 : dark
                   ? "bg-white/10 text-white/40 cursor-not-allowed"
                   : "bg-ink/10 text-muted-foreground cursor-not-allowed",

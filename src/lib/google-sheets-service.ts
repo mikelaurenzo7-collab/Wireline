@@ -255,7 +255,7 @@ async function ensureSpreadsheet(token: string, conn: SheetConnection): Promise<
                         userEnteredFormat: {
                           textFormat: { bold: true },
                           backgroundColor: { red: 0.31, green: 0.12, blue: 0.48 },
-                          // White text on Wireline purple header
+                          // White text on Wireline mono header
                           foregroundColorStyle: {
                             rgbColor: { red: 1, green: 1, blue: 1 },
                           },

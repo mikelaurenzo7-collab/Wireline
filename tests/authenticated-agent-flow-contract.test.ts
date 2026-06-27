@@ -61,11 +61,11 @@ describe("authenticated agent flow", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
 
     expect(overview).toContain("Create -> Train -> Run");
-    expect(overview).toContain("Forge an agent.");
-    expect(overview).toContain("Run the work.");
-    expect(overview).toContain("Brief it.");
-    expect(overview).toContain("Forge it.");
-    expect(overview).toContain("Task it.");
+    expect(overview).toContain("WORKSPACE_VOICE");
+    expect(overview).toContain("WORKSPACE_VOICE.forgeHeadline");
+    expect(overview).toContain("WORKSPACE_VOICE.runHeadline");
+    expect(overview).toContain("WORKSPACE_VOICE.emptyCue");
+    expect(overview).toContain("wl-composer-dock");
     expect(overview).toContain("Open Studio");
     expect(overview).toContain("Work here.");
     expect(overview).toContain("One voice. Everywhere.");

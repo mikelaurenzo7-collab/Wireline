@@ -1,0 +1,69 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { MARKETING_VOICE } from "../src/lib/product-copy";
+import { WL_COMPOSER_CLASSES, WL_VISION } from "../src/lib/wireline-design-system";
+import { WIRELINE_DESIGN_VISION } from "../src/lib/wireline-design-vision";
+import { buildWirelineMcpWidgetCss } from "../src/lib/wireline-mcp-widget-styles";
+
+const root = process.cwd();
+const read = (path: string) => readFileSync(resolve(root, path), "utf8");
+
+const AUTHENTICATED_SURFACE_GLOBS = [
+  "src/pages/OverviewPage.tsx",
+  "src/pages/AgentsPage.tsx",
+  "src/pages/SettingsPage.tsx",
+  "src/components/WorkspaceShell.tsx",
+  "src/components/CreateAgentDialog.tsx",
+  "src/components/StudioWorkroom.tsx",
+];
+
+const OLD_PALETTE = /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF|rgba\(93,\s*63,\s*211/i;
+
+describe("Wireline Mono design vision", () => {
+  it("exports a single canonical vision manifest", () => {
+    expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
+    expect(WIRELINE_DESIGN_VISION.system).toBe("Wireline Mono");
+    expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#111111");
+    expect(WIRELINE_DESIGN_VISION.utilities).toContain("wl-panel-elevated");
+  });
+
+  it("defines panel and composer primitives in the design system stylesheet", () => {
+    const css = read("src/styles/design-system.css");
+    for (const utility of WIRELINE_DESIGN_VISION.utilities) {
+      expect(css).toContain(`.${utility}`);
+    }
+  });
+
+  it("maps tertiary text to the generated token in foundation runtime", () => {
+    const foundation = read("src/styles/foundation.css");
+    expect(foundation).toContain("--wl-text-tertiary: var(--wireline-color-text-tertiary)");
+    expect(read("src/styles/tokens.generated.css")).toContain(
+      "--wireline-color-text-tertiary: #8A8A84",
+    );
+  });
+
+  it("wires composer class constants to CSS utilities", () => {
+    expect(WL_COMPOSER_CLASSES.composerDock).toContain("wl-composer-dock");
+    expect(WL_COMPOSER_CLASSES.starterChip).toContain("wl-chip-suggestion");
+  });
+
+  it("keeps authenticated surfaces free of retired purple palette literals", () => {
+    for (const path of AUTHENTICATED_SURFACE_GLOBS) {
+      expect(existsSync(resolve(root, path))).toBe(true);
+      expect(read(path)).not.toMatch(OLD_PALETTE);
+    }
+  });
+
+  it("aligns extension hero copy with shared marketing voice", () => {
+    const panel = read("apps/browser-extension/panel/index.html");
+    expect(panel).toContain(MARKETING_VOICE.extensionLead);
+  });
+
+  it("keeps MCP widgets on mono canvas, tertiary hints, and composer shell", () => {
+    const css = buildWirelineMcpWidgetCss();
+    expect(css).toContain(`--wl-canvas: ${WIRELINE_DESIGN_VISION.tokens.canvas}`);
+    expect(css).toContain(`--wl-tertiary: ${WIRELINE_DESIGN_VISION.tokens.textTertiary}`);
+    expect(css).toContain(".composer");
+  });
+});

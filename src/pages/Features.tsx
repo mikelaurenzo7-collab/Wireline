@@ -13,6 +13,7 @@ import {
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import { PageMeta } from "../lib/page-meta";
+import { PRODUCT_VERSATILITY } from "../lib/product-copy";
 
 const OUTCOMES = ["Handle", "Qualify", "Schedule"] as const;
 const CUSTOMIZATION = [
@@ -45,7 +46,7 @@ export default function Features() {
             <h1 className="mx-auto mt-4 max-w-[13ch] font-[var(--wireline-font-display)] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
               Give every conversation a clear next step.
             </h1>
-            <p className="wl-public-copy mt-5">Make it yours. Keep the outcome.</p>
+            <p className="wl-public-copy mt-5">{PRODUCT_VERSATILITY.tagline}</p>
             <div className="marketing-hero__actions mt-8">
               <Link
                 to="/signup"

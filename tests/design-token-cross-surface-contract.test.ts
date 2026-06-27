@@ -64,6 +64,7 @@ describe("cross-surface design token generation", () => {
     const designSystem = read("src/styles/design-system.css");
     expect(designSystem).toContain(".wl-composer-dock");
     expect(designSystem).toContain(".wl-chip-suggestion");
+    expect(designSystem).toContain(".wl-panel-elevated");
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("wl-composer-dock");
     expect(overview).toContain("WORKSPACE_VOICE");

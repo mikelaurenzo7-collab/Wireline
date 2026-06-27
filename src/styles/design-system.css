@@ -140,6 +140,23 @@
   transform: translateY(-1px);
 }
 
+/* Raised surfaces — shared depth primitive across app, studio, and modals */
+.wl-panel {
+  background: var(--wireline-card);
+  border: 1px solid var(--wireline-rule);
+}
+
+.wl-panel-elevated {
+  background: var(--wireline-card);
+  border: 1px solid color-mix(in srgb, var(--wireline-rule) 90%, transparent);
+  box-shadow: var(--wireline-elevation-sm);
+}
+
+.wl-panel-elevated:focus-within {
+  border-color: color-mix(in srgb, var(--wireline-rule-strong) 65%, var(--wireline-action-soft));
+  box-shadow: var(--wireline-elevation-card);
+}
+
 /* ChatGPT / Cursor-style command composer — raised dock on canvas */
 .wl-composer-dock {
   border: 1px solid var(--wireline-rule);
