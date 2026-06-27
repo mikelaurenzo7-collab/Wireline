@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ArrowRight,
   Bot,
@@ -7,16 +8,19 @@ import {
   Inbox,
   PlayCircle,
   Plus,
+  Send,
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge, Button, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary } from "../lib/product-copy";
+
+const HOME_COMMANDS = ["Review calls", "Draft reply", "Prep handoff"] as const;
 
 const WORKSPACE_MOVES = [
   { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approve. Follow up." },
@@ -52,10 +56,24 @@ function RosterLoading() {
 }
 
 export default function OverviewPage() {
+  const navigate = useNavigate();
   const { agents, loading, degraded } = useAgents();
+  const [command, setCommand] = useState("");
   const personalCount = agents.filter((agent) => !agent.is_business_agent).length;
   const businessCount = agents.filter((agent) => agent.is_business_agent).length;
   const hasAgents = !loading && agents.length > 0;
+  const primaryAgent = agents[0];
+  const commandText = command.trim();
+
+  function openWorkroom() {
+    if (!primaryAgent) return;
+    const next = new URLSearchParams({ agent: primaryAgent.id, mode: "workroom" });
+    if (commandText) {
+      next.set("command", commandText);
+      next.set("commandNonce", String(Date.now()));
+    }
+    navigate(`/studio?${next.toString()}`);
+  }
 
   return (
     <WorkspaceShell
@@ -73,26 +91,65 @@ export default function OverviewPage() {
     >
       <div className="wl-overview flex w-full max-w-none flex-col pb-8">
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
-          <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
+          <div className="studio-card grid gap-4 border-primary/20 bg-secondary p-4 sm:p-5 lg:p-6">
             <div className="wl-centered-header">
               <p className="studio-kicker">Create / Train / Run</p>
-              <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,1.2rem+1.4vw,2.1rem)] font-semibold leading-tight tracking-[-0.03em]">
+              <h2 className="mt-1 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-semibold leading-tight tracking-[-0.03em]">
                 {hasAgents ? "Run the work." : "Forge an agent."}
               </h2>
             </div>
-            <div className="mt-5 flex flex-wrap justify-center gap-3">
-              <Button asChild>
-                <Link to={hasAgents ? "/studio" : "/studio?create=1"}>
-                  {hasAgents ? "Open Studio" : "Create agent"}
-                  <ArrowRight aria-hidden="true" size={15} />
-                </Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link to={hasAgents ? "/training" : "/studio?create=1&posture=business"}>
-                  {hasAgents ? "Train" : "Business"}
-                </Link>
-              </Button>
-            </div>
+
+            {hasAgents ? (
+              <div className="rounded-[var(--radius-lg)] border border-border bg-background p-3 shadow-[var(--wireline-elevation-sm)]">
+                <label className="sr-only" htmlFor="home-command">
+                  Direct your first agent
+                </label>
+                <textarea
+                  id="home-command"
+                  value={command}
+                  onChange={(event) => setCommand(event.target.value)}
+                  rows={2}
+                  placeholder={`Direct ${primaryAgent?.name || "your agent"}...`}
+                  className="min-h-[72px] w-full resize-none bg-transparent px-1 py-1 text-[16px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/60"
+                  onKeyDown={(event) => {
+                    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                      event.preventDefault();
+                      openWorkroom();
+                    }
+                  }}
+                />
+                <div className="mt-2 flex flex-col gap-3 border-t border-border/70 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap gap-1.5">
+                    {HOME_COMMANDS.map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        onClick={() => setCommand(prompt)}
+                        className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-accent hover:text-foreground"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                  <Button type="button" className="justify-center sm:w-auto" onClick={openWorkroom}>
+                    {commandText ? "Send" : "Open Studio"}
+                    {commandText ? <Send aria-hidden="true" size={15} /> : <ArrowRight aria-hidden="true" size={15} />}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button asChild>
+                  <Link to="/studio?create=1">
+                    Create agent
+                    <ArrowRight aria-hidden="true" size={15} />
+                  </Link>
+                </Button>
+                <Button asChild variant="secondary">
+                  <Link to="/studio?create=1&posture=business">Business</Link>
+                </Button>
+              </div>
+            )}
           </div>
 
           <aside className="studio-card wl-status-card flex flex-col justify-between p-6 sm:p-7">
