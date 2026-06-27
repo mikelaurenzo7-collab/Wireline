@@ -3,15 +3,7 @@ import { Database, Loader2, Plus, ShieldCheck, SlidersHorizontal, Trash2 } from 
 import { useSearchParams } from "react-router-dom";
 
 import { authFetch, safeJson } from "../lib/api";
-import {
-  Badge,
-  Button,
-  EmptyState,
-  Input,
-  NativeSelect,
-  Skeleton,
-  Textarea,
-} from "../components/atoms";
+import { Badge, Button, EmptyState, Input, Skeleton, Textarea } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import { useAgents } from "../contexts/AgentsContext";
 
@@ -47,8 +39,8 @@ function Card({
   children: ReactNode;
 }) {
   return (
-    <article className="flex min-h-[280px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--wireline-elevation-sm)]">
-      <header className="flex flex-col items-center gap-2 border-b border-border px-4 py-4 text-center">
+    <article className="flex min-h-[220px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--wireline-elevation-sm)] sm:min-h-[260px]">
+      <header className="flex flex-col items-center gap-2 border-b border-border px-4 py-3.5 text-center">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-sm bg-muted text-muted-foreground">
           {icon}
         </span>
@@ -123,7 +115,7 @@ function ItemsCard({
       ) : (
         <EmptyState
           density="compact"
-          className="min-h-[190px] border-dashed text-center"
+          className="min-h-[150px] border-dashed text-center"
           icon={icon}
           title="Empty"
           description={empty}
@@ -147,11 +139,11 @@ function ToneCard({ personality, loading }: { personality?: string; loading: boo
         <LoadingRows />
       ) : (
         <>
-          <blockquote className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3 text-[var(--wireline-typography-body-size)] italic leading-6 text-muted-foreground">
+          <blockquote className="border-l-2 border-[color:var(--wireline-color-border-strong)] pl-3 text-[15px] leading-6 text-muted-foreground">
             {personality || "Clear. Confident. Concise."}
           </blockquote>
-          <p className="mt-7 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[.05em] text-muted-foreground">
-            Key traits
+          <p className="mt-5 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[.05em] text-muted-foreground">
+            Traits
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {traits.map((trait) => (
@@ -172,7 +164,7 @@ function SourcesCard({ loading }: { loading: boolean }) {
       {loading ? (
         <LoadingRows />
       ) : (
-        <div className="flex min-h-[190px] flex-col justify-center">
+        <div className="flex min-h-[150px] flex-col justify-center">
           <EmptyState
             density="compact"
             className="min-h-0 border-dashed text-center"
@@ -219,6 +211,7 @@ export default function KnowledgeWorkspace() {
       { replace: true },
     );
   }
+
   const facts = useMemo(
     () => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [],
     [config.knowledge],
@@ -325,29 +318,6 @@ export default function KnowledgeWorkspace() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
-      <div className="flex shrink-0 items-center justify-end lg:hidden">
-        <NativeSelect
-          value={agentId}
-          onChange={(event) =>
-            setParams(
-              (current) => {
-                const updated = new URLSearchParams(current);
-                updated.set("agent", event.target.value);
-                return updated;
-              },
-              { replace: true },
-            )
-          }
-          className="max-w-[260px]"
-          aria-label="Choose agent"
-        >
-          {agents.map((agent) => (
-            <option value={agent.id} key={agent.id}>
-              {agent.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </div>
       <div className="grid shrink-0 grid-cols-4 overflow-hidden rounded-md border border-border bg-muted lg:hidden">
         {(["facts", "guidance", "tone", "sources"] as View[]).map((item) => (
           <button
@@ -376,16 +346,14 @@ export default function KnowledgeWorkspace() {
         </div>
         <div className="min-h-0 xl:hidden">{selected}</div>
 
-        <aside className="mt-4 flex min-h-[480px] flex-col rounded-xl border border-border bg-card p-4 shadow-[var(--wireline-elevation-sm)] xl:mt-0">
+        <aside className="mt-4 flex min-h-0 flex-col rounded-xl border border-border bg-card p-4 shadow-[var(--wireline-elevation-sm)] xl:mt-0 xl:min-h-[480px]">
           <div className="flex items-center gap-2 border-b border-border pb-3">
-            <Plus size={19} className="text-foreground" />
+            <Plus size={18} className="text-foreground" />
             <div>
               <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.01em] text-foreground">
-                Add a detail
+                Add detail
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Add a fact, preference, or handoff preference.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Fact, rule, or handoff.</p>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 rounded-md bg-muted p-1">
@@ -395,7 +363,7 @@ export default function KnowledgeWorkspace() {
               className={`min-h-9 rounded-sm text-[var(--wireline-typography-body-size)] font-medium ${kind === "knowledge" ? "bg-card text-foreground shadow-[var(--wireline-elevation-sm)]" : "text-muted-foreground"}`}
               onClick={() => setKind("knowledge")}
             >
-              Add fact
+              Fact
             </button>
             <button
               type="button"
@@ -403,14 +371,11 @@ export default function KnowledgeWorkspace() {
               className={`min-h-9 rounded-sm text-[var(--wireline-typography-body-size)] font-medium ${kind === "directive" ? "bg-card text-foreground shadow-[var(--wireline-elevation-sm)]" : "text-muted-foreground"}`}
               onClick={() => setKind("directive")}
             >
-              Add guidance
+              Guidance
             </button>
           </div>
-          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
-            <FormField
-              label="Title"
-              description={kind === "knowledge" ? "Name for easy scan." : "Rule or handoff."}
-            >
+          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3">
+            <FormField label="Title" description="Optional label.">
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
@@ -422,23 +387,23 @@ export default function KnowledgeWorkspace() {
             <FormField
               label="Content"
               required
-              description={kind === "knowledge" ? "Fact or detail." : "How to handle."}
+              description="Required."
               error={saveError || undefined}
               className="flex min-h-0 flex-1 flex-col"
             >
               <Textarea
                 value={entry}
                 onChange={(event) => setEntry(event.target.value)}
-                className="mt-1 min-h-[180px] flex-1"
+                className="mt-1 min-h-[132px] flex-1 sm:min-h-[180px]"
                 resize="none"
                 placeholder={
                   kind === "knowledge"
-                    ? "Describe a fact, preference, routine, or policy clearly..."
-                    : "Explain how you want the agent to handle this..."
+                    ? "Fact, preference, routine, or policy."
+                    : "Rule, handoff, or handling preference."
                 }
               />
             </FormField>
-            <FormField label="Tags" description="Tags (optional).">
+            <FormField label="Tags" description="Optional.">
               <Input
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}
