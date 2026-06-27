@@ -10,20 +10,20 @@ import ConversationBalanceCard from "../components/ConversationBalanceCard";
 const BILLING_FLOW = [
   {
     label: "Fund",
-    title: "Start free. Fund live work.",
-    detail: "Personal work starts with Conversation Balance, not a recurring plan.",
+    title: "Start free.",
+    detail: "Balance, not plans.",
     icon: WalletCards,
   },
   {
     label: "Run",
     title: "Use balance first.",
-    detail: "Live calls, texts, and follow-up consume balance before overage is metered.",
+    detail: "Calls eat balance.",
     icon: PlayCircle,
   },
   {
     label: "Reconcile",
-    title: "Stripe keeps the receipt.",
-    detail: "Team and Business plans, invoices, and payment methods stay in Stripe.",
+    title: "Stripe receipts.",
+    detail: "Plans in Stripe.",
     icon: Receipt,
   },
 ] as const;
@@ -45,7 +45,7 @@ export default function BillingSettings() {
     >
       <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-6 pb-6">
         <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(240px,.62fr)_minmax(0,1fr)] xl:items-center">
-          <div className="text-center xl:text-left">
+          <div className="text-center">
             <p className="studio-kicker">Billing</p>
             <h2 className="wl-section-title mt-1">Fund the work.</h2>
           </div>
@@ -82,10 +82,10 @@ export default function BillingSettings() {
 
         <StatusNotice
           tone="info"
-          title="Invoices and receipts"
+          title="Receipts."
           icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
         >
-          Manage payment methods, plan changes, and downloads in the secure Stripe portal.
+          Stripe portal.
         </StatusNotice>
       </div>
     </WorkspaceShell>

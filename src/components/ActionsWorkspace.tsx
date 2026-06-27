@@ -61,23 +61,23 @@ const BUSINESS_TOOL_NAMES = new Set<AgentToolName>([
 const CONSUMER_COPY: Partial<Record<AgentToolName, { label: string; description: string }>> = {
   escalate_to_human: {
     label: "Ask me first",
-    description: "Brings anything sensitive, unclear, or high-stakes back to you.",
+    description: "Escalate the edge cases.",
   },
   create_followup_task: {
     label: "Create a follow-up",
-    description: "Saves a reminder for you when something needs your attention.",
+    description: "Queue what matters.",
   },
   send_email: {
     label: "Send an email",
-    description: "Sends confirmations, summaries, and follow-ups you have approved.",
+    description: "Approved follow-ups.",
   },
   send_text_message: {
     label: "Send a text",
-    description: "Sends a text update when messaging is appropriate.",
+    description: "Text when right.",
   },
   lookup_phone_number: {
     label: "Check a phone number",
-    description: "Verifies a phone number before your agent uses it.",
+    description: "Verify before call.",
   },
 };
 
@@ -106,8 +106,8 @@ function ToolGroup({
   return (
     <section className="studio-card p-5">
       <header className="flex items-center justify-between gap-3 border-b border-border/70 pb-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <h3 className="font-semibold tracking-[-0.01em] text-foreground">
+        <div className="flex min-w-0 items-center gap-3 w-full justify-center">
+          <h3 className="font-semibold tracking-[-0.01em] text-foreground text-center">
             {title}
           </h3>
         </div>
@@ -284,10 +284,10 @@ export default function ActionsWorkspace() {
       <div className="grid h-full min-h-[520px] place-items-center py-8">
         <EmptyState
           density="default"
-          className="studio-card w-full max-w-[560px] px-8 py-12 sm:px-10"
+          className="studio-card w-full max-w-[560px] px-8 py-12 sm:px-10 text-center"
           icon={<Sparkles size={29} />}
-          title="Create the agent before you configure Wire."
-          description="Create an agent first. Then wire it."
+          title="Agent first."
+          description="Create. Then wire."
           action={
             <Button asChild>
               <Link to="/studio?create=1">Create an agent</Link>
@@ -308,7 +308,7 @@ export default function ActionsWorkspace() {
         <div className="min-w-0 text-center sm:text-left">
           <p className="studio-kicker">Wire</p>
           <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 justify-center sm:justify-start">
-            <h2 className="text-[19px] font-semibold tracking-[-0.02em] leading-tight text-foreground">
+            <h2 className="text-[19px] font-semibold tracking-[-0.02em] leading-tight text-foreground text-center sm:text-left">
               Arm {selectedAgent?.name || "your agent"}.
             </h2>
             {!loading ? (
@@ -338,8 +338,8 @@ export default function ActionsWorkspace() {
         </StatusNotice>
       ) : null}
       {saveState === "saved" ? (
-        <StatusNotice className="mb-5" tone="success" title="Permissions saved.">
-          {selectedAgent?.name || "This agent"} can now use the selected actions.
+        <StatusNotice className="mb-5" tone="success" title="Wired.">
+          {selectedAgent?.name || "Agent"} armed.
         </StatusNotice>
       ) : null}
 
@@ -366,9 +366,8 @@ export default function ActionsWorkspace() {
               <summary className="cursor-pointer text-[var(--wireline-typography-body-size)] font-semibold text-[var(--wireline-color-text-primary)]">
                 Business tools
               </summary>
-              <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-5 text-[var(--wireline-color-text-secondary)]">
-                Optional controls for sales, customer records, teams, and commerce. Enable only what
-                this agent needs for its current role.
+              <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-5 text-[var(--wireline-color-text-secondary)] text-center">
+                Business tools. Enable what fits.
               </p>
               <div className="mt-5 space-y-5">
                 {Object.entries(businessGroups).map(([group, tools]) => (

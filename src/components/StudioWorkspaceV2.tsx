@@ -34,7 +34,7 @@ function StudioEmptyState() {
         className="studio-card w-full max-w-xl px-8 py-10 text-left"
         icon={<Sparkles size={28} strokeWidth={1.6} />}
         title="Create one useful agent."
-        description="Name it. Voice it. Direct it."
+        description="Name. Voice. Direct."
         action={
           <div className="flex flex-wrap gap-3 pt-1">
             <Button asChild>

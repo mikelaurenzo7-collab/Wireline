@@ -220,11 +220,9 @@ export default function SalesforceIntegrationPage() {
       }
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-10">
-        <div className="max-w-3xl">
+        <div className="max-w-3xl text-center">
           <p className="wl-page-copy">
-            Wireline records eligible completed calls in Salesforce as Task activities after
-            post-call enrichment. Control that live delivery here and review the exact runtime
-            payload before your team relies on it.
+            Log calls as Salesforce Tasks.
           </p>
         </div>
 
@@ -243,8 +241,8 @@ export default function SalesforceIntegrationPage() {
                     <Send className="size-5 text-primary" />
                     <h2 className="font-semibold text-foreground">Call activity delivery</h2>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Push call outcomes as Salesforce Tasks. Toggle to pause.
+                  <p className="mt-1 text-sm text-muted-foreground text-center">
+                    Push Tasks. Toggle.
                   </p>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
@@ -260,8 +258,8 @@ export default function SalesforceIntegrationPage() {
                   >
                     Log completed calls to Salesforce
                   </label>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    This controls the live post-call Task sync for the connected organization.
+                  <p className="mt-1 text-sm text-muted-foreground text-center">
+                    Post-call sync control.
                   </p>
                 </div>
                 <Switch
@@ -312,37 +310,34 @@ export default function SalesforceIntegrationPage() {
                 </span>
                 <div>
                   <h2 className="font-semibold text-foreground">Activity payload</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    The current Salesforce runtime is intentionally explicit: it creates standard
-                    Tasks rather than applying unverified custom-field mappings.
+                  <p className="mt-1 text-sm text-muted-foreground text-center">
+                    Standard Tasks. No magic fields.
                   </p>
                 </div>
               </div>
               <dl className="divide-y divide-border text-sm">
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Task subject</dt>
-                  <dd className="text-muted-foreground">
-                    Wireline inbound or outbound call, with the resolved intent when available.
+                  <dd className="text-muted-foreground text-center">
+                    Call + intent.
                   </dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Related contact</dt>
-                  <dd className="text-muted-foreground">
-                    The best available Salesforce contact match for the caller’s number.
+                  <dd className="text-muted-foreground text-center">
+                    Best number match.
                   </dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Task details</dt>
-                  <dd className="text-muted-foreground">
-                    Agent, direction, caller number, duration, intent, sentiment, lead score, and
-                    post-call summary.
+                  <dd className="text-muted-foreground text-center">
+                    Agent. Intent. Sentiment.
                   </dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Not yet exposed</dt>
-                  <dd className="text-muted-foreground">
-                    Custom field mapping, transcript attachments, and recording links will appear
-                    only after their runtime delivery contracts are implemented.
+                  <dd className="text-muted-foreground text-center">
+                    Custom fields later.
                   </dd>
                 </div>
               </dl>
@@ -356,16 +351,10 @@ export default function SalesforceIntegrationPage() {
                 <CheckCircle2 className="size-4 text-[color:var(--wireline-color-status-success)]" />
                 <h2 className="font-semibold text-foreground">Runtime guardrails</h2>
               </div>
-              <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
-                <li>OAuth tokens remain encrypted and are never exposed in this workspace.</li>
-                <li>
-                  Pausing delivery affects future automatic activities only; existing Salesforce
-                  records remain unchanged.
-                </li>
-                <li>
-                  Salesforce health and contact matching are evaluated by the server before any Task
-                  is created.
-                </li>
+              <ul className="mt-4 space-y-4 text-sm text-muted-foreground text-center">
+                <li>Tokens encrypted.</li>
+                <li>Pause future only.</li>
+                <li>Health checked before Task.</li>
               </ul>
             </section>
           </aside>

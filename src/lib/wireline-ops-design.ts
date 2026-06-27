@@ -73,8 +73,7 @@ export const OPS_CHANNEL_EMPTY = {
   floor: {
     eyebrow: "Active calls",
     title: "No active callers",
-    description:
-      "Active conversations stream here in real time – listen in, get callbacks, or take over.",
+    description: "Live here. Listen in.",
     actions: [
       { label: "View call history", to: "/phone" },
       { label: "Open roster", to: "/agents", primary: true },
@@ -89,14 +88,12 @@ export const OPS_CHANNEL_EMPTY = {
   fleetAgents: {
     eyebrow: "Full versatility",
     title: "No roster yet",
-    description:
-      "Create an agent for calls, texts, follow-up, email, and browser context under your rules.",
+    description: "Create. Cover channels.",
   },
   agentRecall: {
     eyebrow: "Recall",
     title: "No calls yet",
-    description:
-      "Once this agent takes calls, conversation summaries appear here as follow-up context.",
+    description: "Summaries after calls.",
   },
   agentDockCalls: {
     eyebrow: "Latest calls",
@@ -106,8 +103,7 @@ export const OPS_CHANNEL_EMPTY = {
   phone: {
     eyebrow: "Call history",
     title: "No calls yet",
-    description:
-      "When your agents handle calls, recaps and analytics appear here. Configure a number in Settings to go live.",
+    description: "Recaps after live calls.",
     actions: [
       { label: "Configure a number", to: "/settings", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
@@ -121,8 +117,7 @@ export const OPS_CHANNEL_EMPTY = {
   sms: {
     eyebrow: "SMS",
     title: "No SMS yet",
-    description:
-      "Conversations land here when an agent sends a text or a customer replies. Configure your sender in Settings, then run outbound.",
+    description: "Texts land here.",
     actions: [
       { label: "Configure SMS sender", to: "/settings?tab=carrier", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
@@ -131,7 +126,7 @@ export const OPS_CHANNEL_EMPTY = {
   email: {
     eyebrow: "Email",
     title: "No threads yet",
-    description: "Connect Gmail, Outlook, or Yahoo in Wire so agents can triage and reply.",
+    description: "Connect inbox.",
     actions: [
       { label: "Connect email", to: "/actions", primary: true },
       { label: "Open Agents", to: "/agents" },
@@ -145,8 +140,7 @@ export const OPS_CHANNEL_EMPTY = {
   pipeline: {
     eyebrow: "Pipeline",
     title: "No leads in the pipeline",
-    description:
-      "Track outbound leads. Upload a CSV in Outbound or capture leads from inbound calls.",
+    description: "Track. Upload. Capture.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Open Wire", to: "/actions" },
@@ -155,19 +149,18 @@ export const OPS_CHANNEL_EMPTY = {
   training: {
     eyebrow: "Training",
     title: "No agents to train yet",
-    description: "Create your first agent, then return here for Training, voice, and behavior.",
+    description: "Create agent first.",
     actions: [{ label: "Open Agents", to: "/agents", primary: true }],
   },
   integrations: {
     eyebrow: "Email carriers",
     title: "No carriers linked",
-    description: "Connect Gmail, Outlook, or Yahoo – agents triage and reply from there.",
+    description: "Connect. Triage.",
   },
   audit: {
     eyebrow: "Audit",
     title: "Audit trail is quiet",
-    description:
-      "Every agent action, callback, and policy check writes here. Deploy an agent to start the feed.",
+    description: "Actions logged on deploy.",
     actions: [
       { label: "Deploy an agent", to: "/agents", primary: true },
       { label: "Open Recaps", to: "/overview" },
@@ -181,8 +174,7 @@ export const OPS_CHANNEL_EMPTY = {
   intel: {
     eyebrow: "Action queue",
     title: "All clear",
-    description:
-      "No Account Holder approvals waiting. Autonomous actions land here when agents need your sign-off.",
+    description: "No approvals waiting.",
     actions: [
       { label: "Open Recaps", to: "/overview", primary: true },
       { label: "Open Studio", to: "/studio" },
@@ -197,8 +189,7 @@ export const OPS_CHANNEL_EMPTY = {
   campaigns: {
     eyebrow: "Campaigns",
     title: "No campaigns yet",
-    description:
-      "Group outbound lists into campaigns – track dials, connects, and outcomes in one place.",
+    description: "Group. Track. Dial.",
     actions: [
       { label: "Create campaign", to: "/phone?tab=outbound", primary: true },
       { label: "Import leads", to: "/pipeline" },
@@ -207,8 +198,7 @@ export const OPS_CHANNEL_EMPTY = {
   outboundQueue: {
     eyebrow: "Outbound queue",
     title: "Queue is idle",
-    description:
-      "Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM.",
+    description: "Upload CSV. Dial.",
   },
   campaignLeads: {
     eyebrow: "Campaign leads",
@@ -225,18 +215,17 @@ export const OPS_CHANNEL_EMPTY = {
   cadences: {
     eyebrow: "Sequences",
     title: "No sequences yet",
-    description:
-      "Define call – SMS – email steps with delays. Enroll leads from Pipeline or the API – the job worker runs each step automatically.",
+    description: "Call. SMS. Email. Auto.",
   },
   appointmentsUpcoming: {
     eyebrow: "Appointments",
     title: "No active commitments",
-    description: "Book manually or let agents schedule during calls.",
+    description: "Book or auto.",
   },
   appointmentsHistory: {
     eyebrow: "History",
     title: "No completed appointments yet",
-    description: "Completed and cancelled commitments appear here for follow-up.",
+    description: "Follow-ups land here.",
   },
   contactNotFound: {
     eyebrow: "Contact",
@@ -247,7 +236,7 @@ export const OPS_CHANNEL_EMPTY = {
   contactTimeline: {
     eyebrow: "Timeline",
     title: "No interactions yet",
-    description: "Calls and appointments with this contact appear here once agents engage.",
+    description: "After agent engagement.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "View call history", to: "/phone" },
@@ -257,15 +246,14 @@ export const OPS_CHANNEL_EMPTY = {
 
 /** Dense Training / Agents editor panel empties (nested sections, not route-level) */
 export const OPS_TRAINING_PANEL = {
-  rules: "No rules yet – add one below to set hard limits your agent always respects.",
-  directives: "No directives yet – add tactical constraints below.",
-  facts: "No facts yet – add Training entries below.",
-  pronunciation: "No rules yet. Add a row below.",
+  rules: "No rules. Add below.",
+  directives: "No directives. Add below.",
+  facts: "No facts. Add below.",
+  pronunciation: "No rules. Add row.",
   knowledge: {
     eyebrow: "Training documents",
     title: "No entries yet",
-    description:
-      "Upload a PDF, paste a policy, or add a FAQ below so this agent answers consistently.",
+    description: "Upload PDF or add FAQ.",
   },
 } as const;
 

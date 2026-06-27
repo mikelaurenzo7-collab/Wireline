@@ -24,35 +24,35 @@ const settingsDestinations = [
     href: "/settings/billing",
     icon: CreditCard,
     label: "Billing",
-    detail: "Plan and balance",
+    detail: "Balance.",
     action: "Open",
   },
   {
     href: "/settings/team",
     icon: UsersRound,
     label: "Team",
-    detail: "People and access",
+    detail: "Access.",
     action: "Manage",
   },
   {
     href: "/settings/customization",
     icon: SlidersHorizontal,
     label: "Customize",
-    detail: "Brand and voice",
+    detail: "Voice. Brand.",
     action: "Tune",
   },
   {
     href: "/actions",
     icon: Cable,
     label: "Integrations",
-    detail: "Approved systems",
+    detail: "Wire up.",
     action: "Review",
   },
   {
     href: "/settings/apps",
     icon: MonitorDown,
     label: "Apps",
-    detail: "Mobile and browser",
+    detail: "Surfaces.",
     action: "View",
   },
 ] as const;
@@ -97,7 +97,7 @@ function DangerZone() {
           <h2 className="mt-2 text-base font-semibold tracking-[-.02em] text-foreground">
             Delete account.
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Queues account deletion.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Delete queued.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <label className="grid gap-1.5 text-sm font-semibold text-foreground">
               Type DELETE

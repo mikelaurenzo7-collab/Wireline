@@ -294,7 +294,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           className="studio-card w-full max-w-md px-6 py-10 sm:px-8"
           icon={<Mail className="size-5" />}
           title="No email conversations yet."
-          description="Connect an inbox, then Wireline can organize the conversations that need attention—from lead replies and appointment coordination to follow-up and recap."
+          description="Connect. Then we organize."
           action={
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild>
@@ -434,7 +434,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                   density="compact"
                   icon={<Sparkles className="size-5" />}
                   title="No conversations match this search."
-                  description="Try a sender, subject, outcome, or a shorter search term."
+                  description="Filter by sender, subject or outcome."
                 />
               </li>
             )}
@@ -448,7 +448,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               className="min-h-[360px] border-dashed border-border bg-card p-8"
               icon={<Sparkles className="size-5" />}
               title="Choose a conversation."
-              description="Review the thread, then set a clear operational outcome instead of leaving it as an unread summary."
+              description="Pick thread. Set outcome."
             />
           ) : detailLoading ? (
             <div
@@ -525,7 +525,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     <EmptyState
                       density="compact"
                       title="Message bodies are not stored for this conversation."
-                      description="The synced inbox still has the thread summary, and the outcome controls can make ownership explicit."
+                      description="Summary + controls live here."
                     />
                   )}
                 </div>

@@ -17,12 +17,12 @@ import KnowledgeWorkspace from "../components/KnowledgeWorkspace";
 import { useAgents } from "../contexts/AgentsContext";
 
 const trainingNav = [
-  { label: "Knowledge", note: "Facts and preferences", icon: Database, section: "facts" },
-  { label: "Instructions", note: "Rules and handoff", icon: ShieldCheck, section: "guidance" },
-  { label: "Sources", note: "Files and context", icon: FileText, section: "sources" },
-  { label: "Voice", note: "Sound and identity", icon: Mic2, studioSub: "voices" },
-  { label: "Test call", note: "Practice before live", icon: PlayCircle, studioSub: "simulator" },
-  { label: "Memory", note: "Thread and recall", icon: Brain, studioTab: "memory" },
+  { label: "Knowledge", note: "Facts.", icon: Database, section: "facts" },
+  { label: "Instructions", note: "Rules.", icon: ShieldCheck, section: "guidance" },
+  { label: "Sources", note: "Context.", icon: FileText, section: "sources" },
+  { label: "Voice", note: "Sound.", icon: Mic2, studioSub: "voices" },
+  { label: "Test call", note: "Practice.", icon: PlayCircle, studioSub: "simulator" },
+  { label: "Memory", note: "Recall.", icon: Brain, studioTab: "memory" },
 ] as const;
 
 type TrainingNavItem = (typeof trainingNav)[number];
@@ -45,7 +45,7 @@ function TrainingSurfaceMap({
   return (
     <section className="studio-card grid gap-4 p-4 sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="text-center sm:text-left">
+        <div className="text-center w-full">
           <p className="studio-kicker">Training</p>
           <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.02em] text-foreground">
             Facts. Rules. Voice. Memory.
@@ -92,10 +92,10 @@ function EmptyTraining() {
     <div className="grid h-full min-h-[520px] place-items-center py-8">
       <EmptyState
         density="default"
-        className="studio-card w-full max-w-[512px] px-8 py-12 text-left sm:px-10"
+        className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
-        title="Train the agent."
-        description="Facts and rules live here."
+        title="Forge it."
+        description="Facts. Rules. Here."
         action={
           <Button asChild>
             <Link to="/studio?create=1">
@@ -121,10 +121,10 @@ function TrainingRail({
       className="hidden min-h-0 w-[196px] shrink-0 rounded-2xl border border-border bg-card p-2 lg:block"
       aria-label="Training sections"
     >
-      <div className="px-3 py-3">
+      <div className="px-3 py-3 text-center">
         <p className="wl-overline">Training</p>
         <p className="mt-2 text-sm leading-5 text-muted-foreground">
-          Facts, instructions, sources, voice, and memory.
+          Facts. Rules. Voice.
         </p>
       </div>
       <nav className="mt-2 grid gap-1">

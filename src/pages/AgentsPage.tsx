@@ -30,7 +30,7 @@ function EmptyRoster() {
       <span className="grid size-12 place-items-center rounded-[var(--radius-lg)] bg-accent text-primary">
         <Bot size={23} strokeWidth={1.8} />
       </span>
-      <div className="text-center sm:text-left">
+      <div className="text-center">
         <p className="wl-setup-surface__eyebrow">First agent</p>
         <h2 className="wl-setup-surface__title mt-2">Start simple.</h2>
         <div className="mt-5 flex flex-wrap gap-3">
@@ -111,7 +111,7 @@ function AgentFlowPanel({ agent }: { agent: WorkspaceAgentSummary }) {
 
   return (
     <section className="studio-card grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,.7fr)] lg:items-center">
-      <div className="text-center lg:text-left">
+      <div className="text-center">
         <p className="studio-kicker">Flow</p>
         <h2 className="mt-1 max-w-3xl font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,2.8vw,2rem)] font-semibold leading-[.95] tracking-[-0.03em] text-foreground">
           Create. Train. Run.
@@ -285,9 +285,9 @@ function RosterSection({
   if (!agents.length) return null;
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between gap-3 text-center sm:text-left">
-        <div>
-          <p className="studio-kicker">{title}</p>
+      <div className="mb-3 flex items-center justify-between gap-3 text-center">
+        <div className="w-full">
+          <p className="studio-kicker text-center">{title}</p>
         </div>
         <Button asChild variant="secondary" size="sm">
           <Link to={createHref}>

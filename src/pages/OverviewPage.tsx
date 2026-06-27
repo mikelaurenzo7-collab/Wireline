@@ -21,19 +21,19 @@ import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary } from "../lib/product-copy";
 
 const WORKSPACE_MOVES = [
-  { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approvals and follow-up" },
+  { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approve. Follow up." },
   {
     href: "/training",
     icon: FileText,
     title: "Training",
-    label: "Rules, sources, and evaluation",
+    label: "Facts. Rules. Voice.",
   },
-  { href: "/actions", icon: Cable, title: "Wire", label: "Numbers, routing, and integrations" },
+  { href: "/actions", icon: Cable, title: "Wire", label: "Connect everything." },
   {
     href: "/settings/customization",
     icon: SlidersHorizontal,
     title: "Customize",
-    label: "Brand, voice, and authority",
+    label: "One voice. Everywhere.",
   },
 ] as const;
 
@@ -43,8 +43,8 @@ function operatingSteps(activeAgentId: string | null) {
     {
       step: "01",
       label: "Create",
-      title: "Short intake",
-      detail: "Name, role, voice, personality, and a starting brief.",
+      title: "Brief it.",
+      detail: "Name. Role. Voice. Done.",
       href: "/studio?create=1",
       action: "Create agent",
       icon: Plus,
@@ -52,8 +52,8 @@ function operatingSteps(activeAgentId: string | null) {
     {
       step: "02",
       label: "Train",
-      title: "Make it trustworthy",
-      detail: "Facts, instructions, sources, voice, test calls, and memory.",
+      title: "Forge it.",
+      detail: "Facts. Rules. Voice. Memory.",
       href: encodedAgentId ? `/training?agent=${encodedAgentId}` : "/training",
       action: "Open Training",
       icon: FileText,
@@ -61,8 +61,8 @@ function operatingSteps(activeAgentId: string | null) {
     {
       step: "03",
       label: "Run",
-      title: "Direct live work",
-      detail: "Calls, texts, approvals, follow-up, and handoff from Studio.",
+      title: "Task it.",
+      detail: "Calls. Texts. Handoff.",
       href: encodedAgentId ? `/studio?agent=${encodedAgentId}&mode=workroom` : "/studio?create=1",
       action: "Open Studio",
       icon: PlayCircle,
@@ -95,7 +95,7 @@ function OperatingPath({ activeAgentId }: { activeAgentId: string | null }) {
   const steps = operatingSteps(activeAgentId);
   return (
     <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(220px,.65fr)_minmax(0,1fr)] xl:items-center">
-      <div className="text-center sm:text-left">
+      <div className="text-center">
         <p className="studio-kicker">Loop</p>
         <h2 className="mt-1 font-semibold tracking-[-0.02em]">Create. Train. Run.</h2>
       </div>
@@ -154,7 +154,7 @@ export default function OverviewPage() {
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
             <div className="text-center sm:text-left">
               <p className="studio-kicker">Create → Train → Run</p>
-              <h2 className="mt-2 max-w-[18ch] font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.4vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em]">
+              <h2 className="mt-2 max-w-[18ch] font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.4vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em] text-center sm:text-left">
                 {hasAgents ? "Run the work." : "Build your agent."}
               </h2>
             </div>
@@ -174,7 +174,7 @@ export default function OverviewPage() {
           </div>
 
           <aside className="studio-card flex flex-col justify-between p-6 sm:p-7">
-            <div>
+            <div className="text-center">
               <p className="studio-kicker">Workspace status</p>
               <div className="mt-5 flex items-end gap-2">
                 <span className="wl-metric-value">{loading ? "--" : agents.length}</span>
@@ -204,8 +204,8 @@ export default function OverviewPage() {
         </section>
 
         {degraded ? (
-          <StatusNotice tone="warning" title="Workspace status is partially unavailable.">
-            Roster details may be stale until the affected connection recovers.
+          <StatusNotice tone="warning" title="Status partial.">
+            Connections recovering.
           </StatusNotice>
         ) : null}
 
@@ -217,7 +217,7 @@ export default function OverviewPage() {
               <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                 <User aria-hidden="true" size={19} />
               </span>
-              <div className="mt-5">
+              <div className="mt-5 text-center">
                 <p className="studio-kicker">For you</p>
                 <h2 className="wl-section-title mt-2 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
                   Personal agent
@@ -231,7 +231,7 @@ export default function OverviewPage() {
               <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                 <Briefcase aria-hidden="true" size={19} />
               </span>
-              <div className="mt-5">
+              <div className="mt-5 text-center">
                 <p className="studio-kicker">For business</p>
                 <h2 className="wl-section-title mt-2 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
                   Business agent
@@ -263,13 +263,13 @@ export default function OverviewPage() {
               <Link
                 key={href}
                 to={href}
-                className="wl-overview-shortcut studio-card wl-card-action group flex flex-col p-5 text-left transition-colors hover:border-primary/20"
+                className="wl-overview-shortcut studio-card wl-card-action group flex flex-col p-5 text-center transition-colors hover:border-primary/20"
               >
-                <Icon aria-hidden="true" className="size-5 text-primary" />
-                <div className="mt-auto flex items-end justify-between gap-3">
+                <Icon aria-hidden="true" className="size-5 text-primary mx-auto" />
+                <div className="mt-auto flex flex-col items-center gap-3">
                   <div>
-                    <h3 className="wl-card-title tracking-[-0.01em]">{title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+                    <h3 className="wl-card-title tracking-[-0.01em] text-center">{title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground text-center">{label}</p>
                   </div>
                   <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
                 </div>
@@ -280,10 +280,10 @@ export default function OverviewPage() {
 
         <section className="studio-card p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
-            <div>
+            <div className="text-center sm:text-left w-full sm:w-auto">
               <p className="studio-kicker">Your agents</p>
-              <h2 className="wl-section-title mt-2">
-                {hasAgents ? "Ready for work" : "No agents yet"}
+              <h2 className="wl-section-title mt-2 text-center sm:text-left">
+                {hasAgents ? "Ready for work." : "No agents yet."}
               </h2>
             </div>
             <Button asChild variant="secondary" size="sm">
@@ -322,10 +322,10 @@ export default function OverviewPage() {
               ))}
             </div>
           ) : (
-            <div className="flex min-h-[152px] flex-col items-start justify-center gap-3 py-6">
+            <div className="flex min-h-[152px] flex-col items-center justify-center gap-3 py-6 text-center">
               <Sparkles aria-hidden="true" className="size-6 text-primary" />
               <p className="text-sm text-muted-foreground">
-                Create your first agent from a focused brief.
+                Brief it. Run it.
               </p>
             </div>
           )}

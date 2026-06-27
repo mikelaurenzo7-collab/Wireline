@@ -112,12 +112,11 @@ export default function AgentMemoryPanel({
             </span>
             <div className="min-w-0">
               <p className="text-eyebrow">Agent context</p>
-              <h3 className="mt-1 text-xl font-semibold tracking-[-.025em] text-foreground">
+              <h3 className="mt-1 text-xl font-semibold tracking-[-.025em] text-foreground text-center sm:text-left">
                 What {agentName} can reference
               </h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Wireline separates active conversation context, call-derived recall, and the rules
-                and facts you configure for this agent.
+              <p className="mt-2 text-sm leading-6 text-muted-foreground text-center sm:text-left">
+                Context. Recall. Rules.
               </p>
             </div>
           </div>
@@ -132,9 +131,8 @@ export default function AgentMemoryPanel({
             </span>
             <div>
               <h4 className="font-semibold text-foreground">Conversation thread</h4>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {messageCount} message{messageCount === 1 ? "" : "s"} available in this agent's
-                current thread.
+              <p className="mt-1 text-sm text-muted-foreground text-center sm:text-left">
+                {messageCount} message{messageCount === 1 ? "" : "s"} in thread.
               </p>
             </div>
           </div>
@@ -144,9 +142,8 @@ export default function AgentMemoryPanel({
             </Button>
           ) : null}
         </div>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Clearing this thread removes the stored conversation context. It does not delete
-          configured rules, Training sources, or historical call records.
+        <p className="mt-3 text-sm leading-6 text-muted-foreground text-center">
+          Clears thread only.
         </p>
       </section>
 
@@ -157,8 +154,8 @@ export default function AgentMemoryPanel({
           </span>
           <div>
             <h4 className="font-semibold text-foreground">Recent call recall</h4>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Summaries from the most recent conversations available to this workspace.
+            <p className="mt-1 text-sm text-muted-foreground text-center">
+              Recent summaries.
             </p>
           </div>
         </div>
@@ -192,7 +189,7 @@ export default function AgentMemoryPanel({
             icon={<Phone className="size-5" />}
             eyebrow={OPS_CHANNEL_EMPTY.agentRecall.eyebrow}
             title={OPS_CHANNEL_EMPTY.agentRecall.title}
-            description={`Summaries will appear here after live calls.`}
+            description="After live calls."
             density="compact"
           />
         )}
@@ -206,8 +203,8 @@ export default function AgentMemoryPanel({
             </span>
             <div>
               <h4 className="font-semibold text-foreground">Patterns learned from calls</h4>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Derived observations, shown separately from your configured instructions.
+              <p className="mt-1 text-sm text-muted-foreground text-center">
+                Call-derived.
               </p>
             </div>
           </div>
@@ -234,9 +231,8 @@ export default function AgentMemoryPanel({
               <h4 className="font-semibold text-foreground">
                 Configured rules, facts, and personality
               </h4>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {directives.length} rule{directives.length === 1 ? "" : "s"} - {knowledge.length}{" "}
-                fact{knowledge.length === 1 ? "" : "s"}
+              <p className="mt-1 text-sm text-muted-foreground text-center">
+                {directives.length} rules · {knowledge.length} facts
               </p>
             </div>
           </div>
@@ -249,8 +245,8 @@ export default function AgentMemoryPanel({
             {personality}
           </p>
         ) : (
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            No personality guidance is configured yet.
+          <p className="mt-3 text-sm leading-6 text-muted-foreground text-center">
+            No personality yet.
           </p>
         )}
       </section>

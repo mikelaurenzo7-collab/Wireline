@@ -347,7 +347,7 @@ function CreditTopUpCard({
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           {isActivation
             ? `${CONVERSATION_BALANCE_COPY.subtitle} ${CONVERSATION_BALANCE_COPY.reassurance}`
-            : "Fund live calls, texts, and follow-up only when you need more operating room. If usage is consistently above plan capacity, move up a tier instead of relying on repeated top-ups."}
+            : "Top up when you need more. Scale up for steady use."}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

@@ -48,16 +48,16 @@ function Card({
 }) {
   return (
     <article className="flex min-h-[280px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--wireline-elevation-sm)]">
-      <header className="flex items-start gap-3 border-b border-border px-4 py-4">
+      <header className="flex items-start gap-3 border-b border-border px-4 py-4 justify-center text-center">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-sm bg-muted text-muted-foreground">
           {icon}
         </span>
         <div>
-          <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.02em] text-foreground">
+          <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.02em] text-foreground text-center">
             {title}
           </h2>
           {meta ? (
-            <p className="mt-1 font-mono text-[var(--wireline-typography-overline-size)] leading-4 text-muted-foreground">
+            <p className="mt-1 font-mono text-[var(--wireline-typography-overline-size)] leading-4 text-muted-foreground text-center">
               {meta}
             </p>
           ) : null}
@@ -297,7 +297,7 @@ export default function KnowledgeWorkspace() {
       title="Facts & preferences"
       icon={<Database size={16} />}
       items={facts}
-      empty="Add preferences, routines, important details, and approved information your agent can use."
+      empty="Facts. Preferences. Details."
       loading={loading}
       meta={`${facts.length} items`}
     />
@@ -307,7 +307,7 @@ export default function KnowledgeWorkspace() {
       title="Guidance & handoff"
       icon={<ShieldCheck size={16} />}
       items={guidance}
-      empty="Add the instructions and handoff preferences that shape each conversation."
+      empty="Rules. Handoffs. Preferences."
       loading={loading}
       meta={guidance.length ? `${guidance.length} active` : "0 items"}
     />
@@ -411,8 +411,8 @@ export default function KnowledgeWorkspace() {
               label="Title"
               description={
                 kind === "knowledge"
-                  ? "Name the fact so it is easy to scan later."
-                  : "Summarize the preference, instruction, or handoff."
+                  ? "Name for easy scan."
+                  : "Rule or handoff."
               }
             >
               <Input
@@ -428,8 +428,8 @@ export default function KnowledgeWorkspace() {
               required
               description={
                 kind === "knowledge"
-                  ? "Describe a fact, preference, routine, or policy clearly."
-                  : "Explain how you want the agent to handle this."
+                  ? "Fact or detail."
+                  : "How to handle."
               }
               error={saveError || undefined}
               className="flex min-h-0 flex-1 flex-col"
@@ -448,7 +448,7 @@ export default function KnowledgeWorkspace() {
             </FormField>
             <FormField
               label="Tags"
-              description="Optional comma-separated labels for future filtering and retrieval."
+              description="Tags (optional)."
             >
               <Input
                 value={tags}

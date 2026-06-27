@@ -2,9 +2,9 @@
 
 export const PRODUCT_VERSATILITY = {
   eyebrow: "Agent coverage",
-  tagline: "One workspace for calls, texts, and follow-up.",
+  tagline: "One voice. All channels.",
   short: "Personal and business agents, in one place.",
-  hero: "Handle the conversations that move your day and business forward.",
+  hero: "Conversations, handled.",
 } as const;
 
 export const PRODUCT_POSTURE = {
@@ -12,17 +12,15 @@ export const PRODUCT_POSTURE = {
     badge: "Personal agent",
     badgeShort: "Personal",
     createCta: "Create personal agent",
-    emptyTitle: "Start with a personal agent",
-    emptyBody:
-      "Handle pharmacy calls, scheduling, reminders, and follow-up without chasing every thread yourself.",
+    emptyTitle: "Personal agent.",
+    emptyBody: "Your calls. Your rules.",
   },
   business: {
     badge: "Business agent",
     badgeShort: "Business",
     createCta: "Create business agent",
-    emptyTitle: "Add a business agent when work needs a line",
-    emptyBody:
-      "Represent your company on inbound calls, qualify leads, and book meetings with policies, hours, and escalation you control.",
+    emptyTitle: "Business agent.",
+    emptyBody: "Brand on the line.",
   },
 } as const;
 

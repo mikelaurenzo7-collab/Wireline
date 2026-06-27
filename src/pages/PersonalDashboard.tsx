@@ -59,16 +59,15 @@ export default function PersonalDashboard() {
       <PageMeta title="Personal Agent - Wireline" />
 
       <div className="mx-auto max-w-5xl">
-        <header className="mb-10 text-left">
-          <div className="mb-2 flex items-center gap-3">
+        <header className="mb-10 text-center">
+          <div className="mb-2 flex items-center justify-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--wireline-color-action-primary-container)] font-bold text-[var(--wireline-color-action-primary-default)]">
               AI
             </div>
             <h1 className="text-3xl font-semibold tracking-[-.03em] text-foreground">My Agent</h1>
           </div>
           <p className="max-w-2xl text-lg leading-relaxed text-foreground/70">
-            Hand off the calls you keep putting off. Your agent makes the call, waits on hold, and
-            texts you what matters.
+            Hand off calls. Get the recap.
           </p>
         </header>
 
@@ -77,7 +76,7 @@ export default function PersonalDashboard() {
         ) : !personalAgent ? (
           <div className="flex flex-col items-start gap-4 rounded-xl border border-dashed border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-8 py-16 text-left">
             <User className="size-8 text-[var(--wireline-color-action-primary-default)]" />
-            <div>
+            <div className="text-center">
               <h3 className="text-lg font-semibold text-foreground">Create your first agent.</h3>
             </div>
             <Link to="/studio?create=1" className="studio-primary-button mt-2 text-sm">

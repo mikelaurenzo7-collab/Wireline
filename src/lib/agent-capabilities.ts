@@ -93,13 +93,13 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "view_recent_interactions",
     label: "View recent interactions",
-    description: "Loads recent calls and open context for continuity.",
+    description: "Recent context.",
     group: "core",
   },
   {
     name: "escalate_to_human",
     label: "Escalate to human",
-    description: "Transfers the conversation to a human when risk or complexity is too high.",
+    description: "Hand off tough ones.",
     group: "core",
   },
   {
@@ -119,13 +119,13 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "create_followup_task",
     label: "Create Assistants task",
-    description: "Queues a follow-up task for a human teammate.",
+    description: "Queue follow-up.",
     group: "core",
   },
   {
     name: "send_email",
     label: "Send email",
-    description: "Emails confirmations, quotes, summaries, or follow-ups.",
+    description: "Send summaries.",
     group: "core",
   },
   {
@@ -217,7 +217,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "send_text_message",
     label: "Send SMS / WhatsApp",
-    description: "Sends a text follow-up when the customer consented to messaging.",
+    description: "Text follow-up.",
     group: "messaging",
     integration: "twilio",
   },
@@ -232,8 +232,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "send_slack_notification",
     label: "Notify team via Slack",
-    description:
-      "Posts a message to the configured Slack channel when something important happens.",
+    description: "Slack alert.",
     group: "team",
     integration: "slack",
   },

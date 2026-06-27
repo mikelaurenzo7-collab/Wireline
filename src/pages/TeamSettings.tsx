@@ -81,7 +81,7 @@ export default function TeamSettings() {
       <div className="min-h-0 flex-1 pb-12">
         <div className="mx-auto max-w-[920px] space-y-6">
           <section className="studio-card flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-center sm:text-left">
+            <div className="text-center">
               <Badge variant="info">
                 <ShieldCheck size={14} />
                 Business
@@ -163,7 +163,7 @@ export default function TeamSettings() {
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Invite to workspace</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Choose an email and access level.
+                  Email. Level.
                 </p>
               </div>
               <Button

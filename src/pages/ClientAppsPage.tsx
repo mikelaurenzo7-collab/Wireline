@@ -9,8 +9,8 @@ const clientSurfaces = [
     title: "Wireline Command",
     status: "Private preview",
     statusVariant: "warning" as const,
-    description: "Command agents from the browser tab you already have open.",
-    detail: "Call, text, follow-up, and agent tasks from selected text, page context, URLs, and linked numbers.",
+    description: "Browser tab control.",
+    detail: "Call. Text. Context.",
     action: "Request browser preview",
     href: "mailto:support@trywireline.com?subject=Wireline%20Command%20Preview",
   },
@@ -19,8 +19,8 @@ const clientSurfaces = [
     title: "Wireline for iPhone",
     status: "Release preparation",
     statusVariant: "info" as const,
-    description: "Control Wireline away from your desk.",
-    detail: "Siri, widgets, CallKit, and supported CarPlay communication flows.",
+    description: "Away from desk.",
+    detail: "Siri. Widgets. CarPlay.",
     action: "Ask about iPhone access",
     href: "mailto:support@trywireline.com?subject=Wireline%20for%20iPhone",
   },
@@ -29,8 +29,8 @@ const clientSurfaces = [
     title: "Wireline for Android",
     status: "Release preparation",
     statusVariant: "info" as const,
-    description: "Control Wireline from your Android device.",
-    detail: "Telecom, notifications, widgets, and supported Android Auto communication flows.",
+    description: "Android control.",
+    detail: "Notifications. Widgets.",
     action: "Ask about Android access",
     href: "mailto:support@trywireline.com?subject=Wireline%20for%20Android",
   },
@@ -39,8 +39,8 @@ const clientSurfaces = [
     title: "Wireline in ChatGPT",
     status: "Developer mode",
     statusVariant: "outline" as const,
-    description: "Draft an agent in ChatGPT, then finish setup here.",
-    detail: "Requires a connected Wireline account and Developer Mode connection.",
+    description: "Draft in ChatGPT.",
+    detail: "Finish setup here.",
     action: "Ask about ChatGPT access",
     href: "mailto:support@trywireline.com?subject=Wireline%20in%20ChatGPT",
   },
@@ -65,9 +65,9 @@ export default function ClientAppsPage() {
                   </span>
                   <Badge variant={statusVariant}>{status}</Badge>
                 </div>
-                <h2 className="wl-card-title mt-5 text-[var(--wireline-typography-h3-size)]">{title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-                <p className="mt-2 text-xs font-semibold leading-5 text-muted-foreground">{detail}</p>
+                <h2 className="wl-card-title mt-5 text-[var(--wireline-typography-h3-size)] text-center">{title}</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground text-center">{description}</p>
+                <p className="mt-2 text-xs font-semibold leading-5 text-muted-foreground text-center">{detail}</p>
                 <Button asChild variant="link" className="mt-auto w-fit px-0 pt-5 text-sm">
                   <a href={href}>
                     {action} <ArrowUpRight size={15} />

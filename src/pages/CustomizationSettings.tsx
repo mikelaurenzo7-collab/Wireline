@@ -22,7 +22,7 @@ const customizationLayers = [
   {
     label: "Brand",
     title: "Brand profile",
-    detail: "Name, color, blurb, assets, and design context for every generated surface.",
+    detail: "Name. Color. Assets.",
     action: "Review apps",
     href: "/settings/apps",
     icon: Palette,
@@ -30,7 +30,7 @@ const customizationLayers = [
   {
     label: "Voice",
     title: "Voice identity",
-    detail: "Voice choice, pronunciation, pace, personality, and test calls in one training path.",
+    detail: "Choice. Pace. Personality.",
     action: "Open Training",
     href: "/training",
     icon: Mic2,
@@ -38,7 +38,7 @@ const customizationLayers = [
   {
     label: "Authority",
     title: "Operating authority",
-    detail: "Autonomy defaults, approvals, handoff, escalation, retention, and CSAT boundaries.",
+    detail: "Rules. Handoff. Escalation.",
     action: "Review controls",
     href: "/settings",
     icon: SlidersHorizontal,
@@ -46,7 +46,7 @@ const customizationLayers = [
   {
     label: "Goals",
     title: "Success targets",
-    detail: "Primary offer, audience, KPI focus, follow-up standard, and measurable goals.",
+    detail: "KPIs. Follow-up. Offer.",
     action: "Set guidance",
     href: "/training?section=guidance",
     icon: Target,
@@ -56,22 +56,22 @@ const customizationLayers = [
 const appCarryover = [
   {
     label: "Studio",
-    detail: "Agent creation, workroom defaults, and training start from the same profile.",
+    detail: "Same profile. Everywhere.",
     icon: Bot,
   },
   {
     label: "Browser",
-    detail: "Page context, selected text, URLs, and command actions inherit brand and authority.",
+    detail: "Context inherits.",
     icon: MonitorDown,
   },
   {
     label: "Mobile",
-    detail: "Notifications, callbacks, widgets, and handoff respect the same escalation rules.",
+    detail: "Rules travel.",
     icon: Smartphone,
   },
   {
     label: "ChatGPT",
-    detail: "Drafted agents and suggestions stay aligned with the saved operating profile.",
+    detail: "Aligned drafts.",
     icon: MessageSquareText,
   },
 ] as const;
@@ -93,7 +93,7 @@ export default function CustomizationSettings() {
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-8">
         <section className="studio-card grid gap-5 border-primary/20 bg-secondary p-6 sm:p-7 xl:grid-cols-[minmax(0,.8fr)_minmax(320px,.55fr)] xl:items-end">
-          <div className="text-center xl:text-left">
+          <div className="text-center">
             <p className="studio-kicker">Profile</p>
             <h2 className="wl-section-title mt-1">One voice, everywhere.</h2>
           </div>
@@ -148,7 +148,7 @@ export default function CustomizationSettings() {
 
         <section className="studio-card p-5 sm:p-6">
           <div className="flex flex-col items-center gap-2 border-b border-border pb-3 text-center sm:flex-row sm:items-center sm:justify-between">
-            <div>
+            <div className="text-center w-full sm:w-auto sm:text-left">
               <p className="studio-kicker">Carryover</p>
               <h2 className="wl-section-title mt-1">Taste travels.</h2>
             </div>
@@ -173,11 +173,10 @@ export default function CustomizationSettings() {
 
         <StatusNotice
           tone="info"
-          title="Customization contract"
+          title="One profile."
           icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
         >
-          Keep shared identity in one operating profile, then allow agent-specific overrides only
-          where the job truly needs a different voice, rule, or target.
+          Override only where needed.
         </StatusNotice>
       </div>
     </WorkspaceShell>
