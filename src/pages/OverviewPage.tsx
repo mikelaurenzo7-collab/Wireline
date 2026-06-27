@@ -20,6 +20,8 @@ import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary } from "../lib/product-copy";
 
+const CREATE_TRAIN_RUN = "Create -> Train -> Run";
+
 const WORKSPACE_MOVES = [
   { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approve. Follow up." },
   {
@@ -153,7 +155,7 @@ export default function OverviewPage() {
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
             <div className="text-center sm:text-left">
-              <p className="studio-kicker">Create -> Train -> Run</p>
+              <p className="studio-kicker">{CREATE_TRAIN_RUN}</p>
               <h2 className="mt-2 max-w-[18ch] font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.4vw,2.2rem)] font-semibold leading-tight tracking-[-0.03em] text-center sm:text-left">
                 {hasAgents ? "Run the work." : "Build your agent."}
               </h2>
