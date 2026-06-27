@@ -140,7 +140,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         className="mt-0 shrink-0"
         aria-label="ROI snapshot"
       >
-        <div className="rounded-md border border-brand/15 bg-card/70 p-3 shadow-[0_8px_28px_-18px_rgba(107,43,153,0.22)]">
+        <div className="rounded-md border border-brand/15 bg-card/70 p-3 shadow-[var(--wireline-elevation-sm)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-eyebrow !text-brand">ROI snapshot</p>
@@ -175,7 +175,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
       aria-labelledby="roi-heading"
       data-testid="roi-calculator"
     >
-      <div className="rounded-md border border-brand/12 bg-gradient-to-br from-card via-paper to-card p-4 sm:p-5 shadow-[0_8px_32px_-12px_rgba(107,43,153,0.12)]">
+      <div className="rounded-md border border-brand/12 bg-gradient-to-br from-card via-paper to-card p-4 sm:p-5 shadow-[var(--wireline-elevation-sm)]">
         <div className="flex items-center gap-2 mb-3">
           <span className="hero-accent-line bg-brand" />
           <h2
@@ -295,10 +295,10 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               </div>
               <a
                 href="/signup"
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-brand text-paper text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] font-semibold hover:bg-brand-deep hover:-translate-y-px transition-all shadow-[0_6px_18px_-8px_rgba(107,43,153,0.5)]"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-brand text-paper text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] font-semibold hover:bg-brand-deep hover:-translate-y-px transition-all shadow-[var(--wireline-elevation-md)]"
                 data-testid="roi-cta-start"
               >
-                Start free trial
+                Start free
               </a>
             </div>
           </div>

@@ -434,14 +434,12 @@ function LivePulse({ count }: { count: number }) {
         <div
           className={cn(
             "flex items-center justify-center h-7 px-2 rounded-md",
-            live ? "bg-purple-500/10 wl-ambient-glow" : "bg-white/[0.03]",
+            live ? "bg-primary/10 wl-ambient-glow" : "bg-white/[0.03]",
           )}
           title={live ? `${count} live call${count === 1 ? "" : "s"}` : "Floor is quiet"}
         >
           <span className="relative inline-flex w-2.5 h-2.5 shrink-0 items-center justify-center">
-            {live && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-purple-400/55" />
-            )}
+            {live && <span className="absolute inset-0 rounded-full animate-ping bg-primary/55" />}
             <span
               className={cn(
                 "relative w-2 h-2 rounded-full",

@@ -24,7 +24,7 @@ router.post(
     return res.status(410).json({
       code: "LEGACY_PLAN_RETIRED",
       error:
-        "This personal subscription is no longer offered. Build and test for free, then add Conversation Balance when you are ready for live work.",
+        "This personal subscription is no longer offered. Start free. Fund live work with Conversation Balance when you are ready.",
       replacement: "conversation_balance",
     });
   },

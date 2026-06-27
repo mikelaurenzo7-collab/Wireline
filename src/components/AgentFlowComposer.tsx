@@ -749,7 +749,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         "relative z-10 flex items-center gap-3 p-3 rounded-md border transition-all cursor-pointer group",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                         activeStepId === step.id
-                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(107,43,153,0.1)]"
+                          ? "bg-brand/10 border-brand/40 shadow-[var(--wireline-elevation-sm)]"
                           : "wl-panel border-border hover:border-brand/30",
                       )}
                     >

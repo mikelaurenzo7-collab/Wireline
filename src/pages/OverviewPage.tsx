@@ -24,13 +24,13 @@ const HOME_COMMANDS = ["Review calls", "Draft reply", "Prep handoff"] as const;
 
 const WORKSPACE_MOVES = [
   { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approve. Follow up." },
-  { href: "/training", icon: FileText, title: "Train", label: "Facts. Rules. Voice." },
+  { href: "/training", icon: FileText, title: "Training", label: "Facts. Rules. Voice." },
   { href: "/actions", icon: Cable, title: "Wire", label: "Connect tools." },
   {
     href: "/settings/customization",
     icon: SlidersHorizontal,
     title: "Tune",
-    label: "One voice.",
+    label: "One voice. Everywhere.",
   },
 ] as const;
 
@@ -93,7 +93,7 @@ export default function OverviewPage() {
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="studio-card grid gap-4 border-primary/20 bg-secondary p-4 sm:p-5 lg:p-6">
             <div className="wl-centered-header">
-              <p className="studio-kicker">Create / Train / Run</p>
+              <p className="studio-kicker">{`Create -> Train -> Run`}</p>
               <h2 className="mt-1 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-semibold leading-tight tracking-[-0.03em]">
                 {hasAgents ? "Run the work." : "Forge an agent."}
               </h2>
@@ -133,22 +133,31 @@ export default function OverviewPage() {
                   </div>
                   <Button type="button" className="justify-center sm:w-auto" onClick={openWorkroom}>
                     {commandText ? "Send" : "Open Studio"}
-                    {commandText ? <Send aria-hidden="true" size={15} /> : <ArrowRight aria-hidden="true" size={15} />}
+                    {commandText ? (
+                      <Send aria-hidden="true" size={15} />
+                    ) : (
+                      <ArrowRight aria-hidden="true" size={15} />
+                    )}
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button asChild>
-                  <Link to="/studio?create=1">
-                    Create agent
-                    <ArrowRight aria-hidden="true" size={15} />
-                  </Link>
-                </Button>
-                <Button asChild variant="secondary">
-                  <Link to="/studio?create=1&posture=business">Business</Link>
-                </Button>
-              </div>
+              <>
+                <p className="text-center text-sm text-muted-foreground">
+                  Brief it. Forge it. Task it.
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Button asChild>
+                    <Link to="/studio?create=1">
+                      Create agent
+                      <ArrowRight aria-hidden="true" size={15} />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="secondary">
+                    <Link to="/studio?create=1&posture=business">Business</Link>
+                  </Button>
+                </div>
+              </>
             )}
           </div>
 
@@ -288,7 +297,7 @@ export default function OverviewPage() {
           ) : (
             <div className="flex min-h-[152px] flex-col items-center justify-center gap-3 py-6 text-center">
               <Sparkles aria-hidden="true" className="size-6 text-primary" />
-              <p className="text-sm text-muted-foreground">Brief it. Run it.</p>
+              <p className="text-sm text-muted-foreground">Brief it. Forge it. Task it.</p>
             </div>
           )}
         </section>

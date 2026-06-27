@@ -107,7 +107,7 @@ export default function ResetPassword() {
                 Reset password
               </h1>
               <p className="text-caption mt-1.5">
-                Choose a new password for your Account Holder account.
+                Choose a new password for your Wireline account.
               </p>
             </div>
           </div>
@@ -127,8 +127,8 @@ export default function ResetPassword() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted/80 mb-6 leading-relaxed">
-                Pick a new password to finish resetting your Wireline account. Use at least 8 characters
-                with uppercase, lowercase, and a number.
+                Pick a new password to finish resetting your Wireline account. Use at least 8
+                characters with uppercase, lowercase, and a number.
               </p>
 
               <FormField label="New password" htmlFor="reset-password" required>

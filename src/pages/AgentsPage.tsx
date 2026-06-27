@@ -6,11 +6,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { StatusNotice } from "../components/molecules";
 import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
-import {
-  formatAgentRoleLabel,
-  PRODUCT_POSTURE,
-  PRODUCT_VERSATILITY,
-} from "../lib/product-copy";
+import { formatAgentRoleLabel, PRODUCT_POSTURE, PRODUCT_VERSATILITY } from "../lib/product-copy";
 
 function EmptyRoster() {
   return (
@@ -54,7 +50,10 @@ function LoadingRoster() {
       aria-busy="true"
     >
       {Array.from({ length: 6 }, (_, index) => (
-        <div key={index} className="rounded-[var(--radius-xl)] border border-border bg-card p-4 sm:p-5">
+        <div
+          key={index}
+          className="rounded-[var(--radius-xl)] border border-border bg-card p-4 sm:p-5"
+        >
           <div className="flex items-start gap-3">
             <Skeleton shape="circle" className="size-10" />
             <div className="flex-1 space-y-2">
@@ -129,11 +128,40 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
       </div>
 
       <div className="mt-3 grid gap-1.5 rounded-lg border border-border/60 bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-        <Link to="/settings/apps" className="truncate font-semibold text-foreground hover:text-primary">
+        <Link
+          to="/settings/apps"
+          className="truncate font-semibold text-foreground hover:text-primary"
+        >
           {agent.phone_number || "Configure number"}
         </Link>
         <Link to="/settings/billing" className="font-semibold text-foreground hover:text-primary">
-          Balance
+          Usage
+        </Link>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.06em]">
+        <Link
+          to={`/training?agent=${encodedAgentId}&section=facts`}
+          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+        >
+          Knowledge
+        </Link>
+        <Link
+          to={`/training?agent=${encodedAgentId}&section=guidance`}
+          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+        >
+          Instructions
+        </Link>
+        <Link
+          to={`/studio?agent=${encodedAgentId}&tab=training&sub=voices`}
+          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+        >
+          Voice
+        </Link>
+        <Link
+          to={`/studio?agent=${encodedAgentId}&tab=memory`}
+          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+        >
+          Memory
         </Link>
       </div>
     </article>
@@ -204,6 +232,7 @@ export default function AgentsPage() {
       }
     >
       <div className="flex w-full flex-col gap-5 pb-6">
+        <p className="text-center text-sm text-muted-foreground">Create. Train. Run.</p>
         {degraded ? (
           <StatusNotice tone="destructive" title="Roster unavailable">
             Saved agents are unchanged. Try again in a moment.

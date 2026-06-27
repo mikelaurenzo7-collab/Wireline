@@ -78,7 +78,7 @@ function DangerZone() {
       const date = body?.scheduled_purge_at
         ? new Date(body.scheduled_purge_at).toLocaleDateString()
         : "after the grace window";
-      setMessage(`Deletion queued for ${date}.`);
+      setMessage(`Delete queued. Purge scheduled for ${date}.`);
       setConfirmation("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Deletion request failed.");
@@ -94,7 +94,7 @@ function DangerZone() {
         <div className="min-w-0 flex-1">
           <p className="studio-kicker">Danger</p>
           <h2 className="mt-2 text-base font-semibold tracking-[-.02em] text-foreground">
-            Delete account.
+            Account deletion
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <label className="grid gap-1.5 text-sm font-semibold text-foreground">
@@ -156,6 +156,16 @@ export default function SettingsPage() {
   return (
     <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="pt-1 pb-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
+        <section className="studio-card p-4 text-center sm:p-5">
+          <p className="studio-kicker">Paths</p>
+          <h2 className="wl-section-title mt-1">Pick your path.</h2>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/studio">Open Studio</Link>
+            </Button>
+          </div>
+        </section>
+
         <section className="studio-card p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">

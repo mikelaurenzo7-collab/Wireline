@@ -173,10 +173,11 @@ export default function CreateAgentDialog({
               id="create-agent-title"
               className="font-[var(--wireline-font-family-display)] text-2xl font-semibold leading-tight tracking-[-.04em] text-foreground"
             >
-              New agent
+              New agent.
             </h2>
             <p id="create-agent-description" className="mt-1 text-sm text-muted-foreground">
-              Name. Role. Voice. Brief.
+              Name, role, voice, personality, and a starting brief. Short intake. Train next. Run
+              immediately.
             </p>
           </div>
           <Button
@@ -246,7 +247,9 @@ export default function CreateAgentDialog({
 
         <label
           className={`mt-3 flex cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border p-3 text-left transition-colors ${
-            provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-background hover:bg-muted"
+            provisionNumber
+              ? "border-primary/35 bg-accent"
+              : "border-border bg-background hover:bg-muted"
           }`}
         >
           <input
@@ -319,7 +322,8 @@ export default function CreateAgentDialog({
           ) : (
             <WandSparkles aria-hidden="true" size={16} />
           )}
-          Create agent
+          <span className="sr-only">Create agent</span>
+          Create and open Training
         </Button>
       </form>
     </div>

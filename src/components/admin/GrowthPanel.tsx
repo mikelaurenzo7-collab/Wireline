@@ -94,7 +94,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     className={cn(
                       "w-12 h-12 rounded-md flex items-center justify-center shrink-0 transition-all",
                       settings.prospecting_enabled
-                        ? "bg-brand/20 text-brand shadow-[0_0_15px_rgba(107, 43, 153 ,0.3)]"
+                        ? "bg-brand/20 text-brand shadow-[var(--wireline-elevation-sm)]"
                         : "bg-black/10 text-muted",
                     )}
                   >
@@ -342,7 +342,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         className={cn(
                           "px-2 py-2 rounded-md border wl-label font-bold h-auto min-h-0",
                           (settings.target_employee_ranges || []).includes(range.value)
-                            ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(107, 43, 153 ,0.1)]"
+                            ? "bg-brand/10 border-brand/40 text-brand shadow-[var(--wireline-elevation-sm)]"
                             : "bg-black/5 border-input text-muted/70 hover:border-white/20",
                         )}
                       >

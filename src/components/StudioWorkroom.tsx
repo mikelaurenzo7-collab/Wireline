@@ -410,7 +410,7 @@ export default function StudioWorkroom({
           </div>
         </div>
         <div className="mt-2 hidden text-center text-[10px] text-muted-foreground sm:block">
-          Calls, texts, follow-up, approvals, handoff.
+          Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.
         </div>
       </div>
     </main>

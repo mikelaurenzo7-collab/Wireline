@@ -13,7 +13,7 @@ export const CONVERSATION_BALANCE_PRESETS_USD = [5, 10, 25, 50] as const;
 
 export const CONVERSATION_BALANCE_COPY = {
   title: "Conversation Balance",
-  subtitle: "Build and test for free. Add $5 when you are ready to put an agent to work.",
+  subtitle: "Start free. Add balance when you are ready to run calls, texts, and follow-up.",
   reassurance:
     "No subscription for personal use. No automatic reload. You decide when to add more.",
 } as const;

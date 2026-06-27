@@ -3,8 +3,8 @@ import { Cable, CreditCard, MonitorDown, Settings, UsersRound } from "lucide-rea
 
 const mobileUtilityLinks = [
   { href: "/settings", label: "Settings", detail: "Account", icon: Settings },
-  { href: "/settings/billing", label: "Billing", detail: "Usage", icon: CreditCard },
-  { href: "/actions", label: "Integrations", detail: "Tools", icon: Cable },
+  { href: "/settings/billing", label: "Billing", detail: "Usage + balance", icon: CreditCard },
+  { href: "/actions", label: "Integrations", detail: "Connected tools", icon: Cable },
   { href: "/settings/apps", label: "Apps", detail: "Surfaces", icon: MonitorDown },
   { href: "/settings/team", label: "Team", detail: "Access", icon: UsersRound },
 ] as const;
@@ -16,7 +16,9 @@ function isActive(pathname: string, href: string) {
 }
 
 function hidesOwnControls(pathname: string) {
-  return pathname === "/studio" || pathname.startsWith("/studio/") || pathname.startsWith("/settings");
+  return (
+    pathname === "/studio" || pathname.startsWith("/studio/") || pathname.startsWith("/settings")
+  );
 }
 
 export default function MobileBrowserUtilities() {
@@ -57,7 +59,9 @@ export default function MobileBrowserUtilities() {
                   <Icon size={15} aria-hidden="true" />
                 </span>
                 <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
-                  <span className="truncate font-semibold leading-none text-foreground">{label}</span>
+                  <span className="truncate font-semibold leading-none text-foreground">
+                    {label}
+                  </span>
                   <span className="shrink-0 text-[11px] font-medium leading-none text-muted-foreground">
                     {detail}
                   </span>

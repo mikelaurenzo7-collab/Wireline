@@ -228,7 +228,7 @@ function Sparkline({ values }: { values: number[] }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           points={points}
-          className="drop-shadow-[0_2px_8px_rgba(107, 43, 153 ,0.4)]"
+          className="drop-shadow-[0_2px_8px_rgba(17,17,17,0.2)]"
         />
         <polygon fill="url(#sparkfill)" points={`0,${h} ${points} ${w},${h}`} />
       </svg>
