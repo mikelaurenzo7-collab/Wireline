@@ -1,3 +1,4 @@
+import { BRAND } from "../constants/brand-colors";
 import type { ContactAgent } from "./contact-agents";
 
 /**
@@ -34,9 +35,8 @@ export const SHOWCASE_AGENTS: ReadonlyArray<ShowcaseAgent> = [
     handles: "demo, fun, jingle, singing, marquee",
     tel: "+12122970620",
     display: "(212) 297-0620",
-    // Brand chromeGlow — playful but inside the purple/cream palette
-    // (was #FF7A59 coral, the lone off-palette hue on the marketing site).
-    tint: "#C77DFF",
+    // Mono card accent — surface container, not a decorative hue.
+    tint: BRAND.colors.surfaceContainer,
     defaultVibe: "playful",
     tagline:
       "She answers the phone singing — then catches herself with a normal greeting. Give her a call to hear how playful a Wireline agent can be.",

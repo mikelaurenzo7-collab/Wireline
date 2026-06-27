@@ -8,6 +8,7 @@
   --primary-pressed: var(--wireline-color-action-primary-pressed);
   --text: var(--wireline-color-text-primary);
   --muted: var(--wireline-color-text-secondary);
+  --tertiary: var(--wireline-color-text-tertiary);
   --border: var(--wireline-color-border-default);
   --focus: var(--wireline-color-focus-default);
   --danger: var(--wireline-color-status-error);
@@ -128,31 +129,37 @@ textarea:focus-visible {
 
 .handoff-form {
   display: grid;
-  gap: 9px;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--wireline-elevation-card);
+  padding: var(--wireline-space-150);
 }
 
 .handoff-form label {
   font-size: var(--wireline-typography-caption-size);
   font-weight: 700;
+  color: var(--muted);
 }
 
-textarea {
+.handoff-form textarea {
   width: 100%;
   resize: vertical;
   min-height: 104px;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius-control);
-  background: var(--surface);
+  background: transparent;
   color: var(--text);
-  padding: 10px;
+  padding: 2px 0;
   line-height: 1.45;
 }
 
-textarea::placeholder { color: var(--muted); }
+.handoff-form textarea::placeholder { color: var(--tertiary); }
 
 .privacy-note {
   margin: 0;
-  color: var(--muted);
+  color: var(--tertiary);
   font-size: var(--wireline-typography-overline-size);
   line-height: 1.5;
 }
@@ -166,7 +173,7 @@ textarea::placeholder { color: var(--muted); }
 
 .primary-button {
   min-height: max(40px, var(--wireline-interaction-target-comfortable));
-  border-radius: var(--radius-control);
+  border-radius: var(--wireline-radius-pill);
   background: var(--primary);
   color: var(--wireline-color-text-onAction);
   font-size: var(--wireline-typography-caption-size);

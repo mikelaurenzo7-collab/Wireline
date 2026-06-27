@@ -79,7 +79,7 @@
 }
 
 .wl-workspace-content .studio-card:not(.wl-card-action) {
-  box-shadow: 0 1px 1px rgba(21, 32, 56, 0.025);
+  box-shadow: var(--wireline-elevation-sm);
 }
 
 .wl-workspace-content :is(.studio-card, .wl-setup-surface) :is(h2, h3) {
@@ -241,7 +241,7 @@
 }
 
 .marketing-channel-card {
-  box-shadow: 0 1px 1px rgba(21, 32, 56, 0.02);
+  box-shadow: var(--wireline-elevation-sm);
 }
 
 .marketing-channel-card:hover {

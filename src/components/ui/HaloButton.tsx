@@ -1,8 +1,8 @@
 /**
  * HaloButton — composition wrapper for branded / halo CTAs.
  *
- * These are the premium promotional buttons that include a soft brand-purple
- * halo (`bg-brand/30 blur-2xl scale-150`) and optional gradient fills.
+ * These are the premium promotional buttons that include a soft mono halo
+ * (`bg-brand/30 blur-2xl scale-150`) and optional gradient fills.
  * They are visually hand-tuned and must not be routed through standard
  * ShadButton variants.
  *

@@ -18,6 +18,8 @@ describe("ChatGPT MCP widget mono styling", () => {
   it("builds accessible widget CSS with mono surfaces and 44px controls", () => {
     const css = buildWirelineMcpWidgetCss();
     expect(css).toContain("--wl-canvas: #F7F7F4");
+    expect(css).toContain("--wl-tertiary:");
+    expect(css).toContain(".composer");
     expect(css).toContain("min-height: 44px");
     expect(css).toContain("outline: 2px solid var(--wl-action)");
   });

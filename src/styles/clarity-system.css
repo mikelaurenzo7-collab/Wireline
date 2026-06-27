@@ -319,7 +319,7 @@
   display: grid;
   gap: 1.25rem;
   padding: clamp(1.5rem, 1.15rem + 1vw, 2rem);
-  box-shadow: 0 16px 40px -32px rgba(21, 32, 56, 0.18);
+  box-shadow: var(--wireline-elevation-card);
 }
 
 .wl-transition-copy {

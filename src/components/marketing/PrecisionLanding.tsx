@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Mail, MessageSquareText, PhoneCall } from "lucide-react";
 import { Link } from "react-router-dom";
+import { MARKETING_VOICE } from "../../lib/product-copy";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 
@@ -33,12 +34,12 @@ export default function PrecisionLanding() {
         <section className="marketing-hero border-b border-border px-4 py-6 sm:px-5 sm:py-8 md:px-6 lg:px-8 safe-area-insets">
           <div className="wl-public-rail flex min-h-[calc(78dvh-4rem)] flex-col items-center justify-center py-4 text-center sm:py-6">
             <div className="marketing-hero__content flex flex-col items-center">
-              <p className="wl-overline text-primary">Wireline OS</p>
+              <p className="wl-overline text-primary">{MARKETING_VOICE.eyebrow}</p>
               <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(46px,6.7vw,84px)] font-semibold leading-[.94] tracking-[-.055em] text-foreground">
-                Agents for every conversation.
+                {MARKETING_VOICE.headline}
               </h1>
               <p className="wl-public-copy mx-auto mt-5 max-w-5xl text-[clamp(17px,1.7vw,22px)] leading-[1.38]">
-                Calls, texts, follow-up. Handled.
+                {MARKETING_VOICE.subline}
               </p>
               <div className="marketing-hero__actions mt-8 justify-center">
                 <Link
@@ -56,7 +57,7 @@ export default function PrecisionLanding() {
               </div>
             </div>
             <div className="marketing-hero-proof mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] tracking-[0.12em] text-muted-foreground">
-              {["Create", "Train", "Run", "Calls", "Texts", "Follow-up"].map((item) => (
+              {MARKETING_VOICE.proof.map((item) => (
                 <span key={item} className="px-1">
                   {item}
                 </span>
@@ -113,7 +114,9 @@ export default function PrecisionLanding() {
             <div className="mx-auto max-w-3xl">
               <p className="wl-overline text-primary">One voice</p>
               <h2 className="wl-public-section-heading mx-auto mt-3">No drift.</h2>
-              <p className="wl-public-copy mx-auto mt-4">Calls, texts, and email route through one trained agent.</p>
+              <p className="wl-public-copy mx-auto mt-4">
+                Calls, texts, and email route through one trained agent.
+              </p>
             </div>
             <SignalFlow />
             <LiveDirectSimulator />

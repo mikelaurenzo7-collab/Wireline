@@ -140,6 +140,79 @@
   transform: translateY(-1px);
 }
 
+/* ChatGPT / Cursor-style command composer — raised dock on canvas */
+.wl-composer-dock {
+  border: 1px solid var(--wireline-rule);
+  border-radius: var(--wireline-radius-xl);
+  background: var(--wireline-card);
+  box-shadow: var(--wireline-elevation-sm);
+  overflow: hidden;
+}
+
+.wl-composer-hero {
+  border-color: var(--wireline-rule);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-subtle) 42%,
+    var(--wireline-color-surface-default)
+  );
+}
+
+.wl-composer-dock__input {
+  width: 100%;
+  min-height: 4.5rem;
+  resize: none;
+  border: 0;
+  background: transparent;
+  padding: 0.75rem 0.875rem;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--wireline-ink);
+  outline: none;
+}
+
+.wl-composer-dock__input::placeholder {
+  color: color-mix(in srgb, var(--wireline-ink-muted) 62%, transparent);
+}
+
+.wl-composer-dock__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--wireline-rule) 72%, transparent);
+  padding: 0.75rem 0.875rem;
+}
+
+.wl-chip-suggestion {
+  border: 1px solid var(--wireline-rule);
+  border-radius: var(--wireline-radius-pill);
+  background: var(--wireline-card);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--wireline-ink-muted);
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base),
+    color var(--transition-base);
+}
+
+.wl-chip-suggestion:hover {
+  border-color: color-mix(in srgb, var(--wireline-rule-strong) 75%, var(--wireline-action-soft));
+  background: var(--wireline-card-muted);
+  color: var(--wireline-ink);
+}
+
+.wl-not-found-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--wireline-color-action-primary-container) 55%, transparent),
+    transparent 70%
+  );
+}
+
 .marketing-hero,
 .marketing-demo-surface {
   background:

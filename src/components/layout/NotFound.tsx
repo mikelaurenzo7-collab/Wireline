@@ -19,7 +19,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
 
   return (
     <div className="min-h-[80svh] flex flex-col items-center justify-center gap-8 text-center px-6 py-12 relative">
-      {/* Subtle purple glow behind the 404 mark */}
+      {/* Subtle mono wash behind the 404 mark */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-center -z-10"

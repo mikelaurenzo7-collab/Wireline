@@ -52,7 +52,7 @@ type ProviderKey = keyof IntegrationState;
 
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
-/** Unified connected-state styling — purple + cream palette only. */
+/** Unified connected-state styling — mono brand tokens only. */
 const CONNECTED_STYLES = {
   card: "border-brand/30 bg-brand/5",
   icon: "bg-brand/15 border-brand/30 text-brand",

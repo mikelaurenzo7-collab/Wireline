@@ -122,6 +122,7 @@ const androidAssistantWidget = read(
 );
 const chatgptWidget = read("src/lib/chatgpt-mcp.ts");
 const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
+const productCopy = read("src/lib/product-copy.ts");
 const legalCss = read("public/static-legal.css");
 const manifest = read("public/site.webmanifest");
 const publicIcon = read("public/wireline-icon.svg");
@@ -670,14 +671,32 @@ mustExclude(
 mustInclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
-  /Agents for every conversation\./,
+  /MARKETING_VOICE\.headline/,
   "landing hero must frame agents across inbound and outbound conversations",
 );
 mustInclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
-  /Calls, texts, follow-up\. Handled\./,
+  /MARKETING_VOICE\.subline/,
   "landing hero must keep the short punchy subhero",
+);
+mustInclude(
+  "src/lib/product-copy.ts",
+  productCopy,
+  /MARKETING_VOICE/,
+  "marketing hero copy must live in product-copy module",
+);
+mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /MARKETING_VOICE/,
+  "landing must consume shared marketing voice constants",
+);
+mustInclude(
+  "src/styles/design-system.css",
+  designSystemCss,
+  /\.wl-composer-dock/,
+  "design system must expose shared composer dock utility",
 );
 mustInclude(
   "index.html",

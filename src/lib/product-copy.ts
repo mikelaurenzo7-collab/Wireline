@@ -1,5 +1,22 @@
 /** Shared product voice — one workspace for personal and business agents. */
 
+export const MARKETING_VOICE = {
+  eyebrow: "Wireline OS",
+  headline: "Agents for every conversation.",
+  subline: "Calls, texts, follow-up. Handled.",
+  proof: ["Create", "Train", "Run", "Calls", "Texts", "Follow-up"],
+  extensionLead:
+    "Command agents from the page you're on. Create, train, and run with mono clarity.",
+} as const;
+
+export const WORKSPACE_VOICE = {
+  forgeHeadline: "Forge an agent.",
+  runHeadline: "Run the work.",
+  emptyCue: "Brief it. Forge it. Task it.",
+  commandPrompts: ["Review calls", "Draft reply", "Prep handoff"],
+  directAgent: (name?: string | null) => `Direct ${name?.trim() || "your agent"}...`,
+} as const;
+
 export const PRODUCT_VERSATILITY = {
   eyebrow: "Agent coverage",
   tagline: "One voice. All channels.",
@@ -25,9 +42,7 @@ export const PRODUCT_POSTURE = {
 } as const;
 
 export function formatAgentRoleLabel(role?: string | null): string {
-  return (role || "agent")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return (role || "agent").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function rosterSummary(personalCount: number, businessCount: number): string {

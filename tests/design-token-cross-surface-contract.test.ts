@@ -56,5 +56,16 @@ describe("cross-surface design token generation", () => {
     expect(panel.indexOf("./tokens.generated.css")).toBeLessThan(panel.indexOf("./styles.css"));
     const extensionStyles = read("apps/browser-extension/panel/styles.css");
     expect(extensionStyles).toContain("var(--wireline-elevation-card)");
+    expect(extensionStyles).toContain("--tertiary: var(--wireline-color-text-tertiary)");
+    expect(extensionStyles).toContain(".handoff-form");
+  });
+
+  it("exposes shared composer utilities for authenticated command surfaces", () => {
+    const designSystem = read("src/styles/design-system.css");
+    expect(designSystem).toContain(".wl-composer-dock");
+    expect(designSystem).toContain(".wl-chip-suggestion");
+    const overview = read("src/pages/OverviewPage.tsx");
+    expect(overview).toContain("wl-composer-dock");
+    expect(overview).toContain("WORKSPACE_VOICE");
   });
 });

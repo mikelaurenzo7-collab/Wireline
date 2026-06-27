@@ -10,6 +10,7 @@ export const WIRELINE_MCP_WIDGET_TOKENS = {
   actionPressed: "#000000",
   text: "#111111",
   muted: "#6B6B66",
+  tertiary: "#8A8A84",
   border: "#E3E3E0",
   radiusLg: "12px",
   radiusMd: "10px",
@@ -30,6 +31,7 @@ export function buildWirelineMcpWidgetCss(): string {
   --wl-action-pressed: ${t.actionPressed};
   --wl-text: ${t.text};
   --wl-muted: ${t.muted};
+  --wl-tertiary: ${t.tertiary};
   --wl-border: ${t.border};
   --wl-radius-lg: ${t.radiusLg};
   --wl-radius-md: ${t.radiusMd};
@@ -99,7 +101,30 @@ button:focus-visible, a.button:focus-visible {
   outline-offset: 2px;
 }
 .status { margin-top: 11px; min-height: 20px; font-size: 13px; color: var(--wl-muted); }
-.note { margin-top: 12px; font-size: 12px; color: var(--wl-muted); }
+.note { margin-top: 12px; font-size: 12px; color: var(--wl-tertiary); }
+.composer {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  border: 1px solid var(--wl-border);
+  border-radius: var(--wl-radius-lg);
+  background: var(--wl-surface);
+  box-shadow: var(--wl-shadow-card);
+  padding: 12px;
+}
+.composer textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  color: var(--wl-text);
+  font: inherit;
+  line-height: 1.45;
+  outline: none;
+}
+.composer textarea::placeholder { color: var(--wl-tertiary); }
+.composer .actions { margin-top: 0; }
 .live {
   display: none;
   margin-top: 12px;
