@@ -107,11 +107,12 @@ function ToolGroup({
     <section className="studio-card p-5">
       <header className="flex items-center justify-between gap-3 border-b border-border/70 pb-3">
         <div className="flex min-w-0 items-center gap-3 w-full justify-center">
-          <h3 className="font-semibold tracking-[-0.01em] text-foreground text-center">
-            {title}
-          </h3>
+          <h3 className="font-semibold tracking-[-0.01em] text-foreground text-center">{title}</h3>
         </div>
-        <Badge variant="info" className="shrink-0 text-[10px] font-mono uppercase tracking-[0.06em]">
+        <Badge
+          variant="info"
+          className="shrink-0 text-[10px] font-mono uppercase tracking-[0.06em]"
+        >
           {activeCount} on
         </Badge>
       </header>
@@ -129,7 +130,7 @@ function ToolGroup({
               className="flex w-full items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-accent/60 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span
-                className={`mt-1 grid h-[15px] w-[15px] shrink-0 place-items-center rounded border text-[10px] ${active ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
+                className={`mt-1 grid h-[15px] w-[15px] sm:h-4 sm:w-4 shrink-0 place-items-center rounded border text-[10px] sm:text-[11px] ${active ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
                 aria-hidden="true"
               >
                 {active ? <Check size={10} strokeWidth={3.5} /> : null}
@@ -281,10 +282,10 @@ export default function ActionsWorkspace() {
 
   if (!agents.length) {
     return (
-      <div className="grid h-full min-h-[520px] place-items-center py-8">
+      <div className="grid h-full min-h-[min(520px,70dvh)] place-items-center py-6 sm:py-8">
         <EmptyState
           density="default"
-          className="studio-card w-full max-w-[560px] px-8 py-12 sm:px-10 text-center"
+          className="studio-card w-full max-w-[min(100%,560px)] px-6 py-10 sm:px-8 sm:py-12 text-center"
           icon={<Sparkles size={29} />}
           title="Agent first."
           description="Create. Then wire."

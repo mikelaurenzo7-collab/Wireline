@@ -121,7 +121,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
   );
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden max-w-[1400px] mx-auto w-full">
+    <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden max-w-[min(100%,1400px)] mx-auto w-full safe-area-insets">
       <div className="wl-panel rounded-md p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-card/80 backdrop-blur-xl">
         <div>
           <h3 className="font-display italic text-2xl text-foreground flex items-center gap-3">
@@ -164,7 +164,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
               <div className="h-px bg-brand/10 flex-1" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 stagger-children">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 stagger-children resp-adaptive-grid">
               {tools.map((tool) => {
                 const isEnabled = enabledTools.includes(tool.name);
                 const status = getIntegrationStatus(tool.integration);

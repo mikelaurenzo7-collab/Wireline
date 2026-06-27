@@ -21,7 +21,7 @@ const PRINCIPLES = [
 
 export default function About() {
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24 safe-area-insets">
       <PageMeta
         title="About Wireline | AI Agents for Calls and Follow-up"
         description="Wireline is a customizable agent platform built for calls, texts, follow-up, browser context, email, and integrations."
@@ -88,9 +88,12 @@ export default function About() {
         </div>
         <div className="mt-10 grid gap-3 md:grid-cols-3">
           {PRINCIPLES.map((principle) => (
-            <article className="wl-stitch-card p-6 text-center" key={principle.title}>
-              <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary">
-                <Check className="h-4 w-4" />
+            <article
+              className="wl-stitch-card group p-6 text-center transition-all hover:-translate-y-px hover:shadow-sm"
+              key={principle.title}
+            >
+              <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary transition group-hover:bg-primary/10">
+                <Check className="h-4 w-4 transition group-hover:scale-110" />
               </span>
               <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
                 {principle.title}

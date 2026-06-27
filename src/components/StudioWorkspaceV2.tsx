@@ -10,16 +10,20 @@ import StudioWorkroom from "./StudioWorkroom";
 function StudioLoadingState() {
   return (
     <main
-      className="grid min-h-[55vh] place-items-center bg-background px-6"
+      className="grid min-h-[55vh] place-items-center bg-background px-4 sm:px-6 safe-area-insets"
       aria-busy="true"
       aria-label="Loading Studio"
     >
-      <div className="w-full max-w-5xl space-y-3">
+      <div className="w-full max-w-5xl space-y-4">
         <Skeleton shape="text" className="h-3 w-20" />
         <Skeleton shape="text" className="h-8 w-80 max-w-full" />
         <Skeleton shape="text" className="h-3 w-64" />
-        <div className="pt-2">
+        <div className="pt-3">
           <Skeleton shape="surface" className="h-[280px] w-full rounded-[var(--radius-xl)]" />
+        </div>
+        <div className="flex gap-2 pt-1">
+          <Skeleton shape="text" className="h-8 w-28 rounded-full" />
+          <Skeleton shape="text" className="h-8 w-28 rounded-full" />
         </div>
       </div>
     </main>
@@ -28,7 +32,7 @@ function StudioLoadingState() {
 
 function StudioEmptyState() {
   return (
-    <main className="grid min-h-[55vh] place-items-center bg-background px-6 py-8">
+    <main className="grid min-h-[55vh] place-items-center bg-background px-4 py-6 sm:px-6 sm:py-8 safe-area-insets">
       <EmptyState
         density="default"
         className="studio-card w-full max-w-xl px-8 py-10 text-center"

@@ -38,7 +38,7 @@ export default function MarketingPageFrame({
   return (
     <div
       className={cn(
-        "marketing-surface relative flex flex-col bg-background text-foreground",
+        "marketing-surface relative flex flex-col bg-background text-foreground safe-area-insets",
         scroll ? "min-h-dvh" : "h-dvh max-h-dvh overflow-hidden",
         className,
       )}
@@ -54,8 +54,8 @@ export default function MarketingPageFrame({
           scroll ? "scroll-viewport" : "flex flex-col overflow-hidden",
           stickyCta && scroll && "marketing-has-sticky-cta",
           scroll
-            ? "px-5 pb-10 pt-24 md:px-8 md:pb-12 md:pt-28 lg:px-12 xl:px-16"
-            : "px-5 pb-4 pt-16 lg:px-8 lg:pb-6",
+            ? "px-4 pb-8 pt-20 sm:px-5 sm:pb-10 sm:pt-24 md:px-8 md:pb-12 md:pt-28 lg:px-12 xl:px-16 2xl:px-20"
+            : "px-4 pb-4 pt-16 sm:px-5 lg:px-8 lg:pb-6",
           mainClassName,
         )}
       >
@@ -87,7 +87,7 @@ export default function MarketingPageFrame({
             </nav>
           </div>
         ) : null}
-        <div className={cn(scroll && "wl-measure")}>{children}</div>
+        <div className={cn(scroll && "wl-measure", "resp-adaptive-grid")}>{children}</div>
       </main>
 
       {footer ? (

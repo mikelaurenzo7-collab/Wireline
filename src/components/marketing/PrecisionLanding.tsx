@@ -30,8 +30,8 @@ export default function PrecisionLanding() {
     <div className="wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-        <section className="marketing-hero border-b border-border px-5 py-8 sm:px-6 lg:px-8">
-          <div className="wl-public-rail flex min-h-[calc(78dvh-4rem)] flex-col items-center justify-center py-6 text-center">
+        <section className="marketing-hero border-b border-border px-4 py-6 sm:px-5 sm:py-8 md:px-6 lg:px-8 safe-area-insets">
+          <div className="wl-public-rail flex min-h-[calc(78dvh-4rem)] flex-col items-center justify-center py-4 text-center sm:py-6">
             <div className="marketing-hero__content flex flex-col items-center">
               <p className="wl-overline text-primary">Wireline OS</p>
               <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(46px,6.7vw,84px)] font-semibold leading-[.94] tracking-[-.055em] text-foreground">
@@ -55,9 +55,11 @@ export default function PrecisionLanding() {
                 </Link>
               </div>
             </div>
-            <div className="marketing-hero-proof mt-7">
+            <div className="marketing-hero-proof mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] tracking-[0.12em] text-muted-foreground">
               {["Create", "Train", "Run", "Calls", "Texts", "Follow-up"].map((item) => (
-                <span key={item}>{item}</span>
+                <span key={item} className="px-1">
+                  {item}
+                </span>
               ))}
             </div>
           </div>
@@ -76,9 +78,12 @@ export default function PrecisionLanding() {
             </div>
             <div className="marketing-channel-grid mt-8">
               {channels.map(({ label, title, body, icon: Icon }) => (
-                <article key={label} className="marketing-channel-row">
-                  <div className="marketing-channel-row__icon">
-                    <Icon className="size-4" aria-hidden="true" />
+                <article
+                  key={label}
+                  className="marketing-channel-row group rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-primary/30 hover:shadow-sm sm:p-6"
+                >
+                  <div className="marketing-channel-row__icon mb-3">
+                    <Icon className="size-5 text-primary" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="wl-overline text-primary">{label}</p>
@@ -97,11 +102,7 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        {/* New marketing visuals: world-class, brand-perfect hero illustration + video.
-            Generated to match Wireline Mono exactly: #F7F7F4 warm paper canvas,
-            #111111 deep charcoal, precise minimal linework, generous space.
-            Cohesive with existing lockups, wirelines, and product surfaces.
-            Ready for landing, social campaigns, and paid ads. */}
+        {/* Marketing visuals section - restored to pre-Imagine state */}
         <section className="border-b border-border px-5 py-12 sm:px-6 lg:px-8">
           <div className="wl-public-rail text-center">
             <div className="mx-auto max-w-3xl">
@@ -110,11 +111,10 @@ export default function PrecisionLanding() {
               <p className="wl-public-copy mx-auto mt-4">One voice. All channels. No drift.</p>
             </div>
 
-            {/* Creative hero visual (new refined deliverable) */}
             <figure className="marketing-visual mt-8 mx-auto max-w-[1100px]">
               <img
-                src="/marketing/wireline-agents-hero-refined.jpg"
-                alt="Agents for every conversation — World-class minimalist Wireline hero: central precision agent hub in deep charcoal with graceful connections to Calls, Texts, and Email nodes on exact #F7F7F4 warm paper canvas. Flawless Wireline Mono branding."
+                src="/marketing/one-voice-all-channels-hero.jpg"
+                alt="One voice. All channels. — Minimalist hero visual: central Wireline agent hub in deep charcoal directing clean branching connections to phone, message, and email icons on warm off-white paper canvas."
                 className="w-full rounded-[var(--radius-xl)] border border-[var(--wireline-color-border-default)]"
                 style={{ boxShadow: "var(--wireline-elevation-sm)" }}
               />
@@ -123,18 +123,17 @@ export default function PrecisionLanding() {
               </figcaption>
             </figure>
 
-            {/* Video deliverable (new signal flow) + live interactive */}
             <div className="mt-12 mx-auto max-w-[960px]">
               <p className="wl-overline text-primary mb-3">See the flow in action</p>
               <div className="marketing-demo-surface p-2 sm:p-3">
                 <video
-                  src="/marketing/wireline-signal-flow-demo.mp4"
+                  src="/marketing/one-voice-direct-work-demo.mp4"
                   className="w-full rounded-[var(--radius-lg)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)]"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  aria-label="World-class animation: graceful signals flow from Calls, Texts and Email into the central Wireline agent hub, then unified action radiates outward. Perfect Wireline Mono calm precision."
+                  aria-label="Elegant animation: signals travel into a central voice hub. One voice directs unified work back across calls, texts and email channels."
                 />
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
@@ -144,22 +143,6 @@ export default function PrecisionLanding() {
 
               {/* Live simulator: direct in real time. Better than any static mockup. */}
               <LiveDirectSimulator />
-            </div>
-
-            {/* Additional campaign-ready deliverable: square ad / social asset */}
-            <div className="mt-16 mx-auto max-w-[520px]">
-              <p className="wl-overline text-primary mb-3">Campaign + ad ready</p>
-              <figure>
-                <img
-                  src="/marketing/wireline-one-voice-square-ad.jpg"
-                  alt="One voice. All channels. — Square social and ad creative. Exact Wireline Mono: clean central hub, three channel connections, bold typography on warm paper. Perfect for LinkedIn, Meta, Instagram ads."
-                  className="w-full rounded-[var(--radius-xl)] border border-[var(--wireline-color-border-default)]"
-                  style={{ boxShadow: "var(--wireline-elevation-sm)" }}
-                />
-                <figcaption className="mt-3 text-xs text-muted-foreground tracking-[0.08em] uppercase">
-                  Social • Paid • 1:1 — drop-in ready
-                </figcaption>
-              </figure>
             </div>
           </div>
         </section>
@@ -214,11 +197,11 @@ function LiveDirectSimulator() {
         ))}
       </div>
 
-      {/* Visual hub response — pure code micro interaction */}
+      {/* Visual hub response — pure code micro interaction (world-class polish) */}
       <div className="mt-5 flex justify-center">
-        <div className="relative flex h-12 w-full max-w-[420px] items-center justify-center rounded-full border border-border/60 bg-background">
+        <div className="relative flex h-12 w-full max-w-[420px] items-center justify-center rounded-full border border-border/60 bg-background transition-all">
           <div
-            className={`absolute h-2 w-2 rounded-full bg-primary transition-all ${active ? "scale-150 opacity-90" : "scale-100 opacity-40"}`}
+            className={`absolute h-2 w-2 rounded-full bg-primary transition-all duration-200 ${active ? "scale-150 opacity-95" : "scale-100 opacity-40"}`}
           />
           <span className="text-[10px] font-mono tracking-[0.12em] text-muted-foreground">
             {active

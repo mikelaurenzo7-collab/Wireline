@@ -38,7 +38,7 @@ export default function Features() {
         path="/features"
       />
       <PrecisionPublicHeader />
-      <main id="main-content" className="pt-16" tabIndex={-1}>
+      <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
           <div className="wl-public-rail">
             <p className="wl-overline text-primary">How it works</p>
@@ -65,8 +65,11 @@ export default function Features() {
 
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail grid gap-3 lg:grid-cols-2 lg:gap-4">
-            <article className="wl-stitch-card flex min-h-[12rem] flex-col items-center p-5 text-center sm:min-h-[16rem] sm:p-8">
-              <MessageSquareText size={22} className="text-primary" />
+            <article className="wl-stitch-card group flex min-h-[12rem] flex-col items-center rounded-xl p-5 text-center transition-all hover:-translate-y-px hover:shadow-sm sm:min-h-[16rem] sm:p-8">
+              <MessageSquareText
+                size={24}
+                className="text-primary transition group-hover:scale-110"
+              />
               <h2 className="wl-section-title mt-5 max-w-[16ch]">
                 Conversations that stay on task.
               </h2>
@@ -81,8 +84,8 @@ export default function Features() {
                 ))}
               </div>
             </article>
-            <article className="wl-stitch-card flex min-h-[12rem] flex-col items-center p-5 text-center sm:min-h-[16rem] sm:p-8">
-              <ShieldCheck size={22} className="text-primary" />
+            <article className="wl-stitch-card group flex min-h-[12rem] flex-col items-center rounded-xl p-5 text-center transition-all hover:-translate-y-px hover:shadow-sm sm:min-h-[16rem] sm:p-8">
+              <ShieldCheck size={24} className="text-primary transition group-hover:scale-110" />
               <h2 className="wl-section-title mt-5">Made to fit your work.</h2>
               <dl className="mt-6 divide-y divide-border overflow-hidden rounded-[var(--radius-lg)] border border-border sm:mt-auto">
                 {CUSTOMIZATION.map(([label, value]) => (

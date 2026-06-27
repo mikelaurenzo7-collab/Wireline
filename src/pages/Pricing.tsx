@@ -74,7 +74,7 @@ export default function Pricing() {
       />
       <PrecisionPublicHeader />
 
-      <main id="main-content" className="pt-16" tabIndex={-1}>
+      <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
         <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-20 lg:px-10">
           <div className="mx-auto max-w-6xl text-center">
             <div className="mx-auto max-w-3xl">
@@ -106,7 +106,7 @@ export default function Pricing() {
 
         <section className="px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
           <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_.9fr] lg:items-stretch">
-            <article className="wl-stitch-card p-6 text-center sm:p-9">
+            <article className="wl-stitch-card group p-6 text-center transition-all hover:-translate-y-px hover:shadow-sm sm:p-9">
               <div className="flex items-center justify-center gap-2">
                 <Sparkles className="size-5 text-primary" />
                 <span className="wl-overline">Wireline Personal</span>
@@ -176,7 +176,7 @@ export default function Pricing() {
                 return (
                   <article
                     key={String(title)}
-                    className="wl-stitch-card flex flex-col items-center gap-4 p-5 text-center"
+                    className="wl-stitch-card group flex flex-col items-center gap-4 p-5 text-center transition-all hover:-translate-y-px hover:shadow-sm"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
                       <CardIcon size={18} />
@@ -208,7 +208,10 @@ export default function Pricing() {
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               {CAPACITY_TIERS.map((tier) => (
-                <article key={tier.name} className="wl-stitch-card flex flex-col p-6 text-center">
+                <article
+                  key={tier.name}
+                  className="wl-stitch-card group flex flex-col p-6 text-center transition-all hover:-translate-y-px hover:shadow-sm"
+                >
                   <p className="wl-overline text-primary">{tier.eyebrow}</p>
                   <h3 className="wl-card-title mt-4 text-lg">{tier.name}</h3>
                   <p className="mt-4 flex-1 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">

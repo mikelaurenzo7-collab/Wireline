@@ -81,15 +81,15 @@ function RailItem({
       title={label}
       className={
         compact
-          ? `grid min-h-14 flex-1 place-items-center gap-0.5 rounded-xl px-2 py-1.5 text-[var(--wireline-typography-overline-size)] font-semibold transition-colors ${
+          ? `grid min-h-[44px] flex-1 place-items-center gap-0.5 rounded-xl px-2 py-1.5 text-[var(--wireline-typography-overline-size)] font-semibold transition-colors ${
               active
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
             }`
-          : `relative flex w-full flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-[6px] text-[10px] font-medium tracking-[0.01em] transition-all ${
+          : `relative flex w-full flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-[6px] text-[10px] font-medium tracking-[0.01em] transition-all min-h-[44px] sm:min-h-0 ${
               active
                 ? "bg-primary/10 text-primary after:absolute after:left-[2px] after:top-1/2 after:h-3.5 after:w-[2.5px] after:-translate-y-1/2 after:rounded-full after:bg-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
             }`
       }
     >

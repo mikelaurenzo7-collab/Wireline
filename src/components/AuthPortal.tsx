@@ -225,7 +225,10 @@ function AuthShell({
   void headerActive;
   return (
     <div className="wl-stitch-auth-shell">
-      <main id="main-content" className="flex flex-1 items-center justify-center px-6 py-12">
+      <main
+        id="main-content"
+        className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 safe-area-insets"
+      >
         <div className="w-full max-w-[440px]">
           <div className="mb-6 text-center">
             <Link to="/" className="text-2xl font-bold tracking-[-.03em] text-primary">
@@ -240,7 +243,9 @@ function AuthShell({
                 : "Sign in to manage your agent workspace."}
             </p>
           </div>
-          <div className="wl-stitch-auth-card">{children}</div>
+          <div className="wl-stitch-auth-card rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+            {children}
+          </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-sm text-muted-foreground">
             <Link to="/" className="hover:text-primary hover:underline">
               Back to home
