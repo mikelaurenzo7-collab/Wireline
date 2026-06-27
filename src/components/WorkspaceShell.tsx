@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
+  ArrowLeft,
   Bot,
   Cable,
   GraduationCap,
@@ -177,7 +178,9 @@ export default function WorkspaceShell({
 }) {
   const location = useLocation();
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
+  const isHomeRoute = location.pathname === "/overview";
   const nativeAppShell = isNativeAppShell();
+  const showHomeLink = !isHomeRoute && !isStudioRoute;
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
@@ -195,7 +198,17 @@ export default function WorkspaceShell({
         >
           {!isStudioRoute && (title || eyebrow || action) && (
             <div className="relative mb-4 pb-3 lg:mb-5">
-              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-0">
+              {showHomeLink ? (
+                <Link
+                  to="/overview"
+                  aria-label="Back to workspace home"
+                  className="absolute left-0 top-1 z-10 inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-background px-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:top-1/2 md:-translate-y-1/2"
+                >
+                  <ArrowLeft aria-hidden="true" size={15} />
+                  <span className="hidden sm:inline">Home</span>
+                </Link>
+              ) : null}
+              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-12 sm:px-20 md:px-28">
                 <div className="flex min-w-0 flex-col items-center text-center wl-centered-header">
                   {eyebrow ? (
                     <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/70">
@@ -210,7 +223,7 @@ export default function WorkspaceShell({
                 </div>
               </div>
               {action ? (
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 lg:right-[calc((100%-1480px)/2)]">
+                <div className="mt-3 flex min-w-0 items-center justify-center gap-2 md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2 md:justify-end lg:right-[calc((100%-1480px)/2)]">
                   {action}
                 </div>
               ) : null}
