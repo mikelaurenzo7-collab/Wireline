@@ -25,7 +25,10 @@ export default function MobileBrowserUtilities() {
   if (hidesOwnControls(location.pathname)) return null;
 
   return (
-    <details className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-[70] lg:hidden">
+    <details
+      key={location.pathname}
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-[70] lg:hidden"
+    >
       <summary
         aria-label="Open workspace controls"
         className="grid size-11 cursor-pointer list-none place-items-center rounded-full border border-border bg-background text-foreground shadow-[var(--wireline-elevation-md)] marker:hidden transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden"
