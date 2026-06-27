@@ -72,7 +72,7 @@ export default function StudioOverview({
               <Plus aria-hidden="true" size={15} />
               New
             </Button>
-            <Button asChild type="button" variant="secondary" className="justify-center">
+            <Button asChild variant="secondary" className="justify-center">
               <Link to="/settings">
                 <SettingsIcon aria-hidden="true" size={15} />
                 Settings
