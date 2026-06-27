@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { ArrowRight, BriefcaseBusiness, CircleDot, Plus } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CheckCircle2,
+  CircleDot,
+  MessageSquareText,
+  Mic2,
+  Phone,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
 
 import { Button } from "../components/atoms";
 import type { WorkspaceAgentSummary } from "../contexts/AgentsContext";
@@ -13,6 +23,13 @@ type StudioOverviewProps = {
   onCreate: () => void;
 };
 
+const WORK_PROMPTS = [
+  "Review recent conversations",
+  "Draft follow-up",
+  "Prepare handoff",
+  "Set a call plan",
+] as const;
+
 function roleLabel(agent: WorkspaceAgentSummary) {
   if (agent.role) return agent.role.replace(/_/g, " ");
   return agent.is_business_agent ? "Business" : "Personal";
@@ -25,6 +42,10 @@ function channelLabel(agent: WorkspaceAgentSummary) {
   return "Agent";
 }
 
+function agentDescription(agent: WorkspaceAgentSummary) {
+  return `${roleLabel(agent)} - ${channelLabel(agent)}`;
+}
+
 export default function StudioOverview({
   active,
   agents,
@@ -34,27 +55,29 @@ export default function StudioOverview({
   onCreate,
 }: StudioOverviewProps) {
   const [brief, setBrief] = useState("");
+  const activeDescription = agentDescription(active);
+  const trimmedBrief = brief.trim();
 
   return (
-    <main className="h-full min-h-0 overflow-y-auto bg-background px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+    <main className="h-full min-h-0 overflow-y-auto bg-background px-4 py-4 sm:px-6 sm:py-7 lg:px-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:gap-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <p className="wl-overline">Studio</p>
-            <h1 className="mt-1 truncate text-[clamp(1.9rem,4vw,3.4rem)] font-semibold leading-none tracking-[-.06em] text-foreground">
+            <p className="text-xs font-semibold text-muted-foreground">Studio</p>
+            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[clamp(2.2rem,11vw,3.25rem)] font-semibold leading-none tracking-[-.06em] text-foreground">
               {active.name}
             </h1>
-            <p className="mt-2 text-sm capitalize text-muted-foreground">
-              {roleLabel(active)} - {channelLabel(active)}
+            <p className="mt-2 text-base capitalize leading-6 text-muted-foreground">
+              {activeDescription}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" onClick={onCreate}>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <Button type="button" variant="secondary" onClick={onCreate} className="justify-center">
               <Plus aria-hidden="true" size={15} />
               New
             </Button>
-            <Button type="button" onClick={() => onOpen(active.id)}>
-              Open <ArrowRight aria-hidden="true" size={15} />
+            <Button type="button" onClick={() => onOpen(active.id)} className="justify-center">
+              Open chat <ArrowRight aria-hidden="true" size={15} />
             </Button>
           </div>
         </header>
@@ -65,16 +88,25 @@ export default function StudioOverview({
           </p>
         ) : null}
 
-        <section className="rounded-3xl border border-border bg-card p-4 shadow-[var(--wireline-elevation-sm)] sm:p-5 lg:p-6">
-          <p className="wl-overline text-primary">Workroom</p>
-          <h2 className="mt-3 max-w-[11ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[.95] tracking-[-.065em] text-foreground">
-            What should it do?
-          </h2>
-          <p className="mt-4 max-w-xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-            Give the agent a clear outcome. The next screen is chat-first.
-          </p>
+        <section className="studio-card p-4 sm:p-5 lg:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold text-muted-foreground">Workroom</p>
+              <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,7vw,2.6rem)] font-semibold leading-[1.02] tracking-[-.045em] text-foreground">
+                Give {active.name} the next job.
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Tell the agent what to run, draft, review, or hand off. It starts in chat and keeps
+                approvals visible before anything goes live.
+              </p>
+            </div>
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+              <CheckCircle2 aria-hidden="true" size={14} className="text-primary" />
+              Ready to direct
+            </div>
+          </div>
 
-          <div className="mt-8 rounded-2xl border border-border bg-background p-3 focus-within:border-primary/35">
+          <div className="mt-5 rounded-[var(--radius-lg)] border border-border bg-background p-3 focus-within:border-primary/35 sm:p-4">
             <label className="sr-only" htmlFor="studio-brief">
               What should this agent work on?
             </label>
@@ -83,17 +115,17 @@ export default function StudioOverview({
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
               rows={4}
-              placeholder={`Tell ${active.name} what to work on...`}
-              className="min-h-[128px] w-full resize-none bg-transparent px-3 py-2 text-[var(--wireline-typography-body-size)] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
+              placeholder={`Ask ${active.name} to review, draft, call, or follow up...`}
+              className="min-h-[116px] w-full resize-none bg-transparent px-2 py-1 text-base leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 sm:min-h-[132px]"
             />
-            <div className="flex flex-col gap-3 border-t border-border px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2">
-                {["Review conversations", "Draft follow-up", "Improve handoff"].map((prompt) => (
+                {WORK_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => setBrief(prompt)}
-                    className="rounded-full border border-border px-3 py-1.5 text-[var(--wireline-typography-caption-size)] text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
+                    className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
                   >
                     {prompt}
                   </button>
@@ -101,38 +133,46 @@ export default function StudioOverview({
               </div>
               <Button
                 type="button"
-                disabled={!brief.trim()}
-                onClick={() => onOpen(active.id, brief)}
+                className="w-full justify-center sm:w-auto"
+                onClick={() => onOpen(active.id, trimmedBrief || undefined)}
               >
-                Continue <ArrowRight aria-hidden="true" size={15} />
+                {trimmedBrief ? "Start task" : "Open workroom"}
+                <ArrowRight aria-hidden="true" size={15} />
               </Button>
             </div>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-3">
-          <div className="flex items-center justify-between gap-3 px-2 py-2">
-            <p className="wl-overline">Agents</p>
+        <section className="studio-card p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-3 px-1 py-1.5">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground">Agents</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {agents.length} available. Tap once to switch, tap selected to open.
+              </p>
+            </div>
             <button
               type="button"
               onClick={onCreate}
-              className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full border border-border px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <Plus size={14} />
               New
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-2 px-1 pb-1 pt-2 sm:flex sm:overflow-x-auto">
+          <div className="grid grid-cols-1 gap-2 pt-3 sm:flex sm:overflow-x-auto">
             {agents.map((agent) => {
               const selected = agent.id === active.id;
+              const AgentIcon = agent.channel === "email" ? MessageSquareText : Phone;
               return (
                 <button
                   key={agent.id}
                   type="button"
                   onClick={() => (selected ? onOpen(agent.id) : onSelect(agent.id))}
-                  className={`flex w-full min-w-0 items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors sm:min-w-[220px] ${selected ? "border-primary/30 bg-primary/[0.06]" : "border-border bg-background hover:border-primary/25"}`}
+                  aria-current={selected ? "true" : undefined}
+                  className={`flex w-full min-w-0 items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-3 text-left transition-colors sm:min-w-[240px] ${selected ? "border-primary/35 bg-accent" : "border-border bg-background hover:border-primary/25 hover:bg-accent"}`}
                 >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-sm font-semibold text-foreground">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold text-foreground">
                     {agent.name.slice(0, 1).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1 overflow-hidden">
@@ -140,15 +180,15 @@ export default function StudioOverview({
                       {selected ? <CircleDot className="size-3 shrink-0 text-primary" /> : null}
                       <span className="truncate">{agent.name}</span>
                     </span>
-                    <span className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs capitalize text-muted-foreground">
+                    <span className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-xs capitalize text-muted-foreground">
                       {agent.is_business_agent ? (
                         <BriefcaseBusiness className="shrink-0" size={12} />
                       ) : null}
-                      <span className="truncate">
-                        {roleLabel(agent)} - {channelLabel(agent)}
-                      </span>
+                      <AgentIcon className="shrink-0" size={12} />
+                      <span className="truncate">{activeDescription}</span>
                     </span>
                   </span>
+                  {selected ? <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" /> : null}
                 </button>
               );
             })}
