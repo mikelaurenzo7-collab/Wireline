@@ -143,14 +143,18 @@ export default function Features() {
             <h2 className="wl-public-section-heading mt-3">
               Start with the job you want off your plate.
             </h2>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {USE_CASES.map((title) => (
                 <article
                   key={title}
-                  className="wl-stitch-card flex min-h-[9.5rem] flex-col items-center justify-between p-5 text-center"
+                  className="wl-stitch-card group flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center transition-all hover:border-primary/30 hover:shadow-sm"
                 >
-                  <SlidersHorizontal size={17} className="text-primary" />
-                  <h3 className="wl-card-title mt-6">{title}</h3>
+                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-primary/5 text-primary transition group-hover:bg-primary/10">
+                    <SlidersHorizontal size={18} />
+                  </div>
+                  <h3 className="text-[1.05rem] font-semibold leading-tight tracking-[-0.015em] text-foreground">
+                    {title}
+                  </h3>
                 </article>
               ))}
             </div>

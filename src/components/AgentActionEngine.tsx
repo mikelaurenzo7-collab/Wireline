@@ -201,7 +201,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                     {isEnabled && !isMissingIntegration && (
                       <>
                         <div className="absolute inset-0 bg-gradient-to-br from-brand/10 to-transparent opacity-50" />
-                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/50 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                       </>
                     )}
 

@@ -94,8 +94,7 @@ const AGENT_TEMPLATES = [
     icon: Headphones,
     accent: BRAND.colors.primary,
     badge: null,
-    firstMessage:
-      "Thank you for calling support. I'm your agent — how can I help you today?",
+    firstMessage: "Thank you for calling support. I'm your agent — how can I help you today?",
   },
   {
     id: "support-email",
@@ -381,9 +380,7 @@ function TemplateCard({
               <span
                 className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success border wl-text-success"
                 title={
-                  deployedCount === 1
-                    ? "Already in your agents"
-                    : `${deployedCount} in your agents`
+                  deployedCount === 1 ? "Already in your agents" : `${deployedCount} in your agents`
                 }
               >
                 <Check className="w-2.5 h-2.5" />
@@ -460,10 +457,8 @@ function CustomAssistantCard() {
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">
-          Custom Agent
-        </h3>
-        <p className="text-xs text-foreground/70 leading-relaxed max-w-[200px]">
+        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
+        <p className="text-[var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
           Let Wireline Forge design a bespoke agent for your exact use case.
         </p>
       </div>

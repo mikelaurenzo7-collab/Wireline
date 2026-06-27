@@ -76,19 +76,25 @@ export default function PrecisionLanding() {
                 Call in. Answer. Capture. Follow-up queued. Approval ready.
               </p>
             </div>
-            <div className="marketing-channel-grid mt-8">
+            <div className="marketing-channel-grid mt-8 grid gap-4 sm:gap-6">
               {channels.map(({ label, title, body, icon: Icon }) => (
                 <article
                   key={label}
-                  className="marketing-channel-row group rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-primary/30 hover:shadow-sm sm:p-6"
+                  className="marketing-channel-row group flex flex-col rounded-xl border border-border bg-card p-6 text-left transition-all hover:border-primary/40 hover:shadow-md sm:p-7"
                 >
-                  <div className="marketing-channel-row__icon mb-3">
-                    <Icon className="size-5 text-primary" aria-hidden="true" />
+                  <div className="marketing-channel-row__icon mb-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary">
+                      <Icon className="size-5" aria-hidden="true" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="wl-overline text-primary">{label}</p>
-                    <h3 className="wl-section-title mt-1 text-[clamp(22px,3vw,30px)]">{title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
+                  <div className="flex-1">
+                    <p className="wl-overline text-primary tracking-[0.08em]">{label}</p>
+                    <h3 className="wl-section-title mt-2 text-[clamp(1.25rem,2.8vw,1.75rem)] leading-tight">
+                      {title}
+                    </h3>
+                    <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-relaxed text-muted-foreground">
+                      {body}
+                    </p>
                   </div>
                 </article>
               ))}

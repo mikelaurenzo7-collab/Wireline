@@ -111,7 +111,7 @@ function ToolGroup({
         </div>
         <Badge
           variant="info"
-          className="shrink-0 text-[10px] font-mono uppercase tracking-[0.06em]"
+          className="shrink-0 text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[0.06em]"
         >
           {activeCount} on
         </Badge>
@@ -130,7 +130,7 @@ function ToolGroup({
               className="flex w-full items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-accent/60 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span
-                className={`mt-1 grid h-[15px] w-[15px] sm:h-4 sm:w-4 shrink-0 place-items-center rounded border text-[10px] sm:text-[11px] ${active ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
+                className={`mt-1 grid h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 place-items-center rounded border text-[var(--wireline-typography-overline-size)] sm:text-xs ${active ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
                 aria-hidden="true"
               >
                 {active ? <Check size={10} strokeWidth={3.5} /> : null}
@@ -309,11 +309,14 @@ export default function ActionsWorkspace() {
         <div className="min-w-0 text-center sm:text-left">
           <p className="studio-kicker text-center sm:text-left">Wire</p>
           <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 justify-center sm:justify-start">
-            <h2 className="text-[19px] font-semibold tracking-[-0.02em] leading-tight text-foreground text-center sm:text-left">
+            <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-0.02em] leading-tight text-foreground text-center sm:text-left">
               Arm {selectedAgent?.name || "your agent"}.
             </h2>
             {!loading ? (
-              <Badge variant="info" className="text-[10px] font-mono uppercase tracking-[0.06em]">
+              <Badge
+                variant="info"
+                className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[0.06em]"
+              >
                 {enabledTools.length} on
               </Badge>
             ) : null}
@@ -322,7 +325,7 @@ export default function ActionsWorkspace() {
         <NativeSelect
           value={agentId}
           onChange={(event) => chooseAgent(event.target.value)}
-          className="max-w-[240px]"
+          className="max-w-[15rem]"
           aria-label="Choose agent"
         >
           {agents.map((agent) => (
@@ -426,7 +429,7 @@ export default function ActionsWorkspace() {
                   : "default";
               return (
                 <article
-                  className="studio-card flex min-h-[82px] items-center justify-between gap-3 p-4"
+                  className="studio-card flex min-h-[5rem] items-center justify-between gap-3 p-4"
                   key={integration.id}
                 >
                   <div className="min-w-0">
