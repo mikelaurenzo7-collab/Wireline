@@ -78,7 +78,7 @@ export default function AgentAssetUpload({
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-[var(--wireline-elevation-sm)]">
+    <section className="studio-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="wl-overline">Sources</p>

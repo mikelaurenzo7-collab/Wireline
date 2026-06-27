@@ -136,10 +136,10 @@ function ToolGroup({
                 {active ? <Check size={10} strokeWidth={3.5} /> : null}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14.5px] font-semibold tracking-[-0.005em] text-foreground">
+                <span className="block truncate text-[var(--wireline-typography-body-size)] font-semibold tracking-[-0.005em] text-foreground">
                   {copy?.label || tool.label}
                 </span>
-                <span className="mt-px block text-[12.5px] leading-snug text-muted-foreground line-clamp-2">
+                <span className="mt-px block text-[var(--wireline-typography-caption-size)] leading-snug text-muted-foreground line-clamp-2">
                   {copy?.description || tool.description}
                 </span>
               </span>

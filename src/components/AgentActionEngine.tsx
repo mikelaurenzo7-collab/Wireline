@@ -140,10 +140,10 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           variant="outline"
           onClick={handleSave}
           disabled={isSaving}
-          className="h-10 px-6 rounded-full bg-brand/15 border-brand/40 text-brand text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] hover:bg-brand/25"
+          className="h-10 px-6 rounded-full bg-primary/10 border-primary/30 text-primary text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] hover:bg-primary/15"
         >
           {isSaving ? (
-            <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           ) : saveSuccess ? (
             <CheckCircle2 className="w-4 h-4 text-brand" />
           ) : (
@@ -157,11 +157,11 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
         {Object.entries(groupedTools).map(([group, tools]) => (
           <div key={group} className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-px bg-brand/30 w-8" />
-              <h4 className="wl-label text-brand/80">
+              <div className="h-px bg-primary/30 w-8" />
+              <h4 className="wl-label text-primary/80">
                 {group === "core" ? "Core actions" : `${group} integrations`}
               </h4>
-              <div className="h-px bg-brand/10 flex-1" />
+              <div className="h-px bg-primary/10 flex-1" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 stagger-children resp-adaptive-grid">
@@ -180,10 +180,10 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                     aria-label={`${tool.label}${isEnabled ? " (enabled)" : ""}`}
                     className={cn(
                       "relative p-5 rounded-md border transition-all cursor-pointer overflow-hidden group",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                       isEnabled && !isMissingIntegration
                         ? "bg-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_5%,transparent)] border-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_30%,var(--wireline-color-border-default))] shadow-[0_4px_24px_color-mix(in_srgb,var(--wireline-color-action-primary-default)_8%,transparent)] hover:-translate-y-px"
-                        : "wl-panel hover:border-brand/30 hover:-translate-y-px",
+                        : "wl-panel hover:border-primary/30 hover:-translate-y-px",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}
                     onClick={() => {
@@ -200,7 +200,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                     {/* Background glow if enabled */}
                     {isEnabled && !isMissingIntegration && (
                       <>
-                        <div className="absolute inset-0 bg-gradient-to-br from-brand/10 to-transparent opacity-50" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-40" />
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                       </>
                     )}
@@ -230,7 +230,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                                 "wl-label px-2 py-0.5 rounded-full border",
                                 isMissingIntegration
                                   ? "border-rose-500/30 text-rose-600 bg-rose-500/10"
-                                  : "border-brand/20 text-brand bg-brand/10",
+                                  : "border-primary/20 text-primary bg-primary/5",
                               )}
                             >
                               {tool.integration}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ArrowLeft, Loader2, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, MessageSquareText, Phone, Send, Trash2 } from "lucide-react";
 import { Button } from "../components/atoms";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
@@ -356,10 +356,11 @@ export default function StudioWorkroom({
                 className="rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:border-primary/30 active:scale-[0.985]"
               >
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {(o.channel || o.direction) === 'voice' || (o.channel || o.direction) === 'inbound' ? <Phone size={12} /> : <MessageSquareText size={12} />}
                   <span>{o.channel || o.direction || 'call'}</span>
                   <span className="rounded bg-muted px-1.5 py-px text-[9px]">{o.outcomeTag || o.tag || 'outcome'}</span>
                 </div>
-                <div className="mt-1 leading-snug text-foreground">{o.summary || 'Call handled.'}</div>
+                <div className="mt-1 leading-snug text-foreground line-clamp-2">{o.summary || 'Call handled.'}</div>
                 <div className="mt-1 text-[12px] text-muted-foreground">Next: {o.next || 'Review in ledger'}</div>
                 <div className="mt-1 text-[10px] text-primary">Brief agent from this outcome</div>
               </button>
