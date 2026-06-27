@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  ArrowLeft,
   ArrowRight,
   Cable,
   CreditCard,
@@ -24,14 +23,14 @@ const settingsDestinations = [
     href: "/settings/billing",
     icon: CreditCard,
     label: "Billing",
-    detail: "Balance.",
+    detail: "Balance",
     action: "Open",
   },
   {
     href: "/settings/team",
     icon: UsersRound,
     label: "Team",
-    detail: "Access.",
+    detail: "Access",
     action: "Manage",
   },
   {
@@ -45,14 +44,14 @@ const settingsDestinations = [
     href: "/actions",
     icon: Cable,
     label: "Integrations",
-    detail: "Wire up.",
+    detail: "Tools",
     action: "Review",
   },
   {
     href: "/settings/apps",
     icon: MonitorDown,
     label: "Apps",
-    detail: "Surfaces.",
+    detail: "Surfaces",
     action: "View",
   },
 ] as const;
@@ -95,9 +94,8 @@ function DangerZone() {
         <div className="min-w-0 flex-1">
           <p className="studio-kicker">Danger</p>
           <h2 className="mt-2 text-base font-semibold tracking-[-.02em] text-foreground">
-            Account deletion.
+            Delete account.
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Delete queued.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <label className="grid gap-1.5 text-sm font-semibold text-foreground">
               Type DELETE
@@ -158,15 +156,6 @@ export default function SettingsPage() {
   return (
     <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="pt-1 pb-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
-        <div className="flex items-center justify-end">
-          <Button asChild variant="secondary" size="sm" className="shrink-0">
-            <Link to="/studio">
-              <ArrowLeft aria-hidden="true" size={15} />
-              Back to Studio
-            </Link>
-          </Button>
-        </div>
-
         <section className="studio-card p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -203,12 +192,6 @@ export default function SettingsPage() {
         </section>
 
         <section>
-          <div className="mb-3 text-center">
-            <p className="studio-kicker">Controls</p>
-            <h2 className="text-xl font-semibold tracking-[-.035em] text-foreground">
-              Pick your path.
-            </h2>
-          </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {settingsDestinations.map(({ href, icon: Icon, label, detail, action }) => (
               <Link
