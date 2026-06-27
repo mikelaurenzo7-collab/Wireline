@@ -1,7 +1,5 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, PlayCircle, Receipt, ShieldCheck, WalletCards } from "lucide-react";
+import { PlayCircle, Receipt, ShieldCheck, WalletCards } from "lucide-react";
 
-import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import StripeBillingCard from "../components/StripeBillingCard";
@@ -30,20 +28,8 @@ const BILLING_FLOW = [
 
 export default function BillingSettings() {
   return (
-    <WorkspaceShell
-      eyebrow="Workspace"
-      title="Billing"
-      contentClassName="pt-6"
-      action={
-        <Button asChild variant="secondary" size="sm" className="shrink-0">
-          <Link to="/settings" aria-label="Back to Settings">
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline">Settings</span>
-          </Link>
-        </Button>
-      }
-    >
-      <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-6 pb-6">
+    <WorkspaceShell eyebrow="Workspace" title="Billing" contentClassName="pt-1 pb-8">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-5 pb-6">
         <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(240px,.62fr)_minmax(0,1fr)] xl:items-center">
           <div className="text-center">
             <p className="studio-kicker">Billing</p>
