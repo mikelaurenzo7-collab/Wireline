@@ -3,9 +3,9 @@ import { Cable, CreditCard, MonitorDown, Settings, UsersRound } from "lucide-rea
 
 const mobileUtilityLinks = [
   { href: "/settings", label: "Settings", detail: "Account", icon: Settings },
-  { href: "/settings/billing", label: "Billing", detail: "Usage + balance", icon: CreditCard },
-  { href: "/actions", label: "Integrations", detail: "Connected tools", icon: Cable },
-  { href: "/settings/apps", label: "Apps", detail: "Mobile + browser", icon: MonitorDown },
+  { href: "/settings/billing", label: "Billing", detail: "Usage", icon: CreditCard },
+  { href: "/actions", label: "Integrations", detail: "Tools", icon: Cable },
+  { href: "/settings/apps", label: "Apps", detail: "Mobile", icon: MonitorDown },
   { href: "/settings/team", label: "Team", detail: "Access", icon: UsersRound },
 ] as const;
 
@@ -25,35 +25,44 @@ export default function MobileBrowserUtilities() {
   if (hidesOwnControls(location.pathname)) return null;
 
   return (
-    <details className="fixed right-3 top-3 z-50 lg:hidden">
+    <details className="fixed left-4 top-3 z-[70] lg:hidden">
       <summary
         aria-label="Open workspace controls"
-        className="grid size-11 cursor-pointer list-none place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-[var(--wireline-elevation-sm)] backdrop-blur-xl marker:hidden [&::-webkit-details-marker]:hidden"
+        className="grid size-10 cursor-pointer list-none place-items-center rounded-full border border-border bg-background text-foreground shadow-[var(--wireline-elevation-sm)] marker:hidden transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden"
       >
-        <Settings size={18} aria-hidden="true" />
+        <Settings size={17} aria-hidden="true" />
       </summary>
-      <div className="absolute right-0 mt-2 w-[min(19rem,calc(100vw-1.5rem))] rounded-2xl border border-border bg-background p-2 shadow-[var(--wireline-elevation-md)]">
-        <div className="px-3 py-2">
-          <p className="wl-overline">Controls</p>
-          <p className="mt-1 text-sm text-muted-foreground">Settings, usage, integrations.</p>
+      <div className="absolute left-0 mt-2 max-h-[min(24rem,calc(100dvh-5.25rem))] w-[min(17rem,calc(100vw-2rem))] overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-background p-2 normal-case tracking-normal text-foreground shadow-[0_22px_48px_-28px_rgba(17,17,17,0.45),var(--wireline-elevation-md)]">
+        <div className="border-b border-border/70 px-3 py-2.5 text-left">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Controls
+          </p>
+          <p className="mt-1 text-xs font-medium leading-snug text-foreground">Settings and tools.</p>
         </div>
-        <nav className="grid gap-1" aria-label="Mobile browser controls">
-          {mobileUtilityLinks.map(({ href, label, detail, icon: Icon }) => (
-            <Link
-              key={href}
-              to={href}
-              aria-current={isActive(location.pathname, href) ? "page" : undefined}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-muted"
-            >
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
-                <Icon size={15} aria-hidden="true" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-foreground">{label}</span>
-                <span className="block truncate text-xs text-muted-foreground">{detail}</span>
-              </span>
-            </Link>
-          ))}
+        <nav className="mt-1 grid gap-1" aria-label="Mobile browser controls">
+          {mobileUtilityLinks.map(({ href, label, detail, icon: Icon }) => {
+            const active = isActive(location.pathname, href);
+            return (
+              <Link
+                key={href}
+                to={href}
+                aria-current={active ? "page" : undefined}
+                className={`flex min-h-12 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                  active ? "bg-muted text-foreground" : "hover:bg-muted text-foreground"
+                }`}
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-card text-foreground">
+                  <Icon size={15} aria-hidden="true" />
+                </span>
+                <span className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
+                  <span className="truncate font-semibold leading-none text-foreground">{label}</span>
+                  <span className="shrink-0 text-[11px] font-medium leading-none text-muted-foreground">
+                    {detail}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </details>
