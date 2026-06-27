@@ -26,7 +26,8 @@ describe("authenticated agent flow", () => {
     expect(agentsPage).toContain("/settings/billing");
 
     expect(createDialog).toContain("New agent.");
-    expect(createDialog).toContain("Name it. Pick a role. Train next.");
+    expect(createDialog).toContain("Name, role, voice, personality, and a starting brief.");
+    expect(createDialog).toContain("Short intake. Train next. Run immediately.");
     expect(createDialog).toContain("Create agent");
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
@@ -46,7 +47,9 @@ describe("authenticated agent flow", () => {
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
     expect(onboardingFlow).toContain("Opening Create Agent");
-    expect(onboardingFlow).toContain("Fresh signups go straight into the short intake.");
+    expect(onboardingFlow).toContain(
+      "Fresh signups and create links can target Studio create when appropriate.",
+    );
     expect(onboardingFlow).not.toContain("Link your phone");
   });
 
@@ -57,18 +60,20 @@ describe("authenticated agent flow", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
 
     expect(overview).toContain("Create -> Train -> Run");
-    expect(overview).toContain("Next best move");
-    expect(overview).toContain("Create, train, then run without guessing.");
-    expect(overview).toContain("Short intake");
-    expect(overview).toContain("Make it trustworthy");
-    expect(overview).toContain("Direct live work");
+    expect(overview).toContain("Forge an agent.");
+    expect(overview).toContain("Run the work.");
+    expect(overview).toContain("Brief it.");
+    expect(overview).toContain("Forge it.");
+    expect(overview).toContain("Task it.");
     expect(overview).toContain("Open Studio");
-    expect(overview).toContain("Approvals and follow-up");
-    expect(overview).toContain("Brand, voice, and authority");
+    expect(overview).toContain("Work here.");
+    expect(overview).toContain("One voice. Everywhere.");
 
-    expect(studioOverview).toContain("Give it work.");
-    expect(studioOverview).toContain('placeholder={`Ask ${active.name} to...`}');
-    expect(studioOverview).toContain("Open chat");
+    expect(studioOverview).toContain("Task it.");
+    expect(studioOverview).toContain("placeholder={`Ask ${active.name} to...`}");
+    expect(studioOverview).toContain("Open Workroom");
+    expect(studioOverview).toContain("Workroom");
+    expect(studioOverview).toContain("Forge");
     expect(studioOverview).toContain('to="/settings"');
     expect(studioOverview).toContain("Settings");
     expect(studioOverview).not.toContain("WHAT SHOULD IT DO?");
@@ -80,10 +85,10 @@ describe("authenticated agent flow", () => {
     expect(studioWorkspace).toContain('next.set("mode", "workroom")');
     expect(studioWorkspace).toContain('mode === "workroom" || mode === "assistant"');
 
-    expect(workroom).toContain("Start with a task.");
+    expect(workroom).toContain("Ready.");
+    expect(workroom).toContain("Direct the work.");
     expect(workroom).toContain("Draft reply");
     expect(workroom).toContain('to="/settings"');
-    expect(workroom).not.toContain("Direct work.");
     expect(workroom).not.toContain("Training holds setup.");
     expect(workroom).not.toContain("Train by talking.");
     expect(workroom).not.toContain("what to learn or do");
@@ -125,10 +130,10 @@ describe("authenticated agent flow", () => {
     const balance = read("src/components/ConversationBalanceCard.tsx");
     const stripeBilling = read("src/components/StripeBillingCard.tsx");
 
-    expect(billing).toContain("Fund the work. Keep the ledger clean.");
+    expect(billing).toContain("Fund the work.");
     expect(billing).toContain("Start free. Fund live work.");
     expect(billing).toContain("Use balance first.");
-    expect(billing).toContain("Stripe keeps the receipt.");
+    expect(billing).toContain("Stripe receipts.");
     expect(balance).toContain(
       "Start free. Add balance when you are ready to run calls, texts, and follow-up.",
     );
@@ -143,13 +148,13 @@ describe("authenticated agent flow", () => {
     const settings = read("src/pages/SettingsPage.tsx");
     const routes = read("src/routes/AppRoutes.tsx");
 
-    expect(settings).toContain("Choose a control.");
-    expect(settings).toContain("Plan and balance");
-    expect(settings).toContain("People and access");
-    expect(settings).toContain("Brand and voice");
-    expect(settings).toContain("Approved systems");
-    expect(settings).toContain("Mobile and browser");
-    expect(settings).toContain("Queues account deletion.");
+    expect(settings).toContain("Pick your path.");
+    expect(settings).toContain("Billing");
+    expect(settings).toContain("Team");
+    expect(settings).toContain("Customize");
+    expect(settings).toContain("Integrations");
+    expect(settings).toContain("Apps");
+    expect(settings).toContain("Delete queued.");
     expect(settings).toContain('to="/studio"');
     expect(settings).not.toContain("Set the operating rules.");
     expect(settings).not.toContain("Make every surface feel like one system.");
@@ -162,14 +167,14 @@ describe("authenticated agent flow", () => {
   it("gives customization a dedicated authenticated surface", () => {
     const customization = read("src/pages/CustomizationSettings.tsx");
 
-    expect(customization).toContain("One profile for brand, voice, rules, and goals.");
-    expect(customization).toContain("Customize the system, not just a screen.");
+    expect(customization).toContain("One voice, everywhere.");
+    expect(customization).toContain("System taste, not screens.");
     expect(customization).toContain("Brand profile");
     expect(customization).toContain("Voice identity");
     expect(customization).toContain("Operating authority");
     expect(customization).toContain("Success targets");
-    expect(customization).toContain("Same taste, every surface.");
-    expect(customization).toContain("Customization contract");
+    expect(customization).toContain("Taste travels.");
+    expect(customization).toContain("One profile.");
   });
 
   it("does not ship mojibake in the authenticated first-run path", () => {

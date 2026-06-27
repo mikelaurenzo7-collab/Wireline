@@ -3,6 +3,11 @@ Allow: /
 Disallow: /api/
 Disallow: /admin
 Disallow: /agents
+Disallow: /overview
+Disallow: /studio
+Disallow: /training
+Disallow: /actions
+Disallow: /settings
 Disallow: /audit
 Disallow: /logs
 Disallow: /outbound
@@ -12,6 +17,7 @@ Disallow: /sms
 Disallow: /cockpit
 Disallow: /dnc
 Disallow: /knowledge
+Disallow: /email
 Disallow: /integrations
 Disallow: /train
 Disallow: /live

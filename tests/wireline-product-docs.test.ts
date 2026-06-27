@@ -82,4 +82,25 @@ describe("Wireline product documentation contract", () => {
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });
+
+  it("keeps authenticated workspace routes out of crawler policy and public sitemap", () => {
+    const robots = read("public/robots.txt");
+    const sitemap = read("public/sitemap.xml");
+    const privateRoutes = [
+      "/admin",
+      "/agents",
+      "/overview",
+      "/studio",
+      "/training",
+      "/actions",
+      "/settings",
+      "/inbox",
+      "/knowledge",
+    ];
+
+    for (const route of privateRoutes) {
+      expect(robots).toContain(`Disallow: ${route}`);
+      expect(sitemap).not.toContain(`https://trywireline.com${route}`);
+    }
+  });
 });
