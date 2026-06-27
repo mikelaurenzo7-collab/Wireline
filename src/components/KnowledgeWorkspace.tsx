@@ -290,7 +290,7 @@ export default function KnowledgeWorkspace() {
       title="Facts & preferences"
       icon={<Database size={16} />}
       items={facts}
-      empty="Facts. Preferences. Details."
+      empty="No facts yet."
       loading={loading}
       meta={`${facts.length} items`}
     />
@@ -300,7 +300,7 @@ export default function KnowledgeWorkspace() {
       title="Guidance & handoff"
       icon={<ShieldCheck size={16} />}
       items={guidance}
-      empty="Rules. Handoffs. Preferences."
+      empty="No rules yet."
       loading={loading}
       meta={guidance.length ? `${guidance.length} active` : "0 items"}
     />
@@ -353,7 +353,6 @@ export default function KnowledgeWorkspace() {
               <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.01em] text-foreground">
                 Add detail
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">Fact, rule, or handoff.</p>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 rounded-md bg-muted p-1">

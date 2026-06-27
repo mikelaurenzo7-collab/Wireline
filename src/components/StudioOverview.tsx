@@ -56,31 +56,9 @@ export default function StudioOverview({
   return (
     <main className="h-full min-h-0 overflow-y-auto bg-background px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-5 sm:gap-6">
-        {/* Quick path actions stay compact so the work composer owns the page. */}
-        <div className="flex flex-wrap justify-center gap-2 text-center">
-          <Link
-            to={`/studio?agent=${encodeURIComponent(active.id)}&mode=workroom`}
-            className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold tracking-wide hover:border-primary/30 hover:bg-accent active:scale-[0.985]"
-          >
-            Direct
-          </Link>
-          <Link
-            to={`/training?agent=${encodeURIComponent(active.id)}`}
-            className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold tracking-wide hover:border-primary/30 hover:bg-accent active:scale-[0.985]"
-          >
-            Train
-          </Link>
-          <Link
-            to="/actions"
-            className="rounded-full border border-border bg-card px-4 py-1 text-xs font-semibold tracking-wide hover:border-primary/30 hover:bg-accent active:scale-[0.985]"
-          >
-            Wire
-          </Link>
-        </div>
         <header className="flex flex-col items-center gap-3 text-center wl-centered-header">
           <div>
-            <p className="studio-kicker">Studio</p>
-            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h1-size)] font-semibold leading-none tracking-[-0.05em] text-foreground">
+            <h1 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h1-size)] font-semibold leading-none tracking-[-0.05em] text-foreground">
               {active.name}
             </h1>
             <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground/70">
@@ -108,14 +86,7 @@ export default function StudioOverview({
         ) : null}
 
         <section className="studio-card p-5 sm:p-6 text-center wl-centered-header">
-          <div>
-            <p className="studio-kicker">Brief</p>
-            <h2 className="mt-1.5 font-[var(--wireline-font-family-display)] text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-[-0.035em] text-foreground">
-              Task it.
-            </h2>
-          </div>
-
-          <div className="mt-4 flex flex-col items-center gap-4 rounded-[var(--radius-lg)] border border-border bg-background p-3.5 sm:p-4">
+          <div className="flex flex-col items-center gap-4 rounded-[var(--radius-lg)] border border-border bg-background p-3.5 sm:p-4">
             <label className="sr-only" htmlFor="studio-brief">
               What should this agent work on?
             </label>
@@ -161,7 +132,7 @@ export default function StudioOverview({
 
         <section className="studio-card p-4 sm:p-5 text-center wl-centered-header">
           <div className="flex items-center justify-between px-0.5 pb-2">
-            <p className="studio-kicker">Fleet</p>
+            <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Agents</p>
             <button
               type="button"
               onClick={onCreate}
@@ -175,7 +146,6 @@ export default function StudioOverview({
               const selected = agent.id === active.id;
               const AgentIcon = agent.channel === "email" ? MessageSquareText : Phone;
               const description = agentDescription(agent);
-              const encodedId = encodeURIComponent(agent.id);
               return (
                 <div
                   key={agent.id}
@@ -207,28 +177,6 @@ export default function StudioOverview({
                       <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
                     )}
                   </button>
-
-                  {/* Quick actions + seamless Workroom entry with context */}
-                  <div className="mt-2 flex gap-1 border-t border-border/50 pt-2 text-[10px] text-center">
-                    <Link
-                      to={`/studio?agent=${encodedId}`}
-                      className="flex-1 rounded px-2 py-1 font-medium hover:bg-background/50 focus-visible:outline focus-visible:outline-1"
-                    >
-                      Direct
-                    </Link>
-                    <Link
-                      to={`/training?agent=${encodedId}`}
-                      className="flex-1 rounded px-2 py-1 font-medium hover:bg-background/50 focus-visible:outline focus-visible:outline-1"
-                    >
-                      Train
-                    </Link>
-                    <Link
-                      to={`/studio?agent=${encodedId}&mode=workroom`}
-                      className="flex-1 rounded px-2 py-1 font-semibold text-primary hover:bg-primary/5 focus-visible:outline focus-visible:outline-1"
-                    >
-                      Workroom
-                    </Link>
-                  </div>
                 </div>
               );
             })}

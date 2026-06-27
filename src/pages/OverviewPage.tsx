@@ -21,15 +21,10 @@ import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary, WORKSPACE_VOICE } from "../lib/product-copy";
 
 const WORKSPACE_MOVES = [
-  { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approve. Follow up." },
-  { href: "/training", icon: FileText, title: "Training", label: "Facts. Rules. Voice." },
-  { href: "/actions", icon: Cable, title: "Wire", label: "Connect tools." },
-  {
-    href: "/settings/customization",
-    icon: SlidersHorizontal,
-    title: "Tune",
-    label: "One voice. Everywhere.",
-  },
+  { href: "/inbox", icon: Inbox, title: "Inbox" },
+  { href: "/training", icon: FileText, title: "Training" },
+  { href: "/actions", icon: Cable, title: "Wire" },
+  { href: "/settings/customization", icon: SlidersHorizontal, title: "Tune" },
 ] as const;
 
 function RosterLoading() {
@@ -90,12 +85,9 @@ export default function OverviewPage() {
       <div className="wl-overview flex w-full max-w-none flex-col pb-8">
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="studio-card wl-composer-hero grid gap-4 p-4 sm:p-5 lg:p-6">
-            <div className="wl-centered-header">
-              <p className="studio-kicker">{`Create -> Train -> Run`}</p>
-              <h2 className="mt-1 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-semibold leading-tight tracking-[-0.03em]">
-                {hasAgents ? WORKSPACE_VOICE.runHeadline : WORKSPACE_VOICE.createHeadline}
-              </h2>
-            </div>
+            <h2 className="wl-centered-header font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-semibold leading-tight tracking-[-0.03em]">
+              {hasAgents ? WORKSPACE_VOICE.runHeadline : WORKSPACE_VOICE.createHeadline}
+            </h2>
 
             {hasAgents ? (
               <div className="wl-composer-dock">
@@ -160,25 +152,22 @@ export default function OverviewPage() {
           </div>
 
           <aside className="studio-card wl-status-card flex flex-col justify-between p-6 sm:p-7">
-            <div>
-              <p className="studio-kicker">Status</p>
-              <div className="mt-4 flex items-baseline justify-center gap-2">
-                <span className="wl-metric-value text-[2rem] font-semibold tabular-nums tracking-[-0.02em]">
-                  {loading ? "--" : agents.length}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {agents.length === 1 ? "agent" : "agents"}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {degraded
-                  ? "Links recovering."
-                  : hasAgents
-                    ? rosterSummary(personalCount, businessCount)
-                    : "Start here."}
-              </p>
+            <div className="flex items-baseline justify-center gap-2">
+              <span className="wl-metric-value text-[2rem] font-semibold tabular-nums tracking-[-0.02em]">
+                {loading ? "--" : agents.length}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {agents.length === 1 ? "agent" : "agents"}
+              </span>
             </div>
-            <div className="mt-6 flex justify-center border-t border-border pt-4">
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              {degraded
+                ? "Links recovering."
+                : hasAgents
+                  ? rosterSummary(personalCount, businessCount)
+                  : ""}
+            </p>
+            <div className="mt-4 flex justify-center border-t border-border pt-4">
               {degraded ? (
                 <Badge variant="warning" className="text-center">
                   Check links
@@ -199,52 +188,31 @@ export default function OverviewPage() {
           </StatusNotice>
         ) : null}
 
-        <section className="wl-centered-header">
-          <div className="mb-4 flex flex-wrap items-end justify-center gap-3 text-center">
-            <div>
-              <p className="studio-kicker">Next</p>
-              <h2 className="wl-section-title mt-1">Work here.</h2>
-            </div>
-            {hasAgents ? (
-              <Button asChild variant="link" className="h-auto px-0 text-sm">
-                <Link to="/agents">
-                  View agents <ArrowRight aria-hidden="true" className="size-4" />
-                </Link>
-              </Button>
-            ) : null}
-          </div>
+        <section>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {WORKSPACE_MOVES.map(({ href, icon: Icon, title, label }) => (
+            {WORKSPACE_MOVES.map(({ href, icon: Icon, title }) => (
               <Link
                 key={href}
                 to={href}
-                className="wl-overview-shortcut studio-card wl-card-action group flex flex-col p-5 text-center transition-colors hover:border-primary/20"
+                className="wl-overview-shortcut studio-card wl-card-action group flex items-center justify-center gap-3 p-5 text-center transition-colors hover:border-primary/20"
               >
-                <Icon aria-hidden="true" className="mx-auto size-5 text-primary" />
-                <div className="mt-auto flex flex-col items-center gap-3">
-                  <div>
-                    <h3 className="wl-card-title text-center tracking-[-0.01em]">{title}</h3>
-                    <p className="mt-1 text-center text-sm text-muted-foreground">{label}</p>
-                  </div>
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
-                  />
-                </div>
+                <Icon aria-hidden="true" className="size-5 text-primary" />
+                <h3 className="wl-card-title tracking-[-0.01em]">{title}</h3>
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+                />
               </Link>
             ))}
           </div>
         </section>
 
         <section className="studio-card p-5 sm:p-6 wl-centered-header">
-          <div className="flex flex-col items-center gap-3 border-b border-border pb-4 text-center">
-            <div>
-              <p className="studio-kicker">Fleet</p>
-              <h2 className="wl-section-title mt-1">{hasAgents ? "Ready." : "Create one."}</h2>
-            </div>
+          <div className="flex items-center justify-between border-b border-border pb-4">
+            <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Agents</h2>
             <Button asChild variant="secondary" size="sm">
               <Link to={hasAgents ? "/agents" : "/studio?create=1"}>
-                {hasAgents ? "Manage fleet" : "Create agent"}
+                {hasAgents ? "View all" : "Create agent"}
               </Link>
             </Button>
           </div>

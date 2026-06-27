@@ -16,7 +16,7 @@ const CAPACITY_TIERS = [
   {
     name: "Wireline Team",
     eyebrow: "Shared coverage",
-    body: "Several agents, shared inbox, routing, core integrations, and a cleaner operating layer for a small team.",
+    body: "Multi-agent coverage with shared inbox and routing.",
     features: [
       "Multi-agent coverage",
       "Shared inbox and follow-up",
@@ -27,7 +27,7 @@ const CAPACITY_TIERS = [
   {
     name: "Wireline Business",
     eyebrow: "Operating capacity",
-    body: "Revenue, support, and front desk teams that need CRM sync, roles, analytics, and pooled live-work funding.",
+    body: "CRM, roles, analytics, and pooled usage.",
     features: [
       "CRM and policy controls",
       "Team roles and approvals",
@@ -38,7 +38,7 @@ const CAPACITY_TIERS = [
   {
     name: "Wireline Enterprise",
     eyebrow: "Governed rollout",
-    body: "Annual programs for organizations that need SSO, SCIM, auditability, custom policy, and telephony control.",
+    body: "SSO, SCIM, audit, and custom governance.",
     features: [
       "SSO, SCIM, and audit support",
       "Custom policy and governance",
@@ -86,10 +86,6 @@ export default function Pricing() {
                 Wireline sells operating capacity, not template access. Create and train for free,
                 fund live calls and texts through Conversation Balance, and move into Team or
                 Business capacity when work becomes shared.
-              </p>
-              <p className="mx-auto mt-3 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
-                Personal stays subscription-free. Team and Business add shared routing, approvals,
-                and governance while live work still reconciles through Conversation Balance.
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link

@@ -45,16 +45,6 @@ function TrainingSurfaceMap({
 }) {
   return (
     <section className="studio-card grid gap-3 p-4 sm:p-5">
-      <div className="wl-centered-header">
-        <p className="studio-kicker">Train</p>
-        <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.02em] text-foreground">
-          Pick a lane.
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Facts, instructions, sources, voice, test calls, and memory.
-        </p>
-      </div>
-
       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {trainingNav.map((item, idx) => {
           const { label, note, icon: Icon } = item;

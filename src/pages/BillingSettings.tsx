@@ -32,12 +32,14 @@ export default function BillingSettings() {
       <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-5 pb-6">
         <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(240px,.62fr)_minmax(0,1fr)] xl:items-center">
           <div className="text-center">
-            <p className="studio-kicker">Billing</p>
-            <h2 className="wl-section-title mt-1">Fund the work.</h2>
+            <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Billing</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {BILLING_FLOW.map(({ label, title, detail, icon: Icon }) => (
-              <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4 text-center">
+              <div
+                key={label}
+                className="rounded-[var(--radius-lg)] border border-border bg-card p-4 text-center"
+              >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
                     {label}

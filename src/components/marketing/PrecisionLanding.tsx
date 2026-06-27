@@ -147,9 +147,6 @@ function SignalFlow() {
         <div className="grid size-16 place-items-center rounded-2xl border border-border bg-background shadow-[var(--wireline-elevation-sm)]">
           <span className="font-mono text-lg font-semibold tracking-[-0.04em]">W</span>
         </div>
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          Agent hub
-        </p>
       </div>
       <div className="grid gap-2 text-left">
         {["Answer", "Summarize", "Follow up"].map((item) => (
@@ -174,12 +171,7 @@ function LiveDirectSimulator() {
 
   return (
     <div className="mx-auto mt-5 max-w-4xl rounded-[var(--radius-xl)] border border-border bg-card p-5 text-left">
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-        <span>Direct live</span>
-        <span className="font-mono">Create / Train / Run</span>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
         {channels.map(({ label, icon: Icon }) => (
           <button
             key={label}

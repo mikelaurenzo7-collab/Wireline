@@ -140,7 +140,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
         <Input
           type="search"
           aria-label="Search calls"
-          placeholder="Search signals…"
+          placeholder="Search calls…"
           className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[var(--wireline-typography-overline-size)] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -170,7 +170,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
     <PageShell
       eyebrow={embedded ? undefined : "Communications · Voice"}
       title={embedded ? "" : "Call Logs"}
-      subtitle={embedded ? undefined : "Recorded calls and agent responses"}
+      subtitle={undefined}
       actions={embedded ? undefined : actions}
     >
       <div className="h-full min-h-0 grid grid-cols-12 gap-3 overflow-hidden">

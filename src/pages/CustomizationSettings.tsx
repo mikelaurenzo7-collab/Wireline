@@ -79,9 +79,7 @@ export default function CustomizationSettings() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 pb-8">
         <section className="studio-card grid gap-4 border-primary/20 bg-secondary p-5 sm:p-6 xl:grid-cols-[minmax(0,.8fr)_minmax(300px,.55fr)] xl:items-center">
           <div className="text-center">
-            <p className="studio-kicker">Profile</p>
-            <h2 className="wl-section-title mt-1">One voice, everywhere.</h2>
-            <p className="mt-2 text-sm text-muted-foreground">System taste, not screens.</p>
+            <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Profile</h2>
           </div>
           <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
             <div className="flex items-start gap-3">
@@ -92,9 +90,7 @@ export default function CustomizationSettings() {
                 <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
                   Rule
                 </p>
-                <p className="mt-1 text-sm text-foreground">
-                  Power where needed. Clarity everywhere.
-                </p>
+                <p className="mt-1 text-sm text-foreground">One profile across all agents.</p>
               </div>
             </div>
           </div>
@@ -133,9 +129,7 @@ export default function CustomizationSettings() {
         <section className="studio-card p-5 sm:p-6">
           <div className="flex flex-col items-center gap-2 border-b border-border pb-3 text-center sm:flex-row sm:items-center sm:justify-between">
             <div className="w-full text-center sm:w-auto sm:text-left">
-              <p className="studio-kicker">Carryover</p>
-              <h2 className="wl-section-title mt-1">Taste travels.</h2>
-              <p className="mt-1 text-sm text-muted-foreground">One profile.</p>
+              <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Surfaces</h2>
             </div>
             <Button asChild variant="link" className="h-auto w-fit px-0 text-sm">
               <Link to="/settings/apps">

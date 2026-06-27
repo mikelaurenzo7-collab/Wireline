@@ -28,7 +28,13 @@ async function readAsset(file: File): Promise<AssetBody> {
   return { fileName: file.name, mimeType, text: await file.text() };
 }
 
-export default function AgentAssetUpload({ agentId, onComplete }: { agentId: string; onComplete?: () => void }) {
+export default function AgentAssetUpload({
+  agentId,
+  onComplete,
+}: {
+  agentId: string;
+  onComplete?: () => void;
+}) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -49,12 +55,15 @@ export default function AgentAssetUpload({ agentId, onComplete }: { agentId: str
       const summaries: string[] = [];
       for (const file of files) {
         const payload = await readAsset(file);
-        const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/assets`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const body = await safeJson(response) as { summary?: string; error?: string } | null;
+        const response = await authFetch(
+          `/api/agent-config/${encodeURIComponent(agentId)}/assets`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+        );
+        const body = (await safeJson(response)) as { summary?: string; error?: string } | null;
         if (!response.ok) throw new Error(body?.error || `${file.name} could not be ingested.`);
         if (body?.summary) summaries.push(body.summary);
       }
@@ -73,8 +82,9 @@ export default function AgentAssetUpload({ agentId, onComplete }: { agentId: str
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="wl-overline">Sources</p>
-          <h2 className="mt-1 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.03em] text-foreground">Upload documents</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Ingest files. Feed facts.</p>
+          <h2 className="mt-1 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.03em] text-foreground">
+            Upload
+          </h2>
         </div>
         <FileText className="size-5 text-muted-foreground" aria-hidden="true" />
       </div>
@@ -82,14 +92,39 @@ export default function AgentAssetUpload({ agentId, onComplete }: { agentId: str
       <label className="mt-4 flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-muted">
         <UploadCloud className="size-5 text-muted-foreground" aria-hidden="true" />
         <span className="mt-2 text-sm font-medium text-foreground">Add files</span>
-        <span className="mt-1 text-xs text-muted-foreground">TXT, MD, CSV, JSON, PNG, JPG, WEBP, GIF</span>
-        <input type="file" multiple accept="text/*,.txt,.md,.csv,.json,image/png,image/jpeg,image/webp,image/gif" className="sr-only" onChange={onChange} />
+        <span className="mt-1 text-xs text-muted-foreground">
+          TXT, MD, CSV, JSON, PNG, JPG, WEBP, GIF
+        </span>
+        <input
+          type="file"
+          multiple
+          accept="text/*,.txt,.md,.csv,.json,image/png,image/jpeg,image/webp,image/gif"
+          className="sr-only"
+          onChange={onChange}
+        />
       </label>
 
-      {files.length ? <p className="mt-3 text-xs leading-5 text-muted-foreground">{files.map((file) => file.name).join(", ")}</p> : null}
-      {message ? <StatusNotice tone="success" className="mt-3" title="Ingested">{message}</StatusNotice> : null}
-      {error ? <StatusNotice tone="destructive" className="mt-3" title="Upload failed">{error}</StatusNotice> : null}
-      <Button type="button" disabled={!files.length || uploading || !agentId} onClick={() => void upload()} className="mt-4 w-full justify-center">
+      {files.length ? (
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+          {files.map((file) => file.name).join(", ")}
+        </p>
+      ) : null}
+      {message ? (
+        <StatusNotice tone="success" className="mt-3" title="Ingested">
+          {message}
+        </StatusNotice>
+      ) : null}
+      {error ? (
+        <StatusNotice tone="destructive" className="mt-3" title="Upload failed">
+          {error}
+        </StatusNotice>
+      ) : null}
+      <Button
+        type="button"
+        disabled={!files.length || uploading || !agentId}
+        onClick={() => void upload()}
+        className="mt-4 w-full justify-center"
+      >
         {uploading ? <Loader2 className="size-4 animate-spin" /> : <UploadCloud size={15} />}
         Ingest source
       </Button>
