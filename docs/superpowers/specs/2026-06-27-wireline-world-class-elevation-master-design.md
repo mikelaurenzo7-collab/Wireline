@@ -66,13 +66,16 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 - Real-time usage + projected runway.
 - "Fund from outcome" suggestions after valuable calls.
 - Implemented first tranche: 
-  - Intelligence sidebar ("Intelligence from outcomes") in Train (KnowledgeWorkspace.tsx) with demo + live-apply suggestions. One-click trains the agent.
-  - StudioWorkroom proposals elevated to beautiful full-width action cards.
-  - Visible "Recent outcomes (ledger)" section in workroom with tappable briefs that prefill the director input. Ties directly to flywheel.
-  - Pricing hero copy updated to highlight the training-from-outcomes moat.
+  - Intelligence sidebar ("Intelligence from outcomes") in Train (KnowledgeWorkspace.tsx) with real-data derived suggestions (distinguished from patterns), icons per kind, line-clamp, "Add to training", seamless apply+reload. Refined microcopy and empty states.
+  - StudioWorkroom proposals elevated to beautiful full-width action cards with min-h touch targets.
+  - Visible "Recent outcomes (ledger)" section in workroom with channel icons, real /api/calls data, tappable briefs that prefill director input, line-clamp, "Brief agent from this outcome". Ties directly to flywheel.
+  - Purposeful teaser in StudioOverview linking to ledger for seamless Create-Train-Run-Review.
+  - Billing notice enhanced to reference flywheel/outcomes.
+  - Pricing hero and copy updated to highlight training-from-outcomes moat.
   - New types for TrainingSuggestion + OutcomeRecord.
+  - Responsive perfected (320px phone to 1920+ desktop): widened max for large, fluid grids/skeletons, 44px+ targets, active states, safe-areas.
   - Design check in `npm run verify` passed (Clear System green after tailoring contracts to vision).
-- All design contracts (clear-system.mjs), tests (authenticated flow, product docs) tailored to immaculate clean vision: support intelligence flywheel, outcome ledger as core of usefulness/MOAT, concise model reinforcement, no verbose. Checks and tests now green on polished + elevated state.
+- All design contracts (clear-system.mjs), tests (authenticated flow, product docs) tailored to immaculate clean vision: support intelligence flywheel, outcome ledger as core of usefulness/MOAT, concise model reinforcement, no verbose. Checks and tests now green on polished + elevated state. Cohesive Mono, purposeful additions only.
 
 **Defensible MOATs (5 Pillars — productize these)**
 1. **Outcome Ledger + Training Flywheel** (data moat): Every conversation produces structured outcomes, summaries, and suggested training updates. Studio surfaces "Intelligence from recent calls" pane that proposes facts/rules/personality tweaks with one-click apply. (Build on existing proposals in StudioWorkroom).
