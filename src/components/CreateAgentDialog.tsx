@@ -166,16 +166,16 @@ export default function CreateAgentDialog({
         aria-describedby="create-agent-description"
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 text-center sm:text-left">
-            <p className="text-xs font-semibold text-muted-foreground">New agent</p>
+          <div className="min-w-0">
             <h2
               id="create-agent-title"
-              className="mt-1 font-[var(--wireline-font-family-display)] text-2xl font-semibold leading-tight tracking-[-.04em] text-foreground"
+              className="font-[var(--wireline-font-family-display)] text-2xl font-semibold leading-tight tracking-[-.04em] text-foreground"
             >
-              New agent.
+              New agent
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">Name, role, voice, personality, and a starting brief.</p>
-            <p className="mt-1 text-[10px] text-muted-foreground/70">Short intake. Train next. Run immediately.</p>
+            <p id="create-agent-description" className="mt-1 text-sm text-muted-foreground">
+              Name. Role. Voice. Brief.
+            </p>
           </div>
           <Button
             type="button"
@@ -262,7 +262,7 @@ export default function CreateAgentDialog({
           className="mt-3"
           label="First brief"
           htmlFor="create-agent-brief"
-          description="Optional. Add details in Training. Create and open Training."
+          description="Optional."
         >
           <Textarea
             id="create-agent-brief"
@@ -270,7 +270,7 @@ export default function CreateAgentDialog({
             onChange={(event) => setBrief(event.target.value)}
             placeholder={
               business
-                ? "Book qualified consultations and hand off urgent callers."
+                ? "Book consultations and hand off urgent callers."
                 : "Handle appointment calls and text me what needs review."
             }
             resize="none"
