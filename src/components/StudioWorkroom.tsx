@@ -179,32 +179,32 @@ export default function StudioWorkroom({
 
   return (
     <main className="flex h-full min-h-0 flex-col bg-background">
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-3 backdrop-blur sm:gap-3 sm:px-4">
+      <header className="relative flex h-12 shrink-0 items-center border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4">
         <button
           type="button"
           onClick={onBack}
-          className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="z-10 grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label="Back to Studio overview"
         >
           <ArrowLeft size={16} aria-hidden="true" />
         </button>
-        <div className="min-w-0 flex-1 text-center wl-centered-header">
+        <div className="pointer-events-none absolute left-1/2 max-w-[42vw] -translate-x-1/2 text-center wl-centered-header sm:max-w-md">
           <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
             {agentName}
           </p>
           <p className="text-[10px] text-muted-foreground">Direct the work.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="z-10 ml-auto flex items-center gap-1.5">
           <Link
             to={`/training?agent=${encodeURIComponent(agentId)}`}
-            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
+            className="rounded-md px-1.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             title="Train this agent"
           >
             Train
           </Link>
           <Link
             to={`/actions?agent=${encodeURIComponent(agentId)}`}
-            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
+            className="rounded-md px-1.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             title="Wire integrations"
           >
             Wire
@@ -264,7 +264,6 @@ export default function StudioWorkroom({
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
-                  {/* Upgraded: Better proposals display — interactive pills with live apply feedback (beats static designs) */}
                   {message.proposals && suggestions > 0 && (
                     <div
                       className="mt-2 flex flex-wrap justify-end gap-1.5"
@@ -349,9 +348,16 @@ export default function StudioWorkroom({
             ) : null}
           </div>
         ) : (
-          <div className="mx-auto flex max-w-3xl flex-col gap-2 py-8 text-center wl-centered-header">
-            <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Ready.</p>
-            <div className="mt-2 flex flex-wrap justify-center gap-2">
+          <div className="mx-auto flex h-full max-w-3xl items-end justify-center pb-2 text-center wl-centered-header">
+            <p className="text-sm font-semibold tracking-[-0.01em] text-muted-foreground">Ready.</p>
+          </div>
+        )}
+      </section>
+
+      <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary/40">
+          {!loading && !messages.length ? (
+            <div className="mb-2 flex flex-wrap gap-1.5">
               {QUICK_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
@@ -360,18 +366,13 @@ export default function StudioWorkroom({
                     setDraft(prompt);
                     requestAnimationFrame(() => inputRef.current?.focus());
                   }}
-                  className="rounded-full border border-border/70 bg-card px-3.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground active:scale-[0.985]"
+                  className="rounded-full border border-border/70 bg-background px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground active:scale-[0.985]"
                 >
                   {prompt}
                 </button>
               ))}
             </div>
-          </div>
-        )}
-      </section>
-
-      <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-sm focus-within:border-primary/40 transition-colors">
+          ) : null}
           <label className="sr-only" htmlFor="studio-workroom-message">
             Message {agentName}
           </label>
@@ -389,18 +390,18 @@ export default function StudioWorkroom({
             rows={3}
             disabled={sending}
             placeholder={`Direct ${agentName}...`}
-            className="min-h-[76px] w-full resize-y bg-transparent px-2 py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 rounded"
+            className="min-h-[76px] w-full resize-y rounded bg-transparent px-2 py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 disabled:opacity-60"
           />
           <div className="flex items-center justify-between gap-2 border-t border-border/70 pt-2.5">
             <p className="hidden text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 sm:block">
-              ⌘ + Enter
+              Cmd + Enter
             </p>
             <Button
               type="button"
               size="sm"
               disabled={!draft.trim() || sending}
               onClick={submit}
-              className="ml-auto active:scale-[0.985] transition-all"
+              className="ml-auto transition-all active:scale-[0.985]"
               aria-busy={sending}
             >
               {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
@@ -408,9 +409,8 @@ export default function StudioWorkroom({
             </Button>
           </div>
         </div>
-        <div className="mt-2 text-center text-[9px] font-mono tracking-[0.08em] text-muted-foreground/70">
-          Run calls, draft texts, queue follow-up, review approvals, and prepare handoff. Direct the
-          work.
+        <div className="mt-2 hidden text-center text-[10px] text-muted-foreground sm:block">
+          Calls, texts, follow-up, approvals, handoff.
         </div>
       </div>
     </main>
