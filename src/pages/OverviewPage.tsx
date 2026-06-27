@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   Bot,
-  Briefcase,
   Cable,
   CheckCircle2,
   FileText,
@@ -10,7 +9,6 @@ import {
   Plus,
   SlidersHorizontal,
   Sparkles,
-  User,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge, Button, Skeleton } from "../components/atoms";
@@ -20,52 +18,17 @@ import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary } from "../lib/product-copy";
 
-const CREATE_TRAIN_RUN = "Create -> Train -> Run";
-
 const WORKSPACE_MOVES = [
   { href: "/inbox", icon: Inbox, title: "Inbox", label: "Approve. Follow up." },
-  { href: "/training", icon: FileText, title: "Forge", label: "Facts. Rules. Voice." },
-  { href: "/actions", icon: Cable, title: "Wire", label: "Connect & act." },
+  { href: "/training", icon: FileText, title: "Train", label: "Facts. Rules. Voice." },
+  { href: "/actions", icon: Cable, title: "Wire", label: "Connect tools." },
   {
     href: "/settings/customization",
     icon: SlidersHorizontal,
     title: "Tune",
-    label: "One voice. Everywhere.",
+    label: "One voice.",
   },
 ] as const;
-
-function operatingSteps(activeAgentId: string | null) {
-  const encodedAgentId = activeAgentId ? encodeURIComponent(activeAgentId) : null;
-  return [
-    {
-      step: "01",
-      label: "Create",
-      title: "Brief it.",
-      detail: "Name. Role. Voice. Done.",
-      href: "/studio?create=1",
-      action: "Create agent",
-      icon: Plus,
-    },
-    {
-      step: "02",
-      label: "Train",
-      title: "Forge it.",
-      detail: "Facts. Rules. Voice. Memory.",
-      href: encodedAgentId ? `/training?agent=${encodedAgentId}` : "/training",
-      action: "Open Forge",
-      icon: FileText,
-    },
-    {
-      step: "03",
-      label: "Run",
-      title: "Task it.",
-      detail: "Calls. Texts. Handoff.",
-      href: encodedAgentId ? `/studio?agent=${encodedAgentId}&mode=workroom` : "/studio?create=1",
-      action: "Open Workroom",
-      icon: PlayCircle,
-    },
-  ] as const;
-}
 
 function RosterLoading() {
   return (
@@ -88,55 +51,11 @@ function RosterLoading() {
   );
 }
 
-function OperatingPath({ activeAgentId }: { activeAgentId: string | null }) {
-  const steps = operatingSteps(activeAgentId);
-  return (
-    <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(220px,.65fr)_minmax(0,1fr)] xl:items-center wl-centered-header">
-      <div>
-        <p className="studio-kicker">Loop</p>
-        <h2 className="mt-1 font-semibold tracking-[-0.02em]">Create. Train. Run.</h2>
-        <p className="mt-1 text-xs text-muted-foreground">One move per surface.</p>
-      </div>
-      <div className="grid gap-2 md:grid-cols-3">
-        {steps.map(({ step, label, title, detail, href, action, icon: Icon }) => (
-          <Link
-            key={label}
-            to={href}
-            className="group wl-flow-card flex min-h-[148px] flex-col justify-between rounded-[var(--radius-lg)] border border-border bg-background p-4 transition-colors hover:border-primary/25 hover:bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
-                {step} • {label}
-              </span>
-              <span className="grid size-8 place-items-center rounded-md bg-muted text-foreground transition-colors group-hover:bg-card">
-                <Icon aria-hidden="true" size={15} />
-              </span>
-            </div>
-            <div className="mt-3.5">
-              <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h3>
-              <p className="mt-1 text-xs leading-snug text-muted-foreground">{detail}</p>
-              <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-                {action}{" "}
-                <ArrowRight
-                  aria-hidden="true"
-                  size={13}
-                  className="transition group-hover:translate-x-px"
-                />
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function OverviewPage() {
   const { agents, loading, degraded } = useAgents();
   const personalCount = agents.filter((agent) => !agent.is_business_agent).length;
   const businessCount = agents.filter((agent) => agent.is_business_agent).length;
   const hasAgents = !loading && agents.length > 0;
-  const activeAgentId = agents[0]?.id || null;
 
   return (
     <WorkspaceShell
@@ -156,12 +75,12 @@ export default function OverviewPage() {
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
             <div className="wl-centered-header">
-              <p className="studio-kicker">{CREATE_TRAIN_RUN}</p>
+              <p className="studio-kicker">Create -> Train -> Run</p>
               <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,1.2rem+1.4vw,2.1rem)] font-semibold leading-tight tracking-[-0.03em]">
                 {hasAgents ? "Run the work." : "Forge an agent."}
               </h2>
             </div>
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
               <Button asChild>
                 <Link to={hasAgents ? "/studio" : "/studio?create=1"}>
                   {hasAgents ? "Open Studio" : "Create agent"}
@@ -170,7 +89,7 @@ export default function OverviewPage() {
               </Button>
               <Button asChild variant="secondary">
                 <Link to={hasAgents ? "/training" : "/studio?create=1&posture=business"}>
-                  {hasAgents ? "Training" : "Business agent"}
+                  {hasAgents ? "Train" : "Business"}
                 </Link>
               </Button>
             </div>
@@ -192,10 +111,10 @@ export default function OverviewPage() {
                   ? "Links recovering."
                   : hasAgents
                     ? rosterSummary(personalCount, businessCount)
-                    : "Forge your first."}
+                    : "Start here."}
               </p>
             </div>
-            <div className="mt-6 border-t border-border pt-4 flex justify-center">
+            <div className="mt-6 flex justify-center border-t border-border pt-4">
               {degraded ? (
                 <Badge variant="warning" className="text-center">
                   Check links
@@ -203,7 +122,7 @@ export default function OverviewPage() {
               ) : (
                 <Badge variant="success" className="inline-flex items-center gap-1">
                   <CheckCircle2 aria-hidden="true" className="size-3.5" />
-                  {hasAgents ? "Live" : "Start here"}
+                  {hasAgents ? "Live" : "Ready"}
                 </Badge>
               )}
             </div>
@@ -214,41 +133,6 @@ export default function OverviewPage() {
           <StatusNotice tone="warning" title="Status partial.">
             Connections recovering.
           </StatusNotice>
-        ) : null}
-
-        <OperatingPath activeAgentId={activeAgentId} />
-
-        {!loading && !agents.length ? (
-          <section className="grid gap-4 md:grid-cols-2">
-            <article className="studio-card flex min-h-[178px] flex-col justify-between p-6">
-              <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                <User aria-hidden="true" size={19} />
-              </span>
-              <div className="mt-5 text-center">
-                <p className="studio-kicker">For you</p>
-                <h2 className="wl-section-title mt-2 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
-                  Personal agent
-                </h2>
-              </div>
-              <Button asChild variant="secondary" size="sm" className="mt-6 w-fit">
-                <Link to="/studio?create=1">Start personal</Link>
-              </Button>
-            </article>
-            <article className="studio-card flex min-h-[178px] flex-col justify-between p-6">
-              <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                <Briefcase aria-hidden="true" size={19} />
-              </span>
-              <div className="mt-5 text-center">
-                <p className="studio-kicker">For business</p>
-                <h2 className="wl-section-title mt-2 text-[clamp(1.25rem,1.1rem+.55vw,1.5rem)]">
-                  Business agent
-                </h2>
-              </div>
-              <Button asChild variant="secondary" size="sm" className="mt-6 w-fit">
-                <Link to="/studio?create=1&posture=business">Start business</Link>
-              </Button>
-            </article>
-          </section>
         ) : null}
 
         <section className="wl-centered-header">
@@ -272,11 +156,11 @@ export default function OverviewPage() {
                 to={href}
                 className="wl-overview-shortcut studio-card wl-card-action group flex flex-col p-5 text-center transition-colors hover:border-primary/20"
               >
-                <Icon aria-hidden="true" className="size-5 text-primary mx-auto" />
+                <Icon aria-hidden="true" className="mx-auto size-5 text-primary" />
                 <div className="mt-auto flex flex-col items-center gap-3">
                   <div>
-                    <h3 className="wl-card-title tracking-[-0.01em] text-center">{title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground text-center">{label}</p>
+                    <h3 className="wl-card-title text-center tracking-[-0.01em]">{title}</h3>
+                    <p className="mt-1 text-center text-sm text-muted-foreground">{label}</p>
                   </div>
                   <ArrowRight
                     aria-hidden="true"
@@ -324,18 +208,17 @@ export default function OverviewPage() {
                           <PostureBadge isBusiness={Boolean(agent.is_business_agent)} compact />
                         </div>
                       </div>
-                      <h3 className="mt-2 wl-card-title tracking-[-0.01em] text-center">
+                      <h3 className="mt-2 wl-card-title text-center tracking-[-0.01em]">
                         {agent.name}
                       </h3>
-                      <p className="mt-0.5 text-sm text-muted-foreground text-center">
+                      <p className="mt-0.5 text-center text-sm text-muted-foreground">
                         {formatAgentRoleLabel(agent.role)}
                       </p>
                     </Link>
-                    {/* Quick action: seamless context pass to Workroom */}
-                    <div className="mt-auto pt-3 border-t border-border/60 flex justify-center">
+                    <div className="mt-auto flex justify-center border-t border-border/60 pt-3">
                       <Link
                         to={`/studio?agent=${enc}&mode=workroom`}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary rounded px-1 py-0.5"
+                        className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
                         aria-label={`Open ${agent.name} in workroom`}
                       >
                         Workroom <PlayCircle size={12} aria-hidden="true" />
