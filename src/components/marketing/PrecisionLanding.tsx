@@ -97,10 +97,11 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        {/* New marketing visuals: clever creative hero illustration + video demo.
-            Matches Wireline Mono branding exactly: #F7F7F4 warm paper canvas,
-            #111111 deep charcoal accents, Inter typography, clean minimalist
-            professional aesthetic. Purposeful for hero or demo placements. */}
+        {/* New marketing visuals: world-class, brand-perfect hero illustration + video.
+            Generated to match Wireline Mono exactly: #F7F7F4 warm paper canvas,
+            #111111 deep charcoal, precise minimal linework, generous space.
+            Cohesive with existing lockups, wirelines, and product surfaces.
+            Ready for landing, social campaigns, and paid ads. */}
         <section className="border-b border-border px-5 py-12 sm:px-6 lg:px-8">
           <div className="wl-public-rail text-center">
             <div className="mx-auto max-w-3xl">
@@ -109,11 +110,11 @@ export default function PrecisionLanding() {
               <p className="wl-public-copy mx-auto mt-4">One voice. All channels. No drift.</p>
             </div>
 
-            {/* Creative hero visual (image deliverable) */}
+            {/* Creative hero visual (new refined deliverable) */}
             <figure className="marketing-visual mt-8 mx-auto max-w-[1100px]">
               <img
-                src="/marketing/one-voice-all-channels-hero.jpg"
-                alt="One voice. All channels. — Minimalist hero visual: central Wireline agent hub in deep charcoal directing clean branching connections to phone, message, and email icons on warm off-white paper canvas. Clean professional Inter-style typography."
+                src="/marketing/wireline-agents-hero-refined.jpg"
+                alt="Agents for every conversation — World-class minimalist Wireline hero: central precision agent hub in deep charcoal with graceful connections to Calls, Texts, and Email nodes on exact #F7F7F4 warm paper canvas. Flawless Wireline Mono branding."
                 className="w-full rounded-[var(--radius-xl)] border border-[var(--wireline-color-border-default)]"
                 style={{ boxShadow: "var(--wireline-elevation-sm)" }}
               />
@@ -122,18 +123,18 @@ export default function PrecisionLanding() {
               </figcaption>
             </figure>
 
-            {/* Video deliverable + live interactive (code-powered, exceeds static design) */}
+            {/* Video deliverable (new signal flow) + live interactive */}
             <div className="mt-12 mx-auto max-w-[960px]">
               <p className="wl-overline text-primary mb-3">See the flow in action</p>
               <div className="marketing-demo-surface p-2 sm:p-3">
                 <video
-                  src="/marketing/one-voice-direct-work-demo.mp4"
+                  src="/marketing/wireline-signal-flow-demo.mp4"
                   className="w-full rounded-[var(--radius-lg)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)]"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  aria-label="Elegant animation: signals travel into a central voice hub. One voice directs unified work back across calls, texts and email channels. Perfect Wireline Mono branding."
+                  aria-label="World-class animation: graceful signals flow from Calls, Texts and Email into the central Wireline agent hub, then unified action radiates outward. Perfect Wireline Mono calm precision."
                 />
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
@@ -143,6 +144,22 @@ export default function PrecisionLanding() {
 
               {/* Live simulator: direct in real time. Better than any static mockup. */}
               <LiveDirectSimulator />
+            </div>
+
+            {/* Additional campaign-ready deliverable: square ad / social asset */}
+            <div className="mt-16 mx-auto max-w-[520px]">
+              <p className="wl-overline text-primary mb-3">Campaign + ad ready</p>
+              <figure>
+                <img
+                  src="/marketing/wireline-one-voice-square-ad.jpg"
+                  alt="One voice. All channels. — Square social and ad creative. Exact Wireline Mono: clean central hub, three channel connections, bold typography on warm paper. Perfect for LinkedIn, Meta, Instagram ads."
+                  className="w-full rounded-[var(--radius-xl)] border border-[var(--wireline-color-border-default)]"
+                  style={{ boxShadow: "var(--wireline-elevation-sm)" }}
+                />
+                <figcaption className="mt-3 text-xs text-muted-foreground tracking-[0.08em] uppercase">
+                  Social • Paid • 1:1 — drop-in ready
+                </figcaption>
+              </figure>
             </div>
           </div>
         </section>
