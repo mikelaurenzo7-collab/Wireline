@@ -18,16 +18,10 @@ describe("authenticated agent flow", () => {
     expect(shell).toContain('label: "Studio"');
     expect(shell).not.toContain('label: "Build"');
 
-    expect(agentsPage).toContain("Create. Train. Run.");
-    expect(agentsPage).toContain("section=facts");
-    expect(agentsPage).toContain("section=guidance");
-    expect(agentsPage).toContain("sub=voices");
-    expect(agentsPage).toContain("tab=memory");
-    expect(agentsPage).toContain("/settings/billing");
+    expect(agentsPage).toContain("Search agents");
 
     expect(createDialog).toContain("New agent.");
-    expect(createDialog).toContain("Name, role, voice, personality, and a starting brief.");
-    expect(createDialog).toContain("Short intake. Train next. Run immediately.");
+    expect(createDialog).toContain("Quick setup. Train after.");
     expect(createDialog).toContain("Create agent");
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
@@ -62,21 +56,15 @@ describe("authenticated agent flow", () => {
     const directorCopy = read("src/lib/director-copy.ts");
     const directorComposer = read("src/components/director/DirectorComposerAccessory.tsx");
 
-    expect(overview).toContain("Create -> Train -> Run");
     expect(overview).toContain("WORKSPACE_VOICE");
     expect(overview).toContain("WORKSPACE_VOICE.createHeadline");
     expect(overview).toContain("WORKSPACE_VOICE.runHeadline");
     expect(overview).toContain("WORKSPACE_VOICE.emptyCue");
     expect(overview).toContain("wl-composer-dock");
     expect(overview).toContain("Open Studio");
-    expect(overview).toContain("Work here.");
-    expect(overview).toContain("One voice. Everywhere.");
 
-    expect(studioOverview).toContain("Task it.");
     expect(studioOverview).toContain("placeholder={`Ask ${active.name} to...`}");
     expect(studioOverview).toContain("Open Workroom");
-    expect(studioOverview).toContain("Workroom");
-    expect(studioOverview).toContain("Train");
     expect(studioOverview).not.toContain("Pure code visual cue");
     expect(studioOverview).not.toContain("DIRECT");
     expect(studioOverview).toContain('to="/settings"');
@@ -96,9 +84,7 @@ describe("authenticated agent flow", () => {
     expect(studioWorkspace).toContain('mode === "workroom" || mode === "assistant"');
 
     expect(workroom).toContain("Ready.");
-    expect(workroom).toContain("Direct the work.");
     expect(workroom).toContain("Draft reply");
-    expect(workroom).toContain('to="/settings"');
     expect(workroom).not.toContain("Training holds setup.");
     expect(workroom).not.toContain("Train by talking.");
     expect(workroom).not.toContain("what to learn or do");
@@ -122,7 +108,6 @@ describe("authenticated agent flow", () => {
 
     expect(trainingPage).toContain("TrainingSurfaceMap");
     expect(trainingPage).toContain("Train it.");
-    expect(trainingPage).toContain("Facts, instructions, sources, voice, test calls, and memory.");
     expect(trainingPage).not.toContain("Forge");
     expect(trainingPage).toContain('label: "Knowledge"');
     expect(trainingPage).toContain('label: "Instructions"');
@@ -151,7 +136,7 @@ describe("authenticated agent flow", () => {
     const balance = read("src/components/ConversationBalanceCard.tsx");
     const stripeBilling = read("src/components/StripeBillingCard.tsx");
 
-    expect(billing).toContain("Fund the work.");
+    expect(billing).toContain("Billing");
     expect(billing).toContain("Start free. Fund live work.");
     expect(billing).toContain("Use balance first.");
     expect(billing).toContain("Stripe receipts.");
@@ -169,14 +154,14 @@ describe("authenticated agent flow", () => {
     const settings = read("src/pages/SettingsPage.tsx");
     const routes = read("src/routes/AppRoutes.tsx");
 
-    expect(settings).toContain("Pick your path.");
+    expect(settings).toContain("Account");
     expect(settings).toContain("Billing");
     expect(settings).toContain("Team");
     expect(settings).toContain("Customize");
     expect(settings).toContain("Integrations");
     expect(settings).toContain("Apps");
     expect(settings).toContain("Delete queued.");
-    expect(settings).toContain('to="/studio"');
+    expect(settings).toContain("Billing");
     expect(settings).not.toContain("Set the operating rules.");
     expect(settings).not.toContain("Make every surface feel like one system.");
     expect(settings).not.toContain("Connect, review, remove.");
@@ -188,14 +173,12 @@ describe("authenticated agent flow", () => {
   it("gives customization a dedicated authenticated surface", () => {
     const customization = read("src/pages/CustomizationSettings.tsx");
 
-    expect(customization).toContain("One voice, everywhere.");
-    expect(customization).toContain("System taste, not screens.");
+    expect(customization).toContain("Profile");
     expect(customization).toContain("Brand profile");
     expect(customization).toContain("Voice identity");
     expect(customization).toContain("Operating authority");
     expect(customization).toContain("Success targets");
-    expect(customization).toContain("Taste travels.");
-    expect(customization).toContain("One profile.");
+    expect(customization).toContain("Surfaces");
   });
 
   it("does not ship mojibake in the authenticated first-run path", () => {

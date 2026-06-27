@@ -137,7 +137,9 @@ function RosterSection({
     <section>
       <div className="mb-3 flex items-center justify-between gap-3 text-center">
         <div className="w-full">
-          <p className="studio-kicker text-center">{title}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
+            {title}
+          </p>
         </div>
         <Button asChild variant="secondary" size="sm">
           <Link to={createHref}>
@@ -185,7 +187,6 @@ export default function AgentsPage() {
       }
     >
       <div className="flex w-full flex-col gap-5 pb-6">
-        <p className="text-center text-sm text-muted-foreground">Create. Train. Run.</p>
         {degraded ? (
           <StatusNotice tone="destructive" title="Roster unavailable">
             Saved agents are unchanged. Try again in a moment.

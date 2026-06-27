@@ -30,7 +30,7 @@ export default function Showcase() {
             Hear the agent your customer meets first.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
-            A live example built for a real conversation.
+            A live example. Real conversation.
           </p>
         </div>
 
@@ -77,9 +77,6 @@ export default function Showcase() {
           <div className="mx-auto max-w-2xl text-center">
             <p className="wl-stitch-eyebrow">More examples</p>
             <h2 className="wl-stitch-display mt-3 text-balance">Call a demo line.</h2>
-            <p className="mx-auto mt-4 max-w-md text-base leading-7 text-muted-foreground">
-              Role-play only. Never a real business or person.
-            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (

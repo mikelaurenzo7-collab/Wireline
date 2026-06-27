@@ -118,7 +118,7 @@ export default function DailyBrief() {
     return (
       <div className="rounded-md wl-panel border border-border p-8 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <span className="wl-label text-muted">Wireline is analyzing your day…</span>
+        <span className="wl-label text-muted">Loading brief…</span>
       </div>
     );
 
@@ -161,11 +161,7 @@ export default function DailyBrief() {
   };
 
   const moodLabel =
-    brief.mood === "green"
-      ? "All systems go"
-      : brief.mood === "yellow"
-        ? "Watch closely"
-        : "Needs attention";
+    brief.mood === "green" ? "Good" : brief.mood === "yellow" ? "Watch" : "Action needed";
 
   return (
     <motion.div

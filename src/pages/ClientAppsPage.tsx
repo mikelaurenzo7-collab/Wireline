@@ -50,11 +50,6 @@ export default function ClientAppsPage() {
   return (
     <WorkspaceShell eyebrow="Workspace" title="Wireline everywhere" contentClassName="pt-1 pb-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 pb-8">
-        <section className="studio-card p-6 sm:p-7 text-center">
-          <p className="studio-kicker">Surfaces</p>
-          <h2 className="wl-section-title mt-1">Everywhere you talk.</h2>
-        </section>
-
         <section className="grid gap-3 md:grid-cols-2">
           {clientSurfaces.map(
             ({ icon: Icon, title, status, statusVariant, description, detail, action, href }) => (
@@ -65,9 +60,15 @@ export default function ClientAppsPage() {
                   </span>
                   <Badge variant={statusVariant}>{status}</Badge>
                 </div>
-                <h2 className="wl-card-title mt-5 text-[var(--wireline-typography-h3-size)] text-center">{title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground text-center">{description}</p>
-                <p className="mt-2 text-xs font-semibold leading-5 text-muted-foreground text-center">{detail}</p>
+                <h2 className="wl-card-title mt-5 text-[var(--wireline-typography-h3-size)] text-center">
+                  {title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground text-center">
+                  {description}
+                </p>
+                <p className="mt-2 text-xs font-semibold leading-5 text-muted-foreground text-center">
+                  {detail}
+                </p>
                 <Button asChild variant="link" className="mt-auto w-fit px-0 pt-5 text-sm">
                   <a href={href}>
                     {action} <ArrowUpRight size={15} />

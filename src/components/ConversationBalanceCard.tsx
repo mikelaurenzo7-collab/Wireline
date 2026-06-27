@@ -115,7 +115,7 @@ export default function ConversationBalanceCard() {
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-primary">
             <Wallet className="size-4" />
-            <p className="studio-kicker">On-demand live work</p>
+            <p className="text-xs font-semibold tracking-[-0.01em] text-foreground">Balance</p>
           </div>
           <h2 className="wl-section-title mt-2 text-[clamp(1.4rem,1.2rem+1vw,1.85rem)]">
             {copy.title}

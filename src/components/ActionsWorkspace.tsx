@@ -307,10 +307,9 @@ export default function ActionsWorkspace() {
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 text-center sm:text-left">
-          <p className="studio-kicker text-center sm:text-left">Wire</p>
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 justify-center sm:justify-start">
+          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 justify-center sm:justify-start">
             <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-0.02em] leading-tight text-foreground text-center sm:text-left">
-              Arm {selectedAgent?.name || "your agent"}.
+              {selectedAgent?.name || "Agent"} permissions
             </h2>
             {!loading ? (
               <Badge
@@ -370,9 +369,6 @@ export default function ActionsWorkspace() {
               <summary className="cursor-pointer text-[var(--wireline-typography-body-size)] font-semibold text-[var(--wireline-color-text-primary)]">
                 Business tools
               </summary>
-              <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-5 text-[var(--wireline-color-text-secondary)]">
-                Enable the business tools this agent is allowed to use.
-              </p>
               <div className="mt-5 space-y-5">
                 {Object.entries(businessGroups).map(([group, tools]) => (
                   <ToolGroup
@@ -403,10 +399,9 @@ export default function ActionsWorkspace() {
         </section>
 
         <aside className="mt-6 min-h-0 lg:mt-0">
-          <div className="text-center">
-            <p className="studio-kicker">Integrations</p>
-            <h2 className="wl-section-title mt-1">Wire the world.</h2>
-          </div>
+          <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground text-center">
+            Integrations
+          </h2>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {
               const connected =

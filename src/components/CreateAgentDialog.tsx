@@ -24,8 +24,7 @@ const voices = [
 
 const personalities = ["Clear", "Warm", "Direct", "Polished", "Custom"] as const;
 
-const CREATE_AGENT_INTAKE_COPY =
-  "Name, role, voice, personality, and a starting brief. Short intake. Train next. Run immediately.";
+const CREATE_AGENT_INTAKE_COPY = "Quick setup. Train after.";
 
 type Role = (typeof roles)[number][0];
 type Personality = (typeof personalities)[number];
@@ -324,8 +323,7 @@ export default function CreateAgentDialog({
           ) : (
             <WandSparkles aria-hidden="true" size={16} />
           )}
-          <span className="sr-only">Create agent</span>
-          Create and open Training
+          Create agent
         </Button>
       </form>
     </div>

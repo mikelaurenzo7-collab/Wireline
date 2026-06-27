@@ -388,7 +388,7 @@ export default function StudioWorkroom({
           </div>
         </div>
         <div className="mt-2 hidden text-center text-[10px] text-muted-foreground sm:block">
-          Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.
+          Cmd + Enter to send
         </div>
       </div>
     </main>

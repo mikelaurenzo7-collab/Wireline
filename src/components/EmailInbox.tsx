@@ -345,10 +345,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
     <section className={`${frameClass} min-h-0`}>
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
         <div className="text-center sm:text-left wl-centered-header">
-          <p className="studio-kicker">Inbox</p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Own the outcome. Calls. Texts. Follow-up.
-          </p>
+          <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Inbox</p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -515,7 +512,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               <section className="studio-card p-5 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="studio-kicker">Conversation outcome</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Outcome
+                    </p>
                     <h2 className="mt-2 text-xl font-semibold tracking-[-.03em] text-foreground sm:text-2xl">
                       {selectedThread.subject}
                     </h2>
@@ -535,9 +534,6 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               <section className="studio-card overflow-hidden">
                 <div className="border-b border-border px-5 py-4 sm:px-6">
                   <p className="wl-card-title">Conversation record</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    The underlying messages available to this workspace.
-                  </p>
                 </div>
                 <div className="space-y-3 p-4 sm:p-5">
                   {detail?.messages.length ? (
@@ -568,10 +564,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     <Route className="size-4" />
                   </span>
                   <div>
-                    <p className="wl-card-title">Set the next state</p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      This is an accountable team decision, not an inferred AI score.
-                    </p>
+                    <p className="wl-card-title">Set next state</p>
                   </div>
                 </div>
                 <div className="mt-5 flex flex-wrap gap-2.5">

@@ -6,54 +6,23 @@ import {
   LogOut,
   MonitorDown,
   ShieldAlert,
-  ShieldCheck,
   SlidersHorizontal,
   Trash2,
   UsersRound,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { Badge, Button } from "../components/atoms";
+import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
 
 const settingsDestinations = [
-  {
-    href: "/settings/billing",
-    icon: CreditCard,
-    label: "Billing",
-    detail: "Balance",
-    action: "Open",
-  },
-  {
-    href: "/settings/team",
-    icon: UsersRound,
-    label: "Team",
-    detail: "Access",
-    action: "Manage",
-  },
-  {
-    href: "/settings/customization",
-    icon: SlidersHorizontal,
-    label: "Customize",
-    detail: "Voice. Brand.",
-    action: "Tune",
-  },
-  {
-    href: "/actions",
-    icon: Cable,
-    label: "Integrations",
-    detail: "Tools",
-    action: "Review",
-  },
-  {
-    href: "/settings/apps",
-    icon: MonitorDown,
-    label: "Apps",
-    detail: "Surfaces",
-    action: "View",
-  },
+  { href: "/settings/billing", icon: CreditCard, label: "Billing" },
+  { href: "/settings/team", icon: UsersRound, label: "Team" },
+  { href: "/settings/customization", icon: SlidersHorizontal, label: "Customize" },
+  { href: "/actions", icon: Cable, label: "Integrations" },
+  { href: "/settings/apps", icon: MonitorDown, label: "Apps" },
 ] as const;
 
 function DangerZone() {
@@ -92,8 +61,7 @@ function DangerZone() {
       <div className="flex gap-3">
         <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-destructive" />
         <div className="min-w-0 flex-1">
-          <p className="studio-kicker">Danger</p>
-          <h2 className="mt-2 text-base font-semibold tracking-[-.02em] text-foreground">
+          <h2 className="text-base font-semibold tracking-[-.02em] text-foreground">
             Account deletion
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
@@ -156,20 +124,12 @@ export default function SettingsPage() {
   return (
     <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="pt-1 pb-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
-        <section className="studio-card p-4 text-center sm:p-5">
-          <p className="studio-kicker">Paths</p>
-          <h2 className="wl-section-title mt-1">Pick your path.</h2>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Button asChild variant="secondary" size="sm">
-              <Link to="/studio">Open Studio</Link>
-            </Button>
-          </div>
-        </section>
-
         <section className="studio-card p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="studio-kicker">Account</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Account
+              </p>
               <p
                 data-wireline-preserve-case
                 className="mt-2 truncate text-base font-semibold tracking-[-.02em] text-foreground"
@@ -177,10 +137,6 @@ export default function SettingsPage() {
                 {accountLabel}
               </p>
             </div>
-            <Badge variant="success">
-              <ShieldCheck aria-hidden="true" className="size-3.5" />
-              Secure
-            </Badge>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button
@@ -203,7 +159,7 @@ export default function SettingsPage() {
 
         <section>
           <div className="grid gap-2 sm:grid-cols-2">
-            {settingsDestinations.map(({ href, icon: Icon, label, detail, action }) => (
+            {settingsDestinations.map(({ href, icon: Icon, label }) => (
               <Link
                 key={href}
                 to={href}
@@ -212,17 +168,10 @@ export default function SettingsPage() {
                 <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-muted text-primary sm:size-10">
                   <Icon aria-hidden="true" size={18} />
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold tracking-[-.02em] text-foreground sm:text-base">
-                    {label}
-                  </span>
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground sm:text-sm">
-                    {detail}
-                  </span>
+                <span className="min-w-0 flex-1 text-sm font-semibold tracking-[-.02em] text-foreground sm:text-base">
+                  {label}
                 </span>
-                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary sm:text-sm">
-                  {action} <ArrowRight aria-hidden="true" size={14} />
-                </span>
+                <ArrowRight aria-hidden="true" size={14} className="shrink-0 text-primary" />
               </Link>
             ))}
           </div>

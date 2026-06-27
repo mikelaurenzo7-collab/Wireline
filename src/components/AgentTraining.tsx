@@ -316,31 +316,31 @@ export default function AgentTraining({
               id: "database",
               label: "Knowledge",
               icon: Database,
-              help: "View and edit the facts, personality, instructions, Training entries, and uploaded files this agent can use.",
+              help: "Facts, rules, and personality",
             },
             {
               id: "voices",
               label: "Voice",
               icon: Mic,
-              help: "Voice library and cloning. Every agent's identity starts with the voice they speak in.",
+              help: "Voice library and cloning",
             },
             {
               id: "pronunciation",
               label: "Pronunciation",
               icon: BookOpen,
-              help: "Teach the voice engine how to pronounce industry jargon, brand names, and abbreviations correctly.",
+              help: "Custom word pronunciation",
             },
             {
               id: "simulator",
               label: "Test call",
               icon: PlayCircle,
-              help: "Run simulated conversations to see how your agent will respond before customers call.",
+              help: "Practice call before going live",
             },
             {
               id: "flow",
               label: "Conversation flow",
               icon: Workflow,
-              help: "Define linear conversation stages and transitions. Most agents work well without this until the job becomes complex.",
+              help: "Stage-based conversation paths",
             },
           ].map((tab) => (
             <ShadButton
@@ -399,9 +399,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic text-xl text-foreground">
                         Analysis engine
                       </h3>
-                      <p className="wl-label text-foreground/55">
-                        Find improvement opportunities from your calls
-                      </p>
+                      <p className="wl-label text-foreground/55">Suggestions from call data</p>
                     </div>
                   </div>
                   <ShadButton
@@ -483,9 +481,7 @@ export default function AgentTraining({
                     </div>
                     <div>
                       <h3 className="font-display italic text-xl text-foreground">Personality</h3>
-                      <p className="wl-label text-foreground/55">
-                        Base behavioral heuristics and tone
-                      </p>
+                      <p className="wl-label text-foreground/55">Tone and behavior</p>
                     </div>
                   </div>
                   {editingPersonality ? (
@@ -955,8 +951,7 @@ export default function AgentTraining({
                   <div>
                     <h2 className="font-display italic text-4xl text-foreground mb-2">Test call</h2>
                     <p className="text-foreground/55 text-sm leading-relaxed max-w-md mx-auto">
-                      Test how your agent responds in a safe practice run before it takes real
-                      calls.
+                      Practice run before going live.
                     </p>
                   </div>
                   <div className="rounded-md wl-panel border border-border p-5 text-left space-y-4 max-w-sm mx-auto w-full">
@@ -965,8 +960,7 @@ export default function AgentTraining({
                       <h4 className="font-display italic text-base text-foreground">Voice call</h4>
                     </div>
                     <p className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/55 leading-relaxed">
-                      Speak directly with your agent through your browser microphone. Tests the
-                      exact voice and persona your callers will hear.
+                      Speak through your browser microphone.
                     </p>
                     <ShadButton
                       type="button"
