@@ -75,7 +75,7 @@ export default function OverviewPage() {
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary p-6 sm:p-7">
             <div className="wl-centered-header">
-              <p className="studio-kicker">Create -> Train -> Run</p>
+              <p className="studio-kicker">Create / Train / Run</p>
               <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,1.2rem+1.4vw,2.1rem)] font-semibold leading-tight tracking-[-0.03em]">
                 {hasAgents ? "Run the work." : "Forge an agent."}
               </h2>
