@@ -4,13 +4,10 @@ import {
   Cable,
   CreditCard,
   LogOut,
-  Mic2,
   MonitorDown,
-  Palette,
   ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
-  Target,
   Trash2,
   UsersRound,
 } from "lucide-react";
@@ -25,82 +22,37 @@ const settingsDestinations = [
   {
     href: "/settings/billing",
     icon: CreditCard,
-    label: "Billing + usage",
+    label: "Billing",
     detail: "Plan, balance, invoices",
-    action: "Open billing",
+    action: "Open",
   },
   {
     href: "/settings/team",
     icon: UsersRound,
     label: "Team",
     detail: "People and access",
-    action: "Manage team",
+    action: "Manage",
   },
   {
     href: "/settings/customization",
     icon: SlidersHorizontal,
-    label: "Customization",
+    label: "Customize",
     detail: "Brand, voice, rules",
-    action: "Tune profile",
+    action: "Tune",
   },
   {
     href: "/actions",
     icon: Cable,
     label: "Integrations",
-    detail: "Approved systems",
-    action: "Review integrations",
+    detail: "Connected systems",
+    action: "Review",
   },
   {
     href: "/settings/apps",
     icon: MonitorDown,
     label: "Apps",
-    detail: "Every Wireline surface",
-    action: "View apps",
-  },
-] as const;
-
-const customizationPrinciples = [
-  {
-    label: "Brand",
-    title: "One profile everywhere.",
-    detail: "Name, color, blurb, assets, and design context should travel across every app surface.",
-    icon: Palette,
-  },
-  {
-    label: "Voice",
-    title: "Sound intentional.",
-    detail: "Voice, pronunciation, tone, pace, and personality should live beside the agent's training.",
-    icon: Mic2,
-  },
-  {
-    label: "Authority",
-    title: "Show where autonomy stops.",
-    detail: "Defaults, approvals, escalation, handoff, retention, and CSAT need one readable home.",
-    icon: SlidersHorizontal,
-  },
-  {
-    label: "Goals",
-    title: "Give the system a target.",
-    detail: "Offers, audiences, KPIs, and success thresholds should shape recommendations and follow-up.",
-    icon: Target,
-  },
-] as const;
-
-const controlPrinciples = [
-  {
-    label: "Connect",
-    title: "Only what the job needs.",
-    detail: "Give agents the minimum systems, numbers, and people required for the work.",
-  },
-  {
-    label: "Review",
-    title: "Every action has a surface.",
-    detail: "Billing, access, integrations, and approvals stay visible before they become risk.",
-  },
-  {
-    label: "Remove",
-    title: "Exit paths stay obvious.",
-    detail: "Disconnect systems, sign out, or queue deletion without hunting through menus.",
+    detail: "Mobile and browser",
+    action: "View",
   },
 ] as const;
 
@@ -126,7 +78,7 @@ function DangerZone() {
       const date = body?.scheduled_purge_at
         ? new Date(body.scheduled_purge_at).toLocaleDateString()
         : "after the grace window";
-      setMessage(`Deletion requested. Your account is scheduled for purge ${date}.`);
+      setMessage(`Deletion queued for ${date}.`);
       setConfirmation("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Deletion request failed.");
@@ -136,21 +88,18 @@ function DangerZone() {
   }
 
   return (
-    <section className="studio-card border-destructive/20 p-5 sm:p-6">
+    <section className="studio-card border-destructive/20 p-4 sm:p-5">
       <div className="flex gap-3">
         <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-destructive" />
         <div className="min-w-0 flex-1">
-          <p className="studio-kicker">Account deletion</p>
-          <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">
+          <p className="studio-kicker">Danger zone</p>
+          <h2 className="mt-2 text-base font-semibold tracking-[-.02em] text-foreground">
             Delete account.
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            This starts a 30-day deletion queue for your account, agents, calls, messages,
-            integrations, and training data.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Queues account deletion.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <label className="grid gap-1.5 text-sm font-semibold text-foreground">
-              Type DELETE to request deletion
+              Type DELETE
               <input
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value)}
@@ -190,7 +139,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const displayName = user?.full_name?.trim() || user?.email || "Your account";
+  const accountLabel = user?.email || user?.full_name?.trim() || "Signed in";
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -206,150 +155,71 @@ export default function SettingsPage() {
   }
 
   return (
-    <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="py-6">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-8">
-        <section className="studio-card p-6 sm:p-7">
-          <div className="flex flex-wrap items-start justify-between gap-5">
+    <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="py-3 sm:py-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
+        <section className="studio-card p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="studio-kicker">Account</p>
-              <h2 className="wl-section-title mt-2 truncate">{displayName}</h2>
-              {user?.email ? (
-                <p data-wireline-preserve-case className="mt-1 text-sm text-muted-foreground">
-                  {user.email}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-col items-start gap-3 sm:items-end">
-              <Badge variant="success">
-                <ShieldCheck aria-hidden="true" className="size-3.5" />
-                Secure session
-              </Badge>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={signingOut}
-                onClick={handleSignOut}
+              <p
+                data-wireline-preserve-case
+                className="mt-2 truncate text-base font-semibold tracking-[-.02em] text-foreground"
               >
-                <LogOut aria-hidden="true" size={16} />
-                {signingOut ? "Signing out..." : "Sign out"}
-              </Button>
+                {accountLabel}
+              </p>
             </div>
+            <Badge variant="success">
+              <ShieldCheck aria-hidden="true" className="size-3.5" />
+              Secure
+            </Badge>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={signingOut}
+              onClick={handleSignOut}
+            >
+              <LogOut aria-hidden="true" size={16} />
+              {signingOut ? "Signing out..." : "Sign out"}
+            </Button>
           </div>
           {error ? (
-            <StatusNotice tone="destructive" className="mt-5" title="Sign-out unavailable">
+            <StatusNotice tone="destructive" className="mt-4" title="Sign-out unavailable">
               {error}
             </StatusNotice>
           ) : null}
         </section>
 
         <section>
-          <div className="mb-4 max-w-2xl">
-            <p className="studio-kicker">Workspace controls</p>
-            <h2 className="wl-section-title mt-2">Set the operating rules.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Billing, people, customization, integrations, and app surfaces stay grouped by the
-              control they change.
-            </p>
+          <div className="mb-3">
+            <p className="studio-kicker">Settings</p>
+            <h2 className="text-xl font-semibold tracking-[-.035em] text-foreground">
+              Choose a control.
+            </h2>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-2 sm:grid-cols-2">
             {settingsDestinations.map(({ href, icon: Icon, label, detail, action }) => (
               <Link
                 key={href}
                 to={href}
-                className="studio-card wl-card-action flex min-h-[164px] flex-col p-5"
+                className="studio-card flex items-center gap-3 p-4 transition-colors hover:border-primary/30 hover:bg-accent"
               >
-                <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                  <Icon aria-hidden="true" size={19} />
+                <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
+                  <Icon aria-hidden="true" size={18} />
                 </span>
-                <div className="mt-5 flex-1">
-                  <h3 className="wl-card-title text-[var(--wireline-typography-body-size)]">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-base font-semibold tracking-[-.02em] text-foreground">
                     {label}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
-                </div>
-                <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                  {action} <ArrowRight aria-hidden="true" size={15} />
+                  </span>
+                  <span className="mt-0.5 block truncate text-sm text-muted-foreground">{detail}</span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+                  {action} <ArrowRight aria-hidden="true" size={14} />
                 </span>
               </Link>
             ))}
-          </div>
-        </section>
-
-        <section className="studio-card border-primary/20 bg-secondary p-5 sm:p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-xl">
-              <p className="studio-kicker">Customization</p>
-              <h2 className="wl-section-title mt-2">Make every surface feel like one system.</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                The next layer is not more settings. It is one operating profile: brand, voice,
-                authority, and goals that every agent and app can read.
-              </p>
-              <Button asChild variant="secondary" size="sm" className="mt-5 w-fit">
-                <Link to="/settings/customization">
-                  Open customization <ArrowRight aria-hidden="true" size={15} />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              {customizationPrinciples.map(({ label, title, detail, icon: Icon }) => (
-                <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
-                      {label}
-                    </p>
-                    <span className="grid size-8 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
-                      <Icon aria-hidden="true" size={15} />
-                    </span>
-                  </div>
-                  <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="studio-card border-primary/20 bg-secondary p-5 sm:p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-xl">
-              <p className="studio-kicker">Control by design</p>
-              <h2 className="wl-card-title mt-2 text-[var(--wireline-typography-body-size)]">
-                Connect, review, remove.
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Settings should make authority legible: what is connected, who can act, what costs
-                money, and how to shut it down.
-              </p>
-            </div>
-            <div className="grid min-w-0 flex-1 gap-2 md:grid-cols-3">
-              {controlPrinciples.map(({ label, title, detail }) => (
-                <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
-                  <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
-                    {label}
-                  </p>
-                  <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-border pt-4">
-            <Button asChild variant="link" className="h-auto px-0 text-sm">
-              <Link to="/actions">
-                Review integrations <ArrowRight aria-hidden="true" size={14} />
-              </Link>
-            </Button>
-            <Button asChild variant="link" className="h-auto px-0 text-sm">
-              <Link to="/settings/billing">
-                Usage and balance <ArrowRight aria-hidden="true" size={14} />
-              </Link>
-            </Button>
-            <Button asChild variant="link" className="h-auto px-0 text-sm">
-              <Link to="/settings/team">
-                Manage access <ArrowRight aria-hidden="true" size={14} />
-              </Link>
-            </Button>
           </div>
         </section>
 
