@@ -58,11 +58,11 @@ export default function AgentIntegrationCanvas({
       .length;
 
   return (
-    <div className="rounded-md wl-panel border border-white/8 p-3 space-y-3">
+    <div className="rounded-md wl-panel border border-border/50 p-3 space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 pb-2 border-b border-white/8">
+      <div className="flex items-center justify-between gap-3 pb-2 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-brand" />
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
           <div>
             <h3 className="font-display italic text-base text-foreground">Agent capabilities</h3>
             <p className="wl-micro-meta--muted leading-relaxed text-pretty">
@@ -91,13 +91,13 @@ export default function AgentIntegrationCanvas({
           className={cn(
             "px-2 py-1 rounded-full border uppercase tracking-[0.22em]",
             usingRoleDefaults
-              ? "bg-brand/10 border-brand/30 text-brand"
-              : "bg-white/5 border-white/10 text-muted/80",
+              ? "bg-primary/10 border-primary/30 text-primary"
+              : "bg-muted border-border text-muted",
           )}
         >
           {usingRoleDefaults ? "Role defaults" : "Custom override"}
         </span>
-        <span className="px-2 py-1 rounded-full border border-white/10 bg-white/5 text-muted/80 uppercase tracking-[0.22em]">
+        <span className="px-2 py-1 rounded-full border border-border bg-muted text-muted uppercase tracking-[0.22em]">
           {selectedToolNames.length} tools enabled
         </span>
       </div>

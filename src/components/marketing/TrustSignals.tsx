@@ -94,13 +94,13 @@ const STATE_TONES = {
     label: "Live",
   },
   ready: {
-    pill: "bg-brand/8 text-brand border-brand/20",
+    pill: "bg-primary/8 text-primary border-primary/20",
     dot: "bg-brand",
     label: "Ready",
   },
   progress: {
-    pill: "bg-brand/5 text-brand/80 border-brand/15",
-    dot: "bg-brand/60",
+    pill: "bg-primary/5 text-primary/80 border-primary/15",
+    dot: "bg-primary/60",
     label: "In progress",
   },
 } as const;
@@ -133,11 +133,11 @@ export default function TrustSignals() {
         {VERTICALS.map(({ icon: Icon, label }) => (
           <div
             key={label}
-            className="group flex flex-col items-center gap-1.5 rounded-md border border-white/5 bg-card/80 py-2.5 px-1 transition-all hover:border-brand/20 hover:bg-card hover:-translate-y-0.5"
+            className="group flex flex-col items-center gap-1.5 rounded-md border border-border bg-card/80 py-2.5 px-1 transition-all hover:border-primary/20 hover:bg-card hover:-translate-y-0.5"
             title={label}
           >
             <Icon
-              className="w-3.5 h-3.5 text-brand group-hover:scale-110 transition-transform"
+              className="w-3.5 h-3.5 text-primary group-hover:scale-110 transition-transform"
               strokeWidth={1.8}
             />
             <span className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.18em] text-muted/70 text-center leading-tight">
@@ -154,7 +154,7 @@ export default function TrustSignals() {
           return (
             <div
               key={label}
-              className="rounded-md border border-white/5 bg-card/60 p-2.5 transition-all hover:bg-card hover:border-white/10"
+              className="rounded-md border border-border bg-card/60 p-2.5 transition-all hover:bg-card hover:border-primary/10"
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <Icon className="w-3.5 h-3.5 text-foreground/70" strokeWidth={1.75} />

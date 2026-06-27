@@ -112,7 +112,7 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           <Link
             key={label}
             to={to}
-            className="flex min-h-[38px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-card px-2 text-[13px] font-semibold text-foreground transition-colors hover:border-primary/25 hover:bg-accent"
+            className="flex min-h-[38px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-card px-2 text-[var(--wireline-typography-body-size)] font-semibold text-foreground transition-colors hover:border-primary/25 hover:bg-accent"
           >
             <Icon aria-hidden="true" size={13} />
             <span>{label}</span>

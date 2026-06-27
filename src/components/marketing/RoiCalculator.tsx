@@ -140,23 +140,23 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         className="mt-0 shrink-0"
         aria-label="ROI snapshot"
       >
-        <div className="rounded-md border border-brand/15 bg-card/70 p-3 shadow-[var(--wireline-elevation-sm)]">
+        <div className="rounded-md border border-primary/15 bg-card/70 p-3 shadow-[var(--wireline-elevation-sm)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-eyebrow !text-brand">ROI snapshot</p>
+              <p className="text-eyebrow !text-primary">ROI snapshot</p>
               <p className="mt-1 font-display italic text-xl leading-none text-foreground">
                 {fmtUsd(results.totalRecovered)}
                 <span className="ml-1 text-caption font-sans not-italic">/yr recovered</span>
               </p>
             </div>
-            <div className="shrink-0 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[var(--wireline-typography-overline-size)] font-semibold wl-text-success">
+            <div className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[var(--wireline-typography-overline-size)] font-semibold wl-text-success">
               {results.paybackDays}d payback
             </div>
           </div>
           <p className="mt-2 text-caption">Default: 12 missed calls/week at $180/job.</p>
           <Link
             to="/pricing"
-            className="mt-2 inline-flex min-h-9 items-center text-caption font-semibold text-brand hover:underline"
+            className="mt-2 inline-flex min-h-9 items-center text-caption font-semibold text-primary hover:underline"
           >
             Full ROI calculator →
           </Link>
@@ -175,12 +175,12 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
       aria-labelledby="roi-heading"
       data-testid="roi-calculator"
     >
-      <div className="rounded-md border border-brand/12 bg-gradient-to-br from-card via-paper to-card p-4 sm:p-5 shadow-[var(--wireline-elevation-sm)]">
+      <div className="rounded-md border border-primary/12 bg-card p-4 sm:p-5 shadow-[var(--wireline-elevation-sm)]">
         <div className="flex items-center gap-2 mb-3">
           <span className="hero-accent-line bg-brand" />
           <h2
             id="roi-heading"
-            className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.5em] text-brand font-semibold"
+            className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.5em] text-primary font-semibold"
           >
             <Calculator className="inline w-3 h-3 mr-1 -mt-0.5" strokeWidth={2} />
             Your numbers, our math
@@ -209,7 +209,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                   "text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full " +
                   (active
                     ? "bg-brand text-paper border-brand"
-                    : "bg-card text-muted/75 border-white/10 hover:border-brand/30 hover:text-foreground")
+                    : "bg-card text-muted/75 border-border hover:border-primary/30 hover:text-foreground")
                 }
               >
                 {p.label}
@@ -255,7 +255,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           </div>
 
           {/* Output column */}
-          <div className="rounded-md border border-brand/15 bg-card p-4 flex flex-col">
+          <div className="rounded-md border border-primary/15 bg-card p-4 flex flex-col">
             <div className="grid grid-cols-2 gap-3 mb-3">
               <Stat
                 label="Revenue recovered"
@@ -268,7 +268,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               className={
                 "rounded-md px-3 py-2.5 mb-3 border " +
                 (results.worthIt
-                  ? "border-brand/25 bg-brand/8 wl-status-success"
+                  ? "border-primary/25 bg-primary/8 wl-status-success"
                   : "border-destructive/25 bg-destructive/8")
               }
             >
@@ -287,7 +287,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted/70 leading-none mb-1">
                   Payback in
                 </p>
-                <p className="font-display italic text-xl leading-none text-brand">
+                <p className="font-display italic text-xl leading-none text-primary">
                   {Number.isFinite(results.paybackDays)
                     ? `${results.paybackDays} day${results.paybackDays === 1 ? "" : "s"}`
                     : "—"}
@@ -338,7 +338,7 @@ function SliderRow({
     <div>
       <div className="flex items-center justify-between gap-3 mb-1.5">
         <span className="flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/75 font-medium">
-          <span className="text-brand">{icon}</span>
+          <span className="text-primary">{icon}</span>
           {label}
         </span>
         <span className="text-[var(--wireline-typography-caption-size)] tabular-nums font-semibold text-foreground">
@@ -359,7 +359,7 @@ function SliderRow({
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: "success" | "brand" }) {
-  const toneClass = tone === "success" ? "wl-text-success" : "text-brand";
+  const toneClass = tone === "success" ? "wl-text-success" : "text-primary";
   return (
     <div>
       <p className="wl-label-muted leading-none mb-1">{label}</p>

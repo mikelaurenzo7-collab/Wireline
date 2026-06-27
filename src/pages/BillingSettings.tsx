@@ -38,7 +38,7 @@ export default function BillingSettings() {
             {BILLING_FLOW.map(({ label, title, detail, icon: Icon }) => (
               <div
                 key={label}
-                className="rounded-[var(--radius-lg)] border border-border bg-card p-4 text-center"
+                className="studio-card p-4 text-center"
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
