@@ -17,12 +17,12 @@ import KnowledgeWorkspace from "../components/KnowledgeWorkspace";
 import { useAgents } from "../contexts/AgentsContext";
 
 const trainingNav = [
-  { label: "Knowledge", note: "Facts.", icon: Database, section: "facts" },
-  { label: "Instructions", note: "Rules.", icon: ShieldCheck, section: "guidance" },
-  { label: "Sources", note: "Context.", icon: FileText, section: "sources" },
-  { label: "Voice", note: "Sound.", icon: Mic2, studioSub: "voices" },
-  { label: "Test call", note: "Practice.", icon: PlayCircle, studioSub: "simulator" },
-  { label: "Memory", note: "Recall.", icon: Brain, studioTab: "memory" },
+  { label: "Knowledge", note: "Facts", icon: Database, section: "facts" },
+  { label: "Instructions", note: "Rules", icon: ShieldCheck, section: "guidance" },
+  { label: "Sources", note: "Context", icon: FileText, section: "sources" },
+  { label: "Voice", note: "Sound", icon: Mic2, studioSub: "voices" },
+  { label: "Test call", note: "Practice", icon: PlayCircle, studioSub: "simulator" },
+  { label: "Memory", note: "Recall", icon: Brain, studioTab: "memory" },
 ] as const;
 
 type TrainingNavItem = (typeof trainingNav)[number];
@@ -43,31 +43,15 @@ function TrainingSurfaceMap({
   activeSection: string | null;
 }) {
   return (
-    <section className="studio-card grid gap-4 p-4 sm:p-5 wl-centered-header">
-      <div>
+    <section className="studio-card grid gap-4 p-4 sm:p-5">
+      <div className="wl-centered-header">
         <p className="studio-kicker">Forge</p>
         <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.02em] text-foreground">
-          Facts. Rules. Voice. Sources. Test.
+          Train the agent.
         </h2>
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          Facts, instructions, sources, voice, test calls, and memory.
-        </p>
       </div>
 
-      {/* Tailored visual: Forge map — code + purpose-built asset. Clean, exceeds static mocks. */}
-      <figure className="mx-auto w-full max-w-[620px] px-2">
-        <img
-          src="/marketing/forge-map.jpg"
-          alt="Forge map: central hub with clean spokes to Facts, Rules, Voice, Sources, Test, Memory on warm paper canvas, deep accents."
-          className="w-full rounded-lg border border-border"
-          style={{ boxShadow: "var(--wireline-elevation-sm)" }}
-        />
-        <figcaption className="mt-1.5 text-center text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
-          One surface. Full control.
-        </figcaption>
-      </figure>
-
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 mt-2">
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {trainingNav.map((item, idx) => {
           const { label, note, icon: Icon } = item;
           const href = trainingHref(agentId, item);
@@ -77,18 +61,18 @@ function TrainingSurfaceMap({
               key={label}
               to={href}
               aria-current={isActive ? "page" : undefined}
-              className={`group flex min-h-[78px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+              className={`group flex min-h-[66px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
                 isActive
                   ? "border-primary/40 bg-accent text-foreground"
                   : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:bg-accent hover:text-foreground"
               }`}
             >
               <span className="min-w-0 flex items-center gap-3">
-                <span className={`text-[10px] font-mono tabular-nums text-muted-foreground/70 w-4`}>
+                <span className="w-4 font-mono text-[10px] tabular-nums text-muted-foreground/70">
                   0{idx + 1}
                 </span>
                 <span>
-                  <span className="block text-sm font-semibold text-foreground tracking-[-0.01em]">
+                  <span className="block text-sm font-semibold tracking-[-0.01em] text-foreground">
                     {label}
                   </span>
                   <span className="mt-0.5 block text-[11px] leading-tight text-muted-foreground">
