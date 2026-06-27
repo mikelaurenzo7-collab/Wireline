@@ -103,3 +103,7 @@ scripts/.stripe-env.generated.json
 # Playwright / test run artifacts
 test-results/
 playwright-report/
+
+# Git worktrees (isolated workspaces)
+.worktrees/
+worktrees/
