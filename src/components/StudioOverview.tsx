@@ -130,6 +130,14 @@ export default function StudioOverview({
           </div>
         </section>
 
+        {/* Purposeful flywheel teaser: surface outcomes from Run to drive Train */}
+        <div className="studio-card px-4 py-3 text-center text-sm">
+          <Link to={`/studio?agent=${encodeURIComponent(active.id)}&mode=workroom`} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+            <span>Review recent outcomes in ledger → train the agent</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
         <section className="studio-card p-4 sm:p-5 text-center wl-centered-header">
           <div className="flex items-center justify-between px-0.5 pb-2">
             <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Agents</p>

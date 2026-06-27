@@ -350,7 +350,7 @@ export default function StudioWorkroom({
                 key={o.id}
                 type="button"
                 onClick={() => {
-                  setDraft(`Review and train from this outcome: ${o.summary}. Next step: ${o.next}.`);
+                  setDraft(`Review and train from this outcome: ${o.summary || ''}. Next step: ${o.next || ''}.`);
                   requestAnimationFrame(() => inputRef.current?.focus());
                 }}
                 className="rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:border-primary/30 active:scale-[0.985]"

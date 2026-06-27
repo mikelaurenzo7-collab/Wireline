@@ -380,6 +380,7 @@ export default function KnowledgeWorkspace() {
           <div className="space-y-3">
             {intelligence.map((s) => {
               const isApplied = appliedSuggestions.includes(s.id);
+              const isReal = s.id.startsWith('real-');
               return (
                 <div key={s.id} className="rounded-xl border border-border p-3">
                   <div className="flex items-start justify-between gap-2">
@@ -388,7 +389,7 @@ export default function KnowledgeWorkspace() {
                       {s.kind === 'directive' && <ShieldCheck size={14} className="mt-0.5 text-muted-foreground" />}
                       {s.kind === 'personality' && <User size={14} className="mt-0.5 text-muted-foreground" />}
                       <div>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{s.kind}</span>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{s.kind}{isReal ? ' • from call' : ''}</span>
                         <p className="mt-0.5 leading-snug text-foreground line-clamp-3">{s.content}</p>
                       </div>
                     </div>
@@ -402,7 +403,7 @@ export default function KnowledgeWorkspace() {
                       {isApplied ? "Added" : "Add to training"}
                     </Button>
                   </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground">From recent calls • one-click trains the fleet</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">{isReal ? 'Captured from recent outcome' : 'Suggested from patterns'} • one-click trains the fleet</p>
                 </div>
               );
             })}

@@ -73,7 +73,7 @@ export default function BillingSettings() {
           title="Receipts."
           icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
         >
-          Stripe portal.
+          Stripe portal. Outcomes in your ledger train the fleet.
         </StatusNotice>
       </div>
     </WorkspaceShell>
