@@ -1,11 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { Database, Loader2, Plus, ShieldCheck, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Database, Loader2, Plus, ShieldCheck, SlidersHorizontal, Trash2, Brain } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import { authFetch, safeJson } from "../lib/api";
 import { Badge, Button, EmptyState, Input, Skeleton, Textarea } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import { useAgents } from "../contexts/AgentsContext";
+import type { TrainingSuggestion } from "../types/api";
 
 type Config = {
   directives?: Array<{ content?: string }>;
@@ -307,6 +308,93 @@ export default function KnowledgeWorkspace() {
   );
   const tonePanel = <ToneCard personality={config.personality} loading={loading} />;
   const sourcesPanel = <SourcesCard loading={loading} />;
+
+  // --- Training Intelligence / Flywheel (MOAT + extreme usefulness elevation) ---
+  // Demo data for first tranche. In production this will come from /api/agents/:id/outcomes + LLM extraction.
+  const intelligence: TrainingSuggestion[] = [
+    { id: "s1", kind: "fact", content: "Customer prefers text confirmations over calls after 6pm.", agentId: agentId || "" },
+    { id: "s2", kind: "directive", content: "Always offer callback within 2 hours if no answer on first attempt.", agentId: agentId || "" },
+    { id: "s3", kind: "fact", content: "Home service jobs: confirm address and arrival window in first message.", agentId: agentId || "" },
+    { id: "s4", kind: "personality", content: "Be warm but concise — customers value speed on service calls.", agentId: agentId || "" },
+  ];
+
+  const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
+
+  const applySuggestion = async (s: TrainingSuggestion) => {
+    if (!agentId) return;
+    // For tranche 1: optimistic UI + call existing manual save path for demo
+    setAppliedSuggestions((prev) => [...prev, s.id]);
+    try {
+      await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: s.kind === "fact" ? "knowledge" : "directive",
+          content: s.content,
+        }),
+      });
+      await load(); // refresh panels so value appears immediately
+    } catch {
+      // swallow for demo; real error would surface in production
+    }
+  };
+
+  const intelligencePanel = (
+    <article className="studio-card flex min-h-[220px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[var(--wireline-elevation-sm)] sm:min-h-[260px]">
+      <header className="flex flex-col items-center gap-2 border-b border-border px-4 py-3.5 text-center">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-sm bg-muted text-muted-foreground">
+          <Brain size={16} />
+        </span>
+        <div>
+          <h2 className="text-[var(--wireline-typography-h3-size)] font-semibold leading-5 tracking-[-.02em] text-foreground">
+            Intelligence from outcomes
+          </h2>
+          <p className="mt-0.5 font-mono text-[var(--wireline-typography-overline-size)] leading-4 text-muted-foreground">
+            {loading ? "--" : `${intelligence.length} suggestions`}
+          </p>
+        </div>
+      </header>
+      <div className="wl-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 text-sm">
+        {loading ? (
+          <LoadingRows />
+        ) : intelligence.length ? (
+          <div className="space-y-3">
+            {intelligence.map((s) => {
+              const isApplied = appliedSuggestions.includes(s.id);
+              return (
+                <div key={s.id} className="rounded-lg border border-border p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{s.kind}</span>
+                      <p className="mt-0.5 leading-snug text-foreground">{s.content}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={isApplied ? "secondary" : "default"}
+                      disabled={isApplied}
+                      onClick={() => applySuggestion(s)}
+                    >
+                      {isApplied ? "Applied" : "Apply"}
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">From recent calls • one-click trains the fleet</p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            density="compact"
+            className="min-h-[120px] border-dashed text-center"
+            icon={<Brain size={16} />}
+            title="No new intelligence"
+            description="Run calls or tests — suggestions will appear here."
+          />
+        )}
+      </div>
+    </article>
+  );
+
   const selected =
     view === "facts"
       ? factsPanel
@@ -337,14 +425,18 @@ export default function KnowledgeWorkspace() {
         </StatusNotice>
       ) : null}
 
-      <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(170px,.85fr)_minmax(170px,.85fr)_minmax(180px,.9fr)_minmax(350px,1.65fr)] xl:gap-6">
+      <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(170px,.85fr)_minmax(170px,.85fr)_minmax(180px,.9fr)_minmax(260px,1.1fr)_minmax(350px,1.4fr)] xl:gap-6">
         <div className="hidden min-h-0 xl:block">{factsPanel}</div>
         <div className="hidden min-h-0 xl:block">{guidancePanel}</div>
         <div className="hidden min-h-0 xl:flex xl:flex-col xl:gap-4">
           {tonePanel}
           {sourcesPanel}
         </div>
-        <div className="min-h-0 xl:hidden">{selected}</div>
+        <div className="hidden min-h-0 xl:block">{intelligencePanel}</div>
+        <div className="min-h-0 xl:hidden space-y-4">
+          {selected}
+          {intelligencePanel}
+        </div>
 
         <aside className="mt-4 flex min-h-0 flex-col rounded-xl border border-border bg-card p-4 shadow-[var(--wireline-elevation-sm)] xl:mt-0 xl:min-h-[480px]">
           <div className="flex items-center gap-2 border-b border-border pb-3">

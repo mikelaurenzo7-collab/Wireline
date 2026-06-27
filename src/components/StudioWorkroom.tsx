@@ -243,11 +243,7 @@ export default function StudioWorkroom({
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
                   {message.proposals && suggestions > 0 && (
-                    <div
-                      className="mt-2 flex flex-wrap justify-end gap-1.5"
-                      role="group"
-                      aria-label="Proposals from agent"
-                    >
+                    <div className="mt-3 space-y-2" role="group" aria-label="Proposals from agent">
                       {message.proposals.changes?.slice(0, 2).map((c, i) => {
                         const key = `c-${message.id}-${i}`;
                         const isApplied = !!appliedProposals[key];
@@ -255,14 +251,13 @@ export default function StudioWorkroom({
                           <button
                             key={key}
                             type="button"
-                            onClick={() =>
-                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
-                            }
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            onClick={() => setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))}
+                            className={`w-full rounded-xl border px-3 py-2 text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
                             aria-pressed={isApplied}
                           >
-                            {isApplied ? "Applied " : ""}Change:{" "}
-                            {typeof c === "string" ? c.slice(0, 28) : "config"}
+                            <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">CHANGE</span>
+                            <div className="mt-0.5">{typeof c === "string" ? c : "Update agent config"}</div>
+                            {isApplied && <span className="text-[10px] opacity-70">— applied to training</span>}
                           </button>
                         );
                       })}
@@ -273,14 +268,12 @@ export default function StudioWorkroom({
                           <button
                             key={key}
                             type="button"
-                            onClick={() =>
-                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
-                            }
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            onClick={() => setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))}
+                            className={`w-full rounded-xl border px-3 py-2 text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
                             aria-pressed={isApplied}
                           >
-                            {isApplied ? "Applied " : ""}Wire:{" "}
-                            {typeof t === "string" ? t.slice(0, 24) : "toggle"}
+                            <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">INTEGRATION</span>
+                            <div className="mt-0.5">{typeof t === "string" ? t : "Toggle tool"}</div>
                           </button>
                         );
                       })}
@@ -291,22 +284,15 @@ export default function StudioWorkroom({
                           <button
                             key={key}
                             type="button"
-                            onClick={() =>
-                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
-                            }
-                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-all active:scale-[0.975] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border/60 bg-background text-foreground/90 hover:border-primary/40"}`}
+                            onClick={() => setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))}
+                            className={`w-full rounded-xl border px-3 py-2 text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
                             aria-pressed={isApplied}
                           >
-                            {isApplied ? "Applied " : ""}Action:{" "}
-                            {typeof a === "string" ? a.slice(0, 24) : "run"}
+                            <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">ACTION</span>
+                            <div className="mt-0.5">{typeof a === "string" ? a : "Execute next step"}</div>
                           </button>
                         );
                       })}
-                      {suggestions > 3 && (
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          +{suggestions - 3} more
-                        </span>
-                      )}
                     </div>
                   )}
                 </article>
@@ -331,6 +317,41 @@ export default function StudioWorkroom({
           </div>
         )}
       </section>
+
+      {/* Outcome Ledger — makes the conversation moat visible and actionable (extreme usefulness + MOAT #1) */}
+      {!loading && (
+        <div className="mx-auto max-w-3xl px-4 pb-3 sm:px-6">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground">Recent outcomes (ledger)</div>
+            <Link to={`/training?agent=${encodeURIComponent(agentId)}`} className="text-[10px] text-muted-foreground hover:text-foreground">View in Training →</Link>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              { id: "o1", channel: "voice", summary: "Scheduled follow-up for Tuesday 2pm. Customer confirmed address.", next: "Send SMS reminder + prep brief", tag: "scheduled" },
+              { id: "o2", channel: "sms", summary: "Confirmed service window. No escalations.", next: "Log in CRM", tag: "qualified" },
+            ].map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => {
+                  setDraft(`Review and train from this outcome: ${o.summary}. Next step: ${o.next}.`);
+                  requestAnimationFrame(() => inputRef.current?.focus());
+                }}
+                className="rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:border-primary/30 active:scale-[0.985]"
+              >
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <span>{o.channel}</span>
+                  <span className="rounded bg-muted px-1.5 py-px text-[9px]">{o.tag}</span>
+                </div>
+                <div className="mt-1 leading-snug text-foreground">{o.summary}</div>
+                <div className="mt-1 text-[12px] text-muted-foreground">Next: {o.next}</div>
+                <div className="mt-1 text-[10px] text-primary">Tap to brief agent from this</div>
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground/70">Every outcome trains the fleet. Full history + recordings in Training.</p>
+        </div>
+      )}
 
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
         <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary/40">

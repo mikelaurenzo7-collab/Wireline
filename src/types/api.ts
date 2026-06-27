@@ -46,6 +46,23 @@ export interface CallLog {
   created_at: string;
 }
 
+/* ── Training Flywheel & Outcomes (Wireline MOAT #1) ──────────────── */
+/** Structured suggestion extracted from conversation outcomes for the training flywheel. */
+export interface TrainingSuggestion {
+  id: string;
+  kind: "fact" | "directive" | "personality" | "tool";
+  content: string;
+  sourceOutcomeId?: string;
+  confidence?: number; // 0-1
+  agentId: string;
+}
+
+/** Unified view over call/sms/email outcomes for the ledger (extends existing CallLog). */
+export interface OutcomeRecord extends CallLog {
+  channel?: "voice" | "sms" | "email";
+  next_steps?: string | null;
+}
+
 /* ── Dashboard stats ─────────────────────────────────────────────── */
 
 export interface SentimentBreakdown {

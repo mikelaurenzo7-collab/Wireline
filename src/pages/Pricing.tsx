@@ -83,9 +83,9 @@ export default function Pricing() {
                 Create free. Train deeply. Fund live work when it matters.
               </h1>
               <p className="mx-auto mt-5 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-                Wireline sells operating capacity, not template access. Create and train for free,
-                fund live calls and texts through Conversation Balance, and move into Team or
-                Business capacity when work becomes shared.
+                Wireline sells operating capacity, not template access. Create and train for free.
+                Every conversation produces outcomes that train your agent — the fleet gets smarter with use.
+                Fund live work through Conversation Balance. Scale to Team or Business for shared routing, approvals, and governance.
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link
