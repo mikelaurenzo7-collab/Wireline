@@ -164,6 +164,7 @@ export default function StudioOverview({
             {agents.map((agent) => {
               const selected = agent.id === active.id;
               const AgentIcon = agent.channel === "email" ? MessageSquareText : Phone;
+              const description = agentDescription(agent);
               return (
                 <button
                   key={agent.id}
@@ -185,7 +186,7 @@ export default function StudioOverview({
                         <BriefcaseBusiness className="shrink-0" size={12} />
                       ) : null}
                       <AgentIcon className="shrink-0" size={12} />
-                      <span className="truncate">{activeDescription}</span>
+                      <span className="truncate">{description}</span>
                     </span>
                   </span>
                   {selected ? <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" /> : null}
