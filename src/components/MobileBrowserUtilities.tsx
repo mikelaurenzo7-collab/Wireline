@@ -5,7 +5,7 @@ const mobileUtilityLinks = [
   { href: "/settings", label: "Settings", detail: "Account", icon: Settings },
   { href: "/settings/billing", label: "Billing", detail: "Usage", icon: CreditCard },
   { href: "/actions", label: "Integrations", detail: "Tools", icon: Cable },
-  { href: "/settings/apps", label: "Apps", detail: "Mobile", icon: MonitorDown },
+  { href: "/settings/apps", label: "Apps", detail: "Surfaces", icon: MonitorDown },
   { href: "/settings/team", label: "Team", detail: "Access", icon: UsersRound },
 ] as const;
 
@@ -25,19 +25,18 @@ export default function MobileBrowserUtilities() {
   if (hidesOwnControls(location.pathname)) return null;
 
   return (
-    <details className="fixed left-4 top-3 z-[70] lg:hidden">
+    <details className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-[70] lg:hidden">
       <summary
         aria-label="Open workspace controls"
-        className="grid size-10 cursor-pointer list-none place-items-center rounded-full border border-border bg-background text-foreground shadow-[var(--wireline-elevation-sm)] marker:hidden transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden"
+        className="grid size-11 cursor-pointer list-none place-items-center rounded-full border border-border bg-background text-foreground shadow-[var(--wireline-elevation-md)] marker:hidden transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden"
       >
-        <Settings size={17} aria-hidden="true" />
+        <Settings size={18} aria-hidden="true" />
       </summary>
-      <div className="absolute left-0 mt-2 max-h-[min(24rem,calc(100dvh-5.25rem))] w-[min(17rem,calc(100vw-2rem))] overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-background p-2 normal-case tracking-normal text-foreground shadow-[0_22px_48px_-28px_rgba(17,17,17,0.45),var(--wireline-elevation-md)]">
-        <div className="border-b border-border/70 px-3 py-2.5 text-left">
+      <div className="fixed inset-x-4 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+3.75rem)] max-h-[min(24rem,calc(100dvh-7rem))] overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-background p-2 normal-case tracking-normal text-foreground shadow-[0_24px_60px_-30px_rgba(17,17,17,0.55),var(--wireline-elevation-md)] sm:left-4 sm:right-auto sm:w-[21rem]">
+        <div className="border-b border-border/70 px-3 py-2 text-left">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Controls
           </p>
-          <p className="mt-1 text-xs font-medium leading-snug text-foreground">Settings and tools.</p>
         </div>
         <nav className="mt-1 grid gap-1" aria-label="Mobile browser controls">
           {mobileUtilityLinks.map(({ href, label, detail, icon: Icon }) => {
