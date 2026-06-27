@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, ChevronDown, Mail, Plus, ShieldCheck, UserPlus, X } from "lucide-react";
+import { ChevronDown, Mail, Plus, ShieldCheck, UserPlus, X } from "lucide-react";
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
@@ -65,23 +64,11 @@ export default function TeamSettings() {
   };
 
   return (
-    <WorkspaceShell
-      eyebrow="Workspace"
-      title="Team"
-      contentClassName="pt-6"
-      action={
-        <Button asChild variant="secondary" size="sm" className="shrink-0">
-          <Link to="/settings" aria-label="Back to Settings">
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline">Settings</span>
-          </Link>
-        </Button>
-      }
-    >
+    <WorkspaceShell eyebrow="Workspace" title="Team" contentClassName="pt-1 pb-8">
       <div className="min-h-0 flex-1 pb-12">
-        <div className="mx-auto max-w-[920px] space-y-6">
+        <div className="mx-auto max-w-[920px] space-y-5">
           <section className="studio-card flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-center">
+            <div className="text-center sm:text-left">
               <Badge variant="info">
                 <ShieldCheck size={14} />
                 Business
@@ -162,9 +149,7 @@ export default function TeamSettings() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Invite to workspace</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Email. Level.
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Email. Level.</p>
               </div>
               <Button
                 type="button"
