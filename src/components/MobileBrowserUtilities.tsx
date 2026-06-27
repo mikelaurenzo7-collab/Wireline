@@ -15,8 +15,15 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(`${href}/`);
 }
 
+function hidesOwnControls(pathname: string) {
+  return pathname === "/studio" || pathname.startsWith("/studio/") || pathname.startsWith("/settings");
+}
+
 export default function MobileBrowserUtilities() {
   const location = useLocation();
+
+  if (hidesOwnControls(location.pathname)) return null;
+
   return (
     <details className="fixed right-3 top-3 z-50 lg:hidden">
       <summary
@@ -38,7 +45,9 @@ export default function MobileBrowserUtilities() {
               aria-current={isActive(location.pathname, href) ? "page" : undefined}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-muted"
             >
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground"><Icon size={15} aria-hidden="true" /></span>
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground">
+                <Icon size={15} aria-hidden="true" />
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold text-foreground">{label}</span>
                 <span className="block truncate text-xs text-muted-foreground">{detail}</span>
