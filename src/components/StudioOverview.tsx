@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -7,6 +8,7 @@ import {
   MessageSquareText,
   Phone,
   Plus,
+  Settings as SettingsIcon,
   ShieldCheck,
 } from "lucide-react";
 
@@ -22,12 +24,7 @@ type StudioOverviewProps = {
   onCreate: () => void;
 };
 
-const WORK_PROMPTS = [
-  "Review recent conversations",
-  "Draft follow-up",
-  "Prepare handoff",
-  "Set a call plan",
-] as const;
+const WORK_PROMPTS = ["Review conversations", "Draft follow-up", "Prep handoff", "Plan calls"] as const;
 
 function roleLabel(agent: WorkspaceAgentSummary) {
   if (agent.role) return agent.role.replace(/_/g, " ");
@@ -63,20 +60,26 @@ export default function StudioOverview({
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold text-muted-foreground">Studio</p>
-            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[clamp(2.2rem,11vw,3.25rem)] font-semibold leading-none tracking-[-.06em] text-foreground">
+            <h1 className="mt-1 truncate font-[var(--wireline-font-family-display)] text-[clamp(2rem,10vw,3rem)] font-semibold leading-none tracking-[-.055em] text-foreground">
               {active.name}
             </h1>
             <p className="mt-2 text-base capitalize leading-6 text-muted-foreground">
               {activeDescription}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
             <Button type="button" variant="secondary" onClick={onCreate} className="justify-center">
               <Plus aria-hidden="true" size={15} />
               New
             </Button>
+            <Button asChild type="button" variant="secondary" className="justify-center">
+              <Link to="/settings">
+                <SettingsIcon aria-hidden="true" size={15} />
+                Settings
+              </Link>
+            </Button>
             <Button type="button" onClick={() => onOpen(active.id)} className="justify-center">
-              Open chat <ArrowRight aria-hidden="true" size={15} />
+              Chat <ArrowRight aria-hidden="true" size={15} />
             </Button>
           </div>
         </header>
@@ -89,19 +92,18 @@ export default function StudioOverview({
 
         <section className="studio-card p-4 sm:p-5 lg:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="max-w-2xl">
+            <div className="max-w-xl">
               <p className="text-xs font-semibold text-muted-foreground">Workroom</p>
-              <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,7vw,2.6rem)] font-semibold leading-[1.02] tracking-[-.045em] text-foreground">
-                Give {active.name} the next job.
+              <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,6vw,2.25rem)] font-semibold leading-[1.02] tracking-[-.04em] text-foreground">
+                Next job.
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Tell the agent what to run, draft, review, or hand off. It starts in chat and keeps
-                approvals visible before anything goes live.
+                Describe the outcome. Approvals stay visible.
               </p>
             </div>
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground">
               <CheckCircle2 aria-hidden="true" size={14} className="text-primary" />
-              Ready to direct
+              Ready
             </div>
           </div>
 
@@ -114,7 +116,7 @@ export default function StudioOverview({
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
               rows={4}
-              placeholder={`Ask ${active.name} to review, draft, call, or follow up...`}
+              placeholder={`What should ${active.name} do next?`}
               className="min-h-[116px] w-full resize-none bg-transparent px-2 py-1 text-base leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 sm:min-h-[132px]"
             />
             <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
@@ -135,7 +137,7 @@ export default function StudioOverview({
                 className="w-full justify-center sm:w-auto"
                 onClick={() => onOpen(active.id, trimmedBrief || undefined)}
               >
-                {trimmedBrief ? "Start task" : "Open workroom"}
+                {trimmedBrief ? "Start" : "Open"}
                 <ArrowRight aria-hidden="true" size={15} />
               </Button>
             </div>
@@ -146,9 +148,7 @@ export default function StudioOverview({
           <div className="flex items-center justify-between gap-3 px-1 py-1.5">
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Agents</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                {agents.length} available. Tap once to switch, tap selected to open.
-              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{agents.length} agents</p>
             </div>
             <button
               type="button"
