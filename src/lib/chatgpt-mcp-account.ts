@@ -1,3 +1,5 @@
+import { buildWirelineMcpWidgetCss } from "./wireline-mcp-widget-styles";
+
 export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.html";
 
 /**
@@ -11,29 +13,7 @@ export function buildAccountBoundWidgetHtml(): string {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-:root { color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-* { box-sizing: border-box; }
-body { margin: 0; background: transparent; color: CanvasText; }
-#app { max-width: 680px; margin: 0 auto; padding: 14px; }
-.card { border: 1px solid color-mix(in srgb, CanvasText 18%, transparent); border-radius: 16px; padding: 16px; background: color-mix(in srgb, Canvas 96%, CanvasText 4%); }
-.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .66; }
-h2 { margin: 5px 0 4px; font-size: 20px; line-height: 1.2; }
-p { margin: 0; line-height: 1.45; }
-.meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
-.meta div { border-radius: 10px; padding: 9px 10px; background: color-mix(in srgb, CanvasText 7%, transparent); }
-.meta strong { display: block; font-size: 11px; opacity: .65; text-transform: uppercase; letter-spacing: .04em; }
-.meta span { display: block; margin-top: 2px; font-size: 13px; }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-button, a.button { appearance: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid color-mix(in srgb, CanvasText 24%, transparent); border-radius: 10px; padding: 10px 12px; background: transparent; color: inherit; font: inherit; font-weight: 650; cursor: pointer; text-decoration: none; }
-button.primary { background: #111111; color: white; border-color: #111111; }
-button:disabled { opacity: .55; cursor: not-allowed; }
-.status { margin-top: 11px; min-height: 20px; font-size: 13px; opacity: .78; }
-.note { margin-top: 12px; font-size: 12px; opacity: .7; }
-.live { display: none; margin-top: 12px; border-radius: 10px; padding: 10px; background: color-mix(in srgb, CanvasText 7%, transparent); font-size: 13px; }
-.live.show { display: block; }
-@media (max-width: 460px) { .meta { grid-template-columns: 1fr; } }
-</style>
+<style>${buildWirelineMcpWidgetCss()}</style>
 </head>
 <body>
 <div id="app"><div class="card"><div class="eyebrow">Wireline agent draft</div><h2 id="name">Your private phone agent</h2><p id="summary">Connect Wireline, then describe the agent you want to create in your workspace.</p><div class="meta"><div><strong>Role</strong><span id="role">Not configured</span></div><div><strong>Business</strong><span id="business">Wireline workspace</span></div></div><div class="actions"><button id="voice" class="primary" type="button" disabled>Try private voice</button><a id="open" class="button" href="https://trywireline.com/studio" target="_blank" rel="noreferrer">Open in Wireline</a></div><div class="live" id="live">Private simulation ready. It cannot place calls, access records, or take an external action.</div><div class="status" id="status" aria-live="polite">Connect Wireline to create a private agent draft.</div><p class="note">Agent drafts are saved to your Wireline account. Phone numbers, real calls, messaging, integrations, and launch are configured separately in Wireline.</p></div></div>

@@ -1,29 +1,15 @@
 import SwiftUI
 
-/// Widget palette shared by all extension views. Keep widgets visibly aligned
-/// with the native Wireline Precision surfaces while using WidgetKit-friendly fills.
+/// Widget palette aligned to generated WirelineDesignTokens in WirelineShared.
 enum WidgetColors {
-    static let accent = Color(hex: WirelinePalette.accent)
-    static let accentDeep = Color(hex: WirelinePalette.accentDeep)
-    static let accentSoft = Color(hex: WirelinePalette.accentSoft)
-    static let canvas = Color(hex: WirelinePalette.canvas)
-    static let panel = Color(hex: WirelinePalette.panel)
-    static let panel2 = Color(hex: WirelinePalette.panel2)
-    static let text = Color(hex: WirelinePalette.text)
-    static let text2 = Color(hex: WirelinePalette.text2)
-    static let text3 = Color(hex: WirelinePalette.text3)
-    static let border = Color(hex: WirelinePalette.border)
-
-}
-
-private extension Color {
-    init(hex: String) {
-        let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: cleaned).scanHexInt64(&int)
-        let r = Double((int >> 16) & 0xFF) / 255.0
-        let g = Double((int >> 8) & 0xFF) / 255.0
-        let b = Double(int & 0xFF) / 255.0
-        self.init(.sRGB, red: r, green: g, blue: b)
-    }
+    static let accent = WirelineDesignTokens.ColorToken.colorActionPrimaryDefault
+    static let accentDeep = WirelineDesignTokens.ColorToken.colorActionPrimaryPressed
+    static let accentSoft = WirelineDesignTokens.ColorToken.colorActionPrimaryContainer
+    static let canvas = WirelineDesignTokens.ColorToken.colorCanvasDefault
+    static let panel = WirelineDesignTokens.ColorToken.colorSurfaceDefault
+    static let panel2 = WirelineDesignTokens.ColorToken.colorSurfaceSubtle
+    static let text = WirelineDesignTokens.ColorToken.colorTextPrimary
+    static let text2 = WirelineDesignTokens.ColorToken.colorTextSecondary
+    static let text3 = WirelineDesignTokens.ColorToken.colorTextTertiary
+    static let border = WirelineDesignTokens.ColorToken.colorBorderDefault
 }

@@ -65,7 +65,7 @@ struct CallDetailView: View {
                 Section {
                     Link(destination: link) {
                         Label("Play recording", systemImage: "play.circle.fill")
-                            .foregroundStyle(Brand.purple)
+                            .foregroundStyle(Brand.accent)
                     }
                 }
             }
@@ -117,7 +117,7 @@ private struct OutcomeTag: View {
         switch tag.lowercased() {
         case "booked", "converted", "completed": return Brand.signal
         case "objection", "no_answer", "voicemail": return Color.orange
-        case "transferred": return Brand.purple
+        case "transferred": return Brand.accent
         default: return Color.secondary
         }
     }

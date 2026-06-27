@@ -10,8 +10,18 @@
  */
 
 .wl-public-rail {
-  width: min(100%, 72rem);
+  width: min(100%, var(--wireline-layout-content-max, 72rem));
   margin-inline: auto;
+}
+
+.wl-marketing-rail {
+  width: min(100%, var(--wireline-layout-marketing-rail, 68rem));
+  margin-inline: auto;
+}
+
+.wl-section-stack {
+  display: grid;
+  gap: var(--wireline-layout-section-gap, 48px);
 }
 
 .wl-public-copy {

@@ -406,17 +406,30 @@ mustInclude(
   /CPListTemplate\(title: "Agents"/,
   "CarPlay agent list title must be Agents",
 );
+const mcpWidgetStyles = read("src/lib/wireline-mcp-widget-styles.ts");
+mustInclude(
+  "src/lib/wireline-mcp-widget-styles.ts",
+  mcpWidgetStyles,
+  /canvas: "#F7F7F4"/,
+  "MCP widget styles must use Wireline Mono canvas",
+);
+mustInclude(
+  "src/lib/wireline-mcp-widget-styles.ts",
+  mcpWidgetStyles,
+  /action: "#111111"/,
+  "MCP widget styles must use Wireline Mono action chrome",
+);
 mustInclude(
   "src/lib/chatgpt-mcp.ts",
   chatgptWidget,
-  /button\.primary \{ background: #111111; color: white; border-color: #111111; \}/,
-  "ChatGPT public widget must use monochrome chrome",
+  /buildWirelineMcpWidgetCss/,
+  "ChatGPT public widget must use shared monochrome chrome",
 );
 mustInclude(
   "src/lib/chatgpt-mcp-account.ts",
   chatgptAccountWidget,
-  /button\.primary \{ background: #111111; color: white; border-color: #111111; \}/,
-  "ChatGPT account widget must use monochrome chrome",
+  /buildWirelineMcpWidgetCss/,
+  "ChatGPT account widget must use shared monochrome chrome",
 );
 mustInclude(
   "public/static-legal.css",

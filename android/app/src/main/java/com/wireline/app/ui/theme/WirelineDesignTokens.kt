@@ -33,6 +33,7 @@ internal object WirelineDesignTokens {
     val colorTextOnAction = Color(0xFFFFFFFF)
     val colorTextPrimary = Color(0xFF111111)
     val colorTextSecondary = Color(0xFF6B6B66)
+    val colorTextTertiary = Color(0xFF8A8A84)
   }
 
   object Metric {
@@ -40,6 +41,9 @@ internal object WirelineDesignTokens {
     val interactionFocusWidth = 2.dp
     val interactionTargetComfortable = 44.dp
     val interactionTargetMinimum = 24.dp
+    val layoutContentMax = 1152.dp
+    val layoutMarketingRail = 1088.dp
+    val layoutSectionGap = 48.dp
     val radiusLg = 12.dp
     val radiusMd = 10.dp
     val radiusPill = 999.dp
@@ -75,7 +79,7 @@ internal object WirelineDesignTokens {
     const val motionDurationFastMillis = 120
     const val motionDurationSlowMillis = 300
     const val motionDurationStandardMillis = 200
-    const val pressScale = 0.985f
+    const val pressScale = 0.98f
   }
 
   object ZIndex {

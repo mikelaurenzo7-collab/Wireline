@@ -67,6 +67,8 @@ htmlcov/
 .cursor/
 scratch/
 terminals/
+mcps/
+agent-tools/
 
 # Environment
 .env

@@ -11,8 +11,8 @@ struct AssistantWidget: Widget {
                 .widgetURL(URL(string: "assistant://route"))
                 .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("Agent Coverage")
-        .description("View current call coverage rates and active screening status.")
+        .configurationDisplayName("Wireline Agents")
+        .description("Open Wireline agents with mono clarity — coverage, handoff, and live work.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
     }
 

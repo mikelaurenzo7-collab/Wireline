@@ -44,7 +44,7 @@ struct OutboundCallView: View {
             .navigationTitle("New call")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-            .tint(Brand.purple)
+            .tint(Brand.accent)
             .onAppear { if selectedAgentId.isEmpty { selectedAgentId = agents.first?.id ?? "" } }
         }
     }

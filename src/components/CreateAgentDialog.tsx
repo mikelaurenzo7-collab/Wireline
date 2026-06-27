@@ -24,6 +24,9 @@ const voices = [
 
 const personalities = ["Clear", "Warm", "Direct", "Polished", "Custom"] as const;
 
+const CREATE_AGENT_INTAKE_COPY =
+  "Name, role, voice, personality, and a starting brief. Short intake. Train next. Run immediately.";
+
 type Role = (typeof roles)[number][0];
 type Personality = (typeof personalities)[number];
 
@@ -176,8 +179,7 @@ export default function CreateAgentDialog({
               New agent.
             </h2>
             <p id="create-agent-description" className="mt-1 text-sm text-muted-foreground">
-              Name, role, voice, personality, and a starting brief. Short intake. Train next. Run
-              immediately.
+              {CREATE_AGENT_INTAKE_COPY}
             </p>
           </div>
           <Button

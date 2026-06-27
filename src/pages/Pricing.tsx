@@ -76,15 +76,20 @@ export default function Pricing() {
 
       <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
         <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto max-w-6xl text-center">
+          <div className="wl-marketing-rail wl-section-stack text-center">
             <div className="mx-auto max-w-3xl">
               <p className="wl-overline text-primary">Pricing</p>
               <h1 className="mt-4 text-balance text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
                 Create free. Train deeply. Fund live work when it matters.
               </h1>
               <p className="mx-auto mt-5 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-                Wireline starts with a focused intake, pushes heavy configuration into Training, and
-                keeps live calls, texts, and follow-up funded through Conversation Balance.
+                Wireline sells operating capacity, not template access. Create and train for free,
+                fund live calls and texts through Conversation Balance, and move into Team or
+                Business capacity when work becomes shared.
+              </p>
+              <p className="mx-auto mt-3 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                Personal stays subscription-free. Team and Business add shared routing, approvals,
+                and governance while live work still reconciles through Conversation Balance.
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link

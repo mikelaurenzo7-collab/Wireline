@@ -1,0 +1,116 @@
+/**
+ * Canonical Wireline Mono styling for ChatGPT MCP HTML widgets.
+ * Values mirror design-tokens/wireline.tokens.json — keep in sync via build-design-tokens.
+ */
+export const WIRELINE_MCP_WIDGET_TOKENS = {
+  canvas: "#F7F7F4",
+  surface: "#FFFFFF",
+  surfaceSubtle: "#F1F1EE",
+  action: "#111111",
+  actionPressed: "#000000",
+  text: "#111111",
+  muted: "#6B6B66",
+  border: "#E3E3E0",
+  radiusLg: "12px",
+  radiusMd: "10px",
+  shadowCard: "0 8px 24px -16px rgba(17, 17, 17, 0.18)",
+  fontDisplay:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif',
+} as const;
+
+export function buildWirelineMcpWidgetCss(): string {
+  const t = WIRELINE_MCP_WIDGET_TOKENS;
+  return `
+:root {
+  color-scheme: light;
+  --wl-canvas: ${t.canvas};
+  --wl-surface: ${t.surface};
+  --wl-surface-subtle: ${t.surfaceSubtle};
+  --wl-action: ${t.action};
+  --wl-action-pressed: ${t.actionPressed};
+  --wl-text: ${t.text};
+  --wl-muted: ${t.muted};
+  --wl-border: ${t.border};
+  --wl-radius-lg: ${t.radiusLg};
+  --wl-radius-md: ${t.radiusMd};
+  --wl-shadow-card: ${t.shadowCard};
+  font-family: ${t.fontDisplay};
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: transparent;
+  color: var(--wl-text);
+}
+#app { max-width: 680px; margin: 0 auto; padding: 14px; }
+.card {
+  border: 1px solid var(--wl-border);
+  border-radius: var(--wl-radius-lg);
+  padding: 16px;
+  background: var(--wl-surface);
+  box-shadow: var(--wl-shadow-card);
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wl-muted);
+}
+h2 { margin: 5px 0 4px; font-size: 20px; line-height: 1.2; letter-spacing: -0.02em; }
+p { margin: 0; line-height: 1.45; color: var(--wl-muted); }
+.meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.meta div {
+  border-radius: var(--wl-radius-md);
+  padding: 9px 10px;
+  background: var(--wl-surface-subtle);
+  border: 1px solid var(--wl-border);
+}
+.meta strong {
+  display: block;
+  font-size: 11px;
+  color: var(--wl-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.meta span { display: block; margin-top: 2px; font-size: 13px; color: var(--wl-text); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+button, a.button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--wl-border);
+  border-radius: var(--wl-radius-md);
+  padding: 10px 12px;
+  background: var(--wl-surface);
+  color: var(--wl-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+  min-height: 44px;
+}
+button.primary { background: #111111; color: #fff; border-color: #111111; }
+button.primary:active { background: var(--wl-action-pressed); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+button:focus-visible, a.button:focus-visible {
+  outline: 2px solid var(--wl-action);
+  outline-offset: 2px;
+}
+.status { margin-top: 11px; min-height: 20px; font-size: 13px; color: var(--wl-muted); }
+.note { margin-top: 12px; font-size: 12px; color: var(--wl-muted); }
+.live {
+  display: none;
+  margin-top: 12px;
+  border-radius: var(--wl-radius-md);
+  padding: 10px;
+  background: var(--wl-surface-subtle);
+  border: 1px solid var(--wl-border);
+  font-size: 13px;
+  color: var(--wl-text);
+}
+.live.show { display: block; }
+@media (max-width: 460px) { .meta { grid-template-columns: 1fr; } }
+`.trim();
+}

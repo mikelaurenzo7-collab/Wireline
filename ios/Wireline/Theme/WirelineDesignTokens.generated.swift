@@ -3,7 +3,7 @@ import SwiftUI
 
 public enum WirelineDesignTokens {
   public enum ColorToken {
-    public static let colorActionPrimaryContainer = Color(hex: 0x111111).opacity(0.08)
+    public static let colorActionPrimaryContainer = Color(red: 0.06666666666666667, green: 0.06666666666666667, blue: 0.06666666666666667, opacity: 0.08)
     public static let colorActionPrimaryDefault = Color(hex: 0x111111)
     public static let colorActionPrimaryPressed = Color(hex: 0x000000)
     public static let colorBorderDefault = Color(hex: 0xE3E3E0)
@@ -18,7 +18,7 @@ public enum WirelineDesignTokens {
     public static let colorFeedbackWarningBorder = Color(hex: 0xE3D4B8)
     public static let colorFeedbackWarningSurface = Color(hex: 0xFAF5EA)
     public static let colorFocusDefault = Color(hex: 0x111111)
-    public static let colorOverlayScrim = Color(hex: 0x111111).opacity(0.48)
+    public static let colorOverlayScrim = Color(red: 0.06666666666666667, green: 0.06666666666666667, blue: 0.06666666666666667, opacity: 0.48)
     public static let colorStatusError = Color(hex: 0xA23A3A)
     public static let colorStatusInfo = Color(hex: 0x4B5563)
     public static let colorStatusSuccess = Color(hex: 0x3F6F45)
@@ -30,6 +30,7 @@ public enum WirelineDesignTokens {
     public static let colorTextOnAction = Color(hex: 0xFFFFFF)
     public static let colorTextPrimary = Color(hex: 0x111111)
     public static let colorTextSecondary = Color(hex: 0x6B6B66)
+    public static let colorTextTertiary = Color(hex: 0x8A8A84)
   }
 
   public enum Metric {
@@ -37,6 +38,9 @@ public enum WirelineDesignTokens {
     public static let interactionFocusWidth: CGFloat = 2
     public static let interactionTargetComfortable: CGFloat = 44
     public static let interactionTargetMinimum: CGFloat = 24
+    public static let layoutContentMax: CGFloat = 1152
+    public static let layoutMarketingRail: CGFloat = 1088
+    public static let layoutSectionGap: CGFloat = 48
     public static let radiusLg: CGFloat = 12
     public static let radiusMd: CGFloat = 10
     public static let radiusPill: CGFloat = 999
@@ -72,7 +76,7 @@ public enum WirelineDesignTokens {
     public static let motionDurationFast: Double = 0.12
     public static let motionDurationSlow: Double = 0.3
     public static let motionDurationStandard: Double = 0.2
-    public static let pressScale: CGFloat = 0.985
+    public static let pressScale: CGFloat = 0.98
   }
 
   public enum ZIndex {

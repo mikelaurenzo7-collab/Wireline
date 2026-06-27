@@ -8,7 +8,8 @@ public enum WirelineWidgetShared {
     public static let appGroupId = "group.com.wireline.assistant"
 }
 
-/// Small immutable mirror of Wireline Mono for widgets that cannot import the app target.
+/// Legacy hex mirror for App Group snapshots. Prefer WirelineDesignTokens in widget views.
+/// Regenerate ios/WirelineShared/WirelineDesignTokens.generated.swift via `node scripts/build-design-tokens.mjs`.
 public enum WirelinePalette {
     public static let accent = "111111"
     public static let accentDeep = "000000"

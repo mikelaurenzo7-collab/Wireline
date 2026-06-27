@@ -73,6 +73,19 @@ textarea:focus-visible {
   border-radius: var(--radius-card);
   background: var(--surface);
   padding: var(--wireline-space-150);
+  box-shadow: var(--wireline-elevation-card);
+}
+
+.panel-hero {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: linear-gradient(
+    180deg,
+    var(--surface) 0%,
+    color-mix(in srgb, var(--canvas) 88%, var(--surface)) 100%
+  );
+  padding: var(--wireline-space-200);
+  box-shadow: var(--wireline-elevation-card);
 }
 
 .section-heading {

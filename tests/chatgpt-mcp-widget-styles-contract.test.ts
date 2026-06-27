@@ -1,0 +1,33 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  buildWirelineMcpWidgetCss,
+  WIRELINE_MCP_WIDGET_TOKENS,
+} from "../src/lib/wireline-mcp-widget-styles";
+
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+describe("ChatGPT MCP widget mono styling", () => {
+  it("exports canonical Wireline Mono tokens for MCP HTML widgets", () => {
+    expect(WIRELINE_MCP_WIDGET_TOKENS.canvas).toBe("#F7F7F4");
+    expect(WIRELINE_MCP_WIDGET_TOKENS.action).toBe("#111111");
+    expect(WIRELINE_MCP_WIDGET_TOKENS.shadowCard).toContain("rgba(17, 17, 17");
+  });
+
+  it("builds accessible widget CSS with mono surfaces and 44px controls", () => {
+    const css = buildWirelineMcpWidgetCss();
+    expect(css).toContain("--wl-canvas: #F7F7F4");
+    expect(css).toContain("min-height: 44px");
+    expect(css).toContain("outline: 2px solid var(--wl-action)");
+  });
+
+  it("wires shared widget CSS into both MCP HTML builders", () => {
+    const launch = read("src/lib/chatgpt-mcp.ts");
+    const account = read("src/lib/chatgpt-mcp-account.ts");
+    expect(launch).toContain("buildWirelineMcpWidgetCss");
+    expect(account).toContain("buildWirelineMcpWidgetCss");
+    expect(launch).not.toContain("color-mix(in srgb, CanvasText");
+    expect(account).not.toContain("color-mix(in srgb, CanvasText");
+  });
+});

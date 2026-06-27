@@ -27,6 +27,8 @@
   --wireline-color-text-onAction: #FFFFFF;
   --wireline-color-text-primary: #111111;
   --wireline-color-text-secondary: #6B6B66;
+  --wireline-color-text-tertiary: #8A8A84;
+  --wireline-elevation-card: 0 8px 24px -16px rgba(17, 17, 17, 0.18);
   --wireline-elevation-lg: 0 28px 70px -44px rgba(17, 17, 17, 0.34);
   --wireline-elevation-md: 0 14px 34px -26px rgba(17, 17, 17, 0.24);
   --wireline-elevation-sm: 0 1px 2px rgba(17, 17, 17, 0.05);
@@ -37,6 +39,9 @@
   --wireline-interaction-focus-width: 2px;
   --wireline-interaction-target-comfortable: 44px;
   --wireline-interaction-target-minimum: 24px;
+  --wireline-layout-contentMax: 1152px;
+  --wireline-layout-marketingRail: 1088px;
+  --wireline-layout-sectionGap: 48px;
   --wireline-motion-duration-fast: 120ms;
   --wireline-motion-duration-slow: 300ms;
   --wireline-motion-duration-standard: 200ms;

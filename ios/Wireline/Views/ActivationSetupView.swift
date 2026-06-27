@@ -17,7 +17,7 @@ struct ActivationSetupView: View {
                 Button { openSettings() } label: {
                     Label("Open Settings to assign them", systemImage: "gear")
                 }
-                .tint(Brand.purple)
+                .tint(Brand.accent)
             } header: {
                 Text("Physical triggers")
             } footer: {
@@ -30,7 +30,7 @@ struct ActivationSetupView: View {
                 Button { openShortcuts() } label: {
                     Label("Open the Shortcuts app", systemImage: "square.2.layers.3d")
                 }
-                .tint(Brand.purple)
+                .tint(Brand.accent)
             } header: { Text("Glanceable") }
 
             Section {
@@ -49,7 +49,7 @@ struct ActivationSetupView: View {
     private func row(_ icon: String, _ title: String, _ detail: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .foregroundStyle(Brand.purple)
+                .foregroundStyle(Brand.accent)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)

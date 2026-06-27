@@ -113,6 +113,26 @@ Previously retired or inactive products no longer active in the catalog:
 
 Stripe blocks archival of a product's default price. The retired consumer products are inactive, but their default price IDs may remain technically active under inactive products.
 
+## Public positioning and cross-surface consistency
+
+Wireline's commercial story is intentionally narrow and repeatable:
+
+- **Create free** — short intake, no subscription wall, all templates unlocked.
+- **Train deeply** — facts, instructions, voice, memory, and sources live in Training, not checkout.
+- **Fund live work** — Conversation Balance is customer-controlled; Personal never requires a plan.
+- **Buy capacity when shared** — Team, Business, and Enterprise add routing, governance, and pooled usage.
+
+These messages must stay aligned across:
+
+| Surface | Canonical copy anchor |
+| --- | --- |
+| `/pricing` | "Create free. Train deeply. Fund live work when it matters." |
+| Billing settings | "Start free. Fund live work." |
+| Conversation Balance API | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts` |
+| Stripe catalog | Product names: Conversation Balance, Wireline Personal/Team/Business/Enterprise |
+| ChatGPT MCP widgets | Wireline Mono tokens via `src/lib/wireline-mcp-widget-styles.ts` |
+| iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json` |
+
 ## Still required before live rollout
 
 1. Re-run production checkout, webhook, portal, and billing-status verification after the next Vercel deployment reaches READY.

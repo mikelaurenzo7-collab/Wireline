@@ -40,7 +40,7 @@ class AskWirelineWidget : GlanceAppWidget() {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(WidgetPalette.Accent)
+                .background(WidgetPalette.Canvas)
                 .padding(16.dp)
                 .clickable(intentAction),
             verticalAlignment = Alignment.CenterVertically,
@@ -54,7 +54,7 @@ class AskWirelineWidget : GlanceAppWidget() {
             Text(
                 text = "Ask Wireline",
                 style = TextStyle(
-                    color = ColorProvider(WidgetPalette.Text),
+                    color = ColorProvider(WidgetPalette.Accent),
                     fontSize = WirelineDesignTokens.Metric.typographyBodySize.sp,
                     fontWeight = FontWeight.Bold,
                 ),

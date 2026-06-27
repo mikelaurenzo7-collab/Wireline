@@ -6,6 +6,7 @@ const sourcePath = resolve(root, "design-tokens/wireline.tokens.json");
 const cssOutputPath = resolve(root, "src/styles/tokens.generated.css");
 const tsOutputPath = resolve(root, "src/constants/generated-design-tokens.ts");
 const swiftOutputPath = resolve(root, "ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
+const swiftSharedOutputPath = resolve(root, "ios/WirelineShared/WirelineDesignTokens.generated.swift");
 const kotlinOutputPath = resolve(root, "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt");
 const extensionOutputPath = resolve(root, "apps/browser-extension/panel/tokens.generated.css");
 
@@ -114,7 +115,7 @@ const rgbaToCompose = (value) => {
 };
 
 const colorEntries = orderedEntries.filter(([path]) => path.startsWith("color."));
-const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction.", "typography."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
+const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction.", "typography.", "layout."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
 const durationEntries = orderedEntries.filter(([path, value]) => path.startsWith("motion.duration.") && millisecondNumber(value) !== null);
 const zIndexEntries = orderedEntries.filter(([path]) => path.startsWith("zIndex."));
 
@@ -175,6 +176,7 @@ await Promise.all([
   mkdir(dirname(cssOutputPath), { recursive: true }),
   mkdir(dirname(tsOutputPath), { recursive: true }),
   mkdir(dirname(swiftOutputPath), { recursive: true }),
+  mkdir(dirname(swiftSharedOutputPath), { recursive: true }),
   mkdir(dirname(kotlinOutputPath), { recursive: true }),
   mkdir(dirname(extensionOutputPath), { recursive: true }),
 ]);
@@ -182,6 +184,7 @@ await Promise.all([
   writeFile(cssOutputPath, css),
   writeFile(tsOutputPath, ts),
   writeFile(swiftOutputPath, swift),
+  writeFile(swiftSharedOutputPath, swift),
   writeFile(kotlinOutputPath, kotlin),
   writeFile(extensionOutputPath, css),
 ]);
