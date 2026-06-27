@@ -59,6 +59,8 @@ describe("authenticated agent flow", () => {
     const studioOverview = read("src/components/StudioOverview.tsx");
     const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
+    const directorCopy = read("src/lib/director-copy.ts");
+    const directorComposer = read("src/components/director/DirectorComposerAccessory.tsx");
 
     expect(overview).toContain("Create -> Train -> Run");
     expect(overview).toContain("WORKSPACE_VOICE");
@@ -93,6 +95,15 @@ describe("authenticated agent flow", () => {
     expect(workroom).not.toContain("Training holds setup.");
     expect(workroom).not.toContain("Train by talking.");
     expect(workroom).not.toContain("what to learn or do");
+
+    expect(directorCopy).toContain("Agent audit");
+    expect(directorCopy).toContain("Opening agent coach");
+    expect(directorCopy).toContain("Orchestrate your agents from");
+    expect(directorCopy).not.toContain("Assistants coach");
+    expect(directorCopy).not.toContain("Assistants audit");
+    expect(directorCopy).not.toContain("Plan your Assistants");
+    expect(directorComposer).toContain("All agents");
+    expect(directorComposer).not.toContain("Assistants only");
   });
 
   it("makes Training the heavy-configuration surface", () => {

@@ -1,5 +1,5 @@
 /**
- * Director / Assistants coach copy and capability catalog.
+ * Director / agent coach copy and capability catalog.
  * Visual styling: wireline-design-system.ts + design-system.css (Figma tokens).
  */
 
@@ -35,10 +35,10 @@ export interface DirectorCapabilityItem {
 export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
   {
     id: "Assistants-audit",
-    label: "Assistants audit",
+    label: "Agent audit",
     description: "Cross-agent review with prioritized fixes",
     category: "strategy",
-    example: "Audit my Assistants — what should I fix first?",
+    example: "Audit my agents - what should I fix first?",
   },
   {
     id: "weekly-priorities",
@@ -189,10 +189,10 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
   },
   {
     id: "deep-dive",
-    label: "Deep Assistants dive",
-    description: "Opus-level cross-Assistants analysis (slower, sharper)",
+    label: "Deep agent dive",
+    description: "Opus-level cross-agent analysis (slower, sharper)",
     category: "strategy",
-    example: "Do a deep dive on my Assistants performance over the last 30 days",
+    example: "Do a deep dive on my agents' performance over the last 30 days",
   },
   {
     id: "book-meeting",
@@ -250,27 +250,27 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
 export type ComposerAccessoryKind = "connectors" | "capabilities" | "coach" | "tools" | "attach";
 
 export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
-  connectors: "Connector lanes your Assistants can orchestrate through Assistant",
+  connectors: "Connector lanes your agents can use through Wireline",
   capabilities: "Tap a skill — example prompt lands in the composer",
   coach: "Route this thread through one agent's memory and tools",
   tools: "Abilities currently armed for the coached agent",
-  attach: "Documents, Assistants context rules, or playbook instructions",
+  attach: "Documents, agent context rules, or playbook instructions",
 };
 
 export type DirectorStreamPhase = "connecting" | "preparing" | "thinking" | "replying" | "done";
 
 export const DIRECTOR_PHASE_COPY: Record<DirectorStreamPhase, { headline: string; sub: string }> = {
   connecting: {
-    headline: "Opening Assistants coach",
-    sub: "Secure channel to your Assistants co-pilot",
+    headline: "Opening agent coach",
+    sub: "Secure channel to your Wireline co-pilot",
   },
   preparing: {
-    headline: "Loading Assistants context",
+    headline: "Loading agent context",
     sub: "Thread history · integrations · Account Holder intent",
   },
   thinking: {
     headline: "Working the problem",
-    sub: "Assistants context · integrations · Account Holder intent",
+    sub: "Agent context · integrations · Account Holder intent",
   },
   replying: {
     headline: "Packaging your co-pilot reply",
@@ -290,7 +290,7 @@ export function directorPhaseCopy(input: {
   const base = DIRECTOR_PHASE_COPY[input.phase];
   if (input.phase === "thinking" && input.isDeep) {
     return {
-      headline: "Deep Assistants analysis",
+      headline: "Deep agent analysis",
       sub: "Cross-agent strategy · Opus reasoning",
     };
   }
@@ -315,7 +315,7 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   {
     id: "first-agent",
     label: "What agent should I hire first?",
-    intent: "Assistants planning for new account holders",
+    intent: "Agent planning for new account holders",
   },
   {
     id: "sales-setup",
@@ -324,8 +324,8 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   },
   {
     id: "Assistants-audit",
-    label: "Audit my Assistants — what should I fix first?",
-    intent: "Deep Assistants review",
+    label: "Audit my agents - what should I fix first?",
+    intent: "Deep agent review",
   },
   {
     id: "business-plan",
@@ -355,7 +355,7 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   {
     id: "post-call-coach",
     label: "Review recent calls and coach my agents",
-    intent: "Assistants coaching from call history",
+    intent: "Agent coaching from call history",
   },
   {
     id: "collections",
@@ -380,18 +380,18 @@ export const DIRECTOR_CAPABILITY_PILLS = [
 ] as const;
 
 export const DIRECTOR_LOADING_COPY = {
-  headline: "Opening Assistants coach",
-  sub: "Thread history · Assistants context · integrations",
+  headline: "Opening agent coach",
+  sub: "Thread history · agent context · integrations",
 } as const;
 
 export const DIRECTOR_EMPTY_HERO = {
-  eyebrow: "Assistants coach",
-  title: "Orchestrate your Assistants from",
+  eyebrow: "Agent coach",
+  title: "Orchestrate your agents from",
   titleAccent: "one console",
   subtitleWithAssistant: (n: number) =>
     `${n} agent${n === 1 ? "" : "s"} on deck — orchestrate calls, comms, and integrations from one thread.`,
   subtitleNoAssistant:
-    "Plan your Assistants, research your market, coach agents, and run CRM work — before agent #1 goes live.",
+    "Plan your agents, research your market, coach agents, and run CRM work - before agent #1 goes live.",
   capabilityEyebrow: "One console for",
   starterEyebrow: "Start here",
   discoverEyebrow: "Explore capabilities",
@@ -421,9 +421,7 @@ export const AGENT_WORKSPACE_STARTER_PROMPTS: readonly DirectorStarterPrompt[] =
 export const DIRECTOR_LIVE_STEP_COPY = {
   contextCoach: (name: string) => `Loading ${name} coaching context`,
   contextAssistant: (n: number) =>
-    n > 0
-      ? `Scanning ${n} agent${n === 1 ? "" : "s"} in Assistants`
-      : "Reading your business setup",
+    n > 0 ? `Scanning ${n} agent${n === 1 ? "" : "s"} in Studio` : "Reading your business setup",
   contextSub: "Thread history · settings · recent calls",
   integrationsOn: "Arming connected integrations",
   integrationsOnSub: "Shopify · CRM · Slack · calendar paths",
@@ -482,13 +480,13 @@ export const DIRECTOR_SESSION_COPY = {
   pendingApprovals: (n: number) => (n === 1 ? "1 approval pending" : `${n} approvals pending`),
   sessionHint:
     "Applied agent settings persist on each agent. Unapproved cards and chat history are removed when you clear.",
-  degradedNotice: "Some Assistant data could not be loaded. Your thread may be incomplete.",
+  degradedNotice: "Some agent data could not be loaded. Your thread may be incomplete.",
   degradedRetryLabel: "Retry",
 } as const;
 
-/** Copy for DirectorLiveOrchestra — Assistants channel / runway / spotlight */
+/** Copy for DirectorLiveOrchestra — agent channel / runway / spotlight */
 export const LIVE_ORCHESTRA_COPY = {
-  eyebrow: "Assistants channel",
+  eyebrow: "Agent channel",
   armSequence: "Arming integration sequence…",
   armNext: "Next on the runway",
   queuedPrefix: "Queued:",

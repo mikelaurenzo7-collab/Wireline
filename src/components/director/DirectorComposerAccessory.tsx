@@ -212,7 +212,7 @@ export function DirectorComposerAccessory({
                     !focusAgentId && "bg-brand/8 text-brand font-medium border border-brand/15",
                   )}
                 >
-                  Assistants only
+                  All agents
                 </ShadButton>
                 {agents.map((a) => (
                   <ShadButton

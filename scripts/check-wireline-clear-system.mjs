@@ -123,6 +123,8 @@ const androidAssistantWidget = read(
 const chatgptWidget = read("src/lib/chatgpt-mcp.ts");
 const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
 const productCopy = read("src/lib/product-copy.ts");
+const directorCopy = read("src/lib/director-copy.ts");
+const directorComposerAccessory = read("src/components/director/DirectorComposerAccessory.tsx");
 const designVision = read("src/lib/wireline-design-vision.ts");
 const wirelineDesignSystem = read("src/lib/wireline-design-system.ts");
 const legalCss = read("public/static-legal.css");
@@ -1179,6 +1181,29 @@ mustExclude(
   /Train by talking\.|what to learn or do/,
   "Studio workroom must not use Training-first copy",
 );
+mustInclude(
+  "src/lib/director-copy.ts",
+  directorCopy,
+  /Agent audit[\s\S]*Opening agent coach[\s\S]*Orchestrate your agents from/,
+  "Director visible copy must use current agent language",
+);
+mustInclude(
+  "src/components/director/DirectorComposerAccessory.tsx",
+  directorComposerAccessory,
+  /All agents/,
+  "Director coach selector must use agent language",
+);
+for (const [file, source] of [
+  ["src/lib/director-copy.ts", directorCopy],
+  ["src/components/director/DirectorComposerAccessory.tsx", directorComposerAccessory],
+]) {
+  mustExclude(
+    file,
+    source,
+    /Assistants coach|Assistants audit|Deep Assistants|Plan your Assistants|Assistants only|Some Assistant data/,
+    "Director visible copy must not revive retired Assistant positioning",
+  );
+}
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
