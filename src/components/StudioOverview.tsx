@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   BriefcaseBusiness,
-  CheckCircle2,
   CircleDot,
   MessageSquareText,
   Phone,
@@ -24,7 +23,7 @@ type StudioOverviewProps = {
   onCreate: () => void;
 };
 
-const WORK_PROMPTS = ["Review conversations", "Draft follow-up", "Prep handoff", "Plan calls"] as const;
+const WORK_PROMPTS = ["Review calls", "Draft reply", "Prep handoff", "Plan follow-up"] as const;
 
 function roleLabel(agent: WorkspaceAgentSummary) {
   if (agent.role) return agent.role.replace(/_/g, " ");
@@ -67,7 +66,7 @@ export default function StudioOverview({
               {activeDescription}
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button type="button" variant="secondary" onClick={onCreate} className="justify-center">
               <Plus aria-hidden="true" size={15} />
               New
@@ -77,9 +76,6 @@ export default function StudioOverview({
                 <SettingsIcon aria-hidden="true" size={15} />
                 Settings
               </Link>
-            </Button>
-            <Button type="button" onClick={() => onOpen(active.id)} className="justify-center">
-              Chat <ArrowRight aria-hidden="true" size={15} />
             </Button>
           </div>
         </header>
@@ -91,23 +87,14 @@ export default function StudioOverview({
         ) : null}
 
         <section className="studio-card p-4 sm:p-5 lg:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="max-w-xl">
-              <p className="text-xs font-semibold text-muted-foreground">Workroom</p>
-              <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,6vw,2.25rem)] font-semibold leading-[1.02] tracking-[-.04em] text-foreground">
-                Next job.
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Describe the outcome. Approvals stay visible.
-              </p>
-            </div>
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-              <CheckCircle2 aria-hidden="true" size={14} className="text-primary" />
-              Ready
-            </div>
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold text-muted-foreground">Task</p>
+            <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,6vw,2.25rem)] font-semibold leading-[1.02] tracking-[-.04em] text-foreground">
+              Give it work.
+            </h2>
           </div>
 
-          <div className="mt-5 rounded-[var(--radius-lg)] border border-border bg-background p-3 focus-within:border-primary/35 sm:p-4">
+          <div className="mt-4 rounded-[var(--radius-lg)] border border-border bg-background p-3 focus-within:border-primary/35 sm:p-4">
             <label className="sr-only" htmlFor="studio-brief">
               What should this agent work on?
             </label>
@@ -116,8 +103,8 @@ export default function StudioOverview({
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
               rows={4}
-              placeholder={`What should ${active.name} do next?`}
-              className="min-h-[116px] w-full resize-none bg-transparent px-2 py-1 text-base leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 sm:min-h-[132px]"
+              placeholder={`Ask ${active.name} to...`}
+              className="min-h-[104px] w-full resize-none bg-transparent px-2 py-1 text-base leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 sm:min-h-[132px]"
             />
             <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2">
@@ -137,7 +124,7 @@ export default function StudioOverview({
                 className="w-full justify-center sm:w-auto"
                 onClick={() => onOpen(active.id, trimmedBrief || undefined)}
               >
-                {trimmedBrief ? "Start" : "Open"}
+                {trimmedBrief ? "Start" : "Open chat"}
                 <ArrowRight aria-hidden="true" size={15} />
               </Button>
             </div>

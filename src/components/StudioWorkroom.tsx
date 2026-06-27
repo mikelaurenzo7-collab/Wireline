@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Send, Settings as SettingsIcon, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Send, Settings as SettingsIcon, Trash2 } from "lucide-react";
 import { Button } from "../components/atoms";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
@@ -17,12 +17,7 @@ type StudioMessage = {
   };
 };
 
-const QUICK_PROMPTS = [
-  "Draft missed-call follow-up.",
-  "Review approvals.",
-  "Prepare handoff.",
-  "Queue priority leads.",
-] as const;
+const QUICK_PROMPTS = ["Draft reply", "Review approvals", "Prep handoff", "Plan follow-up"] as const;
 
 function proposalCount(message: StudioMessage) {
   return (
@@ -217,7 +212,7 @@ export default function StudioWorkroom({
         </div>
       ) : null}
 
-      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
         {loading ? (
           <MessageSkeletons />
         ) : messages.length ? (
@@ -261,17 +256,9 @@ export default function StudioWorkroom({
             ) : null}
           </div>
         ) : (
-          <div className="mx-auto flex h-full max-w-xl flex-col justify-center py-10">
-            <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles size={18} aria-hidden="true" />
-            </span>
-            <h1 className="mt-5 text-[clamp(1.8rem,7vw,2.6rem)] font-semibold leading-none tracking-[-.05em] text-foreground">
-              Direct work.
-            </h1>
-            <p className="mt-4 text-base leading-7 text-muted-foreground">
-              Run, draft, review, or hand off. Training holds setup.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2.5">
+          <div className="mx-auto flex max-w-3xl flex-col gap-3 py-2">
+            <p className="text-sm font-semibold text-foreground">Start with a task.</p>
+            <div className="flex flex-wrap gap-2">
               {QUICK_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
@@ -280,7 +267,7 @@ export default function StudioWorkroom({
                     setDraft(prompt);
                     requestAnimationFrame(() => inputRef.current?.focus());
                   }}
-                  className="rounded-full border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
+                  className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
                 >
                   {prompt}
                 </button>
