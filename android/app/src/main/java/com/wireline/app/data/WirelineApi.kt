@@ -50,7 +50,7 @@ class WirelineApi(context: Context) {
     suspend fun recentCalls(limit: Int = 20): RecentCallsResponse = get("/api/mobile/calls/recent?limit=$limit")
     suspend fun wallet(): WalletResponse = get("/api/mobile/wallet")
 
-    /** Creates an owned assistant through the same production contract as web Studio. */
+    /** Creates an owned agent through the same production contract as the web console. */
     suspend fun createAssistant(
         name: String,
         role: String = "scheduler",

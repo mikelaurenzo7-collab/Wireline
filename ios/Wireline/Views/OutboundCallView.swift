@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Manual outbound dial: pick an agent, enter a number + optional instruction,
 /// and the backend dials via Vapi (`POST /api/mobile/calls/outbound`). Mirrors
-/// the "Hey Siri, tell Wireline to call…" intent for users who'd rather tap.
+/// the Siri intent for users who'd rather tap.
 struct OutboundCallView: View {
     let agents: [Agent]
     @Environment(\.dismiss) private var dismiss

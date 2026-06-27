@@ -72,9 +72,9 @@ fun AskWirelineScreen(
         if (totalRecent == 0) {
             answerText = "No recent calls to report."
         } else if (needsFollowUp == 0) {
-            answerText = "You're all caught up — $totalRecent recent calls, none flagged for follow-up."
+            answerText = "You're all caught up - $totalRecent recent calls, none flagged for follow-up."
         } else {
-            answerText = "$needsFollowUp of your $totalRecent recent calls need follow-up. Review them in the main console."
+            answerText = "$needsFollowUp of your $totalRecent recent calls need follow-up. Review them in Calls."
         }
         isLocalWorking = false
     }
@@ -192,7 +192,7 @@ fun AskWirelineScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    "Wireline Agent Response",
+                                    "Wireline response",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = Brand.Text2,
                                     fontWeight = FontWeight.Bold
@@ -285,12 +285,13 @@ fun AskWirelineScreen(
                                 ) {
                                     Divider(color = Brand.Border)
                                     
-                                    Text("Select Agent:", style = MaterialTheme.typography.labelSmall, color = Brand.Text2)
+                                    Text("Select agent", style = MaterialTheme.typography.labelSmall, color = Brand.Text2)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         state.agents.take(3).forEach { agent ->
+                                            val isSelected = agent.id == selectedAgentId
                                             val containerColor = if (isSelected) Brand.Accent else Brand.Raised
                                             val contentColor = if (isSelected) Color.White else Brand.Text
                                             
@@ -345,7 +346,7 @@ fun AskWirelineScreen(
                                         colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
                                         shape = RoundedCornerShape(Brand.RadiusMd)
                                     ) {
-                                        Text("Place Call", fontWeight = FontWeight.SemiBold)
+                                        Text("Place call", fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -415,7 +416,7 @@ fun AskWirelineScreen(
 
                 // Example Tips
                 Text(
-                    text = "Try these questions:",
+                    text = "Try these commands:",
                     style = MaterialTheme.typography.labelSmall,
                     color = Brand.Text2,
                     fontWeight = FontWeight.Bold

@@ -48,11 +48,11 @@ import com.wireline.app.ui.setup.KnowledgeScreen
 import com.wireline.app.ui.theme.Brand
 
 sealed class Screen(val route: String, val title: String) {
-    object Studio : Screen("studio", "Studio")
+    object Studio : Screen("studio", "Command")
     object Assistants : Screen("assistants", "Agents")
     object Knowledge : Screen("knowledge", "Train")
     object Actions : Screen("actions", "Wire")
-    object Recaps : Screen("recaps", "Recaps")
+    object Recaps : Screen("recaps", "Calls")
     object Wallet : Screen("wallet", "Wallet")
     object Settings : Screen("settings", "Settings")
 }
@@ -118,8 +118,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                 NavigationBarItem(
                     selected = currentRoute == Screen.Studio.route,
                     onClick = { navActions.navigateTo(Screen.Studio) },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Studio") },
-                    label = { Text("Studio") },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Command") },
+                    label = { Text("Command") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Assistants.route,
@@ -142,8 +142,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                 NavigationBarItem(
                     selected = currentRoute == Screen.Recaps.route,
                     onClick = { navActions.navigateTo(Screen.Recaps) },
-                    icon = { Icon(Icons.Default.Call, contentDescription = "Recaps") },
-                    label = { Text("Recaps") },
+                    icon = { Icon(Icons.Default.Call, contentDescription = "Calls") },
+                    label = { Text("Calls") },
                 )
             }
         },
@@ -232,7 +232,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
         if (state.handoffPhone.isBlank()) { item { CallbackNumberPromptCard(onClick = onNavigateToSettings) } }
         item {
             AssistantCard {
-                Text("YOUR DAY", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                Text("COMMAND CENTER", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     MetricStatCard(value = "${state.activeCalls.size}", label = "CALLS NOW", highlighted = state.activeCalls.isNotEmpty(), modifier = Modifier.weight(1f))
                     MetricStatCard(value = "$followUps", label = "FOLLOW-UPS", highlighted = followUps > 0, modifier = Modifier.weight(1f))
@@ -241,7 +241,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
             }
         }
         state.me?.let { me ->
-            item { AssistantCard { Text(me.user.fullName ?: me.account.businessName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} · ${state.agents.size} agents", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
+            item { AssistantCard { Text(me.account.businessName ?: me.user.fullName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} - ${state.agents.size} agents", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
         }
         item {
             AssistantCard {
@@ -263,9 +263,9 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
 @Composable
 private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCreate: () -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Personal and business agents for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Personal, front desk, sales, support, and operations agents.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
         if (agents.isEmpty()) {
-            item { AssistantCard { Text("Personal and business agents", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("Start with a personal agent for everyday calls, or add a business agent when work needs a professional line.", color = Brand.Text2); Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create agent") } } }
+            item { AssistantCard { Text("Build your agent bench", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("Add agents for personal calls, reception, sales, support, and operations.", color = Brand.Text2); Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create agent") } } }
         } else {
             items(agents, key = { it.id }) { agent ->
                 AssistantCard {
@@ -285,7 +285,7 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
     var name by rememberSaveable { mutableStateOf("") }
     var role by rememberSaveable { mutableStateOf("scheduler") }
     var isBusinessAgent by rememberSaveable { mutableStateOf(false) }
-    val choices = listOf("scheduler" to "Personal agent", "customer_service" to "Helpful caller", "receptionist" to "Call concierge", "custom" to "Something else")
+    val choices = listOf("scheduler" to "Personal agent", "customer_service" to "Support desk", "receptionist" to "Front desk", "custom" to "Operations")
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Agent type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -293,7 +293,7 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
             FilterChip(selected = isBusinessAgent, onClick = { isBusinessAgent = true; if (role == "scheduler") role = "receptionist" }, label = { Text("Business agent") }, modifier = Modifier.weight(1f))
         }
         Text(if (isBusinessAgent) "New business agent" else "New personal agent", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-        Text(if (isBusinessAgent) "Name the agent and describe how it should represent your business. Refine policies in Studio next." else "Name the help you want. You can add knowledge, actions, and voice in Studio next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text(if (isBusinessAgent) "Name the agent and describe how it should represent your business. Refine policies from Command next." else "Name the help you want. You can add knowledge, actions, and voice from Command next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, placeholder = { Text("Casey") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Text("What kind of help?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
         choices.chunked(2).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { row.forEach { (value, label) -> FilterChip(selected = role == value, onClick = { role = value }, label = { Text(label, maxLines = 1) }, modifier = Modifier.weight(1f)) }; if (row.size == 1) Spacer(Modifier.weight(1f)) } }
@@ -307,7 +307,7 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
 @Composable
 private fun RecapsScreen(padding: PaddingValues, activeCalls: List<ActiveCall>, recentCalls: List<RecentCall>, onTakeCall: (String) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text("Recaps", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text) }
+        item { Text("Calls", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text) }
         item { Text("On a call", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3) }
         if (activeCalls.isEmpty()) item { Text("No calls in progress.", color = Brand.Text2) }
         items(activeCalls, key = { it.callId }) { call -> SectionCard { Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(call.status?.replace("_", " ") ?: "In progress", color = Brand.Text2); Button(onClick = { onTakeCall(call.callId) }, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Take this call") } } }
@@ -320,7 +320,7 @@ private fun RecapsScreen(padding: PaddingValues, activeCalls: List<ActiveCall>, 
 private fun WalletScreen(padding: PaddingValues, balance: Double?, ledger: List<WalletEntry>) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { SectionCard { Text("Credit balance", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("$${"%.2f".format(balance ?: 0.0)}", style = MaterialTheme.typography.headlineMedium, color = Brand.Text) } }
-        items(ledger, key = { it.id }) { entry -> SectionCard { Text(entry.reason, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${"%+.2f".format(entry.deltaUsd)} → ${"%.2f".format(entry.balanceAfterUsd)}", color = Brand.Text2) } }
+        items(ledger, key = { it.id }) { entry -> SectionCard { Text(entry.reason, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${"%+.2f".format(entry.deltaUsd)} -> ${"%.2f".format(entry.balanceAfterUsd)}", color = Brand.Text2) } }
     }
 }
 

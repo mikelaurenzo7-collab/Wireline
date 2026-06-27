@@ -21,8 +21,8 @@ struct AssistantLibraryView: View {
                     )
                 } else if agents.isEmpty {
                     BrandEmptyState(
-                        title: "Personal and business agents",
-                        message: "Start with a personal agent for everyday calls, or add a business agent when work needs a professional line.",
+                        title: "Build your agent bench",
+                        message: "Add agents for personal calls, reception, sales, support, and operations.",
                         systemImage: "person.wave.2"
                     )
                 } else {
@@ -62,11 +62,11 @@ struct AssistantLibraryView: View {
                 }
                 Section("Start with one clear job") {
                     TextField("Name", text: $name)
-                    Picker("Help with", selection: $role) {
+                    Picker("Job", selection: $role) {
                         Text("Personal agent").tag("scheduler")
-                        Text("Helpful caller").tag("customer_service")
-                        Text("Call concierge").tag("receptionist")
-                        Text("Something else").tag("custom")
+                        Text("Support desk").tag("customer_service")
+                        Text("Front desk").tag("receptionist")
+                        Text("Operations").tag("custom")
                     }
                 }
                 Section {

@@ -18,7 +18,7 @@ struct AskWirelineView: View {
                         Text("What can Wireline help with?")
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(Brand.text)
-                        Text("Start a call, get a recap, or check the follow-ups that need you.")
+                        Text("Dispatch a call, review live work, or clear follow-ups across the account.")
                             .font(.subheadline)
                             .foregroundStyle(Brand.text2)
                             .multilineTextAlignment(.center)
@@ -98,7 +98,7 @@ struct AskWirelineView: View {
     private func attention() async throws -> String {
         let recent = try await WirelineAPI.shared.recentCalls(limit: 20)
         if recent.calls.isEmpty { return "No recent calls." }
-        if recent.needsAttention == 0 { return "You're all caught up — \(recent.calls.count) recent calls, none flagged." }
+        if recent.needsAttention == 0 { return "You're all caught up - \(recent.calls.count) recent calls, none flagged." }
         return "\(recent.needsAttention) of your \(recent.calls.count) recent calls need follow-up."
     }
 }

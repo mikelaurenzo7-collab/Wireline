@@ -101,7 +101,7 @@ struct ActionsView: View {
                                     .tint(Brand.accent).disabled(isSaving || selectedId.isEmpty)
                             }
                         }
-                        Section { Text("Business connections and specialized tools remain available on the web when you need them.").font(.caption).foregroundStyle(Brand.text2) }
+                        Section { Text("Use mobile for fast approvals and core call workflows. Configure deeper CRM, calendar, and billing connections on the web console.").font(.caption).foregroundStyle(Brand.text2) }
                         if let error { Section { Text(error).foregroundStyle(Brand.destructive) } }
                     }.scrollContentBackground(.hidden)
                 }

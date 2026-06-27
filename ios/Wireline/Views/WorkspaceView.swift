@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Consumer-first native workspace. It follows the mobile Stitch hierarchy but
-/// keeps genuine Wireline actions: ask, place a call, review recaps, and manage agents.
+/// Native command center for personal and business plans: dispatch calls,
+/// monitor live work, review follow-ups, and manage agents from mobile.
 struct WorkspaceView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var router: WirelineRouter
@@ -34,10 +34,10 @@ struct WorkspaceView: View {
                 } else if let error {
                     BrandEmptyState(title: "Couldn't load", message: error, systemImage: "wifi.exclamationmark")
                 } else {
-                    ProgressView("Loading Wireline…").tint(Brand.accent)
+                    ProgressView("Loading Wireline...").tint(Brand.accent)
                 }
             }
-            .navigationTitle("Wireline")
+            .navigationTitle(me?.account.mode == .business ? "Command" : "Wireline")
             .navigationBarTitleDisplayMode(.inline)
             .wirelineBrand()
             .toolbar {
@@ -71,7 +71,7 @@ struct WorkspaceView: View {
                     .background(Brand.accentSoft, in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Ask Wireline").font(.title3.weight(.semibold)).foregroundStyle(Brand.text)
-                    Text("Hand off a call, the wait, and the follow-up.").font(.subheadline).foregroundStyle(Brand.text2)
+                    Text("Dispatch calls, waits, approvals, and follow-ups.").font(.subheadline).foregroundStyle(Brand.text2)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(Brand.text3)
@@ -107,7 +107,7 @@ struct WorkspaceView: View {
 
     private var metrics: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Your day").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
+            Text("Command center").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
             HStack(spacing: 8) {
                 Metric(title: "Calls now", value: "\(activeCalls)", icon: "phone.fill", active: activeCalls > 0)
                 Metric(title: "Follow-ups", value: "\(followUps)", icon: "bell.badge.fill", active: followUps > 0)
@@ -121,7 +121,7 @@ struct WorkspaceView: View {
             Medallion(systemImage: me.account.mode == .business ? "person.2.fill" : "person.fill", size: 42)
             VStack(alignment: .leading, spacing: 3) {
                 Text(me.account.businessName ?? me.user.fullName ?? me.user.email).font(.headline).foregroundStyle(Brand.text)
-                Text("\(me.account.planName) · \(quotaText(me.agents))").font(.caption).foregroundStyle(Brand.text2)
+                Text("\(me.account.planName) - \(quotaText(me.agents))").font(.caption).foregroundStyle(Brand.text2)
             }
             Spacer()
             if me.account.subscriptionStatus != "active" {
@@ -144,7 +144,7 @@ struct WorkspaceView: View {
                 if agents.isEmpty {
                     BrandEmptyState(
                         title: "Personal and business agents",
-                        message: "Open the Agents tab to create a personal agent or business agent.",
+                        message: "Create a personal, front desk, sales, support, or operations agent.",
                         systemImage: "person.wave.2"
                     )
                 } else {
@@ -155,7 +155,7 @@ struct WorkspaceView: View {
                 }
                 if me.agents.canAddMore, let price = me.extraAgent.priceUsd, me.extraAgent.configured {
                     Divider()
-                    Label("Add an agent · $\(Int(price))/mo", systemImage: "plus.circle")
+                    Label("Add an agent - $\(Int(price))/mo", systemImage: "plus.circle")
                         .font(.subheadline.weight(.medium)).foregroundStyle(Brand.accent).padding(16)
                 }
             }

@@ -40,18 +40,18 @@ import com.wireline.app.ui.SectionCard
 import com.wireline.app.ui.theme.Brand
 import kotlinx.coroutines.launch
 
-private data class PersonalAction(val id: String, val title: String, val detail: String)
+private data class AgentAction(val id: String, val title: String, val detail: String)
 
-private val personalActions = listOf(
-    PersonalAction("view_recent_interactions", "Use recent context", "Keeps a request connected to what already happened."),
-    PersonalAction("escalate_to_human", "Ask me first", "Brings anything sensitive or unclear back to you."),
-    PersonalAction("create_followup_task", "Create a follow-up", "Saves a reminder when something needs your attention."),
-    PersonalAction("send_email", "Send an email", "Sends confirmations and approved follow-ups."),
-    PersonalAction("send_text_message", "Send a text", "Sends a text update when messaging is appropriate."),
-    PersonalAction("check_calendar_availability", "Check your calendar", "Looks for a time before proposing it."),
-    PersonalAction("book_appointment", "Book an appointment", "Creates an event once you have approved the slot."),
-    PersonalAction("navigate_to", "Open directions", "Sends navigation to your phone when a call gives you an address."),
-    PersonalAction("add_reminder", "Add a reminder", "Creates a reminder for something you need to handle."),
+private val agentActions = listOf(
+    AgentAction("view_recent_interactions", "Use recent context", "Keeps a request connected to what already happened."),
+    AgentAction("escalate_to_human", "Ask me first", "Returns sensitive, unclear, or high-stakes work for approval."),
+    AgentAction("create_followup_task", "Create a follow-up", "Saves a reminder when a customer, vendor, or caller needs action."),
+    AgentAction("send_email", "Send an email", "Sends confirmations and approved follow-ups."),
+    AgentAction("send_text_message", "Send a text", "Sends a text update when messaging is appropriate."),
+    AgentAction("check_calendar_availability", "Check calendars", "Looks for a time before proposing it."),
+    AgentAction("book_appointment", "Book an appointment", "Creates an event once the slot is approved."),
+    AgentAction("navigate_to", "Open directions", "Sends navigation to your phone when a call gives you an address."),
+    AgentAction("add_reminder", "Add a reminder", "Creates a reminder for personal or business follow-through."),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -147,7 +147,7 @@ fun KnowledgeScreen(padding: PaddingValues) {
                             modifier = Modifier.fillMaxWidth(),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(Brand.RadiusMd),
                             colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Brand.Accent)
-                        ) { Text(if (saving) "Saving…" else if (kind == "knowledge") "Save detail" else "Save rule") }
+                        ) { Text(if (saving) "Saving..." else if (kind == "knowledge") "Save detail" else "Save rule") }
                     }
                 }
                 error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
@@ -203,7 +203,7 @@ fun ActionsScreen(padding: PaddingValues) {
                 item {
                     SectionCard {
                         Text("WAYS YOUR AGENT CAN HELP", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
-                        personalActions.forEach { action ->
+                        agentActions.forEach { action ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(action.title, color = Brand.Text)
@@ -227,7 +227,7 @@ fun ActionsScreen(padding: PaddingValues) {
                         }
                     }
                 }
-                item { Text("Business connections and specialized tools remain available on the web when you need them.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
+                item { Text("Use mobile for fast approvals and core call workflows. Configure deeper CRM, calendar, and billing connections on the web console.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
                 error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
             }
         }

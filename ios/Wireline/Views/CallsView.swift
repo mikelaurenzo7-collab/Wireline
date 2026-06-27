@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Call recaps are the native replacement for the retired Live Ops surface:
-/// active calls appear first, followed by plain-language completed-call recaps.
+/// Calls are the native operations view: active work appears first, followed by
+/// plain-language completed-call recaps.
 struct CallsView: View {
     @EnvironmentObject private var router: WirelineRouter
     @State private var live: [ActiveCall] = []
@@ -77,7 +77,7 @@ struct CallsView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Recaps")
+            .navigationTitle("Calls")
             .wirelineBrand()
             .sheet(isPresented: $showingSettings) { NavigationStack { SettingsView() } }
             .task { await load() }
@@ -106,7 +106,7 @@ struct CallsView: View {
             handoffError = "Add a callback number in Settings, then try again."
             showingSettings = true
         } catch let WirelineAPI.APIError.http(status, _) where status == 409 {
-            handoffError = "Can't take over yet — try again in a moment."
+            handoffError = "Can't take over yet - try again in a moment."
         } catch {
             handoffError = "Couldn't take the call. Try again."
         }
