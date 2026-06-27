@@ -133,7 +133,9 @@ function TrainingRail({
     >
       <div className="px-3 py-3 text-center wl-centered-header">
         <p className="wl-overline">Train</p>
-        <p className="mt-1 text-sm leading-5 text-muted-foreground">Facts. Rules. Voice.</p>
+        <p className="mt-1 text-sm leading-5 text-muted-foreground">Facts. Rules. Voice. Memory.</p>
+        {/* Explicit for contract: full config surface */}
+        <p className="mt-0.5 text-[10px] text-muted-foreground/80">Facts, instructions, sources, voice, test calls, and memory.</p>
       </div>
       <nav className="mt-2 grid gap-1">
         {trainingNav.map((item) => {

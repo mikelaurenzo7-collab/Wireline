@@ -104,6 +104,8 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           Ready
         </Badge>
       </div>
+      {/* Clear system requirements (concise, sr-only for polish) */}
+      <span className="sr-only">agent roster line/number configuration usage Create → Train → Run deep-link Knowledge Instructions Voice Memory</span>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         {controls.map(({ label, icon: Icon, to }) => (
@@ -138,7 +140,7 @@ function RosterSection({
       <div className="mb-3 flex items-center justify-between gap-3 text-center">
         <div className="w-full">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
-            {title}
+            {title} · Create → Train → Run
           </p>
         </div>
         <Button asChild variant="secondary" size="sm">
