@@ -108,48 +108,15 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        {/* Marketing visuals section - restored to pre-Imagine state */}
         <section className="border-b border-border px-5 py-12 sm:px-6 lg:px-8">
           <div className="wl-public-rail text-center">
             <div className="mx-auto max-w-3xl">
-              <p className="wl-overline text-primary">One voice. All channels.</p>
-              <h2 className="wl-public-section-heading mx-auto mt-3">Direct the work.</h2>
-              <p className="wl-public-copy mx-auto mt-4">One voice. All channels. No drift.</p>
+              <p className="wl-overline text-primary">One voice</p>
+              <h2 className="wl-public-section-heading mx-auto mt-3">No drift.</h2>
+              <p className="wl-public-copy mx-auto mt-4">Calls, texts, and email route through one trained agent.</p>
             </div>
-
-            <figure className="marketing-visual mt-8 mx-auto max-w-[1100px]">
-              <img
-                src="/marketing/one-voice-all-channels-hero.jpg"
-                alt="One voice. All channels. — Minimalist hero visual: central Wireline agent hub in deep charcoal directing clean branching connections to phone, message, and email icons on warm off-white paper canvas."
-                className="w-full rounded-[var(--radius-xl)] border border-[var(--wireline-color-border-default)]"
-                style={{ boxShadow: "var(--wireline-elevation-sm)" }}
-              />
-              <figcaption className="mt-3 text-xs text-muted-foreground tracking-[0.08em] uppercase">
-                Create. Train. Run. — unified across every channel.
-              </figcaption>
-            </figure>
-
-            <div className="mt-12 mx-auto max-w-[960px]">
-              <p className="wl-overline text-primary mb-3">See the flow in action</p>
-              <div className="marketing-demo-surface p-2 sm:p-3">
-                <video
-                  src="/marketing/one-voice-direct-work-demo.mp4"
-                  className="w-full rounded-[var(--radius-lg)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)]"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  aria-label="Elegant animation: signals travel into a central voice hub. One voice directs unified work back across calls, texts and email channels."
-                />
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Signals arrive from every channel. One voice directs the work out — cleanly,
-                consistently.
-              </p>
-
-              {/* Live simulator: direct in real time. Better than any static mockup. */}
-              <LiveDirectSimulator />
-            </div>
+            <SignalFlow />
+            <LiveDirectSimulator />
           </div>
         </section>
 
@@ -159,66 +126,89 @@ export default function PrecisionLanding() {
   );
 }
 
+function SignalFlow() {
+  return (
+    <div className="mx-auto mt-8 grid max-w-4xl gap-3 rounded-[var(--radius-xl)] border border-border bg-card p-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-6">
+      <div className="grid gap-2 sm:justify-items-end">
+        {channels.map(({ label, icon: Icon }) => (
+          <div
+            key={label}
+            className="flex min-h-12 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
+          >
+            <Icon className="size-4 text-primary" aria-hidden="true" />
+            {label}
+          </div>
+        ))}
+      </div>
+      <div className="grid place-items-center gap-2 px-4 py-2">
+        <div className="grid size-16 place-items-center rounded-2xl border border-border bg-background shadow-[var(--wireline-elevation-sm)]">
+          <span className="font-mono text-lg font-semibold tracking-[-0.04em]">W</span>
+        </div>
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          Agent hub
+        </p>
+      </div>
+      <div className="grid gap-2 text-left">
+        {["Answer", "Summarize", "Follow up"].map((item) => (
+          <div
+            key={item}
+            className="flex min-h-12 items-center rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
+          >
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LiveDirectSimulator() {
   const [active, setActive] = useState<string | null>(null);
-  const channels = [
-    { key: "call", label: "Call", icon: PhoneCall },
-    { key: "text", label: "Text", icon: MessageSquareText },
-    { key: "email", label: "Email", icon: Mail },
-  ] as const;
-
   const trigger = (key: string) => {
     setActive(key);
-    // auto reset for repeat directs — feels alive
     setTimeout(() => setActive(null), 1400);
   };
 
   return (
-    <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left">
+    <div className="mx-auto mt-5 max-w-4xl rounded-[var(--radius-xl)] border border-border bg-card p-5 text-left">
       <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
         <span>Direct live</span>
-        <span className="font-mono">Create • Train • Run</span>
+        <span className="font-mono">Create / Train / Run</span>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-        {channels.map(({ key, label, icon: Icon }) => (
+        {channels.map(({ label, icon: Icon }) => (
           <button
-            key={key}
+            key={label}
             type="button"
-            onClick={() => trigger(key)}
+            onClick={() => trigger(label)}
             className={`group flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all active:scale-[0.985] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${
-              active === key
+              active === label
                 ? "border-primary bg-primary text-primary-foreground shadow-sm"
                 : "border-border bg-background hover:border-primary/40 hover:bg-accent"
             }`}
-            aria-pressed={active === key}
+            aria-pressed={active === label}
           >
             <Icon
               size={15}
-              className={active === key ? "" : "text-primary/80 group-hover:text-primary"}
-              aria-hidden
+              className={active === label ? "" : "text-primary/80 group-hover:text-primary"}
+              aria-hidden="true"
             />
             <span>{label}</span>
           </button>
         ))}
       </div>
 
-      {/* Visual hub response — pure code micro interaction (world-class polish) */}
       <div className="mt-5 flex justify-center">
         <div className="relative flex h-12 w-full max-w-[420px] items-center justify-center rounded-full border border-border/60 bg-background transition-all">
           <div
             className={`absolute h-2 w-2 rounded-full bg-primary transition-all duration-200 ${active ? "scale-150 opacity-95" : "scale-100 opacity-40"}`}
           />
           <span className="text-[10px] font-mono tracking-[0.12em] text-muted-foreground">
-            {active
-              ? `${active.toUpperCase()} SIGNAL → AGENT HUB → ACTION QUEUED`
-              : "AGENT HUB • ONE VOICE"}
+            {active ? `${active.toUpperCase()} -> AGENT HUB -> ACTION` : "AGENT HUB / ONE VOICE"}
           </span>
         </div>
       </div>
-      <p className="mt-2 text-center text-[10px] text-muted-foreground/70">
-        Tap a channel. Watch the work route live.
-      </p>
     </div>
   );
 }
