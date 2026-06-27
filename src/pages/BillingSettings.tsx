@@ -1,11 +1,32 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, CreditCard, Receipt, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CreditCard, PlayCircle, Receipt, ShieldCheck, WalletCards } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import StripeBillingCard from "../components/StripeBillingCard";
 import ConversationBalanceCard from "../components/ConversationBalanceCard";
+
+const BILLING_FLOW = [
+  {
+    label: "Fund",
+    title: "Start free. Fund live work.",
+    detail: "Personal work starts with Conversation Balance, not a recurring plan.",
+    icon: WalletCards,
+  },
+  {
+    label: "Run",
+    title: "Use balance first.",
+    detail: "Live calls, texts, and follow-up consume balance before overage is metered.",
+    icon: PlayCircle,
+  },
+  {
+    label: "Reconcile",
+    title: "Stripe keeps the receipt.",
+    detail: "Team and Business plans, invoices, and payment methods stay in Stripe.",
+    icon: Receipt,
+  },
+] as const;
 
 export default function BillingSettings() {
   return (
@@ -23,52 +44,55 @@ export default function BillingSettings() {
       }
     >
       <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-6 pb-6">
-        <section className="studio-card">
-          <p className="studio-kicker">How billing works</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <div className="rounded-[var(--radius-lg)] border border-border bg-secondary p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
-                <ShieldCheck className="size-4" />
-                Payments
+        <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(240px,.62fr)_minmax(0,1fr)] xl:items-center">
+          <div>
+            <p className="studio-kicker">Billing model</p>
+            <h2 className="wl-section-title mt-2">Fund the work. Keep the ledger clean.</h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+              Conversation Balance covers personal live work. Stripe Billing covers shared team
+              capacity, invoices, and payment methods.
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {BILLING_FLOW.map(({ label, title, detail, icon: Icon }) => (
+              <div key={label} className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
+                    {label}
+                  </span>
+                  <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
+                    <Icon className="size-4" aria-hidden="true" />
+                  </span>
+                </div>
+                <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold leading-6 tracking-[-.025em] text-foreground">
+                  {title}
+                </p>
+                <p className="mt-2 text-sm leading-5 text-muted-foreground">{detail}</p>
               </div>
-              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
-                Protected by Stripe
-              </p>
-            </div>
-            <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                <CreditCard className="size-4 text-primary" />
-                Personal
-              </div>
-              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
-                Start free. Fund live work.
-              </p>
-            </div>
-            <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Receipt className="size-4 text-primary" />
-                Business
-              </div>
-              <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold text-foreground">
-                Plans for team coverage.
-              </p>
-            </div>
+            ))}
           </div>
         </section>
 
         <ConversationBalanceCard />
 
         <section>
-          <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
-            <CreditCard className="size-5 text-primary" />
-            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
-              Business plan
-            </h2>
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <CreditCard className="size-5 text-primary" />
+              <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
+                Business plan
+              </h2>
+            </div>
+            <span className="text-sm text-muted-foreground">Capacity, team coverage, invoices.</span>
           </div>
           <StripeBillingCard />
         </section>
 
-        <StatusNotice tone="info" title="Invoices and receipts">
+        <StatusNotice
+          tone="info"
+          title="Invoices and receipts"
+          icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
+        >
           Manage payment methods, plan changes, and downloads in the secure Stripe portal.
         </StatusNotice>
       </div>
