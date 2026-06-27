@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  ArrowRight,
   Brain,
   Database,
   FileText,
@@ -43,11 +44,11 @@ function TrainingSurfaceMap({
   activeSection: string | null;
 }) {
   return (
-    <section className="studio-card grid gap-4 p-4 sm:p-5">
+    <section className="studio-card grid gap-3 p-4 sm:p-5">
       <div className="wl-centered-header">
         <p className="studio-kicker">Forge</p>
         <h2 className="mt-1 text-[16px] font-semibold tracking-[-0.02em] text-foreground">
-          Train the agent.
+          Pick a lane.
         </h2>
       </div>
 
@@ -61,9 +62,10 @@ function TrainingSurfaceMap({
               key={label}
               to={href}
               aria-current={isActive ? "page" : undefined}
-              className={`group flex min-h-[66px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+              aria-label={`Open ${label}`}
+              className={`group flex min-h-[60px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-all active:scale-[0.992] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
                 isActive
-                  ? "border-primary/40 bg-accent text-foreground"
+                  ? "border-primary/45 bg-accent text-foreground shadow-[var(--wireline-elevation-sm)]"
                   : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:bg-accent hover:text-foreground"
               }`}
             >
@@ -80,14 +82,19 @@ function TrainingSurfaceMap({
                   </span>
                 </span>
               </span>
-              <span
-                className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-card text-foreground"
-                    : "bg-muted text-foreground group-hover:bg-card"
-                }`}
-              >
-                <Icon size={15} aria-hidden="true" />
+              <span className="flex shrink-0 items-center gap-2 text-foreground">
+                <span
+                  className={`grid size-8 place-items-center rounded-lg transition-colors ${
+                    isActive ? "bg-card" : "bg-muted group-hover:bg-card"
+                  }`}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                </span>
+                <ArrowRight
+                  size={14}
+                  aria-hidden="true"
+                  className="text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
+                />
               </span>
             </Link>
           );
@@ -173,14 +180,14 @@ export default function KnowledgePage() {
   const [trainingVersion, setTrainingVersion] = useState(0);
   const { agents, loading } = useAgents();
   const agentId = params.get("agent") || agents[0]?.id || "";
-  const activeSection = params.get("section");
+  const activeSection = params.get("section") || "facts";
   const populated = !loading && agents.length > 0;
 
   return (
     <WorkspaceShell
       eyebrow="Operating system"
       title="Forge"
-      contentClassName={populated ? "pt-1 pb-6" : "pt-0"}
+      contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}
       action={
         populated ? (
           <NativeSelect
