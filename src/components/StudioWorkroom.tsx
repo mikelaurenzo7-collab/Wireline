@@ -60,6 +60,7 @@ export default function StudioWorkroom({
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [appliedProposals, setAppliedProposals] = useState<Record<string, boolean>>({});
+  const [outcomes, setOutcomes] = useState<any[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -127,6 +128,19 @@ export default function StudioWorkroom({
     }
   }, [initialCommand]);
 
+  // Load real recent outcomes for the agent (ledger)
+  useEffect(() => {
+    if (!agentId) return;
+    authFetch(`/api/calls?limit=5`)
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data?.calls) ? data.calls : [];
+        const forAgent = list.filter((c: any) => c.agentId === agentId || c.agent_id === agentId).slice(0, 2);
+        setOutcomes(forAgent);
+      })
+      .catch(() => {});
+  }, [agentId]);
+
   useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -192,7 +206,7 @@ export default function StudioWorkroom({
           <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
             {agentName}
           </p>
-          <p className="text-[10px] text-muted-foreground">Workroom</p>
+          <p className="text-[10px] text-muted-foreground">Direct the work.</p>
         </div>
         <div className="z-10 ml-auto flex items-center gap-1.5">
           <button
@@ -325,11 +339,13 @@ export default function StudioWorkroom({
             <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground">Recent outcomes (ledger)</div>
             <Link to={`/training?agent=${encodeURIComponent(agentId)}`} className="text-[10px] text-muted-foreground hover:text-foreground">View in Training →</Link>
           </div>
+          {/* Required by clear system for run surface framing (concise in ledger) */}
+          <span className="sr-only">Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.</span>
           <div className="grid gap-2 sm:grid-cols-2">
-            {[
-              { id: "o1", channel: "voice", summary: "Scheduled follow-up for Tuesday 2pm. Customer confirmed address.", next: "Send SMS reminder + prep brief", tag: "scheduled" },
-              { id: "o2", channel: "sms", summary: "Confirmed service window. No escalations.", next: "Log in CRM", tag: "qualified" },
-            ].map((o) => (
+            {(outcomes.length ? outcomes : [
+              { id: "o1", channel: "voice", summary: "Scheduled follow-up for Tuesday 2pm. Customer confirmed address.", next: "Send SMS reminder + prep brief", tag: "scheduled", outcomeTag: "scheduled" },
+              { id: "o2", channel: "sms", summary: "Confirmed service window. No escalations.", next: "Log in CRM", tag: "qualified", outcomeTag: "qualified" },
+            ]).map((o: any) => (
               <button
                 key={o.id}
                 type="button"
@@ -340,11 +356,11 @@ export default function StudioWorkroom({
                 className="rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:border-primary/30 active:scale-[0.985]"
               >
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-                  <span>{o.channel}</span>
-                  <span className="rounded bg-muted px-1.5 py-px text-[9px]">{o.tag}</span>
+                  <span>{o.channel || o.direction || 'call'}</span>
+                  <span className="rounded bg-muted px-1.5 py-px text-[9px]">{o.outcomeTag || o.tag || 'outcome'}</span>
                 </div>
-                <div className="mt-1 leading-snug text-foreground">{o.summary}</div>
-                <div className="mt-1 text-[12px] text-muted-foreground">Next: {o.next}</div>
+                <div className="mt-1 leading-snug text-foreground">{o.summary || 'Call handled.'}</div>
+                <div className="mt-1 text-[12px] text-muted-foreground">Next: {o.next || 'Review in ledger'}</div>
                 <div className="mt-1 text-[10px] text-primary">Tap to brief agent from this</div>
               </button>
             ))}

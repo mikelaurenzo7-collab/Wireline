@@ -310,15 +310,34 @@ export default function KnowledgeWorkspace() {
   const sourcesPanel = <SourcesCard loading={loading} />;
 
   // --- Training Intelligence / Flywheel (MOAT + extreme usefulness elevation) ---
-  // Demo data for first tranche. In production this will come from /api/agents/:id/outcomes + LLM extraction.
+  // Mix real outcomes (from /api/calls) with smart suggestions. Full LLM extraction in later tranche.
+  const derivedFromOutcomes = recentOutcomes.slice(0, 2).map((o: any, i: number) => ({
+    id: `real-${i}`,
+    kind: 'fact' as const,
+    content: (o.summary || 'Outcome captured.').slice(0, 90),
+    agentId: agentId || '',
+  }));
   const intelligence: TrainingSuggestion[] = [
-    { id: "s1", kind: "fact", content: "Customer prefers text confirmations over calls after 6pm.", agentId: agentId || "" },
-    { id: "s2", kind: "directive", content: "Always offer callback within 2 hours if no answer on first attempt.", agentId: agentId || "" },
-    { id: "s3", kind: "fact", content: "Home service jobs: confirm address and arrival window in first message.", agentId: agentId || "" },
-    { id: "s4", kind: "personality", content: "Be warm but concise — customers value speed on service calls.", agentId: agentId || "" },
+    ...derivedFromOutcomes,
+    { id: "s1", kind: "directive", content: "Always offer callback within 2 hours if no answer on first attempt.", agentId: agentId || "" },
+    { id: "s2", kind: "personality", content: "Be warm but concise — customers value speed on service calls.", agentId: agentId || "" },
   ];
 
   const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
+  const [recentOutcomes, setRecentOutcomes] = useState<any[]>([]);
+
+  // Pull real outcomes for intelligence suggestions (real flywheel)
+  useEffect(() => {
+    if (!agentId) return;
+    authFetch(`/api/calls?limit=5`)
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data?.calls) ? data.calls : [];
+        const forAgent = list.filter((c: any) => c.agentId === agentId || c.agent_id === agentId).slice(0, 3);
+        setRecentOutcomes(forAgent);
+      })
+      .catch(() => {});
+  }, [agentId]);
 
   const applySuggestion = async (s: TrainingSuggestion) => {
     if (!agentId) return;
