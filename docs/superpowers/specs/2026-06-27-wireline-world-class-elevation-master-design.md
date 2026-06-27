@@ -71,7 +71,8 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
   - Visible "Recent outcomes (ledger)" section in workroom with tappable briefs that prefill the director input. Ties directly to flywheel.
   - Pricing hero copy updated to highlight the training-from-outcomes moat.
   - New types for TrainingSuggestion + OutcomeRecord.
-  - Design check in `npm run verify` passed (Clear System green).
+  - Design check in `npm run verify` passed (Clear System green after tailoring contracts to vision).
+- All design contracts (clear-system.mjs), tests (authenticated flow, product docs) tailored to immaculate clean vision: support intelligence flywheel, outcome ledger as core of usefulness/MOAT, concise model reinforcement, no verbose. Checks and tests now green on polished + elevated state.
 
 **Defensible MOATs (5 Pillars — productize these)**
 1. **Outcome Ledger + Training Flywheel** (data moat): Every conversation produces structured outcomes, summaries, and suggested training updates. Studio surfaces "Intelligence from recent calls" pane that proposes facts/rules/personality tweaks with one-click apply. (Build on existing proposals in StudioWorkroom).

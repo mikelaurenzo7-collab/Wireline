@@ -88,6 +88,10 @@ describe("authenticated agent flow", () => {
     expect(workroom).not.toContain("Training holds setup.");
     expect(workroom).not.toContain("Train by talking.");
     expect(workroom).not.toContain("what to learn or do");
+    // Tailored to vision: outcome ledger + elevated proposals for flawless Run
+    expect(workroom).toContain("Recent outcomes (ledger)");
+    expect(workroom).toContain("Recent outcomes");
+    expect(workroom).toContain("proposals");
 
     expect(directorCopy).toContain("Agent audit");
     expect(directorCopy).toContain("Opening agent coach");
@@ -117,6 +121,9 @@ describe("authenticated agent flow", () => {
 
     expect(knowledgeWorkspace).toContain('params.get("section")');
     expect(knowledgeWorkspace).toContain('updated.set("section", next)');
+    // Tailored to vision: intelligence flywheel for MOAT/usefulness
+    expect(knowledgeWorkspace).toContain("Intelligence from outcomes");
+    expect(knowledgeWorkspace).toContain("applySuggestion");
   });
 
   it("keeps Studio training tabs visible inside the workroom", () => {

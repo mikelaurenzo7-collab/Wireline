@@ -361,7 +361,7 @@ export default function StudioWorkroom({
                 </div>
                 <div className="mt-1 leading-snug text-foreground">{o.summary || 'Call handled.'}</div>
                 <div className="mt-1 text-[12px] text-muted-foreground">Next: {o.next || 'Review in ledger'}</div>
-                <div className="mt-1 text-[10px] text-primary">Tap to brief agent from this</div>
+                <div className="mt-1 text-[10px] text-primary">Brief agent from this outcome</div>
               </button>
             ))}
           </div>

@@ -392,8 +392,9 @@ export default function KnowledgeWorkspace() {
                       variant={isApplied ? "secondary" : "default"}
                       disabled={isApplied}
                       onClick={() => applySuggestion(s)}
+                      aria-label={isApplied ? "Added to training" : "Add this to agent training"}
                     >
-                      {isApplied ? "Applied" : "Apply"}
+                      {isApplied ? "Added" : "Add to training"}
                     </Button>
                   </div>
                   <p className="mt-1 text-[10px] text-muted-foreground">From recent calls • one-click trains the fleet</p>

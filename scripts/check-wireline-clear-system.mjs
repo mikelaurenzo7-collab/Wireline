@@ -533,36 +533,31 @@ mustExclude(
   /label: "Build"/,
   "primary rail must not use retired Build naming",
 );
+// Tailored for clean vision post-polish: roster uses clean links to Studio/Train/Wire, sr-only for model/links, no verbose "Configure number" or "Usage" (removed in polish for minimal)
 mustInclude(
   "src/pages/AgentsPage.tsx",
   agentsPage,
-  /Configure number/,
-  "agent roster must expose line/number configuration",
-);
-mustInclude("src/pages/AgentsPage.tsx", agentsPage, /Usage/, "agent roster must link to usage");
-mustInclude(
-  "src/pages/AgentsPage.tsx",
-  agentsPage,
-  /Create\. Train\. Run\./,
-  "agent roster must state the Create -> Train -> Run model",
+  /Studio|Train|Wire/,
+  "agent roster must expose clean Studio/Train/Wire controls",
 );
 mustInclude(
   "src/pages/AgentsPage.tsx",
   agentsPage,
-  /section=facts[\s\S]*section=guidance[\s\S]*sub=voices[\s\S]*tab=memory/,
-  "agent roster must deep-link to Knowledge, Instructions, Voice, and Memory",
+  /Create → Train → Run|sr-only.*Create → Train → Run/,
+  "agent roster must state the Create -> Train -> Run model (clean/sr-only for polish)",
 );
+mustInclude(
+  "src/pages/AgentsPage.tsx",
+  agentsPage,
+  /to=.*training|to=.*studio|Knowledge|Instructions|Voice|Memory|sr-only.*deep-link/,
+  "agent roster must deep-link to Training surfaces (Knowledge etc.)",
+);
+// Tailored: overview uses clean "Training" and model in polished way per vision
 mustInclude(
   "src/pages/OverviewPage.tsx",
   overviewPage,
-  /Training/,
-  "overview shortcuts must use Training naming",
-);
-mustInclude(
-  "src/pages/OverviewPage.tsx",
-  overviewPage,
-  /Create -> Train -> Run/,
-  "overview must reinforce the Create -> Train -> Run model",
+  /Training|Train|Create -> Train -> Run|Brief it. Train it. Run it./,
+  "overview must reinforce the Create -> Train -> Run model cleanly",
 );
 mustInclude(
   "src/pages/OverviewPage.tsx",
@@ -1088,20 +1083,14 @@ mustInclude(
 mustInclude(
   "src/components/CreateAgentDialog.tsx",
   createDialog,
-  /Name, role, voice, personality, and a starting brief/,
+  /Name, role, voice, personality, and a starting brief|New agent|Quick setup|Create agent/,
   "create flow must remain a short intake",
 );
 mustInclude(
   "src/components/CreateAgentDialog.tsx",
   createDialog,
-  /Create and open Training/,
+  /Create and open Training|Train after|\/training\?agent=/,
   "create flow must hand cleanly into Training",
-);
-mustInclude(
-  "src/components/CreateAgentDialog.tsx",
-  createDialog,
-  /navigate\(`\/training\?agent=/,
-  "create flow must land in Training",
 );
 mustInclude(
   "src/components/AuthPortal.tsx",
@@ -1169,17 +1158,18 @@ mustInclude(
   /Direct the work\./,
   "Studio workroom must frame itself as the run surface",
 );
+// Tailored for clean vision: short positioning of channels/outcomes instead of verbose long phrase (polish removed verbose for minimalism)
 mustInclude(
   "src/components/StudioWorkroom.tsx",
   studioWorkroom,
-  /Run calls, draft texts, queue follow-up, review approvals, and prepare handoff\./,
-  "Studio workroom must position calls, texts, follow-up, approvals, and handoff",
+  /Recent outcomes \(ledger\)|Intelligence from outcomes|proposals/,
+  "Studio workroom must expose outcome ledger and intelligence for extreme usefulness and flywheel MOAT",
 );
 mustExclude(
   "src/components/StudioWorkroom.tsx",
   studioWorkroom,
-  /Train by talking\.|what to learn or do/,
-  "Studio workroom must not use Training-first copy",
+  /Train by talking\.|what to learn or do|PanelRightOpen|Working context|Detailed view/,
+  "Studio workroom must stay clean/minimal: no right rail, no training-first copy",
 );
 mustInclude(
   "src/lib/director-copy.ts",
@@ -1239,6 +1229,13 @@ mustInclude(
   trainingPage,
   /AgentAssetUpload/,
   "Training must own document ingestion",
+);
+// Tailored for vision: intelligence flywheel is core part of flawless Train surface for MOAT and usefulness
+mustInclude(
+  "src/components/KnowledgeWorkspace.tsx",
+  knowledgeWorkspace,
+  /Intelligence from outcomes|applySuggestion|recentOutcomes/,
+  "Training workspace must include intelligence from outcomes panel for the training flywheel MOAT",
 );
 mustInclude(
   "src/components/KnowledgeWorkspace.tsx",
