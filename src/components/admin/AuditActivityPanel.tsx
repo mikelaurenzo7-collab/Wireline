@@ -90,7 +90,7 @@ export function AuditActivityPanel() {
       {/* Window selector */}
       <div className="flex items-center justify-between shrink-0">
         <h3 className="text-eyebrow">AI Usage</h3>
-        <div className="flex p-0.5 rounded-full wl-panel border border-white/10">
+        <div className="flex p-0.5 rounded-full wl-panel border border-border">
           {windowOpts.map((d) => (
             <ShadButton
               key={d}
@@ -100,7 +100,7 @@ export function AuditActivityPanel() {
               onClick={() => setDays(d)}
               className={cn(
                 "h-auto px-3 py-1 rounded-full wl-label",
-                days === d ? "bg-brand/20 text-brand" : "text-muted hover:text-foreground",
+                days === d ? "bg-primary/20 text-primary" : "text-muted hover:text-foreground",
               )}
             >
               {d}d
@@ -111,7 +111,7 @@ export function AuditActivityPanel() {
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
-          <Loader2 className="w-5 h-5 animate-spin text-brand/40" />
+          <Loader2 className="w-5 h-5 animate-spin text-primary/40" />
           <p className="wl-micro-meta--muted uppercase tracking-[0.2em]">Aggregating ledger...</p>
         </div>
       ) : (
@@ -140,7 +140,7 @@ export function AuditActivityPanel() {
                 icon: BarChart3,
               },
             ].map((s) => (
-              <div key={s.label} className="p-4 rounded-md wl-panel border border-white/10">
+              <div key={s.label} className="p-4 rounded-md wl-panel border border-border">
                 <div className="flex items-center gap-2 mb-2 opacity-40">
                   <s.icon className="w-3 h-3" />
                   <span className="wl-label tracking-[0.2em]">{s.label}</span>
@@ -152,7 +152,7 @@ export function AuditActivityPanel() {
 
           {/* Action breakdown */}
           <div className="grid md:grid-cols-2 gap-3 shrink-0">
-            <div className="p-6 rounded-md wl-panel border border-white/10 flex flex-col gap-4">
+            <div className="p-6 rounded-md wl-panel border border-border flex flex-col gap-4">
               <h4 className="text-eyebrow">Cost by Action</h4>
               <div className="space-y-4">
                 {byAction.length === 0 ? (
@@ -168,7 +168,7 @@ export function AuditActivityPanel() {
                           ${Number(a.cost).toFixed(4)}
                         </span>
                       </div>
-                      <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${(Number(a.cost) / maxActionCost) * 100}%` }}
@@ -182,7 +182,7 @@ export function AuditActivityPanel() {
             </div>
 
             {/* Daily Trend */}
-            <div className="p-6 rounded-md wl-panel border border-white/10 flex flex-col gap-4">
+            <div className="p-6 rounded-md wl-panel border border-border flex flex-col gap-4">
               <h4 className="text-eyebrow">Cost Trend</h4>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -239,7 +239,7 @@ export function AuditActivityPanel() {
           </div>
 
           {/* Recent Ledger */}
-          <div className="flex-1 min-h-[300px] p-6 rounded-md wl-panel border border-white/10 flex flex-col gap-4">
+          <div className="flex-1 min-h-[300px] p-6 rounded-md wl-panel border border-border flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h4 className="text-eyebrow">Recent Autonomous Actions</h4>
               {recentLoading && <Loader2 className="w-3 h-3 animate-spin text-muted" />}
@@ -255,14 +255,14 @@ export function AuditActivityPanel() {
                 recent.map((entry: any) => (
                   <div
                     key={entry.id}
-                    className="flex items-center gap-4 py-2.5 px-3 hover:bg-black/5 rounded-md transition-all border-b border-white/[0.03] last:border-0 group"
+                    className="flex items-center gap-4 py-2.5 px-3 hover:bg-muted/50 rounded-md transition-all border-b border-border/50 last:border-0 group"
                   >
                     <div
                       className={cn(
                         "w-7 h-7 rounded-md flex items-center justify-center shrink-0",
                         entry.status === "error"
                           ? "bg-rose-500/10 text-rose-500"
-                          : "bg-brand/10 text-brand",
+                          : "bg-primary/10 text-primary",
                       )}
                     >
                       <Cpu className="w-3.5 h-3.5" />

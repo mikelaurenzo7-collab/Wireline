@@ -533,7 +533,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-brand">
+        <div className="flex flex-col items-center gap-4 text-primary">
           <Loader2 className="w-8 h-8 animate-spin" />
           <span className="wl-label">Loading Neural Flow...</span>
         </div>
@@ -592,7 +592,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-display italic text-xl text-foreground flex items-center gap-2">
-                <Workflow className="w-5 h-5 text-brand" />
+                <Workflow className="w-5 h-5 text-primary" />
                 Conversation Flow
               </h3>
               <p className="wl-label text-foreground/55 mt-1">Linear stage progression</p>
@@ -604,7 +604,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               disableAnimations
               onClick={handleAddStep}
               aria-label="Add stage"
-              className="w-9 h-9 rounded-full border-brand/30 text-brand hover:bg-brand/10"
+              className="w-9 h-9 rounded-full border-primary/30 text-primary hover:bg-primary/10"
             >
               <Plus className="w-4 h-4" />
             </ShadButton>
@@ -613,9 +613,9 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           {/* Template picker — account holders rarely want a blank slate.
             Seeded flows for the 4 demo agent archetypes get them to a
             working draft in one click, then they customize. */}
-          <div className="pt-3 border-t border-white/8 space-y-2">
+          <div className="pt-3 border-t border-border/50 space-y-2">
             <div className="flex items-center gap-1.5 wl-micro-meta">
-              <Sparkles className="w-3 h-3 text-brand" /> Start from a template
+              <Sparkles className="w-3 h-3 text-primary" /> Start from a template
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {(Object.keys(FLOW_TEMPLATES) as TemplateKey[]).map((key) => (
@@ -627,7 +627,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                   disableAnimations
                   onClick={() => handleApplyTemplate(key)}
                   title={FLOW_TEMPLATES[key].description}
-                  className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 wl-micro-meta text-foreground/85 hover:border-brand/40 hover:text-brand truncate"
+                  className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 wl-micro-meta text-foreground/85 hover:border-brand/40 hover:text-primary truncate"
                 >
                   {FLOW_TEMPLATES[key].label}
                 </ShadButton>
@@ -640,7 +640,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               objection handler, a discovery question, a compliance line.
               Groups by category so account holders can scan for the pattern
               they need. */}
-          <div className="pt-3 border-t border-white/8 space-y-2">
+          <div className="pt-3 border-t border-border/50 space-y-2">
             <ShadButton
               type="button"
               variant="ghost"
@@ -649,7 +649,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               className="w-full h-auto justify-between gap-2 wl-micro-meta hover:text-foreground px-0"
             >
               <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-brand" />
+                <Sparkles className="w-3 h-3 text-primary" />
                 Insert a snippet
               </span>
               <span className="text-foreground/55">{showSnippets ? "−" : "+"}</span>
@@ -658,7 +658,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {Array.from(new Set(FLOW_SNIPPETS.map((s) => s.category))).map((cat) => (
                   <div key={cat} className="space-y-1">
-                    <div className="wl-label text-brand/70">{cat}</div>
+                    <div className="wl-label text-primary/70">{cat}</div>
                     {FLOW_SNIPPETS.filter((s) => s.category === cat).map((snip) => (
                       <ShadButton
                         key={snip.id}
@@ -668,14 +668,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         disableAnimations
                         onClick={() => insertSnippet(snip.text)}
                         title={snip.text}
-                        className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 wl-micro-meta text-foreground/85 hover:border-brand/40 hover:text-brand"
+                        className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 wl-micro-meta text-foreground/85 hover:border-brand/40 hover:text-primary"
                       >
                         {snip.label}
                       </ShadButton>
                     ))}
                   </div>
                 ))}
-                <p className="wl-micro-meta leading-relaxed pt-2 border-t border-white/8">
+                <p className="wl-micro-meta leading-relaxed pt-2 border-t border-border/50">
                   Adds the snippet to the currently selected stage's instructions. Edit after
                   pasting.
                 </p>
@@ -688,14 +688,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           incomplete without preventing them from saving a draft. */}
         {validationIssues.length > 0 && (
           <div className="rounded-md border border-brand/30 bg-brand/5 p-3 space-y-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 wl-label text-brand">
+            <div className="flex items-center gap-1.5 wl-label text-primary">
               <AlertTriangle className="w-3 h-3" />
               {validationIssues.length} item{validationIssues.length === 1 ? "" : "s"} to finish
             </div>
             <ul className="text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/70 leading-snug space-y-0.5 max-h-24 overflow-y-auto">
               {validationIssues.slice(0, 6).map((v, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-brand shrink-0">·</span>
+                  <span className="text-primary shrink-0">·</span>
                   <span>{v.message}</span>
                 </li>
               ))}
@@ -772,7 +772,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         <div
                           className={cn(
                             "text-sm font-medium truncate",
-                            activeStepId === step.id ? "text-brand" : "text-foreground/80",
+                            activeStepId === step.id ? "text-primary" : "text-foreground/80",
                           )}
                         >
                           {step.name || "Unnamed Stage"}
@@ -790,7 +790,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         onClick={(e) => handleDuplicateStep(step.id, e)}
                         aria-label="Duplicate stage"
                         title="Duplicate stage"
-                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-foreground/55 hover:text-brand hover:bg-brand/10"
+                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-foreground/55 hover:text-primary hover:bg-brand/10"
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </ShadButton>
@@ -828,7 +828,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
             <div className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-hide">
               <div className="p-5 md:p-6 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 sticky top-0 bg-card/80 backdrop-blur-xl z-20">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-md bg-brand/10 border border-brand/30 flex items-center justify-center text-brand font-display italic text-xl shrink-0">
+                  <div className="w-10 h-10 rounded-md bg-brand/10 border border-brand/30 flex items-center justify-center text-primary font-display italic text-xl shrink-0">
                     {activeStepIndex + 1}
                   </div>
                   <div>
@@ -881,7 +881,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       Saving
                     </span>
                   ) : isDirty ? (
-                    <span className="inline-flex items-center gap-1.5 wl-label text-brand">
+                    <span className="inline-flex items-center gap-1.5 wl-label text-primary">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                       Unsaved
                     </span>
@@ -893,12 +893,12 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     disableAnimations
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="h-9 px-4 rounded-full bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25 ml-2"
+                    className="h-9 px-4 rounded-full bg-brand/15 border-brand/40 text-primary wl-label hover:bg-brand/25 ml-2"
                   >
                     {isSaving ? (
                       <div className="w-3.5 h-3.5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
                     ) : saveSuccess ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-brand" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                     ) : (
                       <Save className="w-3.5 h-3.5" />
                     )}
@@ -910,7 +910,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               <div className="p-5 md:p-6 space-y-6">
                 {/* Agent Instructions */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-brand">
+                  <div className="flex items-center gap-2 text-primary">
                     <Settings2 className="w-4 h-4" />
                     <h4 className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
                       Agent Instructions
@@ -947,7 +947,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     const tooShort = words > 0 && words < 8;
                     return (
                       <div className="flex items-center justify-between wl-micro-meta -mt-1 px-1">
-                        <span className={cn(tooLong && "text-brand", tooShort && "text-rose-500")}>
+                        <span className={cn(tooLong && "text-primary", tooShort && "text-rose-500")}>
                           {words === 0
                             ? "Write what the agent should say in this stage"
                             : `${words} word${words === 1 ? "" : "s"} · ~${seconds}s read-aloud`}
@@ -1006,7 +1006,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           setCoachingStepId(null);
                         }
                       }}
-                      className="rounded-full border-brand/30 wl-label text-brand hover:bg-brand/8"
+                      className="rounded-full border-brand/30 wl-label text-primary hover:bg-brand/8"
                     >
                       {coachingStepId === activeStep.id ? (
                         <>
@@ -1035,7 +1035,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 {/* Transition Condition */}
                 {!activeStep.isEndNode ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-brand">
+                    <div className="flex items-center gap-2 text-primary">
                       <ArrowRight className="w-4 h-4" />
                       <h4 className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
                         Transition Condition
@@ -1046,7 +1046,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       this condition continuously.
                     </p>
                     <div className="relative">
-                      <div className="absolute left-4 top-4 text-brand/50">IF:</div>
+                      <div className="absolute left-4 top-4 text-primary/50">IF:</div>
                       <textarea
                         value={activeStep.transitionCondition}
                         onChange={(e) =>

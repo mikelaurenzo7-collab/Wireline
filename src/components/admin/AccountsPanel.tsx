@@ -25,14 +25,14 @@ function AccountCard({
       className={cn(
         "relative flex items-start gap-4 p-5 border text-left transition-all w-full",
         isActive
-          ? "border-brand bg-brand/[0.03] shadow-sm"
-          : "border-border bg-card hover:border-brand/30 hover:bg-brand/[0.01]",
+          ? "border-primary bg-primary/[0.03] shadow-sm"
+          : "border-border bg-card hover:border-primary/30 hover:bg-primary/[0.01]",
       )}
     >
       <div
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center",
-          isActive ? "bg-brand/10 text-brand" : "bg-muted text-muted-foreground",
+          isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
         )}
       >
         <Icon className="h-5 w-5" />
@@ -127,7 +127,7 @@ export function AccountsPanel() {
               <button
                 onClick={() => handleAdd("personal")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-brand/30 hover:bg-brand/[0.01] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
               >
                 {creating === "personal" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -141,7 +141,7 @@ export function AccountsPanel() {
               <button
                 onClick={() => handleAdd("business")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-brand/30 hover:bg-brand/[0.01] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
               >
                 {creating === "business" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

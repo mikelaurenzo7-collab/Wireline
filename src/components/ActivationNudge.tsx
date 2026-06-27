@@ -90,7 +90,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
       aria-live="polite"
     >
       <div className="min-w-0 flex-1 pl-1">
-        <p className="wl-label mb-1 text-brand">{ACTIVATION_NUDGE_COPY.eyebrow}</p>
+        <p className="wl-label mb-1 text-primary">{ACTIVATION_NUDGE_COPY.eyebrow}</p>
         <p className="text-xs leading-relaxed text-foreground/75">{ACTIVATION_NUDGE_COPY.body}</p>
         {phoneNumber ? (
           <p className="mt-1 font-mono text-[var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">

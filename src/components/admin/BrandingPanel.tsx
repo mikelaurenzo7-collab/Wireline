@@ -26,11 +26,11 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
         className={`client-panel rounded-md wl-panel border border-input ${WL_ADMIN_CLASSES.panel}`}
       >
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-8 h-8 rounded-md bg-brand/10 border border-brand/18 text-brand shadow-sm shadow-brand/10 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-md bg-primary/10 border border-primary/20 text-primary shadow-sm shadow-primary/10 flex items-center justify-center shrink-0">
             <Bot className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <p className="app-form-eyebrow text-brand/70">Appearance</p>
+            <p className="app-form-eyebrow text-primary/70">Appearance</p>
             <h3 className="font-display italic text-lg text-foreground leading-tight">
               Brand Identity
             </h3>

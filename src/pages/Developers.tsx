@@ -90,9 +90,9 @@ export default function Developers() {
         <section className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto border-b md:border-b-0 md:border-r border-outline-variant/30 bg-card">
           <div className="px-6 py-10 sm:px-8 max-w-2xl mx-auto space-y-12">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 border border-brand/20 bg-brand/5 rounded-sm mb-4">
-                <Code2 className="w-3.5 h-3.5 text-brand" />
-                <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] text-brand font-semibold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 border border-primary/20 bg-primary/5 rounded-sm mb-4">
+                <Code2 className="w-3.5 h-3.5 text-primary" />
+                <span className="font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] text-primary font-semibold">
                   Core API v2.4
                 </span>
               </div>
@@ -132,12 +132,12 @@ export default function Developers() {
 
             <div className="p-6 bg-card-warm/40 border border-brand/20 rounded-md shadow-sm paper-texture">
               <div className="flex items-center gap-2.5 mb-4">
-                <ShieldCheck className="w-5 h-5 text-brand" />
+                <ShieldCheck className="w-5 h-5 text-primary" />
                 <h2 className="font-display italic text-xl text-foreground">Authentication</h2>
               </div>
               <p className="text-foreground/75 text-xs sm:text-sm leading-relaxed mb-4">
                 Every API request must include a Bearer token in the{" "}
-                <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[var(--wireline-typography-caption-size)] text-brand">
+                <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[var(--wireline-typography-caption-size)] text-primary">
                   Authorization
                 </code>{" "}
                 header. Tokens are created in your dashboard under Settings {"->"} API Access.
@@ -157,7 +157,7 @@ export default function Developers() {
                       key={step.title}
                       className="wl-panel border border-ink/[0.08] p-4 bg-card rounded-sm"
                     >
-                      <Icon className="w-5 h-5 text-brand mb-3" />
+                      <Icon className="w-5 h-5 text-primary mb-3" />
                       <h3 className="font-display italic text-base text-foreground mb-1">
                         {step.title}
                       </h3>
@@ -178,7 +178,7 @@ export default function Developers() {
                     key={endpoint.path}
                     className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4"
                   >
-                    <code className="text-[var(--wireline-typography-caption-size)] font-mono text-brand font-semibold shrink-0 bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-sm">
+                    <code className="text-[var(--wireline-typography-caption-size)] font-mono text-primary font-semibold shrink-0 bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-sm">
                       {endpoint.path}
                     </code>
                     <span className="text-xs text-foreground/75">{endpoint.description}</span>
@@ -191,7 +191,7 @@ export default function Developers() {
                   href={openApiUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand hover:underline"
+                  className="text-primary hover:underline"
                 >
                   OpenAPI spec
                 </a>
@@ -221,7 +221,7 @@ export default function Developers() {
                 bash - wireline-shell
               </span>
             </div>
-            <span className="flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] text-brand font-mono font-semibold">
+            <span className="flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] text-primary font-mono font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
               LIVE CONNECTED
             </span>
@@ -229,7 +229,7 @@ export default function Developers() {
 
           <div className="flex-1 overflow-y-auto p-6 font-mono text-[var(--wireline-typography-caption-size)] space-y-6 z-10 text-white/90">
             <div>
-              <div className="flex items-center gap-2 mb-2 text-brand">
+              <div className="flex items-center gap-2 mb-2 text-primary">
                 <Terminal className="w-3.5 h-3.5" />
                 <span className="font-bold text-[var(--wireline-typography-overline-size)] uppercase tracking-wider">
                   Request Input
@@ -262,7 +262,7 @@ export default function Developers() {
               </div>
               <div className="bg-black/40 p-4 border border-white/5 rounded-md space-y-2 min-h-[140px]">
                 {logs.map((log, index) => {
-                  let badgeColor = "text-brand";
+                  let badgeColor = "text-primary";
                   if (log.includes("[WARN]")) badgeColor = "text-yellow-500";
                   return (
                     <p
@@ -274,7 +274,7 @@ export default function Developers() {
                     </p>
                   );
                 })}
-                <p className="animate-pulse text-brand font-bold">_</p>
+                <p className="animate-pulse text-primary font-bold">_</p>
               </div>
             </div>
           </div>

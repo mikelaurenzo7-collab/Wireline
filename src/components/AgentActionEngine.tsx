@@ -102,7 +102,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-brand">
+        <div className="flex flex-col items-center gap-4 text-primary">
           <Loader2 className="w-8 h-8 animate-spin" />
           <span className="wl-label">Loading capabilities...</span>
         </div>
@@ -125,7 +125,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
       <div className="wl-panel rounded-md p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-card/80 backdrop-blur-xl">
         <div>
           <h3 className="font-display italic text-2xl text-foreground flex items-center gap-3">
-            <Blocks className="w-6 h-6 text-brand" />
+            <Blocks className="w-6 h-6 text-primary" />
             Agent capabilities
           </h3>
           <p className="text-sm text-muted mt-1 max-w-2xl">
@@ -145,7 +145,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           {isSaving ? (
             <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           ) : saveSuccess ? (
-            <CheckCircle2 className="w-4 h-4 text-brand" />
+            <CheckCircle2 className="w-4 h-4 text-primary" />
           ) : (
             <Save className="w-4 h-4" />
           )}
@@ -211,8 +211,8 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                           className={cn(
                             "w-5 h-5 rounded flex items-center justify-center border transition-colors",
                             isEnabled
-                              ? "bg-brand border-brand text-on-brand"
-                              : "bg-black/10 border-white/20 text-transparent",
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "bg-muted border-border text-transparent",
                           )}
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />

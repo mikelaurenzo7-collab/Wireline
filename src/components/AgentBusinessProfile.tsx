@@ -454,7 +454,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                         "h-7 px-2.5 rounded-full wl-label touch-press hover:scale-[1.05]",
                         closed
                           ? "border-rose-500/30 text-rose-500 bg-rose-500/8 shadow-none"
-                          : "border-brand/30 text-brand bg-brand/8",
+                          : "border-primary/30 text-primary bg-primary/8",
                       )}
                     >
                       {closed ? "Closed" : "Open"}
@@ -530,15 +530,15 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     className={cn(
                       "h-auto w-full justify-start text-left rounded-md border px-3 py-2.5",
                       active
-                        ? "border-brand/40 bg-brand/8"
-                        : "border-border hover:border-brand/25 hover:bg-black/[0.02]",
+                        ? "border-primary/40 bg-primary/8"
+                        : "border-border hover:border-primary/25 hover:bg-muted/50",
                     )}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground text-[var(--wireline-typography-body-size)]">
                         {opt.label}
                       </span>
-                      {active && <span className="wl-label text-brand">Active</span>}
+                      {active && <span className="wl-label text-primary">Active</span>}
                     </div>
                     <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
                   </ShadButton>
@@ -566,15 +566,15 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     className={cn(
                       "h-auto w-full justify-start text-left rounded-md border px-3 py-2.5",
                       active
-                        ? "border-brand/40 bg-brand/8"
-                        : "border-border hover:border-brand/25 hover:bg-black/[0.02]",
+                        ? "border-primary/40 bg-primary/8"
+                        : "border-border hover:border-primary/25 hover:bg-muted/50",
                     )}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground text-[var(--wireline-typography-body-size)]">
                         {opt.label}
                       </span>
-                      {active && <span className="wl-label text-brand">Active</span>}
+                      {active && <span className="wl-label text-primary">Active</span>}
                     </div>
                     <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
                   </ShadButton>
@@ -631,7 +631,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               </p>
               <p className="wl-micro-meta mb-3 leading-relaxed">
                 Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
-                <a href="/admin?tab=carrier" className="text-brand hover:underline">
+                <a href="/admin?tab=carrier" className="text-primary hover:underline">
                   Settings → Carrier
                 </a>
                 .
@@ -651,7 +651,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     }
                     placeholder="+1 555 123 4567"
                     aria-label="Per-agent escalation phone number"
-                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[var(--wireline-typography-body-size)] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
+                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[var(--wireline-typography-body-size)] focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/12 transition-all"
                     data-testid="escalation-phone-input"
                   />
                 </label>
@@ -669,7 +669,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                     }
                     placeholder="lead@yourcompany.com"
                     aria-label="Per-agent escalation email"
-                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[var(--wireline-typography-body-size)] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
+                    className="w-full h-9 px-3 rounded-md border border-border bg-card text-[var(--wireline-typography-body-size)] focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/12 transition-all"
                     data-testid="escalation-email-input"
                   />
                 </label>
@@ -687,8 +687,8 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 className={
                   "mt-3 flex items-start gap-3 p-3 rounded-md border transition-all cursor-pointer " +
                   (value.escalation_handoff_enabled && value.escalation_phone
-                    ? "border-brand/30 bg-brand/[0.04]"
-                    : "border-border bg-card hover:border-brand/20")
+                    ? "border-primary/30 bg-primary/[0.04]"
+                    : "border-border bg-card hover:border-primary/20")
                 }
               >
                 <Checkbox
@@ -697,7 +697,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   onChange={(e) =>
                     onChange({ ...value, escalation_handoff_enabled: e.target.checked })
                   }
-                  className="mt-0.5 w-4 h-4 accent-brand shrink-0"
+                  className="mt-0.5 w-4 h-4 accent-primary shrink-0"
                   aria-label="Warm-transfer live caller to escalation phone"
                   data-testid="escalation-handoff-toggle"
                 />
@@ -711,7 +711,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                       : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
                   </p>
                   {value.escalation_handoff_enabled && value.escalation_phone && (
-                    <p className="mt-1.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-brand font-semibold">
+                    <p className="mt-1.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-primary font-semibold">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand mr-1 align-middle" />
                       Live transfer enabled
                     </p>
@@ -801,7 +801,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 disableAnimations
                 onClick={commitDraftVar}
                 disabled={!draftVarKey.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]{0,40}$/.test(draftVarKey)}
-                className="h-9 px-3 rounded-md bg-brand/15 border-brand/35 text-brand wl-label hover:bg-brand/25 touch-press hover:scale-[1.02]"
+                className="h-9 px-3 rounded-md bg-primary/10 border-primary/30 text-primary wl-label hover:bg-primary/15 touch-press hover:scale-[1.02]"
               >
                 <Plus className="w-3 h-3" /> Add
               </ShadButton>
@@ -834,7 +834,7 @@ function Section({
       className="relative rounded-md wl-panel-elevated border border-border p-4 overflow-hidden"
     >
       <header className="relative flex items-start gap-3 mb-3">
-        <div className="w-9 h-9 rounded-md wl-panel border border-brand/25 flex items-center justify-center shrink-0 text-brand">
+        <div className="w-9 h-9 rounded-md wl-panel border border-primary/25 flex items-center justify-center shrink-0 text-primary">
           <Icon className="w-4 h-4" />
         </div>
         <div className="min-w-0">
@@ -882,7 +882,7 @@ function Field({
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const tone = len > max * 0.9 ? "text-brand" : "text-foreground/55";
+  const tone = len > max * 0.9 ? "text-primary" : "text-foreground/55";
   return (
     <p className={cn("wl-micro-badge tabular-nums text-right", tone)}>
       {len}/{max}
@@ -909,7 +909,7 @@ function ChipList({
   const toneClass =
     tone === "rose"
       ? "bg-rose-500/8 border-rose-500/25 text-rose-600"
-      : "bg-brand/8 border-brand/30 text-brand";
+      : "bg-primary/8 border-primary/30 text-primary";
   return (
     <ul className="flex flex-wrap gap-1.5 mb-2">
       {chips.map((c, i) => (
@@ -930,7 +930,7 @@ function ChipList({
             disableAnimations
             onClick={() => onRemove(i)}
             aria-label={`Remove ${c}`}
-            className="w-4 h-4 rounded-full hover:bg-black/5"
+            className="w-4 h-4 rounded-full hover:bg-muted/50"
           >
             <X className="w-2.5 h-2.5" />
           </ShadButton>
