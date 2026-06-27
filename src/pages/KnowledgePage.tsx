@@ -138,7 +138,7 @@ function TrainingRail({
 }) {
   return (
     <aside
-      className="hidden min-h-0 w-[196px] shrink-0 rounded-2xl border border-border bg-card p-2 lg:block"
+      className="hidden min-h-0 w-[196px] shrink-0 rounded-2xl border border-border bg-card p-2 xl:block"
       aria-label="Training sections"
     >
       <div className="px-3 py-3 text-center wl-centered-header">
@@ -224,7 +224,7 @@ export default function KnowledgePage() {
           <TrainingSurfaceMap agentId={agentId} activeSection={activeSection} />
           <div className="flex min-h-0 gap-4">
             <TrainingRail agentId={agentId} activeSection={activeSection} />
-            <div className="grid min-w-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid min-w-0 flex-1 gap-4 2xl:grid-cols-[minmax(0,1fr)_320px]">
               <div className="min-h-0">
                 <KnowledgeWorkspace key={`${agentId}-${trainingVersion}`} />
               </div>

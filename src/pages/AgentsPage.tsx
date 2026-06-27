@@ -50,26 +50,18 @@ function LoadingRoster() {
       aria-busy="true"
     >
       {Array.from({ length: 6 }, (_, index) => (
-        <div
-          key={index}
-          className="rounded-[var(--radius-xl)] border border-border bg-card p-4 sm:p-5"
-        >
+        <div key={index} className="rounded-[var(--radius-xl)] border border-border bg-card p-5">
           <div className="flex items-start gap-3">
             <Skeleton shape="circle" className="size-10" />
             <div className="flex-1 space-y-2">
-              <div className="flex gap-1.5">
-                <Skeleton shape="text" className="h-5 w-16" />
-                <Skeleton shape="text" className="h-5 w-12" />
-              </div>
               <Skeleton shape="text" className="h-[19px] w-3/4" />
               <Skeleton shape="text" className="h-3 w-1/2" />
             </div>
           </div>
-          <Skeleton shape="text" className="mt-3 h-7 w-full" />
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <Skeleton shape="text" className="h-[42px] w-full" />
-            <Skeleton shape="text" className="h-[42px] w-full" />
-            <Skeleton shape="text" className="h-[42px] w-full" />
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <Skeleton shape="text" className="h-[38px] w-full" />
+            <Skeleton shape="text" className="h-[38px] w-full" />
+            <Skeleton shape="text" className="h-[38px] w-full" />
           </div>
         </div>
       ))}
@@ -88,30 +80,29 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
   ] as const;
 
   return (
-    <article className="studio-card wl-card-action group flex flex-col p-4 transition-colors hover:border-primary/15 sm:p-5">
+    <article className="studio-card wl-card-action group flex flex-col p-5 transition-colors hover:border-primary/15">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-base font-semibold text-primary">
           {agent.name.slice(0, 1).toUpperCase()}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <PostureBadge isBusiness={Boolean(agent.is_business_agent)} />
-            <Badge variant="success">
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
-              Ready
-            </Badge>
-          </div>
-          <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-0.015em] text-foreground">
+          <h2 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-0.015em] text-foreground">
             {agent.name}
           </h2>
-          <p className="mt-0.5 inline-flex min-w-0 items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-muted-foreground">
+          <p className="mt-1 inline-flex min-w-0 items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.04em] text-muted-foreground">
+            <PostureBadge isBusiness={Boolean(agent.is_business_agent)} />
+            <span aria-hidden="true">&middot;</span>
             <span className="capitalize">{formatAgentRoleLabel(agent.role)}</span>
-            <span aria-hidden="true">/</span>
+            <span aria-hidden="true">&middot;</span>
             <span className="inline-flex items-center gap-1">
               <ChannelIcon size={11} /> {channel}
             </span>
           </p>
         </div>
+        <Badge variant="success" className="shrink-0">
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+          Ready
+        </Badge>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
@@ -119,50 +110,12 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           <Link
             key={label}
             to={to}
-            className="flex min-h-[42px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-card px-2 text-sm font-semibold text-foreground transition-colors hover:border-primary/25 hover:bg-accent"
+            className="flex min-h-[38px] items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-card px-2 text-[13px] font-semibold text-foreground transition-colors hover:border-primary/25 hover:bg-accent"
           >
-            <Icon aria-hidden="true" size={14} />
+            <Icon aria-hidden="true" size={13} />
             <span>{label}</span>
           </Link>
         ))}
-      </div>
-
-      <div className="mt-3 grid gap-1.5 rounded-lg border border-border/60 bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-        <Link
-          to="/settings/apps"
-          className="truncate font-semibold text-foreground hover:text-primary"
-        >
-          {agent.phone_number || "Configure number"}
-        </Link>
-        <Link to="/settings/billing" className="font-semibold text-foreground hover:text-primary">
-          Usage
-        </Link>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.06em]">
-        <Link
-          to={`/training?agent=${encodedAgentId}&section=facts`}
-          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-        >
-          Knowledge
-        </Link>
-        <Link
-          to={`/training?agent=${encodedAgentId}&section=guidance`}
-          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-        >
-          Instructions
-        </Link>
-        <Link
-          to={`/studio?agent=${encodedAgentId}&tab=training&sub=voices`}
-          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-        >
-          Voice
-        </Link>
-        <Link
-          to={`/studio?agent=${encodedAgentId}&tab=memory`}
-          className="rounded-full border border-border px-2 py-0.5 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-        >
-          Memory
-        </Link>
       </div>
     </article>
   );

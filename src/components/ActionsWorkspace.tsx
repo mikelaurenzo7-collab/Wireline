@@ -135,11 +135,11 @@ function ToolGroup({
               >
                 {active ? <Check size={10} strokeWidth={3.5} /> : null}
               </span>
-              <span className="min-w-0">
-                <span className="block text-[14.5px] font-semibold tracking-[-0.005em] text-foreground">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14.5px] font-semibold tracking-[-0.005em] text-foreground">
                   {copy?.label || tool.label}
                 </span>
-                <span className="mt-px block text-[12.5px] leading-snug text-muted-foreground">
+                <span className="mt-px block text-[12.5px] leading-snug text-muted-foreground line-clamp-2">
                   {copy?.description || tool.description}
                 </span>
               </span>
@@ -165,7 +165,7 @@ function LoadingPermissions() {
         </div>
         <Skeleton shape="control" className="h-10 w-44" />
       </div>
-      <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,.75fr)] lg:gap-6">
+      <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
         <div className="space-y-5">
           {Array.from({ length: 3 }, (_, index) => (
             <Skeleton key={index} shape="surface" className="h-[176px] w-full" />
@@ -347,7 +347,7 @@ export default function ActionsWorkspace() {
         </StatusNotice>
       ) : null}
 
-      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,.75fr)] lg:gap-6">
+      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
         <section className="wl-scroll min-h-0 overflow-y-auto pr-0.5">
           <div className="space-y-5">
             {loading
@@ -430,9 +430,9 @@ export default function ActionsWorkspace() {
                   className="studio-card flex min-h-[5rem] items-center justify-between gap-3 p-4"
                   key={integration.id}
                 >
-                  <div className="min-w-0">
-                    <h3 className="wl-card-title">{integration.label}</h3>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="wl-card-title truncate">{integration.label}</h3>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground line-clamp-2">
                       {integration.detail}
                     </p>
                   </div>

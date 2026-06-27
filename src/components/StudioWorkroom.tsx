@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Send, Settings as SettingsIcon, Trash2 } from "lucide-react";
+
+import { ArrowLeft, Loader2, Send, Trash2 } from "lucide-react";
 import { Button } from "../components/atoms";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
@@ -192,31 +192,9 @@ export default function StudioWorkroom({
           <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
             {agentName}
           </p>
-          <p className="text-[10px] text-muted-foreground">Direct the work.</p>
+          <p className="text-[10px] text-muted-foreground">Workroom</p>
         </div>
         <div className="z-10 ml-auto flex items-center gap-1.5">
-          <Link
-            to={`/training?agent=${encodeURIComponent(agentId)}`}
-            className="rounded-md px-1.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-            title="Train this agent"
-          >
-            Train
-          </Link>
-          <Link
-            to={`/actions?agent=${encodeURIComponent(agentId)}`}
-            className="rounded-md px-1.5 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-            title="Wire integrations"
-          >
-            Wire
-          </Link>
-          <Link
-            to="/settings"
-            className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Open Settings"
-            title="Settings"
-          >
-            <SettingsIcon className="size-4" aria-hidden="true" />
-          </Link>
           <button
             type="button"
             disabled={!messages.length || clearing}
