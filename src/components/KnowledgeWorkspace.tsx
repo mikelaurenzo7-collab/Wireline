@@ -1,5 +1,15 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { Database, FileText, Loader2, Plus, ShieldCheck, SlidersHorizontal, Trash2, Brain, User } from "lucide-react";
+import {
+  Database,
+  FileText,
+  Loader2,
+  Plus,
+  ShieldCheck,
+  SlidersHorizontal,
+  Trash2,
+  Brain,
+  User,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import { authFetch, safeJson } from "../lib/api";
@@ -7,6 +17,8 @@ import { Badge, Button, EmptyState, Input, Skeleton, Textarea } from "../compone
 import { FormField, StatusNotice } from "../components/molecules";
 import { useAgents } from "../contexts/AgentsContext";
 import type { TrainingSuggestion } from "../types/api";
+
+type LooseRecord = Record<string, unknown>;
 
 type Config = {
   directives?: Array<{ content?: string }>;
@@ -309,22 +321,32 @@ export default function KnowledgeWorkspace() {
   const tonePanel = <ToneCard personality={config.personality} loading={loading} />;
   const sourcesPanel = <SourcesCard loading={loading} />;
 
+  const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
+  const [recentOutcomes, setRecentOutcomes] = useState<unknown[]>([]);
+
   // --- Training Intelligence / Flywheel (MOAT + extreme usefulness elevation) ---
   // Mix real outcomes (from /api/calls) with smart suggestions. Full LLM extraction in later tranche.
-  const derivedFromOutcomes = recentOutcomes.slice(0, 2).map((o: any, i: number) => ({
+  const derivedFromOutcomes = recentOutcomes.slice(0, 2).map((o: unknown, i: number) => ({
     id: `real-${i}`,
-    kind: 'fact' as const,
-    content: (o.summary || 'Outcome captured.').slice(0, 90),
-    agentId: agentId || '',
+    kind: "fact" as const,
+    content: ((o as LooseRecord).summary || "Outcome captured.").slice(0, 90),
+    agentId: agentId || "",
   }));
   const intelligence: TrainingSuggestion[] = [
     ...derivedFromOutcomes,
-    { id: "s1", kind: "directive", content: "Always offer callback within 2 hours if no answer on first attempt.", agentId: agentId || "" },
-    { id: "s2", kind: "personality", content: "Be warm but concise — customers value speed on service calls.", agentId: agentId || "" },
+    {
+      id: "s1",
+      kind: "directive",
+      content: "Always offer callback within 2 hours if no answer on first attempt.",
+      agentId: agentId || "",
+    },
+    {
+      id: "s2",
+      kind: "personality",
+      content: "Be warm but concise — customers value speed on service calls.",
+      agentId: agentId || "",
+    },
   ];
-
-  const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
-  const [recentOutcomes, setRecentOutcomes] = useState<any[]>([]);
 
   // Pull real outcomes for intelligence suggestions (real flywheel)
   useEffect(() => {
@@ -333,7 +355,12 @@ export default function KnowledgeWorkspace() {
       .then((r) => r.json())
       .then((data) => {
         const list = Array.isArray(data?.calls) ? data.calls : [];
-        const forAgent = list.filter((c: any) => c.agentId === agentId || c.agent_id === agentId).slice(0, 3);
+        const forAgent = list
+          .filter(
+            (c: unknown) =>
+              (c as LooseRecord)?.agentId === agentId || (c as LooseRecord)?.agent_id === agentId,
+          )
+          .slice(0, 3);
         setRecentOutcomes(forAgent);
       })
       .catch(() => {});
@@ -380,17 +407,28 @@ export default function KnowledgeWorkspace() {
           <div className="space-y-3">
             {intelligence.map((s) => {
               const isApplied = appliedSuggestions.includes(s.id);
-              const isReal = s.id.startsWith('real-');
+              const isReal = s.id.startsWith("real-");
               return (
                 <div key={s.id} className="rounded-xl border border-border p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex gap-2">
-                      {s.kind === 'fact' && <FileText size={14} className="mt-0.5 text-muted-foreground" />}
-                      {s.kind === 'directive' && <ShieldCheck size={14} className="mt-0.5 text-muted-foreground" />}
-                      {s.kind === 'personality' && <User size={14} className="mt-0.5 text-muted-foreground" />}
+                      {s.kind === "fact" && (
+                        <FileText size={14} className="mt-0.5 text-muted-foreground" />
+                      )}
+                      {s.kind === "directive" && (
+                        <ShieldCheck size={14} className="mt-0.5 text-muted-foreground" />
+                      )}
+                      {s.kind === "personality" && (
+                        <User size={14} className="mt-0.5 text-muted-foreground" />
+                      )}
                       <div>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{s.kind}{isReal ? ' • from call' : ''}</span>
-                        <p className="mt-0.5 leading-snug text-foreground line-clamp-3">{s.content}</p>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          {s.kind}
+                          {isReal ? " • from call" : ""}
+                        </span>
+                        <p className="mt-0.5 leading-snug text-foreground line-clamp-3">
+                          {s.content}
+                        </p>
                       </div>
                     </div>
                     <Button
@@ -403,7 +441,10 @@ export default function KnowledgeWorkspace() {
                       {isApplied ? "Added" : "Add to training"}
                     </Button>
                   </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground">{isReal ? 'Captured from recent outcome' : 'Suggested from patterns'} • one-click trains the fleet</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {isReal ? "Captured from recent outcome" : "Suggested from patterns"} •
+                    one-click trains the fleet
+                  </p>
                 </div>
               );
             })}
