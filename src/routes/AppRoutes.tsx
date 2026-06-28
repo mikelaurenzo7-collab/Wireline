@@ -56,7 +56,9 @@ export default function AppRoutes() {
         <Route path="/ops" element={<Navigate to="/call-logs" replace />} />
         <Route path="/ops/*" element={<Navigate to="/call-logs" replace />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
-        <Route path="/actions" element={<Navigate to="/call-logs" replace />} />
+        {/* Actions/Wire was the integrations surface — route it to Connections. */}
+        <Route path="/actions" element={<Navigate to="/connections" replace />} />
+        <Route path="/actions/*" element={<Navigate to="/connections" replace />} />
         <Route path="/nexus" element={<Navigate to="/connections" replace />} />
         <Route path="/wires" element={<Navigate to="/connections" replace />} />
 
