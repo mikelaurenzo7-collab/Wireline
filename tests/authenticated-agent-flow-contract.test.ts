@@ -15,21 +15,22 @@ describe("authenticated agent flow", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
 
-    // Minimal rail: Studio icon + agent icons + settings
-    expect(shell).toContain('aria-label="Agent workspace navigation"');
-    expect(shell).toContain("Studio");
+    // Minimal rail: logo + settings; agents live in the top/bottom switcher bar
+    expect(shell).toContain('aria-label="Workspace navigation"');
+    expect(shell).toContain("StudioAgentBar");
+    expect(shell).toContain('aria-label="Agent switcher"');
     expect(shell).toContain("Settings");
 
     // Open canvas for creation when no agents
     expect(studioV2).toContain("Wire one.");
     expect(studioV2).toContain("Start with a brief");
 
-    // Agent cards in canvas + full per-agent workspace (chat + grouped Brain/World Connections/Record + integrations inside)
-    expect(studioV2).toContain("Your agents");
+    // Chat-first canvas + per-agent workspace panels behind view=workspace
+    expect(studioV2).toContain("view=workspace");
     expect(studioV2).toContain("Workspace for");
     expect(studioV2).toContain("World Connections");
     expect(studioV2).toContain("Brain");
-    expect(studioV2).toContain("per this workspace only");
+    expect(studioV2).toContain("per this agent's workspace");
 
     expect(createDialog).toContain("Create agent");
 
@@ -58,14 +59,14 @@ describe("authenticated agent flow", () => {
   });
 
   it("keeps the canvas and per-agent workspaces aligned with create + full agent workspace model", () => {
+    const shell = read("src/components/WorkspaceShell.tsx");
     const studioV2 = read("src/components/StudioWorkspaceV2.tsx");
     const _studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
     const _workroom = read("src/components/StudioWorkroom.tsx");
     const agentStudioHome = read("src/pages/AgentStudioHome.tsx");
 
     expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("Wire one.");
-    expect(studioV2).toContain("Canvas");
-    expect(studioV2).toContain("Your agents");
+    expect(shell).toContain("Canvas");
     expect(studioV2).toContain("Workspace for");
     expect(studioV2).toContain("Memory");
     expect(studioV2).toContain("World Connections");

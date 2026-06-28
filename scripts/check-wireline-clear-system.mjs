@@ -525,8 +525,8 @@ mustInclude(
 mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /Agent workspace navigation/,
-  "rail is minimal agent workspace nav",
+  /Workspace navigation/,
+  "rail is minimal workspace nav (logo + settings)",
 );
 mustInclude(
   "src/components/WorkspaceShell.tsx",
@@ -537,15 +537,15 @@ mustInclude(
 mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /agent\.name\?\.\[0\]|size-8 place-items-center rounded-full/,
-  "rail must show per-agent icons (initials in circles) for each created agent",
+  /StudioAgentBar|AgentSwitcherPill/,
+  "agents switch in the top/bottom bar — not stacked in the side rail",
 );
-// Agents appear as icons in rail + cards in canvas. Each agent workspace contains memory/training/knowledge.
+// Canvas is chat-first; per-agent workspace panels live behind view=workspace.
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /Canvas|Your agents|Workspace for|Memory|Training & Knowledge/,
-  "canvas shows agent cards; per-agent workspace holds memory, training, knowledge, outcomes",
+  /view=workspace|Workspace for|Memory|World Connections/,
+  "canvas opens composer; per-agent workspace holds memory, training, knowledge, outcomes",
 );
 mustInclude(
   "src/pages/AgentStudioHome.tsx",
@@ -1101,14 +1101,14 @@ mustExclude(
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /StudioWorkroom|WorkspaceShell|Canvas|Your agents/,
-  "Studio canvas uses shell and shows agent cards + per-agent full workspace",
+  /StudioWorkroom|view=workspace/,
+  "Studio canvas is chat-first with optional per-agent workspace panels",
 );
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /Workspace for|World Connections|Your agents/,
-  "Studio canvas must support per-agent full workspace with grouped sections including integrations",
+  /Workspace for|World Connections/,
+  "Studio workspace view must support grouped sections including integrations",
 );
 mustExclude(
   "src/components/StudioWorkspaceV2.tsx",

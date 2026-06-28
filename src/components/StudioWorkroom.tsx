@@ -50,11 +50,15 @@ export default function StudioWorkroom({
   agentName,
   initialCommand,
   onBack,
+  backLabel = "Agent workspace",
+  layout = "standalone",
 }: {
   agentId: string;
   agentName: string;
   initialCommand?: string;
   onBack: () => void;
+  backLabel?: string;
+  layout?: "standalone" | "canvas" | "split";
 }) {
   const [messages, setMessages] = useState<StudioMessage[]>([]);
   const [draft, setDraft] = useState(initialCommand || "");
@@ -199,35 +203,54 @@ export default function StudioWorkroom({
           ? "Writing"
           : "Working";
 
+  const clearButton = (
+    <button
+      type="button"
+      disabled={!messages.length || clearing}
+      onClick={() => void clearConversation()}
+      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      aria-label="Clear conversation"
+    >
+      {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+    </button>
+  );
+
   return (
-    <main className="flex h-full min-h-0 flex-col bg-background">
-      <header className="relative flex h-12 shrink-0 items-center border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="z-10 grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Back to Studio overview"
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-        </button>
-        <div className="pointer-events-none absolute left-1/2 max-w-[42vw] -translate-x-1/2 text-center wl-centered-header sm:max-w-md">
-          <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-            {agentName}
-          </p>
-          <p className="text-[10px] text-muted-foreground">Direct the work.</p>
-        </div>
-        <div className="z-10 ml-auto flex items-center gap-1.5">
+    <main
+      className={`flex h-full min-h-0 flex-col bg-background ${layout === "canvas" ? "relative" : ""}`}
+    >
+      {layout === "standalone" ? (
+        <header className="relative flex h-12 shrink-0 items-center border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4">
           <button
             type="button"
-            disabled={!messages.length || clearing}
-            onClick={() => void clearConversation()}
-            className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Clear conversation"
+            onClick={onBack}
+            className="z-10 grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={backLabel}
           >
-            {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            <ArrowLeft size={16} aria-hidden="true" />
           </button>
+          <div className="pointer-events-none absolute left-1/2 max-w-[42vw] -translate-x-1/2 text-center wl-centered-header sm:max-w-md">
+            <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+              {agentName}
+            </p>
+            <p className="text-[10px] text-muted-foreground">Direct the work.</p>
+          </div>
+          <div className="z-10 ml-auto flex items-center gap-1.5">{clearButton}</div>
+        </header>
+      ) : layout === "split" ? (
+        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border/60 px-3 sm:px-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {backLabel} →
+          </button>
+          {clearButton}
         </div>
-      </header>
+      ) : (
+        <div className="absolute right-3 top-2 z-10 sm:right-4">{clearButton}</div>
+      )}
 
       {error ? (
         <div
@@ -420,17 +443,17 @@ export default function StudioWorkroom({
                     <MessageSquareText size={12} />
                   )}
                   <span>
-                    {(o as LooseRecord).channel || (o as LooseRecord).direction || "call"}
+                    {String((o as LooseRecord).channel || (o as LooseRecord).direction || "call")}
                   </span>
                   <span className="rounded bg-muted px-1.5 py-px text-[9px]">
-                    {(o as LooseRecord).outcomeTag || (o as LooseRecord).tag || "outcome"}
+                    {String((o as LooseRecord).outcomeTag || (o as LooseRecord).tag || "outcome")}
                   </span>
                 </div>
                 <div className="mt-1 leading-snug text-foreground line-clamp-2">
-                  {(o as LooseRecord).summary || "Call handled."}
+                  {String((o as LooseRecord).summary || "Call handled.")}
                 </div>
                 <div className="mt-1 text-[12px] text-muted-foreground">
-                  Next: {(o as LooseRecord).next || "Review in ledger"}
+                  Next: {String((o as LooseRecord).next || "Review in ledger")}
                 </div>
                 <div className="mt-1 text-[10px] text-primary">Brief agent from this outcome</div>
               </button>

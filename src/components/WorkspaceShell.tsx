@@ -1,15 +1,14 @@
 import { type ReactNode } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Bot, PlayCircle, Settings } from "lucide-react";
+import { ArrowLeft, Bot, Layers, Plus, Settings } from "lucide-react";
 
 import WirelineMark from "./brand/WirelineMark";
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import { useAgents } from "../contexts/AgentsContext";
-
-const primaryNavigation = [{ href: "/studio", label: "Studio", icon: PlayCircle }] as const;
+import type { WorkspaceAgentSummary } from "../contexts/AgentsContext";
 
 const nativeNavigation = [
-  { href: "/studio", label: "Studio", icon: PlayCircle },
+  { href: "/studio", label: "Studio", icon: Layers },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -84,17 +83,218 @@ function RailItem({
   );
 }
 
-function DesktopRail({ pathname }: { pathname: string }) {
-  const { agents } = useAgents();
-  const [searchParams] = useSearchParams();
-  const activeAgentId = searchParams.get("agent");
+function AgentSwitcherPill({
+  agent,
+  active,
+  compact = false,
+}: {
+  agent: WorkspaceAgentSummary;
+  active: boolean;
+  compact?: boolean;
+}) {
+  const initial = agent.name?.[0]?.toUpperCase() || "A";
+  return (
+    <Link
+      to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+      aria-label={agent.name}
+      aria-current={active ? "page" : undefined}
+      title={agent.name}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-medium transition-all active:scale-[0.98] min-h-[32px] ${
+        active
+          ? "border-primary/40 bg-primary/10 text-foreground ring-1 ring-primary/25"
+          : "border-border/70 bg-background text-muted-foreground hover:border-primary/25 hover:bg-muted hover:text-foreground"
+      } ${compact ? "px-1.5" : "sm:px-2.5"}`}
+    >
+      <span
+        className={`grid size-5 place-items-center rounded-full text-[9px] font-semibold ${
+          active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground/80"
+        }`}
+      >
+        {initial}
+      </span>
+      {!compact ? (
+        <span className="hidden max-w-[96px] truncate sm:inline">{agent.name}</span>
+      ) : null}
+    </Link>
+  );
+}
+
+function StudioAgentBar({
+  agents,
+  activeAgentId,
+  workspaceView,
+}: {
+  agents: WorkspaceAgentSummary[];
+  activeAgentId: string | null;
+  workspaceView: boolean;
+}) {
+  const activeAgent = activeAgentId ? agents.find((a) => a.id === activeAgentId) : null;
 
   return (
-    <aside
-      aria-label="Agent workspace navigation"
-      className="hidden h-[100dvh] w-[72px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-1 lg:py-3"
+    <div
+      className="studio-agent-bar border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
+      role="toolbar"
+      aria-label="Studio controls"
     >
-      {/* Studio / Canvas icon - entry to open canvas / creation */}
+      <div className="flex items-center gap-2 px-3 py-2 sm:px-4">
+        <Link
+          to="/studio"
+          className="shrink-0 font-semibold tracking-[-0.01em] text-foreground/90 text-xs sm:text-sm"
+          aria-label="Studio canvas"
+        >
+          Canvas
+        </Link>
+
+        <div
+          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Agents"
+        >
+          {agents.map((agent) => (
+            <AgentSwitcherPill key={agent.id} agent={agent} active={activeAgentId === agent.id} />
+          ))}
+          <Link
+            to="/studio?create=1"
+            aria-label="Wire another agent"
+            title="Wire another agent"
+            className="inline-flex shrink-0 items-center justify-center rounded-full border border-dashed border-border/80 bg-background px-2 py-1 text-muted-foreground transition-colors hover:border-primary/35 hover:bg-muted hover:text-foreground min-h-[32px] min-w-[32px]"
+          >
+            <Plus size={14} aria-hidden="true" />
+          </Link>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          {activeAgent ? (
+            <Link
+              to={
+                workspaceView
+                  ? `/studio?agent=${encodeURIComponent(activeAgent.id)}`
+                  : `/studio?agent=${encodeURIComponent(activeAgent.id)}&view=workspace`
+              }
+              aria-label={workspaceView ? "Back to canvas chat" : "Open agent workspace"}
+              className={`hidden sm:inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors min-h-[32px] ${
+                workspaceView
+                  ? "border-primary/30 bg-primary/5 text-primary"
+                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Layers size={13} aria-hidden="true" />
+              {workspaceView ? "Chat" : "Workspace"}
+            </Link>
+          ) : null}
+          <Link
+            to="/settings"
+            aria-label="Settings"
+            className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
+          >
+            <Settings size={16} aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+
+      {activeAgent ? (
+        <div className="border-t border-border/40 px-3 py-1 text-[10px] text-muted-foreground sm:px-4">
+          <span className="font-medium text-foreground/80">{activeAgent.name}</span>
+          <span className="mx-1.5 opacity-40">·</span>
+          <span>Direct the work. Wire it.</span>
+        </div>
+      ) : (
+        <div className="border-t border-border/40 px-3 py-1 text-[10px] text-muted-foreground sm:px-4">
+          Select an agent or wire a new one.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StudioMobileHeader({
+  agents,
+  activeAgentId,
+  workspaceView,
+}: {
+  agents: WorkspaceAgentSummary[];
+  activeAgentId: string | null;
+  workspaceView: boolean;
+}) {
+  const activeAgent = activeAgentId ? agents.find((a) => a.id === activeAgentId) : null;
+
+  return (
+    <header className="flex items-center justify-between gap-2 border-b border-border/50 bg-background/95 px-3 py-2 backdrop-blur lg:hidden">
+      <div className="min-w-0">
+        <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-muted-foreground">
+          Canvas
+        </p>
+        <p className="truncate text-sm font-semibold tracking-[-0.01em]">
+          {activeAgent?.name || "Select an agent"}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        {activeAgent ? (
+          <Link
+            to={
+              workspaceView
+                ? `/studio?agent=${encodeURIComponent(activeAgent.id)}`
+                : `/studio?agent=${encodeURIComponent(activeAgent.id)}&view=workspace`
+            }
+            className="rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted"
+          >
+            {workspaceView ? "Chat" : "Workspace"}
+          </Link>
+        ) : null}
+        <Link
+          to="/settings"
+          aria-label="Settings"
+          className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+        >
+          <Settings size={16} aria-hidden="true" />
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+function MobileStudioAgentBar({
+  agents,
+  activeAgentId,
+}: {
+  agents: WorkspaceAgentSummary[];
+  activeAgentId: string | null;
+}) {
+  if (!agents.length) return null;
+
+  return (
+    <nav
+      aria-label="Agent switcher"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
+    >
+      <div className="mx-auto flex max-w-2xl items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {agents.map((agent) => (
+            <AgentSwitcherPill
+              key={agent.id}
+              agent={agent}
+              active={activeAgentId === agent.id}
+              compact
+            />
+          ))}
+        </div>
+        <Link
+          to="/studio?create=1"
+          aria-label="Wire another agent"
+          className="grid size-9 shrink-0 place-items-center rounded-full border border-dashed border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <Plus size={16} aria-hidden="true" />
+        </Link>
+      </div>
+    </nav>
+  );
+}
+
+function DesktopRail({ pathname }: { pathname: string }) {
+  return (
+    <aside
+      aria-label="Workspace navigation"
+      className="hidden h-[100dvh] w-[56px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-1 lg:py-3"
+    >
       <Link
         to="/studio"
         aria-label="Studio"
@@ -103,36 +303,6 @@ function DesktopRail({ pathname }: { pathname: string }) {
       >
         <WirelineMark className="h-[19px] w-[19px] shrink-0" />
       </Link>
-
-      <nav className="mt-4 flex w-full flex-col items-center gap-1 px-0.5" aria-label="Agents">
-        {primaryNavigation.map((item) => (
-          <RailItem key={item.href} {...item} active={isActive(pathname, item.href)} />
-        ))}
-
-        {/* Dynamic agent icons - each agent gets its own spot in rail */}
-        {agents.length > 0 && (
-          <div className="mt-2 w-full border-t border-border/40 pt-2 flex flex-col items-center gap-1.5">
-            {agents.map((agent) => {
-              const isActiveAgent = activeAgentId === agent.id;
-              return (
-                <Link
-                  key={agent.id}
-                  to={`/studio?agent=${agent.id}`}
-                  aria-label={agent.name}
-                  title={agent.name}
-                  className={`grid size-8 place-items-center rounded-full text-[10px] font-semibold transition-all active:scale-[0.96] ${
-                    isActiveAgent
-                      ? "bg-primary text-primary-foreground ring-1 ring-primary/40"
-                      : "bg-muted text-foreground/80 hover:bg-muted/70 hover:text-foreground"
-                  }`}
-                >
-                  {agent.name?.[0]?.toUpperCase() || "A"}
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </nav>
 
       <nav
         className="mt-auto flex w-full justify-center border-t border-border/50 pt-2.5"
@@ -197,22 +367,46 @@ export default function WorkspaceShell({
   const showHomeLink = !isHomeRoute && !isStudioRoute;
 
   const studioAgentId = isStudioRoute ? params.get("agent") : null;
-  const studioAgent = studioAgentId ? agents.find((a) => a && a.id === studioAgentId) : null;
+  const studioWorkspaceView = isStudioRoute && params.get("view") === "workspace";
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
       <a className="wl-skip-link" href="#workspace-main">
         Skip to content
       </a>
-      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[80px_minmax(0,1fr)]">
+      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[56px_minmax(0,1fr)]">
         <DesktopRail pathname={location.pathname} />
         <main
           id="workspace-main"
           data-wireline-route={location.pathname}
-          className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pt-2 sm:px-6 sm:pt-3 lg:px-8 lg:pb-6 lg:pt-3 xl:px-10 ${
-            nativeAppShell ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]" : "pb-4 sm:pb-5"
+          className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden ${
+            isStudioRoute
+              ? "px-0 pt-0 lg:px-0 lg:pt-0"
+              : "px-4 pt-2 sm:px-6 sm:pt-3 lg:px-8 lg:pt-3 xl:px-10"
+          } ${
+            isStudioRoute && !nativeAppShell
+              ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
+              : nativeAppShell
+                ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
+                : "pb-4 sm:pb-5 lg:pb-6"
           }`}
         >
+          {isStudioRoute ? (
+            <>
+              <div className="hidden lg:block">
+                <StudioAgentBar
+                  agents={agents}
+                  activeAgentId={studioAgentId}
+                  workspaceView={studioWorkspaceView}
+                />
+              </div>
+              <StudioMobileHeader
+                agents={agents}
+                activeAgentId={studioAgentId}
+                workspaceView={studioWorkspaceView}
+              />
+            </>
+          ) : null}
           {!isStudioRoute && (title || eyebrow || action) && (
             <div className="relative mb-4 pb-3 lg:mb-5">
               {showHomeLink ? (
@@ -252,35 +446,20 @@ export default function WorkspaceShell({
               isStudioRoute ? "overflow-hidden" : ""
             } ${contentClassName}`}
           >
-            {isStudioRoute && (
-              <div className="thin-studio-bar sticky top-0 z-10 border-b border-border/50 bg-background/95 px-3 py-1 text-[10px] text-muted-foreground flex items-center justify-between gap-2 backdrop-blur supports-[backdrop-filter]:bg-background/90">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="font-semibold tracking-[0.015em] text-foreground/85">
-                    Studio
-                  </span>
-                  {studioAgent ? (
-                    <span
-                      title={studioAgent.name}
-                      className="max-w-[148px] truncate rounded-full bg-muted/70 px-2 py-px text-[9px] font-medium text-foreground/75 tabular-nums"
-                    >
-                      {studioAgent.name || studioAgentId?.slice(0, 8)}
-                    </span>
-                  ) : (
-                    <span className="text-[9px] opacity-60">Select or create an agent</span>
-                  )}
-                </div>
-                <span className="shrink-0 text-primary font-medium tracking-[0.01em]">
-                  Direct the work. Wire it.
-                </span>
-              </div>
-            )}
-            <div className="wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col">
+            <div
+              className={`wl-workspace-content-inner mx-auto flex min-h-full w-full flex-col ${
+                isStudioRoute ? "max-w-none" : "max-w-[1480px]"
+              }`}
+            >
               {children}
             </div>
           </div>
         </main>
       </div>
       {!nativeAppShell ? <MobileBrowserUtilities /> : null}
+      {isStudioRoute && !nativeAppShell ? (
+        <MobileStudioAgentBar agents={agents} activeAgentId={studioAgentId} />
+      ) : null}
       {nativeAppShell ? <NativeDock pathname={location.pathname} /> : null}
     </div>
   );
