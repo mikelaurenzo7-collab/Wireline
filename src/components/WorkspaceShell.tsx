@@ -166,9 +166,8 @@ function StudioAgentBar({
   );
 
   return (
-    <div
+    <header
       className="studio-agent-bar border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
-      role="toolbar"
       aria-label="Studio controls"
     >
       <div className="flex items-center gap-2 px-3 py-2 sm:px-4">
@@ -184,6 +183,7 @@ function StudioAgentBar({
           ref={listRef}
           role="tablist"
           aria-label="Agents"
+          aria-orientation="horizontal"
           onKeyDown={handleKeyDown}
           className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
@@ -246,7 +246,7 @@ function StudioAgentBar({
           Select an agent or wire a new one.
         </div>
       )}
-    </div>
+    </header>
   );
 }
 
@@ -279,7 +279,7 @@ function StudioMobileHeader({
                 ? `/studio?agent=${encodeURIComponent(activeAgent.id)}`
                 : `/studio?agent=${encodeURIComponent(activeAgent.id)}&view=workspace`
             }
-            className="rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
           >
             {workspaceView ? "Chat" : "Workspace"}
           </Link>
@@ -319,6 +319,7 @@ function BottomStudioAgentBar({
           ref={listRef}
           role="tablist"
           aria-label="Agents"
+          aria-orientation="horizontal"
           onKeyDown={handleKeyDown}
           className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >

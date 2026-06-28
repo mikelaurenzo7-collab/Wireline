@@ -251,7 +251,7 @@ export default function OverviewPage() {
                       <Link
                         to={`/studio?agent=${enc}`}
                         className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
-                        aria-label={`Open ${agent.name} in workroom`}
+                        aria-label={`Open ${agent.name} in Studio`}
                       >
                         Workroom <PlayCircle size={12} aria-hidden="true" />
                       </Link>

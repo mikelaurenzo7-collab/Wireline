@@ -50,7 +50,6 @@ export default function StudioAgentWorkspacePanel({
     `Hello, this is ${agentName || "your agent"}. How can I help?`,
   );
   const [setupKnowledge, setSetupKnowledge] = useState("");
-  const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [applyingSetup, setApplyingSetup] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
@@ -174,7 +173,6 @@ export default function StudioAgentWorkspacePanel({
         if (!knowledgeResponse.ok) throw new Error("Knowledge could not be saved.");
       }
 
-      setIsSetupComplete(true);
       setSetupNotice("Setup applied. Voice, personality, and knowledge are saved for this agent.");
     } catch (reason) {
       setSetupError(reason instanceof Error ? reason.message : "Setup could not be applied.");
@@ -186,18 +184,11 @@ export default function StudioAgentWorkspacePanel({
   return (
     <div className="min-h-0 flex-1 overflow-y-auto border-t border-border/60">
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-8 sm:py-8">
-        <div className="flex items-baseline justify-between">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">Workspace for {agentName}</h2>
-            <p className="text-sm text-muted-foreground">
-              Everything for this agent lives here. Setup or manage anytime.
-            </p>
-          </div>
-          <div
-            className={`text-[10px] px-2 py-0.5 rounded ${isSetupComplete ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-          >
-            Setup status: {isSetupComplete ? "Complete" : "In progress"}
-          </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Workspace for {agentName}</h2>
+          <p className="text-sm text-muted-foreground">
+            Everything for this agent lives here. Setup or manage anytime.
+          </p>
         </div>
 
         <div className="studio-card p-6">

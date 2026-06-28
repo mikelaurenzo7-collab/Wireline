@@ -136,11 +136,28 @@ export default function StudioWorkspaceV2() {
       (current) => {
         const next = new URLSearchParams(current);
         next.set("agent", resolvedAgentId);
+        if (!requestedId) {
+          next.delete("command");
+          next.delete("commandNonce");
+        }
         return next;
       },
       { replace: true },
     );
   }, [agents, loading, requestedId, resolvedAgentId, setParams]);
+
+  useEffect(() => {
+    if (!params.get("command") && !params.get("commandNonce")) return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("command");
+        next.delete("commandNonce");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [active?.id, params, setParams]);
 
   useEffect(() => {
     if (active?.id) writeStudioLastAgentId(active.id);
@@ -194,6 +211,7 @@ export default function StudioWorkspaceV2() {
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div className={`min-h-0 flex-1 ${workspaceView ? "max-h-[48dvh] lg:max-h-[52dvh]" : ""}`}>
         <StudioWorkroom
+          key={active.id}
           ref={workroomRef}
           agentId={active.id}
           agentName={active.name}

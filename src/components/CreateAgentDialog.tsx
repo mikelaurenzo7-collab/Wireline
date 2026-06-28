@@ -69,6 +69,8 @@ export default function CreateAgentDialog({
       (current) => {
         const next = new URLSearchParams(current);
         next.delete("create");
+        next.delete("brief");
+        next.delete("posture");
         return next;
       },
       { replace: true },

@@ -145,6 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const onSessionExpired = (_event: Event) => {
       localStorage.removeItem(LEGACY_STORAGE_KEY);
+      clearStudioLastAgentId();
       setSession(null);
       setUser(null);
     };
