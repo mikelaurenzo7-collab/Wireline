@@ -492,7 +492,7 @@ export default function KnowledgeWorkspace() {
         </StatusNotice>
       ) : null}
 
-      <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(170px,.85fr)_minmax(170px,.85fr)_minmax(180px,.9fr)_minmax(260px,1.1fr)_minmax(350px,1.4fr)] xl:gap-6">
+      <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(148px,.8fr)_minmax(148px,.8fr)_minmax(162px,.85fr)_minmax(228px,1.05fr)_minmax(300px,1.35fr)] xl:gap-4">
         <div className="hidden min-h-0 xl:block">{factsPanel}</div>
         <div className="hidden min-h-0 xl:block">{guidancePanel}</div>
         <div className="hidden min-h-0 xl:flex xl:flex-col xl:gap-4">
