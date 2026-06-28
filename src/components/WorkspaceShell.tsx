@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Bot,
@@ -13,6 +13,7 @@ import {
 
 import WirelineMark from "./brand/WirelineMark";
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
+import { useAgents } from "../contexts/AgentsContext";
 
 const primaryNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
@@ -177,10 +178,15 @@ export default function WorkspaceShell({
   contentClassName?: string;
 }) {
   const location = useLocation();
+  const [params] = useSearchParams();
+  const { agents } = useAgents();
   const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
   const isHomeRoute = location.pathname === "/overview";
   const nativeAppShell = isNativeAppShell();
   const showHomeLink = !isHomeRoute && !isStudioRoute;
+
+  const studioAgentId = isStudioRoute ? params.get("agent") : null;
+  const studioAgent = studioAgentId ? agents.find((a) => a && a.id === studioAgentId) : null;
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
@@ -236,9 +242,25 @@ export default function WorkspaceShell({
             } ${contentClassName}`}
           >
             {isStudioRoute && (
-              <div className="thin-studio-bar border-b border-border/50 bg-background/95 px-4 py-1 text-[10px] text-muted-foreground flex items-center gap-2 sticky top-0 z-10">
-                <span>Studio</span>
-                <span className="text-primary">• Direct the work.</span>
+              <div className="thin-studio-bar sticky top-0 z-10 border-b border-border/50 bg-background/95 px-3 py-1 text-[10px] text-muted-foreground flex items-center justify-between gap-2 backdrop-blur supports-[backdrop-filter]:bg-background/90">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="font-semibold tracking-[0.015em] text-foreground/85">
+                    Studio
+                  </span>
+                  {studioAgent ? (
+                    <span
+                      title={studioAgent.name}
+                      className="max-w-[148px] truncate rounded-full bg-muted/70 px-2 py-px text-[9px] font-medium text-foreground/75 tabular-nums"
+                    >
+                      {studioAgent.name || studioAgentId?.slice(0, 8)}
+                    </span>
+                  ) : (
+                    <span className="text-[9px] opacity-60">Select or create an agent</span>
+                  )}
+                </div>
+                <span className="shrink-0 text-primary font-medium tracking-[0.01em]">
+                  Direct the work. Wire it.
+                </span>
               </div>
             )}
             <div className="wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col">
