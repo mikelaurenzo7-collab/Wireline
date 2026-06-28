@@ -63,7 +63,7 @@ export async function validateDirectorChatModelSelection(
   if (!openRouterAllowedForEntitlements(planId, options?.email)) {
     return {
       ok: false,
-      error: "OpenRouter models require a Pro plan or higher",
+      error: "OpenRouter models require a Business or Enterprise plan",
       status: 403,
     };
   }

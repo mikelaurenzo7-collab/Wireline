@@ -130,7 +130,7 @@ These messages must stay aligned across:
 | Billing settings | "Start free. Fund live work." |
 | Conversation Balance API | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts` |
 | Stripe catalog | Product names: Conversation Balance, Wireline Personal/Team/Business/Enterprise |
-| ChatGPT MCP widgets | Wireline Mono tokens via `src/lib/wireline-mcp-widget-styles.ts` |
+| ChatGPT MCP widgets | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts` |
 | iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json` |
 
 ## Still required before live rollout

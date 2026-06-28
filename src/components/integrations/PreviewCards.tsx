@@ -147,7 +147,9 @@ export function SlackPreviewCard() {
             <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed wl-preview-slack-message">
               🔥 <strong>Qualified lead:</strong> Jennifer Park, ACME Corp
               <br />
-              <span className="wl-preview-slack-quote">&quot;Interested in the Pro plan&quot;</span>
+              <span className="wl-preview-slack-quote">
+                &quot;Interested in the Business plan&quot;
+              </span>
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               {["👀 1", "⚡ 2"].map((r) => (

@@ -330,8 +330,8 @@ mustInclude(
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
   androidApp,
-  /Agents for every conversation/,
-  "Android sign-in must use agent-forward product copy",
+  /Your phone, finally answering for you\./,
+  "Android sign-in must use the Letterpress landing promise",
 );
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt",

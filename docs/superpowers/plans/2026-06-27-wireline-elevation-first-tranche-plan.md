@@ -4,12 +4,12 @@
 
 **Goal:** Productize the #1 data moat (Outcome Ledger + Training Flywheel) and elevate the core daily usefulness surfaces (Train + Run/Studio) while delivering supporting business surface polish and design system foundations. This tranche delivers visible extreme usefulness and makes the "one agent fleet" moat tangible.
 
-**Architecture:** Build on existing StudioWorkroom proposals, KnowledgeWorkspace cards, outcome structures, and token system. Server remains source of truth. Add structured suggestions and ledger views. Keep all changes inside Wireline Mono.
+**Architecture:** Build on existing StudioWorkroom proposals, KnowledgeWorkspace cards, outcome structures, and token system. Server remains source of truth. Add structured suggestions and ledger views. Keep all changes inside Wireline Letterpress.
 
 **Tech Stack:** React 19 + Vite, TypeScript, existing atoms/molecules, Drizzle/Postgres, current API patterns, design tokens pipeline.
 
 ## Global Constraints
-- Strictly Wireline Mono (no color/gradient deviations).
+- Strictly Wireline Letterpress (no color/gradient deviations).
 - All changes must pass `npm run verify` and `npm run verify:full`.
 - Preserve Create → Train → Run model and Conversation Balance economics.
 - Server-owned logic, tenant scoping, contracts.

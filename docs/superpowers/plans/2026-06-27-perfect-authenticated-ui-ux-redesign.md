@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-27 (Updated Masterclass Redesign)
 **Status:** COMPLETE — First merge done; final polish + thin agent bar + wire branding + recipe rename + fixes + contracts green; second merge pending final validation.
-**Goal:** Masterclass redesign of authenticated pages for a professional, consistent, polished, non-chaotic, flawless experience. Persistent left side rail (DesktopRail) on *every* page including Studio. Clear, logical IA and routing that makes Create → Train → Run obvious and seamless. Consistent page structure using WorkspaceShell everywhere. User flows are frictionless, purposeful, and reinforce the product model. Pages feel like one cohesive, premium system under Wireline Mono. No "loses side rail", no inconsistencies, no amateur chaos. Public pages untouched. Keep exact current colors (warm off-white canvas, dark neutrals, black primary action – no third color needed for purity; status colors as-is for function).
+**Goal:** Masterclass redesign of authenticated pages for a professional, consistent, polished, non-chaotic, flawless experience. Persistent left side rail (DesktopRail) on *every* page including Studio. Clear, logical IA and routing that makes Create → Train → Run obvious and seamless. Consistent page structure using WorkspaceShell everywhere. User flows are frictionless, purposeful, and reinforce the product model. Pages feel like one cohesive, premium system under Wireline Letterpress. No "loses side rail", no inconsistencies, no amateur chaos. Public pages untouched. Keep current Letterpress colors: warm paper canvas, dark neutrals, forest green primary action, and status colors only for meaning.
 
 This addresses the broken structure: Studio bypassing shell, chaotic layouts, poor IA, inconsistent navigation/headers/content, sloppy feel despite strong design system and prior elevation work (flywheel, ledger, responsive).
 
@@ -49,7 +49,7 @@ This addresses the broken structure: Studio bypassing shell, chaotic layouts, po
   - Context: Agent always known. Navigation between surfaces preserves agent.
   - Clear model language everywhere: "Create one.", "Train it.", "Run the work.", "Outcomes train the fleet."
 - **Aesthetics & Polish (Keep System, Master the Structure):**
-  - Exact current Wireline Mono colors/tokens (no change unless adding very subtle third accent for highlights if it serves function – recommend sticking to pure for now: canvas off-white, surfaces white/subtle gray, text near-black, primary black, status for meaning).
+  - Exact current Wireline Letterpress colors/tokens: warm paper canvas, white/subtle surfaces, near-black text, forest green primary action, and status colors for meaning.
   - Consistent everything: studio-card, wl- classes, spacing (4px rhythm), type scale, elevation, radius.
   - Professional: Tight hierarchy, purposeful whitespace, no amateur layouts (no random full-h, no lost rails, consistent headers).
   - Responsive (from prior): Mobile-first stacking, 44px targets, safe-areas, fluid on large desktop.
@@ -125,7 +125,7 @@ All inside shell for consistency. Use +DENSE for ops, consistent elevation.
 - Onboarding/First run: Create -> train -> run cycle obvious.
 
 **5. Visual & Interaction Polish (Keep System, Master Execution)**
-- Colors: Exact current (no change – Mono purity is strength: #F7F7F4 canvas, whites/subtles, #111 text/action, muted grays, status for meaning. No third color needed; status greens/ambers for function).
+- Colors: Exact current Letterpress: #F7F6F3 canvas, whites/subtles, near-black text, #2B5548 action, muted grays, and status colors for meaning.
 - Everything uses tokens, studio-card, consistent components (Button variants, etc.).
 - States: Every interactive/list has loading (skeletons matching layout), empty (purposeful copy + CTA), error, success.
 - Microcopy: Verbs, specific, model-reinforcing. Banned: vague or old language.
@@ -208,10 +208,10 @@ All inside shell for consistency. Use +DENSE for ops, consistent elevation.
 - Navigation logical, flows seamless (test end-to-end Create-Train-Run-Review).
 - Contracts/tests green and tailored.
 - Professional, consistent, no chaos (use designer pre-ship checklist + heuristics).
-- Colors: Exact current Mono.
+- Colors: Exact current Letterpress.
 - Feels "perfect system" – premium, locked-in.
 
-This is the masterclass redesign. Structure first (shell/routing/IA), then polish flows and tailor contracts. Prior work (ledger, intelligence, responsive, Mono) slots in perfectly.
+This is the masterclass redesign. Structure first (shell/routing/IA), then polish flows and tailor contracts. Prior work (ledger, intelligence, responsive, Letterpress) slots in perfectly.
 
 **Next:** Once approved, execute Phase 1 (Studio + Shell). I can start coding the changes now.
 
@@ -234,12 +234,12 @@ Audit complete, vision brainstormed, plan ready. What do you want to tackle firs
 - Routing: Flat + query params for context (agent, mode, section). Legacy redirects preserved. No hijacks.
 - Consistent patterns: Use shell header everywhere possible. Standard content wrappers (studio-card, grids with responsive). Agent context in header for agent-specific pages.
 - Contracts: Update clear-system check to enforce new consistent structure (persistent rail, integrated studio, no chaos).
-- Visuals: Preserve/enhance Mono (tokens, studio-card, etc.). Professional polish on spacing, hierarchy, states.
+- Visuals: Preserve/enhance Letterpress (tokens, studio-card, etc.). Professional polish on spacing, hierarchy, states.
 - User flows: Seamless navigation, visible model (Create/Train/Run), no dead ends, clear agent context.
 
 **Global Constraints:**
 - Respect existing contracts where possible; update check script and tests as needed.
-- Keep Wireline Mono system (no visual overhaul).
+- Keep Wireline Letterpress system (no visual overhaul).
 - Mobile/desktop responsive (from prior pass).
 - Agent-owned: queries scoped to active agent.
 - Server logic unchanged.
@@ -253,7 +253,7 @@ Audit complete, vision brainstormed, plan ready. What do you want to tackle firs
 - Chaotic feel: varying card styles, padding, headers, nav active states, agent selectors.
 - Routing: flat but studio special-cased; potential for lost context; legacy redirects.
 - IA broken: unclear how overview/studio/training relate; side rail disappears in core work surface.
-- Sloppy: missing states, poor hierarchy in some pages, amateur inconsistencies despite good Mono foundation and prior elevation work (flywheel, ledger).
+- Sloppy: missing states, poor hierarchy in some pages, amateur inconsistencies despite good Letterpress foundation and prior elevation work (flywheel, ledger).
 - Errors: design contract likely complains about structure; user reports many issues.
 
 ## Target Perfect System
@@ -417,14 +417,14 @@ Audit complete, vision brainstormed, plan ready. What do you want to tackle firs
 - Consistent, professional, non-chaotic pages (same header/content patterns).
 - All design contracts pass; no "sloppy" feel.
 - Flawless flows, states, responsiveness.
-- Matches "perfect system" while keeping liked Mono design system.
+- Matches "perfect system" while keeping liked Letterpress design system.
 - User can say "this feels locked in and professional".
 
 ## References
 - Current: AppRoutes, WorkspaceShell, Studio* files, check script, prior elevation spec (flywheel/ledger).
 - Designer patterns: screen codes, shell, no right rail for workroom.
 - Product model: Create → Train → Run.
-- Mono tokens and components.
+- Letterpress tokens and components.
 
 This plan delivers the perfect authenticated foundation. Implement phase by phase with validation. Once done, the product will feel cohesive, professional, and flawless in structure/organization. 
 

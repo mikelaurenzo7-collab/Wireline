@@ -9,7 +9,7 @@
 
 Wireline is the precision operating system for every important conversation. One trained agent fleet handles calls, texts, email, browser context, and follow-up for personal and business users through a single protected runtime.
 
-The current foundation (Wireline Mono design system, chat-first Studio, Create → Train → Run model, Conversation Balance economics, multi-surface clients) is already disciplined and directionally correct. This master design elevates it to an undeniably world-class level: 
+The current foundation (Wireline Letterpress design system, chat-first Studio, Create → Train → Run model, Conversation Balance economics, multi-surface clients) is already disciplined and directionally correct. This master design elevates it to an undeniably world-class level:
 
 - **Extreme usefulness** for target audiences (busy individuals and service business operators).
 - **Defensible MOATs** engineered into product, data, surfaces, and economics.
@@ -21,7 +21,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 
 - **Product model**: Create (short intake) → Train (first-class) → Run (Studio chat + outcomes + Wire actions).
 - **Surfaces**: Web Studio (`src/pages/AgentStudioHome.tsx`, `StudioWorkspaceV2.tsx`, `StudioWorkroom.tsx`, `KnowledgePage.tsx` / `KnowledgeWorkspace.tsx`, `ActionsPage.tsx`), public marketing (PrecisionLanding, Pricing, etc.), browser extension (Wireline Command), iOS/Android (native thin clients), ChatGPT App.
-- **Design system**: Wireline Mono — warm off-white canvas (#F7F7F4), strict neutrals, Inter + JetBrains Mono, 4px rhythm, subtle elevation, token pipeline to all platforms (`design-tokens/wireline.tokens.json`, `src/styles/design-system.css`, `src/constants/brand-colors.ts`).
+- **Design system**: Wireline Letterpress — warm paper canvas (#F7F6F3), forest action green (#2B5548), strict neutrals, Instrument Serif + DM Sans + Space Mono, 4px rhythm, subtle elevation, token pipeline to all platforms (`design-tokens/wireline.tokens.json`, `src/styles/design-system.css`, `src/constants/brand-colors.ts`).
 - **Business**: Personal (free create + top-up Balance), Team ($29), Business ($59), Enterprise (contact). Strong server-owned contracts.
 - **Strengths**: Restraint, chat primacy, training emphasis, verification culture, visual QA baselines.
 - **Opportunities**: Make usefulness visible and extreme; formalize and productize MOATs; raise every surface, narrative, and flow to flawless standards without adding visual noise.
@@ -34,10 +34,10 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 - Elevate branding, marketing, and all UI/UX to timeless, world-class clean/minimal standards (Grok-level attention to every detail).
 - Make the system future-proof (stable contracts, model-agnostic, scalable personal→enterprise).
 - Produce actionable, phased PR plans with verification.
-- Align all surfaces (web + extension + native + ChatGPT) through contracts and the Mono system.
+- Align all surfaces (web + extension + native + ChatGPT) through contracts and the Letterpress system.
 
 ### Non-Goals
-- Introduce bright colors, gradients, heavy illustration, or deviation from Mono restraint.
+- Introduce bright colors, gradients, heavy illustration, or deviation from Letterpress restraint.
 - Duplicate logic across clients (server remains source of truth).
 - Overhaul in one release — phased, verifiable elevation.
 - Generic SaaS patterns (three feature cards, purple heroes, noisy dashboards).
@@ -75,7 +75,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
   - New types for TrainingSuggestion + OutcomeRecord.
   - Responsive perfected (320px phone to 1920+ desktop): widened max for large, fluid grids/skeletons, 44px+ targets, active states, safe-areas.
   - Design check in `npm run verify` passed (Clear System green after tailoring contracts to vision).
-- All design contracts (clear-system.mjs), tests (authenticated flow, product docs) tailored to immaculate clean vision: support intelligence flywheel, outcome ledger as core of usefulness/MOAT, concise model reinforcement, no verbose. Checks and tests now green on polished + elevated state. Cohesive Mono, purposeful additions only.
+- All design contracts (clear-system.mjs), tests (authenticated flow, product docs) tailored to immaculate clean vision: support intelligence flywheel, outcome ledger as core of usefulness/MOAT, concise model reinforcement, no verbose. Checks and tests now green on polished + elevated state. Cohesive Letterpress, purposeful additions only.
 
 **Defensible MOATs (5 Pillars — productize these)**
 1. **Outcome Ledger + Training Flywheel** (data moat): Every conversation produces structured outcomes, summaries, and suggested training updates. Studio surfaces "Intelligence from recent calls" pane that proposes facts/rules/personality tweaks with one-click apply. (Build on existing proposals in StudioWorkroom).
@@ -97,7 +97,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 - Enterprise readiness checklist (in docs).
 - Clear ROI storytelling in marketing.
 
-### 2. Brand Identity & Wireline Mono 2.0 Elevation
+### 2. Brand Identity & Wireline Letterpress 2.0 Elevation
 
 **Core Identity**  
 "Precision. Calm. Useful. One voice."
@@ -118,7 +118,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 ### 3. Marketing Operating System
 
 **Positioning Hierarchy**
-- Hero: "Agents for every conversation."
+- Hero: "Your phone, finally answering for you."
 - Sub: "Calls, texts, follow-up. Handled. One voice. All channels."
 - Proof: Real outcomes, time saved, coverage reliability.
 
@@ -199,7 +199,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 
 - All surfaces consume the same agent config, training, and execution contracts.
 - Browser Command: Explicit context handoff only. Elevated panel polish.
-- Native (iOS/Android): Widget, CallKit/Telecom, shortcuts, notification actions — thin clients. Same Mono tokens where applicable.
+- Native (iOS/Android): Widget, CallKit/Telecom, shortcuts, notification actions — thin clients. Same Letterpress tokens where applicable.
 - ChatGPT App: Private drafting + simulation only until expanded.
 
 ## API / Interface Changes
@@ -217,7 +217,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 
 ## Alternatives Considered
 
-1. **Bigger visual refresh** (new hues, heavier illustration): Rejected — would dilute the Mono strength and current restraint that users and team already respect.
+1. **Bigger visual refresh** (new hues, heavier illustration): Rejected — would dilute the Letterpress strength and current restraint that users and team already respect.
 2. **Separate apps per surface**: Rejected — violates client surfaces contract and moat of unified fleet.
 3. **Unlimited plans instead of Balance**: Rejected — Balance creates transparency, defensibility, and aligned expansion.
 
@@ -232,7 +232,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 - Shell + Studio: persistent rail, thin agent bar with live agent context + "Wire it." puns.
 - Branding: "Wire one.", "Wire Agent", "Wire & Deploy", "Brief it. Train it. Wire it." throughout.
 - Rename complete: AgentWireForm + flows.
-- Responsive mastery: 320px (min-h-44, stacks, safe-area) to 1920+ (2xl-6xl breathing, fluid grids) tailored to Wireline Mono.
+- Responsive mastery: 320px (min-h-44, stacks, safe-area) to 1920+ (2xl-6xl breathing, fluid grids) tailored to Wireline Letterpress.
 - Contracts: Clear System + 9/9 auth flow green; integrated ledger/intel, no right rail.
 - Fixes applied: TS/lint clean, Link/hoist/LooseRecord.
 - All pages unified under shell: comfortable, minimal/clean, purposeful, perfectly functional.
@@ -255,7 +255,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 
 ## Key Decisions
 
-- Stay strictly inside Mono visual language.
+- Stay strictly inside Letterpress visual language.
 - Chat + outcomes as the primary operating model (not dashboard-heavy).
 - Balance model as core economic and moat primitive.
 - Server-owned logic and contracts for all surfaces.
