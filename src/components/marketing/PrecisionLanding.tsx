@@ -1,209 +1,563 @@
 import { useState } from "react";
-import { ArrowRight, Mail, MessageSquareText, PhoneCall } from "lucide-react";
+import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
-import { MARKETING_VOICE } from "../../lib/product-copy";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 
-const channels = [
-  {
-    label: "Calls",
-    title: "Answer in your voice.",
-    body: "Inbound, outbound, handoff, approvals, summaries.",
-    icon: PhoneCall,
-  },
-  {
-    label: "Texts",
-    title: "Keep the thread moving.",
-    body: "Confirmations, status, follow-up, and handoff prompts.",
-    icon: MessageSquareText,
-  },
-  {
-    label: "Email",
-    title: "Close the loop.",
-    body: "Approved replies, recaps, next steps, and clean records.",
-    icon: Mail,
-  },
-] as const;
+// ─── Live call card (hero illustration) ────────────────────────────────────
+function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
+  const personal = {
+    initial: "M",
+    name: "Mike's Agent",
+    role: "Personal assistant",
+    caller: "Unknown · (312) 555-0182",
+    lines: [
+      { from: "caller", text: "Hi, is this Mike? I'm calling about your car warranty." },
+      { from: "agent", text: "Mike isn't available. Can I ask what this is regarding?" },
+      { from: "caller", text: "It's about an expiring warranty offer." },
+      { from: "agent", text: "Got it. I'll let him know. Thanks for calling." },
+    ],
+    tags: ["✓ Handled", "✓ Message sent to Mike", "✓ Caller logged"],
+  };
 
+  const business = {
+    initial: "S",
+    name: "Sarah — Front Desk",
+    role: "Business assistant",
+    caller: "Inbound · (630) 555-0198",
+    lines: [
+      { from: "caller", text: "I'd like to book a service estimate for next week." },
+      { from: "agent", text: "Happy to help! Friday at 11:30 works — should I lock it in?" },
+      { from: "caller", text: "Yes, Friday is perfect." },
+      { from: "agent", text: "Booked. I'll text a confirmation now." },
+    ],
+    tags: ["✓ Booked Fri 11:30", "✓ SMS sent", "✓ Calendar updated"],
+  };
+
+  const data = variant === "personal" ? personal : business;
+
+  return (
+    <div className="relative rounded-[20px] border border-border bg-card p-6 shadow-[0_1px_3px_rgba(0,0,0,.03),_0_8px_32px_rgba(0,0,0,.05)]">
+      {/* Glow */}
+      <div
+        className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-60"
+        style={{ background: "radial-gradient(ellipse at 60% 30%, rgba(43,85,72,.07), transparent 70%)", filter: "blur(40px)" }}
+      />
+      <div className="relative">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center rounded-[10px] bg-primary font-mono text-[12px] font-bold text-primary-foreground">
+              {data.initial}
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold">{data.name}</div>
+              <div className="font-mono text-[10px] uppercase tracking-[.12em] text-primary">
+                On a call
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5">
+            <span className="h-1.5 w-1.5 animate-[pulse_2s_ease-in-out_infinite] rounded-full bg-[#3D9B73]" />
+            <span className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
+              Live
+            </span>
+          </div>
+        </div>
+
+        {/* Waveform */}
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-muted px-4 py-3">
+          <div className="flex h-6 items-end gap-[2px]">
+            {[30, 70, 100, 50, 85, 40, 95, 60].map((h, i) => (
+              <div
+                key={i}
+                className="w-[3px] rounded-sm bg-[#3D9B73]"
+                style={{
+                  height: `${h}%`,
+                  animation: `waveBar 1.2s ease-in-out infinite`,
+                  animationDelay: `${i * 0.1}s`,
+                }}
+              />
+            ))}
+          </div>
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
+            Answering · transcribing
+          </span>
+        </div>
+
+        {/* Transcript */}
+        <div className="mt-4 flex flex-col gap-2">
+          {data.lines.map((line, i) => (
+            <div
+              key={i}
+              className={`max-w-[88%] rounded-[14px] px-[14px] py-[10px] text-[13px] leading-[1.5] ${
+                line.from === "agent"
+                  ? "self-end rounded-br-[4px] bg-primary text-primary-foreground"
+                  : "self-start rounded-bl-[4px] bg-muted text-muted-foreground"
+              }`}
+            >
+              {line.text}
+            </div>
+          ))}
+        </div>
+
+        {/* Tags */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {data.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-[#EEF5F1] px-[10px] py-[5px] text-[11px] font-medium text-primary"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Audience toggle ───────────────────────────────────────────────────────
+type Audience = "personal" | "business";
+
+const audiences: { key: Audience; label: string }[] = [
+  { key: "personal", label: "Personal" },
+  { key: "business", label: "Business" },
+];
+
+// ─── What it does cards ────────────────────────────────────────────────────
+const PERSONAL_CONFIGS = [
+  {
+    icon: "◉",
+    name: "The Gatekeeper",
+    body: "Answers unknowns with a real voice. Asks who's calling and why. Takes a detailed message or patches them through — then texts you the play-by-play.",
+    plan: "Starter plan · Day one",
+  },
+  {
+    icon: "◈",
+    name: "The Scheduler",
+    body: "Books appointments, handles reschedules, texts reminders. Calls your dentist, pharmacy, or landlord so you don't have to sit on hold.",
+    plan: "Pro plan · Outbound calls",
+  },
+  {
+    icon: "◫",
+    name: "The Operator",
+    body: "Your side hustle answering itself. Takes orders, quotes rates, qualifies leads, sends follow-up texts. You build the playbook — it runs it.",
+    plan: "Pro plan · Drafting board",
+  },
+];
+
+const BUSINESS_CONFIGS = [
+  {
+    icon: "◉",
+    name: "Front Desk",
+    body: "A live voice agent that answers every call, books appointments, qualifies leads, and texts the outcome — no hold music, no missed opportunities.",
+    plan: "Business · Always on",
+  },
+  {
+    icon: "◈",
+    name: "Sales Floor",
+    body: "Agents that qualify inbound leads, follow up with prospects, and hand off hot opportunities — at the exact moment they're ready.",
+    plan: "Business · Outbound + CRM",
+  },
+  {
+    icon: "◫",
+    name: "Support Line",
+    body: "Handle common questions, book service calls, escalate urgent issues. Your team only picks up when it actually matters.",
+    plan: "Business · Full workflows",
+  },
+];
+
+// ─── How it works steps ────────────────────────────────────────────────────
+const STEPS = [
+  { num: "01", title: "Connect", body: "Keep your number. Wireline hooks in via the app, Shortcuts, and CarPlay — or provision a dedicated business line." },
+  { num: "02", title: "Build", body: "Name it, pick a voice, tell it the job. Chat with Wireline AI to shape the agent — or start from a template." },
+  { num: "03", title: "Train", body: "Feed it scripts, FAQs, and hard limits. Run a test call from your browser — hear exactly what callers hear." },
+  { num: "04", title: "Deploy", body: "Go live. Read every transcript. Coach the weak spots. Your agent learns from every conversation." },
+];
+
+// ─── Pricing ───────────────────────────────────────────────────────────────
+const PLANS = [
+  {
+    name: "Starter",
+    sub: "Your agent, live on your line",
+    price: "$9",
+    period: "/mo",
+    body: "A real voice agent that answers unknowns, takes messages, and follows up — not a silent call blocker.",
+    features: [
+      "Agent answers & talks to callers",
+      "SMS follow-ups & summaries",
+      "Custom voice & persona",
+      "60 minutes / month",
+    ],
+    cta: "Try 7 days free",
+    featured: false,
+  },
+  {
+    name: "Pro",
+    sub: "Custom workflows & drafting board",
+    price: "$29",
+    period: "/mo",
+    body: "Full drafting board. Train your agent on your playbook — booking, errands, side hustle, anything.",
+    features: [
+      "Everything in Starter",
+      "500 minutes / month",
+      "Drafting board + flow composer",
+      "Calendar & CRM connections",
+      "Outbound calls on your behalf",
+    ],
+    cta: "Try 7 days free",
+    featured: true,
+    badge: "Most popular",
+  },
+  {
+    name: "Business",
+    sub: "Dedicated line, full fleet",
+    price: "$79",
+    period: "/mo",
+    body: "Multiple agents, a dedicated business number, live ops, team access, and priority voice routing.",
+    features: [
+      "Everything in Pro",
+      "Unlimited minutes",
+      "Dedicated business number",
+      "Multi-agent fleet",
+      "Live ops dashboard",
+      "Priority voice routing",
+    ],
+    cta: "Try 7 days free",
+    featured: false,
+  },
+];
+
+// ─── Main component ────────────────────────────────────────────────────────
 export default function PrecisionLanding() {
+  const [audience, setAudience] = useState<Audience>("personal");
+  const configs = audience === "personal" ? PERSONAL_CONFIGS : BUSINESS_CONFIGS;
+
   return (
     <div className="wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
+
+      <style>{`
+        @keyframes waveBar { 0%,100% { transform: scaleY(.3) } 50% { transform: scaleY(1) } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+      `}</style>
+
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-        <section className="marketing-hero border-b border-border px-4 py-6 sm:px-5 sm:py-8 md:px-6 lg:px-8 safe-area-insets">
-          <div className="wl-public-rail flex min-h-[calc(66dvh-4rem)] flex-col items-center justify-center py-4 text-center sm:min-h-[calc(78dvh-4rem)] sm:py-6">
-            <div className="marketing-hero__content flex flex-col items-center">
-              <p className="wl-overline text-primary">{MARKETING_VOICE.eyebrow}</p>
-              <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(46px,6.7vw,84px)] font-semibold leading-[.94] tracking-[-.055em] text-foreground">
-                {MARKETING_VOICE.headline}
-              </h1>
-              <p className="wl-public-copy mx-auto mt-5 max-w-5xl text-[clamp(17px,1.7vw,22px)] leading-[1.38]">
-                {MARKETING_VOICE.subline}
-              </p>
-              <div className="marketing-hero__actions mt-7 justify-center">
+
+        {/* ── HERO ──────────────────────────────────────────────── */}
+        <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail grid items-center gap-12 lg:grid-cols-[1.15fr_.85fr]">
+
+            {/* Left copy */}
+            <div style={{ animation: "fadeUp .7s ease-out both" }}>
+              {/* Audience toggle */}
+              <div className="mb-8 inline-flex rounded-lg border border-border bg-card p-1">
+                {audiences.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setAudience(key)}
+                    className={`rounded-md px-5 py-2 text-[13px] font-semibold transition-all ${
+                      audience === key
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {audience === "personal" ? (
+                <>
+                  <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#3D9B73]" />
+                    <span className="font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">
+                      v1 · now in beta
+                    </span>
+                  </div>
+                  <h1
+                    className="wl-public-section-heading max-w-none text-[clamp(52px,6vw,72px)] leading-[.95]"
+                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.035em" }}
+                  >
+                    Your phone,{" "}
+                    <em className="not-italic text-primary">finally</em>{" "}
+                    answering for you.
+                  </h1>
+                  <p className="wl-public-copy mt-6 max-w-none text-[17px] leading-[1.7]">
+                    A voice AI that picks up your phone, talks to the caller, and handles it — booking, message-taking, follow-ups, errands. You get a text with what happened.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#3D9B73]" />
+                    <span className="font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">
+                      For business · v1 in beta
+                    </span>
+                  </div>
+                  <h1
+                    className="wl-public-section-heading max-w-none text-[clamp(52px,6vw,72px)] leading-[.95]"
+                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.035em" }}
+                  >
+                    Your front desk,{" "}
+                    <em className="not-italic text-primary">open</em>{" "}
+                    24/7.
+                  </h1>
+                  <p className="wl-public-copy mt-6 max-w-none text-[17px] leading-[1.7]">
+                    Deploy a fleet of trained voice agents that answer calls, qualify leads, book appointments, and follow up — all under your brand, on your playbook.
+                  </p>
+                </>
+              )}
+
+              <div className="mt-9 flex flex-wrap items-center gap-3">
                 <Link
                   to="/signup"
-                  className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+                  className="marketing-btn-primary flex items-center gap-2 px-6 py-3 text-[15px] font-semibold"
                 >
-                  Create agent <ArrowRight size={16} />
+                  Start 7-day trial <ArrowRight size={16} />
                 </Link>
-                <Link
-                  to="/features"
-                  className="marketing-btn-secondary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-[10px] border border-border bg-card px-6 py-3 text-[15px] font-medium text-foreground transition-all hover:border-border/80"
                 >
-                  See OS
-                </Link>
+                  <Phone size={15} /> Hear it answer a call
+                </button>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-6">
+                {["Answers with a real voice", "Acts on your behalf", "Texts you what happened"].map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                    <div className="grid h-[18px] w-[18px] place-items-center rounded-full bg-[#EEF5F1] text-[10px] font-bold text-primary">
+                      ✓
+                    </div>
+                    {item}
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="marketing-hero-proof mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] tracking-[0.12em] text-muted-foreground">
-              {MARKETING_VOICE.proof.map((item) => (
-                <span key={item} className="px-1">
-                  {item}
-                </span>
-              ))}
+
+            {/* Right: live call card */}
+            <div style={{ animation: "fadeUp .7s ease-out .15s both" }}>
+              <LiveCallCard variant={audience} />
             </div>
           </div>
         </section>
 
-        <section className="border-b border-border px-5 py-10 sm:px-6 sm:py-12 lg:px-8">
-          <div className="wl-public-rail text-center">
-            <div className="mx-auto max-w-3xl">
-              <p className="wl-overline text-primary">First run</p>
-              <h2 className="wl-public-section-heading mx-auto mt-3">
-                Watch one agent become the front desk.
+        {/* ── DIFFERENTIATOR STRIP ──────────────────────────────── */}
+        <div className="border-b border-border bg-[#1C1C1A] px-5 py-5 text-center">
+          <p
+            className="text-[18px] text-[rgba(247,246,243,.7)]"
+            style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif" }}
+          >
+            Siri silences unknowns.{" "}
+            <span className="text-[#F7F6F3]">Wireline answers them.</span>
+          </p>
+        </div>
+
+        {/* ── WHAT IT DOES ──────────────────────────────────────── */}
+        <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail">
+            <div className="mb-12">
+              <p className="font-mono text-[11px] uppercase tracking-[.14em] text-primary">
+                02 — {audience === "personal" ? "Configurations" : "Use cases"}
+              </p>
+              <h2
+                className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
+                style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.025em" }}
+              >
+                {audience === "personal"
+                  ? "Configure it for your life."
+                  : "Built for real business volume."}
               </h2>
-              <p className="wl-public-copy mx-auto mt-4">
-                Call in. Captured. Queued. Approval ready.
+              <p className="mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
+                {audience === "personal"
+                  ? "One agent. Configure it however you need — personal errands, side hustle, or a full front desk. The playbook is yours."
+                  : "From solo operators to multi-location teams — Wireline agents handle the phones while your team handles the work."}
               </p>
             </div>
-            <div className="marketing-channel-grid mt-7 grid gap-4 sm:gap-6">
-              {channels.map(({ label, title, body, icon: Icon }) => (
-                <article
-                  key={label}
-                  className="marketing-channel-row group flex flex-col rounded-xl border border-border bg-card p-6 text-left transition-all hover:border-primary/40 hover:shadow-md sm:p-7"
+
+            <div className="grid gap-3.5 sm:grid-cols-3">
+              {configs.map(({ icon, name, body, plan }) => (
+                <div
+                  key={name}
+                  className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_rgba(43,85,72,.06)]"
                 >
-                  <div className="marketing-channel-row__icon mb-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/5 text-primary">
-                      <Icon className="size-5" aria-hidden="true" />
-                    </div>
+                  <div className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[#EEF5F1] text-[18px] text-primary">
+                    {icon}
                   </div>
-                  <div className="flex-1">
-                    <p className="wl-overline text-primary tracking-[0.08em]">{label}</p>
-                    <h3 className="wl-section-title mt-2 text-[clamp(1.25rem,2.8vw,1.75rem)] leading-tight">
-                      {title}
-                    </h3>
-                    <p className="mt-3 text-[var(--wireline-typography-body-size)] leading-relaxed text-muted-foreground">
-                      {body}
-                    </p>
-                  </div>
-                </article>
+                  <h3
+                    className="mb-2 text-[22px] leading-tight"
+                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.015em" }}
+                  >
+                    {name}
+                  </h3>
+                  <p className="mb-5 text-[14px] leading-[1.6] text-muted-foreground">{body}</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[.12em] text-muted-foreground/60">
+                    {plan}
+                  </p>
+                </div>
               ))}
             </div>
-            <Link
-              to="/signup"
-              className="marketing-btn-primary mx-auto mt-7 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
-            >
-              Start the run <ArrowRight size={15} />
-            </Link>
           </div>
         </section>
 
-        <section className="border-b border-border px-5 py-10 sm:px-6 sm:py-12 lg:px-8">
-          <div className="wl-public-rail text-center">
-            <div className="mx-auto max-w-3xl">
-              <p className="wl-overline text-primary">One voice</p>
-              <h2 className="wl-public-section-heading mx-auto mt-3">No drift.</h2>
-              <p className="wl-public-copy mx-auto mt-4">
-                Calls, texts, and email route through one trained agent.
+        {/* ── HOW IT WORKS ──────────────────────────────────────── */}
+        <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail">
+            <div className="mb-12">
+              <p className="font-mono text-[11px] uppercase tracking-[.14em] text-primary">
+                03 — Four steps
+              </p>
+              <h2
+                className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
+                style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.025em" }}
+              >
+                Live before lunch.
+              </h2>
+            </div>
+
+            <div className="grid divide-x divide-border overflow-hidden rounded-[16px] border border-border sm:grid-cols-4">
+              {STEPS.map(({ num, title, body }) => (
+                <div
+                  key={num}
+                  className="bg-card p-8 transition-colors hover:bg-muted/40"
+                >
+                  <div className="mb-7 font-mono text-[13px] font-bold text-primary">{num}</div>
+                  <h3
+                    className="mb-2 text-[22px]"
+                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.015em" }}
+                  >
+                    {title}
+                  </h3>
+                  <p className="text-[13px] leading-[1.6] text-muted-foreground">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── PRICING ───────────────────────────────────────────── */}
+        <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail">
+            <div className="mb-12 text-center">
+              <p className="font-mono text-[11px] uppercase tracking-[.14em] text-primary">
+                Pricing
+              </p>
+              <h2
+                className="mx-auto mt-4 max-w-[18ch] text-[clamp(34px,4vw,46px)] leading-[1.05]"
+                style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.025em" }}
+              >
+                Three tiers. No gimmick free plan.
+              </h2>
+              <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
+                Every plan includes a real AI agent that talks, decides, and acts. 7-day trial on every tier.
               </p>
             </div>
-            <SignalFlow />
-            <LiveDirectSimulator />
+
+            <div className="mx-auto grid max-w-[960px] items-start gap-5 sm:grid-cols-3">
+              {PLANS.map((plan) => (
+                <div
+                  key={plan.name}
+                  className={`relative rounded-[14px] p-8 ${
+                    plan.featured
+                      ? "bg-[#1C1C1A] text-[#F7F6F3] shadow-[0_4px_24px_rgba(0,0,0,.12)]"
+                      : "border border-border bg-card"
+                  }`}
+                >
+                  {plan.badge && (
+                    <div className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-primary-foreground">
+                      {plan.badge}
+                    </div>
+                  )}
+                  <div
+                    className="mb-1 text-[24px]"
+                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400 }}
+                  >
+                    {plan.name}
+                  </div>
+                  <div className={`mb-5 text-[12px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}>
+                    {plan.sub}
+                  </div>
+                  <div className="mb-4 flex items-baseline gap-1">
+                    <span
+                      className="text-[44px] leading-none tracking-[-0.03em]"
+                      style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif" }}
+                    >
+                      {plan.price}
+                    </span>
+                    <span className={`text-[14px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}>
+                      {plan.period}
+                    </span>
+                  </div>
+                  <p className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "text-[rgba(247,246,243,.5)]" : "text-muted-foreground"}`}>
+                    {plan.body}
+                  </p>
+                  <div className="mb-6 flex flex-col gap-2">
+                    {plan.features.map((f) => (
+                      <div key={f} className="flex items-center gap-2 text-[13px]">
+                        <span className={plan.featured ? "text-[#3D9B73]" : "text-primary"}>✓</span>
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link
+                    to="/signup"
+                    className={`block w-full rounded-lg py-3 text-center text-[13px] font-semibold transition-all ${
+                      plan.featured
+                        ? "bg-white text-[#1C1C1A] hover:bg-[#F7F6F3]"
+                        : "border border-border hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── FINAL CTA ─────────────────────────────────────────── */}
+        <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail">
+            <div className="relative overflow-hidden rounded-[20px] bg-[#1C1C1A] px-10 py-18 text-center text-[#F7F6F3] sm:py-20">
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(43,85,72,.2), transparent 60%)" }}
+              />
+              <div className="relative">
+                <h2
+                  className="mx-auto max-w-[18ch] text-[clamp(34px,4.5vw,50px)] leading-[1.05]"
+                  style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.03em" }}
+                >
+                  Stop ignoring calls.<br />
+                  Start delegating them.
+                </h2>
+                <p className="mx-auto mt-4 max-w-[420px] text-[16px] text-[rgba(247,246,243,.55)]">
+                  7-day free trial. Your agent is live before lunch.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                  <Link
+                    to="/signup"
+                    className="flex items-center gap-2 rounded-[10px] bg-[#F7F6F3] px-7 py-3 text-[15px] font-semibold text-[#1C1C1A] transition-all hover:bg-white hover:-translate-y-px"
+                  >
+                    Start your 7-day trial <ArrowRight size={16} />
+                  </Link>
+                  <button
+                    type="button"
+                    className="px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.7)] transition-colors hover:text-[#F7F6F3]"
+                  >
+                    Hear it answer a call
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
         <MarketingFooter />
       </main>
-    </div>
-  );
-}
-
-function SignalFlow() {
-  return (
-    <div className="mx-auto mt-7 grid max-w-4xl gap-3 rounded-[var(--radius-xl)] border border-border bg-card p-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-6">
-      <div className="grid gap-2 sm:justify-items-end">
-        {channels.map(({ label, icon: Icon }) => (
-          <div
-            key={label}
-            className="flex min-h-11 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
-          >
-            <Icon className="size-4 text-primary" aria-hidden="true" />
-            {label}
-          </div>
-        ))}
-      </div>
-      <div className="grid place-items-center gap-2 px-4 py-1 sm:py-2">
-        <div className="grid size-14 place-items-center rounded-2xl border border-border bg-background shadow-[var(--wireline-elevation-sm)] sm:size-16">
-          <span className="font-mono text-lg font-semibold tracking-[-0.04em]">W</span>
-        </div>
-      </div>
-      <div className="grid gap-2 text-left">
-        {["Answer", "Summarize", "Follow up"].map((item) => (
-          <div
-            key={item}
-            className="flex min-h-11 items-center rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
-          >
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LiveDirectSimulator() {
-  const [active, setActive] = useState<string | null>(null);
-  const trigger = (key: string) => {
-    setActive(key);
-    setTimeout(() => setActive(null), 1400);
-  };
-
-  return (
-    <div className="mx-auto mt-4 max-w-4xl rounded-[var(--radius-xl)] border border-border bg-card p-4 text-left sm:p-5">
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-1 sm:pt-2">
-        {channels.map(({ label, icon: Icon }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => trigger(label)}
-            className={`group flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all active:scale-[0.985] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${
-              active === label
-                ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                : "border-border bg-background hover:border-primary/40 hover:bg-accent"
-            }`}
-            aria-pressed={active === label}
-          >
-            <Icon
-              size={15}
-              className={active === label ? "" : "text-primary/80 group-hover:text-primary"}
-              aria-hidden="true"
-            />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 flex justify-center sm:mt-5">
-        <div className="relative flex h-11 w-full max-w-[420px] items-center justify-center rounded-full border border-border/60 bg-background transition-all sm:h-12">
-          <div
-            className={`absolute h-2 w-2 rounded-full bg-primary transition-all duration-200 ${active ? "scale-150 opacity-95" : "scale-100 opacity-40"}`}
-          />
-          <span className="text-[10px] font-mono tracking-[0.12em] text-muted-foreground">
-            {active ? `${active.toUpperCase()} -> AGENT HUB -> ACTION` : "AGENT HUB / ONE VOICE"}
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 @import './lib/typography.css';
 
-/* Wireline Clear System / Wireline Mono
- * Minimal. Monochrome. Calm. Useful.
- * Black is action. Gray is structure. White space is product. */
+/* Wireline — Letterpress design system.
+ * Instrument Serif for display. DM Sans for body. Space Mono for system labels.
+ * Forest green is action. Warm paper is canvas. Space is product. */
 
 :root {
   --wireline-page: var(--wireline-color-canvas-default);
@@ -26,10 +26,10 @@
 .wl-app-page-title,
 .wl-public-section-heading,
 .wl-section-title {
-  font-family: var(--wireline-font-family-display), Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--wireline-font-family-display), "Instrument Serif", Georgia, serif;
   color: var(--wireline-ink);
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  font-weight: 400;
+  letter-spacing: -0.025em;
 }
 
 .wl-app-page-title {

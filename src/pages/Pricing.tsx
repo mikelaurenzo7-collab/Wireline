@@ -1,66 +1,83 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Building2, Check, Play, ShieldCheck, Sparkles, Wallet } from "lucide-react";
+import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
-import { CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
 import { PageMeta } from "../lib/page-meta";
 
-const PERSONAL_FEATURES = [
-  "All templates unlocked",
-  "1 active agent shaped around your brief",
-  "Training stays first-class before anything goes live",
-  "Conversation Balance funds live work only when you choose",
-] as const;
-
-const CAPACITY_TIERS = [
+const PLANS = [
   {
-    name: "Wireline Team",
-    eyebrow: "Shared coverage",
-    body: "Multi-agent coverage with shared inbox and routing.",
+    id: "starter",
+    name: "Starter",
+    price: 9,
+    period: "mo",
+    tagline: "Your personal agent, live.",
     features: [
-      "Multi-agent coverage",
-      "Shared inbox and follow-up",
-      "Routing and approvals",
-      "Core integrations and numbers",
+      "1 active agent",
+      "Personal number included",
+      "Voice + text handling",
+      "Call summaries via text",
+      "Booking and message-taking",
+      "Email follow-up",
     ],
+    cta: "Start 7-day trial",
+    ctaPath: "/signup?plan=starter",
+    featured: false,
   },
   {
-    name: "Wireline Business",
-    eyebrow: "Operating capacity",
-    body: "CRM, roles, analytics, and pooled usage.",
+    id: "pro",
+    name: "Pro",
+    price: 29,
+    period: "mo",
+    tagline: "More agents. More coverage.",
+    badge: "Most popular",
     features: [
-      "CRM and policy controls",
-      "Team roles and approvals",
-      "Analytics and usage visibility",
-      "Pooled Conversation Balance",
+      "3 active agents",
+      "Dedicated numbers per agent",
+      "Custom voice and persona",
+      "Workflow automation",
+      "CRM and calendar sync",
+      "Priority support",
     ],
+    cta: "Start 7-day trial",
+    ctaPath: "/signup?plan=pro",
+    featured: true,
   },
   {
-    name: "Wireline Enterprise",
-    eyebrow: "Governed rollout",
-    body: "SSO, SCIM, audit, and custom governance.",
+    id: "business",
+    name: "Business",
+    price: 79,
+    period: "mo",
+    tagline: "The full front desk.",
     features: [
-      "SSO, SCIM, and audit support",
-      "Custom policy and governance",
-      "BYO telephony and rollout support",
-      "Committed annual usage",
+      "Unlimited agents",
+      "Team inbox and routing",
+      "Roles and approvals",
+      "Analytics dashboard",
+      "SSO and audit logs",
+      "Dedicated onboarding",
     ],
+    cta: "Start 7-day trial",
+    ctaPath: "/signup?plan=business",
+    featured: false,
   },
 ] as const;
 
 const FAQ = [
   [
-    "Do I need a subscription to start?",
-    "No. Create and train an agent first. Personal live work starts only when you add Conversation Balance.",
-  ],
-  ["Are templates locked by plan?", "No. Templates are product capabilities, not pricing walls."],
-  [
-    "What is Conversation Balance?",
-    "It is customer-controlled funding for live calls, texts, and follow-up work.",
+    "Is there a free plan?",
+    "No free tier — but every plan starts with a 7-day trial, no card required. You get the full experience from day one.",
   ],
   [
-    "When do I move beyond Personal?",
-    "When coverage becomes shared and you need routing, approvals, integrations, governance, or pooled usage.",
+    "Can I switch plans later?",
+    "Yes. Upgrade or downgrade anytime from your account settings. Changes take effect at the start of your next billing cycle.",
+  ],
+  [
+    "What counts as an agent?",
+    "Each agent is a separately configured voice persona with its own number, brief, and workflow. You can run them simultaneously.",
+  ],
+  [
+    "Do you support team accounts?",
+    "Business plan includes shared inbox, team roles, and routing. For larger rollouts with custom governance, contact us.",
   ],
 ] as const;
 
@@ -68,200 +85,211 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Create free, fund live work when ready | Wireline"
-        description="Create and train a Wireline agent for free. Fund live work with Conversation Balance and move into Team, Business, or Enterprise capacity when operations become shared."
+        title="Pricing | Wireline — Phone agents for personal and business"
+        description="Start your 7-day free trial. Wireline offers three plans — Starter at $9, Pro at $29, and Business at $79 — for personal and professional voice AI coverage."
         path="/pricing"
       />
       <PrecisionPublicHeader />
 
       <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
-        <section className="border-b border-border px-5 py-10 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-marketing-rail wl-section-stack text-center">
-            <div className="mx-auto max-w-3xl">
-              <p className="wl-overline text-primary">Pricing</p>
-              <h1 className="mt-4 text-balance text-[clamp(34px,5.6vw,64px)] font-semibold leading-[1.03] tracking-[-.05em] text-foreground">
-                Create free. Train deeply. Fund real work.
-              </h1>
-              <p className="mx-auto mt-5 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-                Build and train before you spend. Add Conversation Balance when calls, texts, and
-                follow-up need to run. Upgrade when the work becomes shared.
-              </p>
-              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <Link
-                  to="/signup"
-                  className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
-                >
-                  Create agent
-                </Link>
-                <Link
-                  to="/showcase"
-                  className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
-                >
-                  <Play size={15} /> Hear a demo
-                </Link>
-              </div>
-            </div>
+        {/* Hero */}
+        <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-20 lg:px-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="wl-overline text-primary">Pricing</p>
+            <h1
+              className="mt-4 text-balance leading-[1.03] tracking-[-0.025em] text-foreground"
+              style={{
+                fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                fontWeight: 400,
+                fontSize: "clamp(2.25rem, 5vw, 4rem)",
+              }}
+            >
+              Simple pricing. Real coverage.
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+              Every plan includes a 7-day free trial. No card required to start. Cancel anytime.
+            </p>
           </div>
         </section>
 
-        <section className="px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
-          <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.1fr_.9fr] lg:items-stretch">
-            <article className="wl-stitch-card group flex flex-col rounded-2xl border border-border bg-card p-6 text-center transition-all hover:-translate-y-px hover:shadow-md sm:p-9">
-              <div className="flex items-center justify-center gap-2">
-                <Sparkles className="size-5 text-primary" />
-                <span className="wl-overline">Wireline Personal</span>
-              </div>
-              <div className="mt-5 flex items-baseline justify-center gap-2">
-                <span className="wl-metric-value text-[clamp(2.5rem,6vw,3.5rem)]">$0</span>
-                <span className="wl-overline">to create and train</span>
-              </div>
-              <p className="mx-auto mt-3 max-w-md text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-                Start with one live agent, one number, and a short intake. Add Conversation Balance
-                only when you are ready for real work.
-              </p>
-              <div className="mt-7">
-                <p className="wl-overline mb-3">Suggested first top-ups</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {CONVERSATION_BALANCE_PRESETS_USD.map((amount, index) => (
-                    <span
-                      key={amount}
-                      className={
-                        (index === 0
-                          ? "border-primary/40 bg-primary/10 text-primary"
-                          : "border-border bg-card text-foreground") +
-                        " inline-flex min-w-[64px] items-center justify-center rounded-full border px-4 py-2 text-[var(--wireline-typography-body-size)] font-semibold tabular-nums"
-                      }
-                    >
-                      ${amount}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <ul className="mt-7 grid gap-2.5 sm:grid-cols-2">
-                {PERSONAL_FEATURES.map((feature) => (
-                  <li
-                    key={feature}
-                    className="flex items-start justify-center gap-2.5 text-[var(--wireline-typography-body-size)] leading-6 text-foreground"
-                  >
-                    <Check size={16} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-8">
-                <Link
-                  to="/signup"
-                  className="marketing-btn-primary w-full justify-center px-6 py-3.5 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em] sm:w-auto"
-                >
-                  Start Personal <ArrowRight size={14} />
-                </Link>
-              </div>
-            </article>
-
-            <aside className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              {[
-                [Wallet, "Conversation Balance", "Top up only when you want live work to run."],
-                [
-                  ShieldCheck,
-                  "No template lock",
-                  "Every template stays available regardless of tier.",
-                ],
-                [
-                  Building2,
-                  "Capacity when shared",
-                  "Move into Team, Business, or Enterprise once routing and governance become shared.",
-                ],
-              ].map(([Icon, title, body]) => {
-                const CardIcon = Icon as typeof Wallet;
-                return (
-                  <article
-                    key={String(title)}
-                    className="wl-stitch-card group flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-5 text-center transition-all hover:-translate-y-px hover:shadow-md"
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
-                      <CardIcon size={18} />
-                    </span>
-                    <div>
-                      <h2 className="wl-card-title">{String(title)}</h2>
-                      <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
-                        {String(body)}
-                      </p>
-                    </div>
-                  </article>
-                );
-              })}
-            </aside>
-          </div>
-        </section>
-
-        <section className="border-t border-border bg-card px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
-          <div className="mx-auto max-w-6xl">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="wl-overline text-primary">Capacity tiers</p>
-              <h2 className="mt-4 text-balance text-[clamp(28px,3.6vw,42px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
-                Shared operations should buy capacity, not vague unlimited promises.
-              </h2>
-              <p className="mt-4 text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-                Team, Business, and Enterprise are for shared coverage, approvals, routing, and
-                governance. Live work still reconciles through Conversation Balance.
-              </p>
-            </div>
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {CAPACITY_TIERS.map((tier) => (
+        {/* Plans */}
+        <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+          <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-3 lg:items-stretch">
+            {PLANS.map((plan) =>
+              plan.featured ? (
                 <article
-                  key={tier.name}
-                  className="wl-stitch-card group flex flex-col rounded-xl border border-border bg-card p-6 text-center transition-all hover:-translate-y-px hover:shadow-md"
+                  key={plan.id}
+                  className="relative flex flex-col rounded-2xl p-7 sm:p-9"
+                  style={{
+                    background: "var(--wireline-color-text-primary)",
+                    color: "var(--wireline-color-canvas-default)",
+                  }}
                 >
-                  <p className="wl-overline text-primary">{tier.eyebrow}</p>
-                  <h3 className="wl-card-title mt-4 text-lg">{tier.name}</h3>
-                  <p className="mt-4 flex-1 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
-                    {tier.body}
+                  {plan.badge && (
+                    <span
+                      className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full px-3.5 py-1 text-xs font-semibold uppercase tracking-wider"
+                      style={{
+                        background: "var(--wireline-color-action-primary-default)",
+                        color: "var(--wireline-color-text-onAction)",
+                      }}
+                    >
+                      {plan.badge}
+                    </span>
+                  )}
+                  <p
+                    className="text-xs font-semibold uppercase tracking-widest"
+                    style={{ color: "rgba(247,246,243,0.55)" }}
+                  >
+                    {plan.name}
                   </p>
-                  <ul className="mt-5 space-y-2.5">
-                    {tier.features.map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-start justify-center gap-2.5 text-[var(--wireline-typography-caption-size)] leading-6 text-foreground"
-                      >
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span
+                      className="text-[clamp(2.5rem,5vw,3.25rem)] font-light leading-none tracking-[-0.04em]"
+                      style={{
+                        fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                        color: "var(--wireline-color-canvas-default)",
+                      }}
+                    >
+                      ${plan.price}
+                    </span>
+                    <span className="text-sm" style={{ color: "rgba(247,246,243,0.55)" }}>
+                      /{plan.period}
+                    </span>
+                  </div>
+                  <p
+                    className="mt-2 text-sm leading-6"
+                    style={{ color: "rgba(247,246,243,0.7)" }}
+                  >
+                    {plan.tagline}
+                  </p>
+                  <ul className="mt-7 flex-1 space-y-3">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm leading-6">
+                        <Check
+                          size={15}
+                          className="mt-0.5 shrink-0"
+                          style={{ color: "var(--wireline-color-action-primary-default)" }}
+                          strokeWidth={2.5}
+                        />
+                        <span style={{ color: "rgba(247,246,243,0.88)" }}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-9">
+                    <Link
+                      to={plan.ctaPath}
+                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full text-sm font-semibold uppercase tracking-[.05em] transition hover:-translate-y-px"
+                      style={{
+                        background: "var(--wireline-color-action-primary-default)",
+                        color: "var(--wireline-color-text-onAction)",
+                      }}
+                    >
+                      {plan.cta} <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </article>
+              ) : (
+                <article
+                  key={plan.id}
+                  className="wl-stitch-card group flex flex-col rounded-2xl border border-border bg-card p-7 transition-all hover:-translate-y-px hover:shadow-md sm:p-9"
+                >
+                  <p className="wl-overline text-primary">{plan.name}</p>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span
+                      className="text-[clamp(2.5rem,5vw,3.25rem)] font-light leading-none tracking-[-0.04em] text-foreground"
+                      style={{
+                        fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      }}
+                    >
+                      ${plan.price}
+                    </span>
+                    <span className="text-sm text-muted-foreground">/{plan.period}</span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.tagline}</p>
+                  <ul className="mt-7 flex-1 space-y-3">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm leading-6 text-foreground">
                         <Check
                           size={15}
                           className="mt-0.5 shrink-0 text-primary"
                           strokeWidth={2.5}
                         />
-                        <span>{feature}</span>
+                        <span>{f}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-7">
+                  <div className="mt-9">
                     <Link
-                      to="/contact"
-                      className="marketing-btn-secondary w-full justify-center px-5 py-3 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+                      to={plan.ctaPath}
+                      className="marketing-btn-primary flex min-h-[48px] w-full items-center justify-center gap-2 px-5 text-sm font-semibold uppercase tracking-[.05em]"
                     >
-                      Talk to sales <ArrowRight size={14} />
+                      {plan.cta} <ArrowRight size={14} />
                     </Link>
                   </div>
                 </article>
-              ))}
-            </div>
+              )
+            )}
+          </div>
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            All plans billed monthly. Annual billing saves 20% — available at checkout.
+          </p>
+        </section>
+
+        {/* Differentiator strip */}
+        <section
+          className="px-5 py-14 sm:px-8 sm:py-16"
+          style={{ background: "var(--wireline-color-text-primary)" }}
+        >
+          <div className="mx-auto max-w-4xl text-center">
+            <h2
+              className="text-balance leading-[1.06] tracking-[-0.025em]"
+              style={{
+                fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                fontWeight: 400,
+                fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)",
+                color: "var(--wireline-color-canvas-default)",
+              }}
+            >
+              Your phone answers every call.
+              <br />
+              <span style={{ color: "var(--wireline-color-action-primary-default)" }}>
+                You never miss what matters.
+              </span>
+            </h2>
+            <p
+              className="mx-auto mt-5 max-w-xl text-base leading-7"
+              style={{ color: "rgba(247,246,243,0.65)" }}
+            >
+              Wireline agents pick up, handle the call, and text you a summary — whether it's a spam
+              caller being dismissed or a client appointment being booked.
+            </p>
           </div>
         </section>
 
-        <section className="border-t border-border px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
-          <div className="mx-auto max-w-4xl">
-            <div className="mx-auto max-w-2xl text-center">
+        {/* FAQ */}
+        <section className="border-t border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+          <div className="mx-auto max-w-3xl">
+            <div className="text-center">
               <p className="wl-overline">Questions</p>
-              <h2 className="mt-3 text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
-                Straightforward before anything goes live.
+              <h2
+                className="mt-3 text-balance leading-[1.08] tracking-[-0.025em] text-foreground"
+                style={{
+                  fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontWeight: 400,
+                  fontSize: "clamp(1.6rem, 3vw, 2.25rem)",
+                }}
+              >
+                Straight answers before you start.
               </h2>
             </div>
-            <div className="mt-8 space-y-3">
+            <div className="mt-10 space-y-3">
               {FAQ.map(([question, answer]) => (
-                <details key={question} className="group wl-stitch-card overflow-hidden">
+                <details key={question} className="group wl-stitch-card overflow-hidden rounded-xl">
                   <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
                     <span>{question}</span>
                     <span
                       aria-hidden="true"
-                      className="text-lg text-muted-foreground transition-transform group-open:rotate-45"
+                      className="shrink-0 text-lg text-muted-foreground transition-transform group-open:rotate-45"
                     >
                       +
                     </span>
@@ -272,16 +300,17 @@ export default function Pricing() {
                 </details>
               ))}
             </div>
-            <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row sm:items-center">
-              <p className="flex items-center gap-2 text-[var(--wireline-typography-caption-size)] text-muted-foreground">
-                <ShieldCheck size={15} className="text-primary" /> Stripe-secured web billing. You
-                stay in control.
+
+            <div className="mt-12 flex flex-col items-center gap-5 text-center">
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ShieldCheck size={15} className="text-primary" />
+                Stripe-secured billing. Cancel anytime — no questions asked.
               </p>
               <Link
                 to="/signup"
-                className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-primary min-h-12 px-8 text-sm font-semibold uppercase tracking-[.05em]"
               >
-                Create agent <ArrowRight size={14} />
+                Start your free trial <ArrowRight size={14} />
               </Link>
             </div>
           </div>
