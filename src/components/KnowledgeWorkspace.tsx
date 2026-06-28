@@ -329,7 +329,7 @@ export default function KnowledgeWorkspace() {
   const derivedFromOutcomes = recentOutcomes.slice(0, 2).map((o: unknown, i: number) => ({
     id: `real-${i}`,
     kind: "fact" as const,
-    content: ((o as LooseRecord).summary || "Outcome captured.").slice(0, 90),
+    content: String((o as LooseRecord).summary || "Outcome captured.").slice(0, 90),
     agentId: agentId || "",
   }));
   const intelligence: TrainingSuggestion[] = [

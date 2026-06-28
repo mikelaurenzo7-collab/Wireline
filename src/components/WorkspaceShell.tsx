@@ -1,12 +1,60 @@
 import { type ReactNode, type Ref, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Bot, Layers, Plus, Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Bot,
+  Home,
+  Inbox,
+  Layers,
+  LayoutGrid,
+  LayoutTemplate,
+  Phone,
+  Plus,
+  Settings,
+  Users,
+  Workflow,
+} from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import type { WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useRovingTabIndex } from "../hooks/useRovingTabIndex";
 import { useAuth } from "../contexts/AuthContext";
+import { useAccount } from "../contexts/AccountContext";
+
+type RailNavItem = { href: string; label: string; icon: typeof Bot };
+
+const WORKSPACE_NAV: Record<"personal" | "business", RailNavItem[]> = {
+  personal: [
+    { href: "/overview", label: "Home", icon: Home },
+    { href: "/studio", label: "Agent Studio", icon: Layers },
+    { href: "/templates", label: "Templates", icon: LayoutTemplate },
+    { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  ],
+  business: [
+    { href: "/overview", label: "Overview", icon: Home },
+    { href: "/agents", label: "Assistants", icon: Users },
+    { href: "/studio", label: "Agent Studio", icon: Layers },
+    { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  ],
+};
+
+const OPERATE_NAV: Record<"personal" | "business", RailNavItem[]> = {
+  personal: [
+    { href: "/call-logs", label: "Call Logs", icon: Phone },
+    { href: "/inbox", label: "Inbox", icon: Inbox },
+    { href: "/apps", label: "Apps", icon: LayoutGrid },
+    { href: "/settings", label: "Settings", icon: Settings },
+  ],
+  business: [
+    { href: "/connections", label: "Connections", icon: Workflow },
+    { href: "/call-logs", label: "Call Logs", icon: Phone },
+    { href: "/inbox", label: "Inbox", icon: Inbox },
+    { href: "/apps", label: "Apps", icon: LayoutGrid },
+    { href: "/settings", label: "Settings", icon: Settings },
+  ],
+};
 
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "W").trim();
@@ -407,19 +455,30 @@ function SidebarLink({
   );
 }
 
+function railItemActive(pathname: string, href: string) {
+  if (href === "/settings") return isActive(pathname, "/settings") || pathname.startsWith("/admin");
+  if (href === "/studio") return isActive(pathname, "/studio");
+  return isActive(pathname, href);
+}
+
 function DesktopRail({ pathname }: { pathname: string }) {
   const { user } = useAuth();
   const { agents } = useStudioActiveAgentId();
-  const settingsActive = isActive(pathname, "/settings") || pathname.startsWith("/admin");
-  const studioActive = isActive(pathname, "/studio") && !settingsActive;
+  const { accountType } = useAccount();
+  const posture: "personal" | "business" = accountType === "business" ? "business" : "personal";
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace";
+  const postureLabel = posture === "business" ? "Business" : "Personal";
 
   return (
     <aside
       aria-label="Workspace navigation"
-      className="hidden h-[100dvh] w-[236px] shrink-0 flex-col border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex"
+      className="hidden h-[100dvh] w-[236px] shrink-0 flex-col overflow-y-auto border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex"
     >
-      <Link to="/studio" aria-label="Wireline" className="mb-1.5 flex items-center gap-2.5 px-1.5">
+      <Link
+        to="/overview"
+        aria-label="Wireline"
+        className="mb-1.5 flex items-center gap-2.5 px-1.5"
+      >
         <span className="grid size-7 place-items-center rounded-[7px] bg-primary font-mono text-[11px] font-bold text-primary-foreground">
           W
         </span>
@@ -428,13 +487,34 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </span>
       </Link>
 
-      <p className="px-2.5 pb-3.5 pt-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-tertiary)]">
+      <p className="px-2.5 pb-2 pt-2.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-tertiary)]">
         Workspace
       </p>
+      <nav className="flex flex-col gap-0.5" aria-label="Workspace">
+        {WORKSPACE_NAV[posture].map((item) => (
+          <SidebarLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={railItemActive(pathname, item.href)}
+          />
+        ))}
+      </nav>
 
-      <nav className="flex flex-1 flex-col gap-0.5" aria-label="Primary">
-        <SidebarLink href="/studio" label="Studio" icon={Layers} active={studioActive} />
-        <SidebarLink href="/settings" label="Settings" icon={Settings} active={settingsActive} />
+      <p className="px-2.5 pb-2 pt-4 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-tertiary)]">
+        Operate
+      </p>
+      <nav className="flex flex-1 flex-col gap-0.5" aria-label="Operate">
+        {OPERATE_NAV[posture].map((item) => (
+          <SidebarLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={railItemActive(pathname, item.href)}
+          />
+        ))}
       </nav>
 
       <Link
@@ -450,7 +530,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
             {displayName}
           </span>
           <span className="block text-[11px] text-[color:var(--wireline-color-text-tertiary)]">
-            {rosterLabel(agents.length)}
+            {postureLabel} · {rosterLabel(agents.length)}
           </span>
         </span>
       </Link>
