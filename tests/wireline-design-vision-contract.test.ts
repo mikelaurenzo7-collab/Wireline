@@ -48,27 +48,20 @@ describe("Wireline Mono design vision", () => {
     expect(WL_COMPOSER_CLASSES.starterChip).toContain("wl-chip-suggestion");
   });
 
-  it("documents studio canvas routing and composer defaults", () => {
-    expect(WIRELINE_DESIGN_VISION.studioCanvas.defaultSurface).toBe("chat-composer");
-    expect(WIRELINE_DESIGN_VISION.studioCanvas.agentSwitcher).toBe("horizontal-bar");
-    expect(WIRELINE_DESIGN_VISION.studioCanvas.railWidthPx).toBe(56);
-    expect(WIRELINE_DESIGN_VISION.studioCanvas.workspaceDepthParam).toBe("view=workspace");
-    expect(WIRELINE_DESIGN_VISION.studioCanvas.minTouchTargetPx).toBe(44);
-  });
-
-  it("aligns Studio workroom and empty state with composer dock and voice modules", () => {
-    const workroom = read("src/components/StudioWorkroom.tsx");
-    const studioV2 = read("src/components/StudioWorkspaceV2.tsx");
-
-    expect(workroom).toContain("WL_COMPOSER_CLASSES");
-    expect(workroom).toContain("wl-composer-dock__input");
-    expect(workroom).toContain("wl-composer-dock__toolbar");
-    expect(workroom).toContain("WORKSPACE_VOICE.directAgent");
-    expect(workroom).toContain("WL_COMPOSER_CLASSES.starterChip");
-
-    expect(studioV2).toContain('params.set("brief"');
-    expect(studioV2).toContain('create: "1"');
-    expect(studioV2).toContain('event.key === "Enter"');
+  it("documents studio canvas routing via the shared contract module", () => {
+    const contract = read("src/lib/studio-canvas-contract.ts");
+    expect(contract).toContain("STUDIO_CANVAS_VISION");
+    expect(contract).toContain("STUDIO_CANVAS_FORBIDDEN");
+    expect(contract).toContain("STUDIO_CANVAS_REQUIRED");
+    expect(WIRELINE_DESIGN_VISION.studioCanvas).toEqual(
+      expect.objectContaining({
+        defaultSurface: "chat-composer",
+        agentSwitcher: "horizontal-bar",
+        railWidthPx: 56,
+        workspaceDepthParam: "view=workspace",
+        minTouchTargetPx: 44,
+      }),
+    );
   });
 
   it("keeps authenticated surfaces free of retired purple palette literals", () => {

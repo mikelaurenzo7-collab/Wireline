@@ -1,7 +1,8 @@
 /**
  * Wireline Mono — canonical design vision for web, extension, MCP, and native.
- * Contracts in tests/wireline-design-vision-contract.test.ts and design:check
- * enforce these decisions. Class constants live in wireline-design-system.ts.
+ * Contracts: tests/wireline-design-vision-contract.test.ts (manifest),
+ * tests/studio-canvas-vision-contract.test.ts (studio IA), design:check.
+ * Studio behavioral invariants live in studio-canvas-contract.ts.
  */
 
 export const WIRELINE_DESIGN_VISION = {

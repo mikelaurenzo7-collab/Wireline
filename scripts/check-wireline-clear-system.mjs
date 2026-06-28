@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { assertStudioCanvasContract } from "./lib/studio-canvas-contract.mjs";
 
 const root = process.cwd();
 const failures = [];
@@ -128,6 +129,7 @@ const productCopy = read("src/lib/product-copy.ts");
 const directorCopy = read("src/lib/director-copy.ts");
 const directorComposerAccessory = read("src/components/director/DirectorComposerAccessory.tsx");
 const designVision = read("src/lib/wireline-design-vision.ts");
+const studioAgentPreference = read("src/lib/studio-agent-preference.ts");
 const wirelineDesignSystem = read("src/lib/wireline-design-system.ts");
 const legalCss = read("public/static-legal.css");
 const manifest = read("public/site.webmanifest");
@@ -523,11 +525,19 @@ mustInclude(
   /!nativeAppShell \? <MobileBrowserUtilities \/>/,
   "mobile browser utility control must mount outside native shells",
 );
-mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /Workspace navigation/,
-  "rail is minimal workspace nav (logo + settings)",
+assertStudioCanvasContract(
+  {
+    shell: workspaceShell,
+    canvas: studioWorkspace,
+    workroom: studioWorkroom,
+    workspacePanel: studioAgentWorkspacePanel,
+    studioHome: agentStudioHome,
+    agentPreference: studioAgentPreference,
+    designVision,
+    overviewPage,
+    studioOverview,
+  },
+  { mustInclude, mustExclude },
 );
 mustInclude(
   "src/components/WorkspaceShell.tsx",
@@ -536,84 +546,10 @@ mustInclude(
   "rail must expose Studio icon",
 );
 mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /StudioAgentBar|AgentSwitcherPill/,
-  "agents switch in the top/bottom bar — not stacked in the side rail",
-);
-mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /role="tablist"/,
-  "agent switcher scroll container must expose tablist semantics",
-);
-mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /function AgentSwitcherPill[\s\S]*min-h-\[44px\]/,
-  "AgentSwitcherPill must meet 44px touch target",
-);
-mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /useRovingTabIndex/,
-  "agent switcher must use roving tabindex keyboard navigation",
-);
-mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /scrollIntoView/,
-  "active agent pill must scroll into view in horizontal scroller",
-);
-mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /function NativeStudioAgentBar/,
-  "native app shell must expose horizontal agent switcher above NativeDock",
-);
-mustInclude(
-  "src/components/WorkspaceShell.tsx",
-  workspaceShell,
-  /isStudioRoute && nativeAppShell[\s\S]*NativeStudioAgentBar/,
-  "native agent switcher must render on studio routes",
-);
-mustInclude(
-  "src/lib/wireline-design-vision.ts",
-  designVision,
-  /minTouchTargetPx:\s*44/,
-  "design vision must document 44px studio touch targets",
-);
-// Canvas is chat-first; per-agent workspace panels live behind view=workspace.
-mustInclude(
-  "src/components/StudioWorkspaceV2.tsx",
-  studioWorkspace,
-  /view"\) === "workspace"|StudioAgentWorkspacePanel/,
-  "canvas opens composer; per-agent workspace panel mounts behind view=workspace",
-);
-mustInclude(
-  "src/components/StudioWorkspaceV2.tsx",
-  studioWorkspace,
-  /next\.delete\("mode"\)/,
-  "studio canvas must strip legacy mode=workroom from URL",
-);
-for (const [file, source] of [
-  ["src/pages/OverviewPage.tsx", overviewPage],
-  ["src/components/StudioOverview.tsx", studioOverview],
-  ["src/components/StudioAgentWorkspacePanel.tsx", studioAgentWorkspacePanel],
-]) {
-  mustExclude(file, source, /mode=workroom/, "legacy workroom mode must not appear in studio links");
-}
-mustInclude(
   "src/components/StudioAgentWorkspacePanel.tsx",
   studioAgentWorkspacePanel,
-  /Workspace for|Memory|World Connections/,
-  "per-agent workspace holds memory, training, knowledge, outcomes",
-);
-mustInclude(
-  "src/pages/AgentStudioHome.tsx",
-  agentStudioHome,
-  /WorkspaceShell|StudioWorkspaceV2/,
-  "studio home uses shell for the canvas",
+  /Workspace for|Memory/,
+  "per-agent workspace holds memory and grouped sections",
 );
 mustInclude("src/pages/ActionsPage.tsx", actionsPage, /Wire/, "Wire route must use current naming");
 mustInclude(
@@ -1160,18 +1096,7 @@ mustExclude(
   /Link your phone|Verify your number|Name your agent/,
   "legacy fake onboarding wizard must stay removed",
 );
-mustInclude(
-  "src/components/StudioWorkspaceV2.tsx",
-  studioWorkspace,
-  /StudioWorkroom|view"\) === "workspace"/,
-  "Studio canvas is chat-first with optional per-agent workspace panels",
-);
-mustInclude(
-  "src/components/StudioAgentWorkspacePanel.tsx",
-  studioAgentWorkspacePanel,
-  /Workspace for|World Connections/,
-  "Studio workspace view must support grouped sections including integrations",
-);
+
 mustExclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
