@@ -1,36 +1,16 @@
 import { type ReactNode } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  Bot,
-  Cable,
-  GraduationCap,
-  Inbox,
-  LayoutDashboard,
-  PlayCircle,
-  Settings,
-} from "lucide-react";
+import { ArrowLeft, Bot, PlayCircle, Settings } from "lucide-react";
 
 import WirelineMark from "./brand/WirelineMark";
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import { useAgents } from "../contexts/AgentsContext";
 
-const primaryNavigation = [
-  { href: "/overview", label: "Home", icon: LayoutDashboard },
-  { href: "/agents", label: "Fleet", icon: Bot },
-  { href: "/studio", label: "Studio", icon: PlayCircle },
-  { href: "/training", label: "Train", icon: GraduationCap },
-  { href: "/actions", label: "Wire", icon: Cable },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-] as const;
+const primaryNavigation = [{ href: "/studio", label: "Studio", icon: PlayCircle }] as const;
 
 const nativeNavigation = [
-  { href: "/overview", label: "Home", icon: LayoutDashboard },
-  { href: "/agents", label: "Fleet", icon: Bot },
   { href: "/studio", label: "Studio", icon: PlayCircle },
-  { href: "/actions", label: "Wire", icon: Cable },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/settings", label: "More", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
 type NativeWindow = Window & {
@@ -56,8 +36,7 @@ function isNativeAppShell() {
 
 function isActive(pathname: string, href: string) {
   if (pathname === href) return true;
-  if (href === "/overview") return false;
-  if (href === "/training" && pathname.startsWith("/knowledge")) return true;
+  if (href === "/studio" && pathname.startsWith("/studio")) return true;
   return pathname.startsWith(`${href}/`);
 }
 
@@ -106,29 +85,58 @@ function RailItem({
 }
 
 function DesktopRail({ pathname }: { pathname: string }) {
+  const { agents } = useAgents();
+  const [searchParams] = useSearchParams();
+  const activeAgentId = searchParams.get("agent");
+
   return (
     <aside
-      aria-label="Workspace navigation"
-      className="hidden h-[100dvh] w-[80px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-1 lg:py-3"
+      aria-label="Agent workspace navigation"
+      className="hidden h-[100dvh] w-[72px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-1 lg:py-3"
     >
+      {/* Studio / Canvas icon - entry to open canvas / creation */}
       <Link
-        to="/overview"
-        aria-label="Wireline home"
-        title="Wireline"
+        to="/studio"
+        aria-label="Studio"
+        title="Studio"
         className="mt-0.5 grid size-9 place-items-center rounded-lg text-primary transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border"
       >
         <WirelineMark className="h-[19px] w-[19px] shrink-0" />
       </Link>
 
-      <nav className="mt-5 flex w-full flex-col items-stretch gap-px px-0.5" aria-label="Workspace">
+      <nav className="mt-4 flex w-full flex-col items-center gap-1 px-0.5" aria-label="Agents">
         {primaryNavigation.map((item) => (
           <RailItem key={item.href} {...item} active={isActive(pathname, item.href)} />
         ))}
+
+        {/* Dynamic agent icons - each agent gets its own spot in rail */}
+        {agents.length > 0 && (
+          <div className="mt-2 w-full border-t border-border/40 pt-2 flex flex-col items-center gap-1.5">
+            {agents.map((agent) => {
+              const isActiveAgent = activeAgentId === agent.id;
+              return (
+                <Link
+                  key={agent.id}
+                  to={`/studio?agent=${agent.id}`}
+                  aria-label={agent.name}
+                  title={agent.name}
+                  className={`grid size-8 place-items-center rounded-full text-[10px] font-semibold transition-all active:scale-[0.96] ${
+                    isActiveAgent
+                      ? "bg-primary text-primary-foreground ring-1 ring-primary/40"
+                      : "bg-muted text-foreground/80 hover:bg-muted/70 hover:text-foreground"
+                  }`}
+                >
+                  {agent.name?.[0]?.toUpperCase() || "A"}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       <nav
         className="mt-auto flex w-full justify-center border-t border-border/50 pt-2.5"
-        aria-label="Account"
+        aria-label="Settings"
       >
         <RailItem
           href="/settings"
@@ -180,8 +188,11 @@ export default function WorkspaceShell({
   const location = useLocation();
   const [params] = useSearchParams();
   const { agents } = useAgents();
-  const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
-  const isHomeRoute = location.pathname === "/overview";
+  const isStudioRoute =
+    location.pathname === "/studio" ||
+    location.pathname.startsWith("/studio/") ||
+    location.pathname === "/forge";
+  const isHomeRoute = location.pathname === "/studio" && !params.get("agent");
   const nativeAppShell = isNativeAppShell();
   const showHomeLink = !isHomeRoute && !isStudioRoute;
 
@@ -206,7 +217,7 @@ export default function WorkspaceShell({
             <div className="relative mb-4 pb-3 lg:mb-5">
               {showHomeLink ? (
                 <Link
-                  to="/overview"
+                  to="/studio"
                   aria-label="Back to workspace home"
                   className="absolute left-0 top-1 z-10 inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-background px-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:top-1/2 md:-translate-y-1/2"
                 >

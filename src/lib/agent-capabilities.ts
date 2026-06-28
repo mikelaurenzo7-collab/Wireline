@@ -877,3 +877,43 @@ export function resolveAgentTools(_role?: string, enabledTools?: unknown): Agent
   const normalized = normalizeEnabledTools(enabledTools);
   return normalized !== null ? normalized : getDefaultAgentTools();
 }
+
+/** Tool names that are business/enterprise only (used for splitting everyday vs business in UIs).
+ *  Canonical source - imported by per-agent workspace and ActionsWorkspace.
+ */
+export const BUSINESS_TOOL_NAMES = new Set<AgentToolName>([
+  "search_leads",
+  "update_lead_status",
+  "log_payment_promise",
+  "capture_customer_profile",
+  "add_to_dnc",
+  "crm_search_contacts",
+  "crm_log_call",
+  "crm_create_opportunity",
+  "send_slack_notification",
+  "list_x_ad_campaigns",
+  "get_x_ad_campaign_stats",
+  "send_contract",
+  "enrich_lead",
+  "shopify_lookup_order",
+  "shopify_check_inventory",
+  "shopify_lookup_customer",
+  "shopify_start_return",
+  "shopify_cancel_order",
+  "shopify_update_address",
+  "shopify_create_draft_order",
+  "shopify_add_order_note",
+  "shopify_apply_discount",
+  "square_lookup_order",
+  "square_lookup_customer",
+  "square_check_inventory",
+  "square_create_payment_link",
+  "square_send_invoice",
+  "log_to_excel",
+  "log_to_google_sheets",
+  "meta_submit_lead",
+  "crm_create_contact",
+  "crm_update_deal_stage",
+  "route_to_business_unit",
+  "trigger_enterprise_webhook",
+]);

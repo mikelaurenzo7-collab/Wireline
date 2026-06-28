@@ -1,20 +1,10 @@
 import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import TransitionSurface from "../components/TransitionSurface";
 
-const OverviewPage = lazy(() => import("../pages/OverviewPage"));
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
-const AgentsPage = lazy(() => import("../pages/AgentsPage"));
-const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
-const ActionsPage = lazy(() => import("../pages/ActionsPage"));
-const EmailPage = lazy(() => import("../pages/EmailPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
-const BillingSettings = lazy(() => import("../pages/BillingSettings"));
-const TeamSettings = lazy(() => import("../pages/TeamSettings"));
-const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
-const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
-const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 
 const loading = (
   <TransitionSurface
@@ -25,45 +15,44 @@ const loading = (
   />
 );
 
-function LegacyConnectionsRedirect() {
-  const location = useLocation();
-  const suffix = location.pathname.replace(/^\/connections/, "");
-  return <Navigate to={`/actions${suffix}${location.search}`} replace />;
-}
-
 export default function AppRoutes() {
   return (
     <Suspense fallback={loading}>
       <Routes>
-        {/* /overview is the default authenticated home for logged-in users.
-            Studio is a tool surface (create/train/run) accessed via nav or specific links (e.g. /studio?create=1). */}
-        <Route path="/" element={<Navigate to="/overview" replace />} />
-        <Route path="/overview" element={<OverviewPage />} />
-        <Route path="/agents" element={<AgentsPage />} />
+        {/* Masterful agent-centric design:
+           - Default /studio is the open canvas.
+           - New users: big clean canvas with composer to create first agent.
+           - Agents appear as icons in rail + cards in canvas.
+           - Each agent has its own workspace containing chat, memory, training, knowledge, everything.
+           - Minimal rail: Studio icon + agent icons + settings.
+        */}
+        <Route path="/" element={<Navigate to="/studio" replace />} />
         <Route path="/studio" element={<AgentStudioHome />} />
-        <Route path="/training" element={<KnowledgePage />} />
-        <Route path="/knowledge" element={<Navigate to="/training" replace />} />
-        <Route path="/actions" element={<ActionsPage />} />
-        <Route path="/actions/salesforce" element={<SalesforceIntegrationPage />} />
-        <Route path="/connections" element={<LegacyConnectionsRedirect />} />
-        <Route path="/connections/*" element={<LegacyConnectionsRedirect />} />
-        <Route path="/inbox" element={<EmailPage />} />
-        <Route path="/email" element={<Navigate to="/inbox" replace />} />
-        {/* Legacy /ops alias kept pointing at Studio (tool surface); not a default home. */}
+        <Route path="/studio/*" element={<AgentStudioHome />} />
+
+        {/* Consolidated legacy redirects to the studio canvas */}
+        <Route path="/overview" element={<Navigate to="/studio" replace />} />
+        <Route path="/pulse" element={<Navigate to="/studio" replace />} />
+        <Route path="/fleet" element={<Navigate to="/studio" replace />} />
+        <Route path="/agents" element={<Navigate to="/studio" replace />} />
         <Route path="/ops" element={<Navigate to="/studio" replace />} />
         <Route path="/ops/*" element={<Navigate to="/studio" replace />} />
+        <Route path="/training" element={<Navigate to="/studio" replace />} />
+        <Route path="/knowledge" element={<Navigate to="/studio" replace />} />
+        <Route path="/actions" element={<Navigate to="/studio" replace />} />
+        <Route path="/nexus" element={<Navigate to="/studio" replace />} />
+        <Route path="/inbox" element={<Navigate to="/studio" replace />} />
+        <Route path="/wires" element={<Navigate to="/studio" replace />} />
+        {/* Single redirect for old connections paths */}
+        <Route path="/connections" element={<Navigate to="/studio" replace />} />
+        <Route path="/connections/*" element={<Navigate to="/studio" replace />} />
+
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/settings/billing" element={<BillingSettings />} />
-        <Route path="/settings/team" element={<TeamSettings />} />
-        <Route path="/settings/apps" element={<ClientAppsPage />} />
-        <Route path="/settings/customization" element={<CustomizationSettings />} />
+        <Route path="/settings/*" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminSettings />} />
         <Route path="/admin/*" element={<AdminSettings />} />
-        <Route path="/help" element={<Navigate to="/overview" replace />} />
-        <Route path="/app/personal" element={<Navigate to="/overview" replace />} />
-        <Route path="/app/business" element={<Navigate to="/overview" replace />} />
-        <Route path="/app/business/*" element={<Navigate to="/overview" replace />} />
-        <Route path="*" element={<Navigate to="/overview" replace />} />
+
+        <Route path="*" element={<Navigate to="/studio" replace />} />
       </Routes>
     </Suspense>
   );

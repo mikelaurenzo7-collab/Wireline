@@ -14,7 +14,7 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
  * (which 302-redirects to the public ElevenLabs preview MP3) and
  * plays it. Self-contained: handles its own audio ref + play state.
  */
-function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: string }) {
+export function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: string }) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);

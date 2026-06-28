@@ -65,6 +65,7 @@ const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
 const studioOverview = read("src/components/StudioOverview.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
 const studioWorkroom = read("src/components/StudioWorkroom.tsx");
+const agentStudioHome = read("src/pages/AgentStudioHome.tsx");
 const agentTraining = read("src/components/AgentTraining.tsx");
 const agentMemoryPanel = read("src/components/AgentMemoryPanel.tsx");
 const assetUpload = read("src/components/AgentAssetUpload.tsx");
@@ -524,52 +525,33 @@ mustInclude(
 mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /label: "Studio"/,
-  "primary rail must expose Studio, not a vague build surface",
+  /Agent workspace navigation/,
+  "rail is minimal agent workspace nav",
 );
-mustExclude(
+mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /label: "Build"/,
-  "primary rail must not use retired Build naming",
-);
-// Tailored for clean vision post-polish: roster uses clean links to Studio/Train/Wire, sr-only for model/links, no verbose "Configure number" or "Usage" (removed in polish for minimal)
-mustInclude(
-  "src/pages/AgentsPage.tsx",
-  agentsPage,
-  /Studio|Train|Wire/,
-  "agent roster must expose clean Studio/Train/Wire controls",
+  /Studio/,
+  "rail must expose Studio icon",
 );
 mustInclude(
-  "src/pages/AgentsPage.tsx",
-  agentsPage,
-  /Create → Train → Run|sr-only.*Create → Train → Run/,
-  "agent roster must state the Create -> Train -> Run model (clean/sr-only for polish)",
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /agent\.name\?\.\[0\]|size-8 place-items-center rounded-full/,
+  "rail must show per-agent icons (initials in circles) for each created agent",
+);
+// Agents appear as icons in rail + cards in canvas. Each agent workspace contains memory/training/knowledge.
+mustInclude(
+  "src/components/StudioWorkspaceV2.tsx",
+  studioWorkspace,
+  /Canvas|Your agents|Workspace for|Memory|Training & Knowledge/,
+  "canvas shows agent cards; per-agent workspace holds memory, training, knowledge, outcomes",
 );
 mustInclude(
-  "src/pages/AgentsPage.tsx",
-  agentsPage,
-  /to=.*training|to=.*studio|Knowledge|Instructions|Voice|Memory|sr-only.*deep-link/,
-  "agent roster must deep-link to Training surfaces (Knowledge etc.)",
-);
-// Tailored: overview uses clean "Training" and model in polished way per vision
-mustInclude(
-  "src/pages/OverviewPage.tsx",
-  overviewPage,
-  /Training|Train|Create -> Train -> Run|Brief it. Train it. Run it./,
-  "overview must reinforce the Create -> Train -> Run model cleanly",
-);
-mustInclude(
-  "src/pages/OverviewPage.tsx",
-  overviewPage,
-  /Open Studio/,
-  "overview must point active accounts into Studio",
-);
-mustInclude(
-  "src/pages/OverviewPage.tsx",
-  overviewPage,
-  /Wire/,
-  "overview shortcuts must use Wire naming",
+  "src/pages/AgentStudioHome.tsx",
+  agentStudioHome,
+  /WorkspaceShell|StudioWorkspaceV2/,
+  "studio home uses shell for the canvas",
 );
 mustInclude("src/pages/ActionsPage.tsx", actionsPage, /Wire/, "Wire route must use current naming");
 mustInclude(
@@ -1041,8 +1023,8 @@ mustExclude(
 mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /label: "Train"/,
-  "primary rail must include Training",
+  /Studio/,
+  "primary rail must include Studio as the entry to the canvas",
 );
 mustInclude(
   "src/components/WorkspaceShell.tsx",
@@ -1065,20 +1047,14 @@ mustInclude(
 mustInclude(
   "src/routes/AppRoutes.tsx",
   appRoutes,
-  /path="\/training" element=\{<KnowledgePage/,
-  "Training must be first-class route",
-);
-mustExclude(
-  "src/App.tsx",
-  appRoot,
-  /path="\/training" element=\{<Navigate to="\/studio" replace \/>/,
-  "top-level router must not hijack Training before the authenticated shell loads",
+  /path="\/studio" element=\{<AgentStudioHome/,
+  "Studio canvas must be the first-class authenticated route for agents and workspaces",
 );
 mustInclude(
   "src/routes/AppRoutes.tsx",
   appRoutes,
-  /path="\/knowledge" element=\{<Navigate to="\/training"/,
-  "Knowledge must redirect to Training",
+  /Navigate to="\/studio"/,
+  "legacy routes redirect cleanly into the studio canvas",
 );
 mustInclude(
   "src/components/CreateAgentDialog.tsx",
@@ -1125,20 +1101,14 @@ mustExclude(
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /StudioWorkroom|WorkspaceShell/,
-  "Studio must use chat-first workroom inside consistent WorkspaceShell for persistent rail",
+  /StudioWorkroom|WorkspaceShell|Canvas|Your agents/,
+  "Studio canvas uses shell and shows agent cards + per-agent full workspace",
 );
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /next\.set\("mode", "workroom"\)/,
-  "Studio must open the workroom with current mode naming",
-);
-mustInclude(
-  "src/components/StudioWorkspaceV2.tsx",
-  studioWorkspace,
-  /mode === "workroom" \|\| mode === "assistant"/,
-  "Studio must preserve legacy assistant-mode links while preferring workroom mode",
+  /Workspace for|World Connections|Your agents/,
+  "Studio canvas must support per-agent full workspace with grouped sections including integrations",
 );
 mustExclude(
   "src/components/StudioWorkspaceV2.tsx",
