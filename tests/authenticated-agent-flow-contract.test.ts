@@ -19,6 +19,10 @@ describe("authenticated agent flow", () => {
     expect(shell).toContain('aria-label="Workspace navigation"');
     expect(shell).toContain("StudioAgentBar");
     expect(shell).toContain('aria-label="Agent switcher"');
+    expect(shell).toContain('role="tablist"');
+    expect(shell).toContain("useRovingTabIndex");
+    expect(shell).toMatch(/function AgentSwitcherPill[\s\S]*min-h-\[44px\]/);
+    expect(shell).toContain("scrollIntoView");
     expect(shell).toContain("Settings");
 
     // Open canvas for creation when no agents

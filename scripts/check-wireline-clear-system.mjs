@@ -540,6 +540,36 @@ mustInclude(
   /StudioAgentBar|AgentSwitcherPill/,
   "agents switch in the top/bottom bar — not stacked in the side rail",
 );
+mustInclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /role="tablist"/,
+  "agent switcher scroll container must expose tablist semantics",
+);
+mustInclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /function AgentSwitcherPill[\s\S]*min-h-\[44px\]/,
+  "AgentSwitcherPill must meet 44px touch target",
+);
+mustInclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /useRovingTabIndex/,
+  "agent switcher must use roving tabindex keyboard navigation",
+);
+mustInclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /scrollIntoView/,
+  "active agent pill must scroll into view in horizontal scroller",
+);
+mustInclude(
+  "src/lib/wireline-design-vision.ts",
+  designVision,
+  /minTouchTargetPx:\s*44/,
+  "design vision must document 44px studio touch targets",
+);
 // Canvas is chat-first; per-agent workspace panels live behind view=workspace.
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",

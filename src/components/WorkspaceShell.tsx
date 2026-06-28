@@ -1,11 +1,12 @@
-import { type ReactNode } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { type ReactNode, type Ref, useEffect, useMemo, useRef } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Bot, Layers, Plus, Settings } from "lucide-react";
 
 import WirelineMark from "./brand/WirelineMark";
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import { useAgents } from "../contexts/AgentsContext";
 import type { WorkspaceAgentSummary } from "../contexts/AgentsContext";
+import { useRovingTabIndex } from "../hooks/useRovingTabIndex";
 
 const nativeNavigation = [
   { href: "/studio", label: "Studio", icon: Layers },
@@ -87,19 +88,28 @@ function AgentSwitcherPill({
   agent,
   active,
   compact = false,
+  tabIndex = active ? 0 : -1,
+  pillRef,
 }: {
   agent: WorkspaceAgentSummary;
   active: boolean;
   compact?: boolean;
+  tabIndex?: number;
+  pillRef?: Ref<HTMLAnchorElement>;
 }) {
   const initial = agent.name?.[0]?.toUpperCase() || "A";
   return (
     <Link
+      ref={pillRef}
       to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+      role="tab"
+      data-roving-tab={agent.id}
       aria-label={agent.name}
+      aria-selected={active}
       aria-current={active ? "page" : undefined}
+      tabIndex={tabIndex}
       title={agent.name}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-medium transition-all active:scale-[0.98] min-h-[32px] ${
+      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-medium transition-all active:scale-[0.98] min-h-[44px] min-w-[44px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${
         active
           ? "border-primary/40 bg-primary/10 text-foreground ring-1 ring-primary/25"
           : "border-border/70 bg-background text-muted-foreground hover:border-primary/25 hover:bg-muted hover:text-foreground"
@@ -119,6 +129,27 @@ function AgentSwitcherPill({
   );
 }
 
+function useAgentSwitcherA11y(agents: WorkspaceAgentSummary[], activeAgentId: string | null) {
+  const navigate = useNavigate();
+  const activePillRef = useRef<HTMLAnchorElement>(null);
+  const agentIds = useMemo(() => agents.map((agent) => agent.id), [agents]);
+  const { listRef, getTabIndex, handleKeyDown } = useRovingTabIndex({
+    itemIds: agentIds,
+    activeId: activeAgentId,
+    onActivate: (id) => navigate(`/studio?agent=${encodeURIComponent(id)}`),
+  });
+
+  useEffect(() => {
+    activePillRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeAgentId, agents.length]);
+
+  return { listRef, getTabIndex, handleKeyDown, activePillRef };
+}
+
 function StudioAgentBar({
   agents,
   activeAgentId,
@@ -129,6 +160,10 @@ function StudioAgentBar({
   workspaceView: boolean;
 }) {
   const activeAgent = activeAgentId ? agents.find((a) => a.id === activeAgentId) : null;
+  const { listRef, getTabIndex, handleKeyDown, activePillRef } = useAgentSwitcherA11y(
+    agents,
+    activeAgentId,
+  );
 
   return (
     <div
@@ -146,17 +181,26 @@ function StudioAgentBar({
         </Link>
 
         <div
-          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          ref={listRef}
+          role="tablist"
           aria-label="Agents"
+          onKeyDown={handleKeyDown}
+          className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {agents.map((agent) => (
-            <AgentSwitcherPill key={agent.id} agent={agent} active={activeAgentId === agent.id} />
+            <AgentSwitcherPill
+              key={agent.id}
+              agent={agent}
+              active={activeAgentId === agent.id}
+              tabIndex={getTabIndex(agent.id)}
+              pillRef={activeAgentId === agent.id ? activePillRef : undefined}
+            />
           ))}
           <Link
             to="/studio?create=1"
             aria-label="Wire another agent"
             title="Wire another agent"
-            className="inline-flex shrink-0 items-center justify-center rounded-full border border-dashed border-border/80 bg-background px-2 py-1 text-muted-foreground transition-colors hover:border-primary/35 hover:bg-muted hover:text-foreground min-h-[32px] min-w-[32px]"
+            className="inline-flex shrink-0 items-center justify-center rounded-full border border-dashed border-border/80 bg-background px-2 py-1 text-muted-foreground transition-colors hover:border-primary/35 hover:bg-muted hover:text-foreground min-h-[44px] min-w-[44px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
           >
             <Plus size={14} aria-hidden="true" />
           </Link>
@@ -184,7 +228,7 @@ function StudioAgentBar({
           <Link
             to="/settings"
             aria-label="Settings"
-            className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
+            className="grid min-h-[44px] min-w-[44px] place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
           >
             <Settings size={16} aria-hidden="true" />
           </Link>
@@ -243,7 +287,7 @@ function StudioMobileHeader({
         <Link
           to="/settings"
           aria-label="Settings"
-          className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+          className="grid min-h-[44px] min-w-[44px] place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
         >
           <Settings size={16} aria-hidden="true" />
         </Link>
@@ -259,6 +303,11 @@ function MobileStudioAgentBar({
   agents: WorkspaceAgentSummary[];
   activeAgentId: string | null;
 }) {
+  const { listRef, getTabIndex, handleKeyDown, activePillRef } = useAgentSwitcherA11y(
+    agents,
+    activeAgentId,
+  );
+
   if (!agents.length) return null;
 
   return (
@@ -267,20 +316,28 @@ function MobileStudioAgentBar({
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
     >
       <div className="mx-auto flex max-w-2xl items-center gap-1.5">
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          ref={listRef}
+          role="tablist"
+          aria-label="Agents"
+          onKeyDown={handleKeyDown}
+          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {agents.map((agent) => (
             <AgentSwitcherPill
               key={agent.id}
               agent={agent}
               active={activeAgentId === agent.id}
               compact
+              tabIndex={getTabIndex(agent.id)}
+              pillRef={activeAgentId === agent.id ? activePillRef : undefined}
             />
           ))}
         </div>
         <Link
           to="/studio?create=1"
           aria-label="Wire another agent"
-          className="grid size-9 shrink-0 place-items-center rounded-full border border-dashed border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-full border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
         >
           <Plus size={16} aria-hidden="true" />
         </Link>

@@ -31,6 +31,13 @@ export const WIRELINE_DESIGN_VISION = {
     "wl-composer-hero",
   ],
   voiceModules: ["MARKETING_VOICE", "WORKSPACE_VOICE", "PRODUCT_POSTURE"],
+  studioCanvas: {
+    defaultSurface: "chat-composer",
+    agentSwitcher: "horizontal-bar",
+    railWidthPx: 56,
+    workspaceDepthParam: "view=workspace",
+    minTouchTargetPx: 44,
+  },
 } as const;
 
 export type WirelineDesignVision = typeof WIRELINE_DESIGN_VISION;
