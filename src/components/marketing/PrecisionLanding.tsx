@@ -9,19 +9,19 @@ const channels = [
   {
     label: "Calls",
     title: "Answer in your voice.",
-    body: "Inbound, outbound, handoff, approvals, and clean summaries.",
+    body: "Inbound, outbound, handoff, approvals, summaries.",
     icon: PhoneCall,
   },
   {
     label: "Texts",
     title: "Keep the thread moving.",
-    body: "Confirmations, follow-up, status updates, and handoff prompts.",
+    body: "Confirmations, status, follow-up, and handoff prompts.",
     icon: MessageSquareText,
   },
   {
     label: "Email",
     title: "Close the loop.",
-    body: "Approved replies, recaps, next steps, and integration-backed work.",
+    body: "Approved replies, recaps, next steps, and clean records.",
     icon: Mail,
   },
 ] as const;
@@ -32,7 +32,7 @@ export default function PrecisionLanding() {
       <PrecisionPublicHeader />
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
         <section className="marketing-hero border-b border-border px-4 py-6 sm:px-5 sm:py-8 md:px-6 lg:px-8 safe-area-insets">
-          <div className="wl-public-rail flex min-h-[calc(78dvh-4rem)] flex-col items-center justify-center py-4 text-center sm:py-6">
+          <div className="wl-public-rail flex min-h-[calc(66dvh-4rem)] flex-col items-center justify-center py-4 text-center sm:min-h-[calc(78dvh-4rem)] sm:py-6">
             <div className="marketing-hero__content flex flex-col items-center">
               <p className="wl-overline text-primary">{MARKETING_VOICE.eyebrow}</p>
               <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(46px,6.7vw,84px)] font-semibold leading-[.94] tracking-[-.055em] text-foreground">
@@ -41,7 +41,7 @@ export default function PrecisionLanding() {
               <p className="wl-public-copy mx-auto mt-5 max-w-5xl text-[clamp(17px,1.7vw,22px)] leading-[1.38]">
                 {MARKETING_VOICE.subline}
               </p>
-              <div className="marketing-hero__actions mt-8 justify-center">
+              <div className="marketing-hero__actions mt-7 justify-center">
                 <Link
                   to="/signup"
                   className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
@@ -56,7 +56,7 @@ export default function PrecisionLanding() {
                 </Link>
               </div>
             </div>
-            <div className="marketing-hero-proof mt-8 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] tracking-[0.12em] text-muted-foreground">
+            <div className="marketing-hero-proof mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] tracking-[0.12em] text-muted-foreground">
               {MARKETING_VOICE.proof.map((item) => (
                 <span key={item} className="px-1">
                   {item}
@@ -66,7 +66,7 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        <section className="border-b border-border px-5 py-12 sm:px-6 lg:px-8">
+        <section className="border-b border-border px-5 py-10 sm:px-6 sm:py-12 lg:px-8">
           <div className="wl-public-rail text-center">
             <div className="mx-auto max-w-3xl">
               <p className="wl-overline text-primary">First run</p>
@@ -74,10 +74,10 @@ export default function PrecisionLanding() {
                 Watch one agent become the front desk.
               </h2>
               <p className="wl-public-copy mx-auto mt-4">
-                Call in. Answer. Capture. Follow-up queued. Approval ready.
+                Call in. Captured. Queued. Approval ready.
               </p>
             </div>
-            <div className="marketing-channel-grid mt-8 grid gap-4 sm:gap-6">
+            <div className="marketing-channel-grid mt-7 grid gap-4 sm:gap-6">
               {channels.map(({ label, title, body, icon: Icon }) => (
                 <article
                   key={label}
@@ -102,14 +102,14 @@ export default function PrecisionLanding() {
             </div>
             <Link
               to="/signup"
-              className="marketing-btn-primary mx-auto mt-8 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+              className="marketing-btn-primary mx-auto mt-7 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
             >
               Start the run <ArrowRight size={15} />
             </Link>
           </div>
         </section>
 
-        <section className="border-b border-border px-5 py-12 sm:px-6 lg:px-8">
+        <section className="border-b border-border px-5 py-10 sm:px-6 sm:py-12 lg:px-8">
           <div className="wl-public-rail text-center">
             <div className="mx-auto max-w-3xl">
               <p className="wl-overline text-primary">One voice</p>
@@ -131,20 +131,20 @@ export default function PrecisionLanding() {
 
 function SignalFlow() {
   return (
-    <div className="mx-auto mt-8 grid max-w-4xl gap-3 rounded-[var(--radius-xl)] border border-border bg-card p-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-6">
+    <div className="mx-auto mt-7 grid max-w-4xl gap-3 rounded-[var(--radius-xl)] border border-border bg-card p-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-6">
       <div className="grid gap-2 sm:justify-items-end">
         {channels.map(({ label, icon: Icon }) => (
           <div
             key={label}
-            className="flex min-h-12 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
+            className="flex min-h-11 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
           >
             <Icon className="size-4 text-primary" aria-hidden="true" />
             {label}
           </div>
         ))}
       </div>
-      <div className="grid place-items-center gap-2 px-4 py-2">
-        <div className="grid size-16 place-items-center rounded-2xl border border-border bg-background shadow-[var(--wireline-elevation-sm)]">
+      <div className="grid place-items-center gap-2 px-4 py-1 sm:py-2">
+        <div className="grid size-14 place-items-center rounded-2xl border border-border bg-background shadow-[var(--wireline-elevation-sm)] sm:size-16">
           <span className="font-mono text-lg font-semibold tracking-[-0.04em]">W</span>
         </div>
       </div>
@@ -152,7 +152,7 @@ function SignalFlow() {
         {["Answer", "Summarize", "Follow up"].map((item) => (
           <div
             key={item}
-            className="flex min-h-12 items-center rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
+            className="flex min-h-11 items-center rounded-[var(--radius-lg)] border border-border bg-background px-4 text-sm font-semibold"
           >
             {item}
           </div>
@@ -170,8 +170,8 @@ function LiveDirectSimulator() {
   };
 
   return (
-    <div className="mx-auto mt-5 max-w-4xl rounded-[var(--radius-xl)] border border-border bg-card p-5 text-left">
-      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+    <div className="mx-auto mt-4 max-w-4xl rounded-[var(--radius-xl)] border border-border bg-card p-4 text-left sm:p-5">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 pt-1 sm:pt-2">
         {channels.map(({ label, icon: Icon }) => (
           <button
             key={label}
@@ -194,8 +194,8 @@ function LiveDirectSimulator() {
         ))}
       </div>
 
-      <div className="mt-5 flex justify-center">
-        <div className="relative flex h-12 w-full max-w-[420px] items-center justify-center rounded-full border border-border/60 bg-background transition-all">
+      <div className="mt-4 flex justify-center sm:mt-5">
+        <div className="relative flex h-11 w-full max-w-[420px] items-center justify-center rounded-full border border-border/60 bg-background transition-all sm:h-12">
           <div
             className={`absolute h-2 w-2 rounded-full bg-primary transition-all duration-200 ${active ? "scale-150 opacity-95" : "scale-100 opacity-40"}`}
           />
