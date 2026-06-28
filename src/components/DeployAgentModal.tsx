@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
 import { cn } from "../lib/utils";
-import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./AssistantSettings";
+import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./fleet/helpers";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";

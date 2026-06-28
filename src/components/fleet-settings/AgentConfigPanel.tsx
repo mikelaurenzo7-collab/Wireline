@@ -22,7 +22,7 @@ import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import AgentModelSelector from "../AgentModelSelector";
-import { AGENT_ROLES, PREMIUM_VOICES, RoleBadge } from "../Assistants/helpers";
+import { AGENT_ROLES, PREMIUM_VOICES, RoleBadge } from "../fleet/helpers";
 import { Input } from "../ui/shadcn/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";

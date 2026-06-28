@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { Plus, Loader2, Sparkles, Briefcase } from "lucide-react";
 import { motion } from "motion/react";
-import { AGENT_ROLES, type RoleValue } from "../Assistants/helpers";
+import { AGENT_ROLES, type RoleValue } from "../fleet/helpers";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";

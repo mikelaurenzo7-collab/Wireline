@@ -6,9 +6,9 @@
 import { Bot, Mail, Loader2, Shield, Trash2, ChevronRight, PanelLeftClose } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
-import { RoleBadge } from "../Assistants/helpers";
+import { RoleBadge } from "../fleet/helpers";
 import CreateAgentSection from "./CreateAgentSection";
-import type { RoleValue } from "../Assistants/helpers";
+import type { RoleValue } from "../fleet/helpers";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";

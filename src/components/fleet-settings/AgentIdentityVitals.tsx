@@ -8,7 +8,7 @@
  * while they tune the sections below.
  */
 import { Phone, AudioLines, Cpu, Radio } from "lucide-react";
-import { PREMIUM_VOICES } from "../Assistants/helpers";
+import { PREMIUM_VOICES } from "../fleet/helpers";
 
 function voiceLabel(agent: any): string {
   const id = agent?.voice_id;

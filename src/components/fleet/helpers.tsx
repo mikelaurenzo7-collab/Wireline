@@ -13,7 +13,7 @@
  * DeployAgentModal continue importing from there without churn:
  *
  *     // AssistantSettings.tsx
- *     export { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER, AGENT_ROLES } from "./Assistants/helpers";
+ *     export { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER, AGENT_ROLES } from "./fleet/helpers";
  *
  * No behavior change. ~230 LOC moved.
  */

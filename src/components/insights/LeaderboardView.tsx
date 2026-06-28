@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { AGENT_ROLES } from "../Assistants/helpers";
+import { AGENT_ROLES } from "../fleet/helpers";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, Stat } from "./shared";
 
 function RolePill({ role }: { role?: string }) {
