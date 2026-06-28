@@ -1,10 +1,11 @@
 import { Play, Plus, Sparkles } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import { Skeleton } from "../components/atoms";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
+import { resolveStudioActiveAgentId, writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import {
   AGENT_TOOL_CATALOG,
   BUSINESS_TOOL_NAMES,
@@ -103,21 +104,28 @@ export default function StudioWorkspaceV2() {
   const [params, setParams] = useSearchParams();
   const requestedId = params.get("agent");
   const workspaceView = params.get("view") === "workspace";
-  const active =
-    agents.find((agent) => agent.id === requestedId) || (requestedId ? undefined : agents[0]);
+  const agentIds = useMemo(() => agents.map((agent) => agent.id), [agents]);
+  const resolvedAgentId = resolveStudioActiveAgentId(requestedId, agentIds);
+  const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
 
-  // Canvas defaults to the first agent so the composer is always available — no card grid.
+  // Canvas defaults to MRU (or first agent) so the composer is always available — no card grid.
   useEffect(() => {
-    if (loading || agents.length === 0 || requestedId) return;
+    if (loading || agents.length === 0 || !resolvedAgentId || resolvedAgentId === requestedId) {
+      return;
+    }
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
-        next.set("agent", agents[0].id);
+        next.set("agent", resolvedAgentId);
         return next;
       },
       { replace: true },
     );
-  }, [agents, loading, requestedId, setParams]);
+  }, [agents, loading, requestedId, resolvedAgentId, setParams]);
+
+  useEffect(() => {
+    if (active?.id) writeStudioLastAgentId(active.id);
+  }, [active?.id]);
 
   // Onboarding / Customization state for voice gallery and initial setup
   const [allVoices, setAllVoices] = useState<Voice[]>([]);
