@@ -1,6 +1,6 @@
 {
   "$schema": "https://design-tokens.github.io/community-group/format/",
-  "$description": "Wireline Mono design tokens. Minimal monochrome source for web, browser, and native outputs.",
+  "$description": "Wireline Letterpress design tokens. Forest-green action on warm paper, with a terracotta secondary accent. Source for web, browser, and native outputs.",
   "color": {
     "canvas": { "default": { "$type": "color", "$value": "#F7F6F3" } },
     "surface": {
@@ -20,6 +20,11 @@
         "default": { "$type": "color", "$value": "#2B5548" },
         "pressed": { "$type": "color", "$value": "#1E4038" },
         "container": { "$type": "color", "$value": "#EEF5F1" }
+      },
+      "secondary": {
+        "default": { "$type": "color", "$value": "#C4713B" },
+        "pressed": { "$type": "color", "$value": "#A85B2C" },
+        "container": { "$type": "color", "$value": "#FDF0E7" }
       }
     },
     "border": {

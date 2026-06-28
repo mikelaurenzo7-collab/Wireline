@@ -133,21 +133,21 @@
 /* Light mode prose support */
 @media (prefers-color-scheme: light) {
   .prose {
-    --tw-prose-body: #1f2937;
-    --tw-prose-headings: #111827;
-    --tw-prose-links: #4335b1;
-    --tw-prose-bold: #111827;
-    --tw-prose-counters: #6b7280;
-    --tw-prose-bullets: #9ca3af;
-    --tw-prose-hr: #e5e7eb;
-    --tw-prose-quotes: #374151;
-    --tw-prose-quote-borders: #4335b1;
-    --tw-prose-code: #1f2937;
-    --tw-prose-pre-code: #1f2937;
-    --tw-prose-pre-bg: #f3f4f6;
-    --tw-prose-th-borders: #d1d5db;
-    --tw-prose-td-borders: #e5e7eb;
-    --tw-prose-captions: #6b7280;
+    --tw-prose-body: #36352f;
+    --tw-prose-headings: #1c1c1a;
+    --tw-prose-links: #2b5548;
+    --tw-prose-bold: #1c1c1a;
+    --tw-prose-counters: #6b6b65;
+    --tw-prose-bullets: #a1a19b;
+    --tw-prose-hr: #e8e7e3;
+    --tw-prose-quotes: #36352f;
+    --tw-prose-quote-borders: #2b5548;
+    --tw-prose-code: #1c1c1a;
+    --tw-prose-pre-code: #1c1c1a;
+    --tw-prose-pre-bg: #f0efeb;
+    --tw-prose-th-borders: #d0d0ca;
+    --tw-prose-td-borders: #e8e7e3;
+    --tw-prose-captions: #6b6b65;
   }
 }
 

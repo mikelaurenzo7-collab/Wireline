@@ -49,8 +49,8 @@ export default function RobotHead({
     >
       <defs>
         <linearGradient id={`wireline-signal-${uid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--wireline-color-action-primary-default, #111111)" />
-          <stop offset="100%" stopColor="var(--wireline-color-action-primary-pressed, #000000)" />
+          <stop offset="0%" stopColor="var(--wireline-color-action-primary-default, #2B5548)" />
+          <stop offset="100%" stopColor="var(--wireline-color-action-primary-pressed, #1E4038)" />
         </linearGradient>
       </defs>
       <rect
@@ -60,7 +60,7 @@ export default function RobotHead({
         height="80"
         rx="12"
         fill="var(--wireline-color-surface-default, #FFFFFF)"
-        stroke="var(--wireline-color-border-default, #E3E3E0)"
+        stroke="var(--wireline-color-border-default, #E8E7E3)"
       />
       <g transform={mirrored ? "translate(96 0) scale(-1 1)" : undefined}>
         <path
@@ -77,7 +77,7 @@ export default function RobotHead({
         <path
           d="M66 35C72 39 75 44 75 48C75 52 72 57 66 61"
           fill="none"
-          stroke="var(--wireline-color-action-primary-default, #111111)"
+          stroke="var(--wireline-color-action-primary-default, #2B5548)"
           strokeWidth="3"
           strokeLinecap="round"
         />
