@@ -75,17 +75,16 @@ export default function Pricing() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
-        <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-20 lg:px-10">
+        <section className="border-b border-border px-5 py-10 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-marketing-rail wl-section-stack text-center">
             <div className="mx-auto max-w-3xl">
               <p className="wl-overline text-primary">Pricing</p>
-              <h1 className="mt-4 text-balance text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
-                Create free. Train deeply. Fund live work when it matters.
+              <h1 className="mt-4 text-balance text-[clamp(34px,5.6vw,64px)] font-semibold leading-[1.03] tracking-[-.05em] text-foreground">
+                Create free. Train deeply. Fund real work.
               </h1>
               <p className="mx-auto mt-5 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-                Wireline sells operating capacity, not template access. Create and train for free.
-                Every conversation produces outcomes that train your agent — the fleet gets smarter with use.
-                Fund live work through Conversation Balance. Scale to Team or Business for shared routing, approvals, and governance.
+                Build and train before you spend. Add Conversation Balance when calls, texts, and
+                follow-up need to run. Upgrade when the work becomes shared.
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link
@@ -112,7 +111,7 @@ export default function Pricing() {
                 <Sparkles className="size-5 text-primary" />
                 <span className="wl-overline">Wireline Personal</span>
               </div>
-              <div className="mt-5 flex items-baseline gap-2">
+              <div className="mt-5 flex items-baseline justify-center gap-2">
                 <span className="wl-metric-value text-[clamp(2.5rem,6vw,3.5rem)]">$0</span>
                 <span className="wl-overline">to create and train</span>
               </div>
