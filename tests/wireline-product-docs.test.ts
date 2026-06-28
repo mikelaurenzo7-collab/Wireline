@@ -24,7 +24,7 @@ describe("Wireline product documentation contract", () => {
   it("keeps the root README aligned with the current product model", () => {
     const readme = read("README.md");
     expect(readme).toContain("Wireline Command");
-    expect(readme).toContain("Wireline Mono design system");
+    expect(readme).toContain("Wireline Letterpress design system");
     expect(readme).toContain("Create -> Train -> Run");
     expectNoTerms(readme, retiredProductTerms);
   });
@@ -59,13 +59,13 @@ describe("Wireline product documentation contract", () => {
     expectNoTerms(submission, retiredProductTerms);
   });
 
-  it("keeps native docs on the Wireline Mono contract", () => {
+  it("keeps native docs on the Wireline Letterpress contract", () => {
     const android = read("android/README.md");
     const ios = read("ios/README.md");
 
     for (const source of [android, ios]) {
-      expect(source).toContain("Agents for every conversation");
-      expect(source).toContain("Wireline Mono");
+      expect(source).toContain("Your phone, finally answering for you");
+      expect(source).toContain("Wireline Letterpress");
     }
   });
 
@@ -73,12 +73,10 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline - Agents for every conversation");
-    expect(head).toContain(
-      "create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations",
-    );
-    expect(ogImage).toMatch(/Agents for every[\s\S]*conversation\./);
-    expect(ogImage).toContain("Calls, texts, follow-up. Handled.");
+    expect(head).toContain("Wireline — Your phone, finally answering for you.");
+    expect(head).toContain("voice AI that picks up your phone");
+    expect(ogImage).toMatch(/Your phone,[\s\S]*finally[\s\S]*answering[\s\S]*for you\./);
+    expect(ogImage).toContain("Calls, bookings, messages, errands, and follow-up.");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });

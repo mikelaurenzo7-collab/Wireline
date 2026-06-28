@@ -7,7 +7,7 @@ export const MARKETING_VOICE = {
     "A voice AI that picks up your phone, talks to the caller, and handles it — booking, message-taking, follow-ups, errands. You get a text with what happened.",
   proof: ["Answers with a real voice", "Acts on your behalf", "Texts you what happened"],
   extensionLead: "Command your agent from any page. Wireline answers while you stay focused.",
-  differentiator: "Siri silences. Wireline answers.",
+  differentiator: "Wireline answers them.",
 } as const;
 
 export const WORKSPACE_VOICE = {

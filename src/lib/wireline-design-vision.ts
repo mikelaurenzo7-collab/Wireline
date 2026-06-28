@@ -1,19 +1,20 @@
 /**
- * Wireline Mono — canonical design vision for web, extension, MCP, and native.
+ * Wireline Letterpress — canonical design vision for web, extension, MCP, and native.
  * Contracts: tests/wireline-design-vision-contract.test.ts (manifest),
  * tests/studio-canvas-vision-contract.test.ts (studio IA), design:check.
  * Studio behavioral invariants live in studio-canvas-contract.ts.
  */
 
 export const WIRELINE_DESIGN_VISION = {
-  system: "Wireline Mono",
+  system: "Wireline Letterpress",
   tone: ["calm", "precise", "useful"] as const,
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
   principles: [
-    "Black is action. Gray is structure. Canvas is calm.",
+    "Forest green is action. Ink is structure. Warm paper is calm.",
     "One voice module, one composer dock, one elevation language.",
     "Centered marketing storytelling; left/task-first authenticated work.",
-    "No decorative purple, glow, or off-palette marketing hues.",
+    "Instrument Serif carries big ideas; DM Sans carries work; Space Mono carries labels.",
+    "No decorative purple, blue, or off-palette marketing hues.",
     "44px minimum for primary touch targets; 2px focus-visible rings.",
   ],
   tokens: {

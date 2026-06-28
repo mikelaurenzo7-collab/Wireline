@@ -7,15 +7,12 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings in one shared module", () => {
-    expect(MARKETING_VOICE.headline).toBe("Agents for every conversation.");
-    expect(MARKETING_VOICE.subline).toBe("Calls, texts, follow-up. Handled.");
+    expect(MARKETING_VOICE.headline).toBe("Your phone, finally answering for you.");
+    expect(MARKETING_VOICE.subline).toContain("picks up your phone");
     expect(MARKETING_VOICE.proof).toEqual([
-      "Create",
-      "Train",
-      "Run",
-      "Calls",
-      "Texts",
-      "Follow-up",
+      "Answers with a real voice",
+      "Acts on your behalf",
+      "Texts you what happened",
     ]);
   });
 

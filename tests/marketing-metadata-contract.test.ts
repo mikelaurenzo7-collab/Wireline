@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const positioning = "Agents for every conversation";
+const positioning = "Your phone, finally answering for you";
 const stalePositioning = "Personal & Business AI Assistants";
 
 describe("marketing metadata contract", () => {
@@ -11,11 +11,9 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain(`Wireline - ${positioning}`);
+    expect(staticHead).toContain(`Wireline — ${positioning}.`);
     expect(runtimeMeta).toContain(`const DEFAULT_TITLE = "Wireline - ${positioning}"`);
-    expect(runtimeMeta).toContain(
-      "create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations",
-    );
+    expect(runtimeMeta).toContain("voice AI that picks up your phone");
     expect(runtimeMeta).not.toContain(stalePositioning);
   });
 

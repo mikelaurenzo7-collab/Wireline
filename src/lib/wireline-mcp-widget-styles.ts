@@ -1,5 +1,5 @@
 /**
- * Canonical Wireline Mono styling for ChatGPT MCP HTML widgets.
+ * Canonical Wireline Letterpress styling for ChatGPT MCP HTML widgets.
  * Values mirror design-tokens/wireline.tokens.json — keep in sync via build-design-tokens.
  */
 export const WIRELINE_MCP_WIDGET_TOKENS = {

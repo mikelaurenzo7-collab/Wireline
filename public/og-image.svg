@@ -1,172 +1,173 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <defs>
-    <linearGradient id="hairline" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#111111" stop-opacity="0"/>
-      <stop offset="50%" stop-color="#111111" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#111111" stop-opacity="0"/>
+    <linearGradient id="warmRule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2B5548" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#2B5548" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#2B5548" stop-opacity="0"/>
     </linearGradient>
+    <radialGradient id="softGlow" cx="72%" cy="20%" r="58%">
+      <stop offset="0%" stop-color="#D0E8DE" stop-opacity="0.86"/>
+      <stop offset="58%" stop-color="#EEF5F1" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#F7F6F3" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
-  <rect width="1200" height="630" fill="#F7F7F4"/>
+  <rect width="1200" height="630" fill="#F7F6F3"/>
+  <rect width="1200" height="630" fill="url(#softGlow)"/>
 
-  <g stroke="#111111" stroke-opacity="0.07" stroke-width="1">
-    <line x1="0" y1="120" x2="1200" y2="120"/>
-    <line x1="0" y1="510" x2="1200" y2="510"/>
+  <g stroke="#E8E7E3" stroke-width="1">
+    <line x1="0" y1="118" x2="1200" y2="118"/>
+    <line x1="0" y1="512" x2="1200" y2="512"/>
     <line x1="240" y1="0" x2="240" y2="630"/>
     <line x1="960" y1="0" x2="960" y2="630"/>
   </g>
 
   <text
     x="80"
-    y="78"
-    font-family="Inter, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
-    font-size="16"
+    y="76"
+    font-family="Space Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    font-size="15"
     font-weight="700"
-    letter-spacing="8"
-    fill="#111111"
-    fill-opacity="0.72"
+    letter-spacing="5"
+    fill="#2B5548"
   >
-    WIRELINE - TRYWIRELINE.COM
+    WIRELINE · TRYWIRELINE.COM
   </text>
-  <line x1="80" y1="96" x2="404" y2="96" stroke="url(#hairline)" stroke-width="1"/>
+  <line x1="80" y1="96" x2="430" y2="96" stroke="url(#warmRule)" stroke-width="1.25"/>
 
-  <g transform="translate(884, 56)">
+  <g transform="translate(860, 54)">
     <rect
-      width="236"
-      height="38"
-      rx="19"
-      ry="19"
-      fill="#111111"
-      fill-opacity="0.05"
-      stroke="#111111"
-      stroke-opacity="0.18"
+      width="260"
+      height="40"
+      rx="20"
+      ry="20"
+      fill="#EEF5F1"
+      stroke="#D0E8DE"
       stroke-width="1"
     />
-    <circle cx="22" cy="19" r="5" fill="#111111"/>
+    <circle cx="24" cy="20" r="5.5" fill="#3D9B73"/>
     <text
-      x="38"
-      y="25"
-      font-family="Inter, system-ui, sans-serif"
-      font-size="12"
+      x="42"
+      y="26"
+      font-family="Space Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+      font-size="11"
       font-weight="700"
-      letter-spacing="2.4"
-      fill="#111111"
+      letter-spacing="2"
+      fill="#2B5548"
     >
-      LIVE - RUNNING NOW
+      YOUR AGENT IS LIVE
     </text>
   </g>
 
   <text
     x="80"
-    y="236"
-    font-family="Inter, system-ui, sans-serif"
-    font-size="112"
-    font-weight="800"
-    letter-spacing="6"
-    fill="#111111"
+    y="230"
+    font-family="Instrument Serif, Georgia, ui-serif, serif"
+    font-size="88"
+    font-weight="400"
+    letter-spacing="-3"
+    fill="#1C1C1A"
   >
-    WIRELINE
+    Your phone,
+  </text>
+  <text
+    x="80"
+    y="316"
+    font-family="Instrument Serif, Georgia, ui-serif, serif"
+    font-size="88"
+    font-style="italic"
+    font-weight="400"
+    letter-spacing="-3"
+    fill="#2B5548"
+  >
+    finally
+  </text>
+  <text
+    x="350"
+    y="316"
+    font-family="Instrument Serif, Georgia, ui-serif, serif"
+    font-size="88"
+    font-weight="400"
+    letter-spacing="-3"
+    fill="#1C1C1A"
+  >
+    answering
+  </text>
+  <text
+    x="80"
+    y="402"
+    font-family="Instrument Serif, Georgia, ui-serif, serif"
+    font-size="88"
+    font-weight="400"
+    letter-spacing="-3"
+    fill="#1C1C1A"
+  >
+    for you.
   </text>
 
   <text
-    x="80"
-    y="318"
-    font-family="Inter, system-ui, sans-serif"
-    font-size="42"
-    font-weight="700"
-    fill="#111111"
-    letter-spacing="-0.5"
+    x="84"
+    y="458"
+    font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="27"
+    font-weight="500"
+    fill="#6B6B65"
   >
-    Agents for every
-  </text>
-  <text
-    x="80"
-    y="366"
-    font-family="Inter, system-ui, sans-serif"
-    font-size="42"
-    font-weight="700"
-    fill="#111111"
-    letter-spacing="-0.5"
-  >
-    conversation.
-  </text>
-  <text
-    x="80"
-    y="420"
-    font-family="Inter, system-ui, sans-serif"
-    font-size="34"
-    font-weight="700"
-    fill="#111111"
-    fill-opacity="0.68"
-    letter-spacing="-0.5"
-  >
-    Calls, texts, follow-up. Handled.
+    Calls, bookings, messages, errands, and follow-up.
   </text>
 
-  <g transform="translate(80, 470)">
+  <g transform="translate(760, 172)">
     <rect
-      width="616"
-      height="70"
-      rx="35"
-      ry="35"
-      fill="#111111"
-      fill-opacity="0.04"
-      stroke="#111111"
-      stroke-opacity="0.22"
-      stroke-width="1.25"
-    />
-    <circle cx="40" cy="35" r="7" fill="#111111"/>
-    <text
-      x="68"
-      y="44"
-      font-family="Inter, system-ui, sans-serif"
-      font-size="23"
-      font-weight="700"
-      fill="#111111"
-      letter-spacing="0.3"
-    >
-      Call (630) 581-1834 - Liam is live now
-    </text>
-  </g>
-
-  <g transform="translate(770, 160)">
-    <rect
-      x="0"
-      y="0"
-      width="350"
-      height="350"
-      rx="36"
-      ry="36"
-      fill="#111111"
-      fill-opacity="0.03"
-      stroke="#111111"
-      stroke-opacity="0.25"
+      width="360"
+      height="268"
+      rx="26"
+      ry="26"
+      fill="#FFFFFF"
+      stroke="#E8E7E3"
       stroke-width="1.5"
     />
-    <g transform="translate(-38,-18) scale(0.48)">
-      <path
-        d="M 220 300 L 392 712 L 512 470 L 632 712 L 804 300"
-        fill="none"
-        stroke="#111111"
-        stroke-width="110"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
+    <rect x="24" y="24" width="56" height="56" rx="14" fill="#2B5548"/>
+    <path
+      d="M39 40 L49 64 L56 50 L63 64 L73 40"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <text x="96" y="48" font-family="DM Sans, system-ui, sans-serif" font-size="18" font-weight="700" fill="#1C1C1A">
+      Mike's Agent
+    </text>
+    <text x="96" y="72" font-family="Space Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.4" fill="#2B5548">
+      ANSWERING NOW
+    </text>
+    <rect x="24" y="108" width="238" height="42" rx="16" fill="#F0EFEB"/>
+    <text x="42" y="135" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#6B6B65">
+      Who's calling and why?
+    </text>
+    <rect x="88" y="162" width="248" height="48" rx="18" fill="#2B5548"/>
+    <text x="108" y="192" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#FFFFFF">
+      Got it. I'll text Mike.
+    </text>
+    <g transform="translate(24, 228)">
+      <rect width="108" height="24" rx="12" fill="#EEF5F1"/>
+      <text x="15" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#2B5548">Handled</text>
+      <rect x="118" width="112" height="24" rx="12" fill="#FDF0E7"/>
+      <text x="132" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C4713B">SMS sent</text>
     </g>
   </g>
 
-  <line x1="80" y1="588" x2="1120" y2="588" stroke="#111111" stroke-opacity="0.12" stroke-width="1"/>
+  <line x1="80" y1="588" x2="1120" y2="588" stroke="#2B5548" stroke-opacity="0.14" stroke-width="1"/>
   <text
     x="80"
     y="612"
-    font-family="Inter, system-ui, sans-serif"
-    font-size="13"
-    font-weight="600"
-    letter-spacing="3.5"
-    fill="#111111"
-    fill-opacity="0.58"
+    font-family="Space Mono, ui-monospace, monospace"
+    font-size="12"
+    font-weight="700"
+    letter-spacing="3"
+    fill="#A1A19B"
   >
-    CALLS - TEXTS - FOLLOW-UP - GMAIL - SALESFORCE - STRIPE
+    PERSONAL · BUSINESS · VOICE · TEXT · FOLLOW-UP
   </text>
 </svg>

@@ -15,7 +15,7 @@ surface for the agents.
 
 Wireline should be instantly understandable:
 
-> Agents for every conversation. Calls, texts, follow-up. Handled.
+> Your phone, finally answering for you.
 
 The native app is the everyday control surface: ask Wireline, check live calls,
 review recaps, manage callback handoff, and keep the account activated across
@@ -31,7 +31,7 @@ ios/
 │   ├── Info.plist               Background modes, usage strings, wireline:// scheme.
 │   ├── Wireline.entitlements     aps-environment (CarPlay entitlement deferred).
 │   ├── App/WirelineRouter.swift  Bridges App Intents / widgets → in-app surfaces.
-│   ├── Theme/WirelineTheme.swift Native Wireline Mono tokens and system surfaces.
+│   ├── Theme/WirelineTheme.swift Native Wireline Letterpress tokens and system surfaces.
 │   ├── Models/Models.swift      Codable mirrors of the /api/mobile/* payloads.
 │   ├── Auth/AuthService.swift   Sign-in → JWT from session cookie → Keychain.
 │   ├── Networking/              WirelineConfig, WirelineAPI (Bearer), KeychainStore.
@@ -138,11 +138,11 @@ Wireline launches those apps; it does not pilot them.
 
 ## Design
 
-**Direction: native first, Wireline Mono second.** Wireline keeps SF Pro, system
+**Direction: native first, Wireline Letterpress second.** Wireline keeps SF Pro, system
 materials, standard controls, CallKit surfaces, and App Intent behavior, then
-layers the monochrome product identity on top: warm canvas `#F7F7F4`, white
-panels `#FFFFFF`, secondary surfaces `#F1F1EE`, primary action `#111111`, pressed
-action `#000000`, and primary text `#111111`.
+layers the product identity on top: warm paper canvas `#F7F6F3`, white panels
+`#FFFFFF`, secondary surfaces `#F0EFEB`, forest-green primary action `#2B5548`,
+pressed action `#1E4038`, and primary ink `#1C1C1A`.
 
 ## Build
 

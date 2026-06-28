@@ -15,7 +15,7 @@ Wireline is a horizontal agent platform for calls, texts, follow-up, browser con
 
 ## Tech
 
-- Web: React 19 + Vite, Express, TypeScript, Tailwind, and the Wireline Mono design system.
+- Web: React 19 + Vite, Express, TypeScript, Tailwind, and the Wireline Letterpress design system.
 - API: Serverless-capable (Vercel), Drizzle ORM on Supabase Postgres.
 - Browser: Manifest V3 command surface with Chromium and Firefox manifest overlays.
 - Voice: Production voice provider integrations plus dedicated realtime test paths.
@@ -60,7 +60,7 @@ See:
 
 ## Project status
 
-Active development covers Create -> Train -> Run, Wireline Mono standardization, native mobile control surfaces, Wireline Command, ChatGPT App readiness, usage and Conversation Balance foundations, and ongoing codebase health and legacy removal.
+Active development covers Create -> Train -> Run, Wireline Letterpress standardization, native mobile control surfaces, Wireline Command, ChatGPT App readiness, usage and Conversation Balance foundations, and ongoing codebase health and legacy removal.
 
 All changes must pass `npm run verify` (and full where applicable). Follow default-deny authz, Zod validation, structured logging, and source-of-truth discipline (`ai-models.ts`, schema, brand-colors, plan-catalog, and related contracts).
 

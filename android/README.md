@@ -12,7 +12,7 @@ The Android app is the everyday control surface for Wireline agents:
 
 ## Product promise
 
-> Agents for every conversation. Calls, texts, follow-up. Handled.
+> Your phone, finally answering for you.
 
 The native product is the daily control surface for agents, calls, recaps, and follow-up. Business and personal workflows use the same backend agent configuration, but the language must stay clear, practical, and agent-forward.
 
@@ -23,12 +23,12 @@ The Google Stitch project contains two implementation tracks:
 - **Desktop web deliverables** map to the React web application.
 - **Native mobile deliverables map to both this Compose app and the SwiftUI iOS app.** They are not mobile-web layouts.
 
-Android follows Wireline Mono while remaining Material-native:
+Android follows Wireline Letterpress while remaining Material-native:
 
-- warm monochrome canvas `#F7F7F4`, white grouped cards `#FFFFFF`, secondary surfaces `#F1F1EE`, and primary text `#111111`
-- monochrome primary action `#111111`, pressed state `#000000`, and semantic status colors only where status is required
+- warm paper canvas `#F7F6F3`, white grouped cards `#FFFFFF`, secondary surfaces `#F0EFEB`, and primary ink `#1C1C1A`
+- forest-green primary action `#2B5548`, pressed state `#1E4038`, and semantic status colors only where status is required
 - compact controls, restrained radius, and a clear 4dp/8dp spacing rhythm
-- no retired forest heritage, legacy signal blue, purple accents, cyan, mesh, or decorative gradients
+- no legacy signal blue, purple accents, cyan, mesh, or decorative gradients
 - agent language: agents, calls, texts, recaps, and follow-up—not Live Ops or operator dashboards
 - retain Material 3, TalkBack labels, dynamic font scaling, Android system insets, notification permission, and Telecom behavior
 

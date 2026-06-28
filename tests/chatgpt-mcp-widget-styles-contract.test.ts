@@ -8,16 +8,16 @@ import {
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("ChatGPT MCP widget mono styling", () => {
-  it("exports canonical Wireline Mono tokens for MCP HTML widgets", () => {
-    expect(WIRELINE_MCP_WIDGET_TOKENS.canvas).toBe("#F7F7F4");
-    expect(WIRELINE_MCP_WIDGET_TOKENS.action).toBe("#111111");
-    expect(WIRELINE_MCP_WIDGET_TOKENS.shadowCard).toContain("rgba(17, 17, 17");
+describe("ChatGPT MCP widget Letterpress styling", () => {
+  it("exports canonical Wireline Letterpress tokens for MCP HTML widgets", () => {
+    expect(WIRELINE_MCP_WIDGET_TOKENS.canvas).toBe("#F7F6F3");
+    expect(WIRELINE_MCP_WIDGET_TOKENS.action).toBe("#2B5548");
+    expect(WIRELINE_MCP_WIDGET_TOKENS.shadowCard).toContain("rgba(28, 28, 26");
   });
 
-  it("builds accessible widget CSS with mono surfaces and 44px controls", () => {
+  it("builds accessible widget CSS with Letterpress surfaces and 44px controls", () => {
     const css = buildWirelineMcpWidgetCss();
-    expect(css).toContain("--wl-canvas: #F7F7F4");
+    expect(css).toContain("--wl-canvas: #F7F6F3");
     expect(css).toContain("--wl-tertiary:");
     expect(css).toContain(".composer");
     expect(css).toContain("min-height: 44px");

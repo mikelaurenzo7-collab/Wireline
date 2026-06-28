@@ -20,11 +20,11 @@ const AUTHENTICATED_SURFACE_GLOBS = [
 
 const OLD_PALETTE = /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF|rgba\(93,\s*63,\s*211/i;
 
-describe("Wireline Mono design vision", () => {
+describe("Wireline Letterpress design vision", () => {
   it("exports a single canonical vision manifest", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
-    expect(WIRELINE_DESIGN_VISION.system).toBe("Wireline Mono");
-    expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#111111");
+    expect(WIRELINE_DESIGN_VISION.system).toBe("Wireline Letterpress");
+    expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#2B5548");
     expect(WIRELINE_DESIGN_VISION.utilities).toContain("wl-panel-elevated");
   });
 

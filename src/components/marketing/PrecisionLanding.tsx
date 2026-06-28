@@ -3,6 +3,7 @@ import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import { MARKETING_VOICE } from "../../lib/product-copy";
 
 // ─── Live call card (hero illustration) ────────────────────────────────────
 function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
@@ -233,6 +234,7 @@ const PLANS = [
 export default function PrecisionLanding() {
   const [audience, setAudience] = useState<Audience>("personal");
   const configs = audience === "personal" ? PERSONAL_CONFIGS : BUSINESS_CONFIGS;
+  const personalHeadline = MARKETING_VOICE.headline;
 
   return (
     <div className="wl-viewport-frame bg-background text-foreground">
@@ -274,10 +276,11 @@ export default function PrecisionLanding() {
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#3D9B73]" />
                     <span className="font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">
-                      v1 · now in beta
+                      {MARKETING_VOICE.eyebrow}
                     </span>
                   </div>
                   <h1
+                    aria-label={personalHeadline}
                     className="wl-public-section-heading max-w-none text-[clamp(52px,6vw,72px)] leading-[.95]"
                     style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.035em" }}
                   >
@@ -286,7 +289,7 @@ export default function PrecisionLanding() {
                     answering for you.
                   </h1>
                   <p className="wl-public-copy mt-6 max-w-none text-[17px] leading-[1.7]">
-                    A voice AI that picks up your phone, talks to the caller, and handles it — booking, message-taking, follow-ups, errands. You get a text with what happened.
+                    {MARKETING_VOICE.subline}
                   </p>
                 </>
               ) : (
@@ -327,7 +330,7 @@ export default function PrecisionLanding() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-6">
-                {["Answers with a real voice", "Acts on your behalf", "Texts you what happened"].map((item) => (
+                {MARKETING_VOICE.proof.map((item) => (
                   <div key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
                     <div className="grid h-[18px] w-[18px] place-items-center rounded-full bg-[#EEF5F1] text-[10px] font-bold text-primary">
                       ✓
@@ -352,7 +355,7 @@ export default function PrecisionLanding() {
             style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif" }}
           >
             Siri silences unknowns.{" "}
-            <span className="text-[#F7F6F3]">Wireline answers them.</span>
+            <span className="text-[#F7F6F3]">{MARKETING_VOICE.differentiator}</span>
           </p>
         </div>
 

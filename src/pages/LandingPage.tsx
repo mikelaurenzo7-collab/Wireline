@@ -23,8 +23,8 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Agents for every conversation"
-        description="Create, train, and run agents that handle calls, texts, follow-up, browser context, email, and integrations."
+        title="Wireline | Your phone, finally answering for you"
+        description="A voice AI that picks up your phone, talks to the caller, and handles it. Booking, message-taking, follow-ups, errands, and business coverage in one place."
         image="/og-image.png"
       />
       <script

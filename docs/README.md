@@ -19,7 +19,7 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 - Training owns the heavy configuration surface and document ingestion.
 - Studio is a chat-first workroom and does not have the old right context rail.
 - Wireline Command is the browser surface name; do not restore the retired extension name.
-- The design system is Wireline Mono / Wireline Clear System. Product chrome stays monochrome.
+- The design system is Wireline Letterpress / Wireline Clear System. Product chrome uses forest-green action, warm paper, ink text, and restrained status colors.
 
 ## System references
 

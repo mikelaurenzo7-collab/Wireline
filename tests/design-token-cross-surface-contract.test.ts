@@ -31,8 +31,8 @@ describe("cross-surface design token generation", () => {
     const swift = read(outputs.swift);
     const kotlin = read(outputs.kotlin);
 
-    expect(extension).toContain("--wireline-color-canvas-default: #F7F7F4;");
-    expect(extension).toContain("--wireline-color-action-primary-default: #111111;");
+    expect(extension).toContain("--wireline-color-canvas-default: #F7F6F3;");
+    expect(extension).toContain("--wireline-color-action-primary-default: #2B5548;");
     expect(extension).toContain("--wireline-interaction-target-comfortable: 44px;");
     expect(extension).toContain("--wireline-elevation-card:");
     expect(extension).toContain("--wireline-layout-contentMax: 1152px;");
