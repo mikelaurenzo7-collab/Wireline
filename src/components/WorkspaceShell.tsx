@@ -120,7 +120,7 @@ function RailItem({
       title={label}
       className={
         compact
-          ? `grid min-h-[44px] flex-1 place-items-center gap-0.5 rounded-xl px-2 py-1.5 text-[var(--wireline-typography-overline-size)] font-semibold transition-colors ${
+          ? `grid min-h-[44px] flex-1 place-items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-semibold transition-colors ${
               active
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
@@ -415,8 +415,53 @@ function MobileStudioAgentBar({
     <BottomStudioAgentBar
       agents={agents}
       activeAgentId={activeAgentId}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-background/95 px-2 pb-2 pt-2 backdrop-blur-xl lg:hidden"
     />
+  );
+}
+
+const MOBILE_NAV: Record<"personal" | "business", RailNavItem[]> = {
+  personal: [
+    { href: "/overview", label: "Home", icon: Home },
+    { href: "/studio", label: "Studio", icon: Layers },
+    { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+    { href: "/inbox", label: "Inbox", icon: Inbox },
+    { href: "/settings", label: "Settings", icon: Settings },
+  ],
+  business: [
+    { href: "/overview", label: "Overview", icon: Home },
+    { href: "/agents", label: "Assistants", icon: Users },
+    { href: "/studio", label: "Studio", icon: Layers },
+    { href: "/inbox", label: "Inbox", icon: Inbox },
+    { href: "/settings", label: "Settings", icon: Settings },
+  ],
+};
+
+function MobileWorkspaceNav({
+  pathname,
+  posture,
+}: {
+  pathname: string;
+  posture: "personal" | "business";
+}) {
+  return (
+    <nav
+      aria-label="Workspace navigation"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
+    >
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
+        {MOBILE_NAV[posture].map((item) => (
+          <RailItem
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={railItemActive(pathname, item.href)}
+            compact
+          />
+        ))}
+      </div>
+    </nav>
   );
 }
 
@@ -577,6 +622,8 @@ export default function WorkspaceShell({
   const location = useLocation();
   const [params] = useSearchParams();
   const { resolvedId: studioAgentId, agents } = useStudioActiveAgentId();
+  const { accountType } = useAccount();
+  const posture: "personal" | "business" = accountType === "business" ? "business" : "personal";
   const isStudioRoute =
     location.pathname === "/studio" ||
     location.pathname.startsWith("/studio/") ||
@@ -602,13 +649,9 @@ export default function WorkspaceShell({
               ? "px-0 pt-0 lg:px-0 lg:pt-0"
               : "px-4 pt-2 sm:px-6 sm:pt-3 lg:px-8 lg:pt-3 xl:px-10"
           } ${
-            isStudioRoute && !nativeAppShell
-              ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
-              : nativeAppShell
-                ? isStudioRoute
-                  ? "pb-[calc(8.75rem+env(safe-area-inset-bottom))]"
-                  : "pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
-                : "pb-4 sm:pb-5 lg:pb-6"
+            isStudioRoute
+              ? "pb-[calc(8.75rem+env(safe-area-inset-bottom))] lg:pb-0"
+              : "pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-6"
           }`}
         >
           {isStudioRoute ? (
@@ -683,7 +726,11 @@ export default function WorkspaceShell({
       {isStudioRoute && nativeAppShell ? (
         <NativeStudioAgentBar agents={agents} activeAgentId={studioAgentId} />
       ) : null}
-      {nativeAppShell ? <NativeDock pathname={location.pathname} /> : null}
+      {nativeAppShell ? (
+        <NativeDock pathname={location.pathname} />
+      ) : (
+        <MobileWorkspaceNav pathname={location.pathname} posture={posture} />
+      )}
     </div>
   );
 }

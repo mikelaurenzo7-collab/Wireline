@@ -29,7 +29,7 @@ export default function MobileBrowserUtilities() {
   return (
     <details
       key={location.pathname}
-      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-[70] lg:hidden"
+      className="fixed bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.5rem)] right-4 z-[70] lg:hidden"
     >
       <summary
         aria-label="Open workspace controls"
@@ -37,7 +37,7 @@ export default function MobileBrowserUtilities() {
       >
         <Settings size={18} aria-hidden="true" />
       </summary>
-      <div className="fixed inset-x-4 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+3.75rem)] max-h-[min(24rem,calc(100dvh-7rem))] overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-background p-2 normal-case tracking-normal text-foreground shadow-[0_24px_60px_-30px_rgba(17,17,17,0.55),var(--wireline-elevation-md)] sm:left-4 sm:right-auto sm:w-[21rem]">
+      <div className="fixed inset-x-4 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+8.25rem)] max-h-[min(24rem,calc(100dvh-11rem))] overflow-y-auto rounded-[var(--radius-lg)] border border-border bg-background p-2 normal-case tracking-normal text-foreground shadow-[0_24px_60px_-30px_rgba(17,17,17,0.55),var(--wireline-elevation-md)] sm:left-auto sm:right-4 sm:w-[21rem]">
         <div className="border-b border-border/70 px-3 py-2 text-left">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Controls
