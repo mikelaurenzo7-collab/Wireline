@@ -42,9 +42,15 @@ describe("canonical mobile overlay system", () => {
 
     expect(shell).toContain("function DesktopRail");
     expect(shell).toContain("function NativeDock");
+    expect(shell).toContain("function MobileWorkspaceNav");
     expect(shell).toContain("function isNativeAppShell");
     expect(shell).toContain("!nativeAppShell ? <MobileBrowserUtilities />");
-    expect(shell).toContain("nativeAppShell ? <NativeDock");
+    // Native shells get the native dock; mobile web gets the workspace tab bar.
+    expect(shell).toContain("<NativeDock");
+    expect(shell).toContain("<MobileWorkspaceNav");
+    // Full Claude Design sidebar IA, posture-aware.
+    expect(shell).toContain("WORKSPACE_NAV");
+    expect(shell).toContain("OPERATE_NAV");
     expect(shell).not.toContain("document.body.style.overflow");
     expect(shell).not.toContain("window.addEventListener");
   });
