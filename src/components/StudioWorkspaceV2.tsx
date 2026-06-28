@@ -88,7 +88,11 @@ function StudioEmptyState() {
           <div className="flex flex-wrap justify-center gap-3">
             <Link
               to={createHref()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-primary-foreground shadow-sm transition active:scale-[0.985]"
+              style={{
+                background: "var(--wireline-color-action-primary-default)",
+                color: "var(--wireline-color-text-onAction)",
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-medium shadow-sm transition hover:opacity-95 active:scale-[0.985]"
             >
               <Plus size={15} className="sm:size-[17px]" /> Wire it (start setup)
             </Link>

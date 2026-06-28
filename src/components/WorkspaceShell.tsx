@@ -400,15 +400,7 @@ function SidebarLink({
   active: boolean;
 }) {
   return (
-    <Link
-      to={href}
-      aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-[13px] transition-colors ${
-        active
-          ? "bg-primary font-semibold text-primary-foreground"
-          : "text-muted-foreground hover:bg-[color:var(--wireline-color-surface-subtle)] hover:text-foreground"
-      }`}
-    >
+    <Link to={href} aria-current={active ? "page" : undefined} className="wl-rail-link">
       <Icon size={16} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
       {label}
     </Link>
