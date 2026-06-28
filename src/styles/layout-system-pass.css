@@ -35,6 +35,41 @@
   );
 }
 
+/* Letterpress workspace rail link (Claude Design sidebar).
+ * Unlayered so token colors win over Tailwind color utilities on <a>. */
+.wl-rail-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 7px;
+  padding: 0.5rem 0.625rem;
+  font-size: 13px;
+  color: var(--wireline-color-text-secondary);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.wl-rail-link:hover {
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-rail-link[aria-current="page"] {
+  background: var(--wireline-color-action-primary-default);
+  color: #fff;
+  font-weight: 600;
+}
+
+.wl-rail-link[aria-current="page"]:hover {
+  background: var(--wireline-color-action-primary-pressed);
+  color: #fff;
+}
+
+.wl-rail-link[aria-current="page"] svg {
+  color: #fff;
+}
+
 .wl-stitch-sidebar-link {
   min-height: 2.625rem;
   font-size: 0.8125rem;
