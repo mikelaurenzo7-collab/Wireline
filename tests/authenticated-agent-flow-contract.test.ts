@@ -24,6 +24,8 @@ describe("authenticated agent flow", () => {
     expect(shell).toContain("useRovingTabIndex");
     expect(shell).toMatch(/function AgentSwitcherPill[\s\S]*min-h-\[44px\]/);
     expect(shell).toContain("scrollIntoView");
+    expect(shell).toContain("NativeStudioAgentBar");
+    expect(shell).toMatch(/isStudioRoute && nativeAppShell[\s\S]*NativeStudioAgentBar/);
     expect(shell).toContain("Settings");
 
     // Open canvas for creation when no agents
@@ -94,6 +96,11 @@ describe("authenticated agent flow", () => {
     expect(read("src/lib/product-copy.ts")).toContain('createHeadline: "Wire an agent."');
     expect(read("src/lib/product-copy.ts")).toContain('emptyCue: "Brief it. Train it. Wire it."');
 
-    // mode support is legacy; current canvas always renders full per-agent workspace with chat prominent
+    expect(studioV2).toContain('params.get("mode")');
+    expect(studioV2).toContain('next.delete("mode")');
+    expect(studioV2).not.toContain("mode=workroom");
+    expect(read("src/pages/OverviewPage.tsx")).not.toContain("mode=workroom");
+    expect(read("src/components/StudioOverview.tsx")).not.toContain("mode=workroom");
+    expect(workspacePanel).not.toContain("mode=workroom");
   });
 });

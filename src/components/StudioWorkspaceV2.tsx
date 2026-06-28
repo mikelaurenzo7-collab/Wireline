@@ -111,10 +111,23 @@ export default function StudioWorkspaceV2() {
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const requestedId = params.get("agent");
+  const legacyMode = params.get("mode");
   const workspaceView = params.get("view") === "workspace";
   const agentIds = useMemo(() => agents.map((agent) => agent.id), [agents]);
   const resolvedAgentId = resolveStudioActiveAgentId(requestedId, agentIds);
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
+
+  useEffect(() => {
+    if (legacyMode !== "workroom") return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("mode");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [legacyMode, setParams]);
 
   useEffect(() => {
     if (loading || agents.length === 0 || !resolvedAgentId || resolvedAgentId === requestedId) {

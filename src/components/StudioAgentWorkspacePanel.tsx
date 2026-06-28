@@ -632,7 +632,7 @@ export default function StudioAgentWorkspacePanel({
                 </div>
               </div>
               <Link
-                to={`/studio?agent=${agentId}&mode=workroom`}
+                to={`/studio?agent=${agentId}`}
                 className="mt-4 inline-block text-xs text-primary"
               >
                 Deep dive in chat →
@@ -653,7 +653,7 @@ export default function StudioAgentWorkspacePanel({
             <div className="studio-card p-5">
               <div className="font-semibold mb-3">Controls</div>
               <div className="flex flex-col gap-2 text-sm">
-                <Link to={`/studio?agent=${agentId}&mode=workroom`} className="hover:text-primary">
+                <Link to={`/studio?agent=${agentId}`} className="hover:text-primary">
                   Open full chat workspace
                 </Link>
                 <Link to="/settings" className="hover:text-primary">

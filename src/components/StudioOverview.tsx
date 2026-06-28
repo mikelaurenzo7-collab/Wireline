@@ -132,7 +132,10 @@ export default function StudioOverview({
 
         {/* Purposeful flywheel teaser: surface outcomes from Run to drive Train */}
         <div className="studio-card px-4 py-3 text-center text-sm">
-          <Link to={`/studio?agent=${encodeURIComponent(active.id)}&mode=workroom`} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            to={`/studio?agent=${encodeURIComponent(active.id)}`}
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
             <span>Review recent outcomes in ledger → train the agent</span>
             <ArrowRight size={14} />
           </Link>

@@ -566,6 +566,18 @@ mustInclude(
   "active agent pill must scroll into view in horizontal scroller",
 );
 mustInclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /function NativeStudioAgentBar/,
+  "native app shell must expose horizontal agent switcher above NativeDock",
+);
+mustInclude(
+  "src/components/WorkspaceShell.tsx",
+  workspaceShell,
+  /isStudioRoute && nativeAppShell[\s\S]*NativeStudioAgentBar/,
+  "native agent switcher must render on studio routes",
+);
+mustInclude(
   "src/lib/wireline-design-vision.ts",
   designVision,
   /minTouchTargetPx:\s*44/,
@@ -578,6 +590,19 @@ mustInclude(
   /view"\) === "workspace"|StudioAgentWorkspacePanel/,
   "canvas opens composer; per-agent workspace panel mounts behind view=workspace",
 );
+mustInclude(
+  "src/components/StudioWorkspaceV2.tsx",
+  studioWorkspace,
+  /next\.delete\("mode"\)/,
+  "studio canvas must strip legacy mode=workroom from URL",
+);
+for (const [file, source] of [
+  ["src/pages/OverviewPage.tsx", overviewPage],
+  ["src/components/StudioOverview.tsx", studioOverview],
+  ["src/components/StudioAgentWorkspacePanel.tsx", studioAgentWorkspacePanel],
+]) {
+  mustExclude(file, source, /mode=workroom/, "legacy workroom mode must not appear in studio links");
+}
 mustInclude(
   "src/components/StudioAgentWorkspacePanel.tsx",
   studioAgentWorkspacePanel,

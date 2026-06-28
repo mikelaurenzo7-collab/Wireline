@@ -60,7 +60,7 @@ export default function OverviewPage() {
 
   function openWorkroom() {
     if (!primaryAgent) return;
-    const next = new URLSearchParams({ agent: primaryAgent.id, mode: "workroom" });
+    const next = new URLSearchParams({ agent: primaryAgent.id });
     if (commandText) {
       next.set("command", commandText);
       next.set("commandNonce", String(Date.now()));
@@ -249,7 +249,7 @@ export default function OverviewPage() {
                     </Link>
                     <div className="mt-auto flex justify-center border-t border-border/60 pt-3">
                       <Link
-                        to={`/studio?agent=${enc}&mode=workroom`}
+                        to={`/studio?agent=${enc}`}
                         className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
                         aria-label={`Open ${agent.name} in workroom`}
                       >

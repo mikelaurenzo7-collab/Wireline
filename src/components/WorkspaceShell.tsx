@@ -296,12 +296,14 @@ function StudioMobileHeader({
   );
 }
 
-function MobileStudioAgentBar({
+function BottomStudioAgentBar({
   agents,
   activeAgentId,
+  className,
 }: {
   agents: WorkspaceAgentSummary[];
   activeAgentId: string | null;
+  className: string;
 }) {
   const { listRef, getTabIndex, handleKeyDown, activePillRef } = useAgentSwitcherA11y(
     agents,
@@ -311,10 +313,7 @@ function MobileStudioAgentBar({
   if (!agents.length) return null;
 
   return (
-    <nav
-      aria-label="Agent switcher"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
-    >
+    <nav aria-label="Agent switcher" className={className}>
       <div className="mx-auto flex max-w-2xl items-center gap-1.5">
         <div
           ref={listRef}
@@ -343,6 +342,38 @@ function MobileStudioAgentBar({
         </Link>
       </div>
     </nav>
+  );
+}
+
+function MobileStudioAgentBar({
+  agents,
+  activeAgentId,
+}: {
+  agents: WorkspaceAgentSummary[];
+  activeAgentId: string | null;
+}) {
+  return (
+    <BottomStudioAgentBar
+      agents={agents}
+      activeAgentId={activeAgentId}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
+    />
+  );
+}
+
+function NativeStudioAgentBar({
+  agents,
+  activeAgentId,
+}: {
+  agents: WorkspaceAgentSummary[];
+  activeAgentId: string | null;
+}) {
+  return (
+    <BottomStudioAgentBar
+      agents={agents}
+      activeAgentId={activeAgentId}
+      className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 border-t border-border bg-background/95 px-2 pb-2 pt-2 backdrop-blur-xl lg:hidden"
+    />
   );
 }
 
@@ -444,7 +475,9 @@ export default function WorkspaceShell({
             isStudioRoute && !nativeAppShell
               ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
               : nativeAppShell
-                ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
+                ? isStudioRoute
+                  ? "pb-[calc(8.75rem+env(safe-area-inset-bottom))]"
+                  : "pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
                 : "pb-4 sm:pb-5 lg:pb-6"
           }`}
         >
@@ -516,6 +549,9 @@ export default function WorkspaceShell({
       {!nativeAppShell ? <MobileBrowserUtilities /> : null}
       {isStudioRoute && !nativeAppShell ? (
         <MobileStudioAgentBar agents={agents} activeAgentId={studioAgentId} />
+      ) : null}
+      {isStudioRoute && nativeAppShell ? (
+        <NativeStudioAgentBar agents={agents} activeAgentId={studioAgentId} />
       ) : null}
       {nativeAppShell ? <NativeDock pathname={location.pathname} /> : null}
     </div>

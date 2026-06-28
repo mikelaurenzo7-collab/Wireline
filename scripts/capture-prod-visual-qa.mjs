@@ -57,6 +57,23 @@ const authenticatedRoutes = [
 ];
 
 /*
+ * Multi-agent /studio visual QA (optional deep links):
+ * - Default canvas: /studio?agent=<id>
+ * - Workspace depth: /studio?agent=<id>&view=workspace
+ * - Native shell switcher: append ?wireline_native=1
+ * Set WIRELINE_VISUAL_STUDIO_AGENT to capture agent-specific studio states.
+ */
+function studioMultiAgentCaptureRoutes(agentId) {
+  if (!agentId?.trim()) return [];
+  const enc = encodeURIComponent(agentId.trim());
+  return [`/studio?agent=${enc}`, `/studio?agent=${enc}&view=workspace`];
+}
+
+const studioDeepLinkRoutes = studioMultiAgentCaptureRoutes(
+  process.env.WIRELINE_VISUAL_STUDIO_AGENT,
+);
+
+/*
  * `thinkpad` approximates the effective CSS viewport of a Windows laptop
  * after browser chrome/scaling. It is intentionally shorter than the regular
  * laptop target because composer visibility is a vertical ergonomics contract.
@@ -258,6 +275,8 @@ async function captureAuthenticated(browser, viewport, storageState, issues) {
   const page = await context.newPage();
   attachDiagnostics(page, viewport.name, "authenticated", issues);
   for (const route of authenticatedRoutes)
+    await captureRoute(page, viewport.name, route, issues, "authenticated");
+  for (const route of studioDeepLinkRoutes)
     await captureRoute(page, viewport.name, route, issues, "authenticated");
   await context.close();
 }
@@ -725,7 +744,7 @@ try {
     if (await signUp(signupPage, desktop.name, issues)) {
       await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
       storageState = await signupContext.storageState();
-      for (const route of authenticatedRoutes) {
+      for (const route of [...authenticatedRoutes, ...studioDeepLinkRoutes]) {
         await captureRoute(signupPage, desktop.name, route, issues, "authenticated");
       }
     }
@@ -740,9 +759,10 @@ try {
   await browser.close();
 }
 
+const authenticatedCaptureRoutes = [...authenticatedRoutes, ...studioDeepLinkRoutes];
 const routeCount =
   marketingRoutes.length * viewports.length +
-  (storageState ? authenticatedRoutes.length * viewports.length : 0);
+  (storageState ? authenticatedCaptureRoutes.length * viewports.length : 0);
 const manifest = {
   baseUrl,
   outputDir,
@@ -750,7 +770,8 @@ const manifest = {
   authenticatedCapture: !!storageState,
   viewports,
   marketingRoutes,
-  authenticatedRoutes,
+  authenticatedRoutes: authenticatedCaptureRoutes,
+  studioDeepLinkRoutes,
   screenshotCountExpected: routeCount * 2,
   issues,
 };
