@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
 const PRODUCT_LINKS = [
-  { to: "/for/personal", label: "For you" },
-  { to: "/solutions/sales", label: "For business" },
-  { to: "/features", label: "Voice, email & text" },
+  { to: "/for/personal", label: "Use cases" },
+  { to: "/solutions/sales", label: "Business" },
+  { to: "/features", label: "Channels" },
   { to: "/pricing", label: "Pricing" },
 ] as const;
 
@@ -39,15 +39,15 @@ export default function MarketingFooter({
     >
       <div className="wl-public-rail">
         <div className="marketing-footer-rail">
-          <div>
+          <div className="marketing-footer-brand">
             <p className="font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground">
               Wireline
             </p>
             <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-              Voice, email, and text—made yours.
+              Voice, email, text. Yours.
             </p>
           </div>
-          <nav aria-label="Product" className="flex flex-col items-start gap-1">
+          <nav aria-label="Product" className="marketing-footer-nav flex flex-col items-start gap-1">
             <p className="wl-overline mb-1">Product</p>
             {PRODUCT_LINKS.map((link) => (
               <Link
@@ -59,7 +59,7 @@ export default function MarketingFooter({
               </Link>
             ))}
           </nav>
-          <nav aria-label="Resources" className="flex flex-col items-start gap-1">
+          <nav aria-label="Resources" className="marketing-footer-nav flex flex-col items-start gap-1">
             <p className="wl-overline mb-1">Resources</p>
             {RESOURCE_LINKS.map((link) => (
               <Link
@@ -72,7 +72,7 @@ export default function MarketingFooter({
             ))}
           </nav>
         </div>
-        <div className="mt-7 border-t border-border pt-4 text-sm text-muted-foreground">
+        <div className="marketing-footer-legal mt-7 border-t border-border pt-4 text-sm text-muted-foreground">
           <span>&copy; {new Date().getFullYear()} Wireline</span>
         </div>
       </div>
