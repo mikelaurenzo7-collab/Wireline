@@ -1,8 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Wireline Mono — one calm system, no theme drift. */
+/* Wireline — Letterpress design system. */
 @import "./styles/tokens.generated.css";
 @import "./styles/foundation.css";
 @import "./styles/design-system.css";
@@ -22,10 +22,10 @@
 body {
   background: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
-  font-family: var(--wireline-font-family-body), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --wl-font-display: Inter;
-  --wl-font-sans: Inter;
-  /* World-class typography polish */
+  font-family: var(--wireline-font-family-body), "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wl-font-display: "Instrument Serif";
+  --wl-font-sans: "DM Sans";
+  --wl-font-mono: "Space Mono";
   font-feature-settings: "kern" 1, "tnum" 1, "ss01" 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

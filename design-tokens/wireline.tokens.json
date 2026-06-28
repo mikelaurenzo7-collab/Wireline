@@ -2,34 +2,34 @@
   "$schema": "https://design-tokens.github.io/community-group/format/",
   "$description": "Wireline Mono design tokens. Minimal monochrome source for web, browser, and native outputs.",
   "color": {
-    "canvas": { "default": { "$type": "color", "$value": "#F7F7F4" } },
+    "canvas": { "default": { "$type": "color", "$value": "#F7F6F3" } },
     "surface": {
       "default": { "$type": "color", "$value": "#FFFFFF" },
-      "subtle": { "$type": "color", "$value": "#F1F1EE" },
-      "container": { "$type": "color", "$value": "#ECECEA" },
-      "strong": { "$type": "color", "$value": "#D8D8D3" }
+      "subtle": { "$type": "color", "$value": "#FAFAF8" },
+      "container": { "$type": "color", "$value": "#F0EFEB" },
+      "strong": { "$type": "color", "$value": "#E8E7E3" }
     },
     "text": {
-      "primary": { "$type": "color", "$value": "#111111" },
-      "secondary": { "$type": "color", "$value": "#6B6B66" },
-      "tertiary": { "$type": "color", "$value": "#8A8A84" },
+      "primary": { "$type": "color", "$value": "#1C1C1A" },
+      "secondary": { "$type": "color", "$value": "#6B6B65" },
+      "tertiary": { "$type": "color", "$value": "#A1A19B" },
       "onAction": { "$type": "color", "$value": "#FFFFFF" }
     },
     "action": {
       "primary": {
-        "default": { "$type": "color", "$value": "#111111" },
-        "pressed": { "$type": "color", "$value": "#000000" },
-        "container": { "$type": "color", "$value": "rgba(17, 17, 17, 0.08)" }
+        "default": { "$type": "color", "$value": "#2B5548" },
+        "pressed": { "$type": "color", "$value": "#1E4038" },
+        "container": { "$type": "color", "$value": "#EEF5F1" }
       }
     },
     "border": {
-      "default": { "$type": "color", "$value": "#E3E3E0" },
-      "strong": { "$type": "color", "$value": "#C7C7C2" }
+      "default": { "$type": "color", "$value": "#E8E7E3" },
+      "strong": { "$type": "color", "$value": "#C4C4BE" }
     },
-    "focus": { "default": { "$type": "color", "$value": "#111111" } },
-    "overlay": { "scrim": { "$type": "color", "$value": "rgba(17, 17, 17, 0.48)" } },
+    "focus": { "default": { "$type": "color", "$value": "#2B5548" } },
+    "overlay": { "scrim": { "$type": "color", "$value": "rgba(28, 28, 26, 0.48)" } },
     "status": {
-      "success": { "$type": "color", "$value": "#3F6F45" },
+      "success": { "$type": "color", "$value": "#3D9B73" },
       "warning": { "$type": "color", "$value": "#86612D" },
       "error": { "$type": "color", "$value": "#A23A3A" },
       "info": { "$type": "color", "$value": "#4B5563" }
@@ -93,9 +93,9 @@
   },
   "font": {
     "family": {
-      "display": { "$type": "fontFamily", "$value": "Inter" },
-      "body": { "$type": "fontFamily", "$value": "Inter" },
-      "mono": { "$type": "fontFamily", "$value": "JetBrains Mono" }
+      "display": { "$type": "fontFamily", "$value": "Instrument Serif" },
+      "body": { "$type": "fontFamily", "$value": "DM Sans" },
+      "mono": { "$type": "fontFamily", "$value": "Space Mono" }
     }
   },
   "typography": {

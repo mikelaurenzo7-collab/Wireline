@@ -1,19 +1,21 @@
-/** Shared product voice: one workspace for personal and business agents. */
+/** Shared product voice — personal phone agent, configure it however you need. */
 
 export const MARKETING_VOICE = {
-  eyebrow: "Wireline OS",
-  headline: "Agents for every conversation.",
-  subline: "Calls, texts, follow-up. Done.",
-  proof: ["Create", "Train", "Run", "Calls", "Texts", "Follow-up"],
-  extensionLead: "Command agents from the page you're on. Create, train, and run with mono clarity.",
+  eyebrow: "v1 · now in beta",
+  headline: "Your phone, finally answering for you.",
+  subline:
+    "A voice AI that picks up your phone, talks to the caller, and handles it — booking, message-taking, follow-ups, errands. You get a text with what happened.",
+  proof: ["Answers with a real voice", "Acts on your behalf", "Texts you what happened"],
+  extensionLead: "Command your agent from any page. Wireline answers while you stay focused.",
+  differentiator: "Siri silences. Wireline answers.",
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Wire an agent.",
-  runHeadline: "Run the work.",
-  emptyCue: "Brief it. Train it. Wire it.",
-  commandPrompts: ["Review calls", "Draft reply", "Prep handoff"],
-  directAgent: (name?: string | null) => `Direct ${name?.trim() || "your agent"}...`,
+  createHeadline: "Build your agent.",
+  runHeadline: "Your phone is covered.",
+  emptyCue: "Name it. Train it. Deploy it.",
+  commandPrompts: ["Change voice", "Edit workflows", "Review calls"],
+  directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your agent"}...`,
 } as const;
 
 export const PRODUCT_VERSATILITY = {
