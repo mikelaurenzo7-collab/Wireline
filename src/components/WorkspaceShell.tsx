@@ -517,7 +517,7 @@ export default function WorkspaceShell({
                     </p>
                   ) : null}
                   {title ? (
-                    <h1 className="truncate font-[var(--wireline-font-family-display)] text-[21px] font-semibold leading-[1.05] tracking-[-0.025em] text-foreground">
+                    <h1 className="truncate font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">
                       {title}
                     </h1>
                   ) : null}
@@ -533,12 +533,12 @@ export default function WorkspaceShell({
           )}
           <div
             className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${
-              isStudioRoute ? "overflow-hidden" : ""
+              isStudioRoute && !studioWorkspaceView ? "overflow-hidden" : ""
             } ${contentClassName}`}
           >
             <div
-              className={`wl-workspace-content-inner mx-auto flex min-h-full w-full flex-col ${
-                isStudioRoute ? "max-w-none" : "max-w-[1480px]"
+              className={`wl-workspace-content-inner mx-auto flex w-full flex-col ${
+                isStudioRoute ? "h-full min-h-0 max-w-none" : "min-h-full max-w-[1480px]"
               }`}
             >
               {children}

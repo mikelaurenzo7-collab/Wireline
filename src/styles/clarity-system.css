@@ -212,18 +212,20 @@
 
 .wl-overview-shortcut::after,
 .wl-overview-roster-card::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--wireline-color-action-primary-default) 0%, transparent);
-  transition: box-shadow .2s ease;
+  box-shadow: 0 0 0 0
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 0%, transparent);
+  transition: box-shadow 0.2s ease;
   pointer-events: none;
 }
 
 .wl-overview-shortcut:hover::after,
 .wl-overview-roster-card:hover::after {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wireline-color-action-primary-default) 18%, transparent);
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 18%, transparent);
 }
 
 /* A11y & responsive polish for all upgraded auth flows: use tokens, min targets, clean focus */
@@ -249,7 +251,7 @@
 }
 
 /* Enforce centered titles/headers for authenticated workspace surfaces (Overview, Studio, Training).
- * Clean Wireline Mono: centered, concise, purposeful. Tokens only. */
+ * Wireline Letterpress: centered, concise, purposeful. Tokens only. */
 .wl-centered-header,
 .wl-workspace-shell .wl-section-title,
 .wl-workspace-shell .studio-kicker + h2,
@@ -284,7 +286,11 @@
     ),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--wireline-color-surface-subtle) 70%, var(--wireline-color-canvas-default)),
+      color-mix(
+        in srgb,
+        var(--wireline-color-surface-subtle) 70%,
+        var(--wireline-color-canvas-default)
+      ),
       var(--wireline-color-canvas-default) 24rem
     );
 }

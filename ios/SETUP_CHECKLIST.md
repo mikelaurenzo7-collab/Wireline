@@ -5,7 +5,7 @@ Current release truth for the iOS surface. This replaces the old theme and parit
 ## Product contract
 
 - The app is a native control surface for `Agents`, `Training`, `Wire`, `Inbox`, and live call control.
-- Product chrome follows Wireline Mono. Do not reintroduce retired brand copy or palette claims.
+- Product chrome follows Wireline Letterpress. Do not reintroduce retired brand copy or palette claims.
 - Billing remains web-owned. iOS may show usage and Conversation Balance, but it must not sell balance in-app.
 - The iOS shell must expose account deletion, sign-out, and authenticated recovery paths.
 

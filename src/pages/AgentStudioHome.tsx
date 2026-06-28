@@ -14,6 +14,7 @@ export default function AgentStudioHome() {
   const [params] = useSearchParams();
   const { loading } = useAgents();
   const wantsBusinessAgent = params.get("posture") === "business";
+  const workspaceView = params.get("view") === "workspace";
   const [browserContext] = useState(readBrowserCommandContext);
   const browserBrief = browserCommandBrief(browserContext);
   const [showCreate, setShowCreate] = useState(false);
@@ -33,7 +34,9 @@ export default function AgentStudioHome() {
       <WorkspaceShell
         eyebrow="Workspace"
         title="Studio"
-        contentClassName="h-full min-h-0 p-0 overflow-hidden"
+        contentClassName={
+          workspaceView ? "h-full min-h-0 p-0" : "h-full min-h-0 p-0 overflow-hidden"
+        }
       >
         <StudioWorkspaceV2 />
       </WorkspaceShell>

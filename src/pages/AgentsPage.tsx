@@ -86,7 +86,7 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           {agent.name.slice(0, 1).toUpperCase()}
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-semibold leading-6 tracking-[-0.015em] text-foreground">
+          <h2 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-normal leading-6 tracking-[-0.015em] text-foreground">
             {agent.name}
           </h2>
           <p className="mt-1 inline-flex min-w-0 items-center gap-1.5 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.04em] text-muted-foreground">

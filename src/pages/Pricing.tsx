@@ -1,83 +1,114 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, Check, ShieldCheck, Users, WalletCards } from "lucide-react";
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
+import { STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
 
-const PLANS = [
+const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
+  StripePlanId,
+  (typeof STRIPE_PLANS)[number]
+>;
+
+const PRICING_TIERS = [
   {
-    id: "starter",
-    name: "Starter",
-    price: 9,
-    period: "mo",
-    tagline: "Your personal agent, live.",
+    id: "personal",
+    name: "Personal",
+    eyebrow: "For one person",
+    price: "$0",
+    period: "to create",
+    tagline: "Fund live work with Conversation Balance.",
+    detail:
+      "Create and train one phone agent before billing. When it starts answering real calls, texts, and follow-up, spend comes from prepaid Conversation Balance.",
     features: [
       "1 active agent",
-      "Personal number included",
-      "Voice + text handling",
-      "Call summaries via text",
-      "Booking and message-taking",
-      "Email follow-up",
+      "1 phone line",
+      "Templates unlocked",
+      "Conversation Balance for live work",
     ],
-    cta: "Start 7-day trial",
-    ctaPath: "/signup?plan=starter",
+    cta: "Start with Personal",
+    ctaPath: "/signup?plan=personal",
+    icon: WalletCards,
     featured: false,
   },
   {
-    id: "pro",
-    name: "Pro",
-    price: 29,
+    id: "team",
+    name: "Team",
+    eyebrow: "For small teams",
+    price: `$${planById.team.price_usd_monthly}`,
     period: "mo",
-    tagline: "More agents. More coverage.",
-    badge: "Most popular",
+    tagline: "Shared capacity for a real operating lane.",
+    detail:
+      "Several agents, one inbox, connected numbers, approvals, and core integrations for teams moving beyond a single personal line.",
     features: [
-      "3 active agents",
-      "Dedicated numbers per agent",
-      "Custom voice and persona",
-      "Workflow automation",
-      "CRM and calendar sync",
-      "Priority support",
+      `${planById.team.max_agents} active agents`,
+      `${planById.team.included_phone_numbers} phone lines included`,
+      `Extra agents at $${planById.team.extra_agent_price_usd}/mo`,
+      "Routing, approvals, and team inbox",
     ],
-    cta: "Start 7-day trial",
-    ctaPath: "/signup?plan=pro",
-    featured: true,
+    cta: "Start Team",
+    ctaPath: "/signup?plan=team",
+    icon: Users,
+    featured: false,
   },
   {
     id: "business",
     name: "Business",
-    price: 79,
+    eyebrow: "Best operating tier",
+    price: `$${planById.business.price_usd_monthly}`,
     period: "mo",
-    tagline: "The full front desk.",
+    tagline: "Front desk, revenue, and support coverage.",
+    detail:
+      "The serious business tier: more agents, more lines, CRM sync, analytics, roles, and approvals for inbound, outbound, and follow-up.",
     features: [
-      "Unlimited agents",
-      "Team inbox and routing",
-      "Roles and approvals",
-      "Analytics dashboard",
-      "SSO and audit logs",
-      "Dedicated onboarding",
+      `${planById.business.max_agents} active agents`,
+      `${planById.business.included_phone_numbers} phone lines included`,
+      `Extra agents at $${planById.business.extra_agent_price_usd}/mo`,
+      "CRM sync, analytics, roles, and approvals",
     ],
-    cta: "Start 7-day trial",
+    cta: "Start Business",
     ctaPath: "/signup?plan=business",
+    icon: Building2,
+    featured: true,
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    eyebrow: "For scale",
+    price: "Custom",
+    period: "annual",
+    tagline: "Governed rollouts and custom telephony.",
+    detail:
+      "Annual committed usage, SSO, audit support, BYO SIP, security review, and rollout planning for larger teams.",
+    features: [
+      "Custom agent and line capacity",
+      "SSO, audit, and governed policy controls",
+      "Custom integrations and telephony",
+      "Implementation and launch support",
+    ],
+    cta: "Talk to Wireline",
+    ctaPath: "/contact?topic=enterprise",
+    icon: ShieldCheck,
     featured: false,
   },
 ] as const;
 
 const FAQ = [
   [
-    "Is there a free plan?",
-    "No free tier — but every plan starts with a 7-day trial, no card required. You get the full experience from day one.",
+    "Does Personal require a subscription?",
+    "No. Personal is free to create and train. Live calls, texts, and follow-up are funded through Conversation Balance.",
   ],
   [
-    "Can I switch plans later?",
-    "Yes. Upgrade or downgrade anytime from your account settings. Changes take effect at the start of your next billing cycle.",
+    "What is Conversation Balance?",
+    "Prepaid Stripe credit for live voice work and provider-backed actions. It keeps personal usage flexible and gives teams a clear operating wallet.",
   ],
   [
-    "What counts as an agent?",
-    "Each agent is a separately configured voice persona with its own number, brief, and workflow. You can run them simultaneously.",
+    "Can I switch into Team or Business later?",
+    "Yes. Start with one agent, then move into shared capacity when the phone line becomes a team workflow.",
   ],
   [
-    "Do you support team accounts?",
-    "Business plan includes shared inbox, team roles, and routing. For larger rollouts with custom governance, contact us.",
+    "Are templates locked by plan?",
+    "No. Templates stay unlocked. Pricing is based on operating capacity: agents, lines, routing, approvals, collaboration, and reliability.",
   ],
 ] as const;
 
@@ -85,192 +116,188 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline — Phone agents for personal and business"
-        description="Start your 7-day free trial. Wireline offers three plans — Starter at $9, Pro at $29, and Business at $79 — for personal and professional voice AI coverage."
+        title="Pricing | Wireline - Personal, team, business, and enterprise phone agents"
+        description="Create and train a personal phone agent for free, fund live work with Conversation Balance, or move into Team and Business capacity when Wireline becomes an operating lane."
         path="/pricing"
       />
       <PrecisionPublicHeader />
 
       <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
-        {/* Hero */}
         <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto max-w-3xl text-center">
+          <div className="mx-auto max-w-4xl text-center">
             <p className="wl-overline text-primary">Pricing</p>
             <h1
-              className="mt-4 text-balance leading-[1.03] tracking-[-0.025em] text-foreground"
+              className="mx-auto mt-4 max-w-4xl text-balance leading-[1.03] tracking-[-0.025em] text-foreground"
               style={{
                 fontFamily:
                   "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                 fontWeight: 400,
-                fontSize: "clamp(2.25rem, 5vw, 4rem)",
+                fontSize: "clamp(2.4rem, 6vw, 5.5rem)",
               }}
             >
-              Simple pricing. Real coverage.
+              Personal first. Team when the phones become an operation.
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Every plan includes a 7-day free trial. No card required to start. Cancel anytime.
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+              Start with one agent and a prepaid balance. Add shared capacity when Wireline is
+              handling front desk, revenue, support, or follow-up for more than one person.
             </p>
           </div>
         </section>
 
-        {/* Plans */}
         <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-3 lg:items-stretch">
-            {PLANS.map((plan) =>
-              plan.featured ? (
+          <div className="mx-auto grid max-w-[1360px] gap-4 lg:grid-cols-4 lg:items-stretch">
+            {PRICING_TIERS.map((plan) => {
+              const Icon = plan.icon;
+              return (
                 <article
                   key={plan.id}
-                  className="relative flex flex-col rounded-2xl p-7 sm:p-9"
-                  style={{
-                    background: "var(--wireline-color-text-primary)",
-                    color: "var(--wireline-color-canvas-default)",
-                  }}
+                  className={`relative flex min-h-[520px] flex-col rounded-[var(--wireline-radius-xl)] border p-6 transition-all sm:p-7 ${
+                    plan.featured
+                      ? "border-primary bg-[var(--wireline-color-text-primary)] text-[var(--wireline-color-canvas-default)] shadow-[var(--wireline-elevation-lg)]"
+                      : "border-border bg-card hover:-translate-y-px hover:shadow-[var(--wireline-elevation-md)]"
+                  }`}
                 >
-                  {plan.badge && (
-                    <span
-                      className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full px-3.5 py-1 text-xs font-semibold uppercase tracking-wider"
-                      style={{
-                        background: "var(--wireline-color-action-primary-default)",
-                        color: "var(--wireline-color-text-onAction)",
-                      }}
-                    >
-                      {plan.badge}
+                  {plan.featured ? (
+                    <span className="absolute right-5 top-5 rounded-full bg-primary px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-primary-foreground">
+                      Most useful
                     </span>
-                  )}
-                  <p
-                    className="text-xs font-semibold uppercase tracking-widest"
-                    style={{ color: "rgba(247,246,243,0.55)" }}
+                  ) : null}
+
+                  <div className="mb-8 flex items-center justify-between gap-4">
+                    <span
+                      className={`font-mono text-[10px] font-semibold uppercase tracking-[.14em] ${
+                        plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-primary"
+                      }`}
+                    >
+                      {plan.eyebrow}
+                    </span>
+                    <span
+                      className={`grid size-10 place-items-center rounded-[var(--wireline-radius-md)] border ${
+                        plan.featured
+                          ? "border-white/10 bg-white/10 text-[var(--wireline-color-canvas-default)]"
+                          : "border-border bg-muted text-primary"
+                      }`}
+                    >
+                      <Icon size={17} aria-hidden="true" />
+                    </span>
+                  </div>
+
+                  <h2
+                    className="text-[2rem] leading-none tracking-[-0.025em]"
+                    style={{
+                      fontFamily:
+                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      fontWeight: 400,
+                    }}
                   >
                     {plan.name}
-                  </p>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <span
-                      className="text-[clamp(2.5rem,5vw,3.25rem)] font-light leading-none tracking-[-0.04em]"
-                      style={{
-                        fontFamily:
-                          "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                        color: "var(--wireline-color-canvas-default)",
-                      }}
-                    >
-                      ${plan.price}
-                    </span>
-                    <span className="text-sm" style={{ color: "rgba(247,246,243,0.55)" }}>
-                      /{plan.period}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6" style={{ color: "rgba(247,246,243,0.7)" }}>
+                  </h2>
+                  <p
+                    className={`mt-2 text-sm leading-6 ${
+                      plan.featured ? "text-[rgba(247,246,243,.68)]" : "text-muted-foreground"
+                    }`}
+                  >
                     {plan.tagline}
                   </p>
-                  <ul className="mt-7 flex-1 space-y-3">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm leading-6">
-                        <Check
-                          size={15}
-                          className="mt-0.5 shrink-0"
-                          style={{ color: "var(--wireline-color-action-primary-default)" }}
-                          strokeWidth={2.5}
-                        />
-                        <span style={{ color: "rgba(247,246,243,0.88)" }}>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-9">
-                    <Link
-                      to={plan.ctaPath}
-                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-[.05em] transition hover:-translate-y-px"
-                      style={{
-                        background: "var(--wireline-color-action-primary-default)",
-                        color: "var(--wireline-color-text-onAction)",
-                      }}
-                    >
-                      {plan.cta} <ArrowRight size={14} />
-                    </Link>
-                  </div>
-                </article>
-              ) : (
-                <article
-                  key={plan.id}
-                  className="wl-stitch-card group flex flex-col rounded-2xl border border-border bg-card p-7 transition-all hover:-translate-y-px hover:shadow-md sm:p-9"
-                >
-                  <p className="wl-overline text-primary">{plan.name}</p>
-                  <div className="mt-4 flex items-baseline gap-1">
+
+                  <div className="mt-8 flex items-end gap-2">
                     <span
-                      className="text-[clamp(2.5rem,5vw,3.25rem)] font-light leading-none tracking-[-0.04em] text-foreground"
+                      className="text-[clamp(2.7rem,5vw,4.2rem)] leading-none tracking-[-0.04em]"
                       style={{
                         fontFamily:
                           "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                        fontWeight: 400,
                       }}
                     >
-                      ${plan.price}
+                      {plan.price}
                     </span>
-                    <span className="text-sm text-muted-foreground">/{plan.period}</span>
+                    <span
+                      className={`pb-2 text-sm ${
+                        plan.featured ? "text-[rgba(247,246,243,.58)]" : "text-muted-foreground"
+                      }`}
+                    >
+                      {plan.period === "mo" ? "/mo" : plan.period}
+                    </span>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.tagline}</p>
+
+                  <p
+                    className={`mt-6 min-h-[96px] text-sm leading-6 ${
+                      plan.featured ? "text-[rgba(247,246,243,.72)]" : "text-muted-foreground"
+                    }`}
+                  >
+                    {plan.detail}
+                  </p>
+
                   <ul className="mt-7 flex-1 space-y-3">
-                    {plan.features.map((f) => (
+                    {plan.features.map((feature) => (
                       <li
-                        key={f}
-                        className="flex items-start gap-2.5 text-sm leading-6 text-foreground"
+                        key={feature}
+                        className={`flex items-start gap-2.5 text-sm leading-6 ${
+                          plan.featured ? "text-[rgba(247,246,243,.9)]" : "text-foreground"
+                        }`}
                       >
                         <Check
                           size={15}
-                          className="mt-0.5 shrink-0 text-primary"
+                          className={`mt-0.5 shrink-0 ${plan.featured ? "text-primary" : "text-primary"}`}
                           strokeWidth={2.5}
                         />
-                        <span>{f}</span>
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-9">
-                    <Link
-                      to={plan.ctaPath}
-                      className="marketing-btn-primary flex min-h-[48px] w-full items-center justify-center gap-2 px-5 text-sm font-semibold tracking-[.05em]"
-                    >
-                      {plan.cta} <ArrowRight size={14} />
-                    </Link>
-                  </div>
+
+                  <Link
+                    to={plan.ctaPath}
+                    className={`mt-8 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[var(--wireline-radius-md)] px-5 text-sm font-semibold transition active:scale-[.985] ${
+                      plan.featured
+                        ? "bg-[var(--wireline-color-canvas-default)] text-[var(--wireline-color-text-primary)] hover:bg-white"
+                        : "marketing-btn-primary"
+                    }`}
+                  >
+                    {plan.cta}
+                    <ArrowRight size={14} />
+                  </Link>
                 </article>
-              ),
-            )}
-          </div>
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            All plans billed monthly. Annual billing saves 20% — available at checkout.
-          </p>
-        </section>
-
-        {/* Differentiator strip */}
-        <section
-          className="px-5 py-14 sm:px-8 sm:py-16"
-          style={{ background: "var(--wireline-color-text-primary)" }}
-        >
-          <div className="mx-auto max-w-4xl text-center">
-            <h2
-              className="text-balance leading-[1.06] tracking-[-0.025em]"
-              style={{
-                fontFamily:
-                  "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                fontWeight: 400,
-                fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)",
-                color: "var(--wireline-color-canvas-default)",
-              }}
-            >
-              Your phone answers every call.
-              <br />
-              <span style={{ color: "var(--wireline-color-action-primary-default)" }}>
-                You never miss what matters.
-              </span>
-            </h2>
-            <p
-              className="mx-auto mt-5 max-w-xl text-base leading-7"
-              style={{ color: "rgba(247,246,243,0.65)" }}
-            >
-              Wireline agents pick up, handle the call, and text you a summary — whether it's a spam
-              caller being dismissed or a client appointment being booked.
-            </p>
+              );
+            })}
           </div>
         </section>
 
-        {/* FAQ */}
+        <section className="border-y border-border bg-card/55 px-5 py-12 sm:px-8 lg:px-10">
+          <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[.72fr_1fr] lg:items-center">
+            <div>
+              <p className="wl-overline text-primary">Conversation Balance</p>
+              <h2
+                className="mt-3 text-balance text-[clamp(2rem,4vw,3.25rem)] leading-[1.04] tracking-[-0.025em]"
+                style={{
+                  fontFamily:
+                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontWeight: 400,
+                }}
+              >
+                Balance pays for the live work. Plans add operating capacity.
+              </h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                ["Start", "Create and train before the first recurring plan."],
+                ["Fund", "Top up prepaid credit for calls, texts, and follow-up."],
+                ["Scale", "Move into Team or Business when more people need the lane."],
+              ].map(([label, body]) => (
+                <div
+                  key={label}
+                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
+                >
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-primary">
+                    {label}
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="border-t border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="mx-auto max-w-3xl">
             <div className="text-center">
@@ -284,7 +311,7 @@ export default function Pricing() {
                   fontSize: "clamp(1.6rem, 3vw, 2.25rem)",
                 }}
               >
-                Straight answers before you start.
+                Straight answers before you wire the first line.
               </h2>
             </div>
             <div className="mt-10 space-y-3">
@@ -309,13 +336,13 @@ export default function Pricing() {
             <div className="mt-12 flex flex-col items-center gap-5 text-center">
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <ShieldCheck size={15} className="text-primary" />
-                Stripe-secured billing. Cancel anytime — no questions asked.
+                Stripe-secured checkout, prepaid balance, and customer portal management.
               </p>
               <Link
                 to="/signup"
                 className="marketing-btn-primary min-h-12 px-8 text-sm font-semibold tracking-[.05em]"
               >
-                Start your free trial <ArrowRight size={14} />
+                Start with one agent <ArrowRight size={14} />
               </Link>
             </div>
           </div>

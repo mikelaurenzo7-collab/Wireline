@@ -156,14 +156,14 @@ mustExclude(
 mustInclude(
   "design-tokens/wireline.tokens.json",
   tokenSource,
-  /"\$description"\s*:\s*"Wireline Mono design tokens/,
-  "token source must describe Wireline Mono",
+  /"\$description"\s*:\s*"Wireline Letterpress design tokens/,
+  "token source must describe Wireline Letterpress",
 );
 mustInclude(
   "design-tokens/wireline.tokens.json",
   tokenSource,
-  /"default"\s*:\s*\{\s*"\$type"\s*:\s*"color",\s*"\$value"\s*:\s*"#111111"\s*\}/,
-  "token source primary action must be #111111",
+  /"default"\s*:\s*\{\s*"\$type"\s*:\s*"color",\s*"\$value"\s*:\s*"#2B5548"\s*\}/,
+  "token source primary action must be #2B5548",
 );
 mustExclude(
   "design-tokens/wireline.tokens.json",
@@ -186,8 +186,8 @@ mustInclude(
 mustInclude(
   "src/styles/design-system.css",
   designSystemCss,
-  /Wireline Clear System \/ Wireline Mono/,
-  "name the current monochrome system",
+  /Wireline — Letterpress design system/,
+  "name the current Letterpress system",
 );
 mustInclude(
   "src/styles/clarity-system.css",
@@ -222,14 +222,14 @@ mustExclude(
 mustInclude(
   "src/styles/tokens.generated.css",
   webTokens,
-  /--wireline-color-action-primary-default:\s*#111111/,
-  "web tokens must use Wireline Mono",
+  /--wireline-color-action-primary-default:\s*#2B5548/,
+  "web tokens must use Wireline Letterpress",
 );
 mustInclude(
   "apps/browser-extension/panel/tokens.generated.css",
   browserTokens,
-  /--wireline-color-action-primary-default:\s*#111111/,
-  "browser tokens must use Wireline Mono",
+  /--wireline-color-action-primary-default:\s*#2B5548/,
+  "browser tokens must use Wireline Letterpress",
 );
 mustInclude(
   "apps/browser-extension/manifest.base.json",
@@ -300,14 +300,14 @@ mustInclude(
 mustInclude(
   "src/constants/generated-design-tokens.ts",
   tokenConstants,
-  /"color\.action\.primary\.default": "#111111"/,
-  "TS tokens must use Wireline Mono",
+  /"color\.action\.primary\.default": "#2B5548"/,
+  "TS tokens must use Wireline Letterpress",
 );
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
   androidTokens,
-  /colorActionPrimaryDefault = Color\(0xFF111111\)/,
-  "Android tokens must use Wireline Mono",
+  /colorActionPrimaryDefault = Color\(0xFF2B5548\)/,
+  "Android tokens must use Wireline Letterpress",
 );
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
@@ -354,14 +354,14 @@ mustInclude(
 mustInclude(
   "ios/Wireline/Theme/WirelineDesignTokens.generated.swift",
   iosTokens,
-  /colorActionPrimaryDefault = Color\(hex: 0x111111\)/,
-  "iOS tokens must use Wireline Mono",
+  /colorActionPrimaryDefault = Color\(hex: 0x2B5548\)/,
+  "iOS tokens must use Wireline Letterpress",
 );
 mustInclude(
   "ios/WirelineShared/WirelineWidgetSnapshot.swift",
   iosWidget,
-  /public static let accent = "111111"/,
-  "iOS widget snapshot must use Wireline Mono",
+  /public static let accent = "2B5548"/,
+  "iOS widget snapshot must use Wireline Letterpress",
 );
 mustInclude(
   "ios/Wireline/Views/RootTabView.swift",
@@ -421,49 +421,49 @@ const mcpWidgetStyles = read("src/lib/wireline-mcp-widget-styles.ts");
 mustInclude(
   "src/lib/wireline-mcp-widget-styles.ts",
   mcpWidgetStyles,
-  /canvas: "#F7F7F4"/,
-  "MCP widget styles must use Wireline Mono canvas",
+  /canvas: "#F7F6F3"/,
+  "MCP widget styles must use Wireline Letterpress canvas",
 );
 mustInclude(
   "src/lib/wireline-mcp-widget-styles.ts",
   mcpWidgetStyles,
-  /action: "#111111"/,
-  "MCP widget styles must use Wireline Mono action chrome",
+  /action: "#2B5548"/,
+  "MCP widget styles must use Wireline Letterpress action chrome",
 );
 mustInclude(
   "src/lib/chatgpt-mcp.ts",
   chatgptWidget,
   /buildWirelineMcpWidgetCss/,
-  "ChatGPT public widget must use shared monochrome chrome",
+  "ChatGPT public widget must use shared Letterpress chrome",
 );
 mustInclude(
   "src/lib/chatgpt-mcp-account.ts",
   chatgptAccountWidget,
   /buildWirelineMcpWidgetCss/,
-  "ChatGPT account widget must use shared monochrome chrome",
+  "ChatGPT account widget must use shared Letterpress chrome",
 );
 mustInclude(
   "public/static-legal.css",
   legalCss,
-  /--wireline-color-action-primary-default: #111111/,
-  "static legal pages must use Wireline Mono tokens",
+  /--wireline-color-action-primary-default: #2B5548/,
+  "static legal pages must use Wireline Letterpress tokens",
 );
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"theme_color": "#111111"/,
-  "manifest must use monochrome theme color",
+  /"theme_color": "#2B5548"/,
+  "manifest must use Letterpress theme color",
 );
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"background_color": "#F7F7F4"/,
-  "manifest must use warm monochrome background",
+  /"background_color": "#F7F6F3"/,
+  "manifest must use warm paper background",
 );
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"name": "Wireline - Agents for every conversation"/,
+  /"name": "Wireline - Your phone, finally answering for you"/,
   "manifest name must match the current landing promise",
 );
 mustExclude(
@@ -475,21 +475,26 @@ mustExclude(
 mustInclude(
   "public/wireline-icon.svg",
   publicIcon,
-  /fill="#111111"/,
-  "public app icon must be monochrome",
+  /fill="#2B5548"/,
+  "public app icon must use Letterpress action green",
 );
-mustInclude("public/favicon.svg", favicon, /fill="#111111"/, "favicon must be monochrome");
+mustInclude(
+  "public/favicon.svg",
+  favicon,
+  /fill="#2B5548"/,
+  "favicon must use Letterpress action green",
+);
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /fill="#F7F7F4"/,
-  "OG image must use monochrome canvas",
+  /fill="#F7F6F3"/,
+  "OG image must use warm paper canvas",
 );
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Agents for every[\s\S]*conversation\.[\s\S]*Calls, texts, follow-up\. Handled\./,
-  "OG image must match the sharp landing promise",
+  /Your phone,[\s\S]*finally[\s\S]*answering[\s\S]*for you\.[\s\S]*Calls, bookings, messages, errands, and follow-up\./,
+  "OG image must match the Letterpress landing promise",
 );
 mustExclude(
   "public/og-image.svg",
@@ -500,14 +505,14 @@ mustExclude(
 mustInclude(
   "apps/browser-extension/assets/icon.svg",
   extensionIcon,
-  /fill="#111111"/,
-  "browser extension icon must be monochrome",
+  /fill="#2B5548"/,
+  "browser extension icon must use Letterpress action green",
 );
 mustInclude(
   "android/app/src/main/res/drawable/ic_launcher_background.xml",
   androidLauncherBg,
-  /android:fillColor="#111111"/,
-  "Android launcher background must be monochrome",
+  /android:fillColor="#2B5548"/,
+  "Android launcher background must use Letterpress action green",
 );
 mustInclude(
   "src/components/MobileBrowserUtilities.tsx",
@@ -556,29 +561,21 @@ mustInclude(
   "per-agent workspace holds memory and grouped sections",
 );
 mustInclude("src/pages/ActionsPage.tsx", actionsPage, /Wire/, "Wire route must use current naming");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Personal/, "pricing must position Personal");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Team/, "pricing must position Team");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Business/, "pricing must position Business");
+mustInclude("src/pages/Pricing.tsx", pricingPage, /Enterprise/, "pricing must position Enterprise");
 mustInclude(
   "src/pages/Pricing.tsx",
   pricingPage,
   /Conversation Balance/,
-  "pricing must position Conversation Balance",
+  "pricing must explain Conversation Balance",
 );
 mustInclude(
   "src/pages/Pricing.tsx",
   pricingPage,
-  /Wireline Team/,
-  "pricing must position Wireline Team",
-);
-mustInclude(
-  "src/pages/Pricing.tsx",
-  pricingPage,
-  /Wireline Business/,
-  "pricing must position Wireline Business",
-);
-mustInclude(
-  "src/pages/Pricing.tsx",
-  pricingPage,
-  /Wireline Enterprise/,
-  "pricing must position Wireline Enterprise",
+  /STRIPE_PLANS/,
+  "pricing must stay tied to the Stripe plan catalog",
 );
 for (const [file, source] of [
   ["src/pages/Features.tsx", featuresPage],
@@ -676,6 +673,24 @@ mustInclude(
   "landing must consume shared marketing voice constants",
 );
 mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /STRIPE_PLANS/,
+  "landing pricing must stay tied to the Stripe plan catalog",
+);
+mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /Conversation Balance/,
+  "landing pricing must explain Conversation Balance",
+);
+mustExclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /Start 7-day trial|Start your 7-day trial|Try 7 days free|7-day free trial|7-day trial|No gimmick free plan|name:\s*"Starter"|name:\s*"Pro"|Everything in Starter|Everything in Pro|\$79/,
+  "landing pricing must not revive retired trial or Starter/Pro catalog copy",
+);
+mustInclude(
   "src/styles/design-system.css",
   designSystemCss,
   /\.wl-composer-dock/,
@@ -726,7 +741,7 @@ mustInclude(
 mustInclude(
   "apps/browser-extension/panel/index.html",
   extensionPanel,
-  /Command agents from the page you're on\. Create, train, and run with mono clarity\./,
+  /Command your agent from any page\. Wireline answers while you stay focused\./,
   "extension hero must match shared marketing voice",
 );
 mustInclude(
@@ -738,19 +753,19 @@ mustInclude(
 mustInclude(
   "index.html",
   indexHtml,
-  /Wireline - Agents for every conversation/,
+  /Wireline — Your phone, finally answering for you\./,
   "static metadata title must match the current landing promise",
 );
 mustInclude(
   "src/pages/LandingPage.tsx",
   landingPage,
-  /Wireline \| Agents for every conversation/,
+  /Wireline \| Your phone, finally answering for you/,
   "runtime landing metadata title must match the current landing promise",
 );
 mustInclude(
   "src/lib/page-meta.tsx",
   pageMeta,
-  /Wireline - Agents for every conversation/,
+  /Wireline - Your phone, finally answering for you/,
   "default metadata title must match the current landing promise",
 );
 mustExclude(
@@ -776,7 +791,7 @@ mustInclude(
   "src/components/ui/SignalOrbFrame.tsx",
   signalOrbFrame,
   /SignalFrameRail/,
-  "active loading and empty states must use the minimal monochrome signal frame",
+  "active loading and empty states must use the minimal signal frame",
 );
 mustExclude(
   "src/components/ui/SignalOrbFrame.tsx",

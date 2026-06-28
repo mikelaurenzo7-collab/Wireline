@@ -11,16 +11,16 @@ public enum WirelineWidgetShared {
 /// Legacy hex mirror for App Group snapshots. Prefer WirelineDesignTokens in widget views.
 /// Regenerate ios/WirelineShared/WirelineDesignTokens.generated.swift via `node scripts/build-design-tokens.mjs`.
 public enum WirelinePalette {
-    public static let accent = "111111"
-    public static let accentDeep = "000000"
-    public static let accentSoft = "ECECEA"
-    public static let canvas = "F7F7F4"
+    public static let accent = "2B5548"
+    public static let accentDeep = "1E4038"
+    public static let accentSoft = "EEF5F1"
+    public static let canvas = "F7F6F3"
     public static let panel = "FFFFFF"
-    public static let panel2 = "F1F1EE"
-    public static let text = "111111"
-    public static let text2 = "6B6B66"
-    public static let text3 = "6B6B66"
-    public static let border = "E3E3E0"
+    public static let panel2 = "F0EFEB"
+    public static let text = "1C1C1A"
+    public static let text2 = "6B6B65"
+    public static let text3 = "A1A19B"
+    public static let border = "E8E7E3"
     public static let destructive = "A23A3A"
 }
 

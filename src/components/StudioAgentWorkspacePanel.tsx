@@ -30,12 +30,14 @@ type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
   onTestVoiceInChat: () => void;
+  className?: string;
 };
 
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
   onTestVoiceInChat,
+  className = "",
 }: StudioAgentWorkspacePanelProps) {
   const [allVoices, setAllVoices] = useState<Voice[]>([]);
   const [voicesLoading, setVoicesLoading] = useState(false);
@@ -182,10 +184,12 @@ export default function StudioAgentWorkspacePanel({
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto border-t border-border/60">
+    <div className={`min-h-0 flex-1 overflow-y-auto border-t border-border/60 ${className}`}>
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-8 sm:py-8">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Workspace for {agentName}</h2>
+          <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-0.022em] text-foreground">
+            Workspace for {agentName}
+          </h2>
           <p className="text-sm text-muted-foreground">
             Everything for this agent lives here. Setup or manage anytime.
           </p>

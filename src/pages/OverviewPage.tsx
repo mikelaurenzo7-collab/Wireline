@@ -85,7 +85,7 @@ export default function OverviewPage() {
       <div className="wl-overview flex w-full max-w-none flex-col pb-8">
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
           <div className="studio-card wl-composer-hero grid gap-4 p-4 sm:p-5 lg:p-6">
-            <h2 className="wl-centered-header font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-semibold leading-tight tracking-[-0.03em]">
+            <h2 className="wl-centered-header font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-normal leading-tight tracking-[-0.022em]">
               {hasAgents ? WORKSPACE_VOICE.runHeadline : WORKSPACE_VOICE.createHeadline}
             </h2>
 

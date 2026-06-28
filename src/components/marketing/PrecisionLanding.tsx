@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { MARKETING_VOICE } from "../../lib/product-copy";
+import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
 // ─── Live call card (hero illustration) ────────────────────────────────────
 function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
@@ -42,7 +43,10 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
       {/* Glow */}
       <div
         className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-60"
-        style={{ background: "radial-gradient(ellipse at 60% 30%, rgba(43,85,72,.07), transparent 70%)", filter: "blur(40px)" }}
+        style={{
+          background: "radial-gradient(ellipse at 60% 30%, rgba(43,85,72,.07), transparent 70%)",
+          filter: "blur(40px)",
+        }}
       />
       <div className="relative">
         {/* Header */}
@@ -126,25 +130,33 @@ const audiences: { key: Audience; label: string }[] = [
   { key: "business", label: "Business" },
 ];
 
+const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
+  StripePlanId,
+  (typeof STRIPE_PLANS)[number]
+>;
+
+const teamExtraAgentPrice = planCatalog.team.extra_agent_price_usd ?? 9;
+const businessExtraAgentPrice = planCatalog.business.extra_agent_price_usd ?? 12;
+
 // ─── What it does cards ────────────────────────────────────────────────────
 const PERSONAL_CONFIGS = [
   {
     icon: "◉",
     name: "The Gatekeeper",
     body: "Answers unknowns with a real voice. Asks who's calling and why. Takes a detailed message or patches them through — then texts you the play-by-play.",
-    plan: "Starter plan · Day one",
+    plan: "Personal · Day one",
   },
   {
     icon: "◈",
     name: "The Scheduler",
     body: "Books appointments, handles reschedules, texts reminders. Calls your dentist, pharmacy, or landlord so you don't have to sit on hold.",
-    plan: "Pro plan · Outbound calls",
+    plan: "Personal · Live outbound",
   },
   {
     icon: "◫",
     name: "The Operator",
     body: "Your side hustle answering itself. Takes orders, quotes rates, qualifies leads, sends follow-up texts. You build the playbook — it runs it.",
-    plan: "Pro plan · Drafting board",
+    plan: "Team · Drafting board",
   },
 ];
 
@@ -171,61 +183,76 @@ const BUSINESS_CONFIGS = [
 
 // ─── How it works steps ────────────────────────────────────────────────────
 const STEPS = [
-  { num: "01", title: "Connect", body: "Keep your number. Wireline hooks in via the app, Shortcuts, and CarPlay — or provision a dedicated business line." },
-  { num: "02", title: "Build", body: "Name it, pick a voice, tell it the job. Chat with Wireline AI to shape the agent — or start from a template." },
-  { num: "03", title: "Train", body: "Feed it scripts, FAQs, and hard limits. Run a test call from your browser — hear exactly what callers hear." },
-  { num: "04", title: "Deploy", body: "Go live. Read every transcript. Coach the weak spots. Your agent learns from every conversation." },
+  {
+    num: "01",
+    title: "Connect",
+    body: "Keep your number. Wireline hooks in via the app, Shortcuts, and CarPlay — or provision a dedicated business line.",
+  },
+  {
+    num: "02",
+    title: "Build",
+    body: "Name it, pick a voice, tell it the job. Chat with Wireline AI to shape the agent — or start from a template.",
+  },
+  {
+    num: "03",
+    title: "Train",
+    body: "Feed it scripts, FAQs, and hard limits. Run a test call from your browser — hear exactly what callers hear.",
+  },
+  {
+    num: "04",
+    title: "Deploy",
+    body: "Go live. Read every transcript. Coach the weak spots. Your agent learns from every conversation.",
+  },
 ];
 
 // ─── Pricing ───────────────────────────────────────────────────────────────
 const PLANS = [
   {
-    name: "Starter",
-    sub: "Your agent, live on your line",
-    price: "$9",
-    period: "/mo",
-    body: "A real voice agent that answers unknowns, takes messages, and follows up — not a silent call blocker.",
+    name: "Personal",
+    sub: "Create first, fund live work",
+    price: "$0",
+    period: "to create",
+    body: "Build and train one agent before billing. Calls, texts, and follow-up draw from Conversation Balance only when live work starts.",
     features: [
-      "Agent answers & talks to callers",
-      "SMS follow-ups & summaries",
-      "Custom voice & persona",
-      "60 minutes / month",
+      `${planCatalog.personal.max_agents} active agent`,
+      `${planCatalog.personal.included_phone_numbers} phone line`,
+      "All templates unlocked",
+      "Conversation Balance for live work",
     ],
-    cta: "Try 7 days free",
+    cta: "Start with Personal",
     featured: false,
   },
   {
-    name: "Pro",
-    sub: "Custom workflows & drafting board",
-    price: "$29",
+    name: "Team",
+    sub: "Shared capacity for small teams",
+    price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: "Full drafting board. Train your agent on your playbook — booking, errands, side hustle, anything.",
+    body: "Several agents, shared inbox control, routing, approvals, and connected numbers for a focused team lane.",
     features: [
-      "Everything in Starter",
-      "500 minutes / month",
-      "Drafting board + flow composer",
-      "Calendar & CRM connections",
-      "Outbound calls on your behalf",
+      `${planCatalog.team.max_agents} active agents`,
+      `${planCatalog.team.included_phone_numbers} phone lines`,
+      "Routing, approvals, and inbox",
+      "Core integrations and follow-up",
+      `Extra agents at $${teamExtraAgentPrice}/mo`,
     ],
-    cta: "Try 7 days free",
+    cta: "Start Team",
     featured: true,
-    badge: "Most popular",
+    badge: "Best next step",
   },
   {
     name: "Business",
-    sub: "Dedicated line, full fleet",
-    price: "$79",
+    sub: "Revenue and support operations",
+    price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: "Multiple agents, a dedicated business number, live ops, team access, and priority voice routing.",
+    body: "A deeper operating layer for inbound, outbound, approvals, analytics, CRM sync, and role-aware controls.",
     features: [
-      "Everything in Pro",
-      "Unlimited minutes",
-      "Dedicated business number",
-      "Multi-agent fleet",
-      "Live ops dashboard",
-      "Priority voice routing",
+      `${planCatalog.business.max_agents} active agents`,
+      `${planCatalog.business.included_phone_numbers} phone lines`,
+      "CRM sync and analytics",
+      "Policies, roles, and approvals",
+      `Extra agents at $${businessExtraAgentPrice}/mo`,
     ],
-    cta: "Try 7 days free",
+    cta: "Start Business",
     featured: false,
   },
 ];
@@ -246,11 +273,9 @@ export default function PrecisionLanding() {
       `}</style>
 
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-
         {/* ── HERO ──────────────────────────────────────────────── */}
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail grid items-center gap-12 lg:grid-cols-[1.15fr_.85fr]">
-
             {/* Left copy */}
             <div style={{ animation: "fadeUp .7s ease-out both" }}>
               {/* Audience toggle */}
@@ -282,11 +307,15 @@ export default function PrecisionLanding() {
                   <h1
                     aria-label={personalHeadline}
                     className="wl-public-section-heading max-w-none text-[clamp(52px,6vw,72px)] leading-[.95]"
-                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.035em" }}
+                    style={{
+                      fontFamily:
+                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      fontWeight: 400,
+                      letterSpacing: "-0.035em",
+                    }}
                   >
-                    Your phone,{" "}
-                    <em className="not-italic text-primary">finally</em>{" "}
-                    answering for you.
+                    Your phone, <em className="not-italic text-primary">finally</em> answering for
+                    you.
                   </h1>
                   <p className="wl-public-copy mt-6 max-w-none text-[17px] leading-[1.7]">
                     {MARKETING_VOICE.subline}
@@ -302,14 +331,18 @@ export default function PrecisionLanding() {
                   </div>
                   <h1
                     className="wl-public-section-heading max-w-none text-[clamp(52px,6vw,72px)] leading-[.95]"
-                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.035em" }}
+                    style={{
+                      fontFamily:
+                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      fontWeight: 400,
+                      letterSpacing: "-0.035em",
+                    }}
                   >
-                    Your front desk,{" "}
-                    <em className="not-italic text-primary">open</em>{" "}
-                    24/7.
+                    Your front desk, <em className="not-italic text-primary">open</em> 24/7.
                   </h1>
                   <p className="wl-public-copy mt-6 max-w-none text-[17px] leading-[1.7]">
-                    Deploy a fleet of trained voice agents that answer calls, qualify leads, book appointments, and follow up — all under your brand, on your playbook.
+                    Deploy a fleet of trained voice agents that answer calls, qualify leads, book
+                    appointments, and follow up — all under your brand, on your playbook.
                   </p>
                 </>
               )}
@@ -317,13 +350,13 @@ export default function PrecisionLanding() {
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <Link
                   to="/signup"
-                  className="marketing-btn-primary flex items-center gap-2 px-6 py-3 text-[15px] font-semibold"
+                  className="marketing-btn-primary flex min-h-11 items-center gap-2 px-6 py-3 text-[15px] font-semibold"
                 >
-                  Start 7-day trial <ArrowRight size={16} />
+                  Start with Personal <ArrowRight size={16} />
                 </Link>
                 <button
                   type="button"
-                  className="flex items-center gap-2 rounded-[10px] border border-border bg-card px-6 py-3 text-[15px] font-medium text-foreground transition-all hover:border-border/80"
+                  className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border bg-card px-6 py-3 text-[15px] font-medium text-foreground transition-all hover:border-border/80"
                 >
                   <Phone size={15} /> Hear it answer a call
                 </button>
@@ -331,7 +364,10 @@ export default function PrecisionLanding() {
 
               <div className="mt-8 flex flex-wrap gap-6">
                 {MARKETING_VOICE.proof.map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                  >
                     <div className="grid h-[18px] w-[18px] place-items-center rounded-full bg-[#EEF5F1] text-[10px] font-bold text-primary">
                       ✓
                     </div>
@@ -352,7 +388,9 @@ export default function PrecisionLanding() {
         <div className="border-b border-border bg-[#1C1C1A] px-5 py-5 text-center">
           <p
             className="text-[18px] text-[rgba(247,246,243,.7)]"
-            style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif" }}
+            style={{
+              fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+            }}
           >
             Siri silences unknowns.{" "}
             <span className="text-[#F7F6F3]">{MARKETING_VOICE.differentiator}</span>
@@ -368,7 +406,12 @@ export default function PrecisionLanding() {
               </p>
               <h2
                 className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.025em" }}
+                style={{
+                  fontFamily:
+                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontWeight: 400,
+                  letterSpacing: "-0.025em",
+                }}
               >
                 {audience === "personal"
                   ? "Configure it for your life."
@@ -392,7 +435,12 @@ export default function PrecisionLanding() {
                   </div>
                   <h3
                     className="mb-2 text-[22px] leading-tight"
-                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.015em" }}
+                    style={{
+                      fontFamily:
+                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      fontWeight: 400,
+                      letterSpacing: "-0.015em",
+                    }}
                   >
                     {name}
                   </h3>
@@ -415,7 +463,12 @@ export default function PrecisionLanding() {
               </p>
               <h2
                 className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.025em" }}
+                style={{
+                  fontFamily:
+                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontWeight: 400,
+                  letterSpacing: "-0.025em",
+                }}
               >
                 Live before lunch.
               </h2>
@@ -423,14 +476,16 @@ export default function PrecisionLanding() {
 
             <div className="grid divide-x divide-border overflow-hidden rounded-[16px] border border-border sm:grid-cols-4">
               {STEPS.map(({ num, title, body }) => (
-                <div
-                  key={num}
-                  className="bg-card p-8 transition-colors hover:bg-muted/40"
-                >
+                <div key={num} className="bg-card p-8 transition-colors hover:bg-muted/40">
                   <div className="mb-7 font-mono text-[13px] font-bold text-primary">{num}</div>
                   <h3
                     className="mb-2 text-[22px]"
-                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.015em" }}
+                    style={{
+                      fontFamily:
+                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      fontWeight: 400,
+                      letterSpacing: "-0.015em",
+                    }}
                   >
                     {title}
                   </h3>
@@ -450,12 +505,18 @@ export default function PrecisionLanding() {
               </p>
               <h2
                 className="mx-auto mt-4 max-w-[18ch] text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.025em" }}
+                style={{
+                  fontFamily:
+                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontWeight: 400,
+                  letterSpacing: "-0.025em",
+                }}
               >
-                Three tiers. No gimmick free plan.
+                Personal balance. Team capacity.
               </h2>
               <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
-                Every plan includes a real AI agent that talks, decides, and acts. 7-day trial on every tier.
+                Create for free, fund live work with Conversation Balance, then move into Team or
+                Business capacity when Wireline becomes an operating lane.
               </p>
             </div>
 
@@ -476,25 +537,38 @@ export default function PrecisionLanding() {
                   )}
                   <div
                     className="mb-1 text-[24px]"
-                    style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400 }}
+                    style={{
+                      fontFamily:
+                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      fontWeight: 400,
+                    }}
                   >
                     {plan.name}
                   </div>
-                  <div className={`mb-5 text-[12px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}>
+                  <div
+                    className={`mb-5 text-[12px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}
+                  >
                     {plan.sub}
                   </div>
                   <div className="mb-4 flex items-baseline gap-1">
                     <span
                       className="text-[44px] leading-none tracking-[-0.03em]"
-                      style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif" }}
+                      style={{
+                        fontFamily:
+                          "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                      }}
                     >
                       {plan.price}
                     </span>
-                    <span className={`text-[14px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}>
+                    <span
+                      className={`text-[14px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}
+                    >
                       {plan.period}
                     </span>
                   </div>
-                  <p className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "text-[rgba(247,246,243,.5)]" : "text-muted-foreground"}`}>
+                  <p
+                    className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "text-[rgba(247,246,243,.5)]" : "text-muted-foreground"}`}
+                  >
                     {plan.body}
                   </p>
                   <div className="mb-6 flex flex-col gap-2">
@@ -507,7 +581,7 @@ export default function PrecisionLanding() {
                   </div>
                   <Link
                     to="/signup"
-                    className={`block w-full rounded-lg py-3 text-center text-[13px] font-semibold transition-all ${
+                    className={`block min-h-11 w-full rounded-lg py-3 text-center text-[13px] font-semibold transition-all ${
                       plan.featured
                         ? "bg-white text-[#1C1C1A] hover:bg-[#F7F6F3]"
                         : "border border-border hover:border-primary hover:text-primary"
@@ -527,29 +601,38 @@ export default function PrecisionLanding() {
             <div className="relative overflow-hidden rounded-[20px] bg-[#1C1C1A] px-10 py-18 text-center text-[#F7F6F3] sm:py-20">
               <div
                 className="pointer-events-none absolute inset-0"
-                style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(43,85,72,.2), transparent 60%)" }}
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 50% 0%, rgba(43,85,72,.2), transparent 60%)",
+                }}
               />
               <div className="relative">
                 <h2
                   className="mx-auto max-w-[18ch] text-[clamp(34px,4.5vw,50px)] leading-[1.05]"
-                  style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400, letterSpacing: "-0.03em" }}
+                  style={{
+                    fontFamily:
+                      "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                    fontWeight: 400,
+                    letterSpacing: "-0.03em",
+                  }}
                 >
-                  Stop ignoring calls.<br />
+                  Stop ignoring calls.
+                  <br />
                   Start delegating them.
                 </h2>
                 <p className="mx-auto mt-4 max-w-[420px] text-[16px] text-[rgba(247,246,243,.55)]">
-                  7-day free trial. Your agent is live before lunch.
+                  Create first. Fund live work when the line is ready.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                   <Link
                     to="/signup"
-                    className="flex items-center gap-2 rounded-[10px] bg-[#F7F6F3] px-7 py-3 text-[15px] font-semibold text-[#1C1C1A] transition-all hover:bg-white hover:-translate-y-px"
+                    className="flex min-h-11 items-center gap-2 rounded-[10px] bg-[#F7F6F3] px-7 py-3 text-[15px] font-semibold text-[#1C1C1A] transition-all hover:bg-white hover:-translate-y-px"
                   >
-                    Start your 7-day trial <ArrowRight size={16} />
+                    Start with Personal <ArrowRight size={16} />
                   </Link>
                   <button
                     type="button"
-                    className="px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.7)] transition-colors hover:text-[#F7F6F3]"
+                    className="min-h-11 px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.7)] transition-colors hover:text-[#F7F6F3]"
                   >
                     Hear it answer a call
                   </button>

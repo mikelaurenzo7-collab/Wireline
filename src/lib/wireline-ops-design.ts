@@ -1,7 +1,7 @@
 /**
  * Wireline Recaps – instrument-grade design contract.
  * Copy + class hooks for Recaps, floor, and setup nudges.
- * Palette: Wireline Mono (see foundation.css).
+ * Palette: Wireline Letterpress (see foundation.css).
  */
 
 import { WL_BRAND } from "./wireline-design-system";

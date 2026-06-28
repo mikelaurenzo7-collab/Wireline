@@ -482,7 +482,7 @@ const StudioWorkroom = forwardRef<
                     {String((o as LooseRecord).outcomeTag || (o as LooseRecord).tag || "outcome")}
                   </span>
                 </div>
-                <div className="mt-1 leading-snug text-foreground line-clamp-2">
+                <div className="mt-1 leading-snug text-foreground sm:line-clamp-2">
                   {String((o as LooseRecord).summary || "Call handled.")}
                 </div>
                 <div className="mt-1 text-[12px] text-muted-foreground">

@@ -57,7 +57,7 @@ function StudioEmptyState() {
           <Sparkles size={24} strokeWidth={1.5} className="sm:size-7" />
         </div>
 
-        <h1 className="font-[var(--wireline-font-family-display)] text-3xl sm:text-4xl lg:text-5xl tracking-[-0.04em] font-semibold">
+        <h1 className="font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-0.025em] sm:text-4xl lg:text-5xl">
           Wire one.
         </h1>
         <p className="mt-2 sm:mt-3 text-base sm:text-lg text-muted-foreground max-w-prose mx-auto">
@@ -208,8 +208,20 @@ export default function StudioWorkspaceV2() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className={`min-h-0 flex-1 ${workspaceView ? "max-h-[48dvh] lg:max-h-[52dvh]" : ""}`}>
+    <div
+      className={
+        workspaceView
+          ? "grid min-h-full bg-background lg:h-full lg:min-h-0 lg:grid-cols-[minmax(380px,0.82fr)_minmax(520px,1.18fr)]"
+          : "flex h-full min-h-0 flex-col bg-background"
+      }
+    >
+      <div
+        className={
+          workspaceView
+            ? "min-h-[560px] border-b border-border/60 lg:min-h-0 lg:border-b-0 lg:border-r"
+            : "min-h-0 flex-1"
+        }
+      >
         <StudioWorkroom
           key={active.id}
           ref={workroomRef}
@@ -229,6 +241,7 @@ export default function StudioWorkspaceV2() {
           agentId={active.id}
           agentName={active.name}
           onTestVoiceInChat={testVoiceInChat}
+          className="lg:border-t-0"
         />
       ) : null}
     </div>

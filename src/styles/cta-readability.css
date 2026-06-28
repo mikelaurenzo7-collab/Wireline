@@ -12,7 +12,7 @@
   display: inline-flex;
   min-width: 0;
   max-width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -44,7 +44,7 @@
   border: 1px solid var(--wireline-cta-bg);
   background: var(--wireline-cta-bg);
   color: var(--wireline-cta-fg) !important;
-  box-shadow: var(--wireline-elevation-md); /* strict mono per Wireline Mono contract */
+  box-shadow: var(--wireline-elevation-md); /* Letterpress action contrast */
 }
 
 .marketing-btn-primary :where(svg, span) {
@@ -54,7 +54,7 @@
 .marketing-btn-primary:hover:not(:disabled) {
   border-color: var(--wireline-cta-hover);
   background: var(--wireline-cta-hover);
-  box-shadow: var(--wireline-elevation-lg); /* strict mono per Wireline Mono contract */
+  box-shadow: var(--wireline-elevation-lg); /* Letterpress action contrast */
 }
 
 .marketing-btn-primary:active:not(:disabled),

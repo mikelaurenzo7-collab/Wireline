@@ -58,7 +58,7 @@ export default function StudioOverview({
       <div className="mx-auto flex max-w-5xl flex-col gap-5 sm:gap-6">
         <header className="flex flex-col items-center gap-3 text-center wl-centered-header">
           <div>
-            <h1 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h1-size)] font-semibold leading-none tracking-[-0.05em] text-foreground">
+            <h1 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h1-size)] font-normal leading-none tracking-[-0.025em] text-foreground">
               {active.name}
             </h1>
             <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground/70">

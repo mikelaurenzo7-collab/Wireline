@@ -45,7 +45,7 @@ mustInclude(
 mustInclude(
   "README.md",
   rootReadme,
-  /Wireline Mono design system/,
+  /Wireline Letterpress design system/,
   "must name the current design system",
 );
 mustInclude(
@@ -103,40 +103,40 @@ mustInclude(
 mustInclude(
   "android/README.md",
   androidReadme,
-  /Agents for every conversation/,
+  /Your phone, finally answering for you/,
   "Android docs must use agent-forward promise",
 );
 mustInclude(
   "android/README.md",
   androidReadme,
-  /Wireline Mono/,
-  "Android docs must use Wireline Mono language",
+  /Wireline Letterpress/,
+  "Android docs must use Wireline Letterpress language",
 );
 
 mustInclude(
   "ios/README.md",
   iosReadme,
-  /Agents for every conversation/,
+  /Your phone, finally answering for you/,
   "iOS docs must use agent-forward promise",
 );
 mustInclude(
   "ios/README.md",
   iosReadme,
-  /Wireline Mono/,
-  "iOS docs must use Wireline Mono language",
+  /Wireline Letterpress/,
+  "iOS docs must use Wireline Letterpress language",
 );
 
 mustInclude(
   "index.html",
   staticHead,
-  /Wireline - Agents for every conversation/,
+  /Wireline — Your phone, finally answering for you\./,
   "static metadata must use current positioning",
 );
 mustInclude(
   "index.html",
   staticHead,
-  /create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations/i,
-  "static metadata must describe Create -> Train -> Run agent model",
+  /voice AI that picks up your phone/i,
+  "static metadata must describe the Letterpress landing promise",
 );
 mustExcludeTerms(
   "index.html",
@@ -148,14 +148,14 @@ mustExcludeTerms(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Agents for every[\s\S]*conversation\./,
-  "OG image must use agent-forward positioning",
+  /Your phone,[\s\S]*finally[\s\S]*answering[\s\S]*for you\./,
+  "OG image must use the Letterpress landing promise",
 );
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Calls, texts, follow-up\. Handled\./,
-  "OG image must reinforce the sharp landing promise",
+  /Calls, bookings, messages, errands, and follow-up\./,
+  "OG image must reinforce the phone-agent promise",
 );
 mustExcludeTerms(
   "public/og-image.svg",

@@ -22,9 +22,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 /**
- * Native Android translation of Wireline Mono.
- * Material remains native; Wireline supplies warm monochrome surfaces,
- * sharp black actions, compact geometry, and calm system hierarchy.
+ * Native Android translation of Wireline Letterpress.
+ * Material remains native; Wireline supplies warm paper surfaces,
+ * forest actions, compact geometry, and calm system hierarchy.
  */
 object Brand {
     val Canvas = WirelineDesignTokens.ColorToken.colorCanvasDefault

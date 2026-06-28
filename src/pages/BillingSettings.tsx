@@ -36,10 +36,7 @@ export default function BillingSettings() {
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {BILLING_FLOW.map(({ label, title, detail, icon: Icon }) => (
-              <div
-                key={label}
-                className="studio-card p-4 text-center"
-              >
+              <div key={label} className="studio-card p-4 text-center">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
                     {label}
@@ -48,7 +45,7 @@ export default function BillingSettings() {
                     <Icon className="size-4" aria-hidden="true" />
                   </span>
                 </div>
-                <p className="font-[var(--wireline-font-family-display)] text-lg font-semibold leading-6 tracking-[-.025em] text-foreground">
+                <p className="font-[var(--wireline-font-family-display)] text-lg font-normal leading-6 tracking-[-.02em] text-foreground">
                   {title}
                 </p>
                 <p className="mt-2 text-sm leading-5 text-muted-foreground">{detail}</p>
@@ -61,7 +58,7 @@ export default function BillingSettings() {
 
         <section>
           <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-2">
-            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
+            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-.022em] text-foreground">
               Team capacity
             </h2>
           </div>

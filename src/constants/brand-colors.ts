@@ -1,11 +1,11 @@
 import { wirelineTokenValues as token } from "./generated-design-tokens";
 
 /*
- * Wireline Mono compatibility manifest.
+ * Wireline Letterpress compatibility manifest.
  *
  * Runtime source of truth: generated semantic token artifacts.
  * This object keeps older imports alive while redirecting visual decisions
- * to the clean monochrome system.
+ * to the generated Letterpress token system.
  */
 export const BRAND = {
   colors: {
@@ -36,17 +36,19 @@ export const BRAND = {
   spacing: {
     base: token["space.050"],
     scale: "semantic 4px rhythm with fluid layout allowances",
-    strategy: "Strict semantic spacing with fluid layout only where responsive breathing room is necessary.",
+    strategy:
+      "Strict semantic spacing with fluid layout only where responsive breathing room is necessary.",
     component: `${token["space.200"]} | ${token["space.300"]}`,
     section: "clamp(3rem, 2rem + 5vw, 6rem)",
   },
 
   typography: {
-    display: `${token["font.family.display"]} — clean interface headings`,
+    display: `${token["font.family.display"]} — editorial interface headings`,
     body: `${token["font.family.body"]} — neutral, highly legible interface copy`,
     mono: `${token["font.family.mono"]} — metadata, status, and technical labels`,
     scale: "Fluid modular steps with clamp() for responsive hierarchy",
-    headingStrategy: "Short, single-layer headings only. Concise and purposeful across the app shell.",
+    headingStrategy:
+      "Short, single-layer headings only. Concise and purposeful across the app shell.",
     sizes: {
       display: token["typography.display.size"],
       h1: token["typography.h1.size"],
@@ -59,7 +61,8 @@ export const BRAND = {
   },
 
   elevation: {
-    strategy: "Subtle monochrome layering. Avoid glow, glassmorphism, noisy gradients, and decorative shadow color.",
+    strategy:
+      "Subtle paper layering. Avoid glassmorphism, noisy gradients, and decorative shadow color.",
     card: token["elevation.sm"],
     panel: token["elevation.md"],
     modal: token["elevation.lg"],
@@ -79,23 +82,26 @@ export const BRAND = {
     lg: token["radius.lg"],
     xl: token["radius.xl"],
     pill: token["radius.pill"],
-    note: "Monochrome OS geometry sourced from generated Wireline tokens.",
+    note: "Letterpress geometry sourced from generated Wireline tokens.",
   },
 
   accessibility: {
-    contrastStandard: "WCAG 2.2 AA minimum; target AAA where content and product constraints permit.",
+    contrastStandard:
+      "WCAG 2.2 AA minimum; target AAA where content and product constraints permit.",
     dynamicApproach: "Static high-contrast baseline with room for future perceptual tooling.",
     targetSize: "Minimum 24×24px for compact controls; 44px target for primary touch actions.",
     reducedMotion: "Respect prefers-reduced-motion globally",
   },
 
   theming: {
-    current: "Wireline Mono light operating baseline",
+    current: "Wireline Letterpress light operating baseline",
     planned: "High-contrast mode plus density variants via semantic token sets",
   },
 
-  governance: "Changes require semantic-token review, accessibility validation, generated artifact refresh, and consumer adoption in the same pull request.",
-  pipeline: "DTCG-style JSON source -> dependency-free generator -> CSS custom properties and typed TypeScript. Native adapters follow once active.",
+  governance:
+    "Changes require semantic-token review, accessibility validation, generated artifact refresh, and consumer adoption in the same pull request.",
+  pipeline:
+    "DTCG-style JSON source -> dependency-free generator -> CSS custom properties and typed TypeScript. Native adapters follow once active.",
 } as const;
 
 export type BrandTokenCategory = keyof typeof BRAND;

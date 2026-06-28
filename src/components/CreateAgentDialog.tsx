@@ -175,7 +175,7 @@ export default function CreateAgentDialog({
           <div className="min-w-0">
             <h2
               id="create-agent-title"
-              className="font-[var(--wireline-font-family-display)] text-2xl font-semibold leading-tight tracking-[-.04em] text-foreground"
+              className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
             >
               New agent.
             </h2>
