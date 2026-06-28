@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { ArrowLeft, Loader2, MessageSquareText, Phone, Send, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -47,21 +55,31 @@ function MessageSkeletons() {
   );
 }
 
-export default function StudioWorkroom({
-  agentId,
-  agentName,
-  initialCommand,
-  onBack,
-  backLabel = "Agent workspace",
-  layout = "standalone",
-}: {
-  agentId: string;
-  agentName: string;
-  initialCommand?: string;
-  onBack: () => void;
-  backLabel?: string;
-  layout?: "standalone" | "canvas" | "split";
-}) {
+export type StudioWorkroomHandle = {
+  focusComposer: (text?: string) => void;
+};
+
+const StudioWorkroom = forwardRef<
+  StudioWorkroomHandle,
+  {
+    agentId: string;
+    agentName: string;
+    initialCommand?: string;
+    onBack: () => void;
+    backLabel?: string;
+    layout?: "standalone" | "canvas" | "split";
+  }
+>(function StudioWorkroom(
+  {
+    agentId,
+    agentName,
+    initialCommand,
+    onBack,
+    backLabel = "Agent workspace",
+    layout = "standalone",
+  },
+  ref,
+) {
   const [messages, setMessages] = useState<StudioMessage[]>([]);
   const [draft, setDraft] = useState(initialCommand || "");
   const [loading, setLoading] = useState(true);
@@ -72,6 +90,17 @@ export default function StudioWorkroom({
   const [outcomes, setOutcomes] = useState<unknown[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focusComposer(text?: string) {
+        if (text) setDraft(text);
+        requestAnimationFrame(() => inputRef.current?.focus());
+      },
+    }),
+    [],
+  );
 
   const endpoint = useMemo(
     () => `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`,
@@ -531,4 +560,6 @@ export default function StudioWorkroom({
       </div>
     </main>
   );
-}
+});
+
+export default StudioWorkroom;

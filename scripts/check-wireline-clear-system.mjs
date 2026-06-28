@@ -62,6 +62,7 @@ const settingsPage = read("src/pages/SettingsPage.tsx");
 const billingSettingsPage = read("src/pages/BillingSettings.tsx");
 const accountRoutes = read("src/routes/account-routes.ts");
 const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
+const studioAgentWorkspacePanel = read("src/components/StudioAgentWorkspacePanel.tsx");
 const studioOverview = read("src/components/StudioOverview.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
 const studioWorkroom = read("src/components/StudioWorkroom.tsx");
@@ -574,8 +575,14 @@ mustInclude(
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /view=workspace|Workspace for|Memory|World Connections/,
-  "canvas opens composer; per-agent workspace holds memory, training, knowledge, outcomes",
+  /view"\) === "workspace"|StudioAgentWorkspacePanel/,
+  "canvas opens composer; per-agent workspace panel mounts behind view=workspace",
+);
+mustInclude(
+  "src/components/StudioAgentWorkspacePanel.tsx",
+  studioAgentWorkspacePanel,
+  /Workspace for|Memory|World Connections/,
+  "per-agent workspace holds memory, training, knowledge, outcomes",
 );
 mustInclude(
   "src/pages/AgentStudioHome.tsx",
@@ -1131,12 +1138,12 @@ mustExclude(
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /StudioWorkroom|view=workspace/,
+  /StudioWorkroom|view"\) === "workspace"/,
   "Studio canvas is chat-first with optional per-agent workspace panels",
 );
 mustInclude(
-  "src/components/StudioWorkspaceV2.tsx",
-  studioWorkspace,
+  "src/components/StudioAgentWorkspacePanel.tsx",
+  studioAgentWorkspacePanel,
   /Workspace for|World Connections/,
   "Studio workspace view must support grouped sections including integrations",
 );

@@ -12,6 +12,7 @@ describe("authenticated agent flow", () => {
   it("keeps Studio canvas and per-agent workspaces discoverable with minimal rail", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const studioV2 = read("src/components/StudioWorkspaceV2.tsx");
+    const workspacePanel = read("src/components/StudioAgentWorkspacePanel.tsx");
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
 
@@ -29,12 +30,21 @@ describe("authenticated agent flow", () => {
     expect(studioV2).toContain("Wire one.");
     expect(studioV2).toContain("Start with a brief");
 
-    // Chat-first canvas + per-agent workspace panels behind view=workspace
-    expect(studioV2).toContain("view=workspace");
-    expect(studioV2).toContain("Workspace for");
-    expect(studioV2).toContain("World Connections");
-    expect(studioV2).toContain("Brain");
-    expect(studioV2).toContain("per this agent's workspace");
+    // Chat-first canvas orchestrator + extracted workspace panel behind view=workspace
+    expect(studioV2).toContain("StudioAgentWorkspacePanel");
+    expect(studioV2).toContain('view") === "workspace"');
+    expect(studioV2).toContain("onTestVoiceInChat");
+    expect(studioV2).not.toContain("document.querySelector");
+    expect(studioV2).not.toContain("alert(");
+
+    expect(workspacePanel).toContain("Workspace for");
+    expect(workspacePanel).toContain("World Connections");
+    expect(workspacePanel).toContain("Brain");
+    expect(workspacePanel).toContain("per this agent's workspace");
+    expect(workspacePanel).toContain("/api/agent-config/");
+    expect(workspacePanel).toContain("/api/train/extract");
+    expect(workspacePanel).not.toContain("document.querySelector");
+    expect(workspacePanel).not.toContain("alert(");
 
     expect(createDialog).toContain("Create agent");
 
@@ -65,15 +75,18 @@ describe("authenticated agent flow", () => {
   it("keeps the canvas and per-agent workspaces aligned with create + full agent workspace model", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const studioV2 = read("src/components/StudioWorkspaceV2.tsx");
-    const _studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
-    const _workroom = read("src/components/StudioWorkroom.tsx");
+    const workspacePanel = read("src/components/StudioAgentWorkspacePanel.tsx");
+    const workroom = read("src/components/StudioWorkroom.tsx");
     const agentStudioHome = read("src/pages/AgentStudioHome.tsx");
 
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("Wire one.");
+    expect(studioV2).toContain("Wire one.");
     expect(shell).toContain("Canvas");
-    expect(studioV2).toContain("Workspace for");
-    expect(studioV2).toContain("Memory");
-    expect(studioV2).toContain("World Connections");
+    expect(studioV2).toContain("StudioAgentWorkspacePanel");
+    expect(workspacePanel).toContain("Workspace for");
+    expect(workspacePanel).toContain("Memory");
+    expect(workspacePanel).toContain("World Connections");
+    expect(workroom).toContain("StudioWorkroomHandle");
+    expect(workroom).toContain("focusComposer");
 
     expect(agentStudioHome).toContain("WorkspaceShell");
     expect(agentStudioHome).toContain("StudioWorkspaceV2");
