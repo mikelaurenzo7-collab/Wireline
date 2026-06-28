@@ -3,6 +3,9 @@ export const wirelineTokenValues = {
   "color.action.primary.container": "#EEF5F1",
   "color.action.primary.default": "#2B5548",
   "color.action.primary.pressed": "#1E4038",
+  "color.action.secondary.container": "#FDF0E7",
+  "color.action.secondary.default": "#C4713B",
+  "color.action.secondary.pressed": "#A85B2C",
   "color.border.default": "#E8E7E3",
   "color.border.strong": "#C4C4BE",
   "color.canvas.default": "#F7F6F3",
@@ -100,7 +103,7 @@ export const wirelineTokenValues = {
   "zIndex.modalBackdrop": 1040,
   "zIndex.popover": 1060,
   "zIndex.sticky": 1020,
-  "zIndex.tooltip": 1070
+  "zIndex.tooltip": 1070,
 } as const;
 
 export type WirelineTokenPath = keyof typeof wirelineTokenValues;

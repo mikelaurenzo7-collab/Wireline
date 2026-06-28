@@ -230,6 +230,51 @@ function OAuthSignInButtons({
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 
+const AUTH_BRAND = {
+  signin: {
+    label: "Welcome back",
+    headline: "Your phone, finally answering for you.",
+    body: "Sign in to your workspace — your agents, calls, and follow-ups are right where you left them.",
+  },
+  signup: {
+    label: "Your workspace",
+    headline: "Your phone, finally answering for you.",
+    body: "A voice AI that answers your phone, talks to the caller, and handles it. Messages, bookings, errands, follow-ups — you get a text with what happened.",
+  },
+} as const;
+
+function AuthBrandPanel({ headerActive }: { headerActive: "signin" | "signup" }) {
+  const brand = AUTH_BRAND[headerActive];
+  return (
+    <aside className="wl-auth-brand-panel" aria-hidden="true">
+      <div className="wl-auth-brand-glow" />
+      <div className="wl-auth-brand-top">
+        <Link to="/" className="wl-auth-brand-mark">
+          <span className="wl-auth-brand-badge">W</span>
+          <span className="wl-auth-brand-word">Wireline</span>
+        </Link>
+      </div>
+      <div className="wl-auth-brand-copy">
+        <p className="wl-auth-brand-label">{brand.label}</p>
+        <h2 className="wl-auth-brand-headline">{brand.headline}</h2>
+        <p className="wl-auth-brand-body">{brand.body}</p>
+      </div>
+      <div className="wl-auth-brand-grid">
+        {[
+          ["Google", "Workspace"],
+          ["Outlook", "Microsoft 365"],
+          ["Yahoo", "Mail"],
+        ].map(([name, sub]) => (
+          <div key={name} className="wl-auth-brand-grid-cell">
+            <div className="wl-auth-brand-grid-name">{name}</div>
+            <div className="wl-auth-brand-grid-sub">{sub}</div>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
 function AuthShell({
   children,
   mode,
@@ -240,27 +285,18 @@ function AuthShell({
   headerActive: "signin" | "signup";
 }) {
   void mode;
-  void headerActive;
   return (
     <div className="wl-stitch-auth-shell">
+      <AuthBrandPanel headerActive={headerActive} />
       <main
         id="main-content"
-        className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 safe-area-insets"
+        className="wl-auth-form-panel flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 safe-area-insets"
       >
         <div className="w-full max-w-[440px]">
-          <div className="mb-6 text-center">
-            <Link to="/" className="text-2xl font-bold tracking-[-.03em] text-primary">
-              Wireline
-            </Link>
-            <h1 className="wl-stitch-headline mt-3">
-              {headerActive === "signup" ? "Create your account" : "Welcome Back"}
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {mode === "personal"
-                ? "Sign in to manage your agent and live work."
-                : "Sign in to manage your agent workspace."}
-            </p>
-          </div>
+          <Link to="/" className="wl-auth-mobile-mark">
+            <span className="wl-auth-brand-badge">W</span>
+            <span>Wireline</span>
+          </Link>
           <div className="wl-stitch-auth-card rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
             {children}
           </div>
@@ -277,22 +313,6 @@ function AuthShell({
           </div>
         </div>
       </main>
-      <footer className="mt-auto border-t border-border bg-card px-6 py-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
-          <span className="font-bold text-primary">Wireline</span>
-          <div className="flex gap-6">
-            <Link to="/privacy" className="hover:text-primary hover:underline">
-              Privacy
-            </Link>
-            <Link to="/terms" className="hover:text-primary hover:underline">
-              Terms
-            </Link>
-            <Link to="/support" className="hover:text-primary hover:underline">
-              Support
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

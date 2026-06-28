@@ -3,20 +3,19 @@
  * Values mirror design-tokens/wireline.tokens.json — keep in sync via build-design-tokens.
  */
 export const WIRELINE_MCP_WIDGET_TOKENS = {
-  canvas: "#F7F7F4",
+  canvas: "#F7F6F3",
   surface: "#FFFFFF",
-  surfaceSubtle: "#F1F1EE",
-  action: "#111111",
-  actionPressed: "#000000",
-  text: "#111111",
-  muted: "#6B6B66",
-  tertiary: "#8A8A84",
-  border: "#E3E3E0",
+  surfaceSubtle: "#F0EFEB",
+  action: "#2B5548",
+  actionPressed: "#1E4038",
+  text: "#1C1C1A",
+  muted: "#6B6B65",
+  tertiary: "#A1A19B",
+  border: "#E8E7E3",
   radiusLg: "12px",
   radiusMd: "10px",
-  shadowCard: "0 8px 24px -16px rgba(17, 17, 17, 0.18)",
-  fontDisplay:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif',
+  shadowCard: "0 8px 24px -16px rgba(28, 28, 26, 0.18)",
+  fontDisplay: '"Instrument Serif", Georgia, ui-serif, serif',
 } as const;
 
 export function buildWirelineMcpWidgetCss(): string {
@@ -93,7 +92,7 @@ button, a.button {
   text-decoration: none;
   min-height: 44px;
 }
-button.primary { background: #111111; color: #fff; border-color: #111111; }
+button.primary { background: var(--wl-action); color: #fff; border-color: var(--wl-action); }
 button.primary:active { background: var(--wl-action-pressed); }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 button:focus-visible, a.button:focus-visible {

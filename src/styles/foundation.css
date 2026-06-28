@@ -16,6 +16,9 @@
   --wl-accent: var(--wireline-color-action-primary-default);
   --wl-accent-hover: var(--wireline-color-action-primary-pressed);
   --wl-accent-container: var(--wireline-color-action-primary-container);
+  --wl-accent-warm: var(--wireline-color-action-secondary-default);
+  --wl-accent-warm-hover: var(--wireline-color-action-secondary-pressed);
+  --wl-accent-warm-container: var(--wireline-color-action-secondary-container);
   --wl-on-primary: var(--wireline-color-text-onAction);
   --wl-line: var(--wireline-color-border-default);
   --wl-line-strong: var(--wireline-color-border-strong);

@@ -1,40 +1,150 @@
-/* Account entry surface. Scoped to the existing AuthPortal structure. */
+/* Account entry surface — Letterpress two-panel auth.
+ * Left: dark brand panel (#1C1C1A) with forest-green glow. Right: form. */
 .wl-stitch-auth-shell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   min-height: 100dvh;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--wireline-color-action-primary-container) 3%, var(--wireline-color-canvas-default)), var(--wireline-color-canvas-default) 34rem);
 }
 
-.wl-stitch-auth-shell main {
-  padding: clamp(2.5rem, 4vw, 4.5rem) 1.5rem;
+/* ── Left brand panel ───────────────────────────────────────── */
+.wl-auth-brand-panel {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2.5rem;
+  padding: clamp(2.5rem, 4vw, 3.5rem);
+  background: var(--wireline-color-text-primary);
+  color: var(--wireline-color-canvas-default);
+  animation: fadeIn 0.5s ease-out both;
 }
 
-.wl-stitch-auth-shell main > div {
-  max-width: 27.5rem;
+.wl-auth-brand-glow {
+  position: absolute;
+  top: -100px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent),
+    transparent 65%
+  );
+  pointer-events: none;
 }
 
-.wl-stitch-auth-shell main > div > .mb-6 > a:first-child {
+.wl-auth-brand-top,
+.wl-auth-brand-copy,
+.wl-auth-brand-grid {
+  position: relative;
+}
+
+.wl-auth-brand-mark {
   display: inline-flex;
   align-items: center;
-  border-radius: var(--radius-md);
+  gap: 0.625rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.wl-auth-brand-badge {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--wireline-color-action-primary-default);
+  color: #fff;
+  font-family: var(--wireline-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wl-auth-brand-word {
   font-family: var(--wireline-font-display);
-  font-size: 1.125rem;
-  font-weight: 650;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.wl-auth-brand-copy {
+  max-width: 26rem;
+}
+
+.wl-auth-brand-label {
+  font-family: var(--wireline-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--wireline-color-canvas-default) 40%, transparent);
+  margin-bottom: 1.25rem;
+}
+
+.wl-auth-brand-headline {
+  font-family: var(--wireline-font-display);
+  font-size: clamp(2.25rem, 1.6rem + 2vw, 3rem);
+  line-height: 1.05;
   letter-spacing: -0.03em;
+  font-weight: 400;
+  margin-bottom: 1.25rem;
+  color: var(--wireline-color-canvas-default);
 }
 
-.wl-stitch-auth-shell main > div > .mb-6 {
-  margin-bottom: 1.5rem;
+.wl-auth-brand-body {
+  font-size: 15px;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--wireline-color-canvas-default) 55%, transparent);
 }
 
-.wl-stitch-auth-shell main > div > .mb-6 .wl-stitch-headline {
-  margin-top: 1.125rem;
-  font-size: clamp(1.75rem, 1.5rem + 0.65vw, 2.2rem);
-  line-height: 1.1;
-  letter-spacing: -0.035em;
+.wl-auth-brand-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  border: 1px solid color-mix(in srgb, #fff 6%, transparent);
+  background: color-mix(in srgb, #fff 6%, transparent);
 }
 
-.wl-stitch-auth-shell footer {
+.wl-auth-brand-grid-cell {
+  background: var(--wireline-color-text-primary);
+  padding: 1rem;
+  text-align: center;
+}
+
+.wl-auth-brand-grid-name {
+  font-family: var(--wireline-font-display);
+  font-size: 18px;
+  color: var(--wireline-color-canvas-default);
+}
+
+.wl-auth-brand-grid-sub {
+  font-family: var(--wireline-font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--wireline-color-canvas-default) 30%, transparent);
+  margin-top: 4px;
+}
+
+/* ── Right form panel ───────────────────────────────────────── */
+.wl-auth-form-panel {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wireline-color-action-primary-container) 3%, var(--wireline-color-canvas-default)),
+    var(--wireline-color-canvas-default) 34rem
+  );
+}
+
+.wl-auth-mobile-mark {
   display: none;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  font-family: var(--wireline-font-display);
+  font-size: 1.375rem;
+  color: var(--wireline-color-text-primary);
+  text-decoration: none;
 }
 
 .wl-stitch-auth-card {
@@ -42,7 +152,7 @@
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   background: var(--wireline-color-surface-default);
-  box-shadow: var(--wireline-elevation-lg); /* strict mono per contract */
+  box-shadow: var(--wireline-elevation-md);
 }
 
 .wl-stitch-oauth-btn {
@@ -54,20 +164,27 @@
 .wl-stitch-auth-divider {
   font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
 
-.wl-stitch-auth-shell .wl-stitch-auth-card + div {
-  margin-top: 1.25rem;
-  font-size: 0.8125rem;
+/* ── Responsive: collapse to single column on small screens ─── */
+@media (max-width: 899px) {
+  .wl-stitch-auth-shell {
+    grid-template-columns: 1fr;
+  }
+  .wl-auth-brand-panel {
+    display: none;
+  }
+  .wl-auth-mobile-mark {
+    display: flex;
+  }
 }
 
 @media (max-width: 639px) {
-  .wl-stitch-auth-shell main {
+  .wl-auth-form-panel {
     align-items: flex-start;
     padding: 2rem 1rem;
   }
-
   .wl-stitch-auth-card {
     padding: 1.25rem;
   }

@@ -9,11 +9,11 @@ import { WIRELINE_DESIGN_VISION } from "./wireline-design-vision";
 /** Canonical vision metadata for tooling and contracts. */
 export const WL_VISION = WIRELINE_DESIGN_VISION;
 
-/** Wireline Mono accent used across shared UI surfaces. */
+/** Wireline Letterpress accent used across shared UI surfaces. */
 export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */
-  accentHex: "#111111",
+  accentHex: "#2B5548",
 } as const;
 
 /** Workspace surfaces, settings, insights, ops panels */

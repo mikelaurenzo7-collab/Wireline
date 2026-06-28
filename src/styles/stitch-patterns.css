@@ -10,17 +10,17 @@
   font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.14em;
   line-height: 1.2;
   text-transform: uppercase;
-  color: var(--wireline-color-text-secondary);
+  color: var(--wireline-color-text-tertiary);
 }
 
 .wl-stitch-headline {
   font-family: var(--wireline-font-display);
   font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-weight: 400;
+  letter-spacing: -0.02em;
   line-height: 1.15;
   color: var(--foreground);
 }
@@ -28,18 +28,18 @@
 .wl-stitch-display {
   font-family: var(--wireline-font-display);
   font-size: clamp(1.75rem, 1.4rem + 1.8vw, 2.5rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1.08;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
   color: var(--foreground);
 }
 
 .wl-stitch-marketing-hero {
   font-family: var(--wireline-font-display);
   font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1.08;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
   color: var(--foreground);
 }
 
@@ -233,7 +233,7 @@
 .wl-stitch-stat-box strong {
   font-family: var(--wireline-font-display);
   font-size: var(--wireline-typography-h3-size);
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: -0.03em;
   color: var(--wireline-color-text-primary);
 }

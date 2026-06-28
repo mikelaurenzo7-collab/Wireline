@@ -35,9 +35,9 @@
   max-width: 22ch;
   font-family: var(--wireline-font-display);
   font-size: clamp(1.85rem, 1.55rem + 1.9vw, 3.15rem);
-  font-weight: 650;
-  letter-spacing: -0.045em;
-  line-height: 1.05;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
   text-wrap: balance;
 }
 

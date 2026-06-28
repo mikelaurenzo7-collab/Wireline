@@ -15,6 +15,9 @@
   --wireline-action: var(--wireline-color-action-primary-default);
   --wireline-action-pressed: var(--wireline-color-action-primary-pressed);
   --wireline-action-soft: var(--wireline-color-action-primary-container);
+  --wireline-accent-warm: var(--wireline-color-action-secondary-default);
+  --wireline-accent-warm-pressed: var(--wireline-color-action-secondary-pressed);
+  --wireline-accent-warm-soft: var(--wireline-color-action-secondary-container);
   --wireline-panel-shadow: var(--wireline-elevation-md);
 }
 
@@ -233,7 +236,11 @@
 .marketing-hero,
 .marketing-demo-surface {
   background:
-    radial-gradient(circle at top left, rgba(17, 17, 17, 0.05), transparent 32rem),
+    radial-gradient(
+      circle at top left,
+      color-mix(in srgb, var(--wireline-action) 8%, transparent),
+      transparent 32rem
+    ),
     var(--wireline-page);
 }
 
@@ -269,5 +276,5 @@
 
 .border-primary\/25,
 .border-primary\/35 {
-  border-color: rgba(17, 17, 17, 0.18) !important;
+  border-color: color-mix(in srgb, var(--wireline-action) 28%, transparent) !important;
 }
