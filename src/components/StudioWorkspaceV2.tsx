@@ -471,61 +471,7 @@ export default function StudioWorkspaceV2() {
             </button>
           </div>
 
-          {/* Additional robust customizations grouped */}
-          <div className="mt-3 border-t pt-3">
-            <div className="text-xs font-medium mb-1">Additional Customizations</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div>
-                Personality:{" "}
-                <select className="border rounded px-1">
-                  <option>Clear</option>
-                  <option>Warm</option>
-                  <option>Direct</option>
-                </select>
-              </div>
-              <div>
-                Greeting:{" "}
-                <input
-                  className="border rounded px-1 w-3/4"
-                  defaultValue="Hello, how can I help?"
-                />
-              </div>
-            </div>
-            <div className="mt-1 text-[10px] text-muted">
-              Full options in sections below. Apply to save.
-            </div>
-          </div>
-
-          {/* Voice Settings for robust customization (11labs params) */}
-          <div className="mt-2 border-t pt-2">
-            <div className="text-xs font-medium mb-1">
-              Voice Fine-tuning (robust for 11labs; xAI uses profile)
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <label>
-                Speed{" "}
-                <input
-                  type="range"
-                  min="0.7"
-                  max="1.2"
-                  step="0.05"
-                  defaultValue="1"
-                  className="w-full align-middle"
-                />
-              </label>
-              <label>
-                Stability{" "}
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  defaultValue="0.5"
-                  className="w-full align-middle"
-                />
-              </label>
-            </div>
-          </div>
+          {/* (Static demo blocks removed for clarity — the controlled steps below + voice gallery provide the full easy+robust onboarding.) */}
 
           {/* Step 2: Basics */}
           <div className="mb-4">
@@ -534,8 +480,11 @@ export default function StudioWorkspaceV2() {
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs">Personality</label>
+                <label htmlFor="setup-personality" className="text-xs">
+                  Personality
+                </label>
                 <select
+                  id="setup-personality"
                   value={setupPersonality}
                   onChange={(e) => setSetupPersonality(e.target.value)}
                   className="w-full mt-1 text-sm border border-border rounded-lg px-3 py-1.5 bg-background"
@@ -548,8 +497,11 @@ export default function StudioWorkspaceV2() {
                 </select>
               </div>
               <div>
-                <label className="text-xs">Greeting</label>
+                <label htmlFor="setup-greeting" className="text-xs">
+                  Greeting
+                </label>
                 <input
+                  id="setup-greeting"
                   value={setupGreeting}
                   onChange={(e) => setSetupGreeting(e.target.value)}
                   className="w-full mt-1 text-sm border border-border rounded-lg px-3 py-1.5 bg-background"
@@ -563,12 +515,20 @@ export default function StudioWorkspaceV2() {
             <div className="uppercase text-[10px] tracking-[0.12em] text-primary font-medium mb-2">
               3. Seed Initial Knowledge
             </div>
+            <label htmlFor="setup-knowledge" className="text-xs block mb-1">
+              Seed Initial Knowledge
+            </label>
             <textarea
+              id="setup-knowledge"
               value={setupKnowledge}
               onChange={(e) => setSetupKnowledge(e.target.value)}
               className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background min-h-[50px]"
               placeholder="E.g. Business hours 9-5. Free shipping over $50."
+              aria-describedby="knowledge-help"
             />
+            <div id="knowledge-help" className="sr-only">
+              Provide facts, policies, or context this agent should know.
+            </div>
           </div>
 
           <div className="flex gap-2">
