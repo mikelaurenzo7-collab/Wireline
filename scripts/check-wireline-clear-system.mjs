@@ -1125,8 +1125,8 @@ mustExclude(
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",
   studioWorkspace,
-  /StudioWorkroom/,
-  "Studio must use chat-first workroom",
+  /StudioWorkroom|WorkspaceShell/,
+  "Studio must use chat-first workroom inside consistent WorkspaceShell for persistent rail",
 );
 mustInclude(
   "src/components/StudioWorkspaceV2.tsx",

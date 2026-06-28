@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import CreateAgentDialog from "../components/CreateAgentDialog";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
+import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { browserCommandBrief, clearBrowserCommandHash, readBrowserCommandContext } from "../lib/browser-command-context";
 
@@ -25,7 +26,13 @@ export default function AgentStudioHome() {
 
   return (
     <>
-      <div className="h-[100dvh] min-h-0 overflow-hidden"><StudioWorkspaceV2 /></div>
+      <WorkspaceShell
+        eyebrow="Workspace"
+        title="Studio"
+        contentClassName="h-full min-h-0 p-0 overflow-hidden"
+      >
+        <StudioWorkspaceV2 />
+      </WorkspaceShell>
       <CreateAgentDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
