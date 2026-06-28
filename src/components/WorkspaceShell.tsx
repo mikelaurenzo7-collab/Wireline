@@ -2,11 +2,21 @@ import { type ReactNode, type Ref, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Bot, Layers, Plus, Settings } from "lucide-react";
 
-import WirelineMark from "./brand/WirelineMark";
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import type { WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useRovingTabIndex } from "../hooks/useRovingTabIndex";
+import { useAuth } from "../contexts/AuthContext";
+
+function userInitial(name?: string | null, email?: string | null) {
+  const source = (name || email || "W").trim();
+  return source.charAt(0).toUpperCase() || "W";
+}
+
+function rosterLabel(count: number) {
+  if (count <= 0) return "No agents yet";
+  return `${count} agent${count === 1 ? "" : "s"}`;
+}
 
 const nativeNavigation = [
   { href: "/studio", label: "Studio", icon: Layers },
@@ -378,32 +388,80 @@ function NativeStudioAgentBar({
   );
 }
 
+function SidebarLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: typeof Bot;
+  active: boolean;
+}) {
+  return (
+    <Link
+      to={href}
+      aria-current={active ? "page" : undefined}
+      className={`flex items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-[13px] transition-colors ${
+        active
+          ? "bg-primary font-semibold text-primary-foreground"
+          : "text-muted-foreground hover:bg-[color:var(--wireline-color-surface-subtle)] hover:text-foreground"
+      }`}
+    >
+      <Icon size={16} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
+      {label}
+    </Link>
+  );
+}
+
 function DesktopRail({ pathname }: { pathname: string }) {
+  const { user } = useAuth();
+  const { agents } = useStudioActiveAgentId();
+  const settingsActive = isActive(pathname, "/settings") || pathname.startsWith("/admin");
+  const studioActive = isActive(pathname, "/studio") && !settingsActive;
+  const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace";
+
   return (
     <aside
       aria-label="Workspace navigation"
-      className="hidden h-[100dvh] w-[56px] shrink-0 border-r border-border bg-background lg:flex lg:flex-col lg:items-center lg:px-1 lg:py-3"
+      className="hidden h-[100dvh] w-[236px] shrink-0 flex-col border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex"
     >
-      <Link
-        to="/studio"
-        aria-label="Studio"
-        title="Studio"
-        className="mt-0.5 grid size-9 place-items-center rounded-lg text-primary transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border"
-      >
-        <WirelineMark className="h-[19px] w-[19px] shrink-0" />
+      <Link to="/studio" aria-label="Wireline" className="mb-1.5 flex items-center gap-2.5 px-1.5">
+        <span className="grid size-7 place-items-center rounded-[7px] bg-primary font-mono text-[11px] font-bold text-primary-foreground">
+          W
+        </span>
+        <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">
+          Wireline
+        </span>
       </Link>
 
-      <nav
-        className="mt-auto flex w-full justify-center border-t border-border/50 pt-2.5"
-        aria-label="Settings"
-      >
-        <RailItem
-          href="/settings"
-          label="Settings"
-          icon={Settings}
-          active={isActive(pathname, "/settings") || pathname.startsWith("/admin")}
-        />
+      <p className="px-2.5 pb-3.5 pt-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-tertiary)]">
+        Workspace
+      </p>
+
+      <nav className="flex flex-1 flex-col gap-0.5" aria-label="Primary">
+        <SidebarLink href="/studio" label="Studio" icon={Layers} active={studioActive} />
+        <SidebarLink href="/settings" label="Settings" icon={Settings} active={settingsActive} />
       </nav>
+
+      <Link
+        to="/settings"
+        className="mt-2 flex items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80"
+        aria-label="Account settings"
+      >
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
+          {userInitial(user?.full_name, user?.email)}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-[13px] font-medium text-foreground">
+            {displayName}
+          </span>
+          <span className="block text-[11px] text-[color:var(--wireline-color-text-tertiary)]">
+            {rosterLabel(agents.length)}
+          </span>
+        </span>
+      </Link>
     </aside>
   );
 }
@@ -462,7 +520,7 @@ export default function WorkspaceShell({
       <a className="wl-skip-link" href="#workspace-main">
         Skip to content
       </a>
-      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[56px_minmax(0,1fr)]">
+      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[236px_minmax(0,1fr)]">
         <DesktopRail pathname={location.pathname} />
         <main
           id="workspace-main"

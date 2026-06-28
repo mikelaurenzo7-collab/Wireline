@@ -44,8 +44,11 @@ export const STUDIO_CANVAS_LEGACY_LINK_PATTERN = /mode=workroom/;
 /** Required behaviors per surface — absence means the vision is not shipped. */
 export const STUDIO_CANVAS_REQUIRED = {
   shell: [
-    { id: "minimal-rail", pattern: /aria-label="Workspace navigation"/ },
-    { id: "rail-width", pattern: /w-\[56px\]/ },
+    { id: "branded-rail", pattern: /aria-label="Workspace navigation"/ },
+    // Letterpress sidebar: full-width branded rail (Claude Design), not the legacy 56px strip.
+    { id: "rail-width", pattern: /w-\[236px\]/ },
+    { id: "rail-wordmark", pattern: /Wireline\s*<\/span>/ },
+    { id: "rail-user-card", pattern: /rosterLabel/ },
     { id: "horizontal-switcher", pattern: /StudioAgentBar/ },
     { id: "tablist-semantics", pattern: /role="tablist"/ },
     { id: "touch-target-44", pattern: /min-h-\[44px\][\s\S]*min-w-\[44px\]/ },
