@@ -52,7 +52,7 @@ export default function Features() {
                 to="/signup"
                 className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
-                Create agent
+                Wire agent
               </Link>
               <Link
                 to="/showcase"
@@ -169,7 +169,7 @@ export default function Features() {
                 to="/signup"
                 className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
-                Create agent
+                Wire agent
               </Link>
               <Link
                 to="/pricing"

@@ -459,10 +459,10 @@ function CustomAssistantCard() {
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
         <p className="text-[var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
-          Let Wireline Forge design a bespoke agent for your exact use case.
+          Let Wireline wire a bespoke agent for your exact use case.
         </p>
       </div>
-      <ClaudeRecipeButton recipe="agent-forge" label="Open Agent Forge" variant="ghost" />
+      <ClaudeRecipeButton recipe="agent-wire" label="Open Wire Agent" variant="ghost" />
     </motion.div>
   );
 }

@@ -16,7 +16,7 @@ import { NoKeyInline } from "./shared";
 import { RECIPE_META, type AgentLite, type Recipe } from "./types";
 import { CoachForm } from "./forms/CoachForm";
 import { KnowledgeFromUrlForm } from "./forms/KnowledgeFromUrlForm";
-import { AgentForgeForm } from "./forms/AgentForgeForm";
+import { AgentWireForm } from "./forms/AgentWireForm";
 import { BriefForm } from "./forms/BriefForm";
 import { EnrichLeadForm } from "./forms/EnrichLeadForm";
 import { QualifyForm } from "./forms/QualifyForm";
@@ -205,9 +205,7 @@ export function RecipeModal({
                   disabled={!available}
                 />
               )}
-              {recipe === "agent-forge" && (
-                <AgentForgeForm initial={initial} disabled={!available} />
-              )}
+              {recipe === "agent-wire" && <AgentWireForm initial={initial} disabled={!available} />}
               {recipe === "call-playbook" && (
                 <CallPlaybookForm
                   agents={agents}

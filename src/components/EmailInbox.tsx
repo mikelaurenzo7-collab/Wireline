@@ -352,7 +352,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             to="/training"
             className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
           >
-            Forge
+            Wire
           </Link>
           <Link
             to="/studio"

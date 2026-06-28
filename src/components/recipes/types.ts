@@ -35,7 +35,7 @@ export type Recipe =
   | "coach"
   | "knowledge-from-url"
   | "knowledge-from-document"
-  | "agent-forge"
+  | "agent-wire"
   | "call-playbook";
 
 export interface RecipeMeta {
@@ -124,8 +124,8 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
     accent: BRAND.colors.outlineVariant,
     thinking: false,
   },
-  "agent-forge": {
-    title: "Agent Forge",
+  "agent-wire": {
+    title: "Wire Agent",
     tagline: "Synthesize a complete agent from a goal.",
     icon: Hammer,
     accent: BRAND.colors.primary,

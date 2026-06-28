@@ -105,7 +105,10 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
         </Badge>
       </div>
       {/* Clear system requirements (concise, sr-only for polish) */}
-      <span className="sr-only">agent roster line/number configuration usage Create → Train → Run deep-link Knowledge Instructions Voice Memory</span>
+      <span className="sr-only">
+        agent roster line/number configuration usage Create → Train → Run deep-link Knowledge
+        Instructions Voice Memory
+      </span>
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {controls.map(({ label, icon: Icon, to }) => (
@@ -183,7 +186,7 @@ export default function AgentsPage() {
         <Button asChild size="sm">
           <Link to="/studio?create=1">
             <Plus aria-hidden="true" size={16} />
-            Create agent
+            Wire agent
           </Link>
         </Button>
       }

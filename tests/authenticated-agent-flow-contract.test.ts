@@ -74,12 +74,12 @@ describe("authenticated agent flow", () => {
     expect(studioOverview).not.toContain("Tap once to switch");
     expect(studioOverview).not.toContain("Describe the outcome. Approvals stay visible.");
     expect(studioOverview).not.toContain("Ready to direct");
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("Create one.");
+    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("Wire one.");
     expect(read("src/components/StudioWorkspaceV2.tsx")).not.toContain("Forge one.");
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("WorkspaceShell");
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("StudioWorkspaceV2");
-    expect(read("src/lib/product-copy.ts")).toContain('createHeadline: "Create an agent."');
-    expect(read("src/lib/product-copy.ts")).toContain('emptyCue: "Brief it. Train it. Run it."');
+    expect(read("src/lib/product-copy.ts")).toContain('createHeadline: "Wire an agent."');
+    expect(read("src/lib/product-copy.ts")).toContain('emptyCue: "Brief it. Train it. Wire it."');
     expect(read("src/lib/product-copy.ts")).not.toContain("Forge an agent.");
 
     expect(studioWorkspace).toContain('next.set("mode", "workroom")');

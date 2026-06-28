@@ -51,7 +51,7 @@ export default function CreateAgentSection({
           {isPersonal ? PRODUCT_POSTURE.personal.createCta : "Add to roster"}
         </h3>
         <div className="flex items-center gap-1.5">
-          <ClaudeRecipeButton recipe="agent-forge" label="Forge" variant="ghost" />
+          <ClaudeRecipeButton recipe="agent-wire" label="Wire" variant="ghost" />
           {!isPersonal && (
             <ShadButton
               type="button"

@@ -345,7 +345,7 @@ export default function CommandBar() {
                       : undefined
                   }
                   aria-autocomplete="list"
-                  placeholder="Search workspace or create an agent…"
+                  placeholder="Search workspace or wire an agent…"
                   className="h-8 border-none bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}

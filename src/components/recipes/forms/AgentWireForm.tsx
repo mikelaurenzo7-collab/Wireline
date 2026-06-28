@@ -5,7 +5,7 @@ import { authFetch } from "../../../lib/api";
 import { FormShell, Field, TextInput, TextArea, RunButton, ResultCard, ErrCard } from "../shared";
 import { ShadButton } from "../../ui/shadcn/ShadButton";
 
-export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
+export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
   const [goal, setGoal] = useState(initial?.goal ?? "");
   const [companyName, setCompanyName] = useState(initial?.companyName ?? "");
   const [industry, setIndustry] = useState(initial?.industry ?? "");
@@ -92,7 +92,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
           />
         </Field>
       </div>
-      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Forge Agent" />
+      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Wire Agent" />
 
       {err && <ErrCard error={err} />}
       {design && (
@@ -171,7 +171,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
                 </>
               ) : (
                 <>
-                  <Hammer className="w-4 h-4" /> Forge & Deploy <ArrowRight className="w-4 h-4" />
+                  <Hammer className="w-4 h-4" /> Wire & Deploy <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </ShadButton>

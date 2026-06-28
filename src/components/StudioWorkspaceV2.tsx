@@ -40,8 +40,8 @@ function StudioEmptyState() {
         density="default"
         className="studio-card w-full max-w-xl px-8 py-10 text-center"
         icon={<Sparkles size={28} strokeWidth={1.6} />}
-        title="Create one."
-        description="Name. Voice. Direct."
+        title="Wire one."
+        description="Name. Voice. Wire it."
         action={
           <div className="flex flex-wrap gap-3 pt-1 justify-center">
             <Button asChild>

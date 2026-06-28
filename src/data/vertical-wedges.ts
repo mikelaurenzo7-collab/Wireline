@@ -317,7 +317,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Yours",
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
-    primaryCta: { label: "Create personal agent", href: signupHrefForWedge("personal") },
+    primaryCta: { label: "Wire personal agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
       "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your dashboard before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",

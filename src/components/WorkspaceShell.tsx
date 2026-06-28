@@ -16,7 +16,7 @@ import MobileBrowserUtilities from "./MobileBrowserUtilities";
 
 const primaryNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
-  { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/agents", label: "Fleet", icon: Bot },
   { href: "/studio", label: "Studio", icon: PlayCircle },
   { href: "/training", label: "Train", icon: GraduationCap },
   { href: "/actions", label: "Wire", icon: Cable },
@@ -25,7 +25,7 @@ const primaryNavigation = [
 
 const nativeNavigation = [
   { href: "/overview", label: "Home", icon: LayoutDashboard },
-  { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/agents", label: "Fleet", icon: Bot },
   { href: "/studio", label: "Studio", icon: PlayCircle },
   { href: "/actions", label: "Wire", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
@@ -235,6 +235,12 @@ export default function WorkspaceShell({
               isStudioRoute ? "overflow-hidden" : ""
             } ${contentClassName}`}
           >
+            {isStudioRoute && (
+              <div className="thin-studio-bar border-b border-border/50 bg-background/95 px-4 py-1 text-[10px] text-muted-foreground flex items-center gap-2 sticky top-0 z-10">
+                <span>Studio</span>
+                <span className="text-primary">• Direct the work.</span>
+              </div>
+            )}
             <div className="wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col">
               {children}
             </div>

@@ -10,9 +10,9 @@ export const MARKETING_VOICE = {
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Create an agent.",
+  createHeadline: "Wire an agent.",
   runHeadline: "Run the work.",
-  emptyCue: "Brief it. Train it. Run it.",
+  emptyCue: "Brief it. Train it. Wire it.",
   commandPrompts: ["Review calls", "Draft reply", "Prep handoff"],
   directAgent: (name?: string | null) => `Direct ${name?.trim() || "your agent"}...`,
 } as const;
@@ -28,14 +28,14 @@ export const PRODUCT_POSTURE = {
   personal: {
     badge: "Personal agent",
     badgeShort: "Personal",
-    createCta: "Create personal agent",
+    createCta: "Wire personal agent",
     emptyTitle: "Personal agent.",
     emptyBody: "Your calls. Your rules.",
   },
   business: {
     badge: "Business agent",
     badgeShort: "Business",
-    createCta: "Create business agent",
+    createCta: "Wire business agent",
     emptyTitle: "Business agent.",
     emptyBody: "Brand on the line.",
   },

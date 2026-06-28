@@ -291,7 +291,7 @@ export default function ActionsWorkspace() {
           description="Create. Then wire."
           action={
             <Button asChild>
-              <Link to="/studio?create=1">Create an agent</Link>
+              <Link to="/studio?create=1">Wire an agent</Link>
             </Button>
           }
         />

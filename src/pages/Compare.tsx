@@ -115,7 +115,7 @@ export default function Compare() {
             to="/signup?mode=personal"
             className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
           >
-            Create agent <ArrowRight className="h-4 w-4" />
+            Wire agent <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>

@@ -110,7 +110,7 @@ function EmptyTraining() {
           <Button asChild>
             <Link to="/studio?create=1">
               <WandSparkles aria-hidden="true" size={16} />
-              Create agent
+              Wire agent
             </Link>
           </Button>
         }
@@ -135,7 +135,9 @@ function TrainingRail({
         <p className="wl-overline">Train</p>
         <p className="mt-1 text-sm leading-5 text-muted-foreground">Facts. Rules. Voice. Memory.</p>
         {/* Explicit for contract: full config surface */}
-        <p className="mt-0.5 text-[10px] text-muted-foreground/80">Facts, instructions, sources, voice, test calls, and memory.</p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground/80">
+          Facts, instructions, sources, voice, test calls, and memory.
+        </p>
       </div>
       <nav className="mt-2 grid gap-1">
         {trainingNav.map((item) => {

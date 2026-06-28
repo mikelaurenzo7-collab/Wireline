@@ -66,7 +66,7 @@ Every decision prioritizes clarity, outcome velocity, trust, and compounding adv
 - Real-time usage + projected runway.
 - "Fund from outcome" suggestions after valuable calls.
 - Implemented first tranche: 
-  - Intelligence sidebar ("Intelligence from outcomes") in Train (KnowledgeWorkspace.tsx) with real-data derived suggestions (distinguished from patterns), icons per kind, line-clamp, "Add to training", seamless apply+reload. Refined microcopy and empty states.
+  - Intelligence sidebar ("Intelligence from outcomes") in Train (KnowledgeWorkspace.tsx) with real-data derived suggestions (distinguished from patterns), icons per kind, line-clamp, "Add to training", seamless apply+reload. Refined microcopy and empty states. "Wire one." branding in Studio empty.
   - StudioWorkroom proposals elevated to beautiful full-width action cards with min-h touch targets.
   - Visible "Recent outcomes (ledger)" section in workroom with channel icons, real /api/calls data, tappable briefs that prefill director input, line-clamp, "Brief agent from this outcome". Ties directly to flywheel.
   - Purposeful teaser in StudioOverview linking to ledger for seamless Create-Train-Run-Review.

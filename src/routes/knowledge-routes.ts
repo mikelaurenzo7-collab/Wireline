@@ -15,7 +15,7 @@ const router = Router();
 // ──────────────────────────────────────────────────────────
 //  KNOWLEDGE BASE MANAGER — cross-agent view of every fact in
 //  wireline_knowledge. Agents accumulate knowledge from URL/PDF
-//  ingest, agent-forge seed, and per-agent manual entry; this is
+//  ingest, agent-wire seed, and per-agent manual entry; this is
 //  the centralized place to audit, edit, and prune.
 // ──────────────────────────────────────────────────────────
 
