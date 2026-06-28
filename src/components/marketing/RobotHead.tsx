@@ -93,7 +93,7 @@ export default function RobotHead({
         x="48"
         y="82"
         textAnchor="middle"
-        fill="var(--wireline-color-text-secondary, #6B6B66)"
+        fill="var(--wireline-color-text-secondary, #6B6B65)"
         fontFamily="Inter, sans-serif"
         fontSize="7"
         fontWeight="700"
