@@ -1,7 +1,6 @@
 import { type ReactNode, type Ref, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft,
   BookOpen,
   Bot,
   Home,
@@ -628,9 +627,7 @@ export default function WorkspaceShell({
     location.pathname === "/studio" ||
     location.pathname.startsWith("/studio/") ||
     location.pathname === "/forge";
-  const isHomeRoute = location.pathname === "/studio" && !params.get("agent");
   const nativeAppShell = isNativeAppShell();
-  const showHomeLink = !isHomeRoute && !isStudioRoute;
 
   const studioWorkspaceView = isStudioRoute && params.get("view") === "workspace";
 
@@ -672,17 +669,7 @@ export default function WorkspaceShell({
           ) : null}
           {!isStudioRoute && (title || eyebrow || action) && (
             <div className="relative mb-4 pb-3 lg:mb-5">
-              {showHomeLink ? (
-                <Link
-                  to="/studio"
-                  aria-label="Back to workspace home"
-                  className="absolute left-0 top-1 z-10 inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-[var(--radius-md)] border border-border bg-background px-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:top-1/2 md:-translate-y-1/2"
-                >
-                  <ArrowLeft aria-hidden="true" size={15} />
-                  <span className="hidden sm:inline">Home</span>
-                </Link>
-              ) : null}
-              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-12 sm:px-20 md:px-28">
+              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-4 sm:px-12 md:px-28">
                 <div className="flex min-w-0 flex-col items-center text-center wl-centered-header">
                   {eyebrow ? (
                     <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/70">

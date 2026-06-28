@@ -75,8 +75,8 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
   const encodedAgentId = encodeURIComponent(agent.id);
   const controls = [
     { label: "Studio", icon: Wrench, to: `/studio?agent=${encodedAgentId}` },
-    { label: "Train", icon: Database, to: `/training?agent=${encodedAgentId}` },
-    { label: "Wire", icon: Zap, to: `/actions?agent=${encodedAgentId}` },
+    { label: "Train", icon: Database, to: `/knowledge?agent=${encodedAgentId}` },
+    { label: "Wire", icon: Zap, to: `/studio?agent=${encodedAgentId}&view=workspace` },
   ] as const;
 
   return (
@@ -89,9 +89,8 @@ function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
           <h2 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h3-size)] font-normal leading-6 tracking-[-0.015em] text-foreground">
             {agent.name}
           </h2>
-          <p className="mt-1 inline-flex min-w-0 items-center gap-1.5 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.04em] text-muted-foreground">
-            <PostureBadge isBusiness={Boolean(agent.is_business_agent)} />
-            <span aria-hidden="true">&middot;</span>
+          <p className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.04em] text-muted-foreground">
+            <PostureBadge isBusiness={Boolean(agent.is_business_agent)} compact />
             <span className="capitalize">{formatAgentRoleLabel(agent.role)}</span>
             <span aria-hidden="true">&middot;</span>
             <span className="inline-flex items-center gap-1">
