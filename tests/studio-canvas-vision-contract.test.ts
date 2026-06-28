@@ -70,6 +70,9 @@ describe("Studio Canvas vision contract", () => {
     const studioHome = read(STUDIO_CANVAS_SURFACES.studioHome);
     expect(studioHome).toContain("WorkspaceShell");
     expect(studioHome).toContain("StudioWorkspaceV2");
-    expect(studioHome).toContain('contentClassName="h-full min-h-0 p-0 overflow-hidden"');
+    expect(studioHome).toContain('const workspaceView = params.get("view") === "workspace";');
+    expect(studioHome).toContain(
+      'workspaceView ? "h-full min-h-0 p-0" : "h-full min-h-0 p-0 overflow-hidden"',
+    );
   });
 });

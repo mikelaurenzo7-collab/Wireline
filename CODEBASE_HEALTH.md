@@ -25,15 +25,15 @@ Wireline's authenticated product starts at `/agents` and follows the Create → 
 - RLS-without-policy notices on server-only tables are fail-closed after grants are revoked; do not create permissive policies merely to silence a linter.
 - Supabase still reports leaked-password protection disabled. Enable it in Supabase Auth settings before public launch.
 
-## Deletion & cleanup rules — Wireline Mono era
+## Deletion & cleanup rules - Wireline Letterpress era
 
 - **No thin re-export wrappers**: Any file whose sole purpose is `export { default } from "./*-v2"` or similar re-exports of migration artifacts must be deleted. Migration debt of this form is forbidden.
 - **Legacy path handling**: Old redirect components or routes for retired surfaces must be removed once the new surface is stable. Use 410 Gone responses only when necessary for external clients.
 - **Admin-migrate scripts**: These are historical one-time migration tools. Do not delete individual migration files unless they are confirmed obsolete and have no audit value. Prefer moving completed migrations to an `archive/migrations/` folder if they clutter the active routes.
 - **Module size discipline**: No new file should exceed ~15-20k lines without a clear plan to split. Existing large monoliths must be progressively split by responsibility.
-- **Wireline Mono supremacy**: All new styling, tokens, class names, and visual components must derive from `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/constants/generated-design-tokens.ts`, and `src/styles/design-system.css`. Do not reintroduce legacy purple, signal blue, dark Studio themes, mesh/nebula primitives, or ad-hoc color tokens.
+- **Wireline Letterpress supremacy**: All new styling, tokens, class names, and visual components must derive from `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/constants/generated-design-tokens.ts`, and `src/styles/design-system.css`. Do not reintroduce legacy purple, signal blue, dark Studio themes, mesh/nebula primitives, standalone redesign palettes, or ad-hoc color tokens.
 - **Agent language**: User-facing surfaces should say Agents, Training, Wire, Studio, calls, texts, and follow-up. Avoid reviving generic assistant/dashboard/operator language unless it is an external API term or internal implementation name.
-- **Stale artifacts**: Generated files, local visual QA output, and temporary screenshots belong in `.gitignore` or CI cleanup, not committed long-term.
+- **Stale artifacts**: Generated files, local visual QA output, standalone redesign exports, temporary screenshots, and one-off migration CSS belong in `.gitignore` or CI cleanup, not committed long-term.
 
 ## Verification
 
@@ -43,11 +43,12 @@ Wireline's authenticated product starts at `/agents` and follows the Create → 
 - `GET /api/health` — production health probe.
 - Review Vercel runtime errors after each deployment.
 
-## Recent health actions — Wireline Mono standardization
+## Recent health actions - Wireline Letterpress standardization
 
 - Replaced the old design contract with `scripts/check-wireline-clear-system.mjs`.
-- Moved source tokens, generated CSS, generated TypeScript, browser extension tokens, native Android tokens, iOS tokens, icons, legal pages, and app manifests to Wireline Mono.
+- Moved source tokens, generated CSS, generated TypeScript, browser extension tokens, native Android tokens, iOS tokens, icons, legal pages, and app manifests to Wireline Letterpress.
 - Deleted dead Studio right-rail and nebula visual primitives.
+- Deleted stale standalone redesign landing artifacts that preserved the wrong dark/blue palette.
 - Added Wireline Command browser-extension command actions and product-doc contracts.
 - Added account deletion controls and guarded mobile-browser settings access.
 - Continued aggressive split plan for large monolithic files while preserving audit-value migrations.

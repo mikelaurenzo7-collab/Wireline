@@ -11,9 +11,9 @@ export const MARKETING_VOICE = {
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Build your agent.",
+  createHeadline: "Wire an agent.",
   runHeadline: "Your phone is covered.",
-  emptyCue: "Name it. Train it. Deploy it.",
+  emptyCue: "Brief it. Train it. Wire it.",
   commandPrompts: ["Change voice", "Edit workflows", "Review calls"],
   directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your agent"}...`,
 } as const;

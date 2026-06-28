@@ -77,7 +77,6 @@ const knowledgeWorkspace = read("src/components/KnowledgeWorkspace.tsx");
 const assistantComposer = read("src/components/AssistantComposer.tsx");
 const browserCallWidget = read("src/components/marketing/BrowserCallWidget.tsx");
 const trustSignals = read("src/components/marketing/TrustSignals.tsx");
-const zipLanding = read("src/components/migration/ZipLanding.tsx");
 const precisionLanding = read("src/components/marketing/PrecisionLanding.tsx");
 const signalOrbFrame = read("src/components/ui/SignalOrbFrame.tsx");
 const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
@@ -642,12 +641,6 @@ mustExclude(
   /demo assistants/i,
   "trust strip must use agent language",
 );
-mustExclude(
-  "src/components/migration/ZipLanding.tsx",
-  zipLanding,
-  /personal assistant|operating system for assistants/i,
-  "Zip landing must use current agent language",
-);
 mustInclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
@@ -1006,7 +999,6 @@ for (const [file, source] of [
   ["src/components/AssistantComposer.tsx", assistantComposer],
   ["src/components/marketing/BrowserCallWidget.tsx", browserCallWidget],
   ["src/components/marketing/TrustSignals.tsx", trustSignals],
-  ["src/components/migration/ZipLanding.tsx", zipLanding],
   ["src/data/wireline-knowledge.ts", wirelineKnowledge],
   ["src/lib/chatgpt-mcp.ts", chatgptWidget],
   ["src/lib/chatgpt-mcp-account.ts", chatgptAccountWidget],
@@ -1291,6 +1283,26 @@ mustBeDeleted(
 mustBeDeleted(
   "src/components/ui/ConstellationField.tsx",
   "unused constellation field visual primitive must stay deleted",
+);
+mustBeDeleted(
+  "src/components/migration/ZipLanding.tsx",
+  "standalone redesign landing artifact used the wrong dark/blue palette and must stay deleted",
+);
+mustBeDeleted(
+  "src/styles/zip-platform-tokens.css",
+  "standalone redesign token shim must not override Wireline Letterpress",
+);
+mustBeDeleted(
+  "src/styles/zip-landing.css",
+  "standalone redesign landing CSS must not reintroduce the wrong palette",
+);
+mustBeDeleted(
+  "src/styles/zip-landing-sections.css",
+  "standalone redesign landing section CSS must not reintroduce the wrong palette",
+);
+mustBeDeleted(
+  "src/styles/source-migration.css",
+  "temporary source-migration styling must not remain after the Letterpress migration",
 );
 mustBeDeleted("src/lib/wireline-signal-design.ts", "retired signal class bridge must stay deleted");
 mustBeDeleted(
