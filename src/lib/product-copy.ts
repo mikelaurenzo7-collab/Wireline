@@ -3,10 +3,9 @@
 export const MARKETING_VOICE = {
   eyebrow: "Wireline OS",
   headline: "Agents for every conversation.",
-  subline: "Calls, texts, follow-up. Handled.",
+  subline: "Calls, texts, follow-up. Done.",
   proof: ["Create", "Train", "Run", "Calls", "Texts", "Follow-up"],
-  extensionLead:
-    "Command agents from the page you're on. Create, train, and run with mono clarity.",
+  extensionLead: "Command agents from the page you're on. Create, train, and run with mono clarity.",
 } as const;
 
 export const WORKSPACE_VOICE = {
