@@ -1,5 +1,5 @@
 import { Play, Plus, Sparkles } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 
 import { Skeleton } from "../components/atoms";
@@ -45,9 +45,20 @@ function StudioLoadingState() {
 }
 
 function StudioEmptyState() {
-  // Perfect first-time onboarding: open canvas with guided, beautiful composer + quick voice/custom peek.
-  // Easy entry, but hints at robust options in the agent's workspace after creation.
-  // World-class: clean, inviting, purposeful, no clutter, mobile friendly.
+  const navigate = useNavigate();
+  const [brief, setBrief] = useState("");
+
+  function createHref() {
+    const params = new URLSearchParams({ create: "1" });
+    const trimmed = brief.trim();
+    if (trimmed) params.set("brief", trimmed);
+    return `/studio?${params.toString()}`;
+  }
+
+  function startCreate() {
+    navigate(createHref());
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-12 text-center">
       <div className="max-w-xl lg:max-w-2xl w-full">
@@ -70,6 +81,14 @@ function StudioEmptyState() {
             </label>
             <textarea
               id="initial-brief"
+              value={brief}
+              onChange={(event) => setBrief(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  startCreate();
+                }
+              }}
               className="w-full min-h-[68px] sm:min-h-[80px] resize-y rounded-xl border border-border bg-card p-3 sm:p-4 text-[14px] sm:text-[15px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
               placeholder="Book appointments, answer pricing questions, follow up on leads..."
             />
@@ -77,7 +96,7 @@ function StudioEmptyState() {
 
           <div className="flex flex-wrap justify-center gap-3">
             <Link
-              to="/studio?create=1"
+              to={createHref()}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-primary-foreground shadow-sm transition active:scale-[0.985]"
             >
               <Plus size={15} className="sm:size-[17px]" /> Wire it (start setup)

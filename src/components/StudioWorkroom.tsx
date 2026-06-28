@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/atoms";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
+import { WORKSPACE_VOICE } from "../lib/product-copy";
+import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 
 type LooseRecord = Record<string, unknown>;
 
@@ -466,58 +468,61 @@ export default function StudioWorkroom({
       )}
 
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl rounded-2xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-primary/40">
-          {!loading && !messages.length ? (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {QUICK_PROMPTS.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => {
-                    setDraft(prompt);
-                    requestAnimationFrame(() => inputRef.current?.focus());
-                  }}
-                  className="rounded-full border border-border/70 bg-background px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:border-primary/30 hover:bg-accent hover:text-foreground active:scale-[0.985]"
-                >
-                  {prompt}
-                </button>
-              ))}
+        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl">
+          <div className={WL_COMPOSER_CLASSES.composerDock}>
+            <label className="sr-only" htmlFor="studio-workroom-message">
+              Message {agentName}
+            </label>
+            <textarea
+              id="studio-workroom-message"
+              ref={inputRef}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !sending) {
+                  event.preventDefault();
+                  submit();
+                }
+              }}
+              rows={2}
+              disabled={sending}
+              placeholder={WORKSPACE_VOICE.directAgent(agentName)}
+              className="wl-composer-dock__input disabled:opacity-60"
+            />
+            <div className="wl-composer-dock__toolbar">
+              <div className="flex flex-wrap gap-1.5">
+                {!loading && !messages.length ? (
+                  QUICK_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => {
+                        setDraft(prompt);
+                        requestAnimationFrame(() => inputRef.current?.focus());
+                      }}
+                      className={WL_COMPOSER_CLASSES.starterChip}
+                    >
+                      {prompt}
+                    </button>
+                  ))
+                ) : (
+                  <p className="hidden text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 sm:block">
+                    Cmd + Enter
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!draft.trim() || sending}
+                onClick={submit}
+                className="transition-all active:scale-[0.985]"
+                aria-busy={sending}
+              >
+                {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+                <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
+              </Button>
             </div>
-          ) : null}
-          <label className="sr-only" htmlFor="studio-workroom-message">
-            Message {agentName}
-          </label>
-          <textarea
-            id="studio-workroom-message"
-            ref={inputRef}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !sending) {
-                event.preventDefault();
-                submit();
-              }
-            }}
-            rows={3}
-            disabled={sending}
-            placeholder={`Direct ${agentName}...`}
-            className="min-h-[76px] w-full resize-y rounded bg-transparent px-2 py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 disabled:opacity-60"
-          />
-          <div className="flex items-center justify-between gap-2 border-t border-border/70 pt-2.5">
-            <p className="hidden text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 sm:block">
-              Cmd + Enter
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              disabled={!draft.trim() || sending}
-              onClick={submit}
-              className="ml-auto transition-all active:scale-[0.985]"
-              aria-busy={sending}
-            >
-              {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
-              <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
-            </Button>
           </div>
         </div>
         <div className="mt-2 hidden text-center text-[10px] text-muted-foreground sm:block">
