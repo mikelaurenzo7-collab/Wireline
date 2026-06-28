@@ -4,7 +4,7 @@ import { ArrowLeft, Bot, Layers, Plus, Settings } from "lucide-react";
 
 import WirelineMark from "./brand/WirelineMark";
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
-import { useAgents } from "../contexts/AgentsContext";
+import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import type { WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useRovingTabIndex } from "../hooks/useRovingTabIndex";
 
@@ -215,7 +215,7 @@ function StudioAgentBar({
                   : `/studio?agent=${encodeURIComponent(activeAgent.id)}&view=workspace`
               }
               aria-label={workspaceView ? "Back to canvas chat" : "Open agent workspace"}
-              className={`hidden sm:inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors min-h-[32px] ${
+              className={`hidden sm:inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors min-h-[44px] min-w-[44px] ${
                 workspaceView
                   ? "border-primary/30 bg-primary/5 text-primary"
                   : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -445,7 +445,7 @@ export default function WorkspaceShell({
 }) {
   const location = useLocation();
   const [params] = useSearchParams();
-  const { agents } = useAgents();
+  const { resolvedId: studioAgentId, agents } = useStudioActiveAgentId();
   const isStudioRoute =
     location.pathname === "/studio" ||
     location.pathname.startsWith("/studio/") ||
@@ -454,7 +454,6 @@ export default function WorkspaceShell({
   const nativeAppShell = isNativeAppShell();
   const showHomeLink = !isHomeRoute && !isStudioRoute;
 
-  const studioAgentId = isStudioRoute ? params.get("agent") : null;
   const studioWorkspaceView = isStudioRoute && params.get("view") === "workspace";
 
   return (

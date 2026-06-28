@@ -130,6 +130,8 @@ const directorCopy = read("src/lib/director-copy.ts");
 const directorComposerAccessory = read("src/components/director/DirectorComposerAccessory.tsx");
 const designVision = read("src/lib/wireline-design-vision.ts");
 const studioAgentPreference = read("src/lib/studio-agent-preference.ts");
+const studioActiveAgentHook = read("src/hooks/useStudioActiveAgentId.ts");
+const authContext = read("src/contexts/AuthContext.tsx");
 const wirelineDesignSystem = read("src/lib/wireline-design-system.ts");
 const legalCss = read("public/static-legal.css");
 const manifest = read("public/site.webmanifest");
@@ -533,6 +535,8 @@ assertStudioCanvasContract(
     workspacePanel: studioAgentWorkspacePanel,
     studioHome: agentStudioHome,
     agentPreference: studioAgentPreference,
+    activeAgentHook: studioActiveAgentHook,
+    authContext,
     designVision,
     overviewPage,
     studioOverview,

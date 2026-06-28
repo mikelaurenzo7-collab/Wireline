@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  clearStudioLastAgentId,
   readStudioLastAgentId,
   resolveStudioActiveAgentId,
   KEY,
@@ -71,5 +72,11 @@ describe("studio-agent-preference", () => {
   it("returns null for an empty roster", () => {
     writeStudioLastAgentId("agent-a");
     expect(resolveStudioActiveAgentId(null, [])).toBeNull();
+  });
+
+  it("clears MRU on logout helper", () => {
+    writeStudioLastAgentId("agent-a");
+    clearStudioLastAgentId();
+    expect(readStudioLastAgentId()).toBeNull();
   });
 });

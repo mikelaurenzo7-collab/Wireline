@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { AUTH_SESSION_EXPIRED_EVENT } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 import { isSessionOptionalPublicPath } from "../lib/public-routes";
+import { clearStudioLastAgentId } from "../lib/studio-agent-preference";
 
 export interface User {
   id: string;
@@ -164,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       /* still clear local state */
     }
     localStorage.removeItem(LEGACY_STORAGE_KEY);
+    clearStudioLastAgentId();
     setSession(null);
     setUser(null);
   }, []);

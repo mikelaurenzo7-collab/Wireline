@@ -13,6 +13,10 @@ export function writeStudioLastAgentId(id: string): void {
   studioStorage()?.setItem(KEY, id);
 }
 
+export function clearStudioLastAgentId(): void {
+  studioStorage()?.removeItem(KEY);
+}
+
 /**
  * Resolves the active Studio agent id from URL request, MRU, or roster order.
  * - requestedId when present in agentIds

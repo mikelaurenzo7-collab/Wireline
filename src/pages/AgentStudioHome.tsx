@@ -4,7 +4,11 @@ import CreateAgentDialog from "../components/CreateAgentDialog";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
-import { browserCommandBrief, clearBrowserCommandHash, readBrowserCommandContext } from "../lib/browser-command-context";
+import {
+  browserCommandBrief,
+  clearBrowserCommandHash,
+  readBrowserCommandContext,
+} from "../lib/browser-command-context";
 
 export default function AgentStudioHome() {
   const [params] = useSearchParams();
@@ -36,7 +40,7 @@ export default function AgentStudioHome() {
       <CreateAgentDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        initialBrief={browserBrief}
+        initialBrief={browserBrief || params.get("brief") || ""}
         business={wantsBusinessAgent}
       />
     </>

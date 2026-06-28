@@ -39,6 +39,9 @@ describe("Studio Canvas vision contract", () => {
     for (const rule of STUDIO_CANVAS_FORBIDDEN.shell) {
       expect(sources.shell, rule.id).not.toMatch(rule.pattern);
     }
+    for (const rule of STUDIO_CANVAS_FORBIDDEN.workspacePanel) {
+      expect(sources.workspacePanel, rule.id).not.toMatch(rule.pattern);
+    }
   });
 
   it("requires chat-first canvas with MRU, composer, and gated workspace depth", () => {

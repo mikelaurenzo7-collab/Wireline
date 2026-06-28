@@ -17,6 +17,8 @@ export const STUDIO_CANVAS_SURFACES = {
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
   studioHome: "src/pages/AgentStudioHome.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
+  activeAgentHook: "src/hooks/useStudioActiveAgentId.ts",
+  authContext: "src/contexts/AuthContext.tsx",
   designVision: "src/lib/wireline-design-vision.ts",
 };
 
@@ -28,6 +30,9 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "no-query-selector-hacks", pattern: /document\.querySelector/ },
   ],
   shell: [{ id: "no-rail-agent-stack", pattern: /function DesktopRail[\s\S]*agents\.map/ }],
+  workspacePanel: [
+    { id: "no-fake-wired-badge", pattern: />\s*wired\s*</ },
+  ],
 };
 
 export const STUDIO_CANVAS_REQUIRED = {
@@ -40,23 +45,47 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "keyboard-roving", pattern: /useRovingTabIndex/ },
     { id: "scroll-active-pill", pattern: /scrollIntoView/ },
     { id: "native-switcher", pattern: /NativeStudioAgentBar/ },
+    { id: "settings-affordance", pattern: /aria-label="Settings"/ },
+    { id: "shared-mru-hook", pattern: /useStudioActiveAgentId/ },
   ],
   canvas: [
     { id: "chat-first-workroom", pattern: /<StudioWorkroom/ },
-    { id: "mru-preference", pattern: /resolveStudioActiveAgentId/ },
+    { id: "shared-mru-hook", pattern: /useStudioActiveAgentId/ },
     { id: "workspace-depth-gate", pattern: /view"\) === "workspace"/ },
     { id: "extracted-workspace-panel", pattern: /StudioAgentWorkspacePanel/ },
+    { id: "workspace-panel-key", pattern: /key=\{active\.id\}/ },
     { id: "strip-legacy-mode", pattern: /next\.delete\("mode"\)/ },
+    { id: "empty-state-wire-one", pattern: /Wire one\./ },
+    { id: "command-nonce", pattern: /commandNonce/ },
   ],
   workroom: [
     { id: "composer-dock", pattern: /wl-composer-dock/ },
     { id: "canvas-layout", pattern: /layout === "canvas"/ },
+    { id: "composer-focus-handle", pattern: /focusComposer/ },
   ],
   workspacePanel: [
+    { id: "scoped-workspace-copy", pattern: /per this[\s\S]*workspace only/ },
     { id: "world-connections", pattern: /World Connections/ },
     { id: "real-config-api", pattern: /\/api\/agent-config\// },
+    { id: "voice-search-a11y", pattern: /htmlFor="voice-search"/ },
+    { id: "elevenlabs-cap-disclosure", pattern: /first 12/ },
+    { id: "honest-integration-keys", pattern: /key=\{integ\.id\}/ },
+    { id: "honest-integration-status", pattern: /integ\.connection/ },
   ],
-  agentPreference: [{ id: "mru-key", pattern: /wireline:studio:last-agent-id/ }],
+  agentPreference: [
+    { id: "mru-key", pattern: /wireline:studio:last-agent-id/ },
+    { id: "resolve-helper", pattern: /resolveStudioActiveAgentId/ },
+    { id: "clear-on-logout", pattern: /clearStudioLastAgentId/ },
+  ],
+  activeAgentHook: [
+    { id: "resolve-mru", pattern: /resolveStudioActiveAgentId/ },
+    { id: "url-agent-param", pattern: /params\.get\("agent"\)/ },
+  ],
+  studioHome: [
+    { id: "brief-param", pattern: /params\.get\("brief"\)/ },
+    { id: "shell-canvas-compose", pattern: /WorkspaceShell[\s\S]*StudioWorkspaceV2/ },
+  ],
+  authContext: [{ id: "logout-clears-mru", pattern: /clearStudioLastAgentId/ }],
 };
 
 export const STUDIO_CANVAS_LINK_SURFACES = [
@@ -73,6 +102,14 @@ export function assertStudioCanvasContract(sources, { mustInclude, mustExclude }
   }
   for (const rule of STUDIO_CANVAS_FORBIDDEN.shell) {
     mustExclude(STUDIO_CANVAS_SURFACES.shell, get("shell"), rule.pattern, rule.id);
+  }
+  for (const rule of STUDIO_CANVAS_FORBIDDEN.workspacePanel ?? []) {
+    mustExclude(
+      STUDIO_CANVAS_SURFACES.workspacePanel,
+      get("workspacePanel"),
+      rule.pattern,
+      rule.id,
+    );
   }
 
   for (const [surfaceKey, rules] of Object.entries(STUDIO_CANVAS_REQUIRED)) {
@@ -97,12 +134,5 @@ export function assertStudioCanvasContract(sources, { mustInclude, mustExclude }
     get("designVision"),
     /studioCanvas:\s*\{[\s\S]*minTouchTargetPx:\s*44/,
     "design vision must document studio canvas touch targets",
-  );
-
-  mustInclude(
-    STUDIO_CANVAS_SURFACES.studioHome,
-    get("studioHome"),
-    /WorkspaceShell[\s\S]*StudioWorkspaceV2/,
-    "studio home must compose shell + canvas orchestrator",
   );
 }

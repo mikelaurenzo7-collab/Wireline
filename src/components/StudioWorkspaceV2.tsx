@@ -1,10 +1,11 @@
 import { Plus, Sparkles } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import { Skeleton } from "../components/atoms";
 import { useAgents } from "../contexts/AgentsContext";
-import { resolveStudioActiveAgentId, writeStudioLastAgentId } from "../lib/studio-agent-preference";
+import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 
@@ -107,14 +108,12 @@ function StudioEmptyState() {
 }
 
 export default function StudioWorkspaceV2() {
-  const { agents, loading } = useAgents();
+  const { loading } = useAgents();
+  const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
-  const requestedId = params.get("agent");
   const legacyMode = params.get("mode");
   const workspaceView = params.get("view") === "workspace";
-  const agentIds = useMemo(() => agents.map((agent) => agent.id), [agents]);
-  const resolvedAgentId = resolveStudioActiveAgentId(requestedId, agentIds);
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
 
   useEffect(() => {
@@ -199,6 +198,7 @@ export default function StudioWorkspaceV2() {
           agentId={active.id}
           agentName={active.name}
           initialCommand={params.get("command") || undefined}
+          commandNonce={params.get("commandNonce") || undefined}
           onBack={workspaceView ? returnToCanvas : openWorkspacePanel}
           backLabel={workspaceView ? "Back to chat" : "Agent workspace"}
           layout={workspaceView ? "split" : "canvas"}
@@ -207,6 +207,7 @@ export default function StudioWorkspaceV2() {
 
       {workspaceView ? (
         <StudioAgentWorkspacePanel
+          key={active.id}
           agentId={active.id}
           agentName={active.name}
           onTestVoiceInChat={testVoiceInChat}

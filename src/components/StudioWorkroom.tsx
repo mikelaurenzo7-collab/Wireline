@@ -65,6 +65,7 @@ const StudioWorkroom = forwardRef<
     agentId: string;
     agentName: string;
     initialCommand?: string;
+    commandNonce?: string;
     onBack: () => void;
     backLabel?: string;
     layout?: "standalone" | "canvas" | "split";
@@ -74,6 +75,7 @@ const StudioWorkroom = forwardRef<
     agentId,
     agentName,
     initialCommand,
+    commandNonce,
     onBack,
     backLabel = "Agent workspace",
     layout = "standalone",
@@ -164,7 +166,7 @@ const StudioWorkroom = forwardRef<
       setDraft(initialCommand);
       requestAnimationFrame(() => inputRef.current?.focus());
     }
-  }, [initialCommand]);
+  }, [initialCommand, commandNonce]);
 
   // Load real recent outcomes for the agent (ledger)
   useEffect(() => {

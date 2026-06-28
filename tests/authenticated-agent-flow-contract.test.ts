@@ -31,6 +31,7 @@ describe("authenticated agent flow", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const productCopy = read("src/lib/product-copy.ts");
     const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
+    const studioHome = read("src/pages/AgentStudioHome.tsx");
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("Create agent");
@@ -40,5 +41,8 @@ describe("authenticated agent flow", () => {
     expect(mobileUtilities).toContain('pathname === "/studio"');
     expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');
     expect(mobileUtilities).toContain('pathname.startsWith("/settings")');
+
+    expect(studioHome).toContain('params.get("brief")');
+    expect(studioHome).not.toContain("mode=workroom");
   });
 });

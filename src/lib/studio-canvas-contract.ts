@@ -15,6 +15,8 @@ export const STUDIO_CANVAS_SURFACES = {
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
   studioHome: "src/pages/AgentStudioHome.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
+  activeAgentHook: "src/hooks/useStudioActiveAgentId.ts",
+  authContext: "src/contexts/AuthContext.tsx",
 } as const;
 
 export type StudioCanvasSurfaceKey = keyof typeof STUDIO_CANVAS_SURFACES;
@@ -34,6 +36,7 @@ export const STUDIO_CANVAS_FORBIDDEN = {
       pattern: /function DesktopRail[\s\S]*agents\.map/,
     },
   ],
+  workspacePanel: [{ id: "no-fake-wired-badge", pattern: />\s*wired\s*</ }],
 } as const;
 
 export const STUDIO_CANVAS_LEGACY_LINK_PATTERN = /mode=workroom/;
@@ -50,14 +53,17 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "scroll-active-pill", pattern: /scrollIntoView/ },
     { id: "native-switcher", pattern: /NativeStudioAgentBar/ },
     { id: "settings-affordance", pattern: /aria-label="Settings"/ },
+    { id: "shared-mru-hook", pattern: /useStudioActiveAgentId/ },
   ],
   canvas: [
     { id: "chat-first-workroom", pattern: /<StudioWorkroom/ },
-    { id: "mru-preference", pattern: /resolveStudioActiveAgentId/ },
+    { id: "shared-mru-hook", pattern: /useStudioActiveAgentId/ },
     { id: "workspace-depth-gate", pattern: /view"\) === "workspace"/ },
     { id: "extracted-workspace-panel", pattern: /StudioAgentWorkspacePanel/ },
+    { id: "workspace-panel-key", pattern: /key=\{active\.id\}/ },
     { id: "strip-legacy-mode", pattern: /next\.delete\("mode"\)/ },
     { id: "empty-state-wire-one", pattern: /Wire one\./ },
+    { id: "command-nonce", pattern: /commandNonce/ },
   ],
   workroom: [
     { id: "composer-dock", pattern: /wl-composer-dock/ },
@@ -65,14 +71,28 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "composer-focus-handle", pattern: /focusComposer/ },
   ],
   workspacePanel: [
-    { id: "scoped-workspace-copy", pattern: /per this agent's workspace/ },
+    { id: "scoped-workspace-copy", pattern: /per this[\s\S]*workspace only/ },
     { id: "world-connections", pattern: /World Connections/ },
     { id: "real-config-api", pattern: /\/api\/agent-config\// },
+    { id: "voice-search-a11y", pattern: /htmlFor="voice-search"/ },
+    { id: "elevenlabs-cap-disclosure", pattern: /first 12/ },
+    { id: "honest-integration-keys", pattern: /key=\{integ\.id\}/ },
+    { id: "honest-integration-status", pattern: /integ\.connection/ },
   ],
   agentPreference: [
     { id: "mru-key", pattern: /wireline:studio:last-agent-id/ },
     { id: "resolve-helper", pattern: /resolveStudioActiveAgentId/ },
+    { id: "clear-on-logout", pattern: /clearStudioLastAgentId/ },
   ],
+  activeAgentHook: [
+    { id: "resolve-mru", pattern: /resolveStudioActiveAgentId/ },
+    { id: "url-agent-param", pattern: /params\.get\("agent"\)/ },
+  ],
+  studioHome: [
+    { id: "brief-param", pattern: /params\.get\("brief"\)/ },
+    { id: "shell-canvas-compose", pattern: /WorkspaceShell[\s\S]*StudioWorkspaceV2/ },
+  ],
+  authContext: [{ id: "logout-clears-mru", pattern: /clearStudioLastAgentId/ }],
 } as const;
 
 export const STUDIO_CANVAS_LINK_SURFACES = [

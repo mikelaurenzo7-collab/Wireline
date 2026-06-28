@@ -24,7 +24,7 @@ const XAI_VOICES: Voice[] = [
   { id: "leo", name: "Leo — Direct & Energetic", provider: "xai" },
 ];
 
-const PERSONALITIES = ["Clear", "Warm", "Direct", "Polished", "Custom"];
+const PERSONALITIES = ["Clear", "Warm", "Direct", "Polished"];
 
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
@@ -135,10 +135,7 @@ export default function StudioAgentWorkspacePanel({
         if (!voiceResponse.ok) throw new Error("Voice could not be saved.");
       }
 
-      const personalityText =
-        setupPersonality === "Custom"
-          ? setupPersonality
-          : `${setupPersonality}. Concise. Useful. Business-ready.`;
+      const personalityText = `${setupPersonality}. Concise. Useful. Business-ready.`;
       if (personalityText) {
         const personalityResponse = await authFetch(
           `/api/agent-config/${encodeURIComponent(agentId)}/manual`,
@@ -237,7 +234,11 @@ export default function StudioAgentWorkspacePanel({
                   Hear xAI + ElevenLabs live
                 </span>
               </div>
+              <label htmlFor="voice-search" className="sr-only">
+                Search voices
+              </label>
               <input
+                id="voice-search"
                 type="text"
                 value={voiceSearch}
                 onChange={(e) => setVoiceSearch(e.target.value)}
@@ -288,7 +289,7 @@ export default function StudioAgentWorkspacePanel({
 
               <div>
                 <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
-                  ElevenLabs (live from API)
+                  ElevenLabs (live from API · first 12)
                 </div>
                 <div className="space-y-1 max-h-48 overflow-auto pr-1">
                   {voicesLoading && (
@@ -439,20 +440,6 @@ export default function StudioAgentWorkspacePanel({
             >
               {applyingSetup ? "Applying…" : "Apply Setup"}
             </button>
-            <button
-              onClick={() => setIsSetupComplete(true)}
-              className="px-4 py-2 rounded-xl border border-border text-sm hover:bg-muted"
-            >
-              Mark Complete
-            </button>
-            <button
-              onClick={() => {
-                /* expand */
-              }}
-              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
-            >
-              Full custom below →
-            </button>
           </div>
         </div>
 
@@ -476,30 +463,28 @@ export default function StudioAgentWorkspacePanel({
                 Context Providers
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {(WORKSPACE_INTEGRATION_CATALOG || []).map(
-                  (integ: WorkspaceIntegration, idx: number) => (
-                    <div
-                      key={idx}
-                      className="studio-card p-4 hover:border-primary/20 transition-all group"
-                    >
-                      <div className="flex justify-between">
-                        <div>
-                          <div className="font-semibold">{integ.label}</div>
-                          <div className="text-[10px] text-muted-foreground">{integ.family}</div>
-                        </div>
-                        <div className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 self-start">
-                          wired
-                        </div>
+                {(WORKSPACE_INTEGRATION_CATALOG || []).map((integ: WorkspaceIntegration) => (
+                  <div
+                    key={integ.id}
+                    className="studio-card p-4 hover:border-primary/20 transition-all group"
+                  >
+                    <div className="flex justify-between">
+                      <div>
+                        <div className="font-semibold">{integ.label}</div>
+                        <div className="text-[10px] text-muted-foreground">{integ.family}</div>
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground leading-snug">
-                        {integ.detail}
-                      </div>
-                      <div className="mt-2 text-[10px] text-primary group-hover:underline">
-                        Capabilities: {integ.capabilities?.join(" · ")}
+                      <div className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground self-start capitalize">
+                        {integ.connection}
                       </div>
                     </div>
-                  ),
-                )}
+                    <div className="mt-2 text-xs text-muted-foreground leading-snug">
+                      {integ.detail}
+                    </div>
+                    <div className="mt-2 text-[10px] text-primary group-hover:underline">
+                      Capabilities: {integ.capabilities?.join(" · ")}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
