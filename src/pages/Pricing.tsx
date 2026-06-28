@@ -99,7 +99,8 @@ export default function Pricing() {
             <h1
               className="mt-4 text-balance leading-[1.03] tracking-[-0.025em] text-foreground"
               style={{
-                fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                fontFamily:
+                  "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                 fontWeight: 400,
                 fontSize: "clamp(2.25rem, 5vw, 4rem)",
               }}
@@ -146,7 +147,8 @@ export default function Pricing() {
                     <span
                       className="text-[clamp(2.5rem,5vw,3.25rem)] font-light leading-none tracking-[-0.04em]"
                       style={{
-                        fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                        fontFamily:
+                          "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                         color: "var(--wireline-color-canvas-default)",
                       }}
                     >
@@ -156,10 +158,7 @@ export default function Pricing() {
                       /{plan.period}
                     </span>
                   </div>
-                  <p
-                    className="mt-2 text-sm leading-6"
-                    style={{ color: "rgba(247,246,243,0.7)" }}
-                  >
+                  <p className="mt-2 text-sm leading-6" style={{ color: "rgba(247,246,243,0.7)" }}>
                     {plan.tagline}
                   </p>
                   <ul className="mt-7 flex-1 space-y-3">
@@ -178,7 +177,7 @@ export default function Pricing() {
                   <div className="mt-9">
                     <Link
                       to={plan.ctaPath}
-                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full text-sm font-semibold uppercase tracking-[.05em] transition hover:-translate-y-px"
+                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full text-sm font-semibold tracking-[.05em] transition hover:-translate-y-px"
                       style={{
                         background: "var(--wireline-color-action-primary-default)",
                         color: "var(--wireline-color-text-onAction)",
@@ -198,7 +197,8 @@ export default function Pricing() {
                     <span
                       className="text-[clamp(2.5rem,5vw,3.25rem)] font-light leading-none tracking-[-0.04em] text-foreground"
                       style={{
-                        fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                        fontFamily:
+                          "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                       }}
                     >
                       ${plan.price}
@@ -208,7 +208,10 @@ export default function Pricing() {
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.tagline}</p>
                   <ul className="mt-7 flex-1 space-y-3">
                     {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-sm leading-6 text-foreground">
+                      <li
+                        key={f}
+                        className="flex items-start gap-2.5 text-sm leading-6 text-foreground"
+                      >
                         <Check
                           size={15}
                           className="mt-0.5 shrink-0 text-primary"
@@ -221,13 +224,13 @@ export default function Pricing() {
                   <div className="mt-9">
                     <Link
                       to={plan.ctaPath}
-                      className="marketing-btn-primary flex min-h-[48px] w-full items-center justify-center gap-2 px-5 text-sm font-semibold uppercase tracking-[.05em]"
+                      className="marketing-btn-primary flex min-h-[48px] w-full items-center justify-center gap-2 px-5 text-sm font-semibold tracking-[.05em]"
                     >
                       {plan.cta} <ArrowRight size={14} />
                     </Link>
                   </div>
                 </article>
-              )
+              ),
             )}
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
@@ -244,7 +247,8 @@ export default function Pricing() {
             <h2
               className="text-balance leading-[1.06] tracking-[-0.025em]"
               style={{
-                fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                fontFamily:
+                  "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                 fontWeight: 400,
                 fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)",
                 color: "var(--wireline-color-canvas-default)",
@@ -274,7 +278,8 @@ export default function Pricing() {
               <h2
                 className="mt-3 text-balance leading-[1.08] tracking-[-0.025em] text-foreground"
                 style={{
-                  fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontFamily:
+                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                   fontWeight: 400,
                   fontSize: "clamp(1.6rem, 3vw, 2.25rem)",
                 }}
@@ -308,7 +313,7 @@ export default function Pricing() {
               </p>
               <Link
                 to="/signup"
-                className="marketing-btn-primary min-h-12 px-8 text-sm font-semibold uppercase tracking-[.05em]"
+                className="marketing-btn-primary min-h-12 px-8 text-sm font-semibold tracking-[.05em]"
               >
                 Start your free trial <ArrowRight size={14} />
               </Link>

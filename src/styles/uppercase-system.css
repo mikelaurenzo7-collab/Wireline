@@ -1,12 +1,12 @@
-/* Uppercase is Wireline's interface language. */
+/* Letterpress typography scale.
+ * Sentence-case Instrument Serif for display/titles; DM Sans for controls and copy.
+ * Uppercase is reserved for Space Mono micro-labels (eyebrows, overlines) only. */
 
 .wl-ui-caps {
-  --wl-caps-display-tracking: -0.045em;
-  --wl-caps-title-tracking: -0.028em;
-  --wl-caps-control-tracking: 0.075em;
-  --wl-caps-label-tracking: 0.13em;
-  text-transform: uppercase;
-  letter-spacing: 0.018em;
+  --wl-caps-display-tracking: -0.025em;
+  --wl-caps-title-tracking: -0.02em;
+  --wl-caps-control-tracking: 0.01em;
+  --wl-caps-label-tracking: 0.14em;
 }
 
 .wl-ui-caps :where(h1, h2, h3, h4, h5, h6),
@@ -19,10 +19,9 @@
 .wl-public-section-heading,
 .wl-stitch-display {
   font-family: var(--wireline-font-family-display);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: var(--wl-caps-title-tracking);
-  line-height: 1.03;
-  text-transform: uppercase;
+  line-height: 1.05;
   text-wrap: balance;
 }
 
@@ -32,29 +31,31 @@
 }
 
 .wl-app-page-title {
-  font-size: clamp(1.25rem, 1.05rem + 1.15vw, 1.85rem);
-  letter-spacing: -0.02em;
-  line-height: 1.06;
+  font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.35rem);
+  letter-spacing: -0.025em;
+  line-height: 1.05;
 }
 
 .wl-section-title,
 .wl-stitch-display {
-  font-size: clamp(1.35rem, 1.08rem + 1.25vw, 2.35rem);
+  font-size: clamp(1.5rem, 1.15rem + 1.4vw, 2.5rem);
 }
 
 .wl-card-title {
   font-size: clamp(1rem, 0.93rem + 0.45vw, 1.35rem);
-  letter-spacing: -0.018em;
-  line-height: 1.1;
+  letter-spacing: -0.012em;
+  line-height: 1.12;
 }
 
 .wl-metric-value {
+  font-family: var(--wireline-font-family-display);
   font-size: clamp(2.25rem, 4vw + 1rem, 3.25rem);
-  font-weight: 700;
-  letter-spacing: var(--wl-caps-display-tracking);
-  line-height: 0.92;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 0.96;
 }
 
+/* Space Mono micro-labels — the only uppercase in the system. */
 .wl-overline,
 .wl-pro-eyebrow,
 .wl-micro-meta,
@@ -66,54 +67,74 @@
 .text-eyebrow {
   font-family: var(--wireline-font-family-mono);
   font-size: clamp(0.61rem, 0.57rem + 0.12vw, 0.7rem);
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: var(--wl-caps-label-tracking);
   line-height: 1.25;
-}
-
-.wl-ui-caps :is(button, [role="button"], [role="tab"], [role="menuitem"], [data-slot="button"], [data-slot="badge"], .wl-btn, .marketing-btn-primary, .marketing-btn-secondary, .studio-primary-button, .studio-secondary-button, .wl-stitch-sidebar-link, nav a, label, legend, th) {
-  letter-spacing: var(--wl-caps-control-tracking);
   text-transform: uppercase;
 }
 
-.wl-ui-caps :is(.wl-public-copy, .wl-page-copy, .wl-route-copy, .wl-overview-hero-copy, .wl-body-caption, .wl-inline-empty, .wl-inline-empty__label, .wl-banner__body, [data-slot="status-notice"]) {
-  letter-spacing: 0.035em;
+/* Controls and copy: sentence case, gentle tracking. */
+.wl-ui-caps
+  :is(
+    button,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [data-slot="button"],
+    [data-slot="badge"],
+    .wl-btn,
+    .marketing-btn-primary,
+    .marketing-btn-secondary,
+    .studio-primary-button,
+    .studio-secondary-button,
+    .wl-stitch-sidebar-link,
+    nav a,
+    label,
+    legend,
+    th
+  ) {
+  letter-spacing: var(--wl-caps-control-tracking);
+  text-transform: none;
 }
 
-.wl-ui-caps :where(input, textarea, select, option, optgroup, [contenteditable="true"], code, pre, kbd, samp),
-.wl-ui-caps :where(.prose, .wl-prose, [data-wireline-preserve-case]),
-.wl-ui-caps :where(.prose, .wl-prose, [data-wireline-preserve-case]) * {
+.wl-ui-caps
+  :is(
+    .wl-public-copy,
+    .wl-page-copy,
+    .wl-route-copy,
+    .wl-overview-hero-copy,
+    .wl-body-caption,
+    .wl-inline-empty,
+    .wl-inline-empty__label,
+    .wl-banner__body,
+    [data-slot="status-notice"]
+  ) {
   letter-spacing: normal;
-  text-transform: none;
 }
 
 @media (max-width: 640px) {
   .wl-ui-caps {
-    --wl-caps-control-tracking: 0.045em;
-    --wl-caps-label-tracking: 0.1em;
+    --wl-caps-control-tracking: 0.01em;
+    --wl-caps-label-tracking: 0.12em;
   }
 
   .wl-page-title {
     font-size: clamp(1.8rem, 8.4vw, 2.7rem);
-    line-height: 1.02;
+    line-height: 1.03;
   }
 
   .wl-app-page-title {
-    font-size: clamp(1.02rem, 4.25vw, 1.3rem);
-    line-height: 1.08;
+    font-size: clamp(1.35rem, 5.4vw, 1.8rem);
+    line-height: 1.06;
   }
 
   .wl-section-title,
   .wl-stitch-display {
-    font-size: clamp(1.16rem, 5.5vw, 1.68rem);
+    font-size: clamp(1.35rem, 6vw, 1.85rem);
   }
 
   .wl-card-title {
     font-size: clamp(0.95rem, 4.2vw, 1.1rem);
-    line-height: 1.12;
-  }
-
-  .wl-ui-caps :is(button, [role="button"], [data-slot="button"], .marketing-btn-primary, .marketing-btn-secondary) {
-    letter-spacing: var(--wl-caps-control-tracking);
+    line-height: 1.14;
   }
 }
