@@ -188,7 +188,7 @@ export function SupportPage() {
                     issueType === "billing"
                       ? "Invoice or charge in question, what you expected, and what happened."
                       : issueType === "agent"
-                        ? "Assistant name, approximate call time, what happened, and what should have happened."
+                        ? "Agent name, approximate call time, what happened, and what should have happened."
                         : "What you did, what happened, and what you expected."
                   }
                   className="w-full resize-none rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
