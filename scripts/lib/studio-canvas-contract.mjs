@@ -1,3 +1,8 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const root = process.cwd();
+
 export const STUDIO_CANVAS_VISION = {
   defaultSurface: "chat-plus-canvas",
   canvasSurface: "spatial-cards",
@@ -43,7 +48,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "rail-width", pattern: /w-\[236px\]/ },
     { id: "apps-route", pattern: /\/apps/ },
     { id: "route-active-state", pattern: /useLocation/ },
-    { id: "no-old-active-leak", pattern: /pathname/ },
+    { id: "route-pathname", pattern: /pathname/ },
   ],
   studioChrome: [
     { id: "breadcrumb", pattern: /Studio breadcrumb/ },
@@ -89,8 +94,15 @@ export const STUDIO_CANVAS_LINK_SURFACES = [
   STUDIO_CANVAS_SURFACES.workspacePanel,
 ];
 
+function readSurface(key) {
+  const path = STUDIO_CANVAS_SURFACES[key];
+  if (!path) return "";
+  const absolute = resolve(root, path);
+  return existsSync(absolute) ? readFileSync(absolute, "utf8") : "";
+}
+
 export function assertStudioCanvasContract(sources, { mustInclude, mustExclude }) {
-  const get = (key) => sources[key] ?? "";
+  const get = (key) => sources[key] ?? readSurface(key);
   for (const [surfaceKey, rules] of Object.entries(STUDIO_CANVAS_FORBIDDEN)) {
     for (const rule of rules) mustExclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, rule.id);
   }
