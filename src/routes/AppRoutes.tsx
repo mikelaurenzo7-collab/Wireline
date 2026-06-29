@@ -35,7 +35,7 @@ export default function AppRoutes() {
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
-        <Route path="/agents" element={<Navigate to="/studio" replace />} />
+        <Route path="/agents" element={<Navigate to="/overview" replace />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 
