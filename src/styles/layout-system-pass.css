@@ -404,3 +404,16 @@
     animation: none;
   }
 }
+
+/* Call Logs (Claude Design) — live indicator pulse + thin waveform bars. */
+@keyframes wlPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+@keyframes wlCallWave {
+  0%, 100% { transform: scaleY(0.55); }
+  50% { transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="wlPulse"], [style*="wlCallWave"] { animation: none !important; }
+}

@@ -367,12 +367,12 @@ function TemplateCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none wl-accent-halo hidden md:block" />
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none hidden hidden md:block" />
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
-            <Icon className="w-5 h-5 wl-accent-text" />
+          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-[var(--wireline-color-feedback-success-surface)]">
+            <Icon className="w-5 h-5 text-[var(--wireline-color-action-primary-default)]" />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -419,9 +419,9 @@ function TemplateCard({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
-              className="rounded-md p-3 border text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 leading-relaxed italic relative wl-accent-bubble"
+              className="rounded-md p-3 border text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 leading-relaxed italic relative bg-[var(--wireline-color-surface-subtle)]"
             >
-              <MessageCircle className="absolute -top-2 -left-1.5 w-4 h-4 wl-accent-text" />
+              <MessageCircle className="absolute -top-2 -left-1.5 w-4 h-4 text-[var(--wireline-color-action-primary-default)]" />
               <span className="pl-2">&ldquo;{template.firstMessage}&rdquo;</span>
             </motion.div>
           )}
@@ -560,7 +560,7 @@ export default function AgentTemplates() {
         typeof data === "object" && data && "id" in data && typeof data.id === "string"
           ? data.id
           : uniqueId;
-      navigate(`/agents?agent=${encodeURIComponent(createdId)}`);
+      navigate(`/studio?agent=${encodeURIComponent(createdId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
       setDeploying(null);
@@ -610,7 +610,7 @@ export default function AgentTemplates() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="py-20 text-center app-section-title/60"
+              className="py-20 text-center text-[var(--wireline-color-text-tertiary)] font-[var(--wireline-font-family-display)] text-lg"
             >
               No templates match your search
             </motion.div>
