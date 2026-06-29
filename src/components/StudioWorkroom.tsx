@@ -31,11 +31,14 @@ type StudioMessage = {
 };
 
 const QUICK_PROMPTS = [
-  "Draft reply",
-  "Review approvals",
-  "Prep handoff",
-  "Plan follow-up",
+  "Walk me through the greeting",
+  "Tune the voice",
+  "Add booking rules",
+  "Run a test call",
 ] as const;
+
+const MONO_LABEL =
+  "font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.14em] text-[var(--wireline-color-text-tertiary)]";
 
 function proposalCount(message: StudioMessage) {
   return (
@@ -168,9 +171,8 @@ const StudioWorkroom = forwardRef<
     }
   }, [initialCommand, commandNonce]);
 
-  // Load real recent outcomes for the agent (ledger)
   useEffect(() => {
-    if (!agentId) return;
+    if (!agentId || layout === "split") return;
     authFetch(`/api/calls?limit=5`)
       .then((r) => r.json())
       .then((data) => {
@@ -184,7 +186,7 @@ const StudioWorkroom = forwardRef<
         setOutcomes(forAgent);
       })
       .catch(() => {});
-  }, [agentId]);
+  }, [agentId, layout]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -248,6 +250,13 @@ const StudioWorkroom = forwardRef<
     </button>
   );
 
+  function seedDraft(text: string) {
+    setDraft(text);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  const contentWidth = layout === "split" ? "max-w-none" : "max-w-3xl xl:max-w-5xl 2xl:max-w-6xl";
+
   return (
     <main
       className={`flex h-full min-h-0 flex-col bg-background ${layout === "canvas" ? "relative" : ""}`}
@@ -271,15 +280,23 @@ const StudioWorkroom = forwardRef<
           <div className="z-10 ml-auto flex items-center gap-1.5">{clearButton}</div>
         </header>
       ) : layout === "split" ? (
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border/60 px-3 sm:px-4">
+        <div className="shrink-0 border-b border-border/60 px-4 py-4 sm:px-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className={MONO_LABEL}>Wireline Assistant</p>
+              <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
+                Talk to build. Ask me anything about {agentName}&apos;s setup.
+              </p>
+            </div>
+            {clearButton}
+          </div>
           <button
             type="button"
             onClick={onBack}
-            className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="mt-3 text-[11px] font-semibold text-primary transition-colors hover:text-foreground"
           >
             {backLabel} →
           </button>
-          {clearButton}
         </div>
       ) : (
         <div className="absolute right-3 top-2 z-10 sm:right-4">{clearButton}</div>
@@ -294,11 +311,11 @@ const StudioWorkroom = forwardRef<
         </div>
       ) : null}
 
-      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
         {loading ? (
           <MessageSkeletons />
         ) : messages.length ? (
-          <div className="mx-auto flex max-w-3xl xl:max-w-5xl 2xl:max-w-6xl flex-col gap-5">
+          <div className={`mx-auto flex ${contentWidth} flex-col gap-5`}>
             {messages.map((message) => {
               const isUser = message.role === "Account Holder";
               const suggestions = proposalCount(message);
@@ -336,13 +353,13 @@ const StudioWorkroom = forwardRef<
                             aria-pressed={isApplied}
                           >
                             <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                              CHANGE
+                              Change
                             </span>
                             <div className="mt-0.5">
-                              {typeof c === "string" ? c : "Update agent config"}
+                              {typeof c === "string" ? c : "Update assistant config"}
                             </div>
                             {isApplied && (
-                              <span className="text-[10px] opacity-70">— applied to training</span>
+                              <span className="text-[10px] opacity-70">— applied to setup</span>
                             )}
                           </button>
                         );
@@ -361,7 +378,7 @@ const StudioWorkroom = forwardRef<
                             aria-pressed={isApplied}
                           >
                             <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                              INTEGRATION
+                              Integration
                             </span>
                             <div className="mt-0.5">
                               {typeof t === "string" ? t : "Toggle tool"}
@@ -383,7 +400,7 @@ const StudioWorkroom = forwardRef<
                             aria-pressed={isApplied}
                           >
                             <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                              ACTION
+                              Action
                             </span>
                             <div className="mt-0.5">
                               {typeof a === "string" ? a : "Execute next step"}
@@ -409,6 +426,34 @@ const StudioWorkroom = forwardRef<
               </div>
             ) : null}
           </div>
+        ) : layout === "split" ? (
+          <div className="mx-auto flex max-w-none flex-col gap-4 py-1">
+            <article className="max-w-[90%]">
+              <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
+                <span className="grid size-5 place-items-center rounded bg-primary font-mono text-[10px] text-primary-foreground">W</span>
+                <span>Wireline</span>
+              </div>
+              <div className="rounded-2xl border border-border bg-card px-4 py-3.5 text-[14px] leading-[1.55] text-foreground shadow-sm">
+                I&apos;m ready to help you build {agentName}. It&apos;s at 94% readiness — just needs a test call. What would you like to configure?
+              </div>
+            </article>
+            <button
+              type="button"
+              onClick={() => seedDraft("Can you walk me through the greeting?")}
+              className="ml-auto max-w-[84%] rounded-2xl bg-primary px-4 py-3 text-left text-[14px] font-medium leading-[1.45] text-primary-foreground transition active:scale-[0.985]"
+            >
+              Can you walk me through the greeting?
+            </button>
+            <article className="max-w-[90%]">
+              <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
+                <span className="grid size-5 place-items-center rounded bg-primary font-mono text-[10px] text-primary-foreground">W</span>
+                <span>Wireline</span>
+              </div>
+              <div className="rounded-2xl border border-border bg-card px-4 py-3.5 text-[14px] leading-[1.55] text-foreground shadow-sm">
+                Current greeting: “Thank you for calling, how can I help you today?” Want me to personalize it with your business name?
+              </div>
+            </article>
+          </div>
         ) : (
           <div className="mx-auto flex h-full max-w-3xl items-end justify-center pb-2 text-center wl-centered-header">
             <p className="text-sm font-semibold tracking-[-0.01em] text-muted-foreground">Ready.</p>
@@ -416,21 +461,19 @@ const StudioWorkroom = forwardRef<
         )}
       </section>
 
-      {/* Outcome Ledger — makes the conversation moat visible and actionable (extreme usefulness + MOAT #1) */}
-      {!loading && (
-        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl px-4 pb-3 sm:px-6">
+      {!loading && layout !== "split" && (
+        <div className={`mx-auto ${contentWidth} px-4 pb-3 sm:px-6`}>
           <div className="mb-2 flex items-center justify-between">
             <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground">
-              Recent outcomes (ledger)
+              Recent outcomes
             </div>
             <Link
-              to={`/training?agent=${encodeURIComponent(agentId)}`}
+              to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
               className="text-[10px] text-muted-foreground hover:text-foreground"
             >
-              View in Training →
+              View in Knowledge →
             </Link>
           </div>
-          {/* Required by clear system for run surface framing (concise in ledger) */}
           <span className="sr-only">
             Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.
           </span>
@@ -461,10 +504,9 @@ const StudioWorkroom = forwardRef<
                 type="button"
                 onClick={() => {
                   const oo = o as LooseRecord;
-                  setDraft(
+                  seedDraft(
                     `Review and train from this outcome: ${oo.summary || ""}. Next step: ${oo.next || ""}.`,
                   );
-                  requestAnimationFrame(() => inputRef.current?.focus());
                 }}
                 className="rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:border-primary/30 active:scale-[0.985]"
               >
@@ -488,18 +530,18 @@ const StudioWorkroom = forwardRef<
                 <div className="mt-1 text-[12px] text-muted-foreground">
                   Next: {String((o as LooseRecord).next || "Review in ledger")}
                 </div>
-                <div className="mt-1 text-[10px] text-primary">Brief agent from this outcome</div>
+                <div className="mt-1 text-[10px] text-primary">Brief assistant from this outcome</div>
               </button>
             ))}
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground/70">
-            Every outcome trains the fleet. Full history + recordings in Training.
+            Every outcome trains the workspace. Full history + recordings in Knowledge.
           </p>
         </div>
       )}
 
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl">
+        <div className={`mx-auto ${contentWidth}`}>
           <div className={WL_COMPOSER_CLASSES.composerDock}>
             <label className="sr-only" htmlFor="studio-workroom-message">
               Message {agentName}
@@ -527,10 +569,7 @@ const StudioWorkroom = forwardRef<
                     <button
                       key={prompt}
                       type="button"
-                      onClick={() => {
-                        setDraft(prompt);
-                        requestAnimationFrame(() => inputRef.current?.focus());
-                      }}
+                      onClick={() => seedDraft(prompt)}
                       className={WL_COMPOSER_CLASSES.starterChip}
                     >
                       {prompt}
