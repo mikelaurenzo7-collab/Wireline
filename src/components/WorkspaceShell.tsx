@@ -6,6 +6,7 @@ import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { formatAgentRoleLabel } from "../lib/product-copy";
 
 type NavItem = { href: string; label: string; icon: typeof Bot };
 
@@ -54,6 +55,10 @@ function userInitial(name?: string | null, email?: string | null) {
   return source.charAt(0).toUpperCase() || "W";
 }
 
+function agentInitial(name?: string | null) {
+  return (name || "A").trim().charAt(0).toUpperCase() || "A";
+}
+
 function agentCountLabel(count: number) {
   if (count <= 0) return "No assistants yet";
   return `${count} assistant${count === 1 ? "" : "s"}`;
@@ -63,6 +68,11 @@ function cleanPath(pathname: string) {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
+function isStudioPath(pathname: string) {
+  const current = cleanPath(pathname);
+  return current === "/studio" || current.startsWith("/studio/") || current === "/agents";
+}
+
 function isActive(pathname: string, href: string) {
   const current = cleanPath(pathname);
   const target = cleanPath(href);
@@ -70,7 +80,7 @@ function isActive(pathname: string, href: string) {
     return current === "/settings" || current.startsWith("/settings/") || current === "/admin" || current.startsWith("/admin/");
   }
   if (target === "/studio") {
-    return current === "/studio" || current.startsWith("/studio/") || current === "/agents";
+    return isStudioPath(current);
   }
   return current === target || current.startsWith(`${target}/`);
 }
@@ -117,9 +127,10 @@ function MobileRailLink({ item, pathname }: { item: NavItem; pathname: string })
 function DesktopRail({ pathname }: { pathname: string }) {
   const { user } = useAuth();
   const { accountType } = useAccount();
-  const { agents } = useStudioActiveAgentId();
+  const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace";
   const planLabel = accountType === "business" ? "Business" : "Personal";
+  const activeAgent = isStudioPath(pathname) && resolvedId ? agents.find((agent) => agent.id === resolvedId) : null;
 
   return (
     <aside aria-label="Workspace navigation" className="hidden h-[100dvh] w-[236px] shrink-0 flex-col overflow-y-auto border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex">
@@ -137,6 +148,23 @@ function DesktopRail({ pathname }: { pathname: string }) {
       <nav className="flex flex-1 flex-col gap-0.5" aria-label="Operate">
         {OPERATE_NAV.map((item) => <RailLink key={item.href} item={item} pathname={pathname} />)}
       </nav>
+
+      {activeAgent ? (
+        <Link
+          to={`/studio?agent=${encodeURIComponent(activeAgent.id)}`}
+          className="mb-2 rounded-[12px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-2.5 transition-colors hover:border-primary/30"
+          aria-label={`Current assistant: ${activeAgent.name}`}
+        >
+          <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">Current assistant</p>
+          <div className="flex items-center gap-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[12px] font-semibold text-primary-foreground">{agentInitial(activeAgent.name)}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-[13px] font-semibold text-foreground">{activeAgent.name}</span>
+              <span className="block truncate text-[11px] text-[color:var(--wireline-color-status-success)]">{formatAgentRoleLabel(activeAgent.role)} · 94% ready</span>
+            </span>
+          </div>
+        </Link>
+      ) : null}
 
       <Link to="/settings" className="mt-2 flex items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80" aria-label="Account settings">
         <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">{userInitial(user?.full_name, user?.email)}</span>
