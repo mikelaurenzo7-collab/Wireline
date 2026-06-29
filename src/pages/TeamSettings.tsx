@@ -52,9 +52,7 @@ export default function TeamSettings() {
       <div className="mx-auto flex w-full max-w-[700px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-          Team
-        </h1>
+        <h1 className="wl-display-3">Team</h1>
 
         <section className="studio-card p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">

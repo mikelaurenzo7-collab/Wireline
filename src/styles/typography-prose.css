@@ -257,3 +257,25 @@
 .wl-section-y-tight {
   padding-block: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
 }
+
+/* Card primitives — one shared shell for every authenticated panel + marketing
+   card. Surfaces that hand-rolled `rounded-[14px] border bg-surface p-5/6`
+   now reach for these classes instead so radius, border, and surface stay
+   consistent across every page. */
+.wl-card {
+  border-radius: 14px;
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+  padding: 1.25rem;
+}
+.wl-card-lg {
+  border-radius: 14px;
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+  padding: 1.5rem;
+}
+@media (min-width: 640px) {
+  .wl-card {
+    padding: 1.5rem;
+  }
+}

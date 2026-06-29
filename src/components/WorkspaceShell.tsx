@@ -160,50 +160,75 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
       <div className="flex min-h-0 flex-1 flex-col pt-4">
         <div className="flex items-center justify-between px-2.5 pb-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
-            Agents
-          </p>
+          <p className="wl-eyebrow">Agents</p>
           {agents.length ? (
-            <span className="text-[10px] font-mono text-[color:var(--wireline-color-text-tertiary)]">
-              {agents.length}
-            </span>
-          ) : (
             <Link
               to="/studio?create=1"
+              aria-label="New agent"
               className="text-[11px] font-semibold text-primary hover:underline"
             >
               New
             </Link>
-          )}
+          ) : null}
         </div>
-        <nav
-          className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-0.5"
-          aria-label="Agents"
-        >
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 pr-0.5" aria-label="Agents">
           {agents.length ? (
-            agents.map((agent) => {
-              const active = isActive(pathname, "/studio") && resolvedId === agent.id;
-              return (
-                <Link
-                  key={agent.id}
-                  to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-                >
-                  <span
-                    className={`grid size-7 shrink-0 place-items-center rounded-lg text-[11px] font-semibold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
-                  >
-                    {agentInitial(agent.name)}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
-                    <span className="block truncate text-[10px] text-[color:var(--wireline-color-text-secondary)]">
-                      {formatAgentRoleLabel(agent.role)}
-                    </span>
-                  </span>
-                </Link>
-              );
-            })
+            <>
+              {/* Cap to 5 most-recent so the rail stops duplicating the full
+                  Overview roster. The active agent is always pinned first so
+                  the user sees the one they're working in even if it's not
+                  among the most recent. */}
+              {(() => {
+                const activeFirst = resolvedId
+                  ? [
+                      ...agents.filter((agent) => agent.id === resolvedId),
+                      ...agents.filter((agent) => agent.id !== resolvedId),
+                    ]
+                  : agents;
+                const visible = activeFirst.slice(0, 5);
+                const remaining = agents.length - visible.length;
+                return (
+                  <>
+                    {visible.map((agent) => {
+                      const active = isActive(pathname, "/studio") && resolvedId === agent.id;
+                      return (
+                        <Link
+                          key={agent.id}
+                          to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+                          aria-current={active ? "page" : undefined}
+                          className={`flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                        >
+                          <span
+                            className={`grid size-7 shrink-0 place-items-center rounded-lg text-[11px] font-semibold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
+                          >
+                            {agentInitial(agent.name)}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-[12px] font-semibold">
+                              {agent.name}
+                            </span>
+                            <span className="block truncate text-[10px] text-[color:var(--wireline-color-text-secondary)]">
+                              {formatAgentRoleLabel(agent.role)}
+                            </span>
+                          </span>
+                        </Link>
+                      );
+                    })}
+                    {remaining > 0 ? (
+                      <Link
+                        to="/overview"
+                        className="mt-0.5 flex min-h-[36px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      >
+                        <span>All agents</span>
+                        <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
+                          {agents.length}
+                        </span>
+                      </Link>
+                    ) : null}
+                  </>
+                );
+              })()}
+            </>
           ) : (
             <Link
               to="/studio?create=1"

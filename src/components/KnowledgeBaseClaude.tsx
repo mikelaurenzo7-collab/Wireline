@@ -38,9 +38,6 @@ type AssetBody = {
   dataUrl?: string;
 };
 
-const MONO_LABEL =
-  "font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.14em] text-[var(--wireline-color-text-tertiary)]";
-
 const TEXT_HEX_DEEP = "var(--wireline-color-action-primary-pressed)";
 const SUCCESS_SURFACE = "var(--wireline-color-feedback-success-surface)";
 const SUCCESS_BORDER = "var(--wireline-color-feedback-success-border)";
@@ -194,9 +191,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     <div className="flex w-full flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.2vw,2.25rem)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
-            Knowledge Base
-          </h1>
+          <h1 className="wl-display-3">Knowledge Base</h1>
           <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)] sm:text-sm">
             Facts, rules, and tone your agents use on every call.
           </p>
@@ -236,7 +231,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             >
               {loading ? "—" : stat.value}
             </div>
-            <div className={`mt-1 ${MONO_LABEL}`}>{stat.label}</div>
+            <div className="mt-1 wl-eyebrow ">{stat.label}</div>
           </div>
         ))}
       </section>
@@ -349,7 +344,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       {directives.length > 0 ? (
         <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
           <div className="mb-3 flex items-center justify-between">
-            <div className={MONO_LABEL}>Active rules</div>
+            <div className="wl-eyebrow">Active rules</div>
             <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
               {directives.length} total
             </span>

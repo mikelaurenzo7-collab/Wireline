@@ -15,9 +15,6 @@ const trainingTabs: Array<{ id: TrainingTabId; label: string }> = [
   { id: "simulator", label: "Simulator" },
 ];
 
-const MONO_LABEL =
-  "font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.14em] text-[var(--wireline-color-text-tertiary)]";
-
 function EmptyTraining() {
   return (
     <div className="grid h-full min-h-[520px] place-items-center py-8">
@@ -82,16 +79,14 @@ function VoiceTab() {
   return (
     <div className="flex w-full flex-col gap-6">
       <header>
-        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.2vw,2.25rem)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
-          Voice Configuration
-        </h1>
+        <h1 className="wl-display-3">Voice Configuration</h1>
         <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)] sm:text-sm">
           Configure voice, pronunciation, and speech patterns per agent.
         </p>
       </header>
       <div className="grid gap-4 xl:grid-cols-2">
         <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6">
-          <p className={MONO_LABEL}>Voice engine</p>
+          <p className="wl-eyebrow">Voice engine</p>
           <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.01em] text-[var(--wireline-color-text-primary)]">
             Wireline Voice — Flash
           </h2>
@@ -126,7 +121,7 @@ function VoiceTab() {
           </button>
         </section>
         <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6">
-          <p className={MONO_LABEL}>Pronunciation dictionary</p>
+          <p className="wl-eyebrow">Pronunciation dictionary</p>
           <div className="mt-4 grid gap-2">
             {[
               ["Wireline", "WIRE-line"],
@@ -176,7 +171,7 @@ function FlowsTab() {
               <h2 className="font-[var(--wireline-font-family-display)] text-[20px] font-normal tracking-[-0.01em] text-[var(--wireline-color-text-primary)]">
                 Flow Composer
               </h2>
-              <p className={`mt-1 ${MONO_LABEL}`}>Linear stage progression</p>
+              <p className="mt-1 wl-eyebrow ">Linear stage progression</p>
             </div>
             <button
               type="button"
@@ -265,7 +260,7 @@ function FlowsTab() {
               <h3 className="font-[var(--wireline-font-family-display)] text-[20px] font-normal tracking-[-0.01em] text-[var(--wireline-color-text-primary)]">
                 Greet & Disarm
               </h3>
-              <p className={`mt-0.5 ${MONO_LABEL}`}>Stage definition</p>
+              <p className="mt-0.5 wl-eyebrow ">Stage definition</p>
             </div>
           </div>
           <button
@@ -325,7 +320,7 @@ function SimulatorTab() {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6">
-        <p className={MONO_LABEL}>Scenario library</p>
+        <p className="wl-eyebrow">Scenario library</p>
         <div className="mt-4 flex flex-col gap-2">
           {scenarios.map((scenario) => (
             <button

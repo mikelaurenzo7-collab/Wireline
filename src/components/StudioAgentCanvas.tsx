@@ -40,9 +40,6 @@ type StudioAgentCanvasProps = {
   className?: string;
 };
 
-const MONO_LABEL =
-  "font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.14em] text-[var(--wireline-color-text-tertiary)]";
-
 const VOICES = [
   { name: "Aria", tone: "Warm · Confident" },
   { name: "Marcus", tone: "Calm · Deep" },
@@ -89,7 +86,7 @@ function CardShell({
       className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_rgba(43,85,72,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
     >
       <div className="mb-3.5 flex items-center justify-between gap-3">
-        <span className={MONO_LABEL}>{label}</span>
+        <span className="wl-eyebrow">{label}</span>
         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
           {action}
           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
@@ -195,7 +192,7 @@ export default function StudioAgentCanvas({
       className={`h-full min-h-0 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
     >
       <div className="mb-6">
-        <div className={MONO_LABEL}>Agent Canvas</div>
+        <div className="wl-eyebrow">Agent Canvas</div>
         <p className="mt-1.5 text-[13px] text-[var(--wireline-color-text-tertiary)]">
           Click any card to edit. Changes save automatically.
         </p>
@@ -520,7 +517,7 @@ export default function StudioAgentCanvas({
 
         <div className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
           <div className="mb-3 flex items-center justify-between">
-            <span className={MONO_LABEL}>Setup health</span>
+            <span className="wl-eyebrow">Setup health</span>
             <span className="text-xs font-semibold text-primary">94% ready</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
