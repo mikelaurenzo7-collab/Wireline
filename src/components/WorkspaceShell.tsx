@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BookOpen, Bot, Home, Inbox, LayoutGrid, Phone, Settings, Workflow } from "lucide-react";
 
@@ -125,169 +125,94 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace";
   const planLabel = accountType === "business" ? "Business plan" : "Personal plan";
-  // Inside Studio with an active agent: swap the user card for a
-  // "Current agent" card that matches the prototype's sidebar footer.
   const onStudio = isActive(pathname, "/studio");
-  const activeAgent =
-    onStudio && resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
+  const activeAgent = onStudio && resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
+  const visibleAgents = useMemo(() => {
+    const activeFirst = resolvedId
+      ? [
+          ...agents.filter((agent) => agent.id === resolvedId),
+          ...agents.filter((agent) => agent.id !== resolvedId),
+        ]
+      : agents;
+    return activeFirst.slice(0, 5);
+  }, [agents, resolvedId]);
+  const remainingAgents = Math.max(0, agents.length - visibleAgents.length);
 
   return (
     <aside
       aria-label="Workspace navigation"
       className="hidden h-[100dvh] w-[236px] shrink-0 flex-col overflow-hidden border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex"
     >
-      <Link
-        to="/overview"
-        aria-label="Wireline"
-        className="mb-1.5 flex items-center gap-2.5 px-1.5"
-      >
-        <span className="grid size-7 place-items-center rounded-[7px] bg-primary font-mono text-[11px] font-bold text-primary-foreground">
-          W
-        </span>
-        <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">
-          Wireline
-        </span>
+      <Link to="/overview" aria-label="Wireline" className="mb-1.5 flex items-center gap-2.5 px-1.5">
+        <span className="grid size-7 place-items-center rounded-[7px] bg-primary font-mono text-[11px] font-bold text-primary-foreground">W</span>
+        <span className="font-[var(--wireline-font-family-display)] text-[19px] leading-none tracking-[-0.01em] text-foreground">Wireline</span>
       </Link>
 
-      <p className="px-2.5 pb-2 pt-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
-        Workspace
-      </p>
+      <p className="px-2.5 pb-2 pt-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">Workspace</p>
       <nav className="flex flex-col gap-0.5" aria-label="Workspace">
-        {WORKSPACE_NAV.map((item) => (
-          <RailLink key={item.href} item={item} pathname={pathname} />
-        ))}
+        {WORKSPACE_NAV.map((item) => <RailLink key={item.href} item={item} pathname={pathname} />)}
       </nav>
 
       <div className="flex min-h-0 flex-1 flex-col pt-4">
         <div className="flex items-center justify-between px-2.5 pb-2">
           <p className="wl-eyebrow">Agents</p>
-          {agents.length ? (
-            <Link
-              to="/studio?create=1"
-              aria-label="New agent"
-              className="text-[11px] font-semibold text-primary hover:underline"
-            >
-              New
-            </Link>
-          ) : null}
+          {agents.length ? <Link to="/studio?create=1" aria-label="New agent" className="text-[11px] font-semibold text-primary hover:underline">New</Link> : null}
         </div>
         <nav className="flex min-h-0 flex-1 flex-col gap-1 pr-0.5" aria-label="Agents">
           {agents.length ? (
             <>
-              {/* Cap to 5 most-recent so the rail stops duplicating the full
-                  Overview roster. The active agent is always pinned first so
-                  the user sees the one they're working in even if it's not
-                  among the most recent. */}
-              {(() => {
-                const activeFirst = resolvedId
-                  ? [
-                      ...agents.filter((agent) => agent.id === resolvedId),
-                      ...agents.filter((agent) => agent.id !== resolvedId),
-                    ]
-                  : agents;
-                const visible = activeFirst.slice(0, 5);
-                const remaining = agents.length - visible.length;
+              {visibleAgents.map((agent) => {
+                const active = onStudio && resolvedId === agent.id;
                 return (
-                  <>
-                    {visible.map((agent) => {
-                      const active = isActive(pathname, "/studio") && resolvedId === agent.id;
-                      return (
-                        <Link
-                          key={agent.id}
-                          to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-                          aria-current={active ? "page" : undefined}
-                          className={`flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-                        >
-                          <span
-                            className={`grid size-7 shrink-0 place-items-center rounded-lg text-[11px] font-semibold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
-                          >
-                            {agentInitial(agent.name)}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block truncate text-[12px] font-semibold">
-                              {agent.name}
-                            </span>
-                            <span className="block truncate text-[10px] text-[color:var(--wireline-color-text-secondary)]">
-                              {formatAgentRoleLabel(agent.role)}
-                            </span>
-                          </span>
-                        </Link>
-                      );
-                    })}
-                    {remaining > 0 ? (
-                      <Link
-                        to="/overview"
-                        className="mt-0.5 flex min-h-[36px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      >
-                        <span>All agents</span>
-                        <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
-                          {agents.length}
-                        </span>
-                      </Link>
-                    ) : null}
-                  </>
+                  <Link
+                    key={agent.id}
+                    to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                  >
+                    <span className={`grid size-7 shrink-0 place-items-center rounded-lg text-[11px] font-semibold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>{agentInitial(agent.name)}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
+                      <span className="block truncate text-[10px] text-[color:var(--wireline-color-text-secondary)]">{formatAgentRoleLabel(agent.role)}</span>
+                    </span>
+                  </Link>
                 );
-              })()}
+              })}
+              {remainingAgents > 0 ? (
+                <Link to="/overview" className="mt-0.5 flex min-h-[36px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  <span>All agents</span>
+                  <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">{agents.length}</span>
+                </Link>
+              ) : null}
             </>
           ) : (
-            <Link
-              to="/studio?create=1"
-              className="rounded-[10px] border border-dashed border-border px-2.5 py-3 text-[12px] text-muted-foreground hover:border-primary/30 hover:text-foreground"
-            >
-              Create your first agent
-            </Link>
+            <Link to="/studio?create=1" className="rounded-[10px] border border-dashed border-border px-2.5 py-3 text-[12px] text-muted-foreground hover:border-primary/30 hover:text-foreground">Create your first agent</Link>
           )}
         </nav>
       </div>
 
-      <p className="shrink-0 px-2.5 pb-2 pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
-        Operate
-      </p>
+      <p className="shrink-0 px-2.5 pb-2 pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">Operate</p>
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
-        {OPERATE_NAV.map((item) => (
-          <RailLink key={item.href} item={item} pathname={pathname} />
-        ))}
+        {OPERATE_NAV.map((item) => <RailLink key={item.href} item={item} pathname={pathname} />)}
       </nav>
 
       {activeAgent ? (
         <div className="mt-2 shrink-0 border-t border-border pt-3.5">
-          <p className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
-            Current agent
-          </p>
-          <Link
-            to={`/studio?agent=${encodeURIComponent(activeAgent.id)}`}
-            className="flex items-center gap-2.5 rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-2.5 py-2 transition-opacity hover:opacity-90"
-            aria-label={`Current agent: ${activeAgent.name}`}
-          >
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
-              {agentInitial(activeAgent.name)}
-            </span>
+          <p className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">Current agent</p>
+          <Link to={`/studio?agent=${encodeURIComponent(activeAgent.id)}`} className="flex items-center gap-2.5 rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-2.5 py-2 transition-opacity hover:opacity-90" aria-label={`Current agent: ${activeAgent.name}`}>
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">{agentInitial(activeAgent.name)}</span>
             <span className="min-w-0">
-              <span className="block truncate text-[13px] font-medium text-foreground">
-                {activeAgent.name}
-              </span>
-              <span className="block truncate text-[11px] text-[color:var(--wireline-color-text-secondary)]">
-                {formatAgentRoleLabel(activeAgent.role)} · {readinessLabel(activeAgent)}
-              </span>
+              <span className="block truncate text-[13px] font-medium text-foreground">{activeAgent.name}</span>
+              <span className="block truncate text-[11px] text-[color:var(--wireline-color-text-secondary)]">{formatAgentRoleLabel(activeAgent.role)} · {readinessLabel(activeAgent)}</span>
             </span>
           </Link>
         </div>
       ) : (
-        <Link
-          to="/settings"
-          className="mt-2 flex shrink-0 items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80"
-          aria-label="Account settings"
-        >
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
-            {userInitial(user?.full_name, user?.email)}
-          </span>
+        <Link to="/settings" className="mt-2 flex shrink-0 items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80" aria-label="Account settings">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">{userInitial(user?.full_name, user?.email)}</span>
           <span className="min-w-0">
-            <span className="block truncate text-[13px] font-medium text-foreground">
-              {displayName}
-            </span>
-            <span className="block text-[11px] text-[color:var(--wireline-color-text-secondary)]">
-              {planLabel}
-            </span>
+            <span className="block truncate text-[13px] font-medium text-foreground">{displayName}</span>
+            <span className="block text-[11px] text-[color:var(--wireline-color-text-secondary)]">{planLabel}</span>
           </span>
         </Link>
       )}
@@ -297,41 +222,18 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
 function MobileDock({ pathname }: { pathname: string }) {
   return (
-    <nav
-      aria-label="Workspace navigation"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
-    >
+    <nav aria-label="Workspace navigation" className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden">
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
-        {MOBILE_NAV.map((item) => (
-          <MobileRailLink key={item.href} item={item} pathname={pathname} />
-        ))}
+        {MOBILE_NAV.map((item) => <MobileRailLink key={item.href} item={item} pathname={pathname} />)}
       </div>
     </nav>
   );
 }
 
-export default function WorkspaceShell({
-  title,
-  eyebrow,
-  action,
-  children,
-  contentClassName = "pt-2 pb-8",
-  fullBleed = false,
-}: {
-  title: string;
-  eyebrow: string;
-  action?: ReactNode;
-  children: ReactNode;
-  contentClassName?: string;
-  fullBleed?: boolean;
-}) {
+export default function WorkspaceShell({ title, eyebrow, action, children, contentClassName = "pt-2 pb-8", fullBleed = false }: { title: string; eyebrow: string; action?: ReactNode; children: ReactNode; contentClassName?: string; fullBleed?: boolean }) {
   const location = useLocation();
   const nativeAppShell = isNativeAppShell();
   const showHeader = Boolean(title || eyebrow || action);
-  // Responsive padding scale that scales gracefully from the smallest phone
-  // (≥320px, mobile dock below) up through ultra-wide desktops. The main
-  // content max-w-[1480px] cap below means anything wider becomes side
-  // breathing room — and at 2xl we widen so 4K+ doesn't read as starved.
   const mainSpacing = fullBleed
     ? "p-0 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0"
     : "px-3 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
@@ -341,43 +243,23 @@ export default function WorkspaceShell({
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
-      <a className="wl-skip-link" href="#workspace-main">
-        Skip to content
-      </a>
+      <a className="wl-skip-link" href="#workspace-main">Skip to content</a>
       <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[236px_minmax(0,1fr)]">
         <DesktopRail pathname={location.pathname} />
-        <main
-          id="workspace-main"
-          data-wireline-route={location.pathname}
-          className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden ${mainSpacing}`}
-        >
+        <main id="workspace-main" data-wireline-route={location.pathname} className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden ${mainSpacing}`}>
           {showHeader ? (
             <div className="relative mb-4 pb-3 lg:mb-5">
               <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-3 sm:px-6 md:px-12 lg:px-20">
                 <div className="flex min-w-0 flex-col items-center text-center wl-centered-header">
-                  {eyebrow ? (
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      {eyebrow}
-                    </p>
-                  ) : null}
-                  {title ? (
-                    <h1 className="truncate font-[var(--wireline-font-family-display)] text-[clamp(1.1rem,1rem+0.5vw,1.5rem)] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">
-                      {title}
-                    </h1>
-                  ) : null}
+                  {eyebrow ? <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{eyebrow}</p> : null}
+                  {title ? <h1 className="truncate font-[var(--wireline-font-family-display)] text-[clamp(1.1rem,1rem+0.5vw,1.5rem)] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">{title}</h1> : null}
                 </div>
               </div>
-              {action ? (
-                <div className="mt-3 flex min-w-0 items-center justify-center gap-2 md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2 md:justify-end">
-                  {action}
-                </div>
-              ) : null}
+              {action ? <div className="mt-3 flex min-w-0 items-center justify-center gap-2 md:absolute md:right-0 md:top-1/2 md:mt-0 md:-translate-y-1/2 md:justify-end">{action}</div> : null}
               <div className="absolute bottom-0 left-0 right-0 border-b border-border/50" />
             </div>
           ) : null}
-          <div
-            className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}
-          >
+          <div className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}>
             <div className={contentInner}>{children}</div>
           </div>
         </main>
