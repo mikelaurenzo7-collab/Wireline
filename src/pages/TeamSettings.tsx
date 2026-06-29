@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { ChevronDown, Mail, Plus, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
-import { FormField, StatusNotice } from "../components/molecules";
+import { FormField } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
 
@@ -12,50 +12,33 @@ interface TeamMember {
   name: string;
   email: string;
   role: Role;
-  status: "Active" | "Pending";
-  avatarInitials: string;
+  initial: string;
 }
 
-const mockTeam: TeamMember[] = [
+const members: TeamMember[] = [
   {
-    id: "1",
-    name: "Sarah Connor",
-    email: "sarah@wireline.co",
+    id: "owner",
+    name: "Mike Laurenzo",
+    email: "owner@example.com",
     role: "Owner",
-    status: "Active",
-    avatarInitials: "SC",
+    initial: "M",
   },
   {
-    id: "2",
-    name: "Miles Dyson",
-    email: "miles@wireline.co",
+    id: "admin",
+    name: "Jordan Freud",
+    email: "jordan@example.com",
     role: "Admin",
-    status: "Active",
-    avatarInitials: "MD",
-  },
-  {
-    id: "3",
-    name: "Kyle Reese",
-    email: "kyle@wireline.co",
-    role: "Member",
-    status: "Active",
-    avatarInitials: "KR",
-  },
-  {
-    id: "4",
-    name: "John Connor",
-    email: "john@wireline.co",
-    role: "Viewer",
-    status: "Pending",
-    avatarInitials: "JC",
+    initial: "J",
   },
 ];
-const inviteRoleOptions: Array<Role | "Manager"> = ["Admin", "Manager", "Member", "Viewer"];
+
+const inviteRoleOptions: Role[] = ["Admin", "Member", "Viewer"];
 
 export default function TeamSettings() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<Role | "Manager">("Admin");
+  const [inviteRole, setInviteRole] = useState<Role>("Admin");
+
   const handleInvite = (event: FormEvent) => {
     event.preventDefault();
     if (!inviteEmail) return;
@@ -65,85 +48,39 @@ export default function TeamSettings() {
   };
 
   return (
-    <WorkspaceShell eyebrow="Settings" title="Team" contentClassName="pt-1 pb-8">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5 pb-10">
+    <WorkspaceShell title="" eyebrow="" contentClassName="pt-0 pb-10">
+      <div className="mx-auto flex w-full max-w-[700px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <section className="studio-card flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <p className="wl-overline">Team</p>
-            <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-.03em] text-foreground">
-              People with the keys.
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">Invite teammates without crowding the workspace.</p>
-          </div>
-          <Button type="button" onClick={() => setIsInviteOpen(true)}>
-            <UserPlus size={16} />
-            Invite
-          </Button>
-        </section>
+        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+          Team
+        </h1>
 
-        <section className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border bg-muted/40 px-5 py-4 sm:px-6">
-            <h3 className="font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-.022em] text-foreground">
-              Roster
-            </h3>
-            <Badge variant="outline">
-              {mockTeam.filter((member) => member.status === "Active").length} active
-            </Badge>
+        <section className="studio-card p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <p className="wl-overline">Members</p>
+            <Button type="button" size="sm" onClick={() => setIsInviteOpen(true)}>
+              <Plus size={14} aria-hidden="true" />
+              Invite
+            </Button>
           </div>
-          <div className="divide-y divide-border">
-            {mockTeam.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-muted/20 sm:p-5"
-              >
+          <div className="mt-5 grid gap-3">
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-4 py-4">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[color:var(--wireline-color-surface-subtle)] text-sm font-medium text-[color:var(--wireline-color-action-primary-default)]">
-                    {member.avatarInitials}
-                  </div>
+                  <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+                    {member.initial}
+                  </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {member.name}
-                      {member.role === "Owner" ? (
-                        <span className="ml-2 text-xs font-normal text-muted-foreground">(You)</span>
-                      ) : null}
-                    </p>
-                    <p
-                      data-wireline-preserve-case
-                      className="truncate text-[var(--wireline-typography-caption-size)] text-muted-foreground"
-                    >
-                      {member.email}
-                    </p>
+                    <p className="truncate text-sm font-semibold text-foreground">{member.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{member.email}</p>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  {member.status === "Pending" ? (
-                    <Badge variant="warning">
-                      <Mail size={12} />
-                      Invited
-                    </Badge>
-                  ) : member.role === "Owner" ? (
-                    <Badge variant="success">Owner</Badge>
-                  ) : (
-                    <Button type="button" variant="ghost" size="sm" className="px-3">
-                      {member.role}
-                      <ChevronDown size={14} className="text-muted-foreground" />
-                    </Button>
-                  )}
-                </div>
+                <Badge variant={member.role === "Owner" ? "success" : "outline"}>{member.role}</Badge>
               </div>
             ))}
           </div>
         </section>
-
-        <StatusNotice
-          tone="warning"
-          title="Access is role-based"
-          icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
-        >
-          Give elevated controls only to people who should manage agents and integrations.
-        </StatusNotice>
       </div>
 
       {isInviteOpen ? (
@@ -151,16 +88,12 @@ export default function TeamSettings() {
           <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Invite to workspace</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Email. Level.</p>
+                <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground">
+                  Invite teammate
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">Add someone to the workspace.</p>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsInviteOpen(false)}
-                aria-label="Close invite dialog"
-              >
+              <Button type="button" variant="ghost" size="icon" onClick={() => setIsInviteOpen(false)} aria-label="Close invite dialog">
                 <X size={20} />
               </Button>
             </div>
@@ -176,10 +109,7 @@ export default function TeamSettings() {
                   />
                 </FormField>
                 <FormField label="Access level">
-                  <NativeSelect
-                    value={inviteRole}
-                    onChange={(event) => setInviteRole(event.target.value as Role | "Manager")}
-                  >
+                  <NativeSelect value={inviteRole} onChange={(event) => setInviteRole(event.target.value as Role)}>
                     {inviteRoleOptions.map((role) => (
                       <option key={role} value={role}>
                         {role}
