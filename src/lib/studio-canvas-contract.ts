@@ -105,7 +105,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "composer-focus", pattern: /focusComposer/ },
   ],
   workspacePanel: [
-    { id: "scoped-workspace-copy", pattern: /per this[\s\S]*workspace only/ },
+    { id: "scoped-workspace-copy", pattern: /Everything stays in this workspace/ },
     { id: "world-connections", pattern: /World Connections/ },
     { id: "real-config-api", pattern: /\/api\/agent-config\// },
     { id: "voice-search", pattern: /htmlFor="voice-search"/ },
