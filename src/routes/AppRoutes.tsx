@@ -6,7 +6,6 @@ const AgentStudioHome = lazy(() => import("../pages/AgentStudioHomeClaude"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const OverviewPage = lazy(() => import("../pages/OverviewPage"));
-const AgentsPage = lazy(() => import("../pages/AgentsPage"));
 const TemplatesPage = lazy(() => import("../pages/TemplatesPage"));
 const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
 const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
@@ -31,15 +30,12 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={loading}>
       <Routes>
-        {/* Letterpress workspace — full sidebar IA from the Claude Design.
-           Workspace: Home/Overview, Agent Studio, Assistants/Templates, Knowledge.
-           Operate: Connections, Call Logs, Inbox, Apps, Settings. */}
         <Route path="/" element={<Navigate to="/overview" replace />} />
 
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
-        <Route path="/agents" element={<AgentsPage />} />
+        <Route path="/agents" element={<Navigate to="/studio" replace />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 
@@ -59,13 +55,11 @@ export default function AppRoutes() {
         <Route path="/admin" element={<AdminSettings />} />
         <Route path="/admin/*" element={<AdminSettings />} />
 
-        {/* Legacy path redirects into the restored IA */}
         <Route path="/pulse" element={<Navigate to="/overview" replace />} />
-        <Route path="/fleet" element={<Navigate to="/agents" replace />} />
+        <Route path="/fleet" element={<Navigate to="/studio" replace />} />
         <Route path="/ops" element={<Navigate to="/call-logs" replace />} />
         <Route path="/ops/*" element={<Navigate to="/call-logs" replace />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
-        {/* Actions/Wire was the integrations surface — route it to Connections. */}
         <Route path="/actions" element={<Navigate to="/connections" replace />} />
         <Route path="/actions/*" element={<Navigate to="/connections" replace />} />
         <Route path="/nexus" element={<Navigate to="/connections" replace />} />
