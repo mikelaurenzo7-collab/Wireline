@@ -52,21 +52,21 @@ function StudioEmptyState() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-12 text-center">
-      <div className="max-w-xl lg:max-w-2xl w-full">
-        <div className="mx-auto mb-5 sm:mb-6 inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-border bg-card">
+    <div className="flex h-full min-h-0 flex-col items-center justify-center bg-background px-4 py-8 text-center sm:px-6 sm:py-12">
+      <div className="w-full max-w-xl lg:max-w-2xl">
+        <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-card sm:mb-6 sm:h-14 sm:w-14">
           <Sparkles size={24} strokeWidth={1.5} className="sm:size-7" />
         </div>
 
         <h1 className="font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-0.025em] sm:text-4xl lg:text-5xl">
           Wire one.
         </h1>
-        <p className="mt-2 sm:mt-3 text-base sm:text-lg text-muted-foreground max-w-prose mx-auto">
+        <p className="mx-auto mt-2 max-w-prose text-base text-muted-foreground sm:mt-3 sm:text-lg">
           Start with a brief. Tell your agent what to do — calls, texts, follow-ups — and it learns
           from every outcome.
         </p>
 
-        <div className="mt-6 sm:mt-8 space-y-4">
+        <div className="mt-6 space-y-4 sm:mt-8">
           <div>
             <label className="sr-only" htmlFor="initial-brief">
               What should this agent do?
@@ -81,7 +81,7 @@ function StudioEmptyState() {
                   startCreate();
                 }
               }}
-              className="w-full min-h-[68px] sm:min-h-[80px] resize-y rounded-xl border border-border bg-card p-3 sm:p-4 text-[14px] sm:text-[15px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+              className="w-full min-h-[68px] resize-y rounded-xl border border-border bg-card p-3 text-[14px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 sm:min-h-[80px] sm:p-4 sm:text-[15px]"
               placeholder="Book appointments, answer pricing questions, follow up on leads..."
             />
           </div>
@@ -93,19 +93,19 @@ function StudioEmptyState() {
                 background: "var(--wireline-color-action-primary-default)",
                 color: "var(--wireline-color-text-onAction)",
               }}
-              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-medium shadow-sm transition hover:opacity-95 active:scale-[0.985]"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium shadow-sm transition hover:opacity-95 active:scale-[0.985] sm:px-8 sm:py-3 sm:text-base"
             >
               <Plus size={15} className="sm:size-[17px]" /> Wire it (start setup)
             </Link>
-            <span className="text-[10px] sm:text-xs text-muted-foreground self-center">
+            <span className="self-center text-[10px] text-muted-foreground sm:text-xs">
               or press Enter in the box above
             </span>
           </div>
         </div>
 
-        <p className="mt-5 sm:mt-6 text-[10px] text-muted-foreground/70">
-          After creation, open the agent’s workspace for full voice previews (xAI + ElevenLabs),
-          personality, knowledge, tools, and more.
+        <p className="mt-5 text-[10px] text-muted-foreground/70 sm:mt-6">
+          After creation, open the agent’s workspace for full voice previews, personality,
+          knowledge, tools, and business routing.
         </p>
       </div>
     </div>
@@ -222,11 +222,8 @@ export default function StudioWorkspaceV2() {
     );
   }
 
-  // Claude Design Agent Studio: always chat (left) + spatial Agent Canvas
-  // (right). The canvas is the default right pane; ?view=workspace swaps it for
-  // the deep editor form so no per-field editing capability is lost.
   return (
-    <div className="grid min-h-full bg-background lg:h-full lg:min-h-0 lg:grid-cols-[minmax(380px,0.82fr)_minmax(520px,1.18fr)]">
+    <div className="grid min-h-full bg-background lg:h-full lg:min-h-0 lg:grid-cols-[400px_minmax(0,1fr)]">
       <div className="min-h-[560px] border-b border-border/60 lg:min-h-0 lg:border-b-0 lg:border-r">
         <StudioWorkroom
           key={active.id}
