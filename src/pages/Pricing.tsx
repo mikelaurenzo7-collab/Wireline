@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Building2, Check, ShieldCheck, Users, WalletCards } from "lucide-react";
+import { ArrowRight, Building2, Check, PhoneCall, ShieldCheck, Users, WalletCards } from "lucide-react";
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
@@ -17,14 +17,14 @@ const PRICING_TIERS = [
     eyebrow: "For one person",
     price: "$0",
     period: "to create",
-    tagline: "Fund live work with Conversation Balance.",
+    tagline: "Start the line before billing starts.",
     detail:
-      "Create and train one phone agent before billing. When it starts answering real calls, texts, and follow-up, spend comes from prepaid Conversation Balance.",
+      "Build and train one agent for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
     features: [
       "1 active agent",
-      "1 phone line",
-      "Templates unlocked",
-      "Conversation Balance for live work",
+      "1 phone line when live",
+      "All templates unlocked",
+      "Conversation Balance funds usage",
     ],
     cta: "Start with Personal",
     ctaPath: "/signup?plan=personal",
@@ -34,12 +34,12 @@ const PRICING_TIERS = [
   {
     id: "team",
     name: "Team",
-    eyebrow: "For small teams",
+    eyebrow: "For a small team",
     price: `$${planById.team.price_usd_monthly}`,
     period: "mo",
-    tagline: "Shared capacity for a real operating lane.",
+    tagline: "Shared capacity for a focused lane.",
     detail:
-      "Several agents, one inbox, connected numbers, approvals, and core integrations for teams moving beyond a single personal line.",
+      "Several agents, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
     features: [
       `${planById.team.max_agents} active agents`,
       `${planById.team.included_phone_numbers} phone lines included`,
@@ -59,12 +59,12 @@ const PRICING_TIERS = [
     period: "mo",
     tagline: "Front desk, revenue, and support coverage.",
     detail:
-      "The serious business tier: more agents, more lines, CRM sync, analytics, roles, and approvals for inbound, outbound, and follow-up.",
+      "The serious business tier: more agents, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
     features: [
       `${planById.business.max_agents} active agents`,
       `${planById.business.included_phone_numbers} phone lines included`,
       `Extra agents at $${planById.business.extra_agent_price_usd}/mo`,
-      "CRM sync, analytics, roles, and approvals",
+      "CRM sync, analytics, roles, approvals",
     ],
     cta: "Start Business",
     ctaPath: "/signup?plan=business",
@@ -82,7 +82,7 @@ const PRICING_TIERS = [
       "Annual committed usage, SSO, audit support, BYO SIP, security review, and rollout planning for larger teams.",
     features: [
       "Custom agent and line capacity",
-      "SSO, audit, and governed policy controls",
+      "SSO, audit, and policy controls",
       "Custom integrations and telephony",
       "Implementation and launch support",
     ],
@@ -93,6 +93,12 @@ const PRICING_TIERS = [
   },
 ] as const;
 
+const COMMERCIAL_RULES = [
+  ["Create", "Templates, voices, and setup are unlocked before billing."],
+  ["Fund", "Conversation Balance pays for calls, texts, and provider-backed actions."],
+  ["Scale", "Team and Business add agents, lines, approvals, routing, and reliability."],
+] as const;
+
 const FAQ = [
   [
     "Does Personal require a subscription?",
@@ -100,15 +106,15 @@ const FAQ = [
   ],
   [
     "What is Conversation Balance?",
-    "Prepaid Stripe credit for live voice work and provider-backed actions. It keeps personal usage flexible and gives teams a clear operating wallet.",
+    "Prepaid Stripe credit for real voice work and provider-backed actions. It keeps personal usage flexible and gives teams a clear operating wallet.",
   ],
   [
-    "Can I switch into Team or Business later?",
-    "Yes. Start with one agent, then move into shared capacity when the phone line becomes a team workflow.",
+    "What makes Business different from Team?",
+    "Business is the operating tier: more agents, more phone lines, CRM sync, analytics, role-aware controls, and approvals for a real front desk or revenue lane.",
   ],
   [
-    "Are templates locked by plan?",
-    "No. Templates stay unlocked. Pricing is based on operating capacity: agents, lines, routing, approvals, collaboration, and reliability.",
+    "Can Wireline provision phone numbers?",
+    "Yes. Dedicated numbers are included by plan, and extra agent or line capacity can be added as the account grows.",
   ],
 ] as const;
 
@@ -123,23 +129,23 @@ export default function Pricing() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
-        <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-20 lg:px-10">
+        <section className="border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="mx-auto max-w-4xl text-center">
             <p className="wl-overline text-primary">Pricing</p>
             <h1
-              className="mx-auto mt-4 max-w-4xl text-balance leading-[1.03] tracking-[-0.025em] text-foreground"
+              className="mx-auto mt-4 max-w-4xl text-balance leading-[1.02] tracking-[-0.035em] text-foreground"
               style={{
                 fontFamily:
                   "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                 fontWeight: 400,
-                fontSize: "clamp(2.4rem, 6vw, 5.5rem)",
+                fontSize: "clamp(2.7rem, 6vw, 5.6rem)",
               }}
             >
-              Personal first. Team when the phones become an operation.
+              Start with one agent. Scale when it becomes the phone operation.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Start with one agent and a prepaid balance. Add shared capacity when Wireline is
-              handling front desk, revenue, support, or follow-up for more than one person.
+              Personal is balance-led. Team and Business sell operating capacity: agents, numbers,
+              routing, approvals, integrations, support, and reliability.
             </p>
           </div>
         </section>
@@ -236,11 +242,7 @@ export default function Pricing() {
                           plan.featured ? "text-[rgba(247,246,243,.9)]" : "text-foreground"
                         }`}
                       >
-                        <Check
-                          size={15}
-                          className={`mt-0.5 shrink-0 ${plan.featured ? "text-primary" : "text-primary"}`}
-                          strokeWidth={2.5}
-                        />
+                        <Check size={15} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -264,26 +266,22 @@ export default function Pricing() {
         </section>
 
         <section className="border-y border-border bg-card/55 px-5 py-12 sm:px-8 lg:px-10">
-          <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[.72fr_1fr] lg:items-center">
+          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[.75fr_1fr] lg:items-center">
             <div>
-              <p className="wl-overline text-primary">Conversation Balance</p>
+              <p className="wl-overline text-primary">Commercial model</p>
               <h2
-                className="mt-3 text-balance text-[clamp(2rem,4vw,3.25rem)] leading-[1.04] tracking-[-0.025em]"
+                className="mt-3 text-balance text-[clamp(2rem,4vw,3.5rem)] leading-[1.04] tracking-[-0.03em]"
                 style={{
                   fontFamily:
                     "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
                   fontWeight: 400,
                 }}
               >
-                Balance pays for the live work. Plans add operating capacity.
+                Balance pays for live work. Plans add the business layer.
               </h2>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                ["Start", "Create and train before the first recurring plan."],
-                ["Fund", "Top up prepaid credit for calls, texts, and follow-up."],
-                ["Scale", "Move into Team or Business when more people need the lane."],
-              ].map(([label, body]) => (
+              {COMMERCIAL_RULES.map(([label, body]) => (
                 <div
                   key={label}
                   className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
@@ -292,6 +290,35 @@ export default function Pricing() {
                     {label}
                   </p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+          <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[.9fr_1.1fr] lg:items-stretch">
+            <div className="rounded-[var(--wireline-radius-xl)] border border-border bg-card p-7">
+              <p className="wl-overline text-primary">Phone numbers</p>
+              <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-4xl font-normal leading-tight tracking-[-0.03em]">
+                Numbers should feel easy to claim.
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                Wireline can provision dedicated numbers during setup, attach them to an agent,
+                and make the account feel operational immediately.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["Included lines", "Team and Business include dedicated phone numbers so customers do not have to wire Twilio themselves."],
+                ["Expansion", "Extra agents and additional line capacity can become clean add-ons instead of hidden usage surprises."],
+                ["Lock-in", "Once a number, voice, playbook, transcripts, and outcomes live in Wireline, switching costs become real."],
+                ["Trust", "Clear billing language matters: platform plan for capacity, Conversation Balance for live work."],
+              ].map(([title, body]) => (
+                <div key={title} className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5">
+                  <PhoneCall size={16} className="text-primary" aria-hidden="true" />
+                  <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
                 </div>
               ))}
             </div>
