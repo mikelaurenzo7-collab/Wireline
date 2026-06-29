@@ -11,7 +11,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
   const personal = {
     initial: "M",
     name: "Mike's Agent",
-    role: "Personal assistant",
+    role: "Personal agent",
     caller: "Unknown · (312) 555-0182",
     lines: [
       { from: "caller", text: "Hi, is this Mike? I'm calling about your car warranty." },
@@ -25,7 +25,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
   const business = {
     initial: "S",
     name: "Sarah — Front Desk",
-    role: "Business assistant",
+    role: "Business agent",
     caller: "Inbound · (630) 555-0198",
     lines: [
       { from: "caller", text: "I'd like to book a service estimate for next week." },

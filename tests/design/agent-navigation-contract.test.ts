@@ -52,7 +52,7 @@ describe("agent navigation contract", () => {
     expect(studioChrome).toMatch(/Agent Studio/);
     expect(studioChrome).toMatch(/Run test call/);
     expect(studioChrome).not.toMatch(/agentSubtitle|Talk to build\. Canvas to tune\./);
-    expect(studioWorkroom).toMatch(/Wireline Assistant/);
+    expect(studioWorkroom).toMatch(/Wireline AI/);
     expect(studioWorkroom).toMatch(/Ask me anything about/);
     expect(studioWorkroom).toMatch(/Change voice/);
     expect(studioWorkroom).toMatch(/Edit workflows/);
@@ -100,6 +100,8 @@ describe("agent navigation contract", () => {
     expect(billingPage).toMatch(/monthlyPrice/);
     expect(billingPage).toMatch(/invoiceTotal/);
     expect(teamPage).toMatch(/Members/);
-    expect([connectionsPage, settingsPage, billingPage, teamPage].join("\n")).not.toMatch(/assistant|Assistant|Assistants|Pro —|500 min|Sarah Connor|Miles Dyson|Kyle Reese|John Connor/);
+    expect([connectionsPage, settingsPage, billingPage, teamPage].join("\n")).not.toMatch(
+      /assistant|Assistant|Assistants|Pro —|500 min|Sarah Connor|Miles Dyson|Kyle Reese|John Connor/,
+    );
   });
 });

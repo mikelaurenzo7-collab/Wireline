@@ -309,7 +309,9 @@ const StudioWorkroom = forwardRef<
   );
 
   return (
-    <main className={`flex h-full min-h-0 flex-col bg-background ${layout === "canvas" ? "relative" : ""}`}>
+    <main
+      className={`flex h-full min-h-0 flex-col bg-background ${layout === "canvas" ? "relative" : ""}`}
+    >
       {layout === "standalone" ? (
         <header className="relative flex h-12 shrink-0 items-center border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4">
           <button
@@ -333,7 +335,7 @@ const StudioWorkroom = forwardRef<
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
-                Wireline Assistant
+                Wireline AI
               </p>
               <p className="mt-2 text-[13px] leading-5 text-foreground/75">
                 Talk to build. Ask me anything about {agentName}&apos;s setup.

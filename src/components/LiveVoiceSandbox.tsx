@@ -10,7 +10,7 @@ type Session = {
   session: Record<string, unknown>;
   greeting: string;
 };
-type Line = { id: string; role: "You" | "Assistant"; text: string };
+type Line = { id: string; role: "You" | "Agent"; text: string };
 
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
@@ -142,7 +142,7 @@ export default function LiveVoiceSandbox({
     const id =
       assistantLineId.current || `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     assistantLineId.current = id;
-    upsertLine(id, "Assistant", text);
+    upsertLine(id, "Agent", text);
   };
 
   const updateUserTranscript = (text: string, itemId?: unknown) => {

@@ -6,7 +6,7 @@ import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
-import { formatAgentRoleLabel, rosterSummary, WORKSPACE_VOICE } from "../lib/product-copy";
+import { formatAgentRoleLabel, WORKSPACE_VOICE } from "../lib/product-copy";
 
 const QUICK_ACTIONS = [
   { href: "/studio", icon: Sparkles, title: "Open Studio" },
@@ -157,8 +157,6 @@ export default function OverviewPage() {
   const { agents, loading, degraded } = useAgents();
   const personalAgents = agents.filter((agent) => !agent.is_business_agent);
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
-  const personalCount = personalAgents.length;
-  const businessCount = businessAgents.length;
   const hasAgents = !loading && agents.length > 0;
   const primaryAgent = agents[0];
   const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
@@ -177,7 +175,7 @@ export default function OverviewPage() {
               </h1>
               <p className="mt-4 text-[15px] text-muted-foreground">
                 {hasAgents
-                  ? `${primaryAgent?.name || "Your agent"} is answering. ${rosterSummary(personalCount, businessCount)}.`
+                  ? `Your line is active. ${primaryAgent?.name || "Your agent"} is answering.`
                   : WORKSPACE_VOICE.emptyCue}
               </p>
             </div>
