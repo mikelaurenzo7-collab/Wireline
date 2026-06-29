@@ -71,8 +71,11 @@ export default function CreateAgentDialog({
     const nextPosture = business ? "business" : "personal";
     setPosture(nextPosture);
     setRole(nextPosture === "business" ? "receptionist" : "scheduler");
+    setName("");
+    setVoiceId("");
+    setPersonality("Warm");
     setProvisionNumber(false);
-    setBrief((current) => current || initialBrief || defaultBrief(nextPosture));
+    setBrief(initialBrief || defaultBrief(nextPosture));
     const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [business, initialBrief, open]);
