@@ -107,12 +107,16 @@ val WirelineTypography = Typography(
     ),
 )
 
+// Letterpress hierarchy on native: display/headline use the system serif (carrying
+// Instrument Serif's serif-display character at regular weight), labels use the
+// system monospace (echoing Space Mono), body stays in the system sans.
 private val AppTypography = WirelineTypography.copy(
-    displayLarge = WirelineTypography.displayLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.64).sp),
-    displayMedium = WirelineTypography.displayMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.56).sp),
+    displayLarge = WirelineTypography.displayLarge.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Normal, letterSpacing = (-0.64).sp),
+    displayMedium = WirelineTypography.displayMedium.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Normal, letterSpacing = (-0.56).sp),
+    headlineLarge = WirelineTypography.headlineLarge.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Normal, letterSpacing = (-0.4).sp),
     bodyLarge = WirelineTypography.bodyLarge.copy(fontFamily = FontFamily.SansSerif),
     bodyMedium = WirelineTypography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
-    labelSmall = WirelineTypography.labelSmall.copy(fontFamily = FontFamily.SansSerif),
+    labelSmall = WirelineTypography.labelSmall.copy(fontFamily = FontFamily.Monospace, letterSpacing = (0.8).sp),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

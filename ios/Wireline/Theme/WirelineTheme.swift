@@ -53,11 +53,12 @@ extension Color {
 }
 
 extension Font {
-    /// Native text remains native; hierarchy comes from weight, tracking, and
-    /// generous line-height rather than importing web behavior into SwiftUI.
-    /// Now beautifully informed by shared typography tokens for masterful consistency.
-    static func display(_ style: Font.TextStyle, weight: Font.Weight = .semibold) -> Font {
-        Font.system(style, design: .default).weight(weight)
+    /// Letterpress hierarchy on native: display uses the system serif (New York)
+    /// to carry Instrument Serif's serif-display character, labels use the system
+    /// monospace (echoing Space Mono), and body/UI stay in the system sans. No
+    /// custom font bundling required — graceful and platform-native.
+    static func display(_ style: Font.TextStyle, weight: Font.Weight = .regular) -> Font {
+        Font.system(style, design: .serif).weight(weight)
     }
 
     static func mono(_ style: Font.TextStyle, weight: Font.Weight = .medium) -> Font {
@@ -68,13 +69,14 @@ extension Font {
         Font.system(style, design: .default).weight(weight)
     }
 
-    /// Token-driven sizes for flawless cross-surface type (past-modern, unique hierarchy)
-    static var displayLarge: Font { .system(size: WirelineDesignTokens.Metric.typographyDisplaySize, weight: .bold, design: .default) }
-    static var h1: Font { .system(size: WirelineDesignTokens.Metric.typographyH1Size, weight: .semibold) }
+    /// Token-driven sizes for flawless cross-surface type. Display tiers are
+    /// serif at regular weight, matching the Letterpress Instrument Serif.
+    static var displayLarge: Font { .system(size: WirelineDesignTokens.Metric.typographyDisplaySize, weight: .regular, design: .serif) }
+    static var h1: Font { .system(size: WirelineDesignTokens.Metric.typographyH1Size, weight: .regular, design: .serif) }
     static var body: Font { .system(size: WirelineDesignTokens.Metric.typographyBodySize, weight: .regular) }
     static var bodyStrong: Font { .system(size: WirelineDesignTokens.Metric.typographyBodyStrongSize, weight: .semibold) }
     static var caption: Font { .system(size: WirelineDesignTokens.Metric.typographyCaptionSize, weight: .regular) }
-    static var overline: Font { .system(size: WirelineDesignTokens.Metric.typographyOverlineSize, weight: .semibold).tracking(0.05) }
+    static var overline: Font { .system(size: WirelineDesignTokens.Metric.typographyOverlineSize, weight: .semibold, design: .monospaced).tracking(0.08) }
 }
 
 /// Shared tactile feedback for deliberately interactive native controls.
@@ -175,12 +177,12 @@ public struct AssistantTextModifier: ViewModifier {
         switch style {
         case .display:
             content
-                .font(.system(size: 32, weight: .semibold))
+                .font(.system(size: 32, weight: .regular, design: .serif))
                 .tracking(-0.64)
                 .foregroundColor(Brand.text)
         case .headline:
             content
-                .font(.system(size: 22, weight: .medium))
+                .font(.system(size: 22, weight: .regular, design: .serif))
                 .tracking(-0.22)
                 .foregroundColor(Brand.text)
         case .body:
