@@ -1,4 +1,4 @@
-@import './lib/typography.css';
+@import "./lib/typography.css";
 
 /* Wireline — Letterpress design system.
  * Instrument Serif for display. DM Sans for body. Space Mono for system labels.
@@ -94,7 +94,10 @@
 .wl-stitch-sidebar-link {
   color: var(--wireline-ink-muted);
   text-decoration: none;
-  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base),
+    border-color var(--transition-base);
 }
 
 .wl-stitch-sidebar-link:hover {
@@ -102,7 +105,7 @@
   color: var(--wireline-ink);
 }
 
-.wl-stitch-sidebar-link[aria-current='page'] {
+.wl-stitch-sidebar-link[aria-current="page"] {
   background: var(--wireline-action-soft);
   color: var(--wireline-action);
 }
@@ -116,7 +119,11 @@
   gap: 0.5rem;
   border-radius: var(--wireline-radius-pill);
   text-decoration: none;
-  transition: background-color var(--transition-base), border-color var(--transition-base), color var(--transition-base), transform var(--transition-fast);
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    transform var(--transition-fast);
 }
 
 .marketing-btn-primary {
@@ -277,4 +284,10 @@
 .border-primary\/25,
 .border-primary\/35 {
   border-color: color-mix(in srgb, var(--wireline-action) 28%, transparent) !important;
+}
+
+/* Success status text — used across pipelines, checklists, and readiness
+ * indicators. Was undefined (colorless); map to the Letterpress success green. */
+.wl-text-success {
+  color: var(--wireline-color-status-success);
 }

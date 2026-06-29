@@ -2,18 +2,25 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Letterpress brand color tokens — register the legacy brand/ink/paper color
- * names as Tailwind utilities so `text-brand`, `bg-brand`, `border-ink`,
- * `text-paper`, `text-on-brand`, etc. resolve to the forest-green system
- * instead of being dropped. Values mirror design-tokens/wireline.tokens.json. */
-@theme {
-  --color-brand: #2b5548;
-  --color-brand-deep: #1e4038;
-  --color-brand-display: #2b5548;
-  --color-brand-soft: #eef5f1;
-  --color-on-brand: #ffffff;
-  --color-ink: #1c1c1a;
-  --color-paper: #f7f6f3;
+/* Register the legacy brand/ink/paper and status color names as Tailwind
+ * utilities so `text-brand`, `bg-brand`, `border-ink`, `text-paper`,
+ * `text-on-brand`, `bg-destructive`, `text-success`, `bg-surface`, etc.
+ * resolve to the live Letterpress tokens instead of being dropped at build
+ * time. Inline so they track the same tokens as `primary`/`card`/`border`. */
+@theme inline {
+  --color-brand: var(--wireline-color-action-primary-default);
+  --color-brand-deep: var(--wireline-color-action-primary-pressed);
+  --color-brand-display: var(--wireline-color-action-primary-default);
+  --color-brand-soft: var(--wireline-color-action-primary-container);
+  --color-on-brand: var(--wireline-color-text-onAction);
+  --color-ink: var(--wireline-color-text-primary);
+  --color-paper: var(--wireline-color-canvas-default);
+  --color-destructive: var(--wireline-color-status-error);
+  --color-destructive-foreground: var(--wireline-color-text-onAction);
+  --color-success: var(--wireline-color-status-success);
+  --color-success-foreground: var(--wireline-color-text-onAction);
+  --color-surface: var(--wireline-color-surface-default);
+  --color-warning: var(--wireline-color-status-warning);
 }
 
 /* Wireline — Letterpress design system. */
