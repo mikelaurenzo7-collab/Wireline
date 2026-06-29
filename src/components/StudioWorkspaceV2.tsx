@@ -9,6 +9,7 @@ import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import StudioAgentCanvas from "./StudioAgentCanvas";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
+import { useIsDesktop } from "../hooks/useMediaQuery";
 
 function StudioLoadingState() {
   return (
@@ -115,6 +116,7 @@ function StudioEmptyState() {
 export default function StudioWorkspaceV2() {
   const { loading } = useAgents();
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
@@ -270,48 +272,56 @@ export default function StudioWorkspaceV2() {
     />
   );
 
-  return (
-    <div className="h-full min-h-0 bg-background">
-      {/* Mobile: tab-switched single pane below lg */}
-      <div className="flex h-full min-h-0 flex-col lg:hidden">
-        <div
-          role="tablist"
-          aria-label="Studio pane"
-          className="flex shrink-0 items-center gap-1 border-b border-border/60 bg-[var(--wireline-color-surface-default)] px-3 py-2"
-        >
-          {(["chat", "canvas"] as const).map((pane) => {
-            const isActive = mobilePane === pane;
-            return (
-              <button
-                key={pane}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setMobilePane(pane)}
-                className="inline-flex min-h-[36px] flex-1 items-center justify-center rounded-[8px] px-3 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)]"
-                style={
-                  isActive
-                    ? {
-                        background: "var(--wireline-color-action-primary-default)",
-                        color: "var(--wireline-color-text-onAction)",
-                      }
-                    : { color: "var(--wireline-color-text-secondary)" }
-                }
-              >
-                {pane === "chat" ? "Chat" : workspaceView ? "Edit" : "Canvas"}
-              </button>
-            );
-          })}
-        </div>
-        <div className="min-h-0 flex-1 overflow-hidden">
-          {mobilePane === "chat" ? workroomNode : rightPane}
-        </div>
-      </div>
-
-      {/* Desktop: chat (400px) + spatial canvas side-by-side from lg up */}
-      <div className="hidden h-full min-h-0 lg:grid lg:grid-cols-[400px_minmax(0,1fr)]">
+  // ONE branch mounts at a time, gated by useIsDesktop(). Earlier this
+  // returned both a `lg:hidden` mobile tree AND a `hidden lg:grid` desktop
+  // tree side-by-side and toggled them with Tailwind `hidden` — but `hidden`
+  // is display:none, not unmount, so the offscreen branch's children still
+  // mounted and ran their effects (doubling /api/agent-config and /api/calls
+  // fetches on every viewport, plus aliasing workroomRef to whichever instance
+  // committed last). The hook keeps things truthful: only the visible branch
+  // exists in the React tree.
+  if (isDesktop) {
+    return (
+      <div className="grid h-full min-h-0 bg-background lg:grid-cols-[400px_minmax(0,1fr)]">
         <div className="border-r border-border/60">{workroomNode}</div>
         {rightPane}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      <div
+        role="tablist"
+        aria-label="Studio pane"
+        className="flex shrink-0 items-center gap-1 border-b border-border/60 bg-[var(--wireline-color-surface-default)] px-3 py-2"
+      >
+        {(["chat", "canvas"] as const).map((pane) => {
+          const isActive = mobilePane === pane;
+          return (
+            <button
+              key={pane}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setMobilePane(pane)}
+              className="inline-flex min-h-[36px] flex-1 items-center justify-center rounded-[8px] px-3 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)]"
+              style={
+                isActive
+                  ? {
+                      background: "var(--wireline-color-action-primary-default)",
+                      color: "var(--wireline-color-text-onAction)",
+                    }
+                  : { color: "var(--wireline-color-text-secondary)" }
+              }
+            >
+              {pane === "chat" ? "Chat" : workspaceView ? "Edit" : "Canvas"}
+            </button>
+          );
+        })}
+      </div>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {mobilePane === "chat" ? workroomNode : rightPane}
       </div>
     </div>
   );
