@@ -11,6 +11,7 @@ export const STUDIO_CANVAS_VISION = WIRELINE_DESIGN_VISION.studioCanvas;
 export const STUDIO_CANVAS_SURFACES = {
   shell: "src/components/WorkspaceShell.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
+  spatialCanvas: "src/components/StudioAgentCanvas.tsx",
   workroom: "src/components/StudioWorkroom.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
   studioHome: "src/pages/AgentStudioHome.tsx",
@@ -24,8 +25,14 @@ export type StudioCanvasSurfaceKey = keyof typeof STUDIO_CANVAS_SURFACES;
 /** Product invariants — if any match, the vision is violated. */
 export const STUDIO_CANVAS_FORBIDDEN = {
   canvas: [
+    // The roster lives in the horizontal switcher, never as a grid in the canvas.
     { id: "no-agent-card-grid", pattern: /Your agents/ },
-    { id: "no-card-open-workspace-cta", pattern: /Open workspace\s*→/ },
+    { id: "no-demo-alert", pattern: /\balert\s*\(/ },
+    { id: "no-query-selector-hacks", pattern: /document\.querySelector/ },
+  ],
+  spatialCanvas: [
+    // The Agent Canvas binds to the real config record, never the prototype mock.
+    { id: "no-prototype-mock-agent", pattern: /\bSarah\b/ },
     { id: "no-demo-alert", pattern: /\balert\s*\(/ },
     { id: "no-query-selector-hacks", pattern: /document\.querySelector/ },
   ],
@@ -59,15 +66,35 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-mru-hook", pattern: /useStudioActiveAgentId/ },
   ],
   canvas: [
-    { id: "chat-first-workroom", pattern: /<StudioWorkroom/ },
+    { id: "chat-left-workroom", pattern: /<StudioWorkroom/ },
+    // Claude Design: chat + spatial Agent Canvas is the default right pane.
+    { id: "spatial-canvas-default", pattern: /<StudioAgentCanvas/ },
     { id: "shared-mru-hook", pattern: /useStudioActiveAgentId/ },
+    // ?view=workspace still gates the deep editor form behind the canvas.
     { id: "workspace-depth-gate", pattern: /view"\) === "workspace"/ },
-    { id: "extracted-workspace-panel", pattern: /StudioAgentWorkspacePanel/ },
-    { id: "workspace-panel-key", pattern: /StudioAgentWorkspacePanel[\s\S]*key=\{active\.id\}/ },
+    { id: "deep-editor-panel", pattern: /StudioAgentWorkspacePanel/ },
+    { id: "canvas-key", pattern: /StudioAgentCanvas[\s\S]*key=\{active\.id\}/ },
     { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{active\.id\}/ },
     { id: "strip-legacy-mode", pattern: /next\.delete\("mode"\)/ },
     { id: "empty-state-wire-one", pattern: /Wire one\./ },
     { id: "command-nonce", pattern: /commandNonce/ },
+  ],
+  spatialCanvas: [
+    // Cards bind to the real agent-config record, not fabricated state.
+    { id: "real-config-api", pattern: /\/api\/agent-config\// },
+    { id: "agent-canvas-label", pattern: /Agent Canvas/ },
+    { id: "identity-card", pattern: /Identity/ },
+    { id: "voice-card", pattern: /Voice/ },
+    { id: "workflows-card", pattern: /Workflows & Capabilities/ },
+    { id: "knowledge-card", pattern: /Knowledge Base/ },
+    { id: "situations-card", pattern: /Situations/ },
+    // Honest workflow active-state comes from enabledTools; situations from directives.
+    { id: "enabled-tools-binding", pattern: /enabledTools/ },
+    { id: "directives-binding", pattern: /directives/ },
+    // Dashed connectors link the spatial rows.
+    { id: "connector-lines", pattern: /border-dashed/ },
+    // Every card opens the deep editor — no capability is lost.
+    { id: "edit-section-callback", pattern: /onEditSection/ },
   ],
   workroom: [
     { id: "composer-dock", pattern: /wl-composer-dock/ },
