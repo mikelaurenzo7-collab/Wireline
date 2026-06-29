@@ -37,9 +37,7 @@ const CATEGORY_ICON: Record<DirectorCapabilityCategory, React.ElementType> = {
 
 export interface DirectorCapabilityCatalogProps {
   onPickExample: (text: string) => void;
-  /** empty = hero embed; popover = composer dropdown */
   variant?: "empty" | "popover";
-  /** Inside composer accessory — defers scroll to parent panel */
   embedded?: boolean;
   className?: string;
 }
@@ -67,17 +65,12 @@ function CapabilityRow({
       <div className="min-w-0 flex-1">
         <p className="wl-micro-meta font-semibold text-foreground leading-snug">{item.label}</p>
         {!compact && (
-          <p
-            className={cn(
-              WL_DIRECTOR_CLASSES.metaCaption,
-              "text-muted-foreground leading-relaxed mt-0.5 line-clamp-2",
-            )}
-          >
+          <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "text-muted-foreground leading-relaxed mt-0.5 line-clamp-2")}>
             {item.description}
           </p>
         )}
       </div>
-      <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/40 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
+      <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/60 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
     </ShadButton>
   );
 }
@@ -89,9 +82,7 @@ export function DirectorCapabilityCatalog({
   className,
 }: DirectorCapabilityCatalogProps) {
   const grouped = useMemo(() => directorCapabilitiesByCategory(), []);
-  const categories = Object.keys(
-    DIRECTOR_CAPABILITY_CATEGORY_LABELS,
-  ) as DirectorCapabilityCategory[];
+  const categories = Object.keys(DIRECTOR_CAPABILITY_CATEGORY_LABELS) as DirectorCapabilityCategory[];
   const [activeCategory, setActiveCategory] = useState<DirectorCapabilityCategory>("strategy");
   const [query, setQuery] = useState("");
 
@@ -114,9 +105,7 @@ export function DirectorCapabilityCatalog({
           <div className="flex items-center justify-between gap-2 px-1 pb-2">
             <span className="wl-label text-muted-foreground">Skills</span>
             <span className="wl-micro-badge font-mono text-muted-foreground tabular-nums">
-              {filteredCatalog
-                ? `${filteredCatalog.length} match`
-                : `${DIRECTOR_CAPABILITY_CATALOG.length} total`}
+              {filteredCatalog ? `${filteredCatalog.length} match` : `${DIRECTOR_CAPABILITY_CATALOG.length} total`}
             </span>
           </div>
         )}
@@ -124,10 +113,7 @@ export function DirectorCapabilityCatalog({
           Search capabilities
         </label>
         <div className="relative px-0.5 pb-2">
-          <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             id="director-capability-search"
             type="search"
@@ -138,12 +124,7 @@ export function DirectorCapabilityCatalog({
           />
         </div>
         {!filteredCatalog && (
-          <div
-            className={cn(
-              "flex flex-wrap gap-1 pb-2 -mx-0.5 px-0.5",
-              embedded && "wl-composer-accessory-catalog-sticky",
-            )}
-          >
+          <div className={cn("flex flex-wrap gap-1 pb-2 -mx-0.5 px-0.5", embedded && "wl-composer-accessory-catalog-sticky")}>
             {categories.map((cat) => {
               const Icon = CATEGORY_ICON[cat];
               const items = grouped[cat];
@@ -167,7 +148,7 @@ export function DirectorCapabilityCatalog({
                 >
                   <Icon className="w-3 h-3 shrink-0" aria-hidden />
                   {DIRECTOR_CAPABILITY_CATEGORY_LABELS[cat]}
-                  <span className="font-mono opacity-60">{items.length}</span>
+                  <span className="font-mono text-muted-foreground">{items.length}</span>
                 </ShadButton>
               );
             })}
@@ -179,9 +160,7 @@ export function DirectorCapabilityCatalog({
               No skills match &ldquo;{query.trim()}&rdquo;
             </p>
           ) : (
-            activeItems.map((item) => (
-              <CapabilityRow key={item.id} item={item} onPick={onPickExample} compact />
-            ))
+            activeItems.map((item) => <CapabilityRow key={item.id} item={item} onPick={onPickExample} compact />)
           )}
         </div>
       </div>
@@ -216,12 +195,7 @@ export function DirectorCapabilityCatalog({
                 <span className="block wl-micro-meta font-semibold text-foreground leading-snug">
                   {item.label}
                 </span>
-                <span
-                  className={cn(
-                    WL_DIRECTOR_CLASSES.metaCaption,
-                    "block text-muted-foreground leading-snug mt-0.5 line-clamp-3 text-pretty",
-                  )}
-                >
+                <span className={cn(WL_DIRECTOR_CLASSES.metaCaption, "block text-muted-foreground leading-snug mt-0.5 line-clamp-3 text-pretty")}>
                   {item.description}
                 </span>
               </span>
@@ -229,14 +203,8 @@ export function DirectorCapabilityCatalog({
           );
         })}
       </div>
-      <p
-        className={cn(
-          WL_DIRECTOR_CLASSES.metaCaption,
-          "mt-3 text-muted-foreground/80 leading-relaxed",
-        )}
-      >
-        Strategy, documents, outbound comms, live research, integrations, agent coaching, and brand
-        generation — all approvable from this thread.
+      <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "mt-3 text-muted-foreground leading-relaxed")}>
+        Strategy, documents, outbound comms, live research, integrations, agent coaching, and brand generation — all approvable from this thread.
       </p>
     </div>
   );
