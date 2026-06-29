@@ -181,7 +181,7 @@ export default function WorkspaceShell({
     ? "p-0 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0"
     : "px-4 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-3 lg:pb-6 xl:px-10";
   const contentInner = fullBleed
-    ? "wl-workspace-content-inner mx-0 flex min-h-full w-full max-w-none flex-col"
+    ? "wl-workspace-content-inner mx-0 flex h-full min-h-0 w-full max-w-none flex-col"
     : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col";
 
   return (
