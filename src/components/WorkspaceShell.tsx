@@ -76,10 +76,11 @@ function isStudioPath(pathname: string) {
 function isActive(pathname: string, href: string) {
   const current = cleanPath(pathname);
   const target = cleanPath(href);
+  const targetIsStudio = target === "/studio";
   if (target === "/settings") {
     return current === "/settings" || current.startsWith("/settings/") || current === "/admin" || current.startsWith("/admin/");
   }
-  if (target === "/studio") {
+  if (targetIsStudio) {
     return isStudioPath(current);
   }
   return current === target || current.startsWith(`${target}/`);
@@ -89,13 +90,7 @@ function RailLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const active = isActive(pathname, item.href);
   const Icon = item.icon;
   return (
-    <Link
-      to={item.href}
-      aria-current={active ? "page" : undefined}
-      data-wireline-nav-href={item.href}
-      data-wireline-nav-active={active ? "true" : undefined}
-      className="wl-rail-link"
-    >
+    <Link to={item.href} aria-current={active ? "page" : undefined} data-wireline-nav-href={item.href} data-wireline-nav-active={active ? "true" : undefined} className="wl-rail-link">
       <Icon size={16} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
       {item.label}
     </Link>
@@ -150,11 +145,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
       </nav>
 
       {activeAgent ? (
-        <Link
-          to={`/studio?agent=${encodeURIComponent(activeAgent.id)}`}
-          className="mb-2 rounded-[12px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-2.5 transition-colors hover:border-primary/30"
-          aria-label={`Current assistant: ${activeAgent.name}`}
-        >
+        <Link to={`/studio?agent=${encodeURIComponent(activeAgent.id)}`} className="mb-2 rounded-[12px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-2.5 transition-colors hover:border-primary/30" aria-label={`Current assistant: ${activeAgent.name}`}>
           <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">Current assistant</p>
           <div className="flex items-center gap-2.5">
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[12px] font-semibold text-primary-foreground">{agentInitial(activeAgent.name)}</span>
