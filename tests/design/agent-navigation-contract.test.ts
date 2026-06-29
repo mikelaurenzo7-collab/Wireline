@@ -14,6 +14,8 @@ describe("agent navigation contract", () => {
   const studioChrome = read("src/components/studio/StudioContextChrome.tsx");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
   const productCopy = read("src/lib/product-copy.ts");
+  const appsPage = read("src/pages/ClientAppsPage.tsx");
+  const pricingPage = read("src/pages/Pricing.tsx");
 
   it("keeps Studio off the primary rail while exposing agents in Overview", () => {
     expect(workspaceShell).not.toMatch(/label:\s*"Assistants"/);
@@ -40,5 +42,16 @@ describe("agent navigation contract", () => {
     expect(createDialog).toMatch(/\/knowledge\?agent=/);
     expect(createDialog).not.toMatch(/\/training\?agent=/);
     expect(productCopy).toMatch(/Brief it\. Train it\. Put it on the line\./);
+  });
+
+  it("translates the Zip handoff into current control-surface and pricing language", () => {
+    expect(appsPage).toMatch(/One agent system, wherever the conversation starts\./);
+    expect(appsPage).toMatch(/Browser Companion/);
+    expect(appsPage).not.toMatch(/One assistant system|Same assistants|New assistant/);
+    expect(pricingPage).toMatch(/STRIPE_PLANS/);
+    expect(pricingPage).toMatch(/Personal[\s\S]*Team[\s\S]*Business[\s\S]*Enterprise/);
+    expect(pricingPage).toMatch(/Conversation Balance/);
+    expect(pricingPage).toMatch(/Balance pays for live work\. Plans add the business layer\./);
+    expect(pricingPage).not.toMatch(/Starter|Try 7 days free|\$79/);
   });
 });
