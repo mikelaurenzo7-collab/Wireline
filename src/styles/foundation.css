@@ -229,8 +229,8 @@ body {
   font-family: var(--wl-font-body, Inter, ui-sans-serif, system-ui, sans-serif);
   color: var(--wl-on-surface);
   background: var(--wl-page);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: subpixel-antialiased;
+  text-rendering: geometricPrecision;
   overscroll-behavior: none;
 }
 
