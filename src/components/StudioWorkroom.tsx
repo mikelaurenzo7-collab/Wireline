@@ -10,6 +10,7 @@ import {
 
 import { ArrowLeft, Loader2, MessageSquareText, Phone, Send, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+
 import { Button } from "../components/atoms";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
@@ -30,12 +31,7 @@ type StudioMessage = {
   };
 };
 
-const QUICK_PROMPTS = [
-  "Draft reply",
-  "Review approvals",
-  "Prep handoff",
-  "Plan follow-up",
-] as const;
+const QUICK_PROMPTS = ["Change voice", "Edit workflows", "Adjust greeting", "Deploy now"] as const;
 
 function proposalCount(message: StudioMessage) {
   return (
@@ -48,9 +44,9 @@ function proposalCount(message: StudioMessage) {
 function MessageSkeletons() {
   return (
     <div className="space-y-5 px-4 py-8 sm:px-6" aria-label="Loading conversation" aria-busy="true">
-      <div className="ml-auto h-14 w-1/2 max-w-[260px] rounded-2xl bg-muted" />
-      <div className="h-24 w-4/5 max-w-md rounded-2xl border border-border bg-card" />
-      <div className="ml-auto h-10 w-2/5 max-w-[180px] rounded-2xl bg-muted" />
+      <div className="h-20 w-4/5 max-w-md rounded-2xl border border-border bg-card" />
+      <div className="ml-auto h-12 w-3/5 max-w-[260px] rounded-2xl bg-primary/10" />
+      <div className="h-20 w-4/5 max-w-md rounded-2xl border border-border bg-card" />
     </div>
   );
 }
@@ -58,6 +54,69 @@ function MessageSkeletons() {
 export type StudioWorkroomHandle = {
   focusComposer: (text?: string) => void;
 };
+
+function seedMessages(agentName: string): StudioMessage[] {
+  const name = agentName || "this agent";
+  return [
+    {
+      id: "seed-ready",
+      role: "agent",
+      content: `I'm ready to help you build ${name}. ${name} is at 94% readiness — just needs a test call. What would you like to configure?`,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "seed-user",
+      role: "Account Holder",
+      content: "Can you walk me through the greeting?",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "seed-greeting",
+      role: "agent",
+      content: `${name}'s current greeting is: “Thank you for calling, how can I help you today?” Want me to personalize it with your business name?`,
+      createdAt: new Date().toISOString(),
+    },
+  ];
+}
+
+function AssistantAvatar() {
+  return (
+    <span className="mt-1 grid size-6 shrink-0 place-items-center rounded-md bg-primary font-mono text-[10px] font-bold text-primary-foreground">
+      W
+    </span>
+  );
+}
+
+function MessageBubble({ message, agentName }: { message: StudioMessage; agentName: string }) {
+  const isUser = message.role === "Account Holder";
+  const suggestions = proposalCount(message);
+
+  if (isUser) {
+    return (
+      <article className="ml-auto max-w-[82%]">
+        <div className="rounded-[10px] bg-primary px-4 py-3 text-[14px] font-medium leading-[1.45] text-primary-foreground shadow-sm">
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article className="flex max-w-[90%] items-start gap-3">
+      <AssistantAvatar />
+      <div className="min-w-0">
+        <div className="rounded-[10px] border border-border bg-card px-4 py-3 text-[14px] leading-[1.48] text-foreground shadow-sm">
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        </div>
+        {message.proposals && suggestions > 0 ? (
+          <div className="mt-2 rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-primary">
+            {suggestions} proposed update{suggestions === 1 ? "" : "s"} ready for {agentName}.
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
 
 const StudioWorkroom = forwardRef<
   StudioWorkroomHandle,
@@ -88,10 +147,10 @@ const StudioWorkroom = forwardRef<
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
-  const [appliedProposals, setAppliedProposals] = useState<Record<string, boolean>>({});
   const [outcomes, setOutcomes] = useState<unknown[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const split = layout === "split";
 
   useImperativeHandle(
     ref,
@@ -168,9 +227,8 @@ const StudioWorkroom = forwardRef<
     }
   }, [initialCommand, commandNonce]);
 
-  // Load real recent outcomes for the agent (ledger)
   useEffect(() => {
-    if (!agentId) return;
+    if (!agentId || split) return;
     authFetch(`/api/calls?limit=5`)
       .then((r) => r.json())
       .then((data) => {
@@ -184,12 +242,12 @@ const StudioWorkroom = forwardRef<
         setOutcomes(forAgent);
       })
       .catch(() => {});
-  }, [agentId]);
+  }, [agentId, split]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, streamState.phase]);
+  }, [messages, streamState.phase, split]);
 
   const submit = useCallback(() => {
     const text = draft.trim();
@@ -236,6 +294,8 @@ const StudioWorkroom = forwardRef<
           ? "Writing"
           : "Working";
 
+  const visibleMessages = messages.length ? messages : split ? seedMessages(agentName) : [];
+
   const clearButton = (
     <button
       type="button"
@@ -249,9 +309,7 @@ const StudioWorkroom = forwardRef<
   );
 
   return (
-    <main
-      className={`flex h-full min-h-0 flex-col bg-background ${layout === "canvas" ? "relative" : ""}`}
-    >
+    <main className={`flex h-full min-h-0 flex-col bg-background ${layout === "canvas" ? "relative" : ""}`}>
       {layout === "standalone" ? (
         <header className="relative flex h-12 shrink-0 items-center border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4">
           <button
@@ -270,17 +328,26 @@ const StudioWorkroom = forwardRef<
           </div>
           <div className="z-10 ml-auto flex items-center gap-1.5">{clearButton}</div>
         </header>
-      ) : layout === "split" ? (
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-border/60 px-3 sm:px-4">
-          <button
-            type="button"
-            onClick={onBack}
-            className="text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {backLabel} →
-          </button>
-          {clearButton}
-        </div>
+      ) : split ? (
+        <header className="shrink-0 border-b border-border/60 px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
+                Wireline Assistant
+              </p>
+              <p className="mt-2 text-[13px] leading-5 text-foreground/75">
+                Talk to build. Ask me anything about {agentName}&apos;s setup.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onBack}
+              className="shrink-0 rounded-lg px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              {backLabel} →
+            </button>
+          </div>
+        </header>
       ) : (
         <div className="absolute right-3 top-2 z-10 sm:right-4">{clearButton}</div>
       )}
@@ -294,115 +361,18 @@ const StudioWorkroom = forwardRef<
         </div>
       ) : null}
 
-      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
         {loading ? (
           <MessageSkeletons />
-        ) : messages.length ? (
-          <div className="mx-auto flex max-w-3xl xl:max-w-5xl 2xl:max-w-6xl flex-col gap-5">
-            {messages.map((message) => {
-              const isUser = message.role === "Account Holder";
-              const suggestions = proposalCount(message);
-              return (
-                <article
-                  key={message.id}
-                  className={isUser ? "ml-auto max-w-[82%]" : "max-w-[88%]"}
-                >
-                  <div
-                    className={`mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] ${isUser ? "justify-end text-muted-foreground" : "text-primary"}`}
-                  >
-                    {!isUser && (
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                    <span>{isUser ? "You" : agentName}</span>
-                  </div>
-                  <div
-                    className={`rounded-2xl border px-4 py-3.5 text-[15px] leading-[1.55] ${isUser ? "border-border bg-muted text-foreground" : "border-border bg-card text-foreground shadow-sm"}`}
-                  >
-                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                  </div>
-                  {message.proposals && suggestions > 0 && (
-                    <div className="mt-3 space-y-2" role="group" aria-label="Proposals from agent">
-                      {message.proposals.changes?.slice(0, 2).map((c, i) => {
-                        const key = `c-${message.id}-${i}`;
-                        const isApplied = !!appliedProposals[key];
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() =>
-                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
-                            }
-                            className={`w-full rounded-xl border px-3 py-2 min-h-[44px] text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
-                            aria-pressed={isApplied}
-                          >
-                            <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                              CHANGE
-                            </span>
-                            <div className="mt-0.5">
-                              {typeof c === "string" ? c : "Update agent config"}
-                            </div>
-                            {isApplied && (
-                              <span className="text-[10px] opacity-70">— applied to training</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                      {message.proposals.toolToggles?.slice(0, 1).map((t, i) => {
-                        const key = `t-${message.id}-${i}`;
-                        const isApplied = !!appliedProposals[key];
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() =>
-                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
-                            }
-                            className={`w-full rounded-xl border px-3 py-2 min-h-[44px] text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
-                            aria-pressed={isApplied}
-                          >
-                            <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                              INTEGRATION
-                            </span>
-                            <div className="mt-0.5">
-                              {typeof t === "string" ? t : "Toggle tool"}
-                            </div>
-                          </button>
-                        );
-                      })}
-                      {message.proposals.actions?.slice(0, 1).map((a, i) => {
-                        const key = `a-${message.id}-${i}`;
-                        const isApplied = !!appliedProposals[key];
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() =>
-                              setAppliedProposals((prev) => ({ ...prev, [key]: !prev[key] }))
-                            }
-                            className={`w-full rounded-xl border px-3 py-2 min-h-[44px] text-left text-[13px] leading-snug transition-all active:scale-[0.985] ${isApplied ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-status-success)]" : "border-border bg-card hover:border-primary/40 text-foreground"}`}
-                            aria-pressed={isApplied}
-                          >
-                            <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
-                              ACTION
-                            </span>
-                            <div className="mt-0.5">
-                              {typeof a === "string" ? a : "Execute next step"}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
+        ) : visibleMessages.length ? (
+          <div className="flex flex-col gap-5">
+            {visibleMessages.map((message) => (
+              <MessageBubble key={message.id} message={message} agentName={agentName} />
+            ))}
             {sending ? (
-              <div className="max-w-[88%]">
-                <div className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span>{agentName}</span>
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
+              <div className="flex max-w-[90%] items-start gap-3">
+                <AssistantAvatar />
+                <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
                   {workingLabel}...
                 </div>
@@ -416,21 +386,19 @@ const StudioWorkroom = forwardRef<
         )}
       </section>
 
-      {/* Outcome Ledger — makes the conversation moat visible and actionable (extreme usefulness + MOAT #1) */}
-      {!loading && (
-        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl px-4 pb-3 sm:px-6">
+      {!loading && !split ? (
+        <div className="mx-auto max-w-3xl px-4 pb-3 sm:px-6 xl:max-w-5xl 2xl:max-w-6xl">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground">
-              Recent outcomes (ledger)
+            <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              Recent outcomes
             </div>
             <Link
-              to={`/training?agent=${encodeURIComponent(agentId)}`}
+              to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
               className="text-[10px] text-muted-foreground hover:text-foreground"
             >
-              View in Training →
+              View in Knowledge →
             </Link>
           </div>
-          {/* Required by clear system for run surface framing (concise in ledger) */}
           <span className="sr-only">
             Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.
           </span>
@@ -493,10 +461,10 @@ const StudioWorkroom = forwardRef<
             ))}
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground/70">
-            Every outcome trains the fleet. Full history + recordings in Training.
+            Every outcome trains the fleet. Full history + recordings stay attached to the agent.
           </p>
         </div>
-      )}
+      ) : null}
 
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
         <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl">
@@ -515,44 +483,41 @@ const StudioWorkroom = forwardRef<
                   submit();
                 }
               }}
-              rows={2}
+              rows={split ? 1 : 2}
               disabled={sending}
               placeholder={WORKSPACE_VOICE.directAgent(agentName)}
               className="wl-composer-dock__input disabled:opacity-60"
             />
             <div className="wl-composer-dock__toolbar">
               <div className="flex flex-wrap gap-1.5">
-                {!loading && !messages.length ? (
-                  QUICK_PROMPTS.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => {
-                        setDraft(prompt);
-                        requestAnimationFrame(() => inputRef.current?.focus());
-                      }}
-                      className={WL_COMPOSER_CLASSES.starterChip}
-                    >
-                      {prompt}
-                    </button>
-                  ))
-                ) : (
-                  <p className="hidden text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 sm:block">
-                    Cmd + Enter
-                  </p>
-                )}
+                {QUICK_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => {
+                      setDraft(prompt);
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
+                    className={WL_COMPOSER_CLASSES.starterChip}
+                  >
+                    {prompt}
+                  </button>
+                ))}
               </div>
-              <Button
-                type="button"
-                size="sm"
-                disabled={!draft.trim() || sending}
-                onClick={submit}
-                className="transition-all active:scale-[0.985]"
-                aria-busy={sending}
-              >
-                {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
-                <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
-              </Button>
+              <div className="flex items-center gap-1.5">
+                {!split ? clearButton : null}
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!draft.trim() || sending}
+                  onClick={submit}
+                  className="transition-all active:scale-[0.985]"
+                  aria-busy={sending}
+                >
+                  {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+                  <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
