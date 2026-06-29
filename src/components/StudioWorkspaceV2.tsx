@@ -122,6 +122,7 @@ export default function StudioWorkspaceV2() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const legacyMode = params.get("mode");
   const workspaceView = params.get("view") === "workspace";
+  const paneParam = params.get("pane");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
 
   useEffect(() => {
@@ -166,6 +167,18 @@ export default function StudioWorkspaceV2() {
       { replace: true },
     );
   }, [active?.id, params, setParams]);
+
+  useEffect(() => {
+    if (!isDesktop || !paneParam) return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("pane");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [isDesktop, paneParam, setParams]);
 
   useEffect(() => {
     if (active?.id) writeStudioLastAgentId(active.id);
@@ -229,7 +242,8 @@ export default function StudioWorkspaceV2() {
   // canvas. A pane=chat|canvas search-param drives a mobile tab strip so
   // either pane gets the full viewport; on lg+ the strip vanishes and
   // both panes render side-by-side as the prototype intends.
-  const mobilePane = (params.get("pane") as "chat" | "canvas" | null) || "canvas";
+  const mobilePane = paneParam === "chat" || paneParam === "canvas" ? paneParam : "canvas";
+  const paneBaseId = `studio-${active.id}`;
   function setMobilePane(next: "chat" | "canvas") {
     setParams(
       (current) => {
@@ -298,12 +312,17 @@ export default function StudioWorkspaceV2() {
       >
         {(["chat", "canvas"] as const).map((pane) => {
           const isActive = mobilePane === pane;
+          const tabId = `${paneBaseId}-${pane}-tab`;
+          const panelId = `${paneBaseId}-${pane}-panel`;
           return (
             <button
               key={pane}
+              id={tabId}
               type="button"
               role="tab"
               aria-selected={isActive}
+              aria-controls={panelId}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => setMobilePane(pane)}
               className="inline-flex min-h-[36px] flex-1 items-center justify-center rounded-[8px] px-3 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)]"
               style={
@@ -320,7 +339,13 @@ export default function StudioWorkspaceV2() {
           );
         })}
       </div>
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div
+        id={`${paneBaseId}-${mobilePane}-panel`}
+        role="tabpanel"
+        aria-labelledby={`${paneBaseId}-${mobilePane}-tab`}
+        tabIndex={0}
+        className="min-h-0 flex-1 overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)]"
+      >
         {mobilePane === "chat" ? workroomNode : rightPane}
       </div>
     </div>
