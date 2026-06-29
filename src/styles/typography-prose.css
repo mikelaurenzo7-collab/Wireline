@@ -166,3 +166,94 @@
   --tw-prose-pre-bg: var(--wireline-surface-container);
   font-feature-settings: "tnum";
 }
+
+/* ==========================================================================
+   Wireline canonical typography scale — the single source of truth for
+   display headlines, eyebrows, leads, and body across marketing + app.
+   Replaces ~19 scattered text-[Npx] declarations with five steps that
+   scale fluidly from the smallest phone to ultra-wide desktops.
+   ========================================================================== */
+
+/* Display 1 — landing hero headlines (the biggest type on the site). */
+.wl-display-1 {
+  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  color: var(--wireline-color-text-primary);
+  text-wrap: balance;
+}
+
+/* Display 2 — section headlines on marketing, pricing tiers, dashboards. */
+.wl-display-2 {
+  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2rem, 1.3rem + 2.8vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--wireline-color-text-primary);
+  text-wrap: balance;
+}
+
+/* Display 3 — page titles (Account, Billing, Phone, Team, Connections). */
+.wl-display-3 {
+  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--wireline-color-text-primary);
+  text-wrap: balance;
+}
+
+/* Display 4 — card titles and hero number callouts. */
+.wl-display-4 {
+  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.625rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--wireline-color-text-primary);
+}
+
+/* Eyebrow — mono section/category labels. The fixed 11px stays as a
+   visual rest point; everything around it scales. */
+.wl-eyebrow {
+  font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wireline-color-text-tertiary);
+}
+
+/* Lead — large body that sits under hero headlines / page titles. */
+.wl-lead {
+  font-size: clamp(0.9375rem, 0.875rem + 0.3vw, 1.125rem);
+  line-height: 1.6;
+  color: var(--wireline-color-text-secondary);
+  text-wrap: pretty;
+}
+
+/* Body — default running copy. */
+.wl-body {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--wireline-color-text-secondary);
+}
+
+/* Body small — captions, meta lines, secondary copy under cards. */
+.wl-body-sm {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--wireline-color-text-tertiary);
+}
+
+/* Section vertical rhythm — one constant across marketing. */
+.wl-section-y {
+  padding-block: clamp(3rem, 2rem + 4vw, 5.5rem);
+}
+.wl-section-y-tight {
+  padding-block: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
+}
