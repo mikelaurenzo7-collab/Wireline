@@ -21,8 +21,10 @@ describe("product voice cohesion", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE");
+    // Claude Design Overview is a dashboard (greeting + metrics + roster + recent calls),
+    // not a composer surface — the composer-dock utility lives in marketing
+    // and the Studio Workroom now.
     expect(overview).toContain("WORKSPACE_VOICE");
-    expect(overview).toContain("wl-composer-dock");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 });

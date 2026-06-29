@@ -41,16 +41,17 @@ describe("canonical mobile overlay system", () => {
     const shell = source("src/components/WorkspaceShell.tsx");
 
     expect(shell).toContain("function DesktopRail");
-    expect(shell).toContain("function NativeDock");
-    expect(shell).toContain("function MobileWorkspaceNav");
+    // Claude Design mobile chrome: one unified MobileDock + a native-shell gate
+    // around MobileBrowserUtilities (which surfaces billing/integrations in the
+    // mobile browser but is hidden inside native app shells).
+    expect(shell).toContain("function MobileDock");
     expect(shell).toContain("function isNativeAppShell");
     expect(shell).toContain("!nativeAppShell ? <MobileBrowserUtilities />");
-    // Native shells get the native dock; mobile web gets the workspace tab bar.
-    expect(shell).toContain("<NativeDock");
-    expect(shell).toContain("<MobileWorkspaceNav");
+    expect(shell).toContain("<MobileDock");
     // Full Claude Design sidebar IA, posture-aware.
     expect(shell).toContain("WORKSPACE_NAV");
     expect(shell).toContain("OPERATE_NAV");
+    expect(shell).toContain("MOBILE_NAV");
     expect(shell).not.toContain("document.body.style.overflow");
     expect(shell).not.toContain("window.addEventListener");
   });

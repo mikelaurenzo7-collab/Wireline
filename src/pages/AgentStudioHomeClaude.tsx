@@ -5,16 +5,29 @@ import StudioContextChrome from "../components/studio/StudioContextChrome";
 import StudioPageShell from "../components/studio/StudioPageShell";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { useAgents } from "../contexts/AgentsContext";
+import {
+  browserCommandBrief,
+  clearBrowserCommandHash,
+  readBrowserCommandContext,
+} from "../lib/browser-command-context";
 
 export default function AgentStudioHomeClaude() {
   const [params] = useSearchParams();
   const { loading } = useAgents();
   const wantsBusinessAgent = params.get("posture") === "business";
+  const [browserContext] = useState(readBrowserCommandContext);
+  const browserBrief = browserCommandBrief(browserContext);
   const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     if (!loading && params.get("create") === "1") setShowCreate(true);
   }, [loading, params]);
+
+  useEffect(() => {
+    if (!browserBrief) return;
+    setShowCreate(true);
+    clearBrowserCommandHash();
+  }, [browserBrief]);
 
   return (
     <>
@@ -29,7 +42,7 @@ export default function AgentStudioHomeClaude() {
       <CreateAgentDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        initialBrief={params.get("brief") || ""}
+        initialBrief={browserBrief || params.get("brief") || ""}
         business={wantsBusinessAgent}
       />
     </>

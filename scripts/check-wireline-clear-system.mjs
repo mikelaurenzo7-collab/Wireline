@@ -68,13 +68,13 @@ const studioAgentWorkspacePanel = read("src/components/StudioAgentWorkspacePanel
 const studioOverview = read("src/components/StudioOverview.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
 const studioWorkroom = read("src/components/StudioWorkroom.tsx");
-const agentStudioHome = read("src/pages/AgentStudioHome.tsx");
-const agentTraining = read("src/components/AgentTraining.tsx");
-const agentMemoryPanel = read("src/components/AgentMemoryPanel.tsx");
-const assetUpload = read("src/components/AgentAssetUpload.tsx");
+const agentStudioHome = read("src/pages/AgentStudioHomeClaude.tsx");
+// Legacy Training IA (AgentTraining / AgentMemoryPanel / AgentAssetUpload /
+// KnowledgeWorkspace) was retired with the Claude Design Knowledge tab.
+// The new Knowledge surface is built into KnowledgeBaseClaude.tsx.
 const agentConfigPanel = read("src/components/fleet-settings/AgentConfigPanel.tsx");
 const trainingPage = read("src/pages/KnowledgePage.tsx");
-const knowledgeWorkspace = read("src/components/KnowledgeWorkspace.tsx");
+const knowledgeBase = read("src/components/KnowledgeBaseClaude.tsx");
 const assistantComposer = read("src/components/AssistantComposer.tsx");
 const browserCallWidget = read("src/components/marketing/BrowserCallWidget.tsx");
 const trustSignals = read("src/components/marketing/TrustSignals.tsx");
@@ -616,14 +616,14 @@ mustExclude(
 mustInclude(
   "src/pages/SettingsPage.tsx",
   settingsPage,
-  /Account deletion/,
+  /Delete account|Account deletion/,
   "settings must expose account deletion",
 );
 mustInclude(
   "src/pages/BillingSettings.tsx",
   billingSettingsPage,
-  /Start free\. Fund live work\./,
-  "billing must position Personal as start-free live-work funding",
+  /Plans add capacity\. Conversation Balance pays/,
+  "billing must position plans + balance per the Claude Design",
 );
 mustInclude(
   "src/routes/account-routes.ts",
@@ -997,7 +997,7 @@ for (const [file, source] of [
   ["src/pages/AgentsPage.tsx", agentsPage],
   ["src/pages/SettingsPage.tsx", settingsPage],
   ["src/pages/Developers.tsx", developersPage],
-  ["src/components/KnowledgeWorkspace.tsx", knowledgeWorkspace],
+  ["src/components/KnowledgeBaseClaude.tsx", knowledgeBase],
   ["src/components/AssistantComposer.tsx", assistantComposer],
   ["src/components/marketing/BrowserCallWidget.tsx", browserCallWidget],
   ["src/components/marketing/TrustSignals.tsx", trustSignals],
@@ -1046,8 +1046,8 @@ mustInclude(
 mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /nativeAppShell \?\s*\(?\s*<NativeDock/,
-  "bottom dock must only render for native app shells",
+  /!nativeAppShell \?\s*<MobileBrowserUtilities/,
+  "MobileBrowserUtilities must be gated by native app shell detection",
 );
 mustInclude(
   "src/components/StudioOverview.tsx",
@@ -1070,14 +1070,14 @@ mustInclude(
 mustInclude(
   "src/components/CreateAgentDialog.tsx",
   createDialog,
-  /Name, role, voice, personality, and a starting brief|New agent|Quick setup|Create agent/,
-  "create flow must remain a short intake",
+  /Fast Start|~3 minutes/,
+  "create flow must use the Fast Start prompt (Claude Design)",
 );
 mustInclude(
   "src/components/CreateAgentDialog.tsx",
   createDialog,
-  /Create and open Training|Train after|\/training\?agent=/,
-  "create flow must hand cleanly into Training",
+  /\/studio\?agent=/,
+  "create flow must hand cleanly into Studio canvas",
 );
 mustInclude(
   "src/components/AuthPortal.tsx",
@@ -1164,83 +1164,59 @@ for (const [file, source] of [
     "Director visible copy must not revive retired Assistant positioning",
   );
 }
+// Claude Design Training (Knowledge / Voice / Flows / Simulator) — four tabs
+// mounted directly in KnowledgePage; Knowledge tab is the spatial Claude
+// Design surface bound to /api/agent-config.
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
-  /TrainingSurfaceMap/,
-  "Training must expose a visible surface map for facts, instructions, voice, test calls, and memory",
-);
-mustInclude(
-  "src/pages/KnowledgePage.tsx",
-  trainingPage,
-  /Facts, instructions, sources, voice, test calls, and memory\./,
-  "Training must make its full config surface explicit",
+  /KnowledgeBaseClaude/,
+  "Training Knowledge tab must mount the Claude Design Knowledge Base surface",
 );
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
-  /TrainingRail/,
-  "Training must own heavy controls in a side rail",
+  /id: "knowledge"[\s\S]*id: "voice"[\s\S]*id: "flows"[\s\S]*id: "simulator"/,
+  "Training must expose Knowledge, Voice, Flows, and Simulator tabs",
 );
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
-  /label: "Knowledge"[\s\S]*label: "Instructions"[\s\S]*label: "Voice"[\s\S]*label: "Memory"/,
-  "Training rail must expose Knowledge, Instructions, Voice, and Memory",
+  /Flow Composer/,
+  "Training Flows tab must own the Flow Composer stage editor",
 );
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
-  /studioSub: "voices"[\s\S]*studioTab: "memory"/,
-  "Training rail must deep-link to Studio voice and memory surfaces",
+  /Scenario library/,
+  "Training Simulator tab must own the scenario library",
 );
 mustInclude(
-  "src/pages/KnowledgePage.tsx",
-  trainingPage,
-  /AgentAssetUpload/,
-  "Training must own document ingestion",
-);
-// Tailored for vision: intelligence flywheel is core part of flawless Train surface for MOAT and usefulness
-mustInclude(
-  "src/components/KnowledgeWorkspace.tsx",
-  knowledgeWorkspace,
-  /Intelligence from outcomes|applySuggestion|recentOutcomes/,
-  "Training workspace must include intelligence from outcomes panel for the training flywheel MOAT",
+  "src/components/KnowledgeBaseClaude.tsx",
+  knowledgeBase,
+  /\/api\/agent-config\/\$\{encodeURIComponent\(agentId\)\}/,
+  "Knowledge Base must bind to the honest agent-config record",
 );
 mustInclude(
-  "src/components/KnowledgeWorkspace.tsx",
-  knowledgeWorkspace,
-  /params\.get\("section"\)/,
-  "Training workspace must read section from the URL",
+  "src/components/KnowledgeBaseClaude.tsx",
+  knowledgeBase,
+  /\/api\/agent-config\/\$\{encodeURIComponent\(agentId\)\}\/assets/,
+  "document intake must use asset ingestion API",
 );
 mustInclude(
-  "src/components/KnowledgeWorkspace.tsx",
-  knowledgeWorkspace,
-  /updated\.set\("section", next\)/,
-  "Training workspace must persist section changes in the URL",
+  "src/components/KnowledgeBaseClaude.tsx",
+  knowledgeBase,
+  /Knowledge Base/,
+  "Knowledge surface must carry the Claude Design title",
 );
 mustInclude(
-  "src/components/AgentTraining.tsx",
-  agentTraining,
-  /aria-label="Training views"/,
-  "Studio Training must expose sub-tab navigation",
-);
-mustInclude(
-  "src/components/AgentTraining.tsx",
-  agentTraining,
-  /label: "Knowledge"[\s\S]*label: "Voice"[\s\S]*label: "Pronunciation"[\s\S]*label: "Test call"[\s\S]*label: "Conversation flow"/,
-  "Studio Training must expose Knowledge, Voice, Pronunciation, Test call, and Conversation flow",
-);
-mustExclude(
-  "src/components/AgentTraining.tsx",
-  agentTraining,
-  /!onSubTabChange &&/,
-  "Studio Training sub-tabs must not disappear when embedded",
+  "src/components/KnowledgeBaseClaude.tsx",
+  knowledgeBase,
+  /Drop files here or click to upload/,
+  "Knowledge surface must own the Claude Design drop zone",
 );
 for (const [file, source] of [
-  ["src/components/AgentTraining.tsx", agentTraining],
   ["src/components/CreateAgentDialog.tsx", createDialog],
-  ["src/components/AgentMemoryPanel.tsx", agentMemoryPanel],
   ["src/components/StudioOverview.tsx", studioOverview],
   ["src/components/AuthPortal.tsx", authPortal],
   ["src/components/layout/AppShell.tsx", read("src/components/layout/AppShell.tsx")],
@@ -1252,12 +1228,6 @@ for (const [file, source] of [
 ]) {
   mustExclude(file, source, /Â|â|�/, "authenticated surfaces must not expose mojibake");
 }
-mustInclude(
-  "src/components/AgentAssetUpload.tsx",
-  assetUpload,
-  /\/api\/agent-config\/\$\{encodeURIComponent\(agentId\)\}\/assets/,
-  "document intake must use asset ingestion API",
-);
 mustBeDeleted(
   "src/components/marketing/HeroCallPreview.tsx",
   "retired Sarah call preview must stay deleted",

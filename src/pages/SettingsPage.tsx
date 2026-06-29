@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, ShieldCheck } from "lucide-react";
+import { LogOut, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Badge, Button } from "../components/atoms";
@@ -7,6 +7,73 @@ import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
+import { authFetch } from "../lib/api";
+
+function DangerZone() {
+  const [confirmation, setConfirmation] = useState("");
+  const [working, setWorking] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function requestDeletion() {
+    if (confirmation !== "DELETE" || working) return;
+    setWorking(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await authFetch("/api/account/delete", { method: "POST" });
+      if (!response.ok) throw new Error(String(response.status));
+      setMessage("Deletion in progress. You'll receive an email when it completes.");
+    } catch {
+      setError("Couldn't queue the deletion. Try again in a moment.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <section className="studio-card border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
+      <p className="wl-overline" style={{ color: "var(--wireline-color-status-error)" }}>
+        Danger zone
+      </p>
+      <h3 className="mt-2 text-sm font-semibold text-foreground">Delete account</h3>
+      <p className="mt-1.5 text-xs text-muted-foreground">
+        This permanently removes your agents, call logs, and billing history. Type DELETE to
+        confirm.
+      </p>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input
+          aria-label="Type DELETE to confirm"
+          value={confirmation}
+          onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
+          placeholder="DELETE"
+          className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-[0.18em] text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={confirmation !== "DELETE" || working}
+          onClick={requestDeletion}
+          className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
+        >
+          <Trash2 size={14} aria-hidden="true" />
+          {working ? "Queuing…" : "Delete account"}
+        </Button>
+      </div>
+      {message ? (
+        <StatusNotice tone="success" className="mt-4" title="Deletion queued">
+          {message}
+        </StatusNotice>
+      ) : null}
+      {error ? (
+        <StatusNotice tone="destructive" className="mt-4" title="Deletion unavailable">
+          {error}
+        </StatusNotice>
+      ) : null}
+    </section>
+  );
+}
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -87,7 +154,13 @@ export default function SettingsPage() {
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">Sign out of this browser.</p>
               </div>
-              <Button type="button" variant="secondary" size="sm" disabled={signingOut} onClick={handleSignOut}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={signingOut}
+                onClick={handleSignOut}
+              >
                 <LogOut aria-hidden="true" size={14} />
                 {signingOut ? "Signing out..." : "Sign out"}
               </Button>
@@ -99,6 +172,8 @@ export default function SettingsPage() {
             </StatusNotice>
           ) : null}
         </section>
+
+        <DangerZone />
       </div>
     </WorkspaceShell>
   );

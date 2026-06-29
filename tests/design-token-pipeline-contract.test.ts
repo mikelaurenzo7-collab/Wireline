@@ -8,12 +8,20 @@ const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 type TokenLeaf = { $type: string; $value: string | number };
 type TokenGroup = Record<string, TokenLeaf | TokenGroup | string>;
 
-function flatten(group: TokenGroup, path: string[] = [], output: Record<string, string | number> = {}) {
+function flatten(
+  group: TokenGroup,
+  path: string[] = [],
+  output: Record<string, string | number> = {},
+) {
   for (const [key, value] of Object.entries(group)) {
     if (key.startsWith("$")) continue;
     const nextPath = [...path, key];
     if (value && typeof value === "object" && "$value" in value) {
-      output[nextPath.join(".")] = value.$value;
+      const raw = (value as TokenLeaf).$value;
+      // Mirror build-design-tokens.mjs: fontFamily values are emitted quoted
+      // so multi-word names survive CSS variable substitution.
+      output[nextPath.join(".")] =
+        (value as TokenLeaf).$type === "fontFamily" && typeof raw === "string" ? `"${raw}"` : raw;
       continue;
     }
     if (value && typeof value === "object") flatten(value as TokenGroup, nextPath, output);

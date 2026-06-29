@@ -33,7 +33,9 @@ function todayLabel() {
 }
 
 function firstName(name?: string | null, email?: string | null) {
-  return (name?.trim().split(/\s+/)[0] || email?.split("@")[0] || "there").replace(/^./, (letter) => letter.toUpperCase());
+  return (name?.trim().split(/\s+/)[0] || email?.split("@")[0] || "there").replace(/^./, (letter) =>
+    letter.toUpperCase(),
+  );
 }
 
 function agentInitial(name?: string | null) {
@@ -47,8 +49,16 @@ function agentReadiness(agent: WorkspaceAgentSummary, index: number) {
 
 function metricRows(agents: WorkspaceAgentSummary[], hasAgents: boolean, activeAgents: number) {
   return [
-    { label: "Agents", value: String(agents.length), detail: hasAgents ? `${activeAgents} ready` : "Create one" },
-    { label: "Calls today", value: hasAgents ? String(Math.max(agents.length * 2, 1)) : "0", detail: hasAgents ? "3 handled · 1 transferred" : "Waiting for first call" },
+    {
+      label: "Agents",
+      value: String(agents.length),
+      detail: hasAgents ? `${activeAgents} ready` : "Create one",
+    },
+    {
+      label: "Calls today",
+      value: hasAgents ? String(Math.max(agents.length * 2, 1)) : "0",
+      detail: hasAgents ? "3 handled · 1 transferred" : "Waiting for first call",
+    },
     { label: "Connections", value: "3", detail: "Calendar · SMS · CRM" },
     { label: "Balance", value: "$187", detail: "Conversation Balance" },
   ];
@@ -75,9 +85,10 @@ function AgentLoadingRows() {
 
 function CompactAgentRow({ agent, index }: { agent: WorkspaceAgentSummary; index: number }) {
   const active = agent.phone_number;
+  const enc = encodeURIComponent(agent.id);
   return (
     <Link
-      to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+      to={`/studio?agent=${enc}`}
       className={`group flex min-h-[56px] items-center gap-3 rounded-[10px] border px-3 py-2 transition-colors ${
         index === 0
           ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]"
@@ -93,21 +104,34 @@ function CompactAgentRow({ agent, index }: { agent: WorkspaceAgentSummary; index
           {agent.is_business_agent ? "Business" : "Personal"} · {formatAgentRoleLabel(agent.role)}
         </span>
       </span>
-      <span className={`inline-flex shrink-0 items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.1em] ${active ? "text-[var(--wireline-color-status-success)]" : "text-[var(--wireline-color-status-warning)]"}`}>
-        <span className={`size-1.5 rounded-full ${active ? "bg-[var(--wireline-color-status-success)]" : "bg-[var(--wireline-color-status-warning)]"}`} aria-hidden="true" />
+      <span
+        className={`inline-flex shrink-0 items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.1em] ${active ? "text-[var(--wireline-color-status-success)]" : "text-[var(--wireline-color-status-warning)]"}`}
+      >
+        <span
+          className={`size-1.5 rounded-full ${active ? "bg-[var(--wireline-color-status-success)]" : "bg-[var(--wireline-color-status-warning)]"}`}
+          aria-hidden="true"
+        />
         {agentReadiness(agent, index)}
       </span>
-      <ArrowRight className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+      <ArrowRight
+        className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
+        aria-hidden="true"
+      />
     </Link>
   );
 }
 
-function AgentSection({ title, kind, agents }: { title: "Personal" | "Business"; kind: "personal" | "business"; agents: WorkspaceAgentSummary[] }) {
+type AgentKind = "personal" | "business";
+
+function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgentSummary[] }) {
+  // Literal "Personal agents" / "Business agents" so test regexes and the
+  // Claude Design copy stay aligned and don't depend on string interpolation.
+  const heading = kind === "personal" ? "Personal agents" : "Business agents";
   return (
-    <section>
+    <section aria-label={heading}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
-          {title} agents
+          {heading}
         </p>
         <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
           {agents.length}
@@ -140,7 +164,7 @@ export default function OverviewPage() {
   const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
 
   return (
-    <WorkspaceShell title="" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
+    <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
       <div className="wl-overview mx-auto flex w-full max-w-[980px] flex-col gap-8 pb-8">
         <section className="relative">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
@@ -166,11 +190,18 @@ export default function OverviewPage() {
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Workspace metrics">
+        <section
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          aria-label="Workspace metrics"
+        >
           {metricRows(agents, hasAgents, activeAgents).map((item) => (
             <div key={item.label} className="studio-card min-h-[120px] p-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">{item.label}</p>
-              <div className="mt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">{loading && item.label === "Agents" ? "--" : item.value}</div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                {item.label}
+              </p>
+              <div className="mt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">
+                {loading && item.label === "Agents" ? "--" : item.value}
+              </div>
               <p className="mt-3 text-xs text-muted-foreground">{item.detail}</p>
             </div>
           ))}
@@ -204,7 +235,9 @@ export default function OverviewPage() {
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">Agents</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                  Agents
+                </p>
                 <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
                   Personal + business lines
                 </h2>
@@ -217,8 +250,8 @@ export default function OverviewPage() {
               <AgentLoadingRows />
             ) : (
               <div className="grid gap-5">
-                <AgentSection title="Personal" kind="personal" agents={personalAgents} />
-                <AgentSection title="Business" kind="business" agents={businessAgents} />
+                <AgentSection kind="personal" agents={personalAgents} />
+                <AgentSection kind="business" agents={businessAgents} />
               </div>
             )}
           </article>
@@ -226,8 +259,12 @@ export default function OverviewPage() {
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">Recent calls</p>
-                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">What changed today</h2>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                  Recent calls
+                </p>
+                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
+                  What changed today
+                </h2>
               </div>
               <Link to="/call-logs" className="text-xs font-semibold text-primary hover:underline">
                 View all →
@@ -235,13 +272,24 @@ export default function OverviewPage() {
             </div>
             <div className="grid gap-0 divide-y divide-border/70">
               {RECENT_CALLS.map((call) => (
-                <Link key={`${call.name}-${call.meta}`} to="/call-logs" className="group flex items-center gap-3 py-3 first:pt-1 last:pb-1">
+                <Link
+                  key={`${call.name}-${call.meta}`}
+                  to="/call-logs"
+                  className="group flex items-center gap-3 py-3 first:pt-1 last:pb-1"
+                >
                   <span className="size-2 rounded-full bg-primary/80" aria-hidden="true" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">{call.name} — {call.outcome}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{primaryAgent?.name || "Agent"} · {call.meta}</span>
+                    <span className="block truncate text-sm font-semibold text-foreground">
+                      {call.name} — {call.outcome}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {primaryAgent?.name || "Agent"} · {call.meta}
+                    </span>
                   </span>
-                  <Clock3 className="size-3.5 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
+                  <Clock3
+                    className="size-3.5 text-muted-foreground transition-colors group-hover:text-primary"
+                    aria-hidden="true"
+                  />
                 </Link>
               ))}
             </div>
@@ -249,7 +297,9 @@ export default function OverviewPage() {
         </section>
 
         <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-6 text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">One continuous line</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
+            One continuous line
+          </p>
           <p className="mt-3 font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.02em]">
             A call that starts on your phone finishes in your Inbox.
           </p>

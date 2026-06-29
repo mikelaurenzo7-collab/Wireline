@@ -31,12 +31,14 @@ describe("authenticated agent flow", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const productCopy = read("src/lib/product-copy.ts");
     const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
-    const studioHome = read("src/pages/AgentStudioHome.tsx");
+    const studioHome = read("src/pages/AgentStudioHomeClaude.tsx");
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
-    expect(createDialog).toContain("Create agent");
+    // Claude Design create flow is a Fast Start, not a legacy "Create agent" form.
+    expect(createDialog).toContain("Fast Start");
+    expect(createDialog).toContain("~3 minutes to your first agent");
     expect(productCopy).toContain('createHeadline: "Wire an agent."');
-    expect(productCopy).toContain('emptyCue: "Brief it. Train it. Wire it."');
+    expect(productCopy).toContain('emptyCue: "Brief it. Train it.');
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
     expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');
