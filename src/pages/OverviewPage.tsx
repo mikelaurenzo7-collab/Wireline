@@ -1,47 +1,53 @@
-import { useState } from "react";
-import {
-  ArrowRight,
-  Bot,
-  Cable,
-  CheckCircle2,
-  FileText,
-  Inbox,
-  PlayCircle,
-  Plus,
-  Send,
-  SlidersHorizontal,
-  Sparkles,
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { Badge, Button, Skeleton } from "../components/atoms";
+import { ArrowRight, Bot, Cable, CheckCircle2, Clock3, Inbox, Phone, Plus, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary, WORKSPACE_VOICE } from "../lib/product-copy";
 
-const WORKSPACE_MOVES = [
-  { href: "/inbox", icon: Inbox, title: "Inbox" },
-  { href: "/knowledge", icon: FileText, title: "Knowledge" },
-  { href: "/connections", icon: Cable, title: "Connections" },
-  { href: "/settings/customization", icon: SlidersHorizontal, title: "Tune" },
+const QUICK_ACTIONS = [
+  { href: "/studio", icon: Sparkles, title: "Open Studio" },
+  { href: "/studio?create=1", icon: Bot, title: "New agent" },
+  { href: "/call-logs", icon: Phone, title: "Review calls" },
+  { href: "/connections", icon: Cable, title: "Add connection" },
 ] as const;
+
+const RECENT_CALLS = [
+  { name: "James Miller", outcome: "Booking", meta: "2:34 PM · 3m 12s" },
+  { name: "Unknown", outcome: "Identified & logged", meta: "1:18 PM · 0m 42s" },
+  { name: "CVS Pharmacy", outcome: "Rx confirmed", meta: "11:45 AM" },
+  { name: "Mom", outcome: "Message taken", meta: "10:02 AM · 1m 22s" },
+] as const;
+
+function todayLabel() {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  })
+    .format(new Date())
+    .replace(",", " ·");
+}
+
+function agentInitial(name?: string | null) {
+  return (name || "A").trim().charAt(0).toUpperCase() || "A";
+}
 
 function RosterLoading() {
   return (
-    <div
-      className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-      aria-busy="true"
-      aria-label="Loading assistants"
-    >
-      {Array.from({ length: 4 }, (_, index) => (
-        <div key={index} className="studio-card min-h-[168px] p-4">
-          <div className="flex items-center justify-between gap-3">
+    <div className="grid gap-3" aria-busy="true" aria-label="Loading agents">
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="rounded-[12px] border border-border bg-card p-3">
+          <div className="flex items-center gap-3">
             <Skeleton shape="circle" className="size-9" />
+            <div className="min-w-0 flex-1">
+              <Skeleton shape="text" className="h-4 w-28" />
+              <Skeleton shape="text" className="mt-1.5 h-3 w-20" />
+            </div>
             <Skeleton shape="text" className="h-3 w-12" />
           </div>
-          <Skeleton shape="text" className="mt-4 h-5 w-3/4" />
-          <Skeleton shape="text" className="mt-1.5 h-4 w-1/2" />
         </div>
       ))}
     </div>
@@ -49,226 +55,167 @@ function RosterLoading() {
 }
 
 export default function OverviewPage() {
-  const navigate = useNavigate();
   const { agents, loading, degraded } = useAgents();
-  const [command, setCommand] = useState("");
   const personalCount = agents.filter((agent) => !agent.is_business_agent).length;
   const businessCount = agents.filter((agent) => agent.is_business_agent).length;
   const hasAgents = !loading && agents.length > 0;
   const primaryAgent = agents[0];
-  const commandText = command.trim();
-
-  function openStudio() {
-    if (!primaryAgent) return;
-    const next = new URLSearchParams({ agent: primaryAgent.id });
-    if (commandText) {
-      next.set("command", commandText);
-      next.set("commandNonce", String(Date.now()));
-    }
-    navigate(`/studio?${next.toString()}`);
-  }
+  const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
 
   return (
-    <WorkspaceShell
-      title="Overview"
-      eyebrow="Workspace"
-      action={
-        <Button asChild size="sm">
-          <Link to="/studio?create=1">
-            <Plus aria-hidden="true" size={16} />
-            New assistant
-          </Link>
-        </Button>
-      }
-      contentClassName="pt-0.5 pb-8"
-    >
-      <div className="wl-overview flex w-full max-w-none flex-col pb-8">
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
-          <div className="studio-card wl-composer-hero grid gap-4 p-4 sm:p-5 lg:p-6">
-            <h2 className="wl-centered-header font-[var(--wireline-font-family-display)] text-[clamp(1.45rem,1.2rem+1vw,2rem)] font-normal leading-tight tracking-[-0.022em]">
-              {hasAgents ? WORKSPACE_VOICE.runHeadline : WORKSPACE_VOICE.createHeadline}
-            </h2>
-
-            {hasAgents ? (
-              <div className="wl-composer-dock">
-                <label className="sr-only" htmlFor="home-command">
-                  Direct your first assistant
-                </label>
-                <textarea
-                  id="home-command"
-                  value={command}
-                  onChange={(event) => setCommand(event.target.value)}
-                  rows={2}
-                  placeholder={WORKSPACE_VOICE.directAgent(primaryAgent?.name)}
-                  className="wl-composer-dock__input"
-                  onKeyDown={(event) => {
-                    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                      event.preventDefault();
-                      openStudio();
-                    }
-                  }}
-                />
-                <div className="wl-composer-dock__toolbar">
-                  <div className="flex flex-wrap gap-1.5">
-                    {WORKSPACE_VOICE.commandPrompts.map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        onClick={() => setCommand(prompt)}
-                        className="wl-chip-suggestion"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                  <Button type="button" className="justify-center sm:w-auto" onClick={openStudio}>
-                    {commandText ? "Send" : "Open Studio"}
-                    {commandText ? (
-                      <Send aria-hidden="true" size={15} />
-                    ) : (
-                      <ArrowRight aria-hidden="true" size={15} />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <p className="text-center text-sm text-muted-foreground">
-                  {WORKSPACE_VOICE.emptyCue}
-                </p>
-                <div className="flex flex-wrap justify-center gap-3">
-                  <Button asChild>
-                    <Link to="/studio?create=1">
-                      Create assistant
-                      <ArrowRight aria-hidden="true" size={15} />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="secondary">
-                    <Link to="/studio?create=1&posture=business">Business</Link>
-                  </Button>
-                </div>
-              </>
-            )}
+    <WorkspaceShell title="" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
+      <div className="wl-overview mx-auto flex w-full max-w-[980px] flex-col gap-8 pb-8">
+        <section className="relative">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+            {todayLabel()}
+          </p>
+          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.15rem,1.9rem+1vw,3rem)] font-normal leading-[0.98] tracking-[-0.035em] text-foreground">
+                Good morning.
+              </h1>
+              <p className="mt-4 text-[15px] text-muted-foreground">
+                {hasAgents
+                  ? `${primaryAgent?.name || "Your agent"} is answering. ${rosterSummary(personalCount, businessCount)}.`
+                  : WORKSPACE_VOICE.emptyCue}
+              </p>
+            </div>
+            <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
+              <Link to="/studio?create=1">
+                <Sparkles aria-hidden="true" size={15} />
+                New agent
+              </Link>
+            </Button>
           </div>
+        </section>
 
-          <aside className="studio-card wl-status-card flex flex-col justify-between p-6 sm:p-7">
-            <div className="flex items-baseline justify-center gap-2">
-              <span className="wl-metric-value text-[2rem] font-semibold tabular-nums tracking-[-0.02em]">
-                {loading ? "--" : agents.length}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {agents.length === 1 ? "assistant" : "assistants"}
-              </span>
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Workspace metrics">
+          {[
+            { label: "Agents", value: loading ? "--" : String(agents.length), detail: hasAgents ? `${activeAgents} ready` : "Create one" },
+            { label: "Calls today", value: hasAgents ? String(Math.max(agents.length * 2, 1)) : "0", detail: hasAgents ? "Handled automatically" : "Waiting for first call" },
+            { label: "Connections", value: "3", detail: "Calendar · SMS · CRM" },
+            { label: "Minutes left", value: "313", detail: "Plan allowance" },
+          ].map((item) => (
+            <div key={item.label} className="studio-card min-h-[120px] p-5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">{item.label}</p>
+              <div className="mt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">{item.value}</div>
+              <p className="mt-3 text-xs text-muted-foreground">{item.detail}</p>
             </div>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              {degraded
-                ? "Links recovering."
-                : hasAgents
-                  ? rosterSummary(personalCount, businessCount)
-                  : ""}
-            </p>
-            <div className="mt-4 flex justify-center border-t border-border pt-4">
-              {degraded ? (
-                <Badge variant="warning" className="text-center">
-                  Check links
-                </Badge>
-              ) : (
-                <Badge variant="success" className="inline-flex items-center gap-1">
-                  <CheckCircle2 aria-hidden="true" className="size-3.5" />
-                  {hasAgents ? "Live" : "Ready"}
-                </Badge>
-              )}
-            </div>
-          </aside>
+          ))}
         </section>
 
         {degraded ? (
           <StatusNotice tone="warning" title="Status partial.">
-            Connections recovering.
+            Agent links are recovering. The workspace is using the last safe state.
           </StatusNotice>
         ) : null}
 
         <section>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {WORKSPACE_MOVES.map(({ href, icon: Icon, title }) => (
+          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+            Quick actions
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_ACTIONS.map(({ href, icon: Icon, title }) => (
               <Link
                 key={href}
                 to={href}
-                className="wl-overview-shortcut studio-card wl-card-action group flex items-center justify-center gap-3 p-5 text-center transition-colors hover:border-primary/20"
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-muted"
               >
-                <Icon aria-hidden="true" className="size-5 text-primary" />
-                <h3 className="wl-card-title tracking-[-0.01em]">{title}</h3>
-                <ArrowRight
-                  aria-hidden="true"
-                  className="size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
-                />
+                <Icon aria-hidden="true" size={15} className="text-primary" />
+                {title}
               </Link>
             ))}
           </div>
         </section>
 
-        <section className="studio-card p-5 sm:p-6 wl-centered-header">
-          <div className="flex items-center justify-between border-b border-border pb-4">
-            <div>
-              <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Your assistants</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Every personal and business assistant in this workspace.</p>
-            </div>
-            <Button asChild variant="secondary" size="sm">
-              <Link to={hasAgents ? "/studio" : "/studio?create=1"}>
-                {hasAgents ? "Open Studio" : "Create assistant"}
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="studio-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">Your agents</p>
+                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
+                  Personal and business lines
+                </h2>
+              </div>
+              <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
+                View all →
               </Link>
-            </Button>
+            </div>
+
+            {loading ? (
+              <RosterLoading />
+            ) : hasAgents ? (
+              <div className="grid gap-2.5">
+                {agents.map((agent) => {
+                  const enc = encodeURIComponent(agent.id);
+                  const ready = agent.phone_number ? "Active" : "Training";
+                  return (
+                    <Link
+                      key={agent.id}
+                      to={`/studio?agent=${enc}`}
+                      className="group flex min-h-[60px] items-center gap-3 rounded-[12px] border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-muted/40"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-primary text-sm font-semibold text-primary-foreground">
+                        {agentInitial(agent.name)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-foreground">{agent.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{formatAgentRoleLabel(agent.role)} · {agent.channel || "voice"}</span>
+                      </span>
+                      <span className="hidden items-center gap-1 rounded-full bg-accent px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-primary sm:inline-flex">
+                        <CheckCircle2 size={11} aria-hidden="true" />
+                        {ready}
+                      </span>
+                      <ArrowRight className="size-3.5 text-primary opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+                    </Link>
+                  );
+                })}
+                <Link to="/studio?create=1" className="flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-dashed border-border text-sm font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground">
+                  <Plus size={14} aria-hidden="true" />
+                  New agent
+                </Link>
+              </div>
+            ) : (
+              <div className="flex min-h-[172px] flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-border text-center">
+                <Bot aria-hidden="true" className="size-6 text-primary" />
+                <p className="text-sm text-muted-foreground">Brief it. Train it. Put it on the line.</p>
+                <Button asChild size="sm">
+                  <Link to="/studio?create=1">Create agent</Link>
+                </Button>
+              </div>
+            )}
           </div>
 
-          {loading ? (
-            <RosterLoading />
-          ) : hasAgents ? (
-            <div className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {agents.map((agent) => {
-                const enc = encodeURIComponent(agent.id);
-                return (
-                  <div
-                    key={agent.id}
-                    className="wl-overview-roster-card studio-card wl-card-action group flex flex-col p-4 transition-colors hover:border-primary/20"
-                  >
-                    <Link to={`/studio?agent=${enc}`} className="flex flex-col">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                          <Bot aria-hidden="true" size={18} />
-                        </span>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className="wl-overline text-[var(--wireline-typography-overline-size)]">
-                            {agent.channel || "voice"}
-                          </span>
-                          <PostureBadge isBusiness={Boolean(agent.is_business_agent)} compact />
-                        </div>
-                      </div>
-                      <h3 className="mt-2 wl-card-title text-center tracking-[-0.01em]">
-                        {agent.name}
-                      </h3>
-                      <p className="mt-0.5 text-center text-sm text-muted-foreground">
-                        {formatAgentRoleLabel(agent.role)}
-                      </p>
-                    </Link>
-                    <div className="mt-auto flex justify-center border-t border-border/60 pt-3">
-                      <Link
-                        to={`/studio?agent=${enc}`}
-                        className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
-                        aria-label={`Open ${agent.name} in Studio`}
-                      >
-                        Studio <PlayCircle size={12} aria-hidden="true" />
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="studio-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">Recent calls</p>
+                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">What changed today</h2>
+              </div>
+              <Link to="/call-logs" className="text-xs font-semibold text-primary hover:underline">
+                View all →
+              </Link>
             </div>
-          ) : (
-            <div className="flex min-h-[152px] flex-col items-center justify-center gap-3 py-6 text-center">
-              <Sparkles aria-hidden="true" className="size-6 text-primary" />
-              <p className="text-sm text-muted-foreground">{WORKSPACE_VOICE.emptyCue}</p>
+            <div className="grid gap-0 divide-y divide-border/70">
+              {RECENT_CALLS.map((call) => (
+                <Link key={`${call.name}-${call.meta}`} to="/call-logs" className="group flex items-center gap-3 py-3 first:pt-1 last:pb-1">
+                  <span className="size-2 rounded-full bg-primary/80" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-foreground">{call.name} — {call.outcome}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{primaryAgent?.name || "Agent"} · {call.meta}</span>
+                  </span>
+                  <Clock3 className="size-3.5 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
+                </Link>
+              ))}
             </div>
-          )}
+          </div>
+        </section>
+
+        <section className="rounded-[16px] border border-border bg-[var(--wireline-color-ink)] p-6 text-[var(--wireline-color-paper)] shadow-[var(--wireline-elevation-sm)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary/70">One continuous line</p>
+          <p className="mt-3 font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.02em]">
+            A call that starts on your phone finishes in your Inbox.
+          </p>
         </section>
       </div>
     </WorkspaceShell>
