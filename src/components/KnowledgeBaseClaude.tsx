@@ -268,52 +268,51 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         aria-label="Ingested knowledge"
         aria-busy={loading ? "true" : undefined}
       >
-        {loading ? (
-          Array.from({ length: 3 }, (_, index) => (
-            <div
-              key={index}
-              className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
-            />
-          ))
-        ) : knowledge.length === 0 ? (
-          <div className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-6 text-center text-sm text-[var(--wireline-color-text-secondary)]">
-            No knowledge yet. Drop a doc below or paste facts in Studio.
-          </div>
-        ) : (
-          knowledge.map((entry, index) => {
-            const badge = fileBadge(entry.source);
-            return (
-              <article
-                key={entry.id ?? `k-${index}`}
-                className="flex items-center gap-3.5 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
-              >
-                <div
-                  className="grid size-9 shrink-0 place-items-center rounded-[9px] font-[var(--wireline-font-mono)] text-[11px] font-bold"
-                  style={{ background: SUCCESS_SURFACE, color: TEXT_HEX_DEEP }}
-                >
-                  {badge}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-                    {entryHeadline(entry.content, entry.source)}
-                  </div>
-                  <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                    {entrySubtitle(entry.content)}
-                  </div>
-                </div>
-                <span
-                  className="rounded-[5px] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
-                  style={{
-                    background: SUCCESS_SURFACE,
-                    color: "var(--wireline-color-status-success)",
-                  }}
-                >
-                  Active
-                </span>
-              </article>
-            );
-          })
-        )}
+        {loading
+          ? Array.from({ length: 3 }, (_, index) => (
+              <div
+                key={index}
+                className="h-[68px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
+              />
+            ))
+          : knowledge.length === 0
+            ? // Drop zone below already invites uploads — keep this row out of the
+              // way when empty so the page reads as: stats -> upload, not
+              // stats -> empty pill -> identical upload pill.
+              null
+            : knowledge.map((entry, index) => {
+                const badge = fileBadge(entry.source);
+                return (
+                  <article
+                    key={entry.id ?? `k-${index}`}
+                    className="flex items-center gap-3.5 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
+                  >
+                    <div
+                      className="grid size-9 shrink-0 place-items-center rounded-[9px] font-[var(--wireline-font-mono)] text-[11px] font-bold"
+                      style={{ background: SUCCESS_SURFACE, color: TEXT_HEX_DEEP }}
+                    >
+                      {badge}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                        {entryHeadline(entry.content, entry.source)}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
+                        {entrySubtitle(entry.content)}
+                      </div>
+                    </div>
+                    <span
+                      className="rounded-[5px] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
+                      style={{
+                        background: SUCCESS_SURFACE,
+                        color: "var(--wireline-color-status-success)",
+                      }}
+                    >
+                      Active
+                    </span>
+                  </article>
+                );
+              })}
       </section>
 
       <div
