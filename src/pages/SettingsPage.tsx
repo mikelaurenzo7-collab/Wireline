@@ -1,91 +1,23 @@
 import { useState } from "react";
-import { LogOut, ShieldAlert, Trash2 } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { Button } from "../components/atoms";
+import { Badge, Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
-import { authFetch } from "../lib/api";
 
-function DangerZone() {
-  const [confirmation, setConfirmation] = useState("");
-  const [working, setWorking] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function requestDeletion() {
-    if (confirmation !== "DELETE" || working) return;
-    setWorking(true);
-    setMessage(null);
-    setError(null);
-    try {
-      const response = await authFetch("/api/account/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmation }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Deletion request failed.");
-      const date = body?.scheduled_purge_at
-        ? new Date(body.scheduled_purge_at).toLocaleDateString()
-        : "after the grace window";
-      setMessage(`Delete queued. Purge scheduled for ${date}.`);
-      setConfirmation("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Deletion request failed.");
-    } finally {
-      setWorking(false);
-    }
-  }
-
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
-    <section className="studio-card border-destructive/20 p-5 sm:p-6">
-      <div className="flex gap-3">
-        <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-destructive" />
-        <div className="min-w-0 flex-1">
-          <p className="wl-overline text-destructive/80">Danger zone</p>
-          <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground">
-            Account deletion
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Queue deletion only when the workspace should stop answering for good.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-            <label className="grid gap-1.5 text-sm font-semibold text-foreground">
-              Type DELETE
-              <input
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-                className="h-11 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-primary/40"
-                autoComplete="off"
-                inputMode="text"
-              />
-            </label>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={confirmation !== "DELETE" || working}
-              onClick={requestDeletion}
-            >
-              <Trash2 aria-hidden="true" size={16} />
-              {working ? "Requesting..." : "Request deletion"}
-            </Button>
-          </div>
-          {message ? (
-            <StatusNotice tone="info" className="mt-4" title="Deletion queued">
-              {message}
-            </StatusNotice>
-          ) : null}
-          {error ? (
-            <StatusNotice tone="destructive" className="mt-4" title="Deletion unavailable">
-              {error}
-            </StatusNotice>
-          ) : null}
-        </div>
-      </div>
-    </section>
+    <label className="grid gap-2 text-sm font-semibold text-foreground">
+      {label}
+      <input
+        readOnly
+        value={value}
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground outline-none"
+      />
+    </label>
   );
 }
 
@@ -94,8 +26,8 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const accountLabel = user?.email || user?.full_name?.trim() || "Signed in";
-  const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Mike";
+  const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace owner";
+  const email = user?.email || "owner@example.com";
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -111,49 +43,55 @@ export default function SettingsPage() {
   }
 
   return (
-    <WorkspaceShell eyebrow="Settings" title="Account" contentClassName="pt-1 pb-8">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5 pb-10">
+    <WorkspaceShell title="" eyebrow="" contentClassName="pt-0 pb-10">
+      <div className="mx-auto flex w-full max-w-[700px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(260px,0.45fr)_minmax(0,1fr)] xl:items-center">
-          <div>
-            <p className="wl-overline">Signed in as</p>
-            <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-.03em] text-foreground">
-              {displayName}
-            </h2>
-            <p data-wireline-preserve-case className="mt-2 truncate text-sm text-muted-foreground">
-              {accountLabel}
-            </p>
-          </div>
-          <div className="grid gap-3 rounded-2xl bg-muted/40 p-4 sm:grid-cols-3">
-            {[
-              ["Plan", "Pro"],
-              ["Workspace", "Wireline"],
-              ["Status", "Active"],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-border bg-background px-4 py-3">
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  {label}
-                </p>
-                <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
-              </div>
-            ))}
+        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+          Account
+        </h1>
+
+        <section className="studio-card p-5 sm:p-6">
+          <p className="wl-overline">Profile</p>
+          <div className="mt-5 grid gap-4">
+            <ReadOnlyField label="Name" value={displayName} />
+            <ReadOnlyField label="Email" value={email} />
+            <ReadOnlyField label="Company" value="Wireline" />
           </div>
         </section>
 
         <section className="studio-card p-5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="wl-overline">Session</p>
-              <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground">
-                Device access
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">Sign out of this browser.</p>
+          <p className="wl-overline">Security</p>
+          <div className="mt-5 grid gap-3">
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Password</p>
+                <p className="mt-1 text-xs text-muted-foreground">Last changed 14 days ago</p>
+              </div>
+              <Button type="button" variant="secondary" size="sm">
+                Change
+              </Button>
             </div>
-            <Button type="button" variant="secondary" disabled={signingOut} onClick={handleSignOut}>
-              <LogOut aria-hidden="true" size={16} />
-              {signingOut ? "Signing out..." : "Sign out"}
-            </Button>
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Two-factor auth</p>
+                <p className="mt-1 text-xs text-muted-foreground">TOTP via authenticator app</p>
+              </div>
+              <Badge variant="success">Enabled</Badge>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <ShieldCheck size={15} className="text-primary" aria-hidden="true" />
+                  Session
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Sign out of this browser.</p>
+              </div>
+              <Button type="button" variant="secondary" size="sm" disabled={signingOut} onClick={handleSignOut}>
+                <LogOut aria-hidden="true" size={14} />
+                {signingOut ? "Signing out..." : "Sign out"}
+              </Button>
+            </div>
           </div>
           {error ? (
             <StatusNotice tone="destructive" className="mt-4" title="Sign-out unavailable">
@@ -161,8 +99,6 @@ export default function SettingsPage() {
             </StatusNotice>
           ) : null}
         </section>
-
-        <DangerZone />
       </div>
     </WorkspaceShell>
   );
