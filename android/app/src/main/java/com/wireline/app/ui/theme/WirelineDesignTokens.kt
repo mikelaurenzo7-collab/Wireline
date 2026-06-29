@@ -35,7 +35,7 @@ internal object WirelineDesignTokens {
     val colorSurfaceSubtle = Color(0xFFFAFAF8)
     val colorTextOnAction = Color(0xFFFFFFFF)
     val colorTextPrimary = Color(0xFF1C1C1A)
-    val colorTextSecondary = Color(0xFF6B6B65)
+    val colorTextSecondary = Color(0xFF4D4D48)
     val colorTextTertiary = Color(0xFF7B7B75)
   }
 

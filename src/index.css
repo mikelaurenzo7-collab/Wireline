@@ -21,6 +21,30 @@
   --color-success-foreground: var(--wireline-color-text-onAction);
   --color-surface: var(--wireline-color-surface-default);
   --color-warning: var(--wireline-color-status-warning);
+
+  /* shadcn-style semantic tokens — register here so Tailwind v4 actually
+     generates `bg-primary`, `text-primary-foreground`, `bg-card`,
+     `text-foreground`, `border-border`, etc. These were defined in `:root`
+     (foundation.css) but never reached @theme, so the utilities were
+     silently dropped — `wl-eyebrow text-primary-foreground` on the dark
+     pricing badge rendered with no color override and no green background. */
+  --color-background: var(--wireline-color-canvas-default);
+  --color-foreground: var(--wireline-color-text-primary);
+  --color-card: var(--wireline-color-surface-default);
+  --color-card-foreground: var(--wireline-color-text-primary);
+  --color-popover: var(--wireline-color-surface-default);
+  --color-popover-foreground: var(--wireline-color-text-primary);
+  --color-primary: var(--wireline-color-action-primary-default);
+  --color-primary-foreground: var(--wireline-color-text-onAction);
+  --color-secondary: var(--wireline-color-surface-subtle);
+  --color-secondary-foreground: var(--wireline-color-text-primary);
+  --color-muted: var(--wireline-color-surface-subtle);
+  --color-muted-foreground: var(--wireline-color-text-secondary);
+  --color-accent: var(--wireline-color-action-primary-container);
+  --color-accent-foreground: var(--wireline-color-text-primary);
+  --color-border: var(--wireline-color-border-default);
+  --color-input: var(--wireline-color-border-default);
+  --color-ring: var(--wireline-color-focus-default);
 }
 
 /* Wireline — Letterpress design system. */
@@ -44,6 +68,7 @@ body {
   background: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
   font-family:
+    "Inter",
     var(--wireline-font-family-body),
     "DM Sans",
     ui-sans-serif,
@@ -52,14 +77,21 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  font-weight: 450;
   --wl-font-display: "Instrument Serif";
-  --wl-font-sans: "DM Sans";
+  --wl-font-sans: "Inter";
   --wl-font-mono: "Space Mono";
   font-feature-settings:
     "kern" 1,
     "tnum" 1,
-    "ss01" 1;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    "ss01" 1,
+    "cv11" 1;
+  /* `optimizeLegibility` triggers iOS Safari's contextual ligature path,
+     which softens kerning and adds visible blur at body sizes. `geometricPrecision`
+     keeps glyph outlines exact. */
+  text-rendering: geometricPrecision;
+  /* Subpixel keeps stem widths crisp on LCD/OLED. `antialiased` was thinning
+     stems and making body copy feel ghosted on warm paper. */
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
 }

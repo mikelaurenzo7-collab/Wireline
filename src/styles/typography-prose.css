@@ -173,11 +173,11 @@
    Replaces ~19 scattered text-[Npx] declarations with five steps that
    scale fluidly from the smallest phone to ultra-wide desktops.
 
-   Colors live in :where() so any Tailwind text-* utility wins. Without
-   this, the unlayered class color (e.g. text-tertiary on .wl-eyebrow)
-   beats every Tailwind utility — turning .wl-eyebrow.text-primary into
-   washed-out gray, and `wl-eyebrow text-primary-foreground` pills into
-   invisible text on a green bg. Specificity 0,1,0 → 0,0,0 fixes both.
+   Defaults live in @layer base so any Tailwind utility wins automatically
+   (utilities are in their own higher layer; unlayered CSS would have beaten
+   them regardless of :where() specificity gymnastics). The class itself
+   stays unlayered for the font/size/line-height side — those *should* win,
+   since they're what makes the class identifiable.
    ========================================================================== */
 
 /* Display 1 — landing hero headlines (the biggest type on the site). */
@@ -189,9 +189,6 @@
   letter-spacing: -0.035em;
   text-wrap: balance;
 }
-:where(.wl-display-1) {
-  color: var(--wireline-color-text-primary);
-}
 
 /* Display 2 — section headlines on marketing, pricing tiers, dashboards. */
 .wl-display-2 {
@@ -201,9 +198,6 @@
   line-height: 1.02;
   letter-spacing: -0.03em;
   text-wrap: balance;
-}
-:where(.wl-display-2) {
-  color: var(--wireline-color-text-primary);
 }
 
 /* Display 3 — page titles (Account, Billing, Phone, Team, Connections). */
@@ -215,9 +209,6 @@
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
-:where(.wl-display-3) {
-  color: var(--wireline-color-text-primary);
-}
 
 /* Display 4 — card titles and hero number callouts. */
 .wl-display-4 {
@@ -227,23 +218,15 @@
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
-:where(.wl-display-4) {
-  color: var(--wireline-color-text-primary);
-}
 
 /* Eyebrow — mono section/category labels. The fixed 11px stays as a
-   visual rest point; everything around it scales. Default color sits
-   in :where() so consumers can override with text-primary, text-muted,
-   text-primary-foreground without specificity gymnastics. */
+   visual rest point; everything around it scales. */
 .wl-eyebrow {
   font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-:where(.wl-eyebrow) {
-  color: var(--wireline-color-text-secondary);
 }
 
 /* Lead — large body that sits under hero headlines / page titles. */
@@ -252,17 +235,11 @@
   line-height: 1.6;
   text-wrap: pretty;
 }
-:where(.wl-lead) {
-  color: var(--wireline-color-text-secondary);
-}
 
 /* Body — default running copy. */
 .wl-body {
   font-size: 0.9375rem;
   line-height: 1.65;
-}
-:where(.wl-body) {
-  color: var(--wireline-color-text-secondary);
 }
 
 /* Body small — captions, meta lines, secondary copy under cards. */
@@ -270,8 +247,23 @@
   font-size: 0.8125rem;
   line-height: 1.55;
 }
-:where(.wl-body-sm) {
-  color: var(--wireline-color-text-tertiary);
+
+/* Default colors — in @layer base so any Tailwind text-* utility wins. */
+@layer base {
+  .wl-display-1,
+  .wl-display-2,
+  .wl-display-3,
+  .wl-display-4 {
+    color: var(--wireline-color-text-primary);
+  }
+  .wl-eyebrow,
+  .wl-lead,
+  .wl-body {
+    color: var(--wireline-color-text-secondary);
+  }
+  .wl-body-sm {
+    color: var(--wireline-color-text-tertiary);
+  }
 }
 
 /* Section vertical rhythm — one constant across marketing. */
