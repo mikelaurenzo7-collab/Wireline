@@ -104,7 +104,7 @@ function StudioEmptyState() {
           </div>
         </div>
 
-        <p className="mt-5 text-[10px] text-muted-foreground/70 sm:mt-6">
+        <p className="mt-5 text-[10px] text-muted-foreground sm:mt-6">
           After creation, open the agent’s workspace for full voice previews, personality,
           knowledge, tools, and business routing.
         </p>

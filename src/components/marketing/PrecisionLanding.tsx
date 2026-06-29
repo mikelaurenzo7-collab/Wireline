@@ -443,7 +443,7 @@ export default function PrecisionLanding() {
                     {name}
                   </h3>
                   <p className="mb-5 text-[14px] leading-[1.6] text-muted-foreground">{body}</p>
-                  <p className="wl-eyebrow text-muted-foreground/60">{plan}</p>
+                  <p className="wl-eyebrow text-muted-foreground">{plan}</p>
                 </div>
               ))}
             </div>

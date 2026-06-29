@@ -448,7 +448,7 @@ export default function StudioAgentWorkspacePanel({
                   workspace only.
                 </p>
               </div>
-              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
                 Scoped to agent
               </div>
             </div>
