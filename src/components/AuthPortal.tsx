@@ -249,7 +249,7 @@ function AuthBrandPanel({ headerActive }: { headerActive: "signin" | "signup" })
     <aside className="wl-auth-brand-panel" aria-hidden="true">
       <div className="wl-auth-brand-glow" />
       <div className="wl-auth-brand-top">
-        <Link to="/" className="wl-auth-brand-mark">
+        <Link to="/" className="wl-auth-brand-mark" tabIndex={-1}>
           <span className="wl-auth-brand-badge">W</span>
           <span className="wl-auth-brand-word">Wireline</span>
         </Link>
@@ -686,10 +686,16 @@ export default function AuthPortal() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((value) => !value)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showPassword}
                       className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
                       tabIndex={-1}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      )}
                     </button>
                   </div>
                   {isSignUp && strengthLabel && (

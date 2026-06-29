@@ -253,15 +253,15 @@ function StudioAgentBar({
               pillRef={activeAgentId === agent.id ? activePillRef : undefined}
             />
           ))}
-          <Link
-            to="/studio?create=1"
-            aria-label="Wire another agent"
-            title="Wire another agent"
-            className="inline-flex shrink-0 items-center justify-center rounded-full border border-dashed border-border/80 bg-background px-2 py-1 text-muted-foreground transition-colors hover:border-primary/35 hover:bg-muted hover:text-foreground min-h-[44px] min-w-[44px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
-          >
-            <Plus size={14} aria-hidden="true" />
-          </Link>
         </div>
+        <Link
+          to="/studio?create=1"
+          aria-label="Wire another agent"
+          title="Wire another agent"
+          className="inline-flex shrink-0 items-center justify-center rounded-full border border-dashed border-border/80 bg-background px-2 py-1 text-muted-foreground transition-colors hover:border-primary/35 hover:bg-muted hover:text-foreground min-h-[44px] min-w-[44px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
+        >
+          <Plus size={14} aria-hidden="true" />
+        </Link>
 
         <div className="flex shrink-0 items-center gap-1">
           {activeAgent ? (
@@ -531,7 +531,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </span>
       </Link>
 
-      <p className="px-2.5 pb-2 pt-2.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-tertiary)]">
+      <p className="px-2.5 pb-2 pt-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
         Workspace
       </p>
       <nav className="flex flex-col gap-0.5" aria-label="Workspace">
@@ -546,7 +546,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         ))}
       </nav>
 
-      <p className="px-2.5 pb-2 pt-4 font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-tertiary)]">
+      <p className="px-2.5 pb-2 pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
         Operate
       </p>
       <nav className="flex flex-1 flex-col gap-0.5" aria-label="Operate">
@@ -573,7 +573,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
           <span className="block truncate text-[13px] font-medium text-foreground">
             {displayName}
           </span>
-          <span className="block text-[11px] text-[color:var(--wireline-color-text-tertiary)]">
+          <span className="block text-[11px] text-[color:var(--wireline-color-text-secondary)]">
             {postureLabel} · {rosterLabel(agents.length)}
           </span>
         </span>
