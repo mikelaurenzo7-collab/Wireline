@@ -4,12 +4,14 @@ export const STUDIO_CANVAS_VISION = WIRELINE_DESIGN_VISION.studioCanvas;
 
 export const STUDIO_CANVAS_SURFACES = {
   appRoutes: "src/routes/AppRoutes.tsx",
-  studioShell: "src/components/studio/StudioPageShell.tsx",
+  studioShell: "src/components/WorkspaceShell.tsx",
+  studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
   spatialCanvas: "src/components/StudioAgentCanvas.tsx",
   workroom: "src/components/StudioWorkroom.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
+  overview: "src/pages/OverviewPage.tsx",
   studioHome: "src/pages/AgentStudioHomeClaude.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
   activeAgentHook: "src/hooks/useStudioActiveAgentId.ts",
@@ -20,9 +22,8 @@ export type StudioCanvasSurfaceKey = keyof typeof STUDIO_CANVAS_SURFACES;
 
 export const STUDIO_CANVAS_FORBIDDEN = {
   appRoutes: [{ id: "old-studio-route", pattern: /pages\/AgentStudioHome"/ }],
-  studioHome: [{ id: "old-shell", pattern: /WorkspaceShell/ }],
-  studioShell: [
-    { id: "agent-tablist", pattern: /role="tablist"/ },
+  studioPageShell: [
+    { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
   studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
@@ -37,12 +38,14 @@ export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
     { id: "studio-route", pattern: /path="\/studio"/ },
+    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/studio"/ },
   ],
   studioHome: [
     { id: "dedicated-studio-shell", pattern: /StudioPageShell/ },
     { id: "context-chrome", pattern: /StudioContextChrome/ },
     { id: "canvas-orchestrator", pattern: /StudioWorkspaceV2/ },
   ],
+  studioPageShell: [{ id: "shared-workspace-shell", pattern: /WorkspaceShell/ }],
   studioShell: [
     { id: "workspace-navigation", pattern: /aria-label="Workspace navigation"/ },
     { id: "rail-width", pattern: /w-\[236px\]/ },
@@ -50,16 +53,23 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "route-active-state", pattern: /useLocation/ },
     { id: "apps-route", pattern: /href: "\/apps"/ },
     { id: "studio-route", pattern: /href === "\/studio"/ },
-    { id: "user-card", pattern: /rosterLabel/ },
+    { id: "assistants-label", pattern: /label: "Assistants"/ },
     { id: "touch-target", pattern: /min-h-\[44px\]/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   studioChrome: [
-    { id: "breadcrumb", pattern: /Studio breadcrumb/ },
+    { id: "breadcrumb", pattern: /Studio breadcrumb|Assistant breadcrumb/ },
     { id: "readiness", pattern: /94% ready|82% ready/ },
-    { id: "test-call", pattern: /Run test call/ },
+    { id: "test-call", pattern: /Run test call|Test call/ },
     { id: "deploy", pattern: /Deploy/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
+  ],
+  overview: [
+    { id: "overview-title", pattern: /title="Overview"/ },
+    { id: "new-assistant", pattern: /New assistant/ },
+    { id: "all-assistants", pattern: /agents\.map/ },
+    { id: "no-slice", pattern: /Your assistants/ },
+    { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
   ],
   canvas: [
     { id: "chat-left-workroom", pattern: /<StudioWorkroom/ },
