@@ -3,6 +3,7 @@ import { ChevronDown, Mail, Plus, ShieldCheck, UserPlus, X } from "lucide-react"
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
+import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 type Role = "Owner" | "Admin" | "Member" | "Viewer";
@@ -64,83 +65,85 @@ export default function TeamSettings() {
   };
 
   return (
-    <WorkspaceShell eyebrow="Workspace" title="Team" contentClassName="pt-1 pb-8">
-      <div className="min-h-0 flex-1 pb-12">
-        <div className="mx-auto max-w-[920px] space-y-5">
-          <section className="studio-card flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-center sm:text-left">
-              <Badge variant="info">
-                <ShieldCheck size={14} />
-                Business
-              </Badge>
-              <h2 className="mt-2 text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.01em] text-foreground">
-                Your team.
-              </h2>
-            </div>
-            <Button type="button" onClick={() => setIsInviteOpen(true)}>
-              <UserPlus size={16} />
-              Invite
-            </Button>
-          </section>
+    <WorkspaceShell eyebrow="Settings" title="Team" contentClassName="pt-1 pb-8">
+      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5 pb-10">
+        <SettingsTabs />
 
-          <section className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border bg-muted/40 px-5 py-4 sm:px-6">
-              <h3 className="font-semibold text-foreground">Roster</h3>
-              <Badge variant="outline">
-                {mockTeam.filter((member) => member.status === "Active").length} active
-              </Badge>
-            </div>
-            <div className="divide-y divide-border">
-              {mockTeam.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-muted/20 sm:p-5"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--wireline-color-surface-subtle)] text-sm font-medium text-[color:var(--wireline-color-action-primary-default)]">
-                      {member.avatarInitials}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {member.name}
-                        {member.role === "Owner" ? (
-                          <span className="ml-2 text-xs font-normal text-muted-foreground">
-                            (You)
-                          </span>
-                        ) : null}
-                      </p>
-                      <p
-                        data-wireline-preserve-case
-                        className="truncate text-[var(--wireline-typography-caption-size)] text-muted-foreground"
-                      >
-                        {member.email}
-                      </p>
-                    </div>
+        <section className="studio-card flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div>
+            <p className="wl-overline">Team</p>
+            <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-.03em] text-foreground">
+              People with the keys.
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">Invite teammates without crowding the workspace.</p>
+          </div>
+          <Button type="button" onClick={() => setIsInviteOpen(true)}>
+            <UserPlus size={16} />
+            Invite
+          </Button>
+        </section>
+
+        <section className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border bg-muted/40 px-5 py-4 sm:px-6">
+            <h3 className="font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-.022em] text-foreground">
+              Roster
+            </h3>
+            <Badge variant="outline">
+              {mockTeam.filter((member) => member.status === "Active").length} active
+            </Badge>
+          </div>
+          <div className="divide-y divide-border">
+            {mockTeam.map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-muted/20 sm:p-5"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[color:var(--wireline-color-surface-subtle)] text-sm font-medium text-[color:var(--wireline-color-action-primary-default)]">
+                    {member.avatarInitials}
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    {member.status === "Pending" ? (
-                      <Badge variant="warning">
-                        <Mail size={12} />
-                        Invited
-                      </Badge>
-                    ) : member.role === "Owner" ? (
-                      <Badge variant="success">Owner</Badge>
-                    ) : (
-                      <Button type="button" variant="ghost" size="sm" className="px-3">
-                        {member.role}
-                        <ChevronDown size={14} className="text-muted-foreground" />
-                      </Button>
-                    )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {member.name}
+                      {member.role === "Owner" ? (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">(You)</span>
+                      ) : null}
+                    </p>
+                    <p
+                      data-wireline-preserve-case
+                      className="truncate text-[var(--wireline-typography-caption-size)] text-muted-foreground"
+                    >
+                      {member.email}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
+                <div className="flex shrink-0 items-center gap-3">
+                  {member.status === "Pending" ? (
+                    <Badge variant="warning">
+                      <Mail size={12} />
+                      Invited
+                    </Badge>
+                  ) : member.role === "Owner" ? (
+                    <Badge variant="success">Owner</Badge>
+                  ) : (
+                    <Button type="button" variant="ghost" size="sm" className="px-3">
+                      {member.role}
+                      <ChevronDown size={14} className="text-muted-foreground" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-          <StatusNotice tone="warning" title="Access is role-based">
-            Give elevated controls only to people who should manage agents and integrations.
-          </StatusNotice>
-        </div>
+        <StatusNotice
+          tone="warning"
+          title="Access is role-based"
+          icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
+        >
+          Give elevated controls only to people who should manage agents and integrations.
+        </StatusNotice>
       </div>
 
       {isInviteOpen ? (
