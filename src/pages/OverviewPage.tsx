@@ -33,9 +33,21 @@ function todayLabel() {
 }
 
 function firstName(name?: string | null, email?: string | null) {
-  return (name?.trim().split(/\s+/)[0] || email?.split("@")[0] || "there").replace(/^./, (letter) =>
-    letter.toUpperCase(),
-  );
+  // Prefer the real full_name first token. Falls through to the email local
+  // part with username noise stripped — trailing digits ("mike97" -> "Mike"),
+  // dot/underscore segments ("mike.laurenzo" -> "Mike"), and a length guard
+  // so a 14-char username doesn't dominate the greeting. Anything that still
+  // looks unfriendly degrades to "there" so we never greet a username.
+  const fromName = name?.trim().split(/\s+/)[0];
+  if (fromName) return fromName.replace(/^./, (letter) => letter.toUpperCase());
+  const local = email?.split("@")[0]?.trim();
+  if (!local) return "there";
+  const cleaned = local
+    .split(/[._-]/)[0]
+    .replace(/\d+$/, "")
+    .replace(/[^A-Za-z]/g, "");
+  if (!cleaned || cleaned.length < 2 || cleaned.length > 14) return "there";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
 }
 
 function agentInitial(name?: string | null) {
