@@ -14,12 +14,14 @@ export const STUDIO_CANVAS_VISION = {
 
 export const STUDIO_CANVAS_SURFACES = {
   appRoutes: "src/routes/AppRoutes.tsx",
-  studioShell: "src/components/studio/StudioPageShell.tsx",
+  studioShell: "src/components/WorkspaceShell.tsx",
+  studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
   spatialCanvas: "src/components/StudioAgentCanvas.tsx",
   workroom: "src/components/StudioWorkroom.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
+  overview: "src/pages/OverviewPage.tsx",
   studioHome: "src/pages/AgentStudioHomeClaude.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
   activeAgentHook: "src/hooks/useStudioActiveAgentId.ts",
@@ -28,8 +30,10 @@ export const STUDIO_CANVAS_SURFACES = {
 };
 
 export const STUDIO_CANVAS_FORBIDDEN = {
-  studioHome: [{ id: "old-workspace-shell", pattern: /WorkspaceShell/ }],
-  studioShell: [{ id: "agent-tablist", pattern: /role="tablist"/ }],
+  studioPageShell: [
+    { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
+    { id: "agent-tablist", pattern: /role="tablist"/ },
+  ],
   studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
   canvas: [{ id: "agent-roster-grid", pattern: /Your agents/ }],
   spatialCanvas: [{ id: "prototype-name", pattern: /\bSarah\b/ }],
@@ -37,24 +41,35 @@ export const STUDIO_CANVAS_FORBIDDEN = {
 };
 
 export const STUDIO_CANVAS_REQUIRED = {
-  appRoutes: [{ id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ }],
+  appRoutes: [
+    { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
+    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/studio"/ },
+  ],
   studioHome: [
     { id: "dedicated-shell", pattern: /StudioPageShell/ },
     { id: "context-chrome", pattern: /StudioContextChrome/ },
     { id: "canvas", pattern: /StudioWorkspaceV2/ },
   ],
+  studioPageShell: [{ id: "shared-shell", pattern: /WorkspaceShell/ }],
   studioShell: [
     { id: "workspace-navigation", pattern: /Workspace navigation/ },
     { id: "rail-width", pattern: /w-\[236px\]/ },
     { id: "apps-route", pattern: /\/apps/ },
     { id: "route-active-state", pattern: /useLocation/ },
-    { id: "route-pathname", pattern: /pathname/ },
+    { id: "assistants-route", pattern: /label: "Assistants"/ },
+    { id: "studio-active-state", pattern: /href === "\/studio"/ },
   ],
   studioChrome: [
-    { id: "breadcrumb", pattern: /Studio breadcrumb/ },
+    { id: "breadcrumb", pattern: /Studio breadcrumb|Assistant breadcrumb/ },
     { id: "readiness", pattern: /94% ready|82% ready/ },
-    { id: "test-call", pattern: /Run test call/ },
+    { id: "test-call", pattern: /Run test call|Test call/ },
     { id: "deploy", pattern: /Deploy/ },
+  ],
+  overview: [
+    { id: "overview-title", pattern: /title="Overview"/ },
+    { id: "new-assistant", pattern: /New assistant/ },
+    { id: "full-roster", pattern: /agents\.map/ },
+    { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],
   canvas: [
     { id: "chat-left", pattern: /<StudioWorkroom/ },
@@ -110,7 +125,7 @@ export function assertStudioCanvasContract(sources, { mustInclude, mustExclude }
     for (const rule of rules) mustInclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, `studio canvas: ${rule.id}`);
   }
   for (const path of STUDIO_CANVAS_LINK_SURFACES) {
-    const key = path.includes("OverviewPage") ? "overviewPage" : path.includes("StudioOverview") ? "studioOverview" : "workspacePanel";
+    const key = path.includes("OverviewPage") ? "overview" : path.includes("StudioOverview") ? "studioOverview" : "workspacePanel";
     mustExclude(path, get(key), /mode=workroom/, "legacy workroom mode must not appear in studio links");
   }
   mustInclude(STUDIO_CANVAS_SURFACES.designVision, get("designVision"), /minTouchTargetPx:\s*44/, "design vision must document Studio touch targets");
