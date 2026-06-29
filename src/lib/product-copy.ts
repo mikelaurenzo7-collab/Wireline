@@ -10,6 +10,13 @@ export const MARKETING_VOICE = {
   differentiator: "Wireline answers them.",
 } as const;
 
+export const BUSINESS_MARKETING_VOICE = {
+  eyebrow: "for business · v1 in beta",
+  proof: ["Books in your calendar", "Routes urgent calls", "Logs every conversation"],
+  differentiator: "Wireline keeps the line open.",
+  beforeStrip: "Hold music turns leads away.",
+} as const;
+
 export const WORKSPACE_VOICE = {
   createHeadline: "Wire an agent.",
   runHeadline: "Your phone is covered.",
