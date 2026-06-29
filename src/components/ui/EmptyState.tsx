@@ -121,6 +121,10 @@ export function EmptyState({
           {actions.map((action, index) => {
             const isPrimary = !!action.primary;
 
+            const primaryTextStyle = isPrimary
+              ? { color: "var(--wireline-color-text-onAction)" }
+              : undefined;
+
             if (action.to) {
               const internal = action.to.startsWith("/") && !action.to.startsWith("//");
               return (
@@ -128,6 +132,7 @@ export function EmptyState({
                   key={index}
                   asChild
                   variant={isPrimary ? "default" : "outline"}
+                  style={primaryTextStyle}
                   className={cn(
                     "rounded-full touch-press w-full sm:w-auto justify-center",
                     isPrimary && "app-primary-action",
@@ -156,6 +161,7 @@ export function EmptyState({
                 key={index}
                 onClick={action.onClick}
                 variant={isPrimary ? "default" : "outline"}
+                style={primaryTextStyle}
                 className={cn(
                   "rounded-full touch-press w-full sm:w-auto justify-center",
                   isPrimary && "app-primary-action",
