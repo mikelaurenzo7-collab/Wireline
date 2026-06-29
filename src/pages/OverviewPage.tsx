@@ -138,7 +138,7 @@ function AgentCard({
 function AddAgentCard({ kind }: { kind: "personal" | "business" }) {
   return (
     <Link
-      to="/studio?create=1"
+      to={`/studio?create=1&posture=${kind}`}
       className="flex min-h-[214px] flex-col items-center justify-center rounded-[16px] border-2 border-dashed border-border bg-background/30 p-5 text-center transition-colors hover:border-primary/40 hover:bg-muted/30"
     >
       <span className="grid size-10 place-items-center rounded-[10px] bg-accent text-primary">
