@@ -34,13 +34,14 @@ export const WIRELINE_DESIGN_VISION = {
   ],
   voiceModules: ["MARKETING_VOICE", "WORKSPACE_VOICE", "PRODUCT_POSTURE"],
   studioCanvas: {
-    // Claude Design Agent Studio: chat composer (left) + spatial Agent Canvas
-    // (right) as the default. The canvas is a connected grid of agent-config
-    // cards (Identity · Voice → Workflows → Knowledge · Situations → Call
-    // Model); ?view=workspace swaps the right pane for the deep editor form.
+    // Claude Design Agent Studio: a route-correct workspace rail, a compact
+    // context chrome (breadcrumb, readiness, test/deploy), and a split pane:
+    // 380px-ish builder chat on the left + spatial Agent Canvas cards on the
+    // right. Agent switching belongs in the Assistants directory / Overview
+    // preview, not as a second roster strip inside Studio.
     defaultSurface: "chat-plus-canvas",
     canvasSurface: "spatial-cards",
-    agentSwitcher: "horizontal-bar",
+    agentSwitcher: "context-chrome",
     railWidthPx: 236,
     workspaceDepthParam: "view=workspace",
     minTouchTargetPx: 44,
