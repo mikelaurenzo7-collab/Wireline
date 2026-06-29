@@ -16,12 +16,15 @@ describe("agent navigation contract", () => {
   const productCopy = read("src/lib/product-copy.ts");
   const appsPage = read("src/pages/ClientAppsPage.tsx");
   const pricingPage = read("src/pages/Pricing.tsx");
+  const connectionsPage = read("src/pages/ConnectionsPage.tsx");
+  const settingsPage = read("src/pages/SettingsPage.tsx");
+  const billingPage = read("src/pages/BillingSettings.tsx");
+  const teamPage = read("src/pages/TeamSettings.tsx");
 
-  it("keeps Studio off the primary rail while exposing agents in Overview", () => {
+  it("keeps the old Assistants rail out while exposing agents in Overview", () => {
     expect(workspaceShell).not.toMatch(/label:\s*"Assistants"/);
     expect(workspaceShell).not.toMatch(/label:\s*"Agent Studio"/);
     expect(workspaceShell).toMatch(/label:\s*"Overview"/);
-    expect(workspaceShell).toMatch(/label:\s*"Studio"/);
     expect(workspaceShell).toMatch(/aria-label="Agents"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
   });
@@ -53,5 +56,16 @@ describe("agent navigation contract", () => {
     expect(pricingPage).toMatch(/Conversation Balance/);
     expect(pricingPage).toMatch(/Balance pays for live work\. Plans add the business layer\./);
     expect(pricingPage).not.toMatch(/Starter|Try 7 days free|\$79/);
+  });
+
+  it("migrates secondary workspace pages to the new quiet screenshot system", () => {
+    expect(connectionsPage).toMatch(/Tools your agents can use when handling a call/);
+    expect(connectionsPage).toMatch(/Available to connect/);
+    expect(settingsPage).toMatch(/Profile/);
+    expect(settingsPage).toMatch(/Security/);
+    expect(billingPage).toMatch(/Current plan/);
+    expect(billingPage).toMatch(/Team[\s\S]*\$\{teamPlan\.price_usd_monthly\}\/mo/);
+    expect(teamPage).toMatch(/Members/);
+    expect([connectionsPage, settingsPage, billingPage, teamPage].join("\n")).not.toMatch(/assistant|Assistant|Assistants|Pro —|500 min|Sarah Connor|Miles Dyson|Kyle Reese|John Connor/);
   });
 });
