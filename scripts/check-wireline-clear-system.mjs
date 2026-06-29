@@ -45,7 +45,8 @@ const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
 const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
 const agentsPage = read("src/pages/AgentsPage.tsx");
 const overviewPage = read("src/pages/OverviewPage.tsx");
-const actionsPage = read("src/pages/ActionsPage.tsx");
+// ActionsPage retired with the outbound dialer; Wire/Connections lives under
+// /connections now and is exercised by other contracts below.
 const pricingPage = read("src/pages/Pricing.tsx");
 const featuresPage = read("src/pages/Features.tsx");
 const aboutPage = read("src/pages/About.tsx");
@@ -561,7 +562,7 @@ mustInclude(
   /Workspace for|Memory/,
   "per-agent workspace holds memory and grouped sections",
 );
-mustInclude("src/pages/ActionsPage.tsx", actionsPage, /Wire/, "Wire route must use current naming");
+// ActionsPage retired — Wire surface is /connections.
 mustInclude("src/pages/Pricing.tsx", pricingPage, /Personal/, "pricing must position Personal");
 mustInclude("src/pages/Pricing.tsx", pricingPage, /Team/, "pricing must position Team");
 mustInclude("src/pages/Pricing.tsx", pricingPage, /Business/, "pricing must position Business");
