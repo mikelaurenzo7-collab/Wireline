@@ -54,7 +54,7 @@ export default function ClientAppsPage() {
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
             Your control surfaces
           </p>
-          <h1 className="mt-4 max-w-[16ch] font-[var(--wireline-font-family-display)] text-[clamp(2rem,1.4rem+3vw,4rem)] font-normal leading-[1.02] tracking-[-0.035em] text-foreground">
+          <h1 className="wl-display-2 mt-4 max-w-[16ch]">
             One agent system, wherever the conversation starts.
           </h1>
           <p className="mt-5 max-w-[54ch] text-[15px] leading-7 text-muted-foreground">

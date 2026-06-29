@@ -40,18 +40,14 @@ export default function BillingSettings() {
         <section className="grid gap-4 sm:grid-cols-2">
           <article className="studio-card p-5">
             <p className="wl-overline">Conversation Balance</p>
-            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.5vw,2.2rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-              $187
-            </p>
+            <p className="wl-display-3 mt-4">$187</p>
             <div className="mt-5 h-2 rounded-full bg-muted">
               <div className="h-full w-[38%] rounded-full bg-primary" />
             </div>
           </article>
           <article className="studio-card p-5">
             <p className="wl-overline">Next invoice</p>
-            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.5vw,2.2rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-              {invoiceTotal}
-            </p>
+            <p className="wl-display-3 mt-4">{invoiceTotal}</p>
             <p className="mt-5 text-sm text-muted-foreground">Due July 1, 2026</p>
           </article>
         </section>
