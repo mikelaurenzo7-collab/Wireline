@@ -4,10 +4,14 @@
  * Tokens: src/styles/foundation.css and src/styles/design-system.css
  */
 
+import { AUTHENTICATED_SURFACE_CONTRACT } from "./authenticated-surface-contract";
 import { WIRELINE_DESIGN_VISION } from "./wireline-design-vision";
 
 /** Canonical vision metadata for tooling and contracts. */
 export const WL_VISION = WIRELINE_DESIGN_VISION;
+
+/** Authenticated Claude Design screen contract for Settings, Training, and IA hierarchy. */
+export const WL_AUTHENTICATED_SURFACE_CONTRACT = AUTHENTICATED_SURFACE_CONTRACT;
 
 /** Wireline Letterpress accent used across shared UI surfaces. */
 export const WL_BRAND = {
