@@ -37,9 +37,10 @@ describe("agent navigation contract", () => {
 
   it("uses the screenshot-inspired overview as the personal and business roster", () => {
     expect(overviewPage).toMatch(/Good morning/);
-    expect(overviewPage).toMatch(/Personal and business agent roster/);
-    expect(overviewPage).toMatch(/title="Personal"/);
-    expect(overviewPage).toMatch(/title="Business"/);
+    expect(overviewPage).toMatch(/Personal \+ business lines/);
+    expect(overviewPage).toMatch(/Personal agents/);
+    expect(overviewPage).toMatch(/Business agents/);
+    expect(overviewPage).toMatch(/Browse templates/);
     expect(overviewPage).toMatch(/posture=/);
     expect(overviewPage).toMatch(/Recent calls/);
     expect(overviewPage).toMatch(/Quick actions/);
@@ -67,12 +68,15 @@ describe("agent navigation contract", () => {
     expect(studioCanvas).toMatch(/Setup health/);
   });
 
-  it("uses agent language across studio entry points", () => {
+  it("uses agent language and Fast Start across studio entry points", () => {
     expect(studioChrome).toMatch(/New agent/);
     expect(studioChrome).not.toMatch(/New assistant|Assistants/);
-    expect(createDialog).toMatch(/New agent\.|Create agent/);
-    expect(createDialog).toMatch(/\/knowledge\?agent=/);
-    expect(createDialog).not.toMatch(/\/training\?agent=/);
+    expect(createDialog).toMatch(/Fast Start/);
+    expect(createDialog).toMatch(/~3 minutes to your first agent/);
+    expect(createDialog).toMatch(/What do you need handled/);
+    expect(createDialog).toMatch(/Provision number/);
+    expect(createDialog).toMatch(/\/studio\?agent=/);
+    expect(createDialog).not.toMatch(/\/training\?agent=|\/knowledge\?agent=/);
     expect(productCopy).toMatch(/Brief it\. Train it\. Put it on the line\./);
   });
 
