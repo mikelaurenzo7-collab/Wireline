@@ -1,4 +1,4 @@
-import { ArrowRight, Bot, Cable, Clock3, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, Cable, Phone, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Button, Skeleton } from "../components/atoms";
@@ -15,13 +15,6 @@ const QUICK_ACTIONS = [
   { href: "/connections", icon: Cable, title: "Add connection" },
 ] as const;
 
-const RECENT_CALLS = [
-  { name: "James Miller", outcome: "Booking", meta: "2:34 PM · 3m 12s" },
-  { name: "Unknown", outcome: "Identified & logged", meta: "1:18 PM · 0m 42s" },
-  { name: "CVS Pharmacy", outcome: "Rx confirmed", meta: "11:45 AM" },
-  { name: "Mom", outcome: "Message taken", meta: "10:02 AM · 1m 22s" },
-] as const;
-
 function todayLabel() {
   return new Intl.DateTimeFormat(undefined, {
     weekday: "long",
@@ -32,46 +25,59 @@ function todayLabel() {
     .replace(",", " ·");
 }
 
+function titleCaseFirstGrapheme(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "there";
+  const [first = "", ...rest] = Array.from(trimmed);
+  return `${first.toLocaleUpperCase()}${rest.join("")}`;
+}
+
 function firstName(name?: string | null, email?: string | null) {
-  // Prefer the real full_name first token. Falls through to the email local
-  // part with username noise stripped — trailing digits ("mike97" -> "Mike"),
-  // dot/underscore segments ("mike.laurenzo" -> "Mike"), and a length guard
-  // so a 14-char username doesn't dominate the greeting. Anything that still
-  // looks unfriendly degrades to "there" so we never greet a username.
-  const fromName = name?.trim().split(/\s+/)[0];
-  if (fromName) return fromName.replace(/^./, (letter) => letter.toUpperCase());
+  const fromName = name?.trim().split(/\s+/u)[0];
+  if (fromName) return titleCaseFirstGrapheme(fromName);
+
   const local = email?.split("@")[0]?.trim();
   if (!local) return "there";
-  const cleaned = local
-    .split(/[._-]/)[0]
-    .replace(/\d+$/, "")
-    .replace(/[^A-Za-z]/g, "");
-  if (!cleaned || cleaned.length < 2 || cleaned.length > 14) return "there";
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+
+  const firstSegment = local.split(/[._-]/u)[0]?.replace(/\p{Number}+$/u, "") ?? "";
+  const lettersOnly = Array.from(firstSegment).every((char) => /\p{Letter}/u.test(char));
+  if (!lettersOnly || firstSegment.length < 2 || firstSegment.length > 14) return "there";
+
+  return titleCaseFirstGrapheme(firstSegment.toLocaleLowerCase());
 }
 
 function agentInitial(name?: string | null) {
-  return (name || "A").trim().charAt(0).toUpperCase() || "A";
+  const [first = "A"] = Array.from((name || "A").trim());
+  return first.toLocaleUpperCase() || "A";
 }
 
 function agentReadiness(agent: WorkspaceAgentSummary) {
   return agent.phone_number ? "Active" : "Training";
 }
 
-function metricRows(agents: WorkspaceAgentSummary[], hasAgents: boolean, activeAgents: number) {
+function metricRows(agents: WorkspaceAgentSummary[], loading: boolean) {
+  const activeAgents = agents.filter((agent) => agent.phone_number).length;
   return [
     {
       label: "Agents",
-      value: String(agents.length),
-      detail: hasAgents ? `${activeAgents} ready` : "Create one",
+      value: loading ? "--" : String(agents.length),
+      detail: agents.length ? `${activeAgents} active · ${agents.length - activeAgents} training` : "Create one",
     },
     {
       label: "Calls today",
-      value: hasAgents ? String(Math.max(agents.length * 2, 1)) : "0",
-      detail: hasAgents ? "3 handled · 1 transferred" : "Waiting for first call",
+      value: "0",
+      detail: "Connect call logs to populate",
     },
-    { label: "Connections", value: "3", detail: "Calendar · SMS · CRM" },
-    { label: "Balance", value: "$187", detail: "Conversation Balance" },
+    {
+      label: "Connections",
+      value: "0",
+      detail: "Add Calendar, SMS, or CRM",
+    },
+    {
+      label: "Balance",
+      value: "--",
+      detail: "Shown after billing sync",
+    },
   ];
 }
 
@@ -135,8 +141,6 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
 type AgentKind = "personal" | "business";
 
 function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgentSummary[] }) {
-  // Literal "Personal agents" / "Business agents" so test regexes and the
-  // Claude Design copy stay aligned and don't depend on string interpolation.
   const heading = kind === "personal" ? "Personal agents" : "Business agents";
   return (
     <section aria-label={heading}>
@@ -170,7 +174,6 @@ export default function OverviewPage() {
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
   const hasAgents = !loading && agents.length > 0;
   const primaryAgent = agents[0];
-  const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
 
   return (
     <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
@@ -186,7 +189,7 @@ export default function OverviewPage() {
               </h1>
               <p className="mt-3 max-w-prose text-[14px] leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
                 {hasAgents
-                  ? `Your line is active. ${primaryAgent?.name || "Your agent"} is answering.`
+                  ? `Your line is active. ${primaryAgent?.name || "Your agent"} is ready for the next workflow.`
                   : WORKSPACE_VOICE.emptyCue}
               </p>
             </div>
@@ -199,17 +202,14 @@ export default function OverviewPage() {
           </div>
         </section>
 
-        <section
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-          aria-label="Workspace metrics"
-        >
-          {metricRows(agents, hasAgents, activeAgents).map((item) => (
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Workspace metrics">
+          {metricRows(agents, loading).map((item) => (
             <div key={item.label} className="studio-card min-h-[120px] p-5">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {item.label}
               </p>
               <div className="mt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">
-                {loading && item.label === "Agents" ? "--" : item.value}
+                {item.value}
               </div>
               <p className="mt-3 text-xs text-muted-foreground">{item.detail}</p>
             </div>
@@ -279,28 +279,13 @@ export default function OverviewPage() {
                 View all →
               </Link>
             </div>
-            <div className="grid gap-0 divide-y divide-border/70">
-              {RECENT_CALLS.map((call) => (
-                <Link
-                  key={`${call.name}-${call.meta}`}
-                  to="/call-logs"
-                  className="group flex items-center gap-3 py-3 first:pt-1 last:pb-1"
-                >
-                  <span className="size-2 rounded-full bg-primary/80" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">
-                      {call.name} — {call.outcome}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {primaryAgent?.name || "Agent"} · {call.meta}
-                    </span>
-                  </span>
-                  <Clock3
-                    className="size-3.5 text-muted-foreground transition-colors group-hover:text-primary"
-                    aria-hidden="true"
-                  />
-                </Link>
-              ))}
+            <div className="grid min-h-[176px] place-items-center rounded-[12px] border border-dashed border-border bg-background/40 px-5 py-8 text-center">
+              <div>
+                <p className="text-sm font-semibold text-foreground">No calls logged yet.</p>
+                <p className="mt-2 max-w-[28ch] text-xs leading-relaxed text-muted-foreground">
+                  Live activity will appear here after your first connected call. Nothing is mocked.
+                </p>
+              </div>
             </div>
           </article>
         </section>
