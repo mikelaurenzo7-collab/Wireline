@@ -3,7 +3,7 @@ import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import { MARKETING_VOICE } from "../../lib/product-copy";
+import { BUSINESS_MARKETING_VOICE, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
 // ─── Live call card (hero illustration) ────────────────────────────────────
@@ -363,7 +363,10 @@ export default function PrecisionLanding() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-6">
-                {MARKETING_VOICE.proof.map((item) => (
+                {(audience === "business"
+                  ? BUSINESS_MARKETING_VOICE.proof
+                  : MARKETING_VOICE.proof
+                ).map((item) => (
                   <div
                     key={item}
                     className="flex items-center gap-2 text-[13px] text-muted-foreground"
@@ -392,8 +395,17 @@ export default function PrecisionLanding() {
               fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
             }}
           >
-            Siri silences unknowns.{" "}
-            <span className="text-[#F7F6F3]">{MARKETING_VOICE.differentiator}</span>
+            {audience === "business" ? (
+              <>
+                {BUSINESS_MARKETING_VOICE.beforeStrip}{" "}
+                <span className="text-[#F7F6F3]">{BUSINESS_MARKETING_VOICE.differentiator}</span>
+              </>
+            ) : (
+              <>
+                Siri silences unknowns.{" "}
+                <span className="text-[#F7F6F3]">{MARKETING_VOICE.differentiator}</span>
+              </>
+            )}
           </p>
         </div>
 
