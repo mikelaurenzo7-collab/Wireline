@@ -80,71 +80,81 @@ function TrainingTabs({
 
 function VoiceTab() {
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6">
-        <p className={MONO_LABEL}>Voice engine</p>
-        <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.01em] text-[var(--wireline-color-text-primary)]">
-          Wireline Voice — Flash
-        </h2>
-        <p className="mt-1.5 text-[13px] text-[var(--wireline-color-text-secondary)]">
-          Ultra-low latency synthesis with natural prosody.
+    <div className="flex w-full flex-col gap-6">
+      <header>
+        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.2vw,2.25rem)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
+          Voice Configuration
+        </h1>
+        <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)] sm:text-sm">
+          Configure voice, pronunciation, and speech patterns per agent.
         </p>
-        <div className="mt-5 flex h-8 items-end gap-1" aria-hidden="true">
-          {[40, 80, 60, 95, 50, 75, 45, 88].map((height, index) => (
-            <span
-              key={index}
-              className="w-1 rounded-sm"
-              style={{
-                height: `${height}%`,
-                background:
-                  index % 2 === 0
-                    ? "var(--wireline-color-action-primary-default)"
-                    : "var(--wireline-color-action-primary-container)",
-              }}
-            />
-          ))}
-        </div>
-        <button
-          type="button"
-          className="mt-5 inline-flex items-center gap-2 rounded-[8px] px-4 py-2 text-[13px] font-semibold"
-          style={{
-            background: "var(--wireline-color-action-primary-default)",
-            color: "var(--wireline-color-text-onAction)",
-          }}
-        >
-          <Mic2 size={15} aria-hidden="true" />
-          Preview voice
-        </button>
-      </section>
-      <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6">
-        <p className={MONO_LABEL}>Pronunciation dictionary</p>
-        <div className="mt-4 grid gap-2">
-          {[
-            ["Wireline", "WIRE-line"],
-            ["Dr. Patel", "Doctor Pah-TELL"],
-            ["HIPAA", "HIP-uh"],
-          ].map(([word, sound]) => (
-            <div
-              key={word}
-              className="flex items-center gap-3 rounded-[8px] bg-[var(--wireline-color-surface-subtle)] px-3 py-2.5 text-[13px]"
-            >
-              <span className="flex-1 font-semibold text-[var(--wireline-color-text-primary)]">
-                {word}
-              </span>
-              <span className="text-[var(--wireline-color-text-tertiary)]">→</span>
-              <span className="font-semibold text-[var(--wireline-color-action-primary-default)]">
-                {sound}
-              </span>
-            </div>
-          ))}
+      </header>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6">
+          <p className={MONO_LABEL}>Voice engine</p>
+          <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.01em] text-[var(--wireline-color-text-primary)]">
+            Wireline Voice — Flash
+          </h2>
+          <p className="mt-1.5 text-[13px] text-[var(--wireline-color-text-secondary)]">
+            Ultra-low latency synthesis with natural prosody.
+          </p>
+          <div className="mt-5 flex h-8 items-end gap-1" aria-hidden="true">
+            {[40, 80, 60, 95, 50, 75, 45, 88].map((height, index) => (
+              <span
+                key={index}
+                className="w-1 rounded-sm"
+                style={{
+                  height: `${height}%`,
+                  background:
+                    index % 2 === 0
+                      ? "var(--wireline-color-action-primary-default)"
+                      : "var(--wireline-color-action-primary-container)",
+                }}
+              />
+            ))}
+          </div>
           <button
             type="button"
-            className="mt-1 min-h-[40px] rounded-[8px] border border-dashed border-[var(--wireline-color-border-strong)] text-[12px] font-medium text-[var(--wireline-color-text-tertiary)] transition-colors hover:border-[var(--wireline-color-action-primary-default)] hover:text-[var(--wireline-color-action-primary-default)]"
+            className="mt-5 inline-flex items-center gap-2 rounded-[8px] px-4 py-2 text-[13px] font-semibold"
+            style={{
+              background: "var(--wireline-color-action-primary-default)",
+              color: "var(--wireline-color-text-onAction)",
+            }}
           >
-            + Add pronunciation
+            <Mic2 size={15} aria-hidden="true" />
+            Preview voice
           </button>
-        </div>
-      </section>
+        </section>
+        <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6">
+          <p className={MONO_LABEL}>Pronunciation dictionary</p>
+          <div className="mt-4 grid gap-2">
+            {[
+              ["Wireline", "WIRE-line"],
+              ["Dr. Patel", "Doctor Pah-TELL"],
+              ["HIPAA", "HIP-uh"],
+            ].map(([word, sound]) => (
+              <div
+                key={word}
+                className="flex items-center gap-3 rounded-[8px] bg-[var(--wireline-color-surface-subtle)] px-3 py-2.5 text-[13px]"
+              >
+                <span className="flex-1 font-semibold text-[var(--wireline-color-text-primary)]">
+                  {word}
+                </span>
+                <span className="text-[var(--wireline-color-text-tertiary)]">→</span>
+                <span className="font-semibold text-[var(--wireline-color-action-primary-default)]">
+                  {sound}
+                </span>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="mt-1 min-h-[40px] rounded-[8px] border border-dashed border-[var(--wireline-color-border-strong)] text-[12px] font-medium text-[var(--wireline-color-text-tertiary)] transition-colors hover:border-[var(--wireline-color-action-primary-default)] hover:text-[var(--wireline-color-action-primary-default)]"
+            >
+              + Add pronunciation
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
