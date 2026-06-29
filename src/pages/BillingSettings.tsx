@@ -1,81 +1,88 @@
-import { PlayCircle, Receipt, ShieldCheck, WalletCards } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 
-import { StatusNotice } from "../components/molecules";
+import { Badge } from "../components/atoms";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
-import StripeBillingCard from "../components/StripeBillingCard";
-import ConversationBalanceCard from "../components/ConversationBalanceCard";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
 
-const BILLING_FLOW = [
-  {
-    label: "Fund",
-    title: "Start free. Fund live work.",
-    detail: "Balance, not clutter.",
-    icon: WalletCards,
-  },
-  {
-    label: "Run",
-    title: "Use balance first.",
-    detail: "Calls draw down cleanly.",
-    icon: PlayCircle,
-  },
-  {
-    label: "Reconcile",
-    title: "Stripe receipts.",
-    detail: "Plans stay in Stripe.",
-    icon: Receipt,
-  },
-] as const;
+const teamPlan = STRIPE_PLANS.find((plan) => plan.id === "team")!;
 
 export default function BillingSettings() {
   return (
-    <WorkspaceShell eyebrow="Settings" title="Billing" contentClassName="pt-1 pb-8">
-      <div className="mx-auto flex min-h-0 w-full max-w-[1080px] flex-1 flex-col gap-5 pb-10">
+    <WorkspaceShell title="" eyebrow="" contentClassName="pt-0 pb-10">
+      <div className="mx-auto flex w-full max-w-[680px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <section className="studio-card grid gap-5 p-5 sm:p-6 xl:grid-cols-[minmax(240px,.52fr)_minmax(0,1fr)] xl:items-center">
-          <div>
-            <p className="wl-overline">Billing</p>
-            <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-.03em] text-foreground">
-              Balance for calls. Stripe for receipts.
+        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+          Billing
+        </h1>
+
+        <section className="rounded-[16px] border border-primary/20 bg-primary p-6 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary-foreground/65">
+            Current plan
+          </p>
+          <div className="mt-4 flex flex-wrap items-end gap-2">
+            <h2 className="font-[var(--wireline-font-family-display)] text-[38px] font-normal leading-none tracking-[-0.035em]">
+              Team
             </h2>
+            <span className="pb-1 font-[var(--wireline-font-family-display)] text-[32px] leading-none tracking-[-0.035em]">
+              — ${teamPlan.price_usd_monthly}/mo
+            </span>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {BILLING_FLOW.map(({ label, title, detail, icon: Icon }) => (
-              <div key={label} className="studio-card p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <span className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.08em] text-muted-foreground">
-                    {label}
-                  </span>
-                  <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
-                    <Icon className="size-4" aria-hidden="true" />
-                  </span>
-                </div>
-                <p className="text-sm font-semibold tracking-[-.01em] text-foreground">{title}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
+          <p className="mt-4 text-sm leading-6 text-primary-foreground/78">
+            {teamPlan.max_agents} agents · {teamPlan.included_phone_numbers} lines · Routing · Approvals · Shared inbox
+          </p>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2">
+          <article className="studio-card p-5">
+            <p className="wl-overline">Conversation Balance</p>
+            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[34px] font-normal leading-none tracking-[-0.035em] text-foreground">
+              $187
+            </p>
+            <div className="mt-5 h-2 rounded-full bg-muted">
+              <div className="h-full w-[38%] rounded-full bg-primary" />
+            </div>
+          </article>
+          <article className="studio-card p-5">
+            <p className="wl-overline">Next invoice</p>
+            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[34px] font-normal leading-none tracking-[-0.035em] text-foreground">
+              ${teamPlan.price_usd_monthly}.00
+            </p>
+            <p className="mt-5 text-sm text-muted-foreground">Due July 1, 2026</p>
+          </article>
+        </section>
+
+        <section className="studio-card p-5 sm:p-6">
+          <p className="wl-overline">Recent invoices</p>
+          <div className="mt-4 grid gap-2">
+            {["June 2026", "May 2026"].map((month) => (
+              <div key={month} className="flex items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3">
+                <p className="text-sm font-medium text-foreground">{month}</p>
+                <p className="text-sm font-semibold text-foreground">${teamPlan.price_usd_monthly}.00</p>
+                <Badge variant="success">Paid</Badge>
               </div>
             ))}
           </div>
         </section>
 
-        <ConversationBalanceCard />
-
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-2">
-            <h2 className="font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-.022em] text-foreground">
-              Payment portal
-            </h2>
+        <section className="studio-card p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <ShieldCheck size={15} className="text-primary" aria-hidden="true" />
+                Clear commercial model
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Plans add capacity. Conversation Balance pays for live calls, texts, and provider-backed actions.
+              </p>
+            </div>
+            <Link to="/pricing" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+              View pricing <ArrowRight size={14} />
+            </Link>
           </div>
-          <StripeBillingCard />
         </section>
-
-        <StatusNotice
-          tone="info"
-          title="Receipts."
-          icon={<ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
-        >
-          Stripe portal. Outcomes in your ledger train the fleet.
-        </StatusNotice>
       </div>
     </WorkspaceShell>
   );
