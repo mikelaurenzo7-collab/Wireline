@@ -38,7 +38,9 @@ export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
     { id: "studio-route", pattern: /path="\/studio"/ },
-    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/studio"/ },
+    // Retired /agents directory page redirects into Overview, where the
+    // roster lives as part of the dashboard (per migration plan).
+    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/overview"/ },
   ],
   studioHome: [
     { id: "dedicated-studio-shell", pattern: /StudioPageShell/ },
@@ -56,7 +58,9 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "route-active-state", pattern: /useLocation/ },
     { id: "apps-route", pattern: /href: "\/apps"/ },
     { id: "studio-route", pattern: /target === "\/studio"/ },
-    { id: "assistants-label", pattern: /label: "Assistants"/ },
+    // "Assistants" nav was retired per the migration plan; the roster lives
+    // in Overview now. Rail items are agent-language only.
+    { id: "studio-label", pattern: /label: "Studio"/ },
     { id: "touch-target", pattern: /min-h-\[44px\]/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
@@ -69,9 +73,12 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   overview: [
     { id: "overview-title", pattern: /title="Overview"/ },
-    { id: "new-assistant", pattern: /New assistant/ },
-    { id: "all-assistants", pattern: /agents\.map/ },
-    { id: "no-slice", pattern: /Your assistants/ },
+    // Wireline uses "agent" language; Assistant was retired by the migration
+    // plan. The dashboard CTA wires a new agent.
+    { id: "new-agent", pattern: /New agent/ },
+    { id: "personal-agents", pattern: /Personal agents/ },
+    { id: "business-agents", pattern: /Business agents/ },
+    { id: "all-agents", pattern: /agents\.map/ },
     { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
   ],
   canvas: [

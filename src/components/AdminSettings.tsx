@@ -21,7 +21,7 @@ import { BRAND } from "../constants/brand-colors";
 import { AccountsPanel } from "./admin/AccountsPanel";
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
-// Voice library + pronunciation dictionary panels moved to AgentTraining
+// Voice library + pronunciation dictionary panels moved to the Training Voice tab
 // (they're agent training inputs, not tenant admin config).
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { TeamPanel } from "./admin/TeamPanel";

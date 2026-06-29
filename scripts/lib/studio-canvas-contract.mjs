@@ -43,7 +43,8 @@ export const STUDIO_CANVAS_FORBIDDEN = {
 export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
-    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/studio"/ },
+    // Retired /agents page redirects into Overview (roster is part of dashboard).
+    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/overview"/ },
   ],
   studioHome: [
     { id: "dedicated-shell", pattern: /StudioPageShell/ },
@@ -56,7 +57,8 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "rail-width", pattern: /w-\[236px\]/ },
     { id: "apps-route", pattern: /\/apps/ },
     { id: "route-active-state", pattern: /useLocation/ },
-    { id: "assistants-route", pattern: /label: "Assistants"/ },
+    // "Assistants" nav was retired; the rail is agent-language only.
+    { id: "studio-label", pattern: /label: "Studio"/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
   ],
   studioChrome: [
@@ -67,7 +69,10 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   overview: [
     { id: "overview-title", pattern: /title="Overview"/ },
-    { id: "new-assistant", pattern: /New assistant/ },
+    // Agent language only; Assistant was retired by the migration plan.
+    { id: "new-agent", pattern: /New agent/ },
+    { id: "personal-agents", pattern: /Personal agents/ },
+    { id: "business-agents", pattern: /Business agents/ },
     { id: "full-roster", pattern: /agents\.map/ },
     { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],

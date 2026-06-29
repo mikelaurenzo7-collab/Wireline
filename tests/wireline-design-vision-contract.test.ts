@@ -57,7 +57,7 @@ describe("Wireline Letterpress design vision", () => {
       expect.objectContaining({
         defaultSurface: "chat-plus-canvas",
         canvasSurface: "spatial-cards",
-        agentSwitcher: "horizontal-bar",
+        agentSwitcher: "context-chrome",
         railWidthPx: 236,
         workspaceDepthParam: "view=workspace",
         minTouchTargetPx: 44,

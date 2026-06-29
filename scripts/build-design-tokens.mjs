@@ -17,7 +17,12 @@ function flatten(group, path = [], output = {}) {
     if (key.startsWith("$")) continue;
     const nextPath = [...path, key];
     if (value && typeof value === "object" && "$value" in value) {
-      output[nextPath.join(".")] = value.$value;
+      const raw = value.$value;
+      // Quote fontFamily values so multi-word names like "Instrument Serif"
+      // survive CSS variable substitution; bare values were resolving to
+      // brittle identifiers and falling back to system fonts.
+      output[nextPath.join(".")] =
+        value.$type === "fontFamily" && typeof raw === "string" ? `"${raw}"` : raw;
       continue;
     }
     if (value && typeof value === "object") flatten(value, nextPath, output);
