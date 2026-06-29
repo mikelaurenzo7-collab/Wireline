@@ -6,6 +6,7 @@ import { Skeleton } from "../components/atoms";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
+import StudioAgentCanvas from "./StudioAgentCanvas";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 
@@ -113,6 +114,7 @@ function StudioEmptyState() {
 
 export default function StudioWorkspaceV2() {
   const { loading } = useAgents();
+  const navigate = useNavigate();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
@@ -187,6 +189,15 @@ export default function StudioWorkspaceV2() {
     });
   }
 
+  function editCanvasSection(section: string) {
+    if (!active) return;
+    if (section === "knowledge") {
+      navigate(`/knowledge?agent=${encodeURIComponent(active.id)}`);
+      return;
+    }
+    openWorkspacePanel();
+  }
+
   const testVoiceInChat = useCallback(() => {
     workroomRef.current?.focusComposer("Introduce yourself using your new voice.");
   }, []);
@@ -211,21 +222,12 @@ export default function StudioWorkspaceV2() {
     );
   }
 
+  // Claude Design Agent Studio: always chat (left) + spatial Agent Canvas
+  // (right). The canvas is the default right pane; ?view=workspace swaps it for
+  // the deep editor form so no per-field editing capability is lost.
   return (
-    <div
-      className={
-        workspaceView
-          ? "grid min-h-full bg-background lg:h-full lg:min-h-0 lg:grid-cols-[minmax(380px,0.82fr)_minmax(520px,1.18fr)]"
-          : "flex h-full min-h-0 flex-col bg-background"
-      }
-    >
-      <div
-        className={
-          workspaceView
-            ? "min-h-[560px] border-b border-border/60 lg:min-h-0 lg:border-b-0 lg:border-r"
-            : "min-h-0 flex-1"
-        }
-      >
+    <div className="grid min-h-full bg-background lg:h-full lg:min-h-0 lg:grid-cols-[minmax(380px,0.82fr)_minmax(520px,1.18fr)]">
+      <div className="min-h-[560px] border-b border-border/60 lg:min-h-0 lg:border-b-0 lg:border-r">
         <StudioWorkroom
           key={active.id}
           ref={workroomRef}
@@ -234,8 +236,8 @@ export default function StudioWorkspaceV2() {
           initialCommand={params.get("command") || undefined}
           commandNonce={params.get("commandNonce") || undefined}
           onBack={workspaceView ? returnToCanvas : openWorkspacePanel}
-          backLabel={workspaceView ? "Back to chat" : "Agent workspace"}
-          layout={workspaceView ? "split" : "canvas"}
+          backLabel={workspaceView ? "Back to canvas" : "Deep edit"}
+          layout="split"
         />
       </div>
 
@@ -247,7 +249,15 @@ export default function StudioWorkspaceV2() {
           onTestVoiceInChat={testVoiceInChat}
           className="lg:border-t-0"
         />
-      ) : null}
+      ) : (
+        <StudioAgentCanvas
+          key={active.id}
+          agentId={active.id}
+          agentName={active.name}
+          isBusinessAgent={active.is_business_agent}
+          onEditSection={editCanvasSection}
+        />
+      )}
     </div>
   );
 }

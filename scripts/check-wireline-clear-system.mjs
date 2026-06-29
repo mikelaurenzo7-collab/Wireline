@@ -63,6 +63,7 @@ const settingsPage = read("src/pages/SettingsPage.tsx");
 const billingSettingsPage = read("src/pages/BillingSettings.tsx");
 const accountRoutes = read("src/routes/account-routes.ts");
 const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
+const studioAgentCanvas = read("src/components/StudioAgentCanvas.tsx");
 const studioAgentWorkspacePanel = read("src/components/StudioAgentWorkspacePanel.tsx");
 const studioOverview = read("src/components/StudioOverview.tsx");
 const createDialog = read("src/components/CreateAgentDialog.tsx");
@@ -535,6 +536,7 @@ assertStudioCanvasContract(
   {
     shell: workspaceShell,
     canvas: studioWorkspace,
+    spatialCanvas: studioAgentCanvas,
     workroom: studioWorkroom,
     workspacePanel: studioAgentWorkspacePanel,
     studioHome: agentStudioHome,
@@ -1044,7 +1046,7 @@ mustInclude(
 mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /nativeAppShell \? <NativeDock/,
+  /nativeAppShell \?\s*\(?\s*<NativeDock/,
   "bottom dock must only render for native app shells",
 );
 mustInclude(
@@ -1062,8 +1064,8 @@ mustInclude(
 mustInclude(
   "src/routes/AppRoutes.tsx",
   appRoutes,
-  /Navigate to="\/studio"/,
-  "legacy routes redirect cleanly into the studio canvas",
+  /Navigate to="\/(overview|agents|call-logs|connections|knowledge)" replace/,
+  "legacy routes redirect cleanly into the restored Claude Design IA",
 );
 mustInclude(
   "src/components/CreateAgentDialog.tsx",

@@ -23,18 +23,22 @@ function loadSurfaces() {
 describe("Studio Canvas vision contract", () => {
   it("keeps the manifest as the single source of truth", () => {
     expect(STUDIO_CANVAS_VISION).toBe(WIRELINE_DESIGN_VISION.studioCanvas);
-    expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-composer");
+    expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-plus-canvas");
+    expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("spatial-cards");
     expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("horizontal-bar");
-    expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(56);
+    expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(236);
     expect(STUDIO_CANVAS_VISION.workspaceDepthParam).toBe("view=workspace");
     expect(STUDIO_CANVAS_VISION.minTouchTargetPx).toBe(44);
   });
 
-  it("forbids retired canvas patterns (cards, rail stack, demo hacks)", () => {
+  it("forbids retired patterns (roster grid in canvas, prototype mock, demo hacks)", () => {
     const sources = loadSurfaces();
 
     for (const rule of STUDIO_CANVAS_FORBIDDEN.canvas) {
       expect(sources.canvas, rule.id).not.toMatch(rule.pattern);
+    }
+    for (const rule of STUDIO_CANVAS_FORBIDDEN.spatialCanvas) {
+      expect(sources.spatialCanvas, rule.id).not.toMatch(rule.pattern);
     }
     for (const rule of STUDIO_CANVAS_FORBIDDEN.shell) {
       expect(sources.shell, rule.id).not.toMatch(rule.pattern);
@@ -44,7 +48,7 @@ describe("Studio Canvas vision contract", () => {
     }
   });
 
-  it("requires chat-first canvas with MRU, composer, and gated workspace depth", () => {
+  it("requires chat + spatial Agent Canvas bound to real config, with gated workspace depth", () => {
     const sources = loadSurfaces();
 
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_REQUIRED) as Array<

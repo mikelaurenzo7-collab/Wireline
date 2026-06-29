@@ -55,9 +55,10 @@ describe("Wireline Letterpress design vision", () => {
     expect(contract).toContain("STUDIO_CANVAS_REQUIRED");
     expect(WIRELINE_DESIGN_VISION.studioCanvas).toEqual(
       expect.objectContaining({
-        defaultSurface: "chat-composer",
+        defaultSurface: "chat-plus-canvas",
+        canvasSurface: "spatial-cards",
         agentSwitcher: "horizontal-bar",
-        railWidthPx: 56,
+        railWidthPx: 236,
         workspaceDepthParam: "view=workspace",
         minTouchTargetPx: 44,
       }),
