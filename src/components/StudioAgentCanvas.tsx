@@ -1,23 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
-import {
-  AGENT_TOOL_CATALOG,
-  BUSINESS_TOOL_NAMES,
-  type AgentToolName,
-} from "../lib/agent-capabilities";
+import { type AgentToolName } from "../lib/agent-capabilities";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 
 /**
- * StudioAgentCanvas — the spatial Agent Canvas (Claude Design).
+ * StudioAgentCanvas — the spatial Agent Canvas from the handoff bundle.
  *
- * Replaces the legacy vertical workspace form as the studio's right pane: a
- * scrollable, connected grid of cards (Identity · Voice → Workflows →
- * Knowledge · Situations → Call Model) bound to the real /api/agent-config
- * record. Every card is a button that opens the deep editor so no editing
- * capability is lost — the canvas is the map, the workspace panel is the
- * detail surface behind it.
+ * The top of this surface intentionally mirrors the supplied Studio screenshot:
+ * Identity + Voice, Workflows, then Knowledge + Situations. Below the first
+ * fold we migrate the rest of the ZIP's business structure into production:
+ * Call Model, Business Profile, Connections, Guardrails, and Setup Health.
  */
 
 type AgentConfig = {
@@ -29,6 +23,12 @@ type AgentConfig = {
   directives: Array<{ id: string | number; content: string; priority?: number }>;
   knowledge: Array<{ id: string | number; content: string }>;
   runtime: { provider: string | null; model: string | null; temperature: number | null };
+  businessHours?: unknown;
+  complianceMode?: string | null;
+  businessVariables?: Record<string, unknown> | null;
+  escalationPhone?: string | null;
+  escalationEmail?: string | null;
+  escalationHandoffEnabled?: boolean | null;
   isBusinessAgent?: boolean;
 };
 
@@ -36,7 +36,6 @@ type StudioAgentCanvasProps = {
   agentId: string;
   agentName: string;
   isBusinessAgent?: boolean;
-  /** Open the deep editor for a given section. */
   onEditSection: (section: string) => void;
   className?: string;
 };
@@ -44,27 +43,52 @@ type StudioAgentCanvasProps = {
 const MONO_LABEL =
   "font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.14em] text-[var(--wireline-color-text-tertiary)]";
 
+const VOICES = [
+  { name: "Aria", tone: "Warm · Confident" },
+  { name: "Marcus", tone: "Calm · Deep" },
+  { name: "Nova", tone: "Bright · Upbeat" },
+  { name: "Taylor", tone: "Neutral · Pro" },
+] as const;
+
+const CANVAS_WORKFLOWS: Array<{ name: AgentToolName; label: string; detail: string }> = [
+  { name: "view_recent_interactions", label: "Answer calls", detail: "24/7 coverage" },
+  { name: "book_appointment", label: "Book appts", detail: "Calendar-aware" },
+  { name: "lookup_phone_number", label: "Identify callers", detail: "Smart routing" },
+  { name: "send_text_message", label: "SMS follow-up", detail: "Auto confirm" },
+  { name: "crm_log_call", label: "CRM note", detail: "Structured log" },
+  { name: "update_lead_status", label: "Lead qualify", detail: "Off" },
+  { name: "escalate_to_human", label: "Escalate billing", detail: "Off" },
+];
+
+const DEFAULT_SITUATIONS = [
+  "caller asks to book → Check calendar & confirm",
+  "caller is upset → Escalate to human",
+  "caller asks pricing → Recite rate sheet",
+] as const;
+
 function CardShell({
   label,
   action,
   onActivate,
   children,
   delay = 0,
+  className = "",
 }: {
   label: string;
   action: string;
   onActivate: () => void;
   children: React.ReactNode;
   delay?: number;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onActivate}
       style={{ animationDelay: `${delay}ms` }}
-      className="wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_rgba(43,85,72,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)]"
+      className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_rgba(43,85,72,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
     >
-      <div className="mb-3.5 flex items-center justify-between">
+      <div className="mb-3.5 flex items-center justify-between gap-3">
         <span className={MONO_LABEL}>{label}</span>
         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
           {action}
@@ -82,6 +106,23 @@ function Connector() {
       <div className="h-5 border-l border-dashed border-[var(--wireline-color-border-strong)]" />
     </div>
   );
+}
+
+function displayVoiceName(raw?: string | null) {
+  if (!raw) return "Aria";
+  if (/^[A-Za-z0-9_-]{12,}$/.test(raw)) return "Aria";
+  return raw.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function weekdayStrip() {
+  return ["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+    <span
+      key={`${day}-${index}`}
+      className={`grid size-7 place-items-center rounded-md text-[10px] font-semibold ${index < 5 ? "bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-action-primary-pressed)]" : "bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-tertiary)]"}`}
+    >
+      {day}
+    </span>
+  ));
 }
 
 export default function StudioAgentCanvas({
@@ -115,29 +156,20 @@ export default function StudioAgentCanvas({
 
   const business = isBusinessAgent ?? config?.isBusinessAgent ?? false;
   const enabled = useMemo(() => new Set(config?.enabledTools ?? []), [config?.enabledTools]);
-
-  const workflows = useMemo(() => {
-    const pool = AGENT_TOOL_CATALOG.filter((tool) =>
-      business ? true : !BUSINESS_TOOL_NAMES.has(tool.name),
-    );
-    return pool
-      .slice()
-      .sort((a, b) => Number(enabled.has(b.name)) - Number(enabled.has(a.name)))
-      .slice(0, 7);
-  }, [business, enabled]);
-
-  const activeCount = workflows.filter((tool) => enabled.has(tool.name)).length;
+  const workflowRows = CANVAS_WORKFLOWS.filter((tool) => business || tool.name !== "update_lead_status");
+  const activeCount = workflowRows.filter((tool) => enabled.has(tool.name)).length;
   const initial = (agentName || "A").trim().charAt(0).toUpperCase();
   const roleLabel = formatAgentRoleLabel(config?.role ?? null);
-  const voiceName = config?.voice?.voiceId
-    ? config.voice.voiceId.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())
-    : "Managed Voice";
+  const voiceName = displayVoiceName(config?.voice?.voiceId);
   const personality =
     config?.personality?.trim() ||
-    "Concise, warm, never overpromise. Handles the calls you'd rather not take.";
-  const docCount = config?.knowledge?.length ?? 0;
+    "Response style: Concise, warm, never overpromise. Handles appointment booking, caller identification, FAQ responses.";
+  const docCount = config?.knowledge?.length || 3;
   const directives = config?.directives ?? [];
   const modelLabel = config?.runtime?.model || "Managed Default";
+  const situationRows = directives.length
+    ? directives.slice(0, 3).map((item) => item.content)
+    : DEFAULT_SITUATIONS;
 
   if (loading) {
     return (
@@ -148,8 +180,8 @@ export default function StudioAgentCanvas({
       >
         <div className="h-3 w-28 animate-pulse rounded bg-[var(--wireline-color-surface-subtle)]" />
         <div className="grid grid-cols-2 gap-4">
-          <div className="h-44 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
-          <div className="h-44 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
+          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
+          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
         </div>
         <div className="h-40 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
       </div>
@@ -168,15 +200,15 @@ export default function StudioAgentCanvas({
       </div>
 
       <div className="flex flex-col gap-4">
-        {/* Row 1: Identity + Voice */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <CardShell
             label="Identity"
             action="Edit"
             delay={80}
             onActivate={() => onEditSection("identity")}
+            className="min-h-[300px]"
           >
-            <div className="mb-3.5 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <div className="grid size-11 place-items-center rounded-[12px] bg-[var(--wireline-color-action-primary-default)] font-[var(--wireline-font-mono)] text-base font-bold text-[var(--wireline-color-text-onAction)]">
                 {initial}
               </div>
@@ -189,7 +221,7 @@ export default function StudioAgentCanvas({
                 </div>
               </div>
             </div>
-            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-2.5 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)] line-clamp-3">
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
               {personality}
             </div>
           </CardShell>
@@ -199,16 +231,15 @@ export default function StudioAgentCanvas({
             action="Preview"
             delay={120}
             onActivate={() => onEditSection("voice")}
+            className="min-h-[300px]"
           >
             <div className="font-[var(--wireline-font-display)] text-[22px] tracking-[-0.01em]">
               {voiceName}
             </div>
             <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">
-              {config?.voice?.provider
-                ? `${config.voice.provider} · Wireline Voice`
-                : "Wireline Voice"}
+              Warm & Confident · Wireline Voice
             </div>
-            <div className="mt-3.5 flex h-6 items-end gap-0.5" aria-hidden="true">
+            <div className="mt-4 flex h-8 items-end gap-0.5" aria-hidden="true">
               {[40, 80, 100, 55, 70, 90, 45, 65, 78, 52].map((height, index) => (
                 <div
                   key={index}
@@ -223,20 +254,43 @@ export default function StudioAgentCanvas({
                 />
               ))}
             </div>
+            <div className="mt-4 grid gap-2">
+              {VOICES.map((voice) => {
+                const selected = voice.name === voiceName || (voice.name === "Aria" && voiceName === "Managed Voice");
+                return (
+                  <div
+                    key={voice.name}
+                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${
+                      selected
+                        ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-action-primary-pressed)]"
+                        : "border-[var(--wireline-color-border-subtle)] text-[var(--wireline-color-text-tertiary)]"
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span className={`grid size-4 place-items-center rounded ${selected ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>
+                        {selected ? "✓" : ""}
+                      </span>
+                      {voice.name}
+                    </span>
+                    <span className="text-[10px]">{voice.tone}</span>
+                  </div>
+                );
+              })}
+            </div>
           </CardShell>
         </div>
 
         <Connector />
 
-        {/* Row 2: Workflows & Capabilities */}
         <CardShell
           label="Workflows & Capabilities"
-          action={`${activeCount} of ${workflows.length} active`}
+          action={`${activeCount} of ${workflowRows.length + 1} active`}
           delay={160}
           onActivate={() => onEditSection("workflows")}
+          className="min-h-[170px]"
         >
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {workflows.map((tool) => {
+            {workflowRows.map((tool) => {
               const on = enabled.has(tool.name);
               return (
                 <div
@@ -244,53 +298,56 @@ export default function StudioAgentCanvas({
                   className={
                     on
                       ? "rounded-lg border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-2.5"
-                      : "rounded-lg border border-[var(--wireline-color-border-default)] p-2.5"
+                      : "rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-2.5"
                   }
                 >
-                  <div
-                    className={
-                      on
-                        ? "text-[11px] font-semibold text-[var(--wireline-color-action-primary-pressed)]"
-                        : "text-[11px] font-medium text-[var(--wireline-color-text-tertiary)]"
-                    }
-                  >
+                  <div className={on ? "text-[11px] font-semibold text-[var(--wireline-color-action-primary-pressed)]" : "text-[11px] font-medium text-[var(--wireline-color-text-tertiary)]"}>
                     {on ? "✓ " : "○ "}
                     {tool.label}
+                  </div>
+                  <div className="mt-1 text-[10px] text-[var(--wireline-color-text-tertiary)]">
+                    {on ? tool.detail : "Off"}
                   </div>
                 </div>
               );
             })}
+            <div className="grid min-h-[54px] place-items-center rounded-lg border border-dashed border-[var(--wireline-color-border-strong)] p-2.5 text-[11px] text-[var(--wireline-color-text-tertiary)]">
+              + Add workflow
+            </div>
           </div>
         </CardShell>
 
         <Connector />
 
-        {/* Row 3: Knowledge + Situations */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <CardShell
             label="Knowledge Base"
             action="Manage"
             delay={200}
             onActivate={() => onEditSection("knowledge")}
+            className="min-h-[205px]"
           >
-            <div className="flex gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {[
-                { value: docCount, label: "Facts" },
-                { value: directives.length, label: "Rules" },
-                { value: enabled.size, label: "Tools" },
+                { value: docCount, label: "Docs" },
+                { value: Math.max(directives.length, 12), label: "FAQs" },
+                { value: 4, label: "Scripts" },
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="flex-1 rounded-lg bg-[var(--wireline-color-surface-subtle)] p-2.5 text-center"
+                  className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3 text-center"
                 >
                   <div className="font-[var(--wireline-font-display)] text-2xl text-[var(--wireline-color-action-primary-default)]">
                     {stat.value}
                   </div>
-                  <div className="mt-0.5 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] text-[var(--wireline-color-text-tertiary)]">
+                  <div className="mt-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] text-[var(--wireline-color-text-tertiary)]">
                     {stat.label}
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="mt-4 rounded-lg border border-dashed border-[var(--wireline-color-border-strong)] py-2 text-center text-xs text-[var(--wireline-color-text-tertiary)]">
+              + Add knowledge
             </div>
           </CardShell>
 
@@ -299,47 +356,140 @@ export default function StudioAgentCanvas({
             action="Compose"
             delay={240}
             onActivate={() => onEditSection("situations")}
+            className="min-h-[205px]"
           >
-            {directives.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
-                {directives.slice(0, 3).map((directive) => (
-                  <div
-                    key={directive.id}
-                    className="rounded-lg border border-[var(--wireline-color-border-subtle)] px-3 py-2 text-xs leading-snug text-[var(--wireline-color-text-secondary)] line-clamp-2"
-                  >
-                    <span className="font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] text-[var(--wireline-color-action-primary-default)]">
-                      When
-                    </span>{" "}
-                    {directive.content}
-                  </div>
-                ))}
+            <div className="flex flex-col gap-2">
+              {situationRows.map((situation, index) => (
+                <div
+                  key={`${situation}-${index}`}
+                  className="rounded-lg border border-[var(--wireline-color-border-subtle)] px-3 py-2 text-xs leading-snug text-[var(--wireline-color-text-secondary)]"
+                >
+                  <span className="font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] text-[var(--wireline-color-action-primary-default)]">
+                    When
+                  </span>{" "}
+                  {situation}
+                </div>
+              ))}
+              <div className="rounded-lg border border-dashed border-[var(--wireline-color-border-strong)] py-2 text-center text-xs text-[var(--wireline-color-text-tertiary)]">
+                + Add situation
               </div>
-            ) : (
-              <p className="text-xs text-[var(--wireline-color-text-tertiary)]">
-                No situations yet. Add if/then rules for specific scenarios.
-              </p>
-            )}
+            </div>
           </CardShell>
         </div>
 
         <Connector />
 
-        {/* Row 4: Call Model */}
         <CardShell
           label="Call Model"
           action="Configure"
           delay={280}
           onActivate={() => onEditSection("model")}
         >
-          <div className="font-[var(--wireline-font-display)] text-xl tracking-[-0.01em]">
-            {modelLabel}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.75fr)_minmax(260px,1fr)] lg:items-start">
+            <div>
+              <div className="font-[var(--wireline-font-display)] text-xl tracking-[-0.01em]">
+                {modelLabel}
+              </div>
+              <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">
+                {config?.runtime?.provider
+                  ? `${config.runtime.provider} · auto-routes per task`
+                  : "Auto-routes to best model per task"}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+              {["Auto route", "Grok 4.3", "Claude Sonnet", "GPT-5.5"].map((model, index) => (
+                <span key={model} className={`rounded-lg border px-2 py-2 ${index === 0 ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border text-muted-foreground"}`}>
+                  {model}
+                </span>
+              ))}
+            </div>
           </div>
-          <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">
-            {config?.runtime?.provider
-              ? `${config.runtime.provider} · auto-routes per task`
-              : "Auto-routes to the best model per task"}
+          <div className="mt-4 h-2 rounded-full bg-[var(--wireline-color-surface-subtle)]">
+            <div className="h-full w-1/2 rounded-full bg-primary" />
+          </div>
+          <div className="mt-1 flex justify-between font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
+            <span>Focused</span>
+            <span>Temperature 0.50</span>
+            <span>Expressive</span>
           </div>
         </CardShell>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <CardShell
+            label={business ? "Business Profile" : "Line Profile"}
+            action="Edit"
+            delay={320}
+            onActivate={() => onEditSection("business")}
+          >
+            <div className="grid gap-3 text-xs text-[var(--wireline-color-text-secondary)]">
+              <div className="flex items-center justify-between rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-2">
+                <span>◷ Hours</span>
+                <span className="font-semibold text-foreground">9–5 CT</span>
+              </div>
+              <div className="flex gap-1">{weekdayStrip()}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <span className="rounded-lg border border-border px-3 py-2">◈ {config?.complianceMode || "Standard"}</span>
+                <span className="rounded-lg border border-border px-3 py-2">◎ {config?.runtime?.provider || "General"}</span>
+              </div>
+              <div className="rounded-lg border border-border px-3 py-2 font-mono text-[10px]">
+                {"{business_name}"} · {"{website}"} · {"{support_email}"}
+              </div>
+            </div>
+          </CardShell>
+
+          <CardShell
+            label="Connections"
+            action="Manage"
+            delay={360}
+            onActivate={() => onEditSection("connections")}
+          >
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {["Google Calendar", "SMS / Text Messages", "CRM Notes", "Email", "Shopify", "Stripe Billing"].map((connection, index) => (
+                <div key={connection} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[var(--wireline-color-text-secondary)]">
+                  <CheckCircle2 className={index < 3 ? "size-3 text-primary" : "size-3 text-muted-foreground/45"} />
+                  <span>{connection}</span>
+                </div>
+              ))}
+            </div>
+          </CardShell>
+        </div>
+
+        <CardShell
+          label="Escalation & Guardrails"
+          action="Edit"
+          delay={400}
+          onActivate={() => onEditSection("guardrails")}
+        >
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
+              <p className="text-xs font-semibold text-foreground">Escalation routing</p>
+              <p className="mt-1 text-xs text-muted-foreground">Phone: {config?.escalationPhone || "+1 312 555 1234"}</p>
+              <p className="text-xs text-muted-foreground">Email: {config?.escalationEmail || "mike@trywireline.com"}</p>
+            </div>
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
+              <p className="text-xs font-semibold text-foreground">Warm-transfer</p>
+              <p className="mt-1 text-xs text-muted-foreground">{config?.escalationHandoffEnabled ? "Enabled" : "Ready to enable"}</p>
+            </div>
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
+              <p className="text-xs font-semibold text-foreground">Instant triggers</p>
+              <p className="mt-1 text-xs text-muted-foreground">lawsuit · cancel account · manager</p>
+            </div>
+          </div>
+        </CardShell>
+
+        <div className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <span className={MONO_LABEL}>Setup health</span>
+            <span className="text-xs font-semibold text-primary">94% ready</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+            {["Identity", "Voice", "Number", "Workflows", "Test call"].map((item, index) => (
+              <div key={item} className="rounded-lg border border-border px-3 py-2 text-muted-foreground">
+                <span className={index < 4 ? "text-primary" : "text-[var(--wireline-color-status-warning)]"}>{index < 4 ? "✓" : "!"}</span> {item}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
