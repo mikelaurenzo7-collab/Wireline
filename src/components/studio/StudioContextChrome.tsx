@@ -4,13 +4,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
 
-function agentSubtitle(agent: WorkspaceAgentSummary | null) {
-  if (!agent) return "Talk to build. Canvas to tune.";
-  const role = agent.role?.trim() || "Agent";
-  const channel = agent.channel ? ` · ${agent.channel}` : "";
-  return `${role}${channel}`;
-}
-
 function studioHref(agent: WorkspaceAgentSummary, suffix?: string) {
   const query = new URLSearchParams({ agent: agent.id });
   if (suffix) query.set("view", suffix);
@@ -48,7 +41,6 @@ export default function StudioContextChrome() {
               </>
             ) : null}
           </nav>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{agentSubtitle(activeAgent)}</p>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
