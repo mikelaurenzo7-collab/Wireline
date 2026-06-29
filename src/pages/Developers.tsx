@@ -155,7 +155,7 @@ export default function Developers() {
                   return (
                     <div
                       key={step.title}
-                      className="wl-panel border border-ink/[0.08] p-4 bg-card rounded-sm"
+                      className="border border-[var(--wireline-color-border-default)] p-4 bg-card rounded-sm"
                     >
                       <Icon className="w-5 h-5 text-primary mb-3" />
                       <h3 className="font-display italic text-base text-foreground mb-1">

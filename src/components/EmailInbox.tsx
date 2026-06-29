@@ -299,7 +299,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             action={
               <div className="flex flex-wrap justify-center gap-3">
                 <Button asChild>
-                  <Link to="/actions">Open Integrations</Link>
+                  <Link to="/connections">Open Connections</Link>
                 </Button>
                 <Button
                   type="button"
@@ -343,24 +343,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   return (
     <section className={`${frameClass} min-h-0`}>
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
-        <div className="text-center sm:text-left wl-centered-header">
-          <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">Inbox</p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            to="/training"
-            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            Wire
-          </Link>
-          <Link
-            to="/studio"
-            className="text-[10px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            Workroom
-          </Link>
-        </div>
+      <header className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-b border-[var(--wireline-color-border-default)] px-5 py-3 sm:px-6">
         <Button
           type="button"
           variant="secondary"

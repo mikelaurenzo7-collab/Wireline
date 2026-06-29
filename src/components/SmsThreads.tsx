@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeft,
@@ -17,6 +17,7 @@ import {
 import { authFetch } from "../lib/api";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { formatDate } from "../lib/safe-date";
+import { cn } from "../lib/utils";
 import {
   OPS_CHANNEL_EMPTY,
   OPS_CHANNEL_TOOLBAR,
@@ -278,12 +279,11 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       return (
         <EmptyState
           icon={<MessageSquare className="size-5" />}
-          eyebrow={OPS_CHANNEL_EMPTY.sms.eyebrow}
           title={OPS_CHANNEL_EMPTY.sms.title}
           description={OPS_CHANNEL_EMPTY.sms.description}
           action={
             <Button asChild>
-              <a href="/actions">Open Integrations</a>
+              <a href="/connections">Open Connections</a>
             </Button>
           }
           density="compact"
@@ -428,7 +428,6 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   {!activeThread ? (
                     <EmptyState
                       icon={<MessageSquare className="size-5" />}
-                      eyebrow={OPS_CHANNEL_EMPTY.inboxDetail.eyebrow}
                       title={OPS_CHANNEL_EMPTY.inboxDetail.title}
                       description={OPS_CHANNEL_EMPTY.inboxDetail.description}
                       density="compact"

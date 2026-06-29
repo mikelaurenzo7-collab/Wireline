@@ -360,7 +360,7 @@ function TemplateCard({
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={{ y: -2 }}
       className={cn(
-        "relative rounded-md wl-panel transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
+        "relative rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
         hovered ? "border-brand/20 shadow-md shadow-brand/8" : "shadow-sm",
       )}
       data-accent={template.accent}
@@ -445,7 +445,7 @@ function TemplateCard({
   );
 }
 
-function CustomAssistantCard() {
+function CustomAgentCard() {
   return (
     <motion.div
       layout
@@ -453,7 +453,7 @@ function CustomAssistantCard() {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-md border border-brand/25 dark:border-white/10 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
     >
-      <div className="w-12 h-12 rounded-md wl-panel flex items-center justify-center">
+      <div className="w-12 h-12 rounded-md border border-border bg-card flex items-center justify-center">
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
@@ -630,7 +630,7 @@ export default function AgentTemplates() {
             ))}
           </AnimatePresence>
 
-          <CustomAssistantCard />
+          <CustomAgentCard />
         </div>
       </div>
 
