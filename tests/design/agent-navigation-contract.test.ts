@@ -29,10 +29,12 @@ describe("agent navigation contract", () => {
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
   });
 
-  it("uses the screenshot-inspired overview as the only agent roster page", () => {
-    expect(overviewPage).toMatch(/Good morning\./);
-    expect(overviewPage).toMatch(/Your agents/);
-    expect(overviewPage).toMatch(/Personal and business lines/);
+  it("uses the screenshot-inspired overview as the personal and business roster", () => {
+    expect(overviewPage).toMatch(/Good morning/);
+    expect(overviewPage).toMatch(/Personal and business agent roster/);
+    expect(overviewPage).toMatch(/title="Personal"/);
+    expect(overviewPage).toMatch(/title="Business"/);
+    expect(overviewPage).toMatch(/Add \{kind\} agent/);
     expect(overviewPage).toMatch(/Recent calls/);
     expect(overviewPage).toMatch(/Quick actions/);
     expect(overviewPage).not.toMatch(/Your assistants|New assistant|Create assistant/);
@@ -64,7 +66,8 @@ describe("agent navigation contract", () => {
     expect(settingsPage).toMatch(/Profile/);
     expect(settingsPage).toMatch(/Security/);
     expect(billingPage).toMatch(/Current plan/);
-    expect(billingPage).toMatch(/Team[\s\S]*\$\{teamPlan\.price_usd_monthly\}\/mo/);
+    expect(billingPage).toMatch(/monthlyPrice/);
+    expect(billingPage).toMatch(/invoiceTotal/);
     expect(teamPage).toMatch(/Members/);
     expect([connectionsPage, settingsPage, billingPage, teamPage].join("\n")).not.toMatch(/assistant|Assistant|Assistants|Pro —|500 min|Sarah Connor|Miles Dyson|Kyle Reese|John Connor/);
   });
