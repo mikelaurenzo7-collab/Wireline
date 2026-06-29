@@ -25,7 +25,7 @@ describe("Studio Canvas vision contract", () => {
     expect(STUDIO_CANVAS_VISION).toBe(WIRELINE_DESIGN_VISION.studioCanvas);
     expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-plus-canvas");
     expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("spatial-cards");
-    expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("horizontal-bar");
+    expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("context-chrome");
     expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(236);
     expect(STUDIO_CANVAS_VISION.workspaceDepthParam).toBe("view=workspace");
     expect(STUDIO_CANVAS_VISION.minTouchTargetPx).toBe(44);
