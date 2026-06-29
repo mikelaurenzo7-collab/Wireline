@@ -43,9 +43,6 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: "analytics", label: "Analytics" },
 ];
 
-const MONO_LABEL =
-  "font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.14em] text-[var(--wireline-color-text-tertiary)]";
-
 function agentInitial(name: string | null | undefined): string {
   return (name || "A").trim().charAt(0).toUpperCase() || "A";
 }
@@ -208,7 +205,7 @@ export default function CallLogsClaude() {
               className={`px-4 py-3 sm:flex-1 sm:px-5 sm:py-3.5 ${phoneBorders}`}
             >
               <div
-                className={MONO_LABEL}
+                className="wl-eyebrow"
                 style={
                   kpi.accent === "warning"
                     ? { color: "var(--wireline-color-status-warning)" }
@@ -305,7 +302,7 @@ function FloorTab({
   return (
     <>
       <div
-        className={`mb-4 inline-flex items-center gap-2 ${MONO_LABEL}`}
+        className="mb-4 inline-flex items-center gap-2 wl-eyebrow "
         style={{ color: "var(--wireline-color-action-primary-default)" }}
       >
         <span
@@ -402,7 +399,7 @@ function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
   return (
     <>
       <div
-        className={`mb-4 ${MONO_LABEL}`}
+        className="mb-4 wl-eyebrow "
         style={{ color: "var(--wireline-color-action-primary-default)" }}
       >
         Action Feed
@@ -460,7 +457,7 @@ function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
   return (
     <>
       <div
-        className={`mb-4 inline-flex items-center gap-2 ${MONO_LABEL}`}
+        className="mb-4 inline-flex items-center gap-2 wl-eyebrow "
         style={{ color: "var(--wireline-color-status-warning)" }}
       >
         <span
@@ -516,7 +513,7 @@ function AnalyticsTab() {
   return (
     <>
       <div className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-7 py-10 text-center">
-        <div className={MONO_LABEL}>Analytics</div>
+        <div className="wl-eyebrow">Analytics</div>
         <div className="mx-auto mt-3 max-w-lg font-[var(--wireline-font-family-display)] text-[22px] leading-tight tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
           Charts appear once your agent has lived a few days.
         </div>
@@ -526,7 +523,7 @@ function AnalyticsTab() {
       </div>
       <div className="mt-4 grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         <section className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
-          <div className={`mb-4 ${MONO_LABEL}`}>What we'll track</div>
+          <div className="mb-4 wl-eyebrow ">What we'll track</div>
           <ul className="flex flex-col gap-2.5 text-[13px] text-[var(--wireline-color-text-primary)]">
             {[
               "Volume by hour & day",

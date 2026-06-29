@@ -17,9 +17,7 @@ export default function BillingSettings() {
       <div className="mx-auto flex w-full max-w-[680px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-          Billing
-        </h1>
+        <h1 className="wl-display-3">Billing</h1>
 
         <section className="rounded-[16px] border border-primary/20 bg-primary p-6 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary-foreground/65">

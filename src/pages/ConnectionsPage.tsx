@@ -106,9 +106,7 @@ export default function ConnectionsPage() {
     <WorkspaceShell title="" eyebrow="" contentClassName="pt-8 pb-10 lg:pt-10">
       <div className="mx-auto flex w-full max-w-[940px] flex-col gap-7 pb-10">
         <section>
-          <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.6vw,3.2rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-            Connections
-          </h1>
+          <h1 className="wl-display-3">Connections</h1>
           <p className="mt-5 max-w-[48ch] text-sm leading-7 text-muted-foreground">
             Tools your agents can use when handling a call. Connect once — any agent can use them.
           </p>
