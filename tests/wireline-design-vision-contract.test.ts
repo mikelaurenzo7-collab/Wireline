@@ -35,11 +35,16 @@ describe("Wireline Letterpress design vision", () => {
     }
   });
 
-  it("maps tertiary text to the generated token in foundation runtime", () => {
+  it("maps secondary and tertiary text to generated token values", () => {
     const foundation = read("src/styles/foundation.css");
+    const tokens = read("src/styles/tokens.generated.css");
+    expect(foundation).toContain("--wl-text-secondary: var(--wireline-color-text-secondary)");
     expect(foundation).toContain("--wl-text-tertiary: var(--wireline-color-text-tertiary)");
-    expect(read("src/styles/tokens.generated.css")).toContain(
-      "--wireline-color-text-tertiary: #7B7B75",
+    expect(tokens).toContain(
+      `--wireline-color-text-secondary: ${WIRELINE_DESIGN_VISION.tokens.textSecondary}`,
+    );
+    expect(tokens).toContain(
+      `--wireline-color-text-tertiary: ${WIRELINE_DESIGN_VISION.tokens.textTertiary}`,
     );
   });
 
