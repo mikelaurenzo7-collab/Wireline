@@ -9,6 +9,9 @@ import { STRIPE_PLANS } from "../lib/plan-catalog";
 const teamPlan = STRIPE_PLANS.find((plan) => plan.id === "team")!;
 
 export default function BillingSettings() {
+  const monthlyPrice = "$" + teamPlan.price_usd_monthly + "/mo";
+  const invoiceTotal = "$" + teamPlan.price_usd_monthly + ".00";
+
   return (
     <WorkspaceShell title="" eyebrow="" contentClassName="pt-0 pb-10">
       <div className="mx-auto flex w-full max-w-[680px] flex-col gap-5 pb-10">
@@ -27,7 +30,7 @@ export default function BillingSettings() {
               Team
             </h2>
             <span className="pb-1 font-[var(--wireline-font-family-display)] text-[32px] leading-none tracking-[-0.035em]">
-              — ${teamPlan.price_usd_monthly}/mo
+              — {monthlyPrice}
             </span>
           </div>
           <p className="mt-4 text-sm leading-6 text-primary-foreground/78">
@@ -48,7 +51,7 @@ export default function BillingSettings() {
           <article className="studio-card p-5">
             <p className="wl-overline">Next invoice</p>
             <p className="mt-4 font-[var(--wireline-font-family-display)] text-[34px] font-normal leading-none tracking-[-0.035em] text-foreground">
-              ${teamPlan.price_usd_monthly}.00
+              {invoiceTotal}
             </p>
             <p className="mt-5 text-sm text-muted-foreground">Due July 1, 2026</p>
           </article>
@@ -60,7 +63,7 @@ export default function BillingSettings() {
             {["June 2026", "May 2026"].map((month) => (
               <div key={month} className="flex items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3">
                 <p className="text-sm font-medium text-foreground">{month}</p>
-                <p className="text-sm font-semibold text-foreground">${teamPlan.price_usd_monthly}.00</p>
+                <p className="text-sm font-semibold text-foreground">{invoiceTotal}</p>
                 <Badge variant="success">Paid</Badge>
               </div>
             ))}
