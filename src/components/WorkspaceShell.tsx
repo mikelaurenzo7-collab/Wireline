@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Bot, Home, Inbox, LayoutGrid, Phone, Settings, Users, Workflow } from "lucide-react";
+import { BookOpen, Bot, Home, Inbox, LayoutGrid, Phone, Settings, Workflow } from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import { useAuth } from "../contexts/AuthContext";
@@ -11,7 +11,6 @@ type NavItem = { href: string; label: string; icon: typeof Bot };
 
 const WORKSPACE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
-  { href: "/studio", label: "Assistants", icon: Users },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
   { href: "/connections", label: "Connections", icon: Workflow },
 ];
@@ -25,7 +24,7 @@ const OPERATE_NAV: NavItem[] = [
 
 const MOBILE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
-  { href: "/studio", label: "Assistants", icon: Users },
+  { href: "/studio", label: "Studio", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -55,8 +54,8 @@ function userInitial(name?: string | null, email?: string | null) {
 }
 
 function agentCountLabel(count: number) {
-  if (count <= 0) return "No assistants yet";
-  return `${count} assistant${count === 1 ? "" : "s"}`;
+  if (count <= 0) return "No agents yet";
+  return `${count} agent${count === 1 ? "" : "s"}`;
 }
 
 function cleanPath(pathname: string) {
