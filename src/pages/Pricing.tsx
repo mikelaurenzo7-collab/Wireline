@@ -1,5 +1,13 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Building2, Check, PhoneCall, ShieldCheck, Users, WalletCards } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Check,
+  PhoneCall,
+  ShieldCheck,
+  Users,
+  WalletCards,
+} from "lucide-react";
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
@@ -164,14 +172,14 @@ export default function Pricing() {
                   }`}
                 >
                   {plan.featured ? (
-                    <span className="absolute right-5 top-5 rounded-full bg-primary px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-primary-foreground">
+                    <span className="absolute right-5 top-5 rounded-full bg-primary px-3 py-1 wl-eyebrow text-primary-foreground">
                       Most useful
                     </span>
                   ) : null}
 
                   <div className="mb-8 flex items-center justify-between gap-4">
                     <span
-                      className={`font-mono text-[10px] font-semibold uppercase tracking-[.14em] ${
+                      className={`wl-eyebrow ${
                         plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-primary"
                       }`}
                     >
@@ -242,7 +250,11 @@ export default function Pricing() {
                           plan.featured ? "text-[rgba(247,246,243,.9)]" : "text-foreground"
                         }`}
                       >
-                        <Check size={15} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
+                        <Check
+                          size={15}
+                          className="mt-0.5 shrink-0 text-primary"
+                          strokeWidth={2.5}
+                        />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -286,9 +298,7 @@ export default function Pricing() {
                   key={label}
                   className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
                 >
-                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[.14em] text-primary">
-                    {label}
-                  </p>
+                  <p className="wl-eyebrow text-primary">{label}</p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
                 </div>
               ))}
@@ -304,18 +314,33 @@ export default function Pricing() {
                 Numbers should feel easy to claim.
               </h2>
               <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                Wireline can provision dedicated numbers during setup, attach them to an agent,
-                and make the account feel operational immediately.
+                Wireline can provision dedicated numbers during setup, attach them to an agent, and
+                make the account feel operational immediately.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                ["Included lines", "Team and Business include dedicated phone numbers so customers do not have to wire Twilio themselves."],
-                ["Expansion", "Extra agents and additional line capacity can become clean add-ons instead of hidden usage surprises."],
-                ["Lock-in", "Once a number, voice, playbook, transcripts, and outcomes live in Wireline, switching costs become real."],
-                ["Trust", "Clear billing language matters: platform plan for capacity, Conversation Balance for live work."],
+                [
+                  "Included lines",
+                  "Team and Business include dedicated phone numbers so customers do not have to wire Twilio themselves.",
+                ],
+                [
+                  "Expansion",
+                  "Extra agents and additional line capacity can become clean add-ons instead of hidden usage surprises.",
+                ],
+                [
+                  "Lock-in",
+                  "Once a number, voice, playbook, transcripts, and outcomes live in Wireline, switching costs become real.",
+                ],
+                [
+                  "Trust",
+                  "Clear billing language matters: platform plan for capacity, Conversation Balance for live work.",
+                ],
               ].map(([title, body]) => (
-                <div key={title} className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5">
+                <div
+                  key={title}
+                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
+                >
                   <PhoneCall size={16} className="text-primary" aria-hidden="true" />
                   <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>

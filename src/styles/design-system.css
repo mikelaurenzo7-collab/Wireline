@@ -26,29 +26,13 @@
   color: var(--wireline-ink);
 }
 
-.wl-app-page-title,
-.wl-public-section-heading,
-.wl-section-title {
-  font-family: var(--wireline-font-family-display), "Instrument Serif", Georgia, serif;
-  color: var(--wireline-ink);
-  font-weight: 400;
-  letter-spacing: -0.025em;
-}
-
-.wl-app-page-title {
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-  line-height: 1.04;
-}
-
-.wl-public-section-heading {
-  max-width: 12ch;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 1.02;
-}
-
-.wl-section-title {
-  line-height: 1.08;
-}
+/* Display headlines + body classes used to live here AND in clarity-system.css
+   with conflicting clamps and max-widths, which produced the visible chaos:
+   whichever stylesheet loaded last won the cascade. The canonical
+   definitions now live in clarity-system.css (.wl-public-section-heading,
+   .wl-public-copy, .wl-app-page-title) and typography-prose.css (the
+   canonical .wl-display-1..4, .wl-eyebrow, .wl-lead, .wl-body, .wl-body-sm
+   scale). This block keeps only .wl-overline because no peer defines it. */
 
 .wl-overline {
   font-size: var(--wireline-typography-overline-size);
@@ -57,13 +41,6 @@
   line-height: var(--wireline-typography-overline-lineHeight);
   text-transform: uppercase;
   color: var(--wireline-ink-muted);
-}
-
-.wl-public-copy {
-  max-width: 38rem;
-  color: var(--wireline-ink-muted);
-  font-size: clamp(1rem, 1.4vw, 1.125rem);
-  line-height: 1.65;
 }
 
 .wl-public-rail,

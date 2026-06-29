@@ -57,9 +57,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             </div>
             <div>
               <div className="text-[14px] font-semibold">{data.name}</div>
-              <div className="font-mono text-[10px] uppercase tracking-[.12em] text-primary">
-                On a call
-              </div>
+              <div className="wl-eyebrow text-primary">On a call</div>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5">
@@ -300,13 +298,13 @@ export default function PrecisionLanding() {
                 <>
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#3D9B73]" />
-                    <span className="font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">
+                    <span className="wl-eyebrow text-muted-foreground">
                       {MARKETING_VOICE.eyebrow}
                     </span>
                   </div>
                   <h1
                     aria-label={personalHeadline}
-                    className="wl-public-section-heading max-w-none text-[clamp(52px,6vw,72px)] leading-[.95]"
+                    className="wl-public-section-heading max-w-none"
                     style={{
                       fontFamily:
                         "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
@@ -325,12 +323,12 @@ export default function PrecisionLanding() {
                 <>
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#3D9B73]" />
-                    <span className="font-mono text-[10px] uppercase tracking-[.14em] text-muted-foreground">
+                    <span className="wl-eyebrow text-muted-foreground">
                       For business · v1 in beta
                     </span>
                   </div>
                   <h1
-                    className="wl-public-section-heading max-w-none text-[clamp(52px,6vw,72px)] leading-[.95]"
+                    className="wl-public-section-heading max-w-none"
                     style={{
                       fontFamily:
                         "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
@@ -401,7 +399,7 @@ export default function PrecisionLanding() {
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
-              <p className="font-mono text-[11px] uppercase tracking-[.14em] text-primary">
+              <p className="wl-eyebrow text-primary">
                 02 — {audience === "personal" ? "Configurations" : "Use cases"}
               </p>
               <h2
@@ -445,9 +443,7 @@ export default function PrecisionLanding() {
                     {name}
                   </h3>
                   <p className="mb-5 text-[14px] leading-[1.6] text-muted-foreground">{body}</p>
-                  <p className="font-mono text-[10px] uppercase tracking-[.12em] text-muted-foreground/60">
-                    {plan}
-                  </p>
+                  <p className="wl-eyebrow text-muted-foreground/60">{plan}</p>
                 </div>
               ))}
             </div>
@@ -458,9 +454,7 @@ export default function PrecisionLanding() {
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
-              <p className="font-mono text-[11px] uppercase tracking-[.14em] text-primary">
-                03 — Four steps
-              </p>
+              <p className="wl-eyebrow text-primary">03 — Four steps</p>
               <h2
                 className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
                 style={{
@@ -500,9 +494,7 @@ export default function PrecisionLanding() {
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12 text-center">
-              <p className="font-mono text-[11px] uppercase tracking-[.14em] text-primary">
-                Pricing
-              </p>
+              <p className="wl-eyebrow text-primary">Pricing</p>
               <h2
                 className="mx-auto mt-4 max-w-[18ch] text-[clamp(34px,4vw,46px)] leading-[1.05]"
                 style={{
@@ -531,7 +523,7 @@ export default function PrecisionLanding() {
                   }`}
                 >
                   {plan.badge && (
-                    <div className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-primary-foreground">
+                    <div className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 wl-eyebrow text-primary-foreground">
                       {plan.badge}
                     </div>
                   )}
