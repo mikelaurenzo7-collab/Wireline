@@ -134,7 +134,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
   return (
     <aside
       aria-label="Workspace navigation"
-      className="hidden h-[100dvh] w-[236px] shrink-0 flex-col overflow-y-auto border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex"
+      className="hidden h-[100dvh] w-[236px] shrink-0 flex-col overflow-hidden border-r border-border bg-[color:var(--wireline-color-surface-default)] px-3.5 py-5 lg:flex"
     >
       <Link
         to="/overview"
@@ -158,19 +158,28 @@ function DesktopRail({ pathname }: { pathname: string }) {
         ))}
       </nav>
 
-      <div className="pt-4">
+      <div className="flex min-h-0 flex-1 flex-col pt-4">
         <div className="flex items-center justify-between px-2.5 pb-2">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
             Agents
           </p>
-          <Link
-            to="/studio?create=1"
-            className="text-[11px] font-semibold text-primary hover:underline"
-          >
-            New
-          </Link>
+          {agents.length ? (
+            <span className="text-[10px] font-mono text-[color:var(--wireline-color-text-tertiary)]">
+              {agents.length}
+            </span>
+          ) : (
+            <Link
+              to="/studio?create=1"
+              className="text-[11px] font-semibold text-primary hover:underline"
+            >
+              New
+            </Link>
+          )}
         </div>
-        <nav className="flex flex-col gap-1" aria-label="Agents">
+        <nav
+          className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-0.5"
+          aria-label="Agents"
+        >
           {agents.length ? (
             agents.map((agent) => {
               const active = isActive(pathname, "/studio") && resolvedId === agent.id;
@@ -206,17 +215,17 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </nav>
       </div>
 
-      <p className="px-2.5 pb-2 pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
+      <p className="shrink-0 px-2.5 pb-2 pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
         Operate
       </p>
-      <nav className="flex flex-1 flex-col gap-0.5" aria-label="Operate">
+      <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
         {OPERATE_NAV.map((item) => (
           <RailLink key={item.href} item={item} pathname={pathname} />
         ))}
       </nav>
 
       {activeAgent ? (
-        <div className="mt-2 border-t border-border pt-3.5">
+        <div className="mt-2 shrink-0 border-t border-border pt-3.5">
           <p className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
             Current agent
           </p>
@@ -241,7 +250,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
       ) : (
         <Link
           to="/settings"
-          className="mt-2 flex items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80"
+          className="mt-2 flex shrink-0 items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80"
           aria-label="Account settings"
         >
           <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
