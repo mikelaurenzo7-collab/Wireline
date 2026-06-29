@@ -165,23 +165,31 @@ export default function WorkspaceShell({
   action,
   children,
   contentClassName = "pt-2 pb-8",
+  fullBleed = false,
 }: {
   title: string;
   eyebrow: string;
   action?: ReactNode;
   children: ReactNode;
   contentClassName?: string;
+  fullBleed?: boolean;
 }) {
   const location = useLocation();
   const nativeAppShell = isNativeAppShell();
   const showHeader = Boolean(title || eyebrow || action);
+  const mainSpacing = fullBleed
+    ? "p-0 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0"
+    : "px-4 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-3 lg:pb-6 xl:px-10";
+  const contentInner = fullBleed
+    ? "wl-workspace-content-inner mx-0 flex min-h-full w-full max-w-none flex-col"
+    : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col";
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
       <a className="wl-skip-link" href="#workspace-main">Skip to content</a>
       <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[236px_minmax(0,1fr)]">
         <DesktopRail pathname={location.pathname} />
-        <main id="workspace-main" data-wireline-route={location.pathname} className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-3 lg:pb-6 xl:px-10">
+        <main id="workspace-main" data-wireline-route={location.pathname} className={`wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden ${mainSpacing}`}>
           {showHeader ? (
             <div className="relative mb-4 pb-3 lg:mb-5">
               <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-4 sm:px-12 md:px-28">
@@ -195,7 +203,7 @@ export default function WorkspaceShell({
             </div>
           ) : null}
           <div className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}>
-            <div className="wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col">{children}</div>
+            <div className={contentInner}>{children}</div>
           </div>
         </main>
       </div>
