@@ -57,7 +57,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "apps-route", pattern: /\/apps/ },
     { id: "route-active-state", pattern: /useLocation/ },
     { id: "assistants-route", pattern: /label: "Assistants"/ },
-    { id: "studio-active-state", pattern: /href === "\/studio"/ },
+    { id: "studio-active-state", pattern: /target === "\/studio"/ },
   ],
   studioChrome: [
     { id: "breadcrumb", pattern: /Studio breadcrumb|Assistant breadcrumb/ },
