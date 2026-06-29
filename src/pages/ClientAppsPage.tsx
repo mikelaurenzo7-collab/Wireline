@@ -6,11 +6,11 @@ import WorkspaceShell from "../components/WorkspaceShell";
 const clientSurfaces = [
   {
     icon: MonitorDown,
-    title: "Browser Companion",
+    title: "Wireline Command",
     status: "Private preview",
     statusVariant: "warning" as const,
     description: "Bring the page you're on into Studio.",
-    detail: "Selected text, title, URL, and linked numbers — only when you invoke it.",
+    detail: "Selected text, title, URL, and linked numbers — only when invoked.",
     action: "Request preview",
     href: "mailto:support@trywireline.com?subject=Wireline%20Command%20Preview",
   },
@@ -63,41 +63,27 @@ export default function ClientAppsPage() {
           </p>
         </section>
 
-        <section
-          className="grid gap-4 md:grid-cols-2"
-          aria-label="Wireline apps and companion surfaces"
-        >
-          {clientSurfaces.map(
-            ({ icon: Icon, title, status, statusVariant, description, detail, action, href }) => (
-              <article
-                key={title}
-                className="studio-card group flex min-h-[230px] flex-col p-6 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--wireline-elevation-md)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <span className="grid size-11 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                    <Icon size={18} aria-hidden="true" />
-                  </span>
-                  <Badge variant={statusVariant}>{status}</Badge>
-                </div>
-                <h2 className="mt-6 font-[var(--wireline-font-family-display)] text-[26px] font-normal leading-tight tracking-[-0.02em] text-foreground">
-                  {title}
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
-                <p className="mt-3 text-xs font-medium leading-5 text-muted-foreground/80">
-                  {detail}
-                </p>
-                <Button
-                  asChild
-                  variant="link"
-                  className="mt-auto w-fit px-0 pt-6 text-sm text-primary"
-                >
-                  <a href={href}>
-                    {action} <ArrowUpRight size={14} />
-                  </a>
-                </Button>
-              </article>
-            ),
-          )}
+        <section className="grid gap-4 md:grid-cols-2" aria-label="Wireline apps and companion surfaces">
+          {clientSurfaces.map(({ icon: Icon, title, status, statusVariant, description, detail, action, href }) => (
+            <article key={title} className="wl-card group flex min-h-[230px] flex-col transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--wireline-elevation-md)]">
+              <div className="flex items-start justify-between gap-4">
+                <span className="grid size-11 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+                  <Icon size={18} aria-hidden="true" />
+                </span>
+                <Badge variant={statusVariant}>{status}</Badge>
+              </div>
+              <h2 className="mt-6 font-[var(--wireline-font-family-display)] text-[26px] font-normal leading-tight tracking-[-0.02em] text-foreground">
+                {title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
+              <p className="mt-3 text-xs font-medium leading-5 text-muted-foreground">{detail}</p>
+              <Button asChild variant="link" className="mt-auto w-fit px-0 pt-6 text-sm text-primary">
+                <a href={href}>
+                  {action} <ArrowUpRight size={14} />
+                </a>
+              </Button>
+            </article>
+          ))}
         </section>
 
         <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-7 text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
@@ -110,7 +96,7 @@ export default function ClientAppsPage() {
                 A call that starts in CarPlay finishes in your Inbox.
               </p>
             </div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[rgba(247,246,243,0.72)]">
               → phone · chat · browser · inbox
             </p>
           </div>
