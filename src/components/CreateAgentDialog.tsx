@@ -1,33 +1,44 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Loader2, Phone, WandSparkles, X } from "lucide-react";
+import { Check, Loader2, Phone, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Button, Input, NativeSelect, Textarea } from "./atoms";
-import { FormField } from "./molecules";
+
+import { Button, Input, Textarea } from "./atoms";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
 
-const roles = [
-  ["scheduler", "Scheduler"],
-  ["receptionist", "Receptionist"],
-  ["customer_service", "Support"],
-  ["sales", "Sales"],
-  ["custom", "Custom"],
+const ROLE_TEMPLATES = [
+  { value: "scheduler", label: "Scheduler", prompt: "Book appointments" },
+  { value: "receptionist", label: "Receptionist", prompt: "Answer my unknowns" },
+  { value: "customer_service", label: "Support", prompt: "Handle pharmacy calls" },
+  { value: "sales", label: "Sales", prompt: "Qualify leads" },
+  { value: "custom", label: "Custom", prompt: "Something else" },
 ] as const;
 
-const voices = [
-  ["", "Auto"],
-  ["pNInz6obpgDQGcFmaJgB", "Adam - Deep"],
-  ["VR6AewLTigWG4xSOukaG", "Arnold - Crisp"],
-  ["21m00Tcm4TlvDq8ikWAM", "Rachel - Warm"],
-  ["EXAVITQu4vr4xnSDxMaL", "Sarah - Gentle"],
+const VOICE_OPTIONS = [
+  { value: "", label: "Auto voice" },
+  { value: "21m00Tcm4TlvDq8ikWAM", label: "Aria · Warm" },
+  { value: "pNInz6obpgDQGcFmaJgB", label: "Marcus · Deep" },
+  { value: "EXAVITQu4vr4xnSDxMaL", label: "Taylor · Gentle" },
 ] as const;
 
-const personalities = ["Clear", "Warm", "Direct", "Polished", "Custom"] as const;
+const PERSONALITY_OPTIONS = ["Clear", "Warm", "Direct", "Polished"] as const;
 
-const CREATE_AGENT_INTAKE_COPY = "Quick setup. Train after.";
+type Role = (typeof ROLE_TEMPLATES)[number]["value"];
+type Personality = (typeof PERSONALITY_OPTIONS)[number];
+type Posture = "personal" | "business";
 
-type Role = (typeof roles)[number][0];
-type Personality = (typeof personalities)[number];
+function defaultAgentName(posture: Posture, role: Role) {
+  if (posture === "personal") return "Sarah";
+  if (role === "sales") return "Liam";
+  if (role === "customer_service") return "Support Desk";
+  return "Front Desk";
+}
+
+function defaultBrief(posture: Posture) {
+  return posture === "business"
+    ? "Answer calls, book consultations, log outcomes, and hand off urgent callers."
+    : "Answer unknown callers, book appointments, take messages, and text me what happened.";
+}
 
 export default function CreateAgentDialog({
   open,
@@ -43,24 +54,26 @@ export default function CreateAgentDialog({
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
   const { refresh } = useAgents();
+  const [posture, setPosture] = useState<Posture>(business ? "business" : "personal");
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>(business ? "receptionist" : "scheduler");
   const [voiceId, setVoiceId] = useState("");
-  const [personality, setPersonality] = useState<Personality>("Clear");
-  const [customPersonality, setCustomPersonality] = useState("");
+  const [personality, setPersonality] = useState<Personality>("Warm");
   const [brief, setBrief] = useState(initialBrief);
   const [provisionNumber, setProvisionNumber] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
-  const formRef = useRef<HTMLFormElement>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
+  const briefRef = useRef<HTMLTextAreaElement>(null);
+  const activePosture: Posture = posture;
 
   useEffect(() => {
     if (!open) return;
-    setRole(business ? "receptionist" : "scheduler");
+    const nextPosture = business ? "business" : "personal";
+    setPosture(nextPosture);
+    setRole(nextPosture === "business" ? "receptionist" : "scheduler");
     setProvisionNumber(false);
-    setBrief((current) => current || initialBrief);
-    const frame = requestAnimationFrame(() => nameRef.current?.focus());
+    setBrief((current) => current || initialBrief || defaultBrief(nextPosture));
+    const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [business, initialBrief, open]);
 
@@ -83,11 +96,17 @@ export default function CreateAgentDialog({
       event.preventDefault();
       close();
     }
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !creating) {
+      event.preventDefault();
+      event.currentTarget.requestSubmit();
+    }
   }
 
   async function create(event: FormEvent) {
     event.preventDefault();
-    if (!name.trim() || creating) return;
+    if (creating) return;
+    const finalBrief = brief.trim() || defaultBrief(activePosture);
+    const finalName = name.trim() || defaultAgentName(activePosture, role);
     setCreating(true);
     setError("");
     try {
@@ -95,10 +114,10 @@ export default function CreateAgentDialog({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name.trim(),
+          name: finalName,
           role,
           deferPhoneProvision: !provisionNumber,
-          is_business_agent: business,
+          is_business_agent: activePosture === "business",
         }),
       });
       const body = (await safeJson(response)) as { id?: string; error?: string } | null;
@@ -115,37 +134,25 @@ export default function CreateAgentDialog({
         });
       }
 
-      const personalityText =
-        personality === "Custom"
-          ? customPersonality.trim()
-          : `${personality}. Concise. Useful. Business-ready.`;
-      if (personalityText) {
-        await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/manual`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "personality", content: personalityText }),
-        });
-      }
+      const personalityText = `${personality}. Concise. Useful. ${activePosture === "business" ? "Business-ready." : "Personal and discreet."}`;
+      await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "personality", content: personalityText }),
+      });
 
-      const firstTraining = [
-        `Role: ${role}.`,
-        personalityText ? `Personality: ${personalityText}` : "",
-        brief.trim() ? `First brief: ${brief.trim()}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      if (firstTraining) {
-        await authFetch("/api/train/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agentId: body.id, message: firstTraining }),
-        });
-      }
+      await authFetch("/api/train/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: body.id,
+          message: [`Role: ${role}.`, `Posture: ${activePosture}.`, `Personality: ${personalityText}`, `First brief: ${finalBrief}`].join("\n"),
+        }),
+      });
 
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
-      navigate(`/knowledge?agent=${encodeURIComponent(body.id)}`, { replace: true });
+      navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });
       onClose();
     } catch {
       setError("Agent could not be created. Try again.");
@@ -158,175 +165,173 @@ export default function CreateAgentDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/65 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
+      className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/58 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-[1px]"
       role="presentation"
     >
       <form
-        ref={formRef}
         onSubmit={create}
         onKeyDown={onKeyDown}
-        className="studio-card my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto p-5 shadow-2xl sm:p-6"
+        className="studio-card my-auto max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto p-0 shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-agent-title"
         aria-describedby="create-agent-description"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2
-              id="create-agent-title"
-              className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
-            >
-              New agent.
-            </h2>
-            <p id="create-agent-description" className="mt-1 text-sm text-muted-foreground">
-              {CREATE_AGENT_INTAKE_COPY}
-            </p>
+        <div className="border-b border-border px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-primary text-primary-foreground">
+                <Zap size={16} aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2 id="create-agent-title" className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground">
+                  Fast Start
+                </h2>
+                <p id="create-agent-description" className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  ~3 minutes to your first agent
+                </p>
+              </div>
+            </div>
+            <Button type="button" variant="ghost" size="icon" onClick={close} aria-label="Close create agent dialog" className="shrink-0">
+              <X aria-hidden="true" size={16} />
+            </Button>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={close}
-            aria-label="Close create agent dialog"
-            className="shrink-0"
-          >
-            <X aria-hidden="true" size={16} />
-          </Button>
+          <div className="mt-4 h-1 rounded-full bg-muted">
+            <div className="h-full w-1/5 rounded-full bg-primary" />
+          </div>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <FormField label="Name" htmlFor="create-agent-name" required>
-            <Input
-              id="create-agent-name"
-              ref={nameRef}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Casey"
-              autoComplete="off"
-              required
-            />
-          </FormField>
-          <FormField label="Role" htmlFor="create-agent-role">
-            <NativeSelect
-              id="create-agent-role"
-              value={role}
-              onChange={(event) => setRole(event.target.value as Role)}
-            >
-              {roles.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </NativeSelect>
-          </FormField>
-          <FormField label="Voice" htmlFor="create-agent-voice">
-            <NativeSelect
-              id="create-agent-voice"
-              value={voiceId}
-              onChange={(event) => setVoiceId(event.target.value)}
-            >
-              {voices.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </NativeSelect>
-          </FormField>
-          <FormField label="Personality" htmlFor="create-agent-personality">
-            <NativeSelect
-              id="create-agent-personality"
-              value={personality}
-              onChange={(event) => setPersonality(event.target.value as Personality)}
-            >
-              {personalities.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </NativeSelect>
-          </FormField>
-        </div>
+        <div className="px-6 py-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">Step 1 of 5</p>
+          <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+            What do you need handled?
+          </h3>
+          <p className="mt-3 text-sm text-muted-foreground">One sentence is enough — Wireline fills in the rest.</p>
 
-        <label
-          className={`mt-3 flex cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border p-3 text-left transition-colors ${
-            provisionNumber
-              ? "border-primary/35 bg-accent"
-              : "border-border bg-background hover:bg-muted"
-          }`}
-        >
-          <input
-            type="checkbox"
-            className="sr-only"
-            checked={provisionNumber}
-            onChange={(event) => setProvisionNumber(event.target.checked)}
-          />
-          <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-card text-foreground">
-            <Phone size={16} aria-hidden="true" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-foreground">Phone number</span>
-            <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
-              Twilio number. Usage may bill.
-            </span>
-          </span>
-          <span className="shrink-0 rounded-full border border-border bg-card px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            {provisionNumber ? "Now" : "Later"}
-          </span>
-        </label>
+          <div className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Agent type">
+            {([
+              ["personal", "Personal", "Unknown callers, errands, appointments"],
+              ["business", "Business", "Front desk, leads, support, scheduling"],
+            ] as const).map(([value, label, detail]) => {
+              const selected = activePosture === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setPosture(value);
+                    setRole(value === "business" ? "receptionist" : "scheduler");
+                    setBrief(defaultBrief(value));
+                  }}
+                  className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]" : "border-border bg-card hover:border-primary/30"}`}
+                  aria-pressed={selected}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                    <span className={`grid size-5 place-items-center rounded-full border text-[10px] ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}>
+                      <Check size={12} aria-hidden="true" />
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        {personality === "Custom" ? (
-          <FormField
-            className="mt-3"
-            label="Custom personality"
-            htmlFor="create-agent-custom-personality"
-          >
+          <label className="mt-5 block">
+            <span className="sr-only">Agent brief</span>
             <Textarea
-              id="create-agent-custom-personality"
-              value={customPersonality}
-              onChange={(event) => setCustomPersonality(event.target.value)}
-              placeholder="Calm, concise, warm, and decisive."
+              ref={briefRef}
+              value={brief}
+              onChange={(event) => setBrief(event.target.value)}
+              placeholder="e.g. Answer my unknown callers and book my haircut appointments"
+              className="min-h-[112px] text-[15px]"
               resize="none"
             />
-          </FormField>
-        ) : null}
+          </label>
 
-        <FormField
-          className="mt-3"
-          label="First brief"
-          htmlFor="create-agent-brief"
-          description="Optional."
-        >
-          <Textarea
-            id="create-agent-brief"
-            value={brief}
-            onChange={(event) => setBrief(event.target.value)}
-            placeholder={
-              business
-                ? "Book consultations and hand off urgent callers."
-                : "Handle appointment calls and text me what needs review."
-            }
-            resize="none"
-          />
-        </FormField>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {ROLE_TEMPLATES.slice(0, 4).map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => {
+                  setRole(item.value);
+                  setBrief(item.prompt);
+                }}
+                className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? "border-primary bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+              >
+                {item.prompt}
+              </button>
+            ))}
+          </div>
 
-        {error ? (
-          <p className="mt-3 text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <Button
-          type="submit"
-          disabled={!name.trim() || creating}
-          className="mt-5 w-full justify-center"
-        >
-          {creating ? (
-            <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-          ) : (
-            <WandSparkles aria-hidden="true" size={16} />
-          )}
-          Create agent
-        </Button>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5">
+              <span className="text-xs font-semibold text-foreground">Agent name</span>
+              <Input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={defaultAgentName(activePosture, role)}
+                autoComplete="off"
+              />
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-xs font-semibold text-foreground">Voice</span>
+              <select
+                value={voiceId}
+                onChange={(event) => setVoiceId(event.target.value)}
+                className="min-h-[44px] rounded-[var(--radius-md)] border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-primary/45 focus:ring-2 focus:ring-primary/10"
+              >
+                {VOICE_OPTIONS.map((voice) => (
+                  <option key={voice.value} value={voice.value}>{voice.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div>
+              <p className="text-xs font-semibold text-foreground">Response style</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PERSONALITY_OPTIONS.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setPersonality(item)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${personality === item ? "border-primary bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className={`flex min-h-[44px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}>
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={provisionNumber}
+                onChange={(event) => setProvisionNumber(event.target.checked)}
+              />
+              <Phone size={15} aria-hidden="true" className="text-primary" />
+              <span className="text-xs font-semibold text-foreground">Provision number</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                {provisionNumber ? "Now" : "Later"}
+              </span>
+            </label>
+          </div>
+
+          {error ? (
+            <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>
+          ) : null}
+        </div>
+
+        <div className="flex items-center justify-end border-t border-border px-6 py-4">
+          <Button type="submit" disabled={creating} className="min-w-[140px] justify-center">
+            {creating ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <WandSparkles aria-hidden="true" size={16} />}
+            Continue →
+          </Button>
+        </div>
       </form>
     </div>
   );
