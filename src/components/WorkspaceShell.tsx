@@ -91,10 +91,19 @@ function isNativeAppShell() {
   );
 }
 
+function normalizePath(pathname: string) {
+  const withoutTrailingSlash = pathname.replace(/\/+$/, "");
+  return withoutTrailingSlash || "/";
+}
+
 function isActive(pathname: string, href: string) {
-  if (pathname === href) return true;
-  if (href === "/studio" && pathname.startsWith("/studio")) return true;
-  return pathname.startsWith(`${href}/`);
+  const current = normalizePath(pathname);
+  const target = normalizePath(href);
+  if (target === "/settings") {
+    return current === "/settings" || current.startsWith("/settings/") || current === "/admin" || current.startsWith("/admin/");
+  }
+  if (target === "/studio") return current === "/studio" || current.startsWith("/studio/");
+  return current === target || current.startsWith(`${target}/`);
 }
 
 function RailItem({
@@ -117,6 +126,8 @@ function RailItem({
       aria-label={label}
       aria-current={active ? "page" : undefined}
       title={label}
+      data-wireline-nav-href={href}
+      data-wireline-nav-active={active ? "true" : undefined}
       className={
         compact
           ? `grid min-h-[44px] flex-1 place-items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-semibold transition-colors ${
@@ -436,6 +447,20 @@ const MOBILE_NAV: Record<"personal" | "business", RailNavItem[]> = {
   ],
 };
 
+function railItemActive(pathname: string, href: string) {
+  return isActive(pathname, href);
+}
+
+function mobileNavForPath(posture: "personal" | "business", pathname: string) {
+  const base = MOBILE_NAV[posture];
+  if (base.some((item) => railItemActive(pathname, item.href))) return base;
+  const activeItem = [...WORKSPACE_NAV[posture], ...OPERATE_NAV[posture]].find((item) =>
+    railItemActive(pathname, item.href),
+  );
+  if (!activeItem) return base;
+  return [activeItem, ...base.filter((item) => item.href !== activeItem.href)].slice(0, 5);
+}
+
 function MobileWorkspaceNav({
   pathname,
   posture,
@@ -449,7 +474,7 @@ function MobileWorkspaceNav({
       className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
     >
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
-        {MOBILE_NAV[posture].map((item) => (
+        {mobileNavForPath(posture, pathname).map((item) => (
           <RailItem
             key={item.href}
             href={item.href}
@@ -492,17 +517,17 @@ function SidebarLink({
   active: boolean;
 }) {
   return (
-    <Link to={href} aria-current={active ? "page" : undefined} className="wl-rail-link">
+    <Link
+      to={href}
+      aria-current={active ? "page" : undefined}
+      data-wireline-nav-href={href}
+      data-wireline-nav-active={active ? "true" : undefined}
+      className="wl-rail-link"
+    >
       <Icon size={16} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
       {label}
     </Link>
   );
-}
-
-function railItemActive(pathname: string, href: string) {
-  if (href === "/settings") return isActive(pathname, "/settings") || pathname.startsWith("/admin");
-  if (href === "/studio") return isActive(pathname, "/studio");
-  return isActive(pathname, href);
 }
 
 function DesktopRail({ pathname }: { pathname: string }) {
@@ -590,15 +615,7 @@ function NativeDock({ pathname }: { pathname: string }) {
     >
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
         {nativeNavigation.map((item) => (
-          <RailItem
-            key={item.href}
-            {...item}
-            active={
-              isActive(pathname, item.href) ||
-              (item.href === "/settings" && pathname.startsWith("/admin"))
-            }
-            compact
-          />
+          <RailItem key={item.href} {...item} active={railItemActive(pathname, item.href)} compact />
         ))}
       </div>
     </nav>
