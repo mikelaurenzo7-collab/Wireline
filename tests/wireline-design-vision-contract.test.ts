@@ -39,7 +39,7 @@ describe("Wireline Letterpress design vision", () => {
     const foundation = read("src/styles/foundation.css");
     expect(foundation).toContain("--wl-text-tertiary: var(--wireline-color-text-tertiary)");
     expect(read("src/styles/tokens.generated.css")).toContain(
-      "--wireline-color-text-tertiary: #A1A19B",
+      "--wireline-color-text-tertiary: #7B7B75",
     );
   });
 

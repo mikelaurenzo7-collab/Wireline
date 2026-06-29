@@ -347,16 +347,18 @@ export default function PrecisionLanding() {
 
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <Link
-                  to="/signup"
+                  to={audience === "business" ? "/signup?plan=business" : "/signup"}
                   className="marketing-btn-primary flex min-h-11 items-center gap-2 px-6 py-3 text-[15px] font-semibold"
                 >
-                  Start with Personal <ArrowRight size={16} />
+                  {audience === "business" ? "Start with Business" : "Start with Personal"}{" "}
+                  <ArrowRight size={16} />
                 </Link>
                 <button
                   type="button"
                   className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border bg-card px-6 py-3 text-[15px] font-medium text-foreground transition-all hover:border-border/80"
                 >
-                  <Phone size={15} /> Hear it answer a call
+                  <Phone size={15} />{" "}
+                  {audience === "business" ? "Hear it run a front desk" : "Hear it answer a call"}
                 </button>
               </div>
 
@@ -385,7 +387,7 @@ export default function PrecisionLanding() {
         {/* ── DIFFERENTIATOR STRIP ──────────────────────────────── */}
         <div className="border-b border-border bg-[#1C1C1A] px-5 py-5 text-center">
           <p
-            className="text-[18px] text-[rgba(247,246,243,.7)]"
+            className="text-[18px] text-[rgba(247,246,243,.82)]"
             style={{
               fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
             }}
@@ -538,7 +540,7 @@ export default function PrecisionLanding() {
                     {plan.name}
                   </div>
                   <div
-                    className={`mb-5 text-[12px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}
+                    className={`mb-5 text-[12px] ${plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-muted-foreground"}`}
                   >
                     {plan.sub}
                   </div>
@@ -553,13 +555,13 @@ export default function PrecisionLanding() {
                       {plan.price}
                     </span>
                     <span
-                      className={`text-[14px] ${plan.featured ? "text-[rgba(247,246,243,.4)]" : "text-muted-foreground"}`}
+                      className={`text-[14px] ${plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-muted-foreground"}`}
                     >
                       {plan.period}
                     </span>
                   </div>
                   <p
-                    className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "text-[rgba(247,246,243,.5)]" : "text-muted-foreground"}`}
+                    className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "text-[rgba(247,246,243,.78)]" : "text-muted-foreground"}`}
                   >
                     {plan.body}
                   </p>
@@ -608,25 +610,38 @@ export default function PrecisionLanding() {
                     letterSpacing: "-0.03em",
                   }}
                 >
-                  Stop ignoring calls.
-                  <br />
-                  Start delegating them.
+                  {audience === "business" ? (
+                    <>
+                      Stop missing calls.
+                      <br />
+                      Start booking them.
+                    </>
+                  ) : (
+                    <>
+                      Stop ignoring calls.
+                      <br />
+                      Start delegating them.
+                    </>
+                  )}
                 </h2>
-                <p className="mx-auto mt-4 max-w-[420px] text-[16px] text-[rgba(247,246,243,.55)]">
-                  Create first. Fund live work when the line is ready.
+                <p className="mx-auto mt-4 max-w-[460px] text-[16px] text-[rgba(247,246,243,.72)]">
+                  {audience === "business"
+                    ? "Stand up a front desk in an afternoon. Fund live calls with Conversation Balance."
+                    : "Create first. Fund live work when the line is ready."}
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                   <Link
-                    to="/signup"
+                    to={audience === "business" ? "/signup?plan=business" : "/signup"}
                     className="flex min-h-11 items-center gap-2 rounded-[10px] bg-[#F7F6F3] px-7 py-3 text-[15px] font-semibold text-[#1C1C1A] transition-all hover:bg-white hover:-translate-y-px"
                   >
-                    Start with Personal <ArrowRight size={16} />
+                    {audience === "business" ? "Start with Business" : "Start with Personal"}{" "}
+                    <ArrowRight size={16} />
                   </Link>
                   <button
                     type="button"
-                    className="min-h-11 px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.7)] transition-colors hover:text-[#F7F6F3]"
+                    className="min-h-11 px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.85)] transition-colors hover:text-[#F7F6F3]"
                   >
-                    Hear it answer a call
+                    {audience === "business" ? "Hear it run a front desk" : "Hear it answer a call"}
                   </button>
                 </div>
               </div>

@@ -36,7 +36,7 @@ internal object WirelineDesignTokens {
     val colorTextOnAction = Color(0xFFFFFFFF)
     val colorTextPrimary = Color(0xFF1C1C1A)
     val colorTextSecondary = Color(0xFF6B6B65)
-    val colorTextTertiary = Color(0xFFA1A19B)
+    val colorTextTertiary = Color(0xFF7B7B75)
   }
 
   object Metric {

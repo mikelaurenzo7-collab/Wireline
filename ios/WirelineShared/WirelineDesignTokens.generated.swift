@@ -33,7 +33,7 @@ public enum WirelineDesignTokens {
     public static let colorTextOnAction = Color(hex: 0xFFFFFF)
     public static let colorTextPrimary = Color(hex: 0x1C1C1A)
     public static let colorTextSecondary = Color(hex: 0x6B6B65)
-    public static let colorTextTertiary = Color(hex: 0xA1A19B)
+    public static let colorTextTertiary = Color(hex: 0x7B7B75)
   }
 
   public enum Metric {

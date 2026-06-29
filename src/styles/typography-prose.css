@@ -172,6 +172,12 @@
    display headlines, eyebrows, leads, and body across marketing + app.
    Replaces ~19 scattered text-[Npx] declarations with five steps that
    scale fluidly from the smallest phone to ultra-wide desktops.
+
+   Colors live in :where() so any Tailwind text-* utility wins. Without
+   this, the unlayered class color (e.g. text-tertiary on .wl-eyebrow)
+   beats every Tailwind utility — turning .wl-eyebrow.text-primary into
+   washed-out gray, and `wl-eyebrow text-primary-foreground` pills into
+   invisible text on a green bg. Specificity 0,1,0 → 0,0,0 fixes both.
    ========================================================================== */
 
 /* Display 1 — landing hero headlines (the biggest type on the site). */
@@ -181,8 +187,10 @@
   font-size: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
   line-height: 0.98;
   letter-spacing: -0.035em;
-  color: var(--wireline-color-text-primary);
   text-wrap: balance;
+}
+:where(.wl-display-1) {
+  color: var(--wireline-color-text-primary);
 }
 
 /* Display 2 — section headlines on marketing, pricing tiers, dashboards. */
@@ -192,8 +200,10 @@
   font-size: clamp(2rem, 1.3rem + 2.8vw, 3.5rem);
   line-height: 1.02;
   letter-spacing: -0.03em;
-  color: var(--wireline-color-text-primary);
   text-wrap: balance;
+}
+:where(.wl-display-2) {
+  color: var(--wireline-color-text-primary);
 }
 
 /* Display 3 — page titles (Account, Billing, Phone, Team, Connections). */
@@ -203,8 +213,10 @@
   font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
   line-height: 1.05;
   letter-spacing: -0.025em;
-  color: var(--wireline-color-text-primary);
   text-wrap: balance;
+}
+:where(.wl-display-3) {
+  color: var(--wireline-color-text-primary);
 }
 
 /* Display 4 — card titles and hero number callouts. */
@@ -214,32 +226,42 @@
   font-size: clamp(1.125rem, 1rem + 0.6vw, 1.625rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
+}
+:where(.wl-display-4) {
   color: var(--wireline-color-text-primary);
 }
 
 /* Eyebrow — mono section/category labels. The fixed 11px stays as a
-   visual rest point; everything around it scales. */
+   visual rest point; everything around it scales. Default color sits
+   in :where() so consumers can override with text-primary, text-muted,
+   text-primary-foreground without specificity gymnastics. */
 .wl-eyebrow {
   font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--wireline-color-text-tertiary);
+}
+:where(.wl-eyebrow) {
+  color: var(--wireline-color-text-secondary);
 }
 
 /* Lead — large body that sits under hero headlines / page titles. */
 .wl-lead {
   font-size: clamp(0.9375rem, 0.875rem + 0.3vw, 1.125rem);
   line-height: 1.6;
-  color: var(--wireline-color-text-secondary);
   text-wrap: pretty;
+}
+:where(.wl-lead) {
+  color: var(--wireline-color-text-secondary);
 }
 
 /* Body — default running copy. */
 .wl-body {
   font-size: 0.9375rem;
   line-height: 1.65;
+}
+:where(.wl-body) {
   color: var(--wireline-color-text-secondary);
 }
 
@@ -247,6 +269,8 @@
 .wl-body-sm {
   font-size: 0.8125rem;
   line-height: 1.55;
+}
+:where(.wl-body-sm) {
   color: var(--wireline-color-text-tertiary);
 }
 
