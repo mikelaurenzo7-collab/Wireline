@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 /**
  * useMediaQuery — render-time match for a CSS media query, backed by
@@ -17,19 +17,22 @@ import { useSyncExternalStore } from "react";
  * API calls. Gate the render on this hook instead.
  */
 export function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    (notify) => {
+  const subscribe = useCallback(
+    (notify: () => void) => {
       if (typeof window === "undefined" || !window.matchMedia) return () => {};
       const list = window.matchMedia(query);
       list.addEventListener("change", notify);
       return () => list.removeEventListener("change", notify);
     },
-    () => {
-      if (typeof window === "undefined" || !window.matchMedia) return false;
-      return window.matchMedia(query).matches;
-    },
-    () => false,
+    [query],
   );
+
+  const getSnapshot = useCallback(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia(query).matches;
+  }, [query]);
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
 /** Convenience: matches the `lg:` Tailwind breakpoint (>= 1024px). */
