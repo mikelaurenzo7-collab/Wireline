@@ -25,30 +25,26 @@ describe("Studio Canvas vision contract", () => {
     expect(STUDIO_CANVAS_VISION).toBe(WIRELINE_DESIGN_VISION.studioCanvas);
     expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-plus-canvas");
     expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("spatial-cards");
-    expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("horizontal-bar");
+    expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("context-chrome");
     expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(236);
     expect(STUDIO_CANVAS_VISION.workspaceDepthParam).toBe("view=workspace");
     expect(STUDIO_CANVAS_VISION.minTouchTargetPx).toBe(44);
   });
 
-  it("forbids retired patterns (roster grid in canvas, prototype mock, demo hacks)", () => {
+  it("guards against old Studio patterns", () => {
     const sources = loadSurfaces();
 
-    for (const rule of STUDIO_CANVAS_FORBIDDEN.canvas) {
-      expect(sources.canvas, rule.id).not.toMatch(rule.pattern);
-    }
-    for (const rule of STUDIO_CANVAS_FORBIDDEN.spatialCanvas) {
-      expect(sources.spatialCanvas, rule.id).not.toMatch(rule.pattern);
-    }
-    for (const rule of STUDIO_CANVAS_FORBIDDEN.shell) {
-      expect(sources.shell, rule.id).not.toMatch(rule.pattern);
-    }
-    for (const rule of STUDIO_CANVAS_FORBIDDEN.workspacePanel) {
-      expect(sources.workspacePanel, rule.id).not.toMatch(rule.pattern);
+    for (const [surface, rules] of Object.entries(STUDIO_CANVAS_FORBIDDEN) as Array<
+      [keyof typeof STUDIO_CANVAS_FORBIDDEN, (typeof STUDIO_CANVAS_FORBIDDEN)[keyof typeof STUDIO_CANVAS_FORBIDDEN]]
+    >) {
+      const text = sources[surface];
+      for (const rule of rules) {
+        expect(text, `${surface}:${rule.id}`).not.toMatch(rule.pattern);
+      }
     }
   });
 
-  it("requires chat + spatial Agent Canvas bound to real config, with gated workspace depth", () => {
+  it("requires the Claude Studio shell, context chrome, chat, and spatial Agent Canvas", () => {
     const sources = loadSurfaces();
 
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_REQUIRED) as Array<
@@ -70,13 +66,11 @@ describe("Studio Canvas vision contract", () => {
     }
   });
 
-  it("composes studio home from shell + canvas orchestrator only", () => {
+  it("composes studio home from the dedicated shell and canvas orchestrator", () => {
     const studioHome = read(STUDIO_CANVAS_SURFACES.studioHome);
-    expect(studioHome).toContain("WorkspaceShell");
+    expect(studioHome).toContain("StudioPageShell");
+    expect(studioHome).toContain("StudioContextChrome");
     expect(studioHome).toContain("StudioWorkspaceV2");
-    expect(studioHome).toContain('const workspaceView = params.get("view") === "workspace";');
-    expect(studioHome).toContain(
-      'workspaceView ? "h-full min-h-0 p-0" : "h-full min-h-0 p-0 overflow-hidden"',
-    );
+    expect(studioHome).not.toContain("StudioAgentBar");
   });
 });

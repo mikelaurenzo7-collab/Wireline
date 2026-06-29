@@ -22,8 +22,8 @@ import { formatAgentRoleLabel, rosterSummary, WORKSPACE_VOICE } from "../lib/pro
 
 const WORKSPACE_MOVES = [
   { href: "/inbox", icon: Inbox, title: "Inbox" },
-  { href: "/training", icon: FileText, title: "Training" },
-  { href: "/actions", icon: Cable, title: "Wire" },
+  { href: "/knowledge", icon: FileText, title: "Knowledge" },
+  { href: "/connections", icon: Cable, title: "Connections" },
   { href: "/settings/customization", icon: SlidersHorizontal, title: "Tune" },
 ] as const;
 
@@ -32,7 +32,7 @@ function RosterLoading() {
     <div
       className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
       aria-busy="true"
-      aria-label="Loading roster"
+      aria-label="Loading assistants"
     >
       {Array.from({ length: 4 }, (_, index) => (
         <div key={index} className="studio-card min-h-[168px] p-4">
@@ -58,7 +58,7 @@ export default function OverviewPage() {
   const primaryAgent = agents[0];
   const commandText = command.trim();
 
-  function openWorkroom() {
+  function openStudio() {
     if (!primaryAgent) return;
     const next = new URLSearchParams({ agent: primaryAgent.id });
     if (commandText) {
@@ -70,13 +70,13 @@ export default function OverviewPage() {
 
   return (
     <WorkspaceShell
-      title="Home"
+      title="Overview"
       eyebrow="Workspace"
       action={
         <Button asChild size="sm">
           <Link to="/studio?create=1">
             <Plus aria-hidden="true" size={16} />
-            New agent
+            New assistant
           </Link>
         </Button>
       }
@@ -92,7 +92,7 @@ export default function OverviewPage() {
             {hasAgents ? (
               <div className="wl-composer-dock">
                 <label className="sr-only" htmlFor="home-command">
-                  Direct your first agent
+                  Direct your first assistant
                 </label>
                 <textarea
                   id="home-command"
@@ -104,7 +104,7 @@ export default function OverviewPage() {
                   onKeyDown={(event) => {
                     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
                       event.preventDefault();
-                      openWorkroom();
+                      openStudio();
                     }
                   }}
                 />
@@ -121,7 +121,7 @@ export default function OverviewPage() {
                       </button>
                     ))}
                   </div>
-                  <Button type="button" className="justify-center sm:w-auto" onClick={openWorkroom}>
+                  <Button type="button" className="justify-center sm:w-auto" onClick={openStudio}>
                     {commandText ? "Send" : "Open Studio"}
                     {commandText ? (
                       <Send aria-hidden="true" size={15} />
@@ -139,7 +139,7 @@ export default function OverviewPage() {
                 <div className="flex flex-wrap justify-center gap-3">
                   <Button asChild>
                     <Link to="/studio?create=1">
-                      Create agent
+                      Create assistant
                       <ArrowRight aria-hidden="true" size={15} />
                     </Link>
                   </Button>
@@ -157,7 +157,7 @@ export default function OverviewPage() {
                 {loading ? "--" : agents.length}
               </span>
               <span className="text-sm text-muted-foreground">
-                {agents.length === 1 ? "agent" : "agents"}
+                {agents.length === 1 ? "assistant" : "assistants"}
               </span>
             </div>
             <p className="mt-2 text-center text-sm text-muted-foreground">
@@ -209,10 +209,13 @@ export default function OverviewPage() {
 
         <section className="studio-card p-5 sm:p-6 wl-centered-header">
           <div className="flex items-center justify-between border-b border-border pb-4">
-            <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Agents</h2>
+            <div>
+              <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Your assistants</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Every personal and business assistant in this workspace.</p>
+            </div>
             <Button asChild variant="secondary" size="sm">
-              <Link to={hasAgents ? "/agents" : "/studio?create=1"}>
-                {hasAgents ? "View all" : "Create agent"}
+              <Link to={hasAgents ? "/studio" : "/studio?create=1"}>
+                {hasAgents ? "Open Studio" : "Create assistant"}
               </Link>
             </Button>
           </div>
@@ -221,7 +224,7 @@ export default function OverviewPage() {
             <RosterLoading />
           ) : hasAgents ? (
             <div className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {agents.slice(0, 8).map((agent) => {
+              {agents.map((agent) => {
                 const enc = encodeURIComponent(agent.id);
                 return (
                   <div
@@ -253,7 +256,7 @@ export default function OverviewPage() {
                         className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold text-primary hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
                         aria-label={`Open ${agent.name} in Studio`}
                       >
-                        Workroom <PlayCircle size={12} aria-hidden="true" />
+                        Studio <PlayCircle size={12} aria-hidden="true" />
                       </Link>
                     </div>
                   </div>
