@@ -30,7 +30,7 @@ export const wirelineTokenValues = {
   "color.text.onAction": "#FFFFFF",
   "color.text.primary": "#1C1C1A",
   "color.text.secondary": "#6B6B65",
-  "color.text.tertiary": "#A1A19B",
+  "color.text.tertiary": "#7B7B75",
   "elevation.card": "0 8px 24px -16px rgba(17, 17, 17, 0.18)",
   "elevation.lg": "0 28px 70px -44px rgba(17, 17, 17, 0.34)",
   "elevation.md": "0 14px 34px -26px rgba(17, 17, 17, 0.24)",

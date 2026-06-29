@@ -21,7 +21,7 @@ export const WIRELINE_DESIGN_VISION = {
     canvas: "#F7F6F3",
     action: "#2B5548",
     actionPressed: "#1E4038",
-    textTertiary: "#A1A19B",
+    textTertiary: "#7B7B75",
   },
   utilities: [
     "wl-composer-dock",

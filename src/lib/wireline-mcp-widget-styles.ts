@@ -10,7 +10,7 @@ export const WIRELINE_MCP_WIDGET_TOKENS = {
   actionPressed: "#1E4038",
   text: "#1C1C1A",
   muted: "#6B6B65",
-  tertiary: "#A1A19B",
+  tertiary: "#7B7B75",
   border: "#E8E7E3",
   radiusLg: "12px",
   radiusMd: "10px",
