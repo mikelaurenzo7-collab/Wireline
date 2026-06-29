@@ -2,7 +2,7 @@ import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import TransitionSurface from "../components/TransitionSurface";
 
-const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
+const AgentStudioHome = lazy(() => import("../pages/AgentStudioHomeClaude"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const OverviewPage = lazy(() => import("../pages/OverviewPage"));
