@@ -114,7 +114,7 @@ export default function SettingsPage() {
       <div className="mx-auto flex w-full max-w-[700px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
           Account
         </h1>
 

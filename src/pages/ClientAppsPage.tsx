@@ -54,16 +54,19 @@ export default function ClientAppsPage() {
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
             Your control surfaces
           </p>
-          <h1 className="mt-4 max-w-[16ch] font-[var(--wireline-font-family-display)] text-[clamp(2.6rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.035em] text-foreground">
+          <h1 className="mt-4 max-w-[16ch] font-[var(--wireline-font-family-display)] text-[clamp(2rem,1.4rem+3vw,4rem)] font-normal leading-[1.02] tracking-[-0.035em] text-foreground">
             One agent system, wherever the conversation starts.
           </h1>
           <p className="mt-5 max-w-[54ch] text-[15px] leading-7 text-muted-foreground">
-            Same agents. Same setup. One protected workspace — on your desk, in your pocket,
-            in the car, or inside the tools you already use.
+            Same agents. Same setup. One protected workspace — on your desk, in your pocket, in the
+            car, or inside the tools you already use.
           </p>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2" aria-label="Wireline apps and companion surfaces">
+        <section
+          className="grid gap-4 md:grid-cols-2"
+          aria-label="Wireline apps and companion surfaces"
+        >
           {clientSurfaces.map(
             ({ icon: Icon, title, status, statusVariant, description, detail, action, href }) => (
               <article
@@ -80,8 +83,14 @@ export default function ClientAppsPage() {
                   {title}
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
-                <p className="mt-3 text-xs font-medium leading-5 text-muted-foreground/80">{detail}</p>
-                <Button asChild variant="link" className="mt-auto w-fit px-0 pt-6 text-sm text-primary">
+                <p className="mt-3 text-xs font-medium leading-5 text-muted-foreground/80">
+                  {detail}
+                </p>
+                <Button
+                  asChild
+                  variant="link"
+                  className="mt-auto w-fit px-0 pt-6 text-sm text-primary"
+                >
                   <a href={href}>
                     {action} <ArrowUpRight size={14} />
                   </a>

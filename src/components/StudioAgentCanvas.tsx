@@ -156,7 +156,9 @@ export default function StudioAgentCanvas({
 
   const business = isBusinessAgent ?? config?.isBusinessAgent ?? false;
   const enabled = useMemo(() => new Set(config?.enabledTools ?? []), [config?.enabledTools]);
-  const workflowRows = CANVAS_WORKFLOWS.filter((tool) => business || tool.name !== "update_lead_status");
+  const workflowRows = CANVAS_WORKFLOWS.filter(
+    (tool) => business || tool.name !== "update_lead_status",
+  );
   const activeCount = workflowRows.filter((tool) => enabled.has(tool.name)).length;
   const initial = (agentName || "A").trim().charAt(0).toUpperCase();
   const roleLabel = formatAgentRoleLabel(config?.role ?? null);
@@ -174,7 +176,7 @@ export default function StudioAgentCanvas({
   if (loading) {
     return (
       <div
-        className={`flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-7 ${className}`}
+        className={`flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
         aria-busy="true"
         aria-label="Loading agent canvas"
       >
@@ -190,7 +192,7 @@ export default function StudioAgentCanvas({
 
   return (
     <div
-      className={`h-full min-h-0 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-7 ${className}`}
+      className={`h-full min-h-0 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
     >
       <div className="mb-6">
         <div className={MONO_LABEL}>Agent Canvas</div>
@@ -256,7 +258,9 @@ export default function StudioAgentCanvas({
             </div>
             <div className="mt-4 grid gap-2">
               {VOICES.map((voice) => {
-                const selected = voice.name === voiceName || (voice.name === "Aria" && voiceName === "Managed Voice");
+                const selected =
+                  voice.name === voiceName ||
+                  (voice.name === "Aria" && voiceName === "Managed Voice");
                 return (
                   <div
                     key={voice.name}
@@ -267,7 +271,9 @@ export default function StudioAgentCanvas({
                     }`}
                   >
                     <span className="inline-flex items-center gap-2">
-                      <span className={`grid size-4 place-items-center rounded ${selected ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>
+                      <span
+                        className={`grid size-4 place-items-center rounded ${selected ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}
+                      >
                         {selected ? "✓" : ""}
                       </span>
                       {voice.name}
@@ -301,7 +307,13 @@ export default function StudioAgentCanvas({
                       : "rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-2.5"
                   }
                 >
-                  <div className={on ? "text-[11px] font-semibold text-[var(--wireline-color-action-primary-pressed)]" : "text-[11px] font-medium text-[var(--wireline-color-text-tertiary)]"}>
+                  <div
+                    className={
+                      on
+                        ? "text-[11px] font-semibold text-[var(--wireline-color-action-primary-pressed)]"
+                        : "text-[11px] font-medium text-[var(--wireline-color-text-tertiary)]"
+                    }
+                  >
                     {on ? "✓ " : "○ "}
                     {tool.label}
                   </div>
@@ -398,7 +410,10 @@ export default function StudioAgentCanvas({
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
               {["Auto route", "Grok 4.3", "Claude Sonnet", "GPT-5.5"].map((model, index) => (
-                <span key={model} className={`rounded-lg border px-2 py-2 ${index === 0 ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border text-muted-foreground"}`}>
+                <span
+                  key={model}
+                  className={`rounded-lg border px-2 py-2 ${index === 0 ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border text-muted-foreground"}`}
+                >
                   {model}
                 </span>
               ))}
@@ -428,8 +443,12 @@ export default function StudioAgentCanvas({
               </div>
               <div className="flex gap-1">{weekdayStrip()}</div>
               <div className="grid grid-cols-2 gap-2">
-                <span className="rounded-lg border border-border px-3 py-2">◈ {config?.complianceMode || "Standard"}</span>
-                <span className="rounded-lg border border-border px-3 py-2">◎ {config?.runtime?.provider || "General"}</span>
+                <span className="rounded-lg border border-border px-3 py-2">
+                  ◈ {config?.complianceMode || "Standard"}
+                </span>
+                <span className="rounded-lg border border-border px-3 py-2">
+                  ◎ {config?.runtime?.provider || "General"}
+                </span>
               </div>
               <div className="rounded-lg border border-border px-3 py-2 font-mono text-[10px]">
                 {"{business_name}"} · {"{website}"} · {"{support_email}"}
@@ -444,9 +463,23 @@ export default function StudioAgentCanvas({
             onActivate={() => onEditSection("connections")}
           >
             <div className="grid grid-cols-2 gap-2 text-xs">
-              {["Google Calendar", "SMS / Text Messages", "CRM Notes", "Email", "Shopify", "Stripe Billing"].map((connection, index) => (
-                <div key={connection} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[var(--wireline-color-text-secondary)]">
-                  <CheckCircle2 className={index < 3 ? "size-3 text-primary" : "size-3 text-muted-foreground/45"} />
+              {[
+                "Google Calendar",
+                "SMS / Text Messages",
+                "CRM Notes",
+                "Email",
+                "Shopify",
+                "Stripe Billing",
+              ].map((connection, index) => (
+                <div
+                  key={connection}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[var(--wireline-color-text-secondary)]"
+                >
+                  <CheckCircle2
+                    className={
+                      index < 3 ? "size-3 text-primary" : "size-3 text-muted-foreground/45"
+                    }
+                  />
                   <span>{connection}</span>
                 </div>
               ))}
@@ -463,16 +496,24 @@ export default function StudioAgentCanvas({
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
               <p className="text-xs font-semibold text-foreground">Escalation routing</p>
-              <p className="mt-1 text-xs text-muted-foreground">Phone: {config?.escalationPhone || "+1 312 555 1234"}</p>
-              <p className="text-xs text-muted-foreground">Email: {config?.escalationEmail || "mike@trywireline.com"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Phone: {config?.escalationPhone || "+1 312 555 1234"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Email: {config?.escalationEmail || "mike@trywireline.com"}
+              </p>
             </div>
             <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
               <p className="text-xs font-semibold text-foreground">Warm-transfer</p>
-              <p className="mt-1 text-xs text-muted-foreground">{config?.escalationHandoffEnabled ? "Enabled" : "Ready to enable"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {config?.escalationHandoffEnabled ? "Enabled" : "Ready to enable"}
+              </p>
             </div>
             <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
               <p className="text-xs font-semibold text-foreground">Instant triggers</p>
-              <p className="mt-1 text-xs text-muted-foreground">lawsuit · cancel account · manager</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                lawsuit · cancel account · manager
+              </p>
             </div>
           </div>
         </CardShell>
@@ -484,8 +525,18 @@ export default function StudioAgentCanvas({
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
             {["Identity", "Voice", "Number", "Workflows", "Test call"].map((item, index) => (
-              <div key={item} className="rounded-lg border border-border px-3 py-2 text-muted-foreground">
-                <span className={index < 4 ? "text-primary" : "text-[var(--wireline-color-status-warning)]"}>{index < 4 ? "✓" : "!"}</span> {item}
+              <div
+                key={item}
+                className="rounded-lg border border-border px-3 py-2 text-muted-foreground"
+              >
+                <span
+                  className={
+                    index < 4 ? "text-primary" : "text-[var(--wireline-color-status-warning)]"
+                  }
+                >
+                  {index < 4 ? "✓" : "!"}
+                </span>{" "}
+                {item}
               </div>
             ))}
           </div>

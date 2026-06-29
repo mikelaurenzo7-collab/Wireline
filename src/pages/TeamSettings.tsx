@@ -52,7 +52,7 @@ export default function TeamSettings() {
       <div className="mx-auto flex w-full max-w-[700px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
           Team
         </h1>
 
@@ -66,7 +66,10 @@ export default function TeamSettings() {
           </div>
           <div className="mt-5 grid gap-3">
             {members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-4 py-4">
+              <div
+                key={member.id}
+                className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-4 py-4"
+              >
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
                     {member.initial}
@@ -76,7 +79,9 @@ export default function TeamSettings() {
                     <p className="truncate text-xs text-muted-foreground">{member.email}</p>
                   </div>
                 </div>
-                <Badge variant={member.role === "Owner" ? "success" : "outline"}>{member.role}</Badge>
+                <Badge variant={member.role === "Owner" ? "success" : "outline"}>
+                  {member.role}
+                </Badge>
               </div>
             ))}
           </div>
@@ -93,7 +98,13 @@ export default function TeamSettings() {
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">Add someone to the workspace.</p>
               </div>
-              <Button type="button" variant="ghost" size="icon" onClick={() => setIsInviteOpen(false)} aria-label="Close invite dialog">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsInviteOpen(false)}
+                aria-label="Close invite dialog"
+              >
                 <X size={20} />
               </Button>
             </div>
@@ -109,7 +120,10 @@ export default function TeamSettings() {
                   />
                 </FormField>
                 <FormField label="Access level">
-                  <NativeSelect value={inviteRole} onChange={(event) => setInviteRole(event.target.value as Role)}>
+                  <NativeSelect
+                    value={inviteRole}
+                    onChange={(event) => setInviteRole(event.target.value as Role)}
+                  >
                     {inviteRoleOptions.map((role) => (
                       <option key={role} value={role}>
                         {role}

@@ -187,15 +187,26 @@ export default function CallLogsClaude() {
     <div className="flex h-full min-h-0 flex-col">
       <section
         aria-label="Call ops metrics"
-        className="flex items-stretch divide-x divide-[var(--wireline-color-border-default)] border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)]"
+        className="grid grid-cols-2 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] sm:flex sm:items-stretch sm:divide-x sm:divide-[var(--wireline-color-border-default)]"
       >
-        {kpis.map((kpi) => {
+        {kpis.map((kpi, index) => {
           const accent =
             kpi.accent === "warning"
               ? "var(--wireline-color-status-warning)"
               : "var(--wireline-color-text-primary)";
+          // On phones, 2×2 grid with borders between cells; from sm up,
+          // a single equal-width row with vertical dividers.
+          const phoneBorders = [
+            "border-b border-r border-[var(--wireline-color-border-default)] sm:border-b-0 sm:border-r-0",
+            "border-b border-[var(--wireline-color-border-default)] sm:border-b-0",
+            "border-r border-[var(--wireline-color-border-default)] sm:border-r-0",
+            "",
+          ][index];
           return (
-            <div key={kpi.label} className="flex-1 px-5 py-3.5">
+            <div
+              key={kpi.label}
+              className={`px-4 py-3 sm:flex-1 sm:px-5 sm:py-3.5 ${phoneBorders}`}
+            >
               <div
                 className={MONO_LABEL}
                 style={
@@ -207,7 +218,7 @@ export default function CallLogsClaude() {
                 {kpi.label}
               </div>
               <div
-                className="font-[var(--wireline-font-family-display)] text-2xl leading-none tracking-[-0.02em]"
+                className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+0.6vw,2rem)] leading-none tracking-[-0.02em]"
                 style={{ color: accent }}
               >
                 {loading ? "—" : kpi.value}

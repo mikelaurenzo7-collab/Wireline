@@ -222,39 +222,97 @@ export default function StudioWorkspaceV2() {
     );
   }
 
+  // Below lg the chat and canvas can't sit side-by-side gracefully — chat
+  // alone takes ~560px, and stacking forces a long scroll to reach the
+  // canvas. A pane=chat|canvas search-param drives a mobile tab strip so
+  // either pane gets the full viewport; on lg+ the strip vanishes and
+  // both panes render side-by-side as the prototype intends.
+  const mobilePane = (params.get("pane") as "chat" | "canvas" | null) || "canvas";
+  function setMobilePane(next: "chat" | "canvas") {
+    setParams(
+      (current) => {
+        const updated = new URLSearchParams(current);
+        updated.set("pane", next);
+        return updated;
+      },
+      { replace: true },
+    );
+  }
+  const rightPane = workspaceView ? (
+    <StudioAgentWorkspacePanel
+      key={active.id}
+      agentId={active.id}
+      agentName={active.name}
+      onTestVoiceInChat={testVoiceInChat}
+      className="lg:border-t-0"
+    />
+  ) : (
+    <StudioAgentCanvas
+      key={active.id}
+      agentId={active.id}
+      agentName={active.name}
+      isBusinessAgent={active.is_business_agent}
+      onEditSection={editCanvasSection}
+    />
+  );
+
+  const workroomNode = (
+    <StudioWorkroom
+      key={active.id}
+      ref={workroomRef}
+      agentId={active.id}
+      agentName={active.name}
+      initialCommand={params.get("command") || undefined}
+      commandNonce={params.get("commandNonce") || undefined}
+      onBack={workspaceView ? returnToCanvas : openWorkspacePanel}
+      backLabel={workspaceView ? "Back to canvas" : "Deep edit"}
+      layout="split"
+    />
+  );
+
   return (
-    <div className="grid min-h-full bg-background lg:h-full lg:min-h-0 lg:grid-cols-[400px_minmax(0,1fr)]">
-      <div className="min-h-[560px] border-b border-border/60 lg:min-h-0 lg:border-b-0 lg:border-r">
-        <StudioWorkroom
-          key={active.id}
-          ref={workroomRef}
-          agentId={active.id}
-          agentName={active.name}
-          initialCommand={params.get("command") || undefined}
-          commandNonce={params.get("commandNonce") || undefined}
-          onBack={workspaceView ? returnToCanvas : openWorkspacePanel}
-          backLabel={workspaceView ? "Back to canvas" : "Deep edit"}
-          layout="split"
-        />
+    <div className="h-full min-h-0 bg-background">
+      {/* Mobile: tab-switched single pane below lg */}
+      <div className="flex h-full min-h-0 flex-col lg:hidden">
+        <div
+          role="tablist"
+          aria-label="Studio pane"
+          className="flex shrink-0 items-center gap-1 border-b border-border/60 bg-[var(--wireline-color-surface-default)] px-3 py-2"
+        >
+          {(["chat", "canvas"] as const).map((pane) => {
+            const isActive = mobilePane === pane;
+            return (
+              <button
+                key={pane}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setMobilePane(pane)}
+                className="inline-flex min-h-[36px] flex-1 items-center justify-center rounded-[8px] px-3 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)]"
+                style={
+                  isActive
+                    ? {
+                        background: "var(--wireline-color-action-primary-default)",
+                        color: "var(--wireline-color-text-onAction)",
+                      }
+                    : { color: "var(--wireline-color-text-secondary)" }
+                }
+              >
+                {pane === "chat" ? "Chat" : workspaceView ? "Edit" : "Canvas"}
+              </button>
+            );
+          })}
+        </div>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {mobilePane === "chat" ? workroomNode : rightPane}
+        </div>
       </div>
 
-      {workspaceView ? (
-        <StudioAgentWorkspacePanel
-          key={active.id}
-          agentId={active.id}
-          agentName={active.name}
-          onTestVoiceInChat={testVoiceInChat}
-          className="lg:border-t-0"
-        />
-      ) : (
-        <StudioAgentCanvas
-          key={active.id}
-          agentId={active.id}
-          agentName={active.name}
-          isBusinessAgent={active.is_business_agent}
-          onEditSection={editCanvasSection}
-        />
-      )}
+      {/* Desktop: chat (400px) + spatial canvas side-by-side from lg up */}
+      <div className="hidden h-full min-h-0 lg:grid lg:grid-cols-[400px_minmax(0,1fr)]">
+        <div className="border-r border-border/60">{workroomNode}</div>
+        {rightPane}
+      </div>
     </div>
   );
 }
