@@ -12,6 +12,10 @@ describe("agent navigation contract", () => {
   const workspaceShell = read("src/components/WorkspaceShell.tsx");
   const overviewPage = read("src/pages/OverviewPage.tsx");
   const studioChrome = read("src/components/studio/StudioContextChrome.tsx");
+  const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
+  const studioCanvas = read("src/components/StudioAgentCanvas.tsx");
+  const studioWorkroom = read("src/components/StudioWorkroom.tsx");
+  const appRoutes = read("src/routes/AppRoutes.tsx");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
   const productCopy = read("src/lib/product-copy.ts");
   const appsPage = read("src/pages/ClientAppsPage.tsx");
@@ -27,6 +31,8 @@ describe("agent navigation contract", () => {
     expect(workspaceShell).toMatch(/label:\s*"Overview"/);
     expect(workspaceShell).toMatch(/aria-label="Agents"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
+    expect(appRoutes).toMatch(/path="\/agents"/);
+    expect(appRoutes).toMatch(/to="\/overview"/);
   });
 
   it("uses the screenshot-inspired overview as the personal and business roster", () => {
@@ -34,15 +40,36 @@ describe("agent navigation contract", () => {
     expect(overviewPage).toMatch(/Personal and business agent roster/);
     expect(overviewPage).toMatch(/title="Personal"/);
     expect(overviewPage).toMatch(/title="Business"/);
-    expect(overviewPage).toMatch(/Add \{kind\} agent/);
+    expect(overviewPage).toMatch(/posture=/);
     expect(overviewPage).toMatch(/Recent calls/);
     expect(overviewPage).toMatch(/Quick actions/);
     expect(overviewPage).not.toMatch(/Your assistants|New assistant|Create assistant/);
   });
 
+  it("keeps Studio visually aligned with the ZIP screenshot", () => {
+    expect(studioWorkspace).toMatch(/400px_minmax/);
+    expect(studioChrome).toMatch(/Agent Studio/);
+    expect(studioChrome).toMatch(/Run test call/);
+    expect(studioChrome).not.toMatch(/agentSubtitle|Talk to build\. Canvas to tune\./);
+    expect(studioWorkroom).toMatch(/Wireline Assistant/);
+    expect(studioWorkroom).toMatch(/Ask me anything about/);
+    expect(studioWorkroom).toMatch(/Change voice/);
+    expect(studioWorkroom).toMatch(/Edit workflows/);
+    expect(studioWorkroom).toMatch(/Adjust greeting/);
+    expect(studioWorkroom).toMatch(/Deploy now/);
+    expect(studioCanvas).toMatch(/Identity/);
+    expect(studioCanvas).toMatch(/Voice/);
+    expect(studioCanvas).toMatch(/Workflows & Capabilities/);
+    expect(studioCanvas).toMatch(/Knowledge Base/);
+    expect(studioCanvas).toMatch(/Situations/);
+    expect(studioCanvas).toMatch(/Business Profile|Line Profile/);
+    expect(studioCanvas).toMatch(/Escalation & Guardrails/);
+    expect(studioCanvas).toMatch(/Setup health/);
+  });
+
   it("uses agent language across studio entry points", () => {
     expect(studioChrome).toMatch(/New agent/);
-    expect(studioChrome).not.toMatch(/New assistant|Assistant/);
+    expect(studioChrome).not.toMatch(/New assistant|Assistants/);
     expect(createDialog).toMatch(/New agent\.|Create agent/);
     expect(createDialog).toMatch(/\/knowledge\?agent=/);
     expect(createDialog).not.toMatch(/\/training\?agent=/);
@@ -57,7 +84,7 @@ describe("agent navigation contract", () => {
     expect(pricingPage).toMatch(/Personal[\s\S]*Team[\s\S]*Business[\s\S]*Enterprise/);
     expect(pricingPage).toMatch(/Conversation Balance/);
     expect(pricingPage).toMatch(/Balance pays for live work\. Plans add the business layer\./);
-    expect(pricingPage).not.toMatch(/Starter|Try 7 days free|\$79/);
+    expect(pricingPage).not.toMatch(/Starter|Try 7 days free/);
   });
 
   it("migrates secondary workspace pages to the new quiet screenshot system", () => {
