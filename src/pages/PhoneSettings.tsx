@@ -105,7 +105,7 @@ export default function PhoneSettings() {
                 <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/65">
                   Your Wireline number
                 </p>
-                <h2 className="mt-4 truncate font-[var(--wireline-font-family-display)] text-[32px] font-normal leading-none tracking-[-0.035em] sm:text-[40px]">
+                <h2 className="mt-4 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
                   {formatPhone(activeNumber?.phone_number)}
                 </h2>
                 <p className="mt-3 text-sm text-primary-foreground/78">{lineMeta}</p>
@@ -135,11 +135,19 @@ export default function PhoneSettings() {
               Number first. Route cleanly.
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Wireline can provision a dedicated line, attach it to an agent, and keep caller history tied to the workspace.
+              Wireline can provision a dedicated line, attach it to an agent, and keep caller
+              history tied to the workspace.
             </p>
             <div className="mt-5 grid gap-2 text-sm">
-              {["Dedicated line for inbound calls", "Agent-aware routing and SMS follow-up", "Ready for paid number add-ons"].map((item) => (
-                <div key={item} className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2">
+              {[
+                "Dedicated line for inbound calls",
+                "Agent-aware routing and SMS follow-up",
+                "Ready for paid number add-ons",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2"
+                >
                   <Check size={14} className="text-primary" aria-hidden="true" />
                   <span>{item}</span>
                 </div>
@@ -153,8 +161,18 @@ export default function PhoneSettings() {
             <p className="wl-overline">Call forwarding</p>
             <div className="mt-4 grid gap-2">
               {[
-                ["Unknown callers", "Agent answers, identifies intent, takes a message or patches through.", "Agent", true],
-                ["Contacts", "Ring your phone first. Agent picks up if you miss it.", "Ring first", false],
+                [
+                  "Unknown callers",
+                  "Agent answers, identifies intent, takes a message or patches through.",
+                  "Agent",
+                  true,
+                ],
+                [
+                  "Contacts",
+                  "Ring your phone first. Agent picks up if you miss it.",
+                  "Ring first",
+                  false,
+                ],
                 ["VIP list", "Always rings through. Never intercepted by agent.", "Direct", false],
               ].map(([title, detail, badge, active]) => (
                 <div
@@ -164,7 +182,9 @@ export default function PhoneSettings() {
                   }`}
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold tracking-[-.01em] text-foreground">{title}</p>
+                    <p className="text-sm font-semibold tracking-[-.01em] text-foreground">
+                      {title}
+                    </p>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</p>
                   </div>
                   <span className="shrink-0 rounded-md bg-muted px-2 py-1 font-mono text-[10px] uppercase tracking-[0.09em] text-muted-foreground">
@@ -185,7 +205,10 @@ export default function PhoneSettings() {
             </div>
             <div className="mt-4 grid gap-2">
               {["Owner", "Family", "Priority client"].map((name) => (
-                <div key={name} className="flex items-center justify-between gap-3 rounded-lg bg-muted/45 px-3 py-2 text-sm">
+                <div
+                  key={name}
+                  className="flex items-center justify-between gap-3 rounded-lg bg-muted/45 px-3 py-2 text-sm"
+                >
                   <span className="font-semibold text-foreground">{name}</span>
                   <span className="font-mono text-[11px] text-muted-foreground">Ring through</span>
                 </div>
@@ -204,7 +227,9 @@ export default function PhoneSettings() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-foreground">Mobile device</p>
-                  <p className="text-xs text-muted-foreground">Wireline app · Shortcuts · CarPlay</p>
+                  <p className="text-xs text-muted-foreground">
+                    Wireline app · Shortcuts · CarPlay
+                  </p>
                 </div>
               </div>
             </div>

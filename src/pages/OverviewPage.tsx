@@ -170,10 +170,10 @@ export default function OverviewPage() {
           </p>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.15rem,1.9rem+1vw,3rem)] font-normal leading-[0.98] tracking-[-0.035em] text-foreground">
+              <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.4rem+1.8vw,3rem)] font-normal leading-[1.02] tracking-[-0.035em] text-foreground">
                 Good morning, {firstName(user?.full_name, user?.email)}.
               </h1>
-              <p className="mt-4 text-[15px] text-muted-foreground">
+              <p className="mt-3 max-w-prose text-[14px] leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
                 {hasAgents
                   ? `Your line is active. ${primaryAgent?.name || "Your agent"} is answering.`
                   : WORKSPACE_VOICE.emptyCue}

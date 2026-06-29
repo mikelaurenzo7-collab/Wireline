@@ -194,10 +194,10 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     <div className="flex w-full flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.4rem+1vw,2.25rem)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
+          <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.2vw,2.25rem)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
             Knowledge Base
           </h1>
-          <p className="mt-1.5 text-sm text-[var(--wireline-color-text-secondary)]">
+          <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)] sm:text-sm">
             Facts, rules, and tone your agents use on every call.
           </p>
         </div>

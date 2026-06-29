@@ -417,3 +417,17 @@
 @media (prefers-reduced-motion: reduce) {
   [style*="wlPulse"], [style*="wlCallWave"] { animation: none !important; }
 }
+
+/* Responsive type system — utility helpers used by display headlines.
+   text-wrap: balance keeps multi-line headings visually centered at every
+   viewport so the prototype's tightly composed greetings don't go ragged
+   on phones or stretch unevenly on ultra-wide desktops. */
+.wl-balance { text-wrap: balance; }
+.wl-pretty { text-wrap: pretty; }
+
+/* Body prose default — 65ch max-width keeps line lengths in the
+   readable 45–75ch band on giant monitors without shrinking on phones. */
+.wl-prose {
+  max-width: 65ch;
+  line-height: 1.6;
+}

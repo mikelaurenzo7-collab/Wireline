@@ -17,7 +17,7 @@ export default function BillingSettings() {
       <div className="mx-auto flex w-full max-w-[680px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+        <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.4vw,3rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
           Billing
         </h1>
 
@@ -26,22 +26,23 @@ export default function BillingSettings() {
             Current plan
           </p>
           <div className="mt-4 flex flex-wrap items-end gap-2">
-            <h2 className="font-[var(--wireline-font-family-display)] text-[38px] font-normal leading-none tracking-[-0.035em]">
+            <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.4rem+1.6vw,2.4rem)] font-normal leading-none tracking-[-0.035em]">
               Team
             </h2>
-            <span className="pb-1 font-[var(--wireline-font-family-display)] text-[32px] leading-none tracking-[-0.035em]">
+            <span className="pb-1 font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-none tracking-[-0.035em]">
               — {monthlyPrice}
             </span>
           </div>
           <p className="mt-4 text-sm leading-6 text-primary-foreground/78">
-            {teamPlan.max_agents} agents · {teamPlan.included_phone_numbers} lines · Routing · Approvals · Shared inbox
+            {teamPlan.max_agents} agents · {teamPlan.included_phone_numbers} lines · Routing ·
+            Approvals · Shared inbox
           </p>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">
           <article className="studio-card p-5">
             <p className="wl-overline">Conversation Balance</p>
-            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[34px] font-normal leading-none tracking-[-0.035em] text-foreground">
+            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.5vw,2.2rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
               $187
             </p>
             <div className="mt-5 h-2 rounded-full bg-muted">
@@ -50,7 +51,7 @@ export default function BillingSettings() {
           </article>
           <article className="studio-card p-5">
             <p className="wl-overline">Next invoice</p>
-            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[34px] font-normal leading-none tracking-[-0.035em] text-foreground">
+            <p className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(1.6rem,1.3rem+1.5vw,2.2rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
               {invoiceTotal}
             </p>
             <p className="mt-5 text-sm text-muted-foreground">Due July 1, 2026</p>
@@ -61,7 +62,10 @@ export default function BillingSettings() {
           <p className="wl-overline">Recent invoices</p>
           <div className="mt-4 grid gap-2">
             {["June 2026", "May 2026"].map((month) => (
-              <div key={month} className="flex items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3">
+              <div
+                key={month}
+                className="flex items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3"
+              >
                 <p className="text-sm font-medium text-foreground">{month}</p>
                 <p className="text-sm font-semibold text-foreground">{invoiceTotal}</p>
                 <Badge variant="success">Paid</Badge>
@@ -78,10 +82,14 @@ export default function BillingSettings() {
                 Clear commercial model
               </p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Plans add capacity. Conversation Balance pays for live calls, texts, and provider-backed actions.
+                Plans add capacity. Conversation Balance pays for live calls, texts, and
+                provider-backed actions.
               </p>
             </div>
-            <Link to="/pricing" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+            <Link
+              to="/pricing"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
+            >
               View pricing <ArrowRight size={14} />
             </Link>
           </div>

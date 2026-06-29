@@ -294,9 +294,13 @@ export default function WorkspaceShell({
   const location = useLocation();
   const nativeAppShell = isNativeAppShell();
   const showHeader = Boolean(title || eyebrow || action);
+  // Responsive padding scale that scales gracefully from the smallest phone
+  // (≥320px, mobile dock below) up through ultra-wide desktops. The main
+  // content max-w-[1480px] cap below means anything wider becomes side
+  // breathing room — and at 2xl we widen so 4K+ doesn't read as starved.
   const mainSpacing = fullBleed
     ? "p-0 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0"
-    : "px-4 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-3 lg:pb-6 xl:px-10";
+    : "px-3 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
   const contentInner = fullBleed
     ? "wl-workspace-content-inner mx-0 flex h-full min-h-0 w-full max-w-none flex-col"
     : "wl-workspace-content-inner mx-auto flex min-h-full w-full max-w-[1480px] flex-col";
@@ -315,7 +319,7 @@ export default function WorkspaceShell({
         >
           {showHeader ? (
             <div className="relative mb-4 pb-3 lg:mb-5">
-              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-4 sm:px-12 md:px-28">
+              <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-3 sm:px-6 md:px-12 lg:px-20">
                 <div className="flex min-w-0 flex-col items-center text-center wl-centered-header">
                   {eyebrow ? (
                     <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/70">
@@ -323,7 +327,7 @@ export default function WorkspaceShell({
                     </p>
                   ) : null}
                   {title ? (
-                    <h1 className="truncate font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">
+                    <h1 className="truncate font-[var(--wireline-font-family-display)] text-[clamp(1.1rem,1rem+0.5vw,1.5rem)] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">
                       {title}
                     </h1>
                   ) : null}

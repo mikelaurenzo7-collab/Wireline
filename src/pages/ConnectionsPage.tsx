@@ -1,4 +1,11 @@
-import { CalendarDays, CreditCard, Mail, MessageSquareText, ShoppingBag, Workflow } from "lucide-react";
+import {
+  CalendarDays,
+  CreditCard,
+  Mail,
+  MessageSquareText,
+  ShoppingBag,
+  Workflow,
+} from "lucide-react";
 
 import { Button } from "../components/atoms";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -68,7 +75,10 @@ function ConnectedCard({ tool }: { tool: (typeof connectedTools)[number] }) {
       </div>
       <h2 className="mt-7 text-sm font-semibold text-foreground">{tool.name}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{tool.detail}</p>
-      <button type="button" className="mt-5 text-sm font-semibold text-[var(--wireline-color-status-warning)]">
+      <button
+        type="button"
+        className="mt-5 text-sm font-semibold text-[var(--wireline-color-status-warning)]"
+      >
         Disconnect
       </button>
     </article>
@@ -96,7 +106,7 @@ export default function ConnectionsPage() {
     <WorkspaceShell title="" eyebrow="" contentClassName="pt-8 pb-10 lg:pt-10">
       <div className="mx-auto flex w-full max-w-[940px] flex-col gap-7 pb-10">
         <section>
-          <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(2.2rem,4vw,3.2rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+          <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.6vw,3.2rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
             Connections
           </h1>
           <p className="mt-5 max-w-[48ch] text-sm leading-7 text-muted-foreground">
