@@ -145,7 +145,7 @@ export default function CreateAgentDialog({
 
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
-      navigate(`/training?agent=${encodeURIComponent(body.id)}`, { replace: true });
+      navigate(`/knowledge?agent=${encodeURIComponent(body.id)}`, { replace: true });
       onClose();
     } catch {
       setError("Agent could not be created. Try again.");
