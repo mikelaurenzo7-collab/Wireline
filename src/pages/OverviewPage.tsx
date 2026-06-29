@@ -1,9 +1,8 @@
-import { ArrowRight, Bot, Cable, CheckCircle2, Clock3, Inbox, Phone, Plus, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, Cable, CheckCircle2, Clock3, Phone, Plus, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
-import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents } from "../contexts/AgentsContext";
 import { formatAgentRoleLabel, rosterSummary, WORKSPACE_VOICE } from "../lib/product-copy";
 
