@@ -64,6 +64,27 @@
 @import "./styles/clarity-system.css";
 @import "./styles/studio-operations.css";
 
+@keyframes waveBar {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 body {
   background: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
