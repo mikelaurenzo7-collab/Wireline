@@ -13,6 +13,9 @@ const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
 const CallLogsPage = lazy(() => import("../pages/CallLogsPage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
+const BillingSettings = lazy(() => import("../pages/BillingSettings"));
+const TeamSettings = lazy(() => import("../pages/TeamSettings"));
+const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
 const loading = (
   <TransitionSurface
@@ -46,6 +49,10 @@ export default function AppRoutes() {
         <Route path="/apps" element={<ClientAppsPage />} />
 
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/billing" element={<BillingSettings />} />
+        <Route path="/settings/team" element={<TeamSettings />} />
+        <Route path="/settings/customization" element={<CustomizationSettings />} />
+        <Route path="/settings/apps" element={<ClientAppsPage />} />
         <Route path="/settings/*" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminSettings />} />
         <Route path="/admin/*" element={<AdminSettings />} />
