@@ -10,22 +10,40 @@
   color: var(--muted-foreground);
 }
 
+/* Legacy compatibility alias.
+ * New surfaces should use `.wl-card` / `.wl-card-lg` for passive panels and
+ * `.wl-panel` / `.wl-panel-elevated` for interactive or chrome surfaces.
+ * Keep `.studio-card` mapped to the same geometry while older authenticated
+ * pages migrate gradually; do not introduce divergent radius/border/elevation
+ * values here. */
 .studio-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  background: var(--card);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  background: var(--wireline-color-surface-default);
   padding: clamp(1rem, 0.85rem + 0.5vw, 1.25rem);
   box-shadow: var(--wireline-elevation-sm);
 }
 
 .studio-card.wl-card-action,
 .studio-card--interactive {
-  transition: border-color var(--transition-base), background-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
+  transition:
+    border-color var(--transition-base),
+    background-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-fast);
 }
 
 .studio-card--interactive:hover {
-  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
-  background: color-mix(in srgb, var(--secondary) 52%, var(--card));
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 45%,
+    var(--wireline-color-border-default)
+  );
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-subtle) 52%,
+    var(--wireline-color-surface-default)
+  );
   box-shadow: var(--wireline-elevation-md);
   transform: translateY(-1px);
 }
@@ -43,20 +61,25 @@
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none !important;
-  transition: background-color var(--transition-base), border-color var(--transition-base), color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-fast);
 }
 
 .studio-primary-button {
-  border: 1px solid var(--primary);
-  background: var(--primary);
-  color: var(--primary-foreground) !important;
-  box-shadow: var(--wireline-elevation-md); /* strict mono */
+  border: 1px solid var(--wireline-color-action-primary-default);
+  background: var(--wireline-color-action-primary-default);
+  color: var(--wireline-color-text-onAction) !important;
+  box-shadow: var(--wireline-elevation-md);
 }
 
 .studio-primary-button:hover:not(:disabled) {
   border-color: var(--wireline-color-action-primary-pressed);
   background: var(--wireline-color-action-primary-pressed);
-  box-shadow: var(--wireline-elevation-lg); /* strict mono */
+  box-shadow: var(--wireline-elevation-lg);
 }
 
 .studio-primary-button:active:not(:disabled),
@@ -77,23 +100,23 @@
 }
 
 .studio-secondary-button {
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--foreground) !important;
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary) !important;
 }
 
 .studio-secondary-button:hover:not(:disabled) {
   border-color: var(--wireline-color-border-strong);
-  background: var(--secondary);
+  background: var(--wireline-color-surface-subtle);
 }
 
 .wl-agent-card {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  background: var(--card);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  background: var(--wireline-color-surface-default);
   padding: 1.25rem;
   box-shadow: var(--wireline-elevation-sm);
 }
