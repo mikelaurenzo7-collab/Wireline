@@ -54,9 +54,8 @@ function agentInitial(name?: string | null) {
   return (name || "A").trim().charAt(0).toUpperCase() || "A";
 }
 
-function agentReadiness(agent: WorkspaceAgentSummary, index: number) {
-  if (!agent.phone_number) return "Training";
-  return index === 0 ? "94% ready" : "Active";
+function agentReadiness(agent: WorkspaceAgentSummary) {
+  return agent.phone_number ? "Active" : "Training";
 }
 
 function metricRows(agents: WorkspaceAgentSummary[], hasAgents: boolean, activeAgents: number) {
@@ -95,14 +94,14 @@ function AgentLoadingRows() {
   );
 }
 
-function CompactAgentRow({ agent, index }: { agent: WorkspaceAgentSummary; index: number }) {
-  const active = agent.phone_number;
+function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
+  const active = !!agent.phone_number;
   const enc = encodeURIComponent(agent.id);
   return (
     <Link
       to={`/studio?agent=${enc}`}
       className={`group flex min-h-[56px] items-center gap-3 rounded-[10px] border px-3 py-2 transition-colors ${
-        index === 0
+        active
           ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]"
           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
       }`}
@@ -123,7 +122,7 @@ function CompactAgentRow({ agent, index }: { agent: WorkspaceAgentSummary; index
           className={`size-1.5 rounded-full ${active ? "bg-[var(--wireline-color-status-success)]" : "bg-[var(--wireline-color-status-warning)]"}`}
           aria-hidden="true"
         />
-        {agentReadiness(agent, index)}
+        {agentReadiness(agent)}
       </span>
       <ArrowRight
         className="size-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100"
@@ -142,7 +141,7 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
   return (
     <section aria-label={heading}>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
           {heading}
         </p>
         <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
@@ -150,8 +149,8 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
         </span>
       </div>
       <div className="grid gap-2">
-        {agents.map((agent, index) => (
-          <CompactAgentRow key={agent.id} agent={agent} index={index} />
+        {agents.map((agent) => (
+          <CompactAgentRow key={agent.id} agent={agent} />
         ))}
         <Link
           to={`/studio?create=1&posture=${kind}`}
@@ -177,7 +176,7 @@ export default function OverviewPage() {
     <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
       <div className="wl-overview mx-auto flex w-full max-w-[980px] flex-col gap-8 pb-8">
         <section className="relative">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {todayLabel()}
           </p>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -206,7 +205,7 @@ export default function OverviewPage() {
         >
           {metricRows(agents, hasAgents, activeAgents).map((item) => (
             <div key={item.label} className="studio-card min-h-[120px] p-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {item.label}
               </p>
               <div className="mt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">
@@ -224,7 +223,7 @@ export default function OverviewPage() {
         ) : null}
 
         <section>
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             Quick actions
           </p>
           <div className="flex flex-wrap gap-2">
@@ -245,7 +244,7 @@ export default function OverviewPage() {
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Agents
                 </p>
                 <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
@@ -269,7 +268,7 @@ export default function OverviewPage() {
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Recent calls
                 </p>
                 <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">

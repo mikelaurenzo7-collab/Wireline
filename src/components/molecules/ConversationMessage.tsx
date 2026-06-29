@@ -58,7 +58,7 @@ const ConversationMessage = React.forwardRef<HTMLElement, ConversationMessagePro
             {defaultIcon(resolvedAuthor)}
           </span>
           <span>{label ?? defaultLabel[resolvedAuthor]}</span>
-          {channel ? <span className="text-muted-foreground/75">. {channel}</span> : null}
+          {channel ? <span className="text-muted-foreground">. {channel}</span> : null}
         </div>
         <div data-wireline-preserve-case className="whitespace-pre-wrap">
           {children}

@@ -61,7 +61,7 @@ export default function StudioOverview({
             <h1 className="truncate font-[var(--wireline-font-family-display)] text-[var(--wireline-typography-h1-size)] font-normal leading-none tracking-[-0.025em] text-foreground">
               {active.name}
             </h1>
-            <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground/70">
+            <p className="mt-1 text-xs font-mono uppercase tracking-[0.1em] text-muted-foreground">
               {activeDescription}
             </p>
           </div>
@@ -96,7 +96,7 @@ export default function StudioOverview({
               onChange={(event) => setBrief(event.target.value)}
               rows={3}
               placeholder={`Ask ${active.name} to...`}
-              className="min-h-[90px] w-full resize-none bg-transparent px-1 py-0.5 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary/40"
+              className="min-h-[90px] w-full resize-none bg-transparent px-1 py-0.5 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/40"
               onKeyDown={(e) => {
                 if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                   e.preventDefault();

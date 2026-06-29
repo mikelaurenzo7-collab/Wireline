@@ -356,7 +356,7 @@ export default function WorkspaceShell({
               <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-3 sm:px-6 md:px-12 lg:px-20">
                 <div className="flex min-w-0 flex-col items-center text-center wl-centered-header">
                   {eyebrow ? (
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/70">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                       {eyebrow}
                     </p>
                   ) : null}

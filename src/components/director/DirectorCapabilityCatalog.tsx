@@ -113,7 +113,7 @@ export function DirectorCapabilityCatalog({
         {!embedded && (
           <div className="flex items-center justify-between gap-2 px-1 pb-2">
             <span className="wl-label text-muted-foreground">Skills</span>
-            <span className="wl-micro-badge font-mono text-muted-foreground/70 tabular-nums">
+            <span className="wl-micro-badge font-mono text-muted-foreground tabular-nums">
               {filteredCatalog
                 ? `${filteredCatalog.length} match`
                 : `${DIRECTOR_CAPABILITY_CATALOG.length} total`}
@@ -125,7 +125,7 @@ export function DirectorCapabilityCatalog({
         </label>
         <div className="relative px-0.5 pb-2">
           <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60"
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
           <Input
@@ -134,7 +134,7 @@ export function DirectorCapabilityCatalog({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search skills…"
-            className="h-8 w-full py-1 pl-7 pr-2 wl-micro-meta bg-card/60 border-border/80 placeholder:text-muted-foreground/60 focus-visible:ring-brand/40"
+            className="h-8 w-full py-1 pl-7 pr-2 wl-micro-meta bg-card/60 border-border/80 placeholder:text-muted-foreground focus-visible:ring-brand/40"
           />
         </div>
         {!filteredCatalog && (
