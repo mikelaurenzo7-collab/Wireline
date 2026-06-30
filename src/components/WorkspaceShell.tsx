@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { BookOpen, Bot, Home, Inbox, LayoutGrid, Phone, Settings, Workflow } from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
+import SkipToContentLink from "./layout/SkipToContentLink";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
@@ -341,9 +342,7 @@ export default function WorkspaceShell({
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
-      <a className="wl-skip-link" href="#workspace-main">
-        Skip to content
-      </a>
+      <SkipToContentLink href="#workspace-main" />
       <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[236px_minmax(0,1fr)]">
         <DesktopRail pathname={location.pathname} />
         <main

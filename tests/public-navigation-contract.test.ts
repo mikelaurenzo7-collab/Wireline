@@ -33,13 +33,28 @@ describe("public navigation mobile regression contract", () => {
 
   it("keeps skip navigation visually hidden until keyboard focus", () => {
     const foundation = source("src/styles/foundation.css");
+    const precisionHeader = source("src/components/marketing/PrecisionPublicHeader.tsx");
+    const publicHeader = source("src/components/marketing/PublicSiteHeader.tsx");
+    const workspaceShell = source("src/components/WorkspaceShell.tsx");
+    const skipLink = source("src/components/layout/SkipToContentLink.tsx");
 
     expect(foundation).toContain(".wl-skip-link {");
-    expect(foundation).toContain("top: -5rem");
+    expect(foundation).toContain("clip-path: inset(50%)");
+    expect(foundation).toContain("transform: translateY(calc(-100% - 1.5rem))");
     expect(foundation).toContain("opacity: 0");
     expect(foundation).toContain(".wl-skip-link:focus-visible");
-    expect(foundation).toContain("top: max(0.75rem, env(safe-area-inset-top))");
+    expect(foundation).toContain("clip-path: none");
     expect(foundation).toContain("opacity: 1");
+
+    expect(skipLink).toContain("hiddenStyle");
+    expect(skipLink).toContain("focusedStyle");
+    expect(skipLink).toContain('className="wl-skip-link"');
+    expect(skipLink).toContain("onFocus");
+    expect(skipLink).toContain("onBlur");
+    expect(precisionHeader).toContain('<SkipToContentLink href="#main-content" />');
+    expect(publicHeader).toContain('<SkipToContentLink href="#main-content" />');
+    expect(workspaceShell).toContain('<SkipToContentLink href="#workspace-main" />');
+    expect(publicHeader).not.toContain("focus:not-sr-only");
   });
 
   it("keeps Dialog capable of route-safe overlay, close-control, and navigation composition", () => {

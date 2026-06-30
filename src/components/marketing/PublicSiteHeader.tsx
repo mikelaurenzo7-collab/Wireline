@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
+import SkipToContentLink from "../layout/SkipToContentLink";
 
 export type PublicNavActive = "signin" | "signup" | "home";
 
@@ -54,12 +55,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
 
   return (
     <>
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:bg-primary focus:px-3 focus:py-2 focus:text-[var(--wireline-typography-caption-size)] focus:font-medium focus:text-primary-foreground"
-      >
-        Skip to content
-      </a>
+      <SkipToContentLink href="#main-content" />
       <header data-testid="site-header" className={cn("wl-stitch-nav-header", className)}>
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6">
           <div className="flex min-w-0 items-center gap-8">

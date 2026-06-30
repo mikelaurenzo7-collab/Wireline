@@ -300,29 +300,45 @@ button,
 
 .wl-skip-link {
   position: fixed;
-  top: -5rem;
+  top: max(0.75rem, env(safe-area-inset-top));
   left: 0.75rem;
   z-index: calc(var(--wireline-zIndex-fixed) + 2);
   display: inline-flex;
-  min-height: 2.75rem;
+  width: 1px;
+  height: 1px;
   align-items: center;
+  justify-content: center;
   border: 1px solid var(--wl-primary);
   border-radius: var(--radius-md);
+  margin: -1px;
   padding: 0.5rem 0.75rem;
   background: var(--wl-primary);
   color: var(--wl-on-primary);
+  clip-path: inset(50%);
   font-size: 0.875rem;
   font-weight: 700;
+  line-height: 1;
   opacity: 0;
+  overflow: hidden;
   pointer-events: none;
   text-decoration: none;
-  transition: top var(--transition-fast), opacity var(--transition-fast);
+  transform: translateY(calc(-100% - 1.5rem));
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+  white-space: nowrap;
 }
 
 .wl-skip-link:focus-visible {
-  top: max(0.75rem, env(safe-area-inset-top));
+  width: auto;
+  height: auto;
+  min-height: 2.75rem;
+  margin: 0;
+  clip-path: none;
   opacity: 1;
   pointer-events: auto;
+  transform: translateY(0);
+  white-space: normal;
   outline: var(--wireline-interaction-focus-width) solid var(--wl-on-primary);
   outline-offset: 3px;
 }

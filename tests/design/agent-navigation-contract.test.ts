@@ -36,7 +36,8 @@ describe("agent navigation contract", () => {
   });
 
   it("uses the screenshot-inspired overview as the personal and business roster", () => {
-    expect(overviewPage).toMatch(/Good morning/);
+    expect(overviewPage).toMatch(/function dayGreeting/);
+    expect(overviewPage).toMatch(/Good evening/);
     expect(overviewPage).toMatch(/Personal \+ business lines/);
     expect(overviewPage).toMatch(/Personal agents/);
     expect(overviewPage).toMatch(/Business agents/);
@@ -59,6 +60,7 @@ describe("agent navigation contract", () => {
     expect(studioWorkroom).toMatch(/Adjust greeting/);
     expect(studioWorkroom).toMatch(/Deploy now/);
     expect(studioCanvas).toMatch(/Identity/);
+    expect(studioCanvas).not.toMatch(/line-clamp-4/);
     expect(studioCanvas).toMatch(/Voice/);
     expect(studioCanvas).toMatch(/Workflows & Capabilities/);
     expect(studioCanvas).toMatch(/Knowledge Base/);

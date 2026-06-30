@@ -220,7 +220,7 @@ export default function StudioAgentCanvas({
                 </div>
               </div>
             </div>
-            <div className="line-clamp-4 rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
               {personality}
             </div>
           </CardShell>

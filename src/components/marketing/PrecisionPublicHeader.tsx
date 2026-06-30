@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../atoms";
 import WirelineMark from "../brand/WirelineMark";
+import SkipToContentLink from "../layout/SkipToContentLink";
 
 const links = [
   {
@@ -27,9 +28,7 @@ export default function PrecisionPublicHeader() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <header className="fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_98%,transparent)] backdrop-blur-xl">
-        <a className="wl-skip-link" href="#main-content">
-          Skip to content
-        </a>
+        <SkipToContentLink href="#main-content" />
         <div className="wl-measure relative mx-auto flex h-16 items-center gap-4 px-5 sm:px-6 lg:px-8">
           <Link
             to="/"

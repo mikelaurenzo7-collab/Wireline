@@ -32,6 +32,13 @@ function todayLabel() {
     .replace(",", " ·");
 }
 
+function dayGreeting(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 function firstName(name?: string | null, email?: string | null) {
   // Prefer the real full_name first token. Falls through to the email local
   // part with username noise stripped — trailing digits ("mike97" -> "Mike"),
@@ -182,7 +189,7 @@ export default function OverviewPage() {
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="wl-display-2">
-                Good morning, {firstName(user?.full_name, user?.email)}.
+                {dayGreeting()}, {firstName(user?.full_name, user?.email)}.
               </h1>
               <p className="mt-3 max-w-prose text-[14px] leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
                 {hasAgents
