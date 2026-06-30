@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { GraduationCap, Mic2, PlayCircle, Plus, WandSparkles } from "lucide-react";
 
-import { Button, NativeSelect } from "../components/atoms";
+import { Button } from "../components/atoms";
 import WorkspaceShell from "../components/WorkspaceShell";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import { useAgents } from "../contexts/AgentsContext";
