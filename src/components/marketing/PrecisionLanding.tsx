@@ -20,6 +20,8 @@ const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan
 
 const teamExtraAgentPrice = planCatalog.team.extra_agent_price_usd ?? 9;
 const businessExtraAgentPrice = planCatalog.business.extra_agent_price_usd ?? 12;
+const displayHeading = "font-[var(--wireline-font-family-display)] font-normal tracking-[-0.025em]";
+const marketingHeading = `${displayHeading} text-[clamp(34px,4vw,46px)] leading-[1.05]`;
 
 const PERSONAL_CONFIGS = [
   {
@@ -137,25 +139,36 @@ const PLANS = [
   },
 ] as const;
 
+const WAVE_BARS = [
+  "h-[30%]",
+  "h-[70%]",
+  "h-full",
+  "h-1/2",
+  "h-[85%]",
+  "h-[40%]",
+  "h-[95%]",
+  "h-[60%]",
+] as const;
+
 function LiveCallCard({ variant }: { variant: Audience }) {
   const data =
     variant === "personal"
       ? {
-          initial: "M",
-          name: "Mike's Agent",
-          caller: "Unknown · (312) 555-0182",
+          initial: "P",
+          name: "Personal Agent",
+          caller: "Unknown caller",
           lines: [
-            { from: "caller", text: "Hi, is this Mike? I'm calling about your car warranty." },
-            { from: "agent", text: "Mike isn't available. Can I ask what this is regarding?" },
+            { from: "caller", text: "Hi, is this a good number to reach you?" },
+            { from: "agent", text: "They aren't available. Can I ask what this is regarding?" },
             { from: "caller", text: "It's about an expiring warranty offer." },
-            { from: "agent", text: "Got it. I'll let him know. Thanks for calling." },
+            { from: "agent", text: "Got it. I'll pass along the message. Thanks for calling." },
           ],
           tags: ["✓ Handled", "✓ Message sent", "✓ Caller logged"],
         }
       : {
-          initial: "S",
-          name: "Sarah — Front Desk",
-          caller: "Inbound · (630) 555-0198",
+          initial: "F",
+          name: "Front Desk Agent",
+          caller: "Inbound caller",
           lines: [
             { from: "caller", text: "I'd like to book a service estimate for next week." },
             { from: "agent", text: "Happy to help! Friday at 11:30 works — should I lock it in?" },
@@ -167,13 +180,7 @@ function LiveCallCard({ variant }: { variant: Audience }) {
 
   return (
     <div className="relative rounded-[20px] border border-border bg-card p-6 shadow-[0_1px_3px_rgba(0,0,0,.03),_0_8px_32px_rgba(0,0,0,.05)]">
-      <div
-        className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-60"
-        style={{
-          background: "radial-gradient(ellipse at 60% 30%, rgba(43,85,72,.07), transparent 70%)",
-          filter: "blur(40px)",
-        }}
-      />
+      <div className="pointer-events-none absolute inset-[-30px] rounded-[40px] bg-[radial-gradient(ellipse_at_60%_30%,rgba(43,85,72,.07),transparent_70%)] opacity-60 blur-[40px]" />
       <div className="relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -195,15 +202,10 @@ function LiveCallCard({ variant }: { variant: Audience }) {
 
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-muted px-4 py-3">
           <div className="flex h-6 items-end gap-[2px]" aria-hidden="true">
-            {[30, 70, 100, 50, 85, 40, 95, 60].map((height, index) => (
+            {WAVE_BARS.map((heightClass, index) => (
               <div
-                key={index}
-                className="w-[3px] rounded-sm bg-[#3D9B73]"
-                style={{
-                  height: `${height}%`,
-                  animation: "waveBar 1.2s ease-in-out infinite",
-                  animationDelay: `${index * 0.1}s`,
-                }}
+                key={`${heightClass}-${index}`}
+                className={`w-[3px] rounded-sm bg-[#3D9B73] animate-[waveBar_1.2s_ease-in-out_infinite] ${heightClass}`}
               />
             ))}
           </div>
@@ -256,7 +258,7 @@ export default function PrecisionLanding() {
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail grid items-center gap-12 lg:grid-cols-[1.15fr_.85fr]">
-            <div style={{ animation: "fadeUp .7s ease-out both" }}>
+            <div className="animate-[fadeUp_.7s_ease-out_both]">
               <div
                 role="group"
                 aria-label="Choose landing page audience"
@@ -290,13 +292,7 @@ export default function PrecisionLanding() {
               </div>
               <h1
                 aria-label={headline}
-                className="wl-public-section-heading max-w-none"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  letterSpacing: "-0.035em",
-                }}
+                className="wl-public-section-heading max-w-none font-[var(--wireline-font-family-display)] font-normal tracking-[-0.035em]"
               >
                 {audience === "business" ? (
                   <>
@@ -339,17 +335,14 @@ export default function PrecisionLanding() {
               </div>
             </div>
 
-            <div style={{ animation: "fadeUp .7s ease-out .15s both" }}>
+            <div className="animate-[fadeUp_.7s_ease-out_.15s_both]">
               <LiveCallCard variant={audience} />
             </div>
           </div>
         </section>
 
         <div className="border-b border-border bg-[#1C1C1A] px-5 py-5 text-center">
-          <p
-            className="text-[18px] text-[rgba(247,246,243,.82)]"
-            style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif" }}
-          >
+          <p className={`text-[18px] text-[rgba(247,246,243,.82)] ${displayHeading}`}>
             {audience === "business" ? (
               <>
                 {BUSINESS_MARKETING_VOICE.beforeStrip}{" "}
@@ -367,15 +360,7 @@ export default function PrecisionLanding() {
           <div className="wl-public-rail">
             <div className="mb-12">
               <p className="wl-eyebrow text-primary">02 — {audience === "personal" ? "Configurations" : "Use cases"}</p>
-              <h2
-                className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  letterSpacing: "-0.025em",
-                }}
-              >
+              <h2 className={`mt-4 ${marketingHeading}`}>
                 {audience === "personal" ? "Configure it for your life." : "Built for real business volume."}
               </h2>
               <p className="mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
@@ -389,15 +374,7 @@ export default function PrecisionLanding() {
               {configs.map(({ icon, name, body, plan }) => (
                 <div key={name} className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_rgba(43,85,72,.06)]">
                   <div className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[#EEF5F1] text-[18px] text-primary">{icon}</div>
-                  <h3
-                    className="mb-2 text-[22px] leading-tight"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                      letterSpacing: "-0.015em",
-                    }}
-                  >
+                  <h3 className={`mb-2 text-[22px] leading-tight tracking-[-0.015em] ${displayHeading}`}>
                     {name}
                   </h3>
                   <p className="mb-5 text-[14px] leading-[1.6] text-muted-foreground">{body}</p>
@@ -412,33 +389,13 @@ export default function PrecisionLanding() {
           <div className="wl-public-rail">
             <div className="mb-12">
               <p className="wl-eyebrow text-primary">03 — Four steps</p>
-              <h2
-                className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  letterSpacing: "-0.025em",
-                }}
-              >
-                Live before lunch.
-              </h2>
+              <h2 className={`mt-4 ${marketingHeading}`}>Live before lunch.</h2>
             </div>
             <div className="grid divide-x divide-border overflow-hidden rounded-[16px] border border-border sm:grid-cols-4">
               {STEPS.map(({ num, title, body }) => (
                 <div key={num} className="bg-card p-8 transition-colors hover:bg-muted/40">
                   <div className="mb-7 font-mono text-[13px] font-bold text-primary">{num}</div>
-                  <h3
-                    className="mb-2 text-[22px]"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                      letterSpacing: "-0.015em",
-                    }}
-                  >
-                    {title}
-                  </h3>
+                  <h3 className={`mb-2 text-[22px] tracking-[-0.015em] ${displayHeading}`}>{title}</h3>
                   <p className="text-[13px] leading-[1.6] text-muted-foreground">{body}</p>
                 </div>
               ))}
@@ -450,17 +407,7 @@ export default function PrecisionLanding() {
           <div className="wl-public-rail">
             <div className="mb-12 text-center">
               <p className="wl-eyebrow text-primary">Pricing</p>
-              <h2
-                className="mx-auto mt-4 max-w-[18ch] text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  letterSpacing: "-0.025em",
-                }}
-              >
-                Personal balance. Team capacity.
-              </h2>
+              <h2 className={`mx-auto mt-4 max-w-[18ch] ${marketingHeading}`}>Personal balance. Team capacity.</h2>
               <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
                 Create for free, fund live work with Conversation Balance, then move into Team or Business capacity when Wireline becomes an operating lane.
               </p>
@@ -481,10 +428,10 @@ export default function PrecisionLanding() {
                       {plan.badge}
                     </div>
                   ) : null}
-                  <div className="mb-1 text-[24px]" style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif", fontWeight: 400 }}>{plan.name}</div>
+                  <div className={`mb-1 text-[24px] ${displayHeading}`}>{plan.name}</div>
                   <div className={`mb-5 text-[12px] ${plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-muted-foreground"}`}>{plan.sub}</div>
                   <div className="mb-4 flex items-baseline gap-1">
-                    <span className="text-[44px] leading-none tracking-[-0.03em]" style={{ fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif" }}>{plan.price}</span>
+                    <span className={`text-[44px] leading-none tracking-[-0.03em] ${displayHeading}`}>{plan.price}</span>
                     <span className={`text-[14px] ${plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-muted-foreground"}`}>{plan.period}</span>
                   </div>
                   <p className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "text-[rgba(247,246,243,.78)]" : "text-muted-foreground"}`}>{plan.body}</p>
@@ -514,21 +461,10 @@ export default function PrecisionLanding() {
 
         <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
-            <div className="relative overflow-hidden rounded-[20px] bg-[#1C1C1A] px-10 py-18 text-center text-[#F7F6F3] sm:py-20">
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(43,85,72,.2), transparent 60%)" }}
-              />
+            <div className="relative overflow-hidden rounded-[20px] bg-[#1C1C1A] px-10 py-[4.5rem] text-center text-[#F7F6F3] sm:py-20">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(43,85,72,.2),transparent_60%)]" />
               <div className="relative">
-                <h2
-                  className="mx-auto max-w-[18ch] text-[clamp(34px,4.5vw,50px)] leading-[1.05]"
-                  style={{
-                    fontFamily:
-                      "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                    fontWeight: 400,
-                    letterSpacing: "-0.03em",
-                  }}
-                >
+                <h2 className={`mx-auto max-w-[18ch] text-[clamp(34px,4.5vw,50px)] leading-[1.05] tracking-[-0.03em] ${displayHeading}`}>
                   {audience === "business" ? (
                     <>
                       Stop missing calls.
