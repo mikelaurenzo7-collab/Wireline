@@ -9,8 +9,8 @@ const clientSurfaces = [
     title: "Wireline Command",
     status: "Private preview",
     statusVariant: "warning" as const,
-    description: "Bring the page you're on into Studio.",
-    detail: "Selected text, title, URL, and linked numbers — only when invoked.",
+    description: "Bring the page you are on into Studio.",
+    detail: "Selected text, title, URL, and linked numbers — only when you invoke it.",
     action: "Request preview",
     href: "mailto:support@trywireline.com?subject=Wireline%20Command%20Preview",
   },
@@ -20,7 +20,7 @@ const clientSurfaces = [
     status: "Release prep",
     statusVariant: "info" as const,
     description: "Run your line away from the desk.",
-    detail: "Siri, Lock Screen widgets, CallKit, and CarPlay calling flows.",
+    detail: "Siri, Lock Screen widgets, CallKit, and approved CarPlay calling flows.",
     action: "Ask about access",
     href: "mailto:support@trywireline.com?subject=Wireline%20for%20iPhone",
   },
@@ -30,7 +30,7 @@ const clientSurfaces = [
     status: "Release prep",
     statusVariant: "info" as const,
     description: "Control Wireline from any Android device.",
-    detail: "Telecom integration, notifications, widgets, and Android Auto flows.",
+    detail: "Telecom integration, notifications, widgets, and Android Auto-ready call flows.",
     action: "Ask about access",
     href: "mailto:support@trywireline.com?subject=Wireline%20for%20Android",
   },
@@ -40,7 +40,7 @@ const clientSurfaces = [
     status: "Developer mode",
     statusVariant: "outline" as const,
     description: "Draft an agent in chat, finish setup here.",
-    detail: "Requires a connected Wireline account and Developer Mode.",
+    detail: "Account-bound drafts and private simulations only; launch stays in Wireline.",
     action: "Ask about access",
     href: "mailto:support@trywireline.com?subject=Wireline%20in%20ChatGPT",
   },
@@ -51,15 +51,12 @@ export default function ClientAppsPage() {
     <WorkspaceShell title="" eyebrow="" contentClassName="pt-8 pb-10 lg:pt-10">
       <div className="mx-auto flex w-full max-w-[940px] flex-col gap-8 pb-8">
         <section>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
-            Your control surfaces
-          </p>
+          <p className="wl-eyebrow wl-eyebrow-primary">Control surfaces</p>
           <h1 className="wl-display-2 mt-4 max-w-[16ch]">
             One agent system, wherever the conversation starts.
           </h1>
-          <p className="mt-5 max-w-[54ch] text-[15px] leading-7 text-muted-foreground">
-            Same agents. Same setup. One protected workspace — on your desk, in your pocket, in the
-            car, or inside the tools you already use.
+          <p className="wl-lead mt-5 max-w-[54ch]">
+            Same agents. Same rules. One protected workspace — on your desk, in your pocket, in the car, or inside the tools you already use.
           </p>
         </section>
 
@@ -72,9 +69,7 @@ export default function ClientAppsPage() {
                 </span>
                 <Badge variant={statusVariant}>{status}</Badge>
               </div>
-              <h2 className="mt-6 font-[var(--wireline-font-family-display)] text-[26px] font-normal leading-tight tracking-[-0.02em] text-foreground">
-                {title}
-              </h2>
+              <h2 className="wl-display-4 mt-6">{title}</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
               <p className="mt-3 text-xs font-medium leading-5 text-muted-foreground">{detail}</p>
               <Button asChild variant="link" className="mt-auto w-fit px-0 pt-6 text-sm text-primary">
@@ -89,15 +84,13 @@ export default function ClientAppsPage() {
         <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-7 text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
-                One continuous line
-              </p>
+              <p className="wl-eyebrow text-[var(--wireline-color-status-success)]">One continuous line</p>
               <p className="mt-3 font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.025em] sm:text-3xl">
-                A call that starts in CarPlay finishes in your Inbox.
+                A call that starts in CarPlay finishes in your inbox.
               </p>
             </div>
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[rgba(247,246,243,0.72)]">
-              → phone · chat · browser · inbox
+              Phone · Chat · Browser · Inbox
             </p>
           </div>
         </section>
