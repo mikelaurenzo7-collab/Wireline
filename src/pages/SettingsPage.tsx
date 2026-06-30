@@ -25,7 +25,7 @@ function DangerZone() {
       if (!response.ok) throw new Error(String(response.status));
       setMessage("Deletion in progress. You'll receive an email when it completes.");
     } catch {
-      setError("Couldn't queue the deletion. Try again in a moment.");
+      setError("Couldn't queue deletion. Try again in a moment.");
     } finally {
       setWorking(false);
     }
@@ -33,13 +33,10 @@ function DangerZone() {
 
   return (
     <section className="studio-card border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
-      <p className="wl-overline" style={{ color: "var(--wireline-color-status-error)" }}>
-        Danger zone
-      </p>
-      <h3 className="mt-2 text-sm font-semibold text-foreground">Delete account</h3>
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        This permanently removes your agents, call logs, and billing history. Type DELETE to
-        confirm.
+      <p className="wl-overline wl-eyebrow-danger">Danger zone</p>
+      <h3 className="wl-card-heading mt-2">Delete account</h3>
+      <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+        This permanently removes your agents, call logs, and billing history. Type DELETE to confirm.
       </p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
@@ -94,7 +91,8 @@ export default function SettingsPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace owner";
-  const email = user?.email || "owner@example.com";
+  const email = user?.email || "Signed-in email unavailable";
+  const company = user?.business_name?.trim() || "Not set";
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -114,14 +112,17 @@ export default function SettingsPage() {
       <div className="mx-auto flex w-full max-w-[700px] flex-col gap-5 pb-10">
         <SettingsTabs />
 
-        <h1 className="wl-display-3">Account</h1>
+        <section>
+          <p className="wl-eyebrow wl-eyebrow-primary">Settings</p>
+          <h1 className="wl-display-3 mt-3">Account</h1>
+        </section>
 
         <section className="studio-card p-5 sm:p-6">
           <p className="wl-overline">Profile</p>
           <div className="mt-5 grid gap-4">
             <ReadOnlyField label="Name" value={displayName} />
             <ReadOnlyField label="Email" value={email} />
-            <ReadOnlyField label="Company" value="Wireline" />
+            <ReadOnlyField label="Company" value={company} />
           </div>
         </section>
 
@@ -130,19 +131,17 @@ export default function SettingsPage() {
           <div className="mt-5 grid gap-3">
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
               <div>
-                <p className="text-sm font-semibold text-foreground">Password</p>
-                <p className="mt-1 text-xs text-muted-foreground">Last changed 14 days ago</p>
+                <p className="wl-card-heading">Password</p>
+                <p className="mt-1 text-xs text-muted-foreground">Managed by your Wireline sign-in method</p>
               </div>
-              <Button type="button" variant="secondary" size="sm">
-                Change
-              </Button>
+              <Badge variant="outline">Account</Badge>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
               <div>
-                <p className="text-sm font-semibold text-foreground">Two-factor auth</p>
-                <p className="mt-1 text-xs text-muted-foreground">TOTP via authenticator app</p>
+                <p className="wl-card-heading">Two-factor authentication</p>
+                <p className="mt-1 text-xs text-muted-foreground">Configure with your identity provider when available</p>
               </div>
-              <Badge variant="success">Enabled</Badge>
+              <Badge variant="outline">Not set</Badge>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
               <div>
