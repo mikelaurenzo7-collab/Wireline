@@ -5,7 +5,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 
 export default function CallLogsPage() {
   return (
-    <WorkspaceShell eyebrow="Run" title="Call logs" contentClassName="pt-2 pb-0">
+    <WorkspaceShell eyebrow="Run" title="Call Logs" contentClassName="pt-2 pb-0">
       <div className="flex h-full min-h-0 flex-col">
         <section className="mb-4 grid gap-3 px-5 pt-2 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="wl-card-lg">
