@@ -161,7 +161,7 @@ export default function SettingsPage() {
                 onClick={handleSignOut}
               >
                 <LogOut aria-hidden="true" size={14} />
-                {signingOut ? "Signing out..." : "Sign out"}
+                {signingOut ? "Signing out…" : "Sign out"}
               </Button>
             </div>
           </div>
