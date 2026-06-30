@@ -9,7 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel, WORKSPACE_VOICE } from "../lib/product-copy";
 
 const QUICK_ACTIONS = [
-  { href: "/studio", icon: Sparkles, title: "Open Studio" },
+  { href: "/studio", icon: Sparkles, title: "Open studio" },
   { href: "/templates", icon: Bot, title: "Browse templates" },
   { href: "/call-logs", icon: Phone, title: "Review calls" },
   { href: "/connections", icon: Cable, title: "Add connection" },
@@ -145,9 +145,7 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
   return (
     <section aria-label={heading}>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          {heading}
-        </p>
+        <p className="wl-eyebrow">{heading}</p>
         <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
           {agents.length}
         </span>
@@ -179,17 +177,13 @@ export default function OverviewPage() {
     <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-5 pb-10 lg:pt-6">
       <div className="wl-overview mx-auto flex w-full max-w-[1040px] flex-col gap-6 pb-8">
         <section className="relative">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            {todayLabel()}
-          </p>
+          <p className="wl-eyebrow">{todayLabel()}</p>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="wl-display-2">
-                Good morning, {firstName(user?.full_name, user?.email)}.
-              </h1>
-              <p className="mt-2.5 max-w-prose text-[14px] leading-relaxed text-muted-foreground sm:text-[15px]">
+              <h1 className="wl-display-2">Good morning, {firstName(user?.full_name, user?.email)}.</h1>
+              <p className="wl-lead mt-2.5 max-w-prose">
                 {hasAgents
-                  ? `Your line is active. ${primaryAgent?.name || "Your agent"} is ready for the next workflow.`
+                  ? `${primaryAgent?.name || "Your agent"} is ready to train, run, and report back.`
                   : WORKSPACE_VOICE.emptyCue}
               </p>
             </div>
@@ -205,9 +199,7 @@ export default function OverviewPage() {
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Workspace metrics">
           {metricRows(agents, loading).map((item) => (
             <div key={item.label} className="studio-card min-h-[112px] p-4 lg:p-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                {item.label}
-              </p>
+              <p className="wl-eyebrow">{item.label}</p>
               <div className="mt-2.5 font-[var(--wireline-font-family-display)] text-[2.1rem] leading-none text-foreground lg:text-[2.25rem]">
                 {item.value}
               </div>
@@ -217,15 +209,13 @@ export default function OverviewPage() {
         </section>
 
         {degraded ? (
-          <StatusNotice tone="warning" title="Status partial.">
+          <StatusNotice tone="warning" title="Status partial">
             Agent links are recovering. The workspace is using the last safe state.
           </StatusNotice>
         ) : null}
 
         <section>
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            Quick actions
-          </p>
+          <p className="wl-eyebrow mb-3">Quick actions</p>
           <div className="flex flex-wrap gap-2">
             {QUICK_ACTIONS.map(({ href, icon: Icon, title }) => (
               <Link
@@ -244,15 +234,11 @@ export default function OverviewPage() {
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Agents
-                </p>
-                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
-                  Personal + business lines
-                </h2>
+                <p className="wl-eyebrow">Agents</p>
+                <h2 className="wl-card-heading mt-1">Personal and business lines</h2>
               </div>
               <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
-                Open Studio →
+                Open studio →
               </Link>
             </div>
             {loading ? (
@@ -268,12 +254,8 @@ export default function OverviewPage() {
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Recent calls
-                </p>
-                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
-                  What changed today
-                </h2>
+                <p className="wl-eyebrow">Recent calls</p>
+                <h2 className="wl-card-heading mt-1">What changed today</h2>
               </div>
               <Link to="/call-logs" className="text-xs font-semibold text-primary hover:underline">
                 View all →
@@ -281,9 +263,9 @@ export default function OverviewPage() {
             </div>
             <div className="grid min-h-[164px] place-items-center rounded-[12px] border border-dashed border-border bg-background/40 px-5 py-7 text-center">
               <div>
-                <p className="text-sm font-semibold text-foreground">No calls logged yet.</p>
+                <p className="text-sm font-semibold text-foreground">No calls logged yet</p>
                 <p className="mt-2 max-w-[30ch] text-xs leading-relaxed text-muted-foreground">
-                  Live activity will appear here after your first connected call. Nothing is mocked.
+                  Real call activity will appear here after your first connected line runs.
                 </p>
               </div>
             </div>
@@ -291,11 +273,9 @@ export default function OverviewPage() {
         </section>
 
         <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-6 text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
-            One continuous line
-          </p>
+          <p className="wl-eyebrow text-[var(--wireline-color-status-success)]">One continuous line</p>
           <p className="mt-3 font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.02em]">
-            A call that starts on your phone finishes in your Inbox.
+            A call that starts on your phone finishes in your inbox.
           </p>
         </section>
       </div>
