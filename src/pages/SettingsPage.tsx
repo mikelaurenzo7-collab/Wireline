@@ -6,6 +6,7 @@ import { Badge, Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { useAccount } from "../contexts/AccountContext";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
 
@@ -87,12 +88,13 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const { activeAccount } = useAccount();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace owner";
   const email = user?.email || "Signed-in email unavailable";
-  const company = user?.business_name?.trim() || "Not set";
+  const company = activeAccount?.label?.trim() || "Not set";
 
   async function handleSignOut() {
     if (signingOut) return;
