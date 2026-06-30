@@ -136,19 +136,63 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         </div>
       </section>
 
-      <section className="border-y border-border bg-card px-5 py-7 sm:px-8 sm:py-10">
-        <div className="mx-auto grid max-w-3xl justify-items-center gap-4 text-center">
-          <div className="wl-stitch-stat-box w-fit font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
-            <span className="wl-stitch-status-dot" aria-hidden />
-            <strong className="text-foreground">{cfg.statValue}</strong>
+      {isPersonal ? (
+        <section className="border-y border-border bg-card px-5 py-10 sm:px-8 sm:py-14">
+          <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(320px,1fr)] lg:items-center">
+            <div className="text-left">
+              <p className="wl-stitch-eyebrow">How it works</p>
+              <h2 className="wl-stitch-display mt-3 text-balance">
+                Text what you need. It handles the call and texts back the result.
+              </h2>
+              <p className="mt-4 max-w-xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+                Offload the awkward call without giving up control. You choose the voice, the
+                boundaries, and exactly when a human should step in.
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                {[
+                  ["Text", "Say what you need done."],
+                  ["Handle", "Wireline makes the call."],
+                  ["Confirm", "You get the outcome back."],
+                ].map(([title, body]) => (
+                  <div key={title} className="wl-stitch-card px-4 py-4 text-left">
+                    <p className="wl-stitch-label">{title}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="wl-stitch-card p-5 sm:p-6">
+              <div className="wl-stitch-label">Example handoff</div>
+              <div className="mt-4 flex flex-col gap-3 text-left">
+                <div className="max-w-[88%] rounded-2xl bg-muted px-4 py-3 text-sm leading-6 text-foreground">
+                  <span className="wl-stitch-label block text-primary">You</span>
+                  “Call the dentist and move Friday if they have anything Monday morning.”
+                </div>
+                <div className="ml-auto max-w-[88%] rounded-2xl bg-primary px-4 py-3 text-sm leading-6 text-primary-foreground">
+                  <span className="wl-stitch-label block text-primary-foreground/75">Wireline</span>
+                  “On it. I’ll ask for Monday morning first and text back with the outcome.”
+                </div>
+                <div className="max-w-[88%] rounded-2xl border border-border bg-card px-4 py-3 text-sm leading-6 text-foreground">
+                  <span className="wl-stitch-label block text-primary">Result</span>
+                  Moved to Monday at 11:30. Confirmation sent. No further action needed.
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-            {isPersonal
-              ? "Text what you need. It calls, handles the back-and-forth, and reports back."
-              : cfg.statLabel}
-          </p>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="border-y border-border bg-card px-5 py-7 sm:px-8 sm:py-10">
+          <div className="mx-auto grid max-w-3xl justify-items-center gap-4 text-center">
+            <div className="wl-stitch-stat-box w-fit font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
+              <span className="wl-stitch-status-dot" aria-hidden />
+              <strong className="text-foreground">{cfg.statValue}</strong>
+            </div>
+            <p className="max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+              {cfg.statLabel}
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
@@ -166,14 +210,15 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             return (
               <article
                 key={pain.title}
-                className="wl-stitch-card marketing-pain-card flex items-center gap-4 p-5 sm:p-6"
+                className="wl-stitch-card marketing-pain-card flex flex-col items-start gap-4 p-5 sm:p-6"
               >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-muted text-primary">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-muted text-primary">
                   <Icon className="h-4 w-4" />
                 </span>
-                <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">
-                  {title}
-                </h3>
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{pain.body}</p>
+                </div>
               </article>
             );
           })}
