@@ -68,4 +68,12 @@ describe("Wireline Command extension contract", () => {
     expect(panelJs).toContain('route: "billing"');
     expect(panelJs).toContain('route: "studio"');
   });
+
+  it("opens canonical workspace paths instead of relying on redirect aliases", () => {
+    expect(serviceWorker).toContain('["agents", "https://trywireline.com/studio"]');
+    expect(serviceWorker).toContain('["training", "https://trywireline.com/knowledge"]');
+    expect(serviceWorker).toContain('["wire", "https://trywireline.com/connections"]');
+    expect(serviceWorker).not.toContain('"https://trywireline.com/agents"');
+    expect(serviceWorker).not.toContain('"https://trywireline.com/actions"');
+  });
 });
