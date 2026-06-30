@@ -158,7 +158,7 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
         ))}
         <Link
           to={`/studio?create=1&posture=${kind}`}
-          className="grid min-h-[44px] place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          className="grid min-h-[42px] place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
         >
           + New {kind} agent
         </Link>
@@ -176,8 +176,8 @@ export default function OverviewPage() {
   const primaryAgent = agents[0];
 
   return (
-    <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
-      <div className="wl-overview mx-auto flex w-full max-w-[980px] flex-col gap-8 pb-8">
+    <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-5 pb-10 lg:pt-6">
+      <div className="wl-overview mx-auto flex w-full max-w-[1040px] flex-col gap-6 pb-8">
         <section className="relative">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {todayLabel()}
@@ -187,13 +187,13 @@ export default function OverviewPage() {
               <h1 className="wl-display-2">
                 Good morning, {firstName(user?.full_name, user?.email)}.
               </h1>
-              <p className="mt-3 max-w-prose text-[14px] leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
+              <p className="mt-2.5 max-w-prose text-[14px] leading-relaxed text-muted-foreground sm:text-[15px]">
                 {hasAgents
                   ? `Your line is active. ${primaryAgent?.name || "Your agent"} is ready for the next workflow.`
                   : WORKSPACE_VOICE.emptyCue}
               </p>
             </div>
-            <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
+            <Button asChild className="shrink-0 justify-center sm:min-w-[148px]">
               <Link to="/studio?create=1">
                 <Sparkles aria-hidden="true" size={15} />
                 New agent
@@ -204,14 +204,14 @@ export default function OverviewPage() {
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Workspace metrics">
           {metricRows(agents, loading).map((item) => (
-            <div key={item.label} className="studio-card min-h-[120px] p-5">
+            <div key={item.label} className="studio-card min-h-[112px] p-4 lg:p-5">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 {item.label}
               </p>
-              <div className="mt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">
+              <div className="mt-2.5 font-[var(--wireline-font-family-display)] text-[2.1rem] leading-none text-foreground lg:text-[2.25rem]">
                 {item.value}
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">{item.detail}</p>
+              <p className="mt-2.5 text-xs leading-5 text-muted-foreground">{item.detail}</p>
             </div>
           ))}
         </section>
@@ -231,7 +231,7 @@ export default function OverviewPage() {
               <Link
                 key={href}
                 to={href}
-                className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-muted"
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-border bg-card px-3.5 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-muted"
               >
                 <Icon aria-hidden="true" size={15} className="text-primary" />
                 {title}
@@ -240,7 +240,7 @@ export default function OverviewPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[1fr_1fr]" aria-label="Agents and recent calls">
+        <section className="grid gap-4 lg:grid-cols-[1.04fr_0.96fr]" aria-label="Agents and recent calls">
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
@@ -258,7 +258,7 @@ export default function OverviewPage() {
             {loading ? (
               <AgentLoadingRows />
             ) : (
-              <div className="grid gap-5">
+              <div className="grid gap-4">
                 <AgentSection kind="personal" agents={personalAgents} />
                 <AgentSection kind="business" agents={businessAgents} />
               </div>
@@ -279,10 +279,10 @@ export default function OverviewPage() {
                 View all →
               </Link>
             </div>
-            <div className="grid min-h-[176px] place-items-center rounded-[12px] border border-dashed border-border bg-background/40 px-5 py-8 text-center">
+            <div className="grid min-h-[164px] place-items-center rounded-[12px] border border-dashed border-border bg-background/40 px-5 py-7 text-center">
               <div>
                 <p className="text-sm font-semibold text-foreground">No calls logged yet.</p>
-                <p className="mt-2 max-w-[28ch] text-xs leading-relaxed text-muted-foreground">
+                <p className="mt-2 max-w-[30ch] text-xs leading-relaxed text-muted-foreground">
                   Live activity will appear here after your first connected call. Nothing is mocked.
                 </p>
               </div>
