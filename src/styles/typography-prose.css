@@ -170,14 +170,6 @@
 /* ==========================================================================
    Wireline canonical typography scale — the single source of truth for
    display headlines, eyebrows, leads, and body across marketing + app.
-   Replaces ~19 scattered text-[Npx] declarations with five steps that
-   scale fluidly from the smallest phone to ultra-wide desktops.
-
-   Defaults live in @layer base so any Tailwind utility wins automatically
-   (utilities are in their own higher layer; unlayered CSS would have beaten
-   them regardless of :where() specificity gymnastics). The class itself
-   stays unlayered for the font/size/line-height side — those *should* win,
-   since they're what makes the class identifiable.
    ========================================================================== */
 
 /* Display 1 — landing hero headlines (the biggest type on the site). */
@@ -219,14 +211,43 @@
   letter-spacing: -0.02em;
 }
 
-/* Eyebrow — mono section/category labels. The fixed 11px stays as a
-   visual rest point; everything around it scales. */
+/* Eyebrow — mono section/category labels. */
 .wl-eyebrow {
   font-family: var(--wireline-font-family-mono), ui-monospace, monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
+  line-height: 1.2;
   text-transform: uppercase;
+}
+
+.wl-eyebrow-primary {
+  color: var(--wireline-color-action-primary-default) !important;
+}
+
+.wl-eyebrow-danger {
+  color: var(--wireline-color-status-error) !important;
+}
+
+.wl-title-tight {
+  font-family: var(--wireline-font-family-display), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.wl-card-heading {
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-text-pretty {
+  text-wrap: pretty;
 }
 
 /* Lead — large body that sits under hero headlines / page titles. */
@@ -253,7 +274,8 @@
   .wl-display-1,
   .wl-display-2,
   .wl-display-3,
-  .wl-display-4 {
+  .wl-display-4,
+  .wl-title-tight {
     color: var(--wireline-color-text-primary);
   }
   .wl-eyebrow,
