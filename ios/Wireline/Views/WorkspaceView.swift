@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Native command center for personal and business plans: dispatch calls,
+/// Native Run surface for personal and business plans: dispatch calls,
 /// monitor live work, review follow-ups, and manage agents from mobile.
 struct WorkspaceView: View {
     @EnvironmentObject private var auth: AuthService
@@ -37,7 +37,7 @@ struct WorkspaceView: View {
                     ProgressView("Loading Wireline...").tint(Brand.accent)
                 }
             }
-            .navigationTitle(me?.account.mode == .business ? "Command" : "Wireline")
+            .navigationTitle("Run")
             .navigationBarTitleDisplayMode(.inline)
             .wirelineBrand()
             .toolbar {
@@ -107,7 +107,7 @@ struct WorkspaceView: View {
 
     private var metrics: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Command center").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
+            Text("Run the line").font(.mono(.caption2, weight: .semibold)).foregroundStyle(Brand.text3).textCase(.uppercase)
             HStack(spacing: 8) {
                 Metric(title: "Calls now", value: "\(activeCalls)", icon: "phone.fill", active: activeCalls > 0)
                 Metric(title: "Follow-ups", value: "\(followUps)", icon: "bell.badge.fill", active: followUps > 0)
