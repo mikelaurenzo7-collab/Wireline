@@ -17,8 +17,8 @@ type Attachment = { id: string; name: string; kind: "image" | "file"; url?: stri
 type Tone = "light" | "dark";
 
 /**
- * Lightweight, keyword-driven reply generator so the agent transcript feels
- * alive in the product demo without wiring a live model. Deterministic per input.
+ * Lightweight, keyword-driven reply generator so agent transcripts feel alive
+ * without wiring a live model into every local surface. Deterministic per input.
  */
 export function simulateAssistantReply(input: string, attachmentCount = 0): string {
   const t = input.toLowerCase();
@@ -59,6 +59,7 @@ export function AssistantComposer({
   const imageRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const attachmentsRef = useRef<Attachment[]>([]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -77,10 +78,13 @@ export function AssistantComposer({
   }, [menuOpen]);
 
   useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  useEffect(() => {
     return () => {
-      attachments.forEach((a) => a.url && URL.revokeObjectURL(a.url));
+      attachmentsRef.current.forEach((a) => a.url && URL.revokeObjectURL(a.url));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addFiles = (list: FileList | null, kind?: "image" | "file") => {
