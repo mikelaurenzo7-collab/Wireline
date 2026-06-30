@@ -23,7 +23,7 @@ const connectedTools = [
   },
   {
     icon: Workflow,
-    name: "CRM notes",
+    name: "CRM Notes",
     detail: "Log call outcomes and contact updates.",
   },
 ] as const;
