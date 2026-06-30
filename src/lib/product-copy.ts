@@ -1,33 +1,34 @@
-/** Shared product voice — personal phone agent, configure it however you need. */
+/** Shared product voice — one agent system across every Wireline surface. */
 
 export const MARKETING_VOICE = {
-  eyebrow: "v1 · now in beta",
+  eyebrow: "V1 · Beta",
   headline: "Your phone, finally answering for you.",
   subline:
-    "A voice AI that picks up your phone, talks to the caller, and handles it — booking, message-taking, follow-ups, errands. You get a text with what happened.",
-  proof: ["Answers with a real voice", "Acts on your behalf", "Texts you what happened"],
-  extensionLead: "Command your agent from any page. Wireline answers while you stay focused.",
+    "Wireline answers calls, handles the back-and-forth, and texts you the outcome — bookings, messages, errands, and follow-ups included.",
+  proof: ["Answers with a real voice", "Acts on your behalf", "Texts you the outcome"],
+  extensionLead: "Command an agent from any page. Wireline handles the call while you stay focused.",
   differentiator: "Wireline answers them.",
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "for business · v1 in beta",
+  eyebrow: "Business · V1 Beta",
   proof: ["Books in your calendar", "Routes urgent calls", "Logs every conversation"],
   differentiator: "Wireline keeps the line open.",
   beforeStrip: "Hold music turns leads away.",
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Wire an agent.",
-  runHeadline: "Your phone is covered.",
-  emptyCue: "Brief it. Train it. Put it on the line.",
-  commandPrompts: ["Change voice", "Edit workflows", "Review calls"],
+  createHeadline: "Create the agent.",
+  trainHeadline: "Train the line.",
+  runHeadline: "Run the work.",
+  emptyCue: "Create. Train. Run the line.",
+  commandPrompts: ["Change voice", "Train flows", "Review calls"],
   directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your agent"}...`,
 } as const;
 
 export const PRODUCT_VERSATILITY = {
   eyebrow: "Agent coverage",
-  tagline: "One voice. All channels.",
+  tagline: "One voice. Every surface.",
   short: "Personal and business agents, in one place.",
   hero: "Conversations, handled.",
 } as const;
@@ -36,15 +37,15 @@ export const PRODUCT_POSTURE = {
   personal: {
     badge: "Personal agent",
     badgeShort: "Personal",
-    createCta: "Wire personal agent",
-    emptyTitle: "Personal agent.",
+    createCta: "Create personal agent",
+    emptyTitle: "Personal agent",
     emptyBody: "Your calls. Your rules.",
   },
   business: {
     badge: "Business agent",
     badgeShort: "Business",
-    createCta: "Wire business agent",
-    emptyTitle: "Business agent.",
+    createCta: "Create business agent",
+    emptyTitle: "Business agent",
     emptyBody: "Brand on the line.",
   },
 } as const;
