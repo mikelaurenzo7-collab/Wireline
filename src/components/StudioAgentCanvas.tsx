@@ -5,15 +5,27 @@ import { authFetch } from "../lib/api";
 import { type AgentToolName } from "../lib/agent-capabilities";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 
+/**
+ * StudioAgentCanvas — the spatial Agent Canvas from the handoff bundle.
+ *
+ * The top of this surface intentionally mirrors the supplied Studio screenshot:
+ * Identity + Voice, Workflows, then Knowledge + Situations. Below the first
+ * fold we migrate the rest of the ZIP's business structure into production:
+ * Call Model, Business Profile, Connections, Guardrails, and Setup Health.
+ */
+
 type AgentConfig = {
   role: string | null;
+  archetype: string | null;
   enabledTools: AgentToolName[];
   voice: { voiceId: string | null; provider: string | null };
   personality: string;
-  directives: Array<{ id: string | number; content: string }>;
+  directives: Array<{ id: string | number; content: string; priority?: number }>;
   knowledge: Array<{ id: string | number; content: string }>;
   runtime: { provider: string | null; model: string | null; temperature: number | null };
+  businessHours?: unknown;
   complianceMode?: string | null;
+  businessVariables?: Record<string, unknown> | null;
   escalationPhone?: string | null;
   escalationEmail?: string | null;
   escalationHandoffEnabled?: boolean | null;
@@ -27,6 +39,13 @@ type StudioAgentCanvasProps = {
   onEditSection: (section: string) => void;
   className?: string;
 };
+
+const VOICES = [
+  { name: "Aria", tone: "Warm · Confident" },
+  { name: "Marcus", tone: "Calm · Deep" },
+  { name: "Nova", tone: "Bright · Upbeat" },
+  { name: "Taylor", tone: "Neutral · Pro" },
+] as const;
 
 const MODEL_OPTIONS = [
   { label: "Auto route", aliases: ["managed default", "auto", "auto route", "managed"] },
@@ -45,12 +64,29 @@ const CANVAS_WORKFLOWS: Array<{ name: AgentToolName; label: string; detail: stri
   { name: "escalate_to_human", label: "Escalation", detail: "Off" },
 ];
 
-function CardShell({ label, action, onActivate, children, className = "" }: { label: string; action: string; onActivate: () => void; children: ReactNode; className?: string }) {
+const DEFAULT_SITUATIONS = ["Booking", "Support", "Follow-up"] as const;
+
+function CardShell({
+  label,
+  action,
+  onActivate,
+  children,
+  delay = 0,
+  className = "",
+}: {
+  label: string;
+  action: string;
+  onActivate: () => void;
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onActivate}
-      className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
+      style={{ animationDelay: `${delay}ms` }}
+      className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_rgba(43,85,72,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
     >
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <span className="wl-eyebrow">{label}</span>
@@ -61,6 +97,14 @@ function CardShell({ label, action, onActivate, children, className = "" }: { la
       </div>
       {children}
     </button>
+  );
+}
+
+function Connector() {
+  return (
+    <div className="flex h-5 items-center justify-center" aria-hidden="true">
+      <div className="h-5 border-l border-dashed border-[var(--wireline-color-border-strong)]" />
+    </div>
   );
 }
 
@@ -80,7 +124,28 @@ function modelSelected(option: (typeof MODEL_OPTIONS)[number], raw?: string | nu
   return option.aliases.some((alias) => normalized === alias || normalized.includes(alias));
 }
 
-export default function StudioAgentCanvas({ agentId, agentName, isBusinessAgent, onEditSection, className = "" }: StudioAgentCanvasProps) {
+function weekdayStrip(active = false) {
+  return ["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+    <span
+      key={`${day}-${index}`}
+      className={`grid size-7 place-items-center rounded-md text-[10px] font-semibold ${active && index < 5 ? "bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-action-primary-pressed)]" : "bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-tertiary)]"}`}
+    >
+      {day}
+    </span>
+  ));
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+export default function StudioAgentCanvas({
+  agentId,
+  agentName,
+  isBusinessAgent,
+  onEditSection,
+  className = "",
+}: StudioAgentCanvasProps) {
   const [config, setConfig] = useState<AgentConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -105,97 +170,409 @@ export default function StudioAgentCanvas({ agentId, agentName, isBusinessAgent,
 
   const business = isBusinessAgent ?? config?.isBusinessAgent ?? false;
   const enabled = useMemo(() => new Set(config?.enabledTools ?? []), [config?.enabledTools]);
-  const workflowRows = CANVAS_WORKFLOWS.filter((tool) => business || tool.name !== "update_lead_status");
+  const workflowRows = CANVAS_WORKFLOWS.filter(
+    (tool) => business || tool.name !== "update_lead_status",
+  );
   const activeCount = workflowRows.filter((tool) => enabled.has(tool.name)).length;
+  const initial = (agentName || "A").trim().charAt(0).toUpperCase();
   const roleLabel = formatAgentRoleLabel(config?.role ?? null);
   const voiceName = displayVoiceName(config?.voice?.voiceId);
-  const personality = config?.personality?.trim() || "Concise, warm, and reliable.";
+  const personality = config?.personality?.trim() || "Add response style, tone, and boundaries.";
+  const docCount = config?.knowledge?.length || 0;
+  const directives = config?.directives ?? [];
   const modelLabel = config?.runtime?.model || "Managed Default";
   const temperature = config?.runtime?.temperature ?? 0.5;
-  const situations = config?.directives?.length
-    ? config.directives.slice(0, 3).map((item) => item.content)
-    : ["Booking", "Support", "Follow-up"];
+  const situationRows = directives.length
+    ? directives.slice(0, 3).map((item) => item.content)
+    : DEFAULT_SITUATIONS;
+  const businessVariables = config?.businessVariables ?? {};
+  const businessName = stringValue(businessVariables.business_name);
+  const website = stringValue(businessVariables.website);
+  const supportEmail = stringValue(businessVariables.support_email);
+  const readiness = [
+    { label: "Identity", ready: Boolean(agentName || config?.role) },
+    { label: "Voice", ready: Boolean(config?.voice?.voiceId) },
+    { label: "Knowledge", ready: docCount > 0 },
+    { label: "Workflows", ready: activeCount > 0 },
+    { label: "Test call", ready: false },
+  ];
+  const readyCount = readiness.filter((item) => item.ready).length;
 
   if (loading) {
     return (
-      <div className={`flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`} aria-busy="true" aria-label="Loading agent canvas">
+      <div
+        className={`flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
+        aria-busy="true"
+        aria-label="Loading agent canvas"
+      >
         <div className="h-3 w-28 animate-pulse rounded bg-[var(--wireline-color-surface-subtle)]" />
-        <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
+          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
+        </div>
+        <div className="h-40 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
       </div>
     );
   }
 
   return (
-    <div className={`h-full min-h-0 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}>
+    <div
+      className={`h-full min-h-0 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
+    >
       <div className="mb-6">
         <div className="wl-eyebrow">Agent Canvas</div>
-        <p className="mt-1.5 text-[13px] text-[var(--wireline-color-text-tertiary)]">Click any card to edit. Changes save automatically.</p>
+        <p className="mt-1.5 text-[13px] text-[var(--wireline-color-text-tertiary)]">
+          Click any card to edit. Changes save automatically.
+        </p>
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <CardShell label="Identity" action="Edit" onActivate={() => onEditSection("identity")} className="min-h-[260px]">
+          <CardShell
+            label="Identity"
+            action="Edit"
+            delay={80}
+            onActivate={() => onEditSection("identity")}
+            className="min-h-[300px]"
+          >
             <div className="mb-4 flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-[12px] bg-[var(--wireline-color-action-primary-default)] font-[var(--wireline-font-mono)] text-base font-bold text-[var(--wireline-color-text-onAction)]">{(agentName || "A").trim().charAt(0).toUpperCase()}</div>
+              <div className="grid size-11 place-items-center rounded-[12px] bg-[var(--wireline-color-action-primary-default)] font-[var(--wireline-font-mono)] text-base font-bold text-[var(--wireline-color-text-onAction)]">
+                {initial}
+              </div>
               <div>
-                <div className="font-[var(--wireline-font-display)] text-[22px] tracking-[-0.01em]">{agentName || "Untitled agent"}</div>
-                <div className="text-xs text-[var(--wireline-color-text-tertiary)]">{roleLabel}</div>
+                <div className="font-[var(--wireline-font-display)] text-[22px] tracking-[-0.01em]">
+                  {agentName || "Untitled agent"}
+                </div>
+                <div className="text-xs text-[var(--wireline-color-text-tertiary)]">
+                  {roleLabel}
+                </div>
               </div>
             </div>
-            <div className="line-clamp-4 rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">{personality}</div>
+            <div className="line-clamp-4 rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
+              {personality}
+            </div>
           </CardShell>
 
-          <CardShell label="Voice" action="Preview" onActivate={() => onEditSection("voice")} className="min-h-[260px]">
-            <div className="font-[var(--wireline-font-display)] text-[22px] tracking-[-0.01em]">{voiceName}</div>
-            <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">Warm & Confident · Wireline Voice</div>
-            <div className="mt-4 text-xs text-[var(--wireline-color-text-tertiary)]">Provider: {config?.voice?.provider || "Managed"}</div>
+          <CardShell
+            label="Voice"
+            action="Preview"
+            delay={120}
+            onActivate={() => onEditSection("voice")}
+            className="min-h-[300px]"
+          >
+            <div className="font-[var(--wireline-font-display)] text-[22px] tracking-[-0.01em]">
+              {voiceName}
+            </div>
+            <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">
+              Warm & Confident · Wireline Voice
+            </div>
+            <div className="mt-4 flex h-8 items-end gap-0.5" aria-hidden="true">
+              {[40, 80, 100, 55, 70, 90, 45, 65, 78, 52].map((height, index) => (
+                <div
+                  key={index}
+                  className="w-[3px] rounded-sm"
+                  style={{
+                    height: `${height}%`,
+                    background:
+                      index % 3 === 2
+                        ? "var(--wireline-color-action-primary-default)"
+                        : "var(--wireline-color-action-primary-container)",
+                  }}
+                />
+              ))}
+            </div>
+            <div className="mt-4 grid gap-2">
+              {VOICES.map((voice) => {
+                const selected =
+                  voice.name === voiceName ||
+                  (voice.name === "Aria" && voiceName === "Managed Voice");
+                return (
+                  <div
+                    key={voice.name}
+                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${
+                      selected
+                        ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-[var(--wireline-color-action-primary-pressed)]"
+                        : "border-[var(--wireline-color-border-subtle)] text-[var(--wireline-color-text-tertiary)]"
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        className={`grid size-4 place-items-center rounded ${selected ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}
+                      >
+                        {selected ? "✓" : ""}
+                      </span>
+                      {voice.name}
+                    </span>
+                    <span className="text-[10px]">{voice.tone}</span>
+                  </div>
+                );
+              })}
+            </div>
           </CardShell>
         </div>
 
-        <CardShell label="Workflows & Capabilities" action={`${activeCount} of ${workflowRows.length} active`} onActivate={() => onEditSection("workflows")}>
+        <Connector />
+
+        <CardShell
+          label="Workflows & Capabilities"
+          action={`${activeCount} of ${workflowRows.length} active`}
+          delay={160}
+          onActivate={() => onEditSection("workflows")}
+          className="min-h-[170px]"
+        >
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {workflowRows.map((tool) => {
               const on = enabled.has(tool.name);
               return (
-                <div key={tool.name} className={on ? "rounded-lg border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-2.5" : "rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-2.5"}>
-                  <div className="flex items-center gap-1.5 text-xs font-semibold">{on ? <CheckCircle2 className="size-3.5 text-primary" /> : null}{tool.label}</div>
-                  <div className="mt-1 text-[10px] text-[var(--wireline-color-text-tertiary)]">{tool.detail}</div>
+                <div
+                  key={tool.name}
+                  className={
+                    on
+                      ? "rounded-lg border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-2.5"
+                      : "rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-2.5"
+                  }
+                >
+                  <div
+                    className={
+                      on
+                        ? "text-[11px] font-semibold text-[var(--wireline-color-action-primary-pressed)]"
+                        : "text-[11px] font-medium text-[var(--wireline-color-text-tertiary)]"
+                    }
+                  >
+                    {on ? "✓ " : "○ "}
+                    {tool.label}
+                  </div>
+                  <div className="mt-1 text-[10px] text-[var(--wireline-color-text-tertiary)]">
+                    {on ? tool.detail : "Off"}
+                  </div>
                 </div>
               );
             })}
+            <div className="grid min-h-[54px] place-items-center rounded-lg border border-dashed border-[var(--wireline-color-border-strong)] p-2.5 text-[11px] text-[var(--wireline-color-text-tertiary)]">
+              + Add workflow
+            </div>
+          </div>
+        </CardShell>
+
+        <Connector />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <CardShell
+            label="Knowledge Base"
+            action="Manage"
+            delay={200}
+            onActivate={() => onEditSection("knowledge")}
+            className="min-h-[205px]"
+          >
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { value: docCount, label: "Docs" },
+                { value: directives.length, label: "Rules" },
+                { value: activeCount, label: "Flows" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3 text-center"
+                >
+                  <div className="font-[var(--wireline-font-display)] text-2xl text-[var(--wireline-color-action-primary-default)]">
+                    {stat.value}
+                  </div>
+                  <div className="mt-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] text-[var(--wireline-color-text-tertiary)]">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-lg border border-dashed border-[var(--wireline-color-border-strong)] py-2 text-center text-xs text-[var(--wireline-color-text-tertiary)]">
+              + Add knowledge
+            </div>
+          </CardShell>
+
+          <CardShell
+            label="Situations"
+            action="Compose"
+            delay={240}
+            onActivate={() => onEditSection("situations")}
+            className="min-h-[205px]"
+          >
+            <div className="flex flex-col gap-2">
+              {situationRows.map((situation, index) => (
+                <div
+                  key={`${situation}-${index}`}
+                  className="rounded-lg border border-[var(--wireline-color-border-subtle)] px-3 py-2 text-xs leading-snug text-[var(--wireline-color-text-secondary)]"
+                >
+                  <span className="font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] text-[var(--wireline-color-action-primary-default)]">
+                    When
+                  </span>{" "}
+                  {situation}
+                </div>
+              ))}
+              <div className="rounded-lg border border-dashed border-[var(--wireline-color-border-strong)] py-2 text-center text-xs text-[var(--wireline-color-text-tertiary)]">
+                + Add situation
+              </div>
+            </div>
+          </CardShell>
+        </div>
+
+        <Connector />
+
+        <CardShell
+          label="Call Model"
+          action="Configure"
+          delay={280}
+          onActivate={() => onEditSection("model")}
+        >
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.75fr)_minmax(260px,1fr)] lg:items-start">
+            <div>
+              <div className="font-[var(--wireline-font-display)] text-xl tracking-[-0.01em]">
+                {modelLabel}
+              </div>
+              <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">
+                {config?.runtime?.provider
+                  ? `${config.runtime.provider} · auto-routes per task`
+                  : "Auto-routes to best model per task"}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4" aria-label="Runtime model">
+              {MODEL_OPTIONS.map((model) => {
+                const selected = modelSelected(model, config?.runtime?.model);
+                return (
+                  <span
+                    key={model.label}
+                    aria-current={selected ? "true" : undefined}
+                    className={`rounded-lg border px-2 py-2 ${selected ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    {model.label}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+          <div className="mt-4 h-2 rounded-full bg-[var(--wireline-color-surface-subtle)]">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.max(0, Math.min(1, temperature)) * 100}%` }}
+            />
+          </div>
+          <div className="mt-1 flex justify-between font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
+            <span>Focused</span>
+            <span>Temperature {temperature.toFixed(2)}</span>
+            <span>Expressive</span>
           </div>
         </CardShell>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <CardShell label="Knowledge" action="Open" onActivate={() => onEditSection("knowledge")}>
-            <div className="font-[var(--wireline-font-display)] text-xl tracking-[-0.01em]">{config?.knowledge?.length || 0} sources</div>
-            <p className="mt-2 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">Scripts, FAQs, policies, and local context.</p>
+          <CardShell
+            label={business ? "Business Profile" : "Line Profile"}
+            action="Edit"
+            delay={320}
+            onActivate={() => onEditSection("business")}
+          >
+            <div className="grid gap-3 text-xs text-[var(--wireline-color-text-secondary)]">
+              <div className="flex items-center justify-between rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-2">
+                <span>◷ Hours</span>
+                <span className="font-semibold text-foreground">
+                  {config?.businessHours ? "Configured" : "Not set"}
+                </span>
+              </div>
+              <div className="flex gap-1">{weekdayStrip(Boolean(config?.businessHours))}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <span className="rounded-lg border border-border px-3 py-2">
+                  ◈ {config?.complianceMode || "Standard"}
+                </span>
+                <span className="rounded-lg border border-border px-3 py-2">
+                  ◎ {config?.runtime?.provider || "Managed"}
+                </span>
+              </div>
+              <div className="rounded-lg border border-border px-3 py-2 font-mono text-[10px]">
+                {[businessName, website, supportEmail].filter(Boolean).join(" · ") || "Add business variables"}
+              </div>
+            </div>
           </CardShell>
-          <CardShell label="Situations" action="Compose" onActivate={() => onEditSection("situations")}>
-            <div className="flex flex-col gap-2">
-              {situations.map((situation, index) => (
-                <div key={`${situation}-${index}`} className="rounded-lg border border-[var(--wireline-color-border-subtle)] px-3 py-2 text-xs leading-snug text-[var(--wireline-color-text-secondary)]">{situation}</div>
+
+          <CardShell
+            label="Connections"
+            action="Manage"
+            delay={360}
+            onActivate={() => onEditSection("connections")}
+          >
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {[
+                "Google Calendar",
+                "SMS / Text Messages",
+                "CRM Notes",
+                "Email",
+                "Shopify",
+                "Stripe Billing",
+              ].map((connection) => (
+                <div
+                  key={connection}
+                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[var(--wireline-color-text-secondary)]"
+                >
+                  <CheckCircle2 className="size-3 text-muted-foreground/45" />
+                  <span>{connection}</span>
+                </div>
               ))}
             </div>
           </CardShell>
         </div>
 
-        <CardShell label="Call Model" action="Configure" onActivate={() => onEditSection("model")}>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.75fr)_minmax(260px,1fr)] lg:items-start">
-            <div>
-              <div className="font-[var(--wireline-font-display)] text-xl tracking-[-0.01em]">{modelLabel}</div>
-              <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">{config?.runtime?.provider ? `${config.runtime.provider} · auto-routes per task` : "Auto-routes to best model per task"}</div>
+        <CardShell
+          label="Escalation & Guardrails"
+          action="Edit"
+          delay={400}
+          onActivate={() => onEditSection("guardrails")}
+        >
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
+              <p className="text-xs font-semibold text-foreground">Escalation routing</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Phone: {config?.escalationPhone || "Not set"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Email: {config?.escalationEmail || "Not set"}
+              </p>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4" aria-label="Runtime model">
-              {MODEL_OPTIONS.map((model) => {
-                const selected = modelSelected(model, config?.runtime?.model);
-                return <span key={model.label} aria-current={selected ? "true" : undefined} className={`rounded-lg border px-2 py-2 ${selected ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border text-muted-foreground"}`}>{model.label}</span>;
-              })}
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
+              <p className="text-xs font-semibold text-foreground">Warm-transfer</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {config?.escalationHandoffEnabled ? "Enabled" : "Ready to enable"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
+              <p className="text-xs font-semibold text-foreground">Instant triggers</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Add phrases that should escalate immediately.
+              </p>
             </div>
           </div>
-          <div className="mt-4 h-2 rounded-full bg-[var(--wireline-color-surface-subtle)]"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(1, temperature)) * 100}%` }} /></div>
-          <div className="mt-1 flex justify-between font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground"><span>Focused</span><span>Temperature {temperature.toFixed(2)}</span><span>Expressive</span></div>
         </CardShell>
+
+        <div className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="wl-eyebrow">Setup health</span>
+            <span className="text-xs font-semibold text-primary">
+              {readyCount} of {readiness.length} ready
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+            {readiness.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-border px-3 py-2 text-muted-foreground"
+              >
+                <span
+                  className={
+                    item.ready ? "text-primary" : "text-[var(--wireline-color-status-warning)]"
+                  }
+                >
+                  {item.ready ? "✓" : "!"}
+                </span>{" "}
+                {item.label}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
