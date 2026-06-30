@@ -94,21 +94,21 @@ export default function PhoneSettings() {
       : "Provision a dedicated line in one click";
 
   return (
-    <WorkspaceShell eyebrow="Settings" title="Phone & Carrier" contentClassName="pt-1 pb-8">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col pb-10">
+    <WorkspaceShell eyebrow="Settings" title="Phone & Carrier" contentClassName="pt-0.5 pb-8">
+      <div className="mx-auto flex w-full max-w-[1040px] flex-col pb-8">
         <SettingsTabs />
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(420px,0.72fr)_minmax(320px,0.45fr)]">
-          <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
+        <div className="grid gap-3.5 xl:grid-cols-[minmax(420px,0.72fr)_minmax(300px,0.45fr)]">
+          <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/65">
                   Your Wireline number
                 </p>
-                <h2 className="mt-4 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
+                <h2 className="mt-3 truncate font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.2rem+2.5vw,2.5rem)] font-normal leading-none tracking-[-0.035em]">
                   {formatPhone(activeNumber?.phone_number)}
                 </h2>
-                <p className="mt-3 text-sm text-primary-foreground/78">{lineMeta}</p>
+                <p className="mt-2.5 text-sm text-primary-foreground/78">{lineMeta}</p>
               </div>
               <span className="inline-flex min-h-[32px] shrink-0 items-center gap-1.5 rounded-lg border border-primary-foreground/20 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary-foreground/75">
                 <span className="size-1.5 rounded-full bg-primary-foreground/70" />
@@ -119,7 +119,7 @@ export default function PhoneSettings() {
               <Button
                 type="button"
                 variant="secondary"
-                className="mt-6 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                className="mt-5 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                 disabled={working || loading}
                 onClick={provisionNumber}
               >
@@ -129,16 +129,15 @@ export default function PhoneSettings() {
             ) : null}
           </section>
 
-          <section className="studio-card p-5 sm:p-6">
+          <section className="studio-card p-5 sm:p-5.5">
             <p className="wl-overline">Provisioning</p>
-            <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground">
+            <h2 className="mt-2.5 font-[var(--wireline-font-family-display)] text-[1.6rem] font-normal tracking-[-.025em] text-foreground">
               Number first. Route cleanly.
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Wireline can provision a dedicated line, attach it to an agent, and keep caller
-              history tied to the workspace.
+              Wireline can provision a dedicated line, attach it to an agent, and keep caller history tied to the workspace.
             </p>
-            <div className="mt-5 grid gap-2 text-sm">
+            <div className="mt-4 grid gap-2 text-sm">
               {[
                 "Dedicated line for inbound calls",
                 "Agent-aware routing and SMS follow-up",
@@ -156,10 +155,10 @@ export default function PhoneSettings() {
           </section>
         </div>
 
-        <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(420px,0.72fr)_minmax(320px,0.45fr)]">
-          <section className="studio-card p-5 sm:p-6">
+        <div className="mt-4 grid gap-3.5 xl:grid-cols-[minmax(420px,0.72fr)_minmax(300px,0.45fr)]">
+          <section className="studio-card p-5 sm:p-5.5">
             <p className="wl-overline">Routing policy</p>
-            <div className="mt-4 grid gap-2">
+            <div className="mt-3 grid gap-2">
               {[
                 [
                   "Unknown callers",
@@ -199,7 +198,7 @@ export default function PhoneSettings() {
             </div>
           </section>
 
-          <section className="studio-card p-5 sm:p-6">
+          <section className="studio-card p-5 sm:p-5.5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="wl-overline">Priority contacts</p>
@@ -210,7 +209,7 @@ export default function PhoneSettings() {
                 Add
               </Button>
             </div>
-            <div className="mt-4 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
+            <div className="mt-3 rounded-xl border border-dashed border-border bg-background px-4 py-7 text-center">
               <p className="text-sm font-semibold text-foreground">Keep your real VIP list here.</p>
               <p className="mt-2 text-xs leading-5 text-muted-foreground">
                 Family, executives, or clients you always want to ring through can be added when routing is ready.
@@ -219,9 +218,9 @@ export default function PhoneSettings() {
           </section>
         </div>
 
-        <section className="studio-card mt-5 p-5 sm:p-6">
+        <section className="studio-card mt-4 p-5 sm:p-5.5">
           <p className="wl-overline">Connected devices</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-background p-4">
               <div className="flex items-center gap-3">
                 <span className="grid size-10 place-items-center rounded-lg bg-muted text-primary">
@@ -237,7 +236,7 @@ export default function PhoneSettings() {
             </div>
             <button
               type="button"
-              className="min-h-[88px] rounded-xl border border-dashed border-border bg-background p-4 text-center text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted/40"
+              className="min-h-[84px] rounded-xl border border-dashed border-border bg-background p-4 text-center text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted/40"
             >
               + Add device
               <span className="mt-1 block text-xs font-normal">Apple Watch, iPad, Mac</span>
@@ -246,12 +245,12 @@ export default function PhoneSettings() {
         </section>
 
         {message ? (
-          <StatusNotice tone="info" className="mt-5" title="Phone line updated">
+          <StatusNotice tone="info" className="mt-4" title="Phone line updated">
             {message}
           </StatusNotice>
         ) : null}
         {error ? (
-          <StatusNotice tone="destructive" className="mt-5" title="Phone line unavailable">
+          <StatusNotice tone="destructive" className="mt-4" title="Phone line unavailable">
             {error}
           </StatusNotice>
         ) : null}
