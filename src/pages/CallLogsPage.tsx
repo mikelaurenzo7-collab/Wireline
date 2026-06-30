@@ -30,7 +30,7 @@ export default function CallLogsPage() {
               </div>
             </div>
             <div className="wl-card flex items-start gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[color:color-mix(in_srgb,var(--wireline-color-status-warning)_14%,transparent)] text-[var(--wireline-color-status-warning)]">
+              <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)]">
                 <ShieldAlert size={18} aria-hidden="true" />
               </span>
               <div>
