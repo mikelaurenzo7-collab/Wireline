@@ -158,34 +158,38 @@ export default function PhoneSettings() {
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(420px,0.72fr)_minmax(320px,0.45fr)]">
           <section className="studio-card p-5 sm:p-6">
-            <p className="wl-overline">Call forwarding</p>
+            <p className="wl-overline">Routing policy</p>
             <div className="mt-4 grid gap-2">
               {[
                 [
                   "Unknown callers",
-                  "Agent answers, identifies intent, takes a message or patches through.",
-                  "Agent",
-                  true,
+                  activeNumber
+                    ? "Set how first-time callers should be screened, answered, or handed to your agent."
+                    : "Provision a number first, then choose how unknown callers are answered.",
+                  activeNumber ? "Configurable" : "Pending",
                 ],
                 [
-                  "Contacts",
-                  "Ring your phone first. Agent picks up if you miss it.",
-                  "Ring first",
-                  false,
+                  "Known contacts",
+                  activeNumber
+                    ? "Choose whether saved contacts ring through first or stay inside the agent workflow."
+                    : "Known-contact routing unlocks after a number is active.",
+                  activeNumber ? "Configurable" : "Locked",
                 ],
-                ["VIP list", "Always rings through. Never intercepted by agent.", "Direct", false],
-              ].map(([title, detail, badge, active]) => (
+                [
+                  "Escalations",
+                  activeNumber
+                    ? "Define where urgent or failed calls should hand off so nothing important stalls."
+                    : "Escalation rules appear once your line is live.",
+                  activeNumber ? "Next" : "Soon",
+                ],
+              ].map(([title, detail, badge]) => (
                 <div
                   key={String(title)}
-                  className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3 ${
-                    active ? "border-primary/20 bg-primary/5" : "border-border bg-background"
-                  }`}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold tracking-[-.01em] text-foreground">
-                      {title}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</p>
+                    <p className="text-sm font-semibold tracking-[-.01em] text-foreground">{title}</p>
+                    <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{detail}</p>
                   </div>
                   <span className="shrink-0 rounded-md bg-muted px-2 py-1 font-mono text-[10px] uppercase tracking-[0.09em] text-muted-foreground">
                     {badge}
@@ -197,22 +201,20 @@ export default function PhoneSettings() {
 
           <section className="studio-card p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
-              <p className="wl-overline">VIP contacts</p>
+              <div>
+                <p className="wl-overline">Priority contacts</p>
+                <p className="mt-1 text-sm text-muted-foreground">No priority contacts yet.</p>
+              </div>
               <Button type="button" variant="secondary" size="sm">
                 <Plus size={14} aria-hidden="true" />
                 Add
               </Button>
             </div>
-            <div className="mt-4 grid gap-2">
-              {["Owner", "Family", "Priority client"].map((name) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-muted/45 px-3 py-2 text-sm"
-                >
-                  <span className="font-semibold text-foreground">{name}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground">Ring through</span>
-                </div>
-              ))}
+            <div className="mt-4 rounded-xl border border-dashed border-border bg-background px-4 py-8 text-center">
+              <p className="text-sm font-semibold text-foreground">Keep your real VIP list here.</p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Family, executives, or clients you always want to ring through can be added when routing is ready.
+              </p>
             </div>
           </section>
         </div>
@@ -220,15 +222,15 @@ export default function PhoneSettings() {
         <section className="studio-card mt-5 p-5 sm:p-6">
           <p className="wl-overline">Connected devices</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <div className="rounded-xl border border-border bg-background p-4">
               <div className="flex items-center gap-3">
                 <span className="grid size-10 place-items-center rounded-lg bg-muted text-primary">
                   <Smartphone size={17} aria-hidden="true" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Mobile device</p>
-                  <p className="text-xs text-muted-foreground">
-                    Wireline app · Shortcuts · CarPlay
+                  <p className="text-sm font-semibold text-foreground">No devices connected yet</p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Device presence should only appear after the mobile app or companion surfaces actually sign in.
                   </p>
                 </div>
               </div>
