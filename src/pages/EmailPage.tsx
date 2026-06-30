@@ -1,3 +1,4 @@
+import { Mail, MessageSquareText } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import EmailInbox from "../components/EmailInbox";
@@ -39,6 +40,65 @@ export default function EmailPage() {
   return (
     <WorkspaceShell eyebrow="Conversations" title="Inbox" contentClassName="pt-2 pb-8">
       <div className="wl-inbox-route flex min-h-full flex-col">
+        <section className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="wl-card-lg">
+            <p
+              className="wl-eyebrow"
+              style={{ color: "var(--wireline-color-action-primary-default)" }}
+            >
+              One queue, two channels
+            </p>
+            <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-[28px] font-normal leading-[1.05] tracking-[-0.025em] text-foreground">
+              Review email threads and SMS follow-up without landing in a blank shell.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Outcomes, handoffs, and reply context should stay readable the moment the page opens —
+              even while live data is still catching up.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div
+              className="wl-card flex items-start gap-3"
+              style={
+                activeTab === "email"
+                  ? {
+                      borderColor: "color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, var(--wireline-color-border-default))",
+                    }
+                  : undefined
+              }
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[var(--wireline-color-feedback-success-surface)] text-primary">
+                <Mail size={18} aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Email outcomes</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Mark a thread resolved, waiting, booked, or ready for handoff.
+                </p>
+              </div>
+            </div>
+            <div
+              className="wl-card flex items-start gap-3"
+              style={
+                activeTab === "sms"
+                  ? {
+                      borderColor: "color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, var(--wireline-color-border-default))",
+                    }
+                  : undefined
+              }
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[var(--wireline-color-surface-subtle)] text-primary">
+                <MessageSquareText size={18} aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">SMS follow-up</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Keep confirmations, reminders, and live message threads in the same lane.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
         <nav
           aria-label="Inbox channels"
           className="mb-4 flex min-h-[44px] items-center gap-2 border-b border-[var(--wireline-color-border-default)] pb-3"
