@@ -23,7 +23,7 @@ export const WORKSPACE_VOICE = {
   runHeadline: "Run the work.",
   emptyCue: "Create. Train. Run the line.",
   commandPrompts: ["Change voice", "Train flows", "Review calls"],
-  directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your agent"}...`,
+  directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your agent"}…`,
 } as const;
 
 export const PRODUCT_VERSATILITY = {
