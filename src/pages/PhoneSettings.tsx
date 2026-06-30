@@ -129,7 +129,7 @@ export default function PhoneSettings() {
             ) : null}
           </section>
 
-          <section className="studio-card p-5 sm:p-5.5">
+          <section className="studio-card p-5 sm:p-[1.375rem]">
             <p className="wl-overline">Provisioning</p>
             <h2 className="mt-2.5 font-[var(--wireline-font-family-display)] text-[1.6rem] font-normal tracking-[-.025em] text-foreground">
               Number first. Route cleanly.
@@ -156,7 +156,7 @@ export default function PhoneSettings() {
         </div>
 
         <div className="mt-4 grid gap-3.5 xl:grid-cols-[minmax(420px,0.72fr)_minmax(300px,0.45fr)]">
-          <section className="studio-card p-5 sm:p-5.5">
+          <section className="studio-card p-5 sm:p-[1.375rem]">
             <p className="wl-overline">Routing policy</p>
             <div className="mt-3 grid gap-2">
               {[
@@ -198,7 +198,7 @@ export default function PhoneSettings() {
             </div>
           </section>
 
-          <section className="studio-card p-5 sm:p-5.5">
+          <section className="studio-card p-5 sm:p-[1.375rem]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="wl-overline">Priority contacts</p>
@@ -218,7 +218,7 @@ export default function PhoneSettings() {
           </section>
         </div>
 
-        <section className="studio-card mt-4 p-5 sm:p-5.5">
+        <section className="studio-card mt-4 p-5 sm:p-[1.375rem]">
           <p className="wl-overline">Connected devices</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-background p-4">
