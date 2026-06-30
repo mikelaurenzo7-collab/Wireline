@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { GraduationCap, Mic2, PlayCircle, Plus, WandSparkles } from "lucide-react";
 
-import { Button, EmptyState, NativeSelect } from "../components/atoms";
+import { Button, NativeSelect } from "../components/atoms";
 import WorkspaceShell from "../components/WorkspaceShell";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import { useAgents } from "../contexts/AgentsContext";
@@ -16,23 +16,94 @@ const trainingTabs: Array<{ id: TrainingTabId; label: string }> = [
 ];
 
 function EmptyTraining() {
+  const lanes = [
+    {
+      icon: GraduationCap,
+      label: "Knowledge",
+      body: "Upload FAQs, scripts, policies, and grounded source material before the first live call.",
+    },
+    {
+      icon: Mic2,
+      label: "Voice",
+      body: "Shape pronunciation, tone, and how the agent should sound when the line picks up.",
+    },
+    {
+      icon: Plus,
+      label: "Flows",
+      body: "Define handoff rules, stage-by-stage call behavior, and what must happen before close.",
+    },
+    {
+      icon: PlayCircle,
+      label: "Simulator",
+      body: "Run practice calls before anything goes live so weak spots show up early.",
+    },
+  ] as const;
+
   return (
-    <div className="grid h-full min-h-[520px] place-items-center py-8">
-      <EmptyState
-        density="default"
-        className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
-        icon={<GraduationCap size={30} strokeWidth={1.7} />}
-        title="Train it."
-        description="Docs. Voice. Flows. Test calls."
-        action={
-          <Button asChild>
-            <Link to="/studio?create=1">
-              <WandSparkles aria-hidden="true" size={16} />
-              Wire agent
-            </Link>
-          </Button>
-        }
-      />
+    <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-6 py-6">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <div className="wl-card-lg">
+          <p className="wl-eyebrow" style={{ color: "var(--wireline-color-action-primary-default)" }}>
+            Train before go-live
+          </p>
+          <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-[32px] font-normal leading-[1.02] tracking-[-0.03em] text-foreground">
+            Docs, voice, flows, and test calls should feel like one setup lane.
+          </h2>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">
+            The Train route should not feel empty before the first agent exists. It should explain what gets trained, why it matters, and where to start once you are ready.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link to="/studio?create=1">
+                <WandSparkles aria-hidden="true" size={16} />
+                Wire agent
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link to="/templates">
+                <Plus aria-hidden="true" size={16} />
+                Browse templates
+              </Link>
+            </Button>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="wl-card flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[var(--wireline-color-feedback-success-surface)] text-primary">
+              <GraduationCap size={18} aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Training first</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                A useful line starts with grounded instructions, not a blank shell.
+              </p>
+            </div>
+          </div>
+          <div className="wl-card flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-muted text-primary">
+              <PlayCircle size={18} aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Practice before production</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Test call behavior, escalation, and tone before real callers hit the line.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Training surfaces">
+        {lanes.map(({ icon: Icon, label, body }) => (
+          <article key={label} className="wl-card min-h-[210px]">
+            <span className="grid size-10 place-items-center rounded-[10px] bg-muted text-primary">
+              <Icon size={18} aria-hidden="true" />
+            </span>
+            <h3 className="mt-5 text-base font-semibold tracking-[-0.015em] text-foreground">{label}</h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+          </article>
+        ))}
+      </section>
     </div>
   );
 }
@@ -420,7 +491,7 @@ export default function KnowledgePage() {
     <WorkspaceShell
       eyebrow="Training"
       title="Train"
-      contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}
+      contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0 pb-8"}
       action={
         populated ? (
           <NativeSelect
