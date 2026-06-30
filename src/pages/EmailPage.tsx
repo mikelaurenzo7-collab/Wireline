@@ -13,11 +13,7 @@ const inboxTabs: Array<{ id: InboxTabId; label: string }> = [
 ];
 
 /**
- * Inbox — the Claude Design Email + SMS surface.
- *
- * One workspace, two channels. Each tab mounts the real thread component
- * (Wireline data via /api/emails/threads + /api/sms/threads) under a
- * shared Letterpress tab strip.
+ * Inbox — one Letterpress queue for email and SMS follow-up.
  */
 export default function EmailPage() {
   const [params, setParams] = useSearchParams();
@@ -42,58 +38,38 @@ export default function EmailPage() {
       <div className="wl-inbox-route flex min-h-full flex-col">
         <section className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="wl-card-lg">
-            <p
-              className="wl-eyebrow"
-              style={{ color: "var(--wireline-color-action-primary-default)" }}
-            >
-              One queue, two channels
-            </p>
-            <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-[28px] font-normal leading-[1.05] tracking-[-0.025em] text-foreground">
-              Review email threads and SMS follow-up without landing in a blank shell.
+            <p className="wl-eyebrow wl-eyebrow-primary">One queue, two channels</p>
+            <h2 className="wl-title-tight mt-3">
+              Email threads and SMS follow-up in the same lane.
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Outcomes, handoffs, and reply context should stay readable the moment the page opens —
-              even while live data is still catching up.
+            <p className="wl-body mt-3 max-w-2xl">
+              Review outcomes, handoffs, and reply context without switching products or losing the call trail.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div
-              className="wl-card flex items-start gap-3"
-              style={
-                activeTab === "email"
-                  ? {
-                      borderColor: "color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, var(--wireline-color-border-default))",
-                    }
-                  : undefined
-              }
+              className={`wl-card flex items-start gap-3 ${activeTab === "email" ? "border-primary/30" : ""}`}
             >
               <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[var(--wireline-color-feedback-success-surface)] text-primary">
                 <Mail size={18} aria-hidden="true" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-foreground">Email outcomes</p>
+                <p className="wl-card-heading">Email outcomes</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Mark a thread resolved, waiting, booked, or ready for handoff.
+                  Mark threads resolved, waiting, booked, or ready for handoff.
                 </p>
               </div>
             </div>
             <div
-              className="wl-card flex items-start gap-3"
-              style={
-                activeTab === "sms"
-                  ? {
-                      borderColor: "color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, var(--wireline-color-border-default))",
-                    }
-                  : undefined
-              }
+              className={`wl-card flex items-start gap-3 ${activeTab === "sms" ? "border-primary/30" : ""}`}
             >
               <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[var(--wireline-color-surface-subtle)] text-primary">
                 <MessageSquareText size={18} aria-hidden="true" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-foreground">SMS follow-up</p>
+                <p className="wl-card-heading">SMS follow-up</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Keep confirmations, reminders, and live message threads in the same lane.
+                  Keep confirmations, reminders, and live message threads in one lane.
                 </p>
               </div>
             </div>
@@ -111,15 +87,11 @@ export default function EmailPage() {
                 type="button"
                 aria-current={active ? "page" : undefined}
                 onClick={() => setActiveTab(tab.id)}
-                className="inline-flex min-h-[36px] shrink-0 items-center justify-center rounded-[6px] px-4 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)]"
-                style={
+                className={`inline-flex min-h-[36px] shrink-0 items-center justify-center rounded-[6px] px-4 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)] ${
                   active
-                    ? {
-                        background: "var(--wireline-color-action-primary-default)",
-                        color: "var(--wireline-color-text-onAction)",
-                      }
-                    : { color: "var(--wireline-color-text-secondary)" }
-                }
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
               >
                 {tab.label}
               </button>
