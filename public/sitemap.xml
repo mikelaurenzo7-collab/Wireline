@@ -2,134 +2,133 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!--
     Wireline is a single-page app. Only routes that render meaningful
-    content without an auth session are indexable. Authenticated dashboard
-    routes (/admin, /agents, /logs, etc.) sit behind JWT and are excluded.
-    <lastmod> is set conservatively so crawlers re-prioritize after each
-    marketing push; bump the date below when copy or schema changes.
+    content without an auth session are indexable. Authenticated workspace
+    routes are excluded by robots.txt and route-level metadata.
+    <lastmod> is bumped when public marketing copy, schema, or metadata changes.
   -->
   <url>
     <loc>https://trywireline.com/</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://trywireline.com/features</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://trywireline.com/pricing</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://trywireline.com/compare</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/about</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://trywireline.com/showcase</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://trywireline.com/blog</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://trywireline.com/support</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://trywireline.com/contact</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://trywireline.com/status</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>
   </url>
   <url>
     <loc>https://trywireline.com/security</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/home-services</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/medical</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/legal</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/real-estate</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/personal</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/insurance</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/restaurants</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/for/sales</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://trywireline.com/privacy</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://trywireline.com/terms</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-06-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
