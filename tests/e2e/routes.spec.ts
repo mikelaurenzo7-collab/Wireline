@@ -1,10 +1,32 @@
 import { expect, test } from "@playwright/test";
 
-const coreRoutes = [
+const publicRoutes = [
   "/",
-  "/signup",
-  "/signin",
+  "/features",
+  "/pricing",
+  "/showcase",
+  "/compare",
   "/for/personal",
+  "/for/home-services",
+  "/for/medical",
+  "/for/legal",
+  "/for/real-estate",
+  "/for/insurance",
+  "/for/restaurants",
+  "/for/sales",
+  "/about",
+  "/blog",
+  "/security",
+  "/status",
+  "/support",
+  "/contact",
+  "/privacy",
+  "/terms",
+] as const;
+
+const authRoutes = ["/signup", "/signin"] as const;
+
+const workspaceRoutes = [
   "/overview",
   "/studio",
   "/knowledge",
@@ -19,8 +41,12 @@ const coreRoutes = [
   "/settings/team",
 ] as const;
 
-test.describe("core route health", () => {
-  for (const path of coreRoutes) {
+const launchRoutes = [...publicRoutes, ...authRoutes, ...workspaceRoutes] as const;
+
+const fatalShellText = /Cannot GET|Application error|Internal Server Error|Unhandled Runtime Error/i;
+
+test.describe("launch route health", () => {
+  for (const path of launchRoutes) {
     test(`${path} returns a live app shell`, async ({ page }) => {
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
 
@@ -28,7 +54,7 @@ test.describe("core route health", () => {
       expect(response!.status(), `${path} should not server-error`).toBeLessThan(500);
 
       await expect(page.locator("body")).toBeVisible();
-      await expect(page.locator("body")).not.toContainText(/Cannot GET|Application error|Internal Server Error/i);
+      await expect(page.locator("body")).not.toContainText(fatalShellText);
     });
   }
 });
