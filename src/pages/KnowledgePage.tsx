@@ -58,9 +58,9 @@ function EmptyTraining() {
               </Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link to="/templates">
+              <Link to="/showcase">
                 <Plus aria-hidden="true" size={16} />
-                Browse templates
+                See examples
               </Link>
             </Button>
           </div>
