@@ -10,7 +10,7 @@ import { formatAgentRoleLabel, WORKSPACE_VOICE } from "../lib/product-copy";
 
 const QUICK_ACTIONS = [
   { href: "/studio", icon: Sparkles, title: "Open studio" },
-  { href: "/templates", icon: Bot, title: "Browse templates" },
+  { href: "/showcase", icon: Bot, title: "See examples" },
   { href: "/call-logs", icon: Phone, title: "Review calls" },
   { href: "/connections", icon: Cable, title: "Add connection" },
 ] as const;
