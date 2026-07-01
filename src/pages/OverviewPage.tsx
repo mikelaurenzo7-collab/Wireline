@@ -25,6 +25,13 @@ function todayLabel() {
     .replace(",", " ·");
 }
 
+function dayGreeting(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 function titleCaseFirstGrapheme(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "there";
@@ -180,7 +187,7 @@ export default function OverviewPage() {
           <p className="wl-eyebrow">{todayLabel()}</p>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="wl-display-2">Good morning, {firstName(user?.full_name, user?.email)}.</h1>
+              <h1 className="wl-display-2">{dayGreeting()}, {firstName(user?.full_name, user?.email)}.</h1>
               <p className="wl-lead mt-2.5 max-w-prose">
                 {hasAgents
                   ? `${primaryAgent?.name || "Your agent"} is ready to train, run, and report back.`
