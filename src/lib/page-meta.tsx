@@ -5,16 +5,25 @@ interface PageMetaProps {
   description?: string;
   path?: string;
   image?: string;
+  imageAlt?: string;
   noIndex?: boolean;
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
-const BRAND_SUFFIX = " - Wireline";
+const BRAND_SUFFIX = " | Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "Wireline - Your phone, finally answering for you";
+const DEFAULT_IMAGE_ALT =
+  "Wireline voice agents for calls, texts, follow-up, browser context, email, and integrations";
+const DEFAULT_TITLE = "Wireline | AI phone agents that answer, act, and report back";
 const DEFAULT_DESCRIPTION =
-  "Wireline is a voice AI that picks up your phone, talks to the caller, and handles it. Personal and business agents in one place.";
+  "Wireline creates, trains, and runs AI phone agents for personal calls and business front desks — answering calls, booking appointments, taking messages, and following up.";
+
+function absoluteUrl(value: string | undefined, fallback: string) {
+  if (!value) return fallback;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${SITE_URL}${value.startsWith("/") ? value : `/${value}`}`;
+}
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
@@ -66,6 +75,7 @@ export function PageMeta({
   description,
   path,
   image,
+  imageAlt,
   noIndex,
   structuredData,
 }: PageMetaProps) {
@@ -75,30 +85,37 @@ export function PageMeta({
       : `${title}${BRAND_SUFFIX}`
     : DEFAULT_TITLE;
   const resolvedDescription = description || DEFAULT_DESCRIPTION;
-  const canonicalUrl = path ? `${SITE_URL}${path}` : undefined;
-  const ogImage = image || DEFAULT_OG_IMAGE;
+  const canonicalUrl = path ? `${SITE_URL}${path}` : SITE_URL;
+  const ogImage = absoluteUrl(image, DEFAULT_OG_IMAGE);
+  const resolvedImageAlt = imageAlt || DEFAULT_IMAGE_ALT;
 
   useEffect(() => {
     document.title = fullTitle;
     setMeta("name", "description", resolvedDescription);
+    setMeta("name", "application-name", "Wireline");
     setMeta(
       "name",
       "robots",
       noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1",
     );
-    setCanonical(canonicalUrl || null);
+    setCanonical(canonicalUrl);
     setMeta("property", "og:title", fullTitle);
     setMeta("property", "og:description", resolvedDescription);
-    setMeta("property", "og:url", canonicalUrl || null);
+    setMeta("property", "og:url", canonicalUrl);
     setMeta("property", "og:image", ogImage);
+    setMeta("property", "og:image:alt", resolvedImageAlt);
     setMeta("property", "og:type", "website");
     setMeta("property", "og:site_name", "Wireline");
+    setMeta("property", "og:locale", "en_US");
     setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:site", "@wirelineapp");
+    setMeta("name", "twitter:creator", "@wirelineapp");
     setMeta("name", "twitter:title", fullTitle);
     setMeta("name", "twitter:description", resolvedDescription);
     setMeta("name", "twitter:image", ogImage);
+    setMeta("name", "twitter:image:alt", resolvedImageAlt);
     setStructuredData(structuredData);
-  }, [canonicalUrl, fullTitle, noIndex, ogImage, resolvedDescription, structuredData]);
+  }, [canonicalUrl, fullTitle, noIndex, ogImage, resolvedDescription, resolvedImageAlt, structuredData]);
 
   return null;
 }
