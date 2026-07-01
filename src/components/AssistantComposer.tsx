@@ -17,8 +17,8 @@ type Attachment = { id: string; name: string; kind: "image" | "file"; url?: stri
 type Tone = "light" | "dark";
 
 /**
- * Lightweight, keyword-driven reply generator so agent transcripts feel alive
- * without wiring a live model into every local surface. Deterministic per input.
+ * Lightweight, keyword-driven reply generator for local previews.
+ * Keep responses generic so production surfaces never imply real work happened.
  */
 export function simulateAssistantReply(input: string, attachmentCount = 0): string {
   const t = input.toLowerCase();
@@ -26,9 +26,9 @@ export function simulateAssistantReply(input: string, attachmentCount = 0): stri
     return `Got it - I've got ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}. Want me to summarize ${attachmentCount > 1 ? "them" : "it"} or pull out the key details?`;
   }
   if (/(hold|wait)/.test(t)) return "On it. I'll wait on hold and bring you back when a real person picks up.";
-  if (/(screen|spam|block|unknown)/.test(t)) return "I'll screen incoming callers, filter spam, and only put through the ones that look real.";
-  if (/(summar|recap|notes?)/.test(t)) return "Here's the recap: one appointment confirmed, three unknown callers blocked, and one callback waiting.";
-  if (/(call|dial|phone|reschedul|book|appointment)/.test(t)) return "Ready. I'll confirm details before committing and report back with what they said.";
+  if (/(screen|spam|block|unknown)/.test(t)) return "I'll screen incoming callers, filter spam, and escalate anything that needs your review.";
+  if (/(summar|recap|notes?)/.test(t)) return "I can turn the latest activity into a clean recap with decisions, open questions, and next steps.";
+  if (/(call|dial|phone|reschedul|book|appointment)/.test(t)) return "Ready. I'll confirm details before committing and report back with what changed.";
   if (/(refund|billing|charge|invoice)/.test(t)) return "I'll handle the billing call carefully and escalate before agreeing to anything.";
   if (/(train|improve|fix|better)/.test(t)) return "Good call. I'll line up practice scenarios and flag where responses need tightening.";
   return "Got it. I'll take care of that and let you know the moment it's done.";
@@ -50,8 +50,9 @@ export function AssistantComposer({
   onSend?: (payload: { text: string; model: ComposerModel; attachments: Attachment[] }) => void;
 }) {
   const dark = tone === "dark";
+  const availableModels = models.length ? models : DEFAULT_COMPOSER_MODELS;
   const [text, setText] = useState("");
-  const [model, setModel] = useState<ComposerModel>(models[0]);
+  const [model, setModel] = useState<ComposerModel>(availableModels[0]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -193,7 +194,7 @@ export function AssistantComposer({
             </button>
             {menuOpen && (
               <div role="listbox" className={cx("absolute bottom-11 left-0 z-20 w-[min(15rem,calc(100vw-3rem))] overflow-hidden rounded-[16px] border p-1.5", menuBg)}>
-                {models.map((m) => (
+                {availableModels.map((m) => (
                   <button key={m.id} type="button" role="option" aria-selected={m.id === model.id} onClick={() => { setModel(m); setMenuOpen(false); }} className={cx("flex w-full items-start gap-2 rounded-[12px] px-3 py-2 text-left transition-colors", m.id === model.id ? "bg-primary/10 text-primary" : dark ? "hover:bg-white/10" : "hover:bg-card-deep")}>
                     <Cpu size={14} className="mt-0.5 shrink-0 text-primary" />
                     <span className="min-w-0">
