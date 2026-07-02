@@ -15,7 +15,7 @@ app.use(chatgptMcpRouter);
 
 app.use((req, res) => {
   const { status, body } = formatErrorResponse(
-    AppError.notFound(`No ChatGPT App route matches ${req.method} ${req.path}`),
+    AppError.notFound(`No Wireline MCP route matches ${req.method} ${req.path}`),
   );
   res.status(status).json(body);
 });

@@ -1,4 +1,11 @@
-import { ArrowUpRight, Car, MessageSquareText, MonitorDown, Smartphone } from "lucide-react";
+import {
+  ArrowUpRight,
+  Car,
+  MessageSquareText,
+  MonitorDown,
+  Smartphone,
+  Sparkles,
+} from "lucide-react";
 
 import { Badge, Button } from "../components/atoms";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
@@ -45,6 +52,16 @@ const clientSurfaces = [
     action: "Ask about access",
     href: "mailto:support@trywireline.com?subject=Wireline%20in%20ChatGPT",
   },
+  {
+    icon: Sparkles,
+    title: "Wireline in Claude",
+    status: "Custom connector",
+    statusVariant: "outline" as const,
+    description: "Draft in Claude.",
+    detail: "Connector URL: trywireline.com/mcp",
+    action: "Add in Claude",
+    href: "https://claude.ai/settings/connectors",
+  },
 ] as const;
 
 export default function ClientAppsPage() {
@@ -79,7 +96,12 @@ export default function ClientAppsPage() {
                   variant="link"
                   className="mt-auto w-fit px-0 pt-6 text-sm text-primary"
                 >
-                  <a href={href}>
+                  <a
+                    href={href}
+                    {...(href.startsWith("https://")
+                      ? { target: "_blank", rel: "noreferrer" }
+                      : {})}
+                  >
                     {action} <ArrowUpRight size={14} />
                   </a>
                 </Button>
