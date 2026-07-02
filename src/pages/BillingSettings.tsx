@@ -33,14 +33,20 @@ function formatInvoiceDate(value: string | null) {
 }
 
 function planDetails(planId: string | null) {
+  // No subscription means the free Personal tier — never fabricate a paid
+  // plan or an invoice amount the account does not actually carry.
   const plan =
     STRIPE_PLANS.find((item) => item.id === planId) ??
-    STRIPE_PLANS.find((item) => item.id === "team");
-  if (!plan) return { name: "Team", monthly: 29, features: "Agents · Lines · Shared inbox" };
+    STRIPE_PLANS.find((item) => item.id === "personal");
+  if (!plan) return { name: "Wireline Personal", monthly: 0, features: "1 agent · 1 line" };
+  const capacity = `${plan.max_agents} agent${plan.max_agents === 1 ? "" : "s"} · ${plan.included_phone_numbers} line${plan.included_phone_numbers === 1 ? "" : "s"}`;
   return {
     name: plan.name,
     monthly: plan.price_usd_monthly,
-    features: `${plan.max_agents} agents · ${plan.included_phone_numbers} lines · Routing · Approvals · Shared inbox`,
+    features:
+      plan.id === "personal"
+        ? `${capacity} · Conversation Balance funds live work`
+        : `${capacity} · Routing · Approvals · Shared inbox`,
   };
 }
 
@@ -78,7 +84,8 @@ export default function BillingSettings() {
   }, []);
 
   const activePlan = planDetails(subscription?.plan ?? null);
-  const monthlyPrice = `$${activePlan.monthly}/mo`;
+  const hasSubscription = Boolean(subscription?.plan && subscription?.current_period_end);
+  const monthlyPrice = activePlan.monthly > 0 ? `$${activePlan.monthly}/mo` : "$0";
   const invoiceTotal = `$${activePlan.monthly}.00`;
   const balanceFill =
     balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
@@ -146,11 +153,18 @@ export default function BillingSettings() {
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 <span className="text-sm">Loading billing…</span>
               </div>
-            ) : (
+            ) : hasSubscription ? (
               <>
                 <p className="wl-display-3 mt-auto pt-4">{invoiceTotal}</p>
                 <p className="mt-5 text-sm text-muted-foreground">
                   Due {formatInvoiceDate(subscription?.current_period_end ?? null)}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="wl-display-3 mt-auto pt-4">—</p>
+                <p className="mt-5 text-sm text-muted-foreground">
+                  No subscription — live work draws from Conversation Balance.
                 </p>
               </>
             )}

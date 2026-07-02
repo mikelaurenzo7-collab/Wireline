@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 128  
-**Protected:** 98  
+**Routes scanned:** 138  
+**Protected:** 108  
 **Public (allowlisted):** 30  
 **Violations:** 0
 
@@ -119,6 +119,16 @@
 | carrier-routes.ts | POST | `/api/phone-numbers/search` | inline | — | — | Protected |
 | conversation-balance-routes.ts | GET | `/api/conversation-balance` | inline | — | — | Protected |
 | conversation-balance-routes.ts | POST | `/api/conversation-balance/checkout` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/appointments` | inline | — | — | Protected |
+| dashboard-routes.ts | POST | `/api/appointments` | inline | — | — | Protected |
+| dashboard-routes.ts | PATCH | `/api/appointments/:id` | inline | — | — | Protected |
+| dashboard-routes.ts | DELETE | `/api/appointments/:id` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/calls` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/dashboard/benchmarks` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/dashboard/dossiers` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/dashboard/stats` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/export/:type.csv` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/nav-counts` | inline | — | — | Protected |
 | email-outcome-routes.ts | PATCH | `/api/emails/threads/:id/outcome` | inline | — | — | Protected |
 | email-outcome-routes.ts | GET | `/api/emails/threads/:id/outcome` | inline | — | — | Protected |
 | email-routes.ts | GET | `/api/emails/accounts` | inline | — | — | Protected |

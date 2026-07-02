@@ -1183,14 +1183,20 @@ mustInclude(
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
-  /Flow Composer/,
-  "Training Flows tab must own the Flow Composer stage editor",
+  /function FlowsTab[\s\S]*?\/studio\?agent=/,
+  "Training Flows tab must hand off to the live Studio conversation editor",
 );
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
-  /Scenario library/,
-  "Training Simulator tab must own the scenario library",
+  /function SimulatorTab[\s\S]*?\/studio\?agent=[\s\S]*?\/call-logs/,
+  "Training Simulator tab must hand off to Studio test calls and Call Logs",
+);
+mustExclude(
+  "src/pages/KnowledgePage.tsx",
+  trainingPage,
+  /Greet & Disarm|Test response quality/,
+  "fake Flow Composer stages and scenario library must stay retired",
 );
 mustInclude(
   "src/components/KnowledgeBaseClaude.tsx",
@@ -1207,8 +1213,8 @@ mustInclude(
 mustInclude(
   "src/components/KnowledgeBaseClaude.tsx",
   knowledgeBase,
-  /Knowledge Base/,
-  "Knowledge surface must carry the Claude Design title",
+  /Ingested knowledge/,
+  "Knowledge surface must present the honest ingested-knowledge list",
 );
 mustInclude(
   "src/components/KnowledgeBaseClaude.tsx",

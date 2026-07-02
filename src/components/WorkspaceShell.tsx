@@ -125,7 +125,8 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace";
-  const planLabel = accountType === "business" ? "Business plan" : "Personal plan";
+  // Account posture, not billing tier — the actual plan lives in Settings → Billing.
+  const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
   // Inside Studio with an active agent: swap the user card for a
   // "Current agent" card that matches the prototype's sidebar footer.
   const onStudio = isActive(pathname, "/studio");

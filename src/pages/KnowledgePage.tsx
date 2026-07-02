@@ -26,6 +26,7 @@ function EmptyTraining() {
         className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
         title="No agents yet"
+        description="Create an agent first — Training gives it knowledge, a voice, flows, and test calls."
         action={
           <Button asChild>
             <Link to="/studio?create=1">
@@ -41,8 +42,11 @@ function EmptyTraining() {
 
 function FlowsTab({ agentId }: { agentId: string }) {
   return (
-    <section className="studio-card mx-auto flex max-w-sm flex-col items-center gap-4 p-8 text-center">
+    <section className="studio-card mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
       <h2 className="wl-card-title">Flows</h2>
+      <p className="text-sm leading-6 text-muted-foreground">
+        Greeting, intent capture, handoff, and close rules live with this agent in Studio.
+      </p>
       <Button asChild>
         <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>Open Studio</Link>
       </Button>
@@ -52,8 +56,12 @@ function FlowsTab({ agentId }: { agentId: string }) {
 
 function SimulatorTab({ agentId }: { agentId: string }) {
   return (
-    <section className="studio-card mx-auto flex max-w-sm flex-col items-center gap-4 p-8 text-center">
+    <section className="studio-card mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
       <h2 className="wl-card-title">Simulator</h2>
+      <p className="text-sm leading-6 text-muted-foreground">
+        Run a live test call against this agent&rsquo;s current training, then review the transcript
+        in Call Logs.
+      </p>
       <div className="flex flex-wrap justify-center gap-3">
         <Button asChild>
           <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>

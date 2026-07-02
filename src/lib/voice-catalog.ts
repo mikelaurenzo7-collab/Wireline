@@ -32,16 +32,16 @@ type ApiVoiceRow = {
 export function normalizeApiVoices(raw: unknown): VoiceOption[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((row) => {
+    .map((row): VoiceOption | null => {
       const voice = row as ApiVoiceRow;
       const id = voice.voice_id || voice.id;
       if (!id) return null;
       return {
         id,
         name: voice.name || id,
-        provider: (voice.provider === "xai" ? "xai" : "11labs") as VoiceProvider,
-        preview_url: voice.preview_url,
-        owned_by_user: voice.owned_by_user,
+        provider: voice.provider === "xai" ? "xai" : "11labs",
+        preview_url: voice.preview_url ?? null,
+        owned_by_user: voice.owned_by_user ?? false,
       };
     })
     .filter((voice): voice is VoiceOption => voice !== null);

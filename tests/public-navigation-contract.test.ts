@@ -23,8 +23,9 @@ describe("public navigation mobile regression contract", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
     expect(header).toContain('label: "Use cases"');
-    expect(header).toContain('label: "System"');
+    expect(header).toContain('label: "Features"');
     expect(header).toContain('label: "Pricing"');
+    expect(header).toContain('label: "Demos"');
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to="/signup"');
     expect(header).toContain("Start");

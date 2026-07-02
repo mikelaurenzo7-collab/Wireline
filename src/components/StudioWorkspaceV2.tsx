@@ -69,11 +69,11 @@ function StudioEmptyState() {
 
         <div className="mt-6 space-y-4 sm:mt-8">
           <div>
-            <label className="sr-only" htmlFor="initial-brief">
+            <label className="sr-only" htmlFor="studio-brief">
               What should this agent do?
             </label>
             <textarea
-              id="initial-brief"
+              id="studio-brief"
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
               onKeyDown={(event) => {

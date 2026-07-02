@@ -13,7 +13,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useBranding } from "../contexts/BrandingContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
-import ClientToolbar from "./layout/ClientToolbar";
+import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 
@@ -367,14 +367,14 @@ export default function AdminSettings() {
   return (
     <>
       <AdminHubViewport>
-        <ClientToolbar
-          left={
-            <span className="app-toolbar-stat">
-              {isLoading
-                ? OPS_ADMIN.loading
-                : (OPS_ADMIN.tabLabels[activeTab as OpsAdminTab] ?? "Settings")}
-            </span>
-          }
+        <WorkspaceTabStrip
+          ariaLabel="Admin sections"
+          activeId={activeTab}
+          onSelect={(id) => navigate(`/admin?tab=${id}`)}
+          tabs={VALID_TABS.map((tab) => ({
+            id: tab,
+            label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,
+          }))}
         />
         <PageShell>
           <div className="h-full flex flex-col">

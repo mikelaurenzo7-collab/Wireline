@@ -38,7 +38,7 @@ describe("agent navigation contract", () => {
   it("uses the screenshot-inspired overview as the personal and business roster", () => {
     expect(overviewPage).toMatch(/function dayGreeting/);
     expect(overviewPage).toMatch(/Good evening/);
-    expect(overviewPage).toMatch(/Personal \+ business lines/);
+    expect(overviewPage).toMatch(/Workspace metrics/);
     expect(overviewPage).toMatch(/Personal agents/);
     expect(overviewPage).toMatch(/Business agents/);
     expect(overviewPage).toMatch(/Browse templates/);
@@ -83,7 +83,7 @@ describe("agent navigation contract", () => {
   });
 
   it("translates the Zip handoff into current control-surface and pricing language", () => {
-    expect(appsPage).toMatch(/One agent system, wherever the conversation starts\./);
+    expect(appsPage).toMatch(/Wireline in ChatGPT/);
     expect(appsPage).toMatch(/Browser Companion/);
     expect(appsPage).not.toMatch(/One assistant system|Same assistants|New assistant/);
     expect(pricingPage).toMatch(/STRIPE_PLANS/);
@@ -94,8 +94,9 @@ describe("agent navigation contract", () => {
   });
 
   it("migrates secondary workspace pages to the new quiet screenshot system", () => {
-    expect(connectionsPage).toMatch(/Tools your agents can use when handling a call/);
-    expect(connectionsPage).toMatch(/Available to connect/);
+    // Connections is a thin page that mounts the live integrations card.
+    expect(connectionsPage).toMatch(/CrmConnectionCard/);
+    expect(read("src/components/CrmConnectionCard.tsx")).toMatch(/Connected stack/);
     expect(settingsPage).toMatch(/Profile/);
     expect(settingsPage).toMatch(/Security/);
     expect(billingPage).toMatch(/Current plan/);
