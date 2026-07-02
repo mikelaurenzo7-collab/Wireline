@@ -24,4 +24,16 @@ describe("static marketing metadata", () => {
     expect(ogImage).toContain("solo business");
     expect(ogImage).toContain("PERSONAL · SOLO BUSINESS · TEAMS · FOLLOW-UP");
   });
+
+  it("keeps the installable web app manifest aligned with the public story", () => {
+    const manifest = JSON.parse(read("public/site.webmanifest")) as {
+      name: string;
+      description: string;
+    };
+
+    expect(manifest.name).toBe("Wireline - Wire your agent");
+    expect(manifest.description).toContain("personal assistants");
+    expect(manifest.description).toContain("solo business agents");
+    expect(manifest.description).toContain("teams");
+  });
 });
