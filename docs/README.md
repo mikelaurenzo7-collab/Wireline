@@ -30,6 +30,7 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 | [DEPLOY.md](../DEPLOY.md) | Deployment and environment runbook. |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution and verification guidance. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
+| [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md) | Research lanes, prioritization, metrics, and 30/90/180-day execution roadmap. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Billing model and Stripe catalog direction. |
 
 ## Verification
