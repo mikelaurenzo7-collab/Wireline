@@ -64,7 +64,7 @@ export function VoiceFieldSelect({
         <SelectContent>
           {allowInherit && <SelectItem value="inherit">Same as primary</SelectItem>}
           <SelectGroup>
-            <SelectLabel>Premium</SelectLabel>
+            <SelectLabel>Wireline Voice</SelectLabel>
             {catalog.map((v) => (
               <SelectItem key={v.id} value={v.id}>
                 {v.name}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { authFetch } from "../lib/api";
+import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 
 /**
  * CallLogsClaude — Operate surface in the Claude Design ground truth.
@@ -225,33 +226,13 @@ export default function CallLogsClaude() {
         })}
       </section>
 
-      <nav
-        aria-label="Call ops tabs"
-        className="flex min-h-[44px] items-center gap-1 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-2.5"
-      >
-        {tabs.map((tab) => {
-          const active = tab.id === activeTab;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              aria-current={active ? "page" : undefined}
-              onClick={() => setActiveTab(tab.id)}
-              className="inline-flex min-h-[34px] items-center justify-center rounded-[6px] px-4 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--wireline-color-action-primary-default)]"
-              style={
-                active
-                  ? {
-                      background: "var(--wireline-color-action-primary-default)",
-                      color: "var(--wireline-color-text-onAction)",
-                    }
-                  : { color: "var(--wireline-color-text-secondary)" }
-              }
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </nav>
+      <WorkspaceTabStrip
+        ariaLabel="Call ops tabs"
+        tabs={tabs}
+        activeId={activeTab}
+        onSelect={(id) => setActiveTab(id as TabId)}
+        className="border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-2.5"
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {error ? (
@@ -543,51 +524,12 @@ function AnalyticsTab() {
             ))}
           </ul>
         </section>
-        <section
-          className="rounded-[12px] p-5"
-          style={{
-            background: "var(--wireline-color-text-primary)",
-            color: "var(--wireline-color-canvas-default)",
-          }}
-        >
-          <div
-            className="mb-4 flex items-center justify-between font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.14em]"
-            style={{ color: "var(--wireline-color-status-success)" }}
-          >
-            Ops log
-            <span
-              className="size-1.5 rounded-full"
-              style={{
-                background: "var(--wireline-color-status-success)",
-                animation: "wlPulse 2s infinite",
-              }}
-              aria-hidden="true"
-            />
-          </div>
-          <ul className="space-y-1 font-[var(--wireline-font-mono)] text-[10px] leading-[2]">
-            <li>
-              <span className="opacity-30">[19:42]</span>{" "}
-              <span style={{ color: "var(--wireline-color-status-success)" }}>SYS</span> Pipeline
-              healthy
-            </li>
-            <li>
-              <span className="opacity-30">[18:15]</span> CFG Settings synced
-            </li>
-            <li>
-              <span className="opacity-30">[17:01]</span>{" "}
-              <span style={{ color: "var(--wireline-color-status-success)" }}>LEAD</span> Outbound
-              targets resolved
-            </li>
-            <li>
-              <span className="opacity-30">[16:55]</span>{" "}
-              <span style={{ color: "var(--wireline-color-status-warning)" }}>ESC</span> Triage
-              opened
-            </li>
-            <li>
-              <span className="opacity-30">[15:20]</span> <span className="opacity-50">SIP</span>{" "}
-              Reachability 100%
-            </li>
-          </ul>
+        <section className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6 text-center">
+          <div className="wl-eyebrow">Ops log</div>
+          <p className="mx-auto mt-3 max-w-sm text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)]">
+            Workspace events will appear here as call volume grows. Until then, Floor and Triage
+            reflect live data from your line.
+          </p>
         </section>
       </div>
     </>

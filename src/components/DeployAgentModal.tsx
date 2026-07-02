@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
 import { cn } from "../lib/utils";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./fleet/helpers";
+import { providerLabel } from "../lib/voice-catalog";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -372,7 +373,9 @@ export default function DeployAgentModal({
                                 )}
                               >
                                 <span className="truncate">{v.name}</span>
-                                <span className="wl-micro-meta shrink-0">{v.provider}</span>
+                                <span className="wl-micro-meta shrink-0">
+                                  {providerLabel(v.provider)}
+                                </span>
                               </ShadButton>
                             );
                           })}

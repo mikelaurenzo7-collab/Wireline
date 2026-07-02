@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { Badge, Button, Skeleton, Switch } from "../components/atoms";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
@@ -196,7 +197,8 @@ export default function SalesforceIntegrationPage() {
     <WorkspaceShell
       eyebrow="Integrations"
       title="Salesforce"
-      contentClassName="pt-6"
+      description="Log completed calls as Salesforce Tasks from your Wireline line."
+      contentClassName="pt-1 pb-10"
       action={
         <div className="flex items-center gap-2">
           <Badge variant={isConnected ? "success" : "warning"}>
@@ -219,13 +221,7 @@ export default function SalesforceIntegrationPage() {
         </div>
       }
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-10">
-        <div className="max-w-3xl text-center">
-          <p className="wl-page-copy">
-            Log calls as Salesforce Tasks.
-          </p>
-        </div>
-
+      <WorkspacePageFrame>
         {connectionError ? (
           <StatusNotice tone="warning" title="Connection state unavailable">
             {connectionError}
@@ -241,8 +237,9 @@ export default function SalesforceIntegrationPage() {
                     <Send className="size-5 text-primary" />
                     <h2 className="font-semibold text-foreground">Call activity delivery</h2>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground text-center">
-                    Push Tasks. Toggle.
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    When enabled, Wireline creates a Task after each eligible call with summary,
+                    intent, and sentiment.
                   </p>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
@@ -258,8 +255,8 @@ export default function SalesforceIntegrationPage() {
                   >
                     Log completed calls to Salesforce
                   </label>
-                  <p className="mt-1 text-sm text-muted-foreground text-center">
-                    Post-call sync control.
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Applies to new calls after you save. Past activity is not rewritten.
                   </p>
                 </div>
                 <Switch
@@ -310,35 +307,31 @@ export default function SalesforceIntegrationPage() {
                 </span>
                 <div>
                   <h2 className="font-semibold text-foreground">Activity payload</h2>
-                  <p className="mt-1 text-sm text-muted-foreground text-center">
-                    Standard Tasks. No magic fields.
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Standard Salesforce Task fields — no custom object mapping yet.
                   </p>
                 </div>
               </div>
               <dl className="divide-y divide-border text-sm">
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Task subject</dt>
-                  <dd className="text-muted-foreground text-center">
-                    Call + intent.
-                  </dd>
+                  <dd className="text-muted-foreground">Caller intent and outcome in one line.</dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Related contact</dt>
-                  <dd className="text-muted-foreground text-center">
-                    Best number match.
+                  <dd className="text-muted-foreground">
+                    Matched from the caller&apos;s phone number when possible.
                   </dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Task details</dt>
-                  <dd className="text-muted-foreground text-center">
-                    Agent. Intent. Sentiment.
+                  <dd className="text-muted-foreground">
+                    Agent name, intent label, and sentiment from the call recap.
                   </dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Not yet exposed</dt>
-                  <dd className="text-muted-foreground text-center">
-                    Custom fields later.
-                  </dd>
+                  <dd className="text-muted-foreground">Custom field mapping is on the roadmap.</dd>
                 </div>
               </dl>
             </section>
@@ -351,21 +344,21 @@ export default function SalesforceIntegrationPage() {
                 <CheckCircle2 className="size-4 text-[color:var(--wireline-color-status-success)]" />
                 <h2 className="font-semibold text-foreground">Runtime guardrails</h2>
               </div>
-              <ul className="mt-4 space-y-4 text-sm text-muted-foreground text-center">
-                <li>Tokens encrypted.</li>
-                <li>Pause future only.</li>
-                <li>Health checked before Task.</li>
+              <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
+                <li>OAuth tokens are encrypted at rest.</li>
+                <li>Pausing delivery affects future calls only.</li>
+                <li>Connection health is checked before each Task is created.</li>
               </ul>
             </section>
           </aside>
         </div>
 
-        <div className="flex border-t border-border pt-6 sm:justify-end">
+        <div className="flex justify-center border-t border-border pt-6 sm:justify-end">
           <Button asChild variant="secondary">
             <Link to="/actions">Back to connections</Link>
           </Button>
         </div>
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }
