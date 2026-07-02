@@ -27,4 +27,28 @@ describe("product voice cohesion", () => {
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
+
+  it("keeps the authenticated page map intentional", () => {
+    const routes = read("src/routes/AppRoutes.tsx");
+    expect(routes).toContain('path="/overview"');
+    expect(routes).toContain('path="/studio"');
+    expect(routes).toContain('path="/templates"');
+    expect(routes).toContain('path="/knowledge"');
+    expect(routes).toContain('path="/connections"');
+    expect(routes).toContain('path="/call-logs"');
+    expect(routes).toContain('path="/inbox"');
+    expect(routes).toContain('path="/apps"');
+    expect(routes).toContain('path="/settings"');
+    expect(routes).toContain('path="/admin"');
+    expect(routes).toContain('path="/actions/salesforce"');
+    expect(routes).toContain('to="/connections/salesforce"');
+    expect(routes).not.toContain('path="/dashboard"');
+  });
+
+  it("keeps top-level workspace pages mounted to the current surfaces", () => {
+    expect(read("src/pages/TemplatesPage.tsx")).toContain("AgentTemplates");
+    expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("CreateAgentDialog");
+    expect(read("src/pages/OverviewPage.tsx")).toContain("Workspace metrics");
+    expect(read("src/pages/OverviewPage.tsx")).toContain("Recent calls");
+  });
 });
