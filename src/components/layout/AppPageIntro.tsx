@@ -90,7 +90,9 @@ export default function AppPageIntro({
                 </Button>
               </DialogClose>
             </div>
-            <div className="flex flex-col gap-2 [&_a]:min-h-[48px] [&_button]:min-h-[48px]">{actions}</div>
+            <div className="flex flex-col gap-2 [&_a]:min-h-[48px] [&_button]:min-h-[48px]">
+              {actions}
+            </div>
           </div>
         </DialogContent>
       ) : null}

@@ -10,9 +10,11 @@ import {
 describe("Salesforce sync preferences", () => {
   it("preserves the historical enabled behavior for legacy or invalid metadata", () => {
     expect(getSalesforceSyncPreferences(undefined)).toEqual(DEFAULT_SALESFORCE_SYNC_PREFERENCES);
-    expect(getSalesforceSyncPreferences({ wireline: { salesforce: { callActivitySyncEnabled: "yes" } } })).toEqual(
-      DEFAULT_SALESFORCE_SYNC_PREFERENCES,
-    );
+    expect(
+      getSalesforceSyncPreferences({
+        wireline: { salesforce: { callActivitySyncEnabled: "yes" } },
+      }),
+    ).toEqual(DEFAULT_SALESFORCE_SYNC_PREFERENCES);
   });
 
   it("reads an explicit paused state", () => {
@@ -42,7 +44,9 @@ describe("Salesforce sync preferences", () => {
   });
 
   it("rejects unrecognized preference payloads at the API boundary", () => {
-    expect(SalesforceSyncPreferencesSchema.safeParse({ callActivitySyncEnabled: true }).success).toBe(true);
+    expect(
+      SalesforceSyncPreferencesSchema.safeParse({ callActivitySyncEnabled: true }).success,
+    ).toBe(true);
     expect(
       SalesforceSyncPreferencesSchema.safeParse({
         callActivitySyncEnabled: true,

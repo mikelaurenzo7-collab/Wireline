@@ -50,13 +50,21 @@ export function FormField({
     : children;
 
   return (
-    <div data-slot="form-field" className={cn(formFieldVariants({ density }), className)} {...props}>
+    <div
+      data-slot="form-field"
+      className={cn(formFieldVariants({ density }), className)}
+      {...props}
+    >
       <label
         htmlFor={htmlFor}
         className="text-sm font-medium leading-none text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
         {label}
-        {required && <span aria-hidden="true" className="ml-1 text-destructive">*</span>}
+        {required && (
+          <span aria-hidden="true" className="ml-1 text-destructive">
+            *
+          </span>
+        )}
       </label>
       {description && (
         <p id={descriptionId} className="text-xs leading-relaxed text-muted-foreground">

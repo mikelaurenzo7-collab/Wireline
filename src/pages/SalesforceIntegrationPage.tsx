@@ -100,7 +100,7 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
       </dl>
 
       <Button asChild variant="secondary" className="mt-5 w-full">
-        <Link to="/actions">
+        <Link to="/connections">
           <ExternalLink size={16} />
           Manage connection
         </Link>
@@ -309,7 +309,7 @@ export default function SalesforceIntegrationPage() {
 
         <div className="flex justify-center border-t border-border pt-6 sm:justify-end">
           <Button asChild variant="secondary">
-            <Link to="/actions">Back to connections</Link>
+            <Link to="/connections">Back to connections</Link>
           </Button>
         </div>
       </WorkspacePageFrame>

@@ -11,7 +11,12 @@ export type NavItem = {
 
 const STUDIO_NAV: NavItem[] = [
   { label: "Agents", path: "/agents", icon: Sparkles, matches: ["/agents"] },
-  { label: "Training", path: "/training", icon: GraduationCap, matches: ["/training", "/knowledge"] },
+  {
+    label: "Training",
+    path: "/training",
+    icon: GraduationCap,
+    matches: ["/training", "/knowledge"],
+  },
   { label: "Wire", path: "/actions", icon: Cable, matches: ["/actions", "/connections"] },
   { label: "Settings", path: "/settings", icon: Settings2, matches: ["/settings", "/admin"] },
 ];

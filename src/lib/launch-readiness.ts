@@ -45,7 +45,10 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const billingBlockers: string[] = [];
   if (byId.get("stripe")?.status !== "configured") billingBlockers.push("STRIPE_SECRET_KEY");
   else if (!envPresent("STRIPE_WEBHOOK_SECRET")) billingBlockers.push("STRIPE_WEBHOOK_SECRET");
-  if (process.env.BILLING_ENFORCE_METER === "true" && !envPresent("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME")) {
+  if (
+    process.env.BILLING_ENFORCE_METER === "true" &&
+    !envPresent("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME")
+  ) {
     billingBlockers.push("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME");
   }
 
@@ -57,11 +60,36 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const coreBlockers = envValidation.valid ? [] : envValidation.errors.map((error) => error.var);
 
   const capabilities: CapabilityReadiness[] = [
-    { id: "core_ready", label: "Core platform", level: levelFromBlockers(coreBlockers), blockers: coreBlockers },
-    { id: "billing_ready", label: "Billing", level: levelFromBlockers(billingBlockers), blockers: billingBlockers },
-    { id: "voice_ready", label: "Voice stack", level: levelFromBlockers(voiceBlockers), blockers: voiceBlockers },
-    { id: "email_ready", label: "Email", level: levelFromBlockers(emailBlockers), blockers: emailBlockers },
-    { id: "oauth_ready", label: "OAuth sign-in", level: levelFromBlockers(oauthBlockers), blockers: oauthBlockers },
+    {
+      id: "core_ready",
+      label: "Core platform",
+      level: levelFromBlockers(coreBlockers),
+      blockers: coreBlockers,
+    },
+    {
+      id: "billing_ready",
+      label: "Billing",
+      level: levelFromBlockers(billingBlockers),
+      blockers: billingBlockers,
+    },
+    {
+      id: "voice_ready",
+      label: "Voice stack",
+      level: levelFromBlockers(voiceBlockers),
+      blockers: voiceBlockers,
+    },
+    {
+      id: "email_ready",
+      label: "Email",
+      level: levelFromBlockers(emailBlockers),
+      blockers: emailBlockers,
+    },
+    {
+      id: "oauth_ready",
+      label: "OAuth sign-in",
+      level: levelFromBlockers(oauthBlockers),
+      blockers: oauthBlockers,
+    },
   ];
 
   // Voice is surfaced as an operational capability, not a core launch gate.

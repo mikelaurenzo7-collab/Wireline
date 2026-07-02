@@ -28,7 +28,7 @@ import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
-import { isOwnerOnlyAdminTab, isWirelineAccountHolder } from "../lib/admin-access";
+import { isOwnerOnlyAdminTab } from "../lib/admin-access";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -59,7 +59,7 @@ interface AdminSettingsState {
 
 export default function AdminSettings() {
   const { success: toastSuccess, error: toastError } = useToast();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const { updateBranding } = useBranding();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [settings, setSettings] = useState<AdminSettingsState>({
@@ -112,9 +112,7 @@ export default function AdminSettings() {
   ];
   // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
-  // the correct tab instead of bouncing to the default. Legacy links
-  // pointing at ?tab=voices / ?tab=pronunciation now live per-agent inside
-  // each agent's chat (Training tab), so they redirect to Chat.
+  // the correct tab instead of bouncing to the default.
   const location = useLocation();
   const navigate = useNavigate();
   const activeTab: AdminTab = (() => {
@@ -124,24 +122,20 @@ export default function AdminSettings() {
     if (qsRaw === "voices" || qsRaw === "pronunciation") {
       // useNavigate inside a render branch is fine because navigate is
       // a stable callback and we run it once per matching render. The
-      // redirect happens synchronously on the next tick.
-      queueMicrotask(() => navigate("/chat", { replace: true }));
+      // redirect happens synchronously on the next tick. Voice tooling
+      // lives on the Training Voice tab now.
+      queueMicrotask(() => navigate("/knowledge?tab=voice", { replace: true }));
       return "branding";
     }
-    // DNC + Audit are standalone pages (DncManager / AuditLog) — the tab
-    // strip navigates to /dnc and /audit directly, so ?tab= deep links
-    // must redirect there instead of rendering an empty Settings body.
+    // Legacy DNC / audit deep links: compliance checklist and the audit
+    // trail both live on the Audit activity tab now.
     if (qsRaw === "dnc" || qsRaw === "audit") {
-      queueMicrotask(() => navigate(`/${qsRaw}`, { replace: true }));
-      return "branding";
+      return "activity";
     }
-    // Legacy / mistaken deep link — system health moved to Founder dashboard.
+    // Legacy / mistaken deep link — owner-only system tabs collapsed into
+    // Billing; there is no separate founder surface in the current IA.
     if (isOwnerOnlyAdminTab(qsRaw ?? "")) {
-      queueMicrotask(() =>
-        navigate(isWirelineAccountHolder(user) ? "/founder" : "/admin?tab=subscription", {
-          replace: true,
-        }),
-      );
+      queueMicrotask(() => navigate("/admin?tab=subscription", { replace: true }));
       return "subscription";
     }
     if (qsRaw === "growth") return "flywheel";
@@ -380,7 +374,7 @@ export default function AdminSettings() {
           <div className="h-full flex flex-col">
             <IntegrationHealthBanner
               health={integrationHealth}
-              onOpenIntegrations={() => navigate("/actions")}
+              onOpenIntegrations={() => navigate("/connections")}
             />
             <div className="flex-1 min-h-0 scroll-viewport scroll-pb-safe">
               {isLoading ? (

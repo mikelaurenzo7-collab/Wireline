@@ -1,5 +1,8 @@
 import * as React from "react";
-import { Skeleton as CanonicalSkeleton, type SkeletonProps as CanonicalSkeletonProps } from "../../atoms/Skeleton";
+import {
+  Skeleton as CanonicalSkeleton,
+  type SkeletonProps as CanonicalSkeletonProps,
+} from "../../atoms/Skeleton";
 
 export interface SkeletonProps extends Omit<CanonicalSkeletonProps, "shape"> {}
 

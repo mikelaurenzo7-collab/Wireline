@@ -5,13 +5,23 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     route: "/settings",
     tabs: ["Account", "Billing", "Phone", "Team"],
     requiredScreens: ["SettingsPage", "BillingSettings", "PhoneSettings", "TeamSettings"],
-    requiredPhoneSections: ["Your Wireline number", "Call forwarding", "VIP contacts", "Connected devices"],
+    requiredPhoneSections: [
+      "Your Wireline number",
+      "Call forwarding",
+      "VIP contacts",
+      "Connected devices",
+    ],
     retiredPatterns: ["settingsDestinations", "link tile hub"],
   },
   knowledge: {
     route: "/knowledge",
     tabs: KNOWLEDGE_TABS,
-    requiredSections: ["Voice engine", "Pronunciation dictionary", "Flow Composer", "Scenario library"],
+    requiredSections: [
+      "Voice engine",
+      "Pronunciation dictionary",
+      "Flow Composer",
+      "Scenario library",
+    ],
     retiredPatterns: ["trainingNav", "six item section map"],
   },
   training: {

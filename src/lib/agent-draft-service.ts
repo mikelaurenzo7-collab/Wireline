@@ -56,9 +56,10 @@ function profileFromStoredAgent(agent: {
   businessVariables: unknown;
   systemPromptOverride: string | null;
 }): AgentCustomizationProfile {
-  const variables = agent.businessVariables && typeof agent.businessVariables === "object"
-    ? (agent.businessVariables as Record<string, unknown>)
-    : {};
+  const variables =
+    agent.businessVariables && typeof agent.businessVariables === "object"
+      ? (agent.businessVariables as Record<string, unknown>)
+      : {};
   if (isAgentCustomizationProfile(variables.customizationProfile)) {
     return variables.customizationProfile;
   }
@@ -96,7 +97,10 @@ function toView(id: string, profile: AgentCustomizationProfile): AgentDraftView 
   };
 }
 
-async function assertAgentCapacity(principal: AgentDraftPrincipal, existingCount: number): Promise<void> {
+async function assertAgentCapacity(
+  principal: AgentDraftPrincipal,
+  existingCount: number,
+): Promise<void> {
   const [setting] = await drizzle
     .select({
       planId: schema.subscriptions.plan,

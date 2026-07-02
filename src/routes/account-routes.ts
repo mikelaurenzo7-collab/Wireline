@@ -59,13 +59,22 @@ router.post(
     const scheduledPurgeAt = computeScheduledPurgeAt(requestedAt);
 
     const [existing] = await drizzle
-      .select({ id: schema.deletionQueue.id, scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt })
+      .select({
+        id: schema.deletionQueue.id,
+        scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
+      })
       .from(schema.deletionQueue)
-      .where(and(eq(schema.deletionQueue.userId, userId), eq(schema.deletionQueue.status, "pending")))
+      .where(
+        and(eq(schema.deletionQueue.userId, userId), eq(schema.deletionQueue.status, "pending")),
+      )
       .limit(1);
 
     if (existing) {
-      return res.json({ ok: true, already_pending: true, scheduled_purge_at: existing.scheduledPurgeAt });
+      return res.json({
+        ok: true,
+        already_pending: true,
+        scheduled_purge_at: existing.scheduledPurgeAt,
+      });
     }
 
     const [row] = await drizzle
@@ -78,10 +87,15 @@ router.post(
         ip: req.ip,
         userAgent: req.get("user-agent") || null,
       })
-      .returning({ id: schema.deletionQueue.id, scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt });
+      .returning({
+        id: schema.deletionQueue.id,
+        scheduledPurgeAt: schema.deletionQueue.scheduledPurgeAt,
+      });
 
     log.warn("account deletion requested", { userId, deletionRequestId: row?.id });
-    res.status(202).json({ ok: true, scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt });
+    res
+      .status(202)
+      .json({ ok: true, scheduled_purge_at: row?.scheduledPurgeAt ?? scheduledPurgeAt });
   },
 );
 

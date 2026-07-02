@@ -65,7 +65,11 @@ export async function listAIGatewayLanguageModels(): Promise<GatewayModelEntry[]
     });
     if (!response.ok) throw new Error(`AI Gateway model catalog failed (${response.status})`);
     const body = (await response.json()) as GatewayCatalogResponse;
-    const source = Array.isArray(body.data) ? body.data : Array.isArray(body.models) ? body.models : [];
+    const source = Array.isArray(body.data)
+      ? body.data
+      : Array.isArray(body.models)
+        ? body.models
+        : [];
     const models = source
       .map(normalizeModel)
       .filter((model): model is GatewayModelEntry => !!model)

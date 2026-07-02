@@ -75,7 +75,10 @@ function parsePhoneNumberMap(data: unknown): Map<string, string> {
   return map;
 }
 
-function parseAgentsPayload(data: unknown, numbersByAgent = new Map<string, string>()): WorkspaceAgentSummary[] {
+function parseAgentsPayload(
+  data: unknown,
+  numbersByAgent = new Map<string, string>(),
+): WorkspaceAgentSummary[] {
   const list = Array.isArray((data as Record<string, unknown>)?.agents)
     ? ((data as Record<string, unknown>).agents as unknown[])
     : [];
@@ -99,10 +102,15 @@ async function fetchAgentsWithRetry(attempts = 2): Promise<{
       const response = await authFetch("/api/agents");
       const body = await response.json().catch(() => null);
       const numbersResponse = await authFetch("/api/phone-numbers").catch(() => null);
-      const numbersBody = numbersResponse?.ok ? await numbersResponse.json().catch(() => null) : null;
+      const numbersBody = numbersResponse?.ok
+        ? await numbersResponse.json().catch(() => null)
+        : null;
       const numbersByAgent = parsePhoneNumberMap(numbersBody);
       if (response.ok && body) {
-        return { agents: parseAgentsPayload(body, numbersByAgent), degraded: body.degraded === true };
+        return {
+          agents: parseAgentsPayload(body, numbersByAgent),
+          degraded: body.degraded === true,
+        };
       }
       if (body && (response.status === 503 || body.degraded === true)) {
         return { agents: parseAgentsPayload(body, numbersByAgent), degraded: true };

@@ -5,8 +5,7 @@ import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
 import { cn } from "@/lib/utils";
 
-export interface SearchFieldProps
-  extends Omit<React.ComponentProps<typeof Input>, "type"> {
+export interface SearchFieldProps extends Omit<React.ComponentProps<typeof Input>, "type"> {
   onClear?: () => void;
   clearLabel?: string;
 }
@@ -17,7 +16,10 @@ const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
 
     return (
       <div className={cn("relative flex items-center", className)}>
-        <Search aria-hidden="true" className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
+        <Search
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground"
+        />
         <Input ref={ref} type="search" value={value} className="pl-9 pr-9" {...props} />
         {hasValue && onClear && (
           <Button

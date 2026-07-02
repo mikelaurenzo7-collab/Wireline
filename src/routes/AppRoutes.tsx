@@ -10,6 +10,7 @@ const OverviewPage = lazy(() => import("../pages/OverviewPage"));
 const TemplatesPage = lazy(() => import("../pages/TemplatesPage"));
 const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
 const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
+const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 const CallLogsPage = lazy(() => import("../pages/CallLogsPage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
@@ -44,6 +45,7 @@ export default function AppRoutes() {
         <Route path="/knowledge" element={<KnowledgePage />} />
 
         <Route path="/connections" element={<ConnectionsPage />} />
+        <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/connections/*" element={<ConnectionsPage />} />
         <Route path="/call-logs" element={<CallLogsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
@@ -65,6 +67,10 @@ export default function AppRoutes() {
         <Route path="/ops/*" element={<Navigate to="/call-logs" replace />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
         <Route path="/actions" element={<Navigate to="/connections" replace />} />
+        <Route
+          path="/actions/salesforce"
+          element={<Navigate to="/connections/salesforce" replace />}
+        />
         <Route path="/actions/*" element={<Navigate to="/connections" replace />} />
         <Route path="/nexus" element={<Navigate to="/connections" replace />} />
         <Route path="/wires" element={<Navigate to="/connections" replace />} />

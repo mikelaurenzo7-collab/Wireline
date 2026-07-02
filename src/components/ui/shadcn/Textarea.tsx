@@ -1,5 +1,1 @@
-export {
-  Textarea,
-  textareaVariants,
-  type TextareaProps,
-} from "../../atoms/Textarea";
+export { Textarea, textareaVariants, type TextareaProps } from "../../atoms/Textarea";

@@ -16,6 +16,7 @@ const Compare = lazy(() => import("./pages/Compare"));
 const About = lazy(() => import("./pages/About"));
 const Blog = lazy(() => import("./pages/Blog"));
 const Security = lazy(() => import("./components/Security"));
+const TrustPackPage = lazy(() => import("./components/TrustPackPage"));
 const Status = lazy(() => import("./components/Status"));
 const SupportPage = lazy(() =>
   import("./components/SupportPage").then((module) => ({ default: module.SupportPage })),
@@ -32,6 +33,7 @@ const TermsOfService = lazy(() =>
 const AppShell = lazy(() => import("./components/layout/AppShell"));
 const AuthPortalRoute = lazy(() => import("./AuthPortalRoute"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
@@ -67,6 +69,8 @@ function AppRouter() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/*" element={<Navigate to="/blog" replace />} />
         <Route path="/security" element={<Security />} />
+        {/* Vertical trust packs — linked from /security for regulated buyers. */}
+        <Route path="/trust/:vertical" element={<TrustPackPage />} />
         <Route path="/status" element={<Status />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/contact" element={<ContactPage />} />
@@ -79,6 +83,8 @@ function AppRouter() {
         <Route path="/auth" element={<AuthPortalRoute />} />
         <Route path="/login" element={<Navigate to="/signin" replace />} />
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
+        {/* Password-reset emails land here with ?token=… — must stay public. */}
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
         <Route path="/onboarding" element={<OnboardingFlow />} />

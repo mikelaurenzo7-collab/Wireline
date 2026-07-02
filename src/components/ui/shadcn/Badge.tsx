@@ -7,10 +7,12 @@ export interface BadgeProps extends Omit<CanonicalBadgeProps, "variant"> {
   variant?: LegacyVariant;
 }
 
-const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(({ variant = "default", ...props }, ref) => {
-  const canonicalVariant = variant === "secondary" ? "default" : variant;
-  return <CanonicalBadge ref={ref} variant={canonicalVariant} {...props} />;
-});
+const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+  ({ variant = "default", ...props }, ref) => {
+    const canonicalVariant = variant === "secondary" ? "default" : variant;
+    return <CanonicalBadge ref={ref} variant={canonicalVariant} {...props} />;
+  },
+);
 
 Badge.displayName = "Badge";
 
