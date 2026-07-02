@@ -109,3 +109,8 @@ playwright-report/
 # Git worktrees (isolated workspaces)
 .worktrees/
 worktrees/
+
+# Playwright e2e output and session-local QA scripts
+test-results/
+playwright-report/
+scripts/.tmp-*
