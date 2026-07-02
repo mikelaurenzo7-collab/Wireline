@@ -3,8 +3,7 @@ import { randomBytes } from "node:crypto";
 export const INLINE_SCRIPT_HASHES = [
   "'sha256-LTkUOuO/95lht1SHJYGSEJ8IcO6rX2Pf7vdiXrzQWq4='",
   "'sha256-lllAnjnN9WS3PhutbKlSKfZBNtcREmT3P0Y2oeFBDUc='",
-  "'sha256-m0JcwVJNO1VP4529+4pvpDNN846Vuhxl/BoCD4IIQGc='",
-  "'sha256-YVxbb9YTn5fdjJ8affeqySUA2vlMISN5svOynGQW+Pk='",
+  "'sha256-GJwYp8YufG+6xkaiHhDxVmkYefD2PB2mK7qfpjtIHe4='",
 ] as const;
 
 /**

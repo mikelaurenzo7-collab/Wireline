@@ -331,7 +331,7 @@ mustInclude(
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
   androidApp,
-  /Your phone, finally answering for you\./,
+  /Wire your agent\./,
   "Android sign-in must use the Letterpress landing promise",
 );
 mustInclude(
@@ -464,13 +464,13 @@ mustInclude(
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"name": "Wireline - Your phone, finally answering for you"/,
+  /"name": "Wireline - Wire your agent"/,
   "manifest name must match the current landing promise",
 );
 mustExclude(
   "public/site.webmanifest",
   manifest,
-  /Agents that answer|Agents for calls, texts, and follow-up/i,
+  /Agents that answer|Agents for calls, texts, and follow-up|finally answering for you/i,
   "manifest must not use retired answer-only positioning",
 );
 mustInclude(
@@ -494,7 +494,7 @@ mustInclude(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Your phone,[\s\S]*finally[\s\S]*answering[\s\S]*for you\.[\s\S]*Calls, bookings, messages, errands, and follow-up\./,
+  /WIRE YOUR[\s\S]*AGENT[\s\S]*Personal assistants · solo business · teams/,
   "OG image must match the Letterpress landing promise",
 );
 mustExclude(
@@ -749,19 +749,19 @@ mustInclude(
 mustInclude(
   "index.html",
   indexHtml,
-  /Wireline — Your phone, finally answering for you\./,
+  /Wireline — Wire your agent\./,
   "static metadata title must match the current landing promise",
 );
 mustInclude(
   "src/pages/LandingPage.tsx",
   landingPage,
-  /Wireline \| Your phone, finally answering for you/,
+  /Wireline \| Wire your agent/,
   "runtime landing metadata title must match the current landing promise",
 );
 mustInclude(
   "src/lib/page-meta.tsx",
   pageMeta,
-  /Wireline - Your phone, finally answering for you/,
+  /Wireline - Wire your agent/,
   "default metadata title must match the current landing promise",
 );
 mustExclude(
