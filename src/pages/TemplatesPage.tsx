@@ -4,12 +4,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 
 export default function TemplatesPage() {
   return (
-    <WorkspaceShell
-      eyebrow="Workspace"
-      title="Templates"
-      description="Start from a proven agent playbook — personal errands, front desk, sales, and support."
-      contentClassName="pt-1 pb-10"
-    >
+    <WorkspaceShell title="Templates" contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
         <AgentTemplates />
       </WorkspacePageFrame>

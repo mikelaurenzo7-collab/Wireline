@@ -320,8 +320,8 @@ export default function WorkspaceShell({
   contentClassName = "pt-2 pb-8",
   fullBleed = false,
 }: {
-  title: string;
-  eyebrow: string;
+  title?: string;
+  eyebrow?: string;
   description?: string;
   action?: ReactNode;
   children: ReactNode;

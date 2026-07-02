@@ -8,7 +8,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
-import { formatAgentRoleLabel, WORKSPACE_VOICE } from "../lib/product-copy";
+import { formatAgentRoleLabel } from "../lib/product-copy";
 import { authFetch } from "../lib/api";
 import type { CallLog } from "../types/api";
 
@@ -298,7 +298,7 @@ export default function OverviewPage() {
   const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
 
   return (
-    <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
+    <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
       <WorkspacePageFrame className="wl-overview">
         <section className="relative text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -309,11 +309,6 @@ export default function OverviewPage() {
               <h1 className="wl-display-2 text-balance">
                 {dayGreeting()}, {firstName(user?.full_name, user?.email)}.
               </h1>
-              <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
-                {hasAgents
-                  ? `Your line is active. ${primaryAgent?.name || "Your agent"} is answering.`
-                  : WORKSPACE_VOICE.emptyCue}
-              </p>
             </div>
             <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
               <Link to="/studio?create=1">
@@ -458,12 +453,7 @@ export default function OverviewPage() {
               ) : (
                 <div className="flex min-h-[180px] flex-col items-center justify-center py-8 text-center text-muted-foreground">
                   <Phone className="mb-3 size-8 text-muted-foreground/30" aria-hidden="true" />
-                  <p className="text-sm font-medium text-foreground">No calls logged yet</p>
-                  <p className="mt-1.5 max-w-xs text-xs leading-relaxed">
-                    {hasAgents
-                      ? "Your line is ready. Calls will appear here as they complete."
-                      : "Create an agent in Studio to start receiving calls."}
-                  </p>
+                  <p className="text-sm font-medium text-foreground">No calls yet</p>
                   {!hasAgents ? (
                     <Button asChild size="sm" className="mt-4">
                       <Link to="/studio?create=1">Create agent</Link>
@@ -473,15 +463,6 @@ export default function OverviewPage() {
               )}
             </div>
           </article>
-        </section>
-
-        <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-6 text-center text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
-            One continuous line
-          </p>
-          <p className="mx-auto mt-3 max-w-[28ch] font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.02em]">
-            A call that starts on your phone finishes in your Inbox.
-          </p>
         </section>
       </WorkspacePageFrame>
     </WorkspaceShell>

@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  CheckCircle2,
-  Cloud,
-  ExternalLink,
-  FileText,
-  Loader2,
-  RefreshCcw,
-  Send,
-} from "lucide-react";
+import { Cloud, ExternalLink, FileText, Loader2, RefreshCcw, Send } from "lucide-react";
 
 import { Badge, Button, Skeleton, Switch } from "../components/atoms";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
@@ -195,9 +187,7 @@ export default function SalesforceIntegrationPage() {
 
   return (
     <WorkspaceShell
-      eyebrow="Integrations"
       title="Salesforce"
-      description="Log completed calls as Salesforce Tasks from your Wireline line."
       contentClassName="pt-1 pb-10"
       action={
         <div className="flex items-center gap-2">
@@ -232,15 +222,9 @@ export default function SalesforceIntegrationPage() {
           <div className="space-y-6">
             <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Send className="size-5 text-primary" />
-                    <h2 className="font-semibold text-foreground">Call activity delivery</h2>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    When enabled, Wireline creates a Task after each eligible call with summary,
-                    intent, and sentiment.
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Send className="size-5 text-primary" />
+                  <h2 className="font-semibold text-foreground">Call activity</h2>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
                   {callActivitySyncEnabled && isConnected ? "Active" : "Paused"}
@@ -248,17 +232,12 @@ export default function SalesforceIntegrationPage() {
               </div>
 
               <div className="mt-6 flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/20 p-4">
-                <div>
-                  <label
-                    htmlFor="salesforce-call-activity-sync"
-                    className="font-medium text-foreground"
-                  >
-                    Log completed calls to Salesforce
-                  </label>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Applies to new calls after you save. Past activity is not rewritten.
-                  </p>
-                </div>
+                <label
+                  htmlFor="salesforce-call-activity-sync"
+                  className="font-medium text-foreground"
+                >
+                  Log completed calls to Salesforce
+                </label>
                 <Switch
                   id="salesforce-call-activity-sync"
                   checked={callActivitySyncEnabled}
@@ -305,33 +284,20 @@ export default function SalesforceIntegrationPage() {
                 <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                   <FileText size={18} />
                 </span>
-                <div>
-                  <h2 className="font-semibold text-foreground">Activity payload</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Standard Salesforce Task fields — no custom object mapping yet.
-                  </p>
-                </div>
+                <h2 className="font-semibold text-foreground">Task fields</h2>
               </div>
               <dl className="divide-y divide-border text-sm">
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
-                  <dt className="font-medium text-foreground">Task subject</dt>
-                  <dd className="text-muted-foreground">Caller intent and outcome in one line.</dd>
+                  <dt className="font-medium text-foreground">Subject</dt>
+                  <dd className="text-muted-foreground">Intent + outcome</dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
-                  <dt className="font-medium text-foreground">Related contact</dt>
-                  <dd className="text-muted-foreground">
-                    Matched from the caller&apos;s phone number when possible.
-                  </dd>
+                  <dt className="font-medium text-foreground">Contact</dt>
+                  <dd className="text-muted-foreground">Phone match</dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
-                  <dt className="font-medium text-foreground">Task details</dt>
-                  <dd className="text-muted-foreground">
-                    Agent name, intent label, and sentiment from the call recap.
-                  </dd>
-                </div>
-                <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
-                  <dt className="font-medium text-foreground">Not yet exposed</dt>
-                  <dd className="text-muted-foreground">Custom field mapping is on the roadmap.</dd>
+                  <dt className="font-medium text-foreground">Details</dt>
+                  <dd className="text-muted-foreground">Agent · intent · sentiment</dd>
                 </div>
               </dl>
             </section>
@@ -339,17 +305,6 @@ export default function SalesforceIntegrationPage() {
 
           <aside className="space-y-6">
             <ConnectionSummary connection={connection} />
-            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-[color:var(--wireline-color-status-success)]" />
-                <h2 className="font-semibold text-foreground">Runtime guardrails</h2>
-              </div>
-              <ul className="mt-4 space-y-4 text-sm text-muted-foreground">
-                <li>OAuth tokens are encrypted at rest.</li>
-                <li>Pausing delivery affects future calls only.</li>
-                <li>Connection health is checked before each Task is created.</li>
-              </ul>
-            </section>
           </aside>
         </div>
 

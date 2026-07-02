@@ -113,12 +113,7 @@ export default function TeamSettings() {
   const canInvite = teamAccess === "ok";
 
   return (
-    <WorkspaceShell
-      eyebrow="Settings"
-      title="Team"
-      description="Invite teammates and manage workspace access."
-      contentClassName="pt-1 pb-10"
-    >
+    <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame narrow>
         <SettingsTabs />
 

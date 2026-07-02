@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Bot,
-  Brain,
   MessageSquareText,
   Mic2,
   MonitorDown,
@@ -76,32 +75,8 @@ const appCarryover = [
 
 export default function CustomizationSettings() {
   return (
-    <WorkspaceShell
-      eyebrow="Workspace"
-      title="Customization"
-      description="One profile for brand, voice, authority, and goals across every agent."
-      contentClassName="pt-1 pb-8"
-    >
+    <WorkspaceShell title="Customization" contentClassName="pt-1 pb-8">
       <WorkspacePageFrame>
-        <section className="studio-card grid gap-4 border-primary/20 bg-secondary p-5 sm:p-6 xl:grid-cols-[minmax(0,.8fr)_minmax(300px,.55fr)] xl:items-center">
-          <div className="text-center">
-            <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Profile</h2>
-          </div>
-          <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4">
-            <div className="flex items-start gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
-                <Brain aria-hidden="true" size={17} />
-              </span>
-              <div>
-                <p className="font-mono text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.06em] text-muted-foreground">
-                  Rule
-                </p>
-                <p className="mt-1 text-sm text-foreground">One profile across all agents.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {customizationLayers.map(({ label, title, detail, action, href, icon: Icon }) => (

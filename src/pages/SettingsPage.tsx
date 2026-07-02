@@ -111,12 +111,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <WorkspaceShell
-      eyebrow="Settings"
-      title="Account"
-      description="Profile and security for this workspace."
-      contentClassName="pt-1 pb-10"
-    >
+    <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame narrow>
         <SettingsTabs />
 

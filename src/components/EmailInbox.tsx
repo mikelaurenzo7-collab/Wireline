@@ -289,13 +289,12 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   if (threads.length === 0) {
     return (
       <section className={`${frameClass} grid place-items-center px-5 text-center`}>
-        <div className="w-full max-w-lg space-y-5">
+        <div className="w-full max-w-lg">
           <EmptyState
             density="default"
             className="studio-card w-full px-6 py-10 sm:px-8"
             icon={<Mail className="size-5" />}
-            title="No email conversations yet."
-            description="Connect an email integration, then conversations land here automatically."
+            title="No email yet"
             action={
               <div className="flex flex-wrap justify-center gap-3">
                 <Button asChild>
@@ -317,20 +316,6 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               </div>
             }
           />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card px-4 py-4 text-center">
-              <p className="text-sm font-semibold text-foreground">Connect</p>
-              <p className="mt-1 text-xs text-muted-foreground">Link your email</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card px-4 py-4 text-center">
-              <p className="text-sm font-semibold text-foreground">Organize</p>
-              <p className="mt-1 text-xs text-muted-foreground">Threads appear here</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card px-4 py-4 text-center">
-              <p className="text-sm font-semibold text-foreground">Resolve</p>
-              <p className="mt-1 text-xs text-muted-foreground">Set outcomes per thread</p>
-            </div>
-          </div>
         </div>
         {error ? (
           <StatusNotice tone="destructive" className="mt-3 max-w-lg text-left">

@@ -526,9 +526,8 @@ function AnalyticsTab() {
         </section>
         <section className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6 text-center">
           <div className="wl-eyebrow">Ops log</div>
-          <p className="mx-auto mt-3 max-w-sm text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)]">
-            Workspace events will appear here as call volume grows. Until then, Floor and Triage
-            reflect live data from your line.
+          <p className="mx-auto mt-3 text-[13px] text-[var(--wireline-color-text-secondary)]">
+            No events yet
           </p>
         </section>
       </div>

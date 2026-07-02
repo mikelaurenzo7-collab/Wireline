@@ -84,12 +84,7 @@ export default function BillingSettings() {
     balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
 
   return (
-    <WorkspaceShell
-      eyebrow="Settings"
-      title="Billing"
-      description="Plan, conversation balance, and invoices."
-      contentClassName="pt-1 pb-10"
-    >
+    <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame narrow>
         <SettingsTabs />
 

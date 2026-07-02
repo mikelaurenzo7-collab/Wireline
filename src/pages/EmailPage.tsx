@@ -35,12 +35,7 @@ export default function EmailPage() {
   }
 
   return (
-    <WorkspaceShell
-      eyebrow="Conversations"
-      title="Inbox"
-      description="Email and SMS threads tied to your agents and follow-up."
-      contentClassName="pt-1 pb-8"
-    >
+    <WorkspaceShell title="Inbox" contentClassName="pt-1 pb-8">
       <WorkspacePageFrame>
         <WorkspaceTabStrip
           ariaLabel="Inbox channels"

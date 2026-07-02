@@ -25,13 +25,12 @@ function EmptyTraining() {
         density="default"
         className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
-        title="Train it."
-        description="Docs. Voice. Flows. Test calls."
+        title="No agents yet"
         action={
           <Button asChild>
             <Link to="/studio?create=1">
               <WandSparkles aria-hidden="true" size={16} />
-              Wire agent
+              Create agent
             </Link>
           </Button>
         }
@@ -42,34 +41,20 @@ function EmptyTraining() {
 
 function FlowsTab({ agentId }: { agentId: string }) {
   return (
-    <section className="studio-card mx-auto max-w-xl p-8 text-center">
-      <p className="wl-overline">Conversation flows</p>
-      <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-2xl tracking-[-0.02em] text-foreground">
-        Shape how calls move stage by stage.
-      </h2>
-      <p className="mt-3 text-sm leading-7 text-muted-foreground">
-        Greeting, intent capture, handoff, and close rules live with each agent in Studio. Train
-        keeps knowledge and voice; Studio owns the live conversation design.
-      </p>
-      <Button asChild className="mt-6">
+    <section className="studio-card mx-auto flex max-w-sm flex-col items-center gap-4 p-8 text-center">
+      <h2 className="wl-card-title">Flows</h2>
+      <Button asChild>
         <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>Open Studio</Link>
       </Button>
     </section>
   );
 }
 
-function SimulatorTab({ agentId, agentName }: { agentId: string; agentName?: string }) {
+function SimulatorTab({ agentId }: { agentId: string }) {
   return (
-    <section className="studio-card mx-auto max-w-xl p-8 text-center">
-      <p className="wl-overline">Test calls</p>
-      <h2 className="mt-3 font-[var(--wireline-font-family-display)] text-2xl tracking-[-0.02em] text-foreground">
-        Hear {agentName || "your agent"} before the line goes live.
-      </h2>
-      <p className="mt-3 text-sm leading-7 text-muted-foreground">
-        Run a browser test from Studio, or review completed calls once your Wireline number is
-        active.
-      </p>
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
+    <section className="studio-card mx-auto flex max-w-sm flex-col items-center gap-4 p-8 text-center">
+      <h2 className="wl-card-title">Simulator</h2>
+      <div className="flex flex-wrap justify-center gap-3">
         <Button asChild>
           <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>
             <Phone size={15} aria-hidden="true" />
@@ -77,7 +62,7 @@ function SimulatorTab({ agentId, agentName }: { agentId: string; agentName?: str
           </Link>
         </Button>
         <Button asChild variant="secondary">
-          <Link to="/call-logs">Review call logs</Link>
+          <Link to="/call-logs">Call logs</Link>
         </Button>
       </div>
     </section>
@@ -109,9 +94,7 @@ export default function KnowledgePage() {
 
   return (
     <WorkspaceShell
-      eyebrow="Training"
-      title="Train"
-      description="Knowledge, voice, flows, and test calls for each agent in your workspace."
+      title="Knowledge"
       contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}
       action={
         populated ? (
@@ -156,9 +139,7 @@ export default function KnowledgePage() {
             <VoiceGallery agentId={agentId} agentName={activeAgent?.name} />
           ) : null}
           {activeTab === "flows" ? <FlowsTab agentId={agentId} /> : null}
-          {activeTab === "simulator" ? (
-            <SimulatorTab agentId={agentId} agentName={activeAgent?.name} />
-          ) : null}
+          {activeTab === "simulator" ? <SimulatorTab agentId={agentId} /> : null}
         </WorkspacePageFrame>
       )}
     </WorkspaceShell>

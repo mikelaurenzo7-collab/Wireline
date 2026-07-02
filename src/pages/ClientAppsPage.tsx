@@ -49,12 +49,7 @@ const clientSurfaces = [
 
 export default function ClientAppsPage() {
   return (
-    <WorkspaceShell
-      eyebrow="Your control surfaces"
-      title="Apps"
-      description="Same agents. Same setup. One protected workspace — on your desk, in your pocket, in the car, or inside the tools you already use."
-      contentClassName="pt-1 pb-10"
-    >
+    <WorkspaceShell title="Apps" contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
         <section
           className="grid gap-4 md:grid-cols-2"
@@ -91,18 +86,6 @@ export default function ClientAppsPage() {
               </article>
             ),
           )}
-        </section>
-
-        <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-7 text-center text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
-            One continuous line
-          </p>
-          <p className="mx-auto mt-3 max-w-[28ch] font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.025em] sm:text-3xl">
-            A call that starts in CarPlay finishes in your Inbox.
-          </p>
-          <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
-            phone · chat · browser · inbox
-          </p>
         </section>
       </WorkspacePageFrame>
     </WorkspaceShell>
