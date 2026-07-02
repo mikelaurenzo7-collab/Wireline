@@ -93,47 +93,44 @@ export default function KnowledgePage() {
   }
 
   return (
-    <WorkspaceShell
-      title="Knowledge"
-      contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}
-      action={
-        populated ? (
-          <NativeSelect
-            value={agentId}
-            onChange={(event) =>
-              setParams(
-                (current) => {
-                  const updated = new URLSearchParams(current);
-                  updated.set("agent", event.target.value);
-                  updated.set("tab", activeTab);
-                  return updated;
-                },
-                { replace: true },
-              )
-            }
-            aria-label="Choose agent"
-            className="min-w-[220px]"
-          >
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name}
-              </option>
-            ))}
-          </NativeSelect>
-        ) : undefined
-      }
-    >
+    <WorkspaceShell contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}>
       {!loading && !agents.length ? (
         <EmptyTraining />
       ) : (
         <WorkspacePageFrame>
-          <WorkspaceTabStrip
-            ariaLabel="Training sections"
-            tabs={trainingTabs}
-            activeId={activeTab}
-            onSelect={(id) => setActiveTab(id as TrainingTabId)}
-            className="mb-7"
-          />
+          <div className="mb-7 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <WorkspaceTabStrip
+              ariaLabel="Training sections"
+              tabs={trainingTabs}
+              activeId={activeTab}
+              onSelect={(id) => setActiveTab(id as TrainingTabId)}
+              className="mb-0 flex-1 border-b-0 pb-0"
+            />
+            {populated ? (
+              <NativeSelect
+                value={agentId}
+                onChange={(event) =>
+                  setParams(
+                    (current) => {
+                      const updated = new URLSearchParams(current);
+                      updated.set("agent", event.target.value);
+                      updated.set("tab", activeTab);
+                      return updated;
+                    },
+                    { replace: true },
+                  )
+                }
+                aria-label="Choose agent"
+                className="w-full min-w-[220px] sm:w-auto"
+              >
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            ) : null}
+          </div>
           {activeTab === "knowledge" ? <KnowledgeBaseClaude agentId={agentId} /> : null}
           {activeTab === "voice" ? (
             <VoiceGallery agentId={agentId} agentName={activeAgent?.name} />

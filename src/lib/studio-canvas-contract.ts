@@ -72,7 +72,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   overview: [
-    { id: "overview-title", pattern: /title="Overview"/ },
+    { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
     // Wireline uses "agent" language; Assistant was retired by the migration
     // plan. The dashboard CTA wires a new agent.
     { id: "new-agent", pattern: /New agent/ },

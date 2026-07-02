@@ -35,7 +35,7 @@ export default function EmailPage() {
   }
 
   return (
-    <WorkspaceShell title="Inbox" contentClassName="pt-1 pb-8">
+    <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame>
         <WorkspaceTabStrip
           ariaLabel="Inbox channels"

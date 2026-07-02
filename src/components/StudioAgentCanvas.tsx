@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { type AgentToolName } from "../lib/agent-capabilities";
 import { formatAgentRoleLabel } from "../lib/product-copy";
+import { providerLabel, resolveVoiceLabel } from "../lib/voice-catalog";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAccount } from "../contexts/AccountContext";
 import { computeAgentReadiness } from "./fleet-settings/agent-readiness";
@@ -118,9 +119,7 @@ function Connector() {
 }
 
 function displayVoiceName(raw?: string | null) {
-  if (!raw) return "Aria";
-  if (/^[A-Za-z0-9_-]{12,}$/.test(raw)) return "Aria";
-  return raw.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+  return resolveVoiceLabel(raw);
 }
 
 function weekdayStrip() {
@@ -201,9 +200,7 @@ export default function StudioAgentCanvas({
   const initial = (agentName || "A").trim().charAt(0).toUpperCase();
   const roleLabel = formatAgentRoleLabel(config?.role ?? null);
   const voiceName = displayVoiceName(config?.voice?.voiceId);
-  const personality =
-    config?.personality?.trim() ||
-    "Response style: Concise, warm, never overpromise. Handles appointment booking, caller identification, FAQ responses.";
+  const personality = config?.personality?.trim() || "Not set";
   const docCount = config?.knowledge?.length ?? 0;
   const directives = config?.directives ?? [];
   const modelLabel = config?.runtime?.model || "Managed Default";
@@ -250,9 +247,6 @@ export default function StudioAgentCanvas({
     >
       <div className="mb-6">
         <div className="wl-eyebrow">Agent Canvas</div>
-        <p className="mt-1.5 text-[13px] text-[var(--wireline-color-text-tertiary)]">
-          Click any card to edit. Changes save automatically.
-        </p>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -293,7 +287,7 @@ export default function StudioAgentCanvas({
               {voiceName}
             </div>
             <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">
-              Warm & Confident · Wireline Voice
+              {providerLabel(config?.voice?.provider)}
             </div>
             <div className="mt-4 flex h-8 items-end gap-0.5" aria-hidden="true">
               {[40, 80, 100, 55, 70, 90, 45, 65, 78, 52].map((height, index) => (

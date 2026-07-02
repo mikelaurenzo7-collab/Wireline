@@ -145,23 +145,25 @@ export default function VoiceGallery({ agentId, agentName, className = "" }: Voi
   return (
     <div className={`flex flex-col gap-5 ${className}`}>
       <section className="studio-card p-5 sm:p-6">
-        <div className="text-center">
-          <p className="wl-overline">Current voice</p>
-          {loadingSelection ? (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              Loading selection…
-            </div>
-          ) : (
-            <>
-              <p className="mt-3 font-[var(--wireline-font-family-display)] text-2xl tracking-[-0.02em] text-foreground">
-                {currentLabel}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {providerLabel(selectedProvider)} · live on calls after you save
-              </p>
-            </>
-          )}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="wl-overline">Current</p>
+            {loadingSelection ? (
+              <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                Loading…
+              </div>
+            ) : (
+              <>
+                <p className="mt-2 font-[var(--wireline-font-family-display)] text-2xl tracking-[-0.02em] text-foreground">
+                  {currentLabel}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {providerLabel(selectedProvider)}
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </section>
 
@@ -177,17 +179,9 @@ export default function VoiceGallery({ agentId, agentName, className = "" }: Voi
       ) : null}
 
       <section className="studio-card p-5 sm:p-6">
-        <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
-          <div>
-            <p className="wl-overline">Voice gallery</p>
-            <h2 className="mt-2 text-sm font-semibold tracking-[-0.01em] text-foreground">
-              Wireline Live + Wireline Voice
-            </h2>
-            <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-              Preview in browser, then assign the voice your agent uses on live calls.
-            </p>
-          </div>
-          <label className="grid w-full max-w-xs gap-1.5 text-left">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <p className="wl-overline">Gallery</p>
+          <label className="grid w-full max-w-xs gap-1.5 sm:w-auto">
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Search
             </span>

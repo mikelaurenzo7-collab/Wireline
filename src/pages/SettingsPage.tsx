@@ -129,9 +129,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">Password</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Reset via email if you need a new password.
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Reset via email.</p>
               </div>
               <Button type="button" variant="secondary" size="sm" asChild>
                 <Link to="/reset-password">Reset password</Link>

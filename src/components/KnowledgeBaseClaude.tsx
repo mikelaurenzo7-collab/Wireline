@@ -189,13 +189,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="wl-display-3">Knowledge Base</h1>
-          <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-[var(--wireline-color-text-secondary)] sm:text-sm">
-            Facts, rules, and tone your agents use on every call.
-          </p>
-        </div>
+      <header className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
