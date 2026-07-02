@@ -18,7 +18,7 @@ type TransitionAction = {
 type TransitionSurfaceProps = {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   busyLabel?: string;
   details?: TransitionDetail[];
   actions?: TransitionAction[];
@@ -48,7 +48,7 @@ export default function TransitionSurface({
           <header className="wl-transition-copy">
             <p className="studio-kicker">{eyebrow}</p>
             <h1 className="wl-section-title">{title}</h1>
-            <p className="wl-transition-description">{description}</p>
+            {description ? <p className="wl-transition-description">{description}</p> : null}
           </header>
 
           <div className="wl-transition-status">

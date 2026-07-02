@@ -185,9 +185,7 @@ export default function TeamSettings() {
               ))}
             </div>
           ) : (
-            <p className="mt-5 text-center text-sm text-muted-foreground">
-              No teammates yet. Invite someone when you are ready to share the workspace.
-            </p>
+            <p className="mt-5 text-center text-sm text-muted-foreground">No teammates yet</p>
           )}
         </section>
       </WorkspacePageFrame>
@@ -200,7 +198,6 @@ export default function TeamSettings() {
                 <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground">
                   Invite teammate
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">Add someone to the workspace.</p>
               </div>
               <Button
                 type="button"

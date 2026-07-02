@@ -163,9 +163,7 @@ export default function BillingSettings() {
             ) : (
               <>
                 <p className="wl-display-3 mt-auto pt-4">—</p>
-                <p className="mt-5 text-sm text-muted-foreground">
-                  No subscription — live work draws from Conversation Balance.
-                </p>
+                <p className="mt-5 text-sm text-muted-foreground">No subscription</p>
               </>
             )}
           </article>
@@ -192,9 +190,7 @@ export default function BillingSettings() {
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Invoices appear here once your subscription is active.
-            </p>
+            <p className="mt-4 text-sm text-muted-foreground">No invoices yet</p>
           )}
         </section>
 

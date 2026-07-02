@@ -63,8 +63,7 @@ function StudioEmptyState() {
           Wire one.
         </h1>
         <p className="mx-auto mt-2 max-w-prose text-base text-muted-foreground sm:mt-3 sm:text-lg">
-          Start with a brief. Tell your agent what to do — calls, texts, follow-ups — and it learns
-          from every outcome.
+          Brief it. It learns from every outcome.
         </p>
 
         <div className="mt-6 space-y-4 sm:mt-8">
@@ -99,15 +98,10 @@ function StudioEmptyState() {
               <Plus size={15} className="sm:size-[17px]" /> Wire it (start setup)
             </Link>
             <span className="self-center text-[10px] text-muted-foreground sm:text-xs">
-              or press Enter in the box above
+              or press Enter
             </span>
           </div>
         </div>
-
-        <p className="mt-5 text-[10px] text-muted-foreground sm:mt-6">
-          After creation, open the agent’s workspace for full voice previews, personality,
-          knowledge, tools, and business routing.
-        </p>
       </div>
     </div>
   );

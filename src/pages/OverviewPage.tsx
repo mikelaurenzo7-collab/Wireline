@@ -358,7 +358,7 @@ export default function OverviewPage() {
 
         {degraded ? (
           <StatusNotice tone="warning" title="Status partial.">
-            Agent links are recovering. The workspace is using the last safe state.
+            Agent links are recovering — showing the last safe state.
           </StatusNotice>
         ) : null}
 

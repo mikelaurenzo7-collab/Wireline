@@ -323,10 +323,6 @@ export default function CrmConnectionCard() {
       <div className="rounded-md wl-panel border border-border px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="wl-label text-brand">Connected stack</p>
-          <p className="text-caption mt-0.5">
-            {connectedCount} of {PROVIDERS.length} integrations active — agents unlock tools per
-            connection.
-          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="chip-brand">{connectedCount} live</span>

@@ -15,7 +15,6 @@ export default function AppShell() {
       <TransitionSurface
         eyebrow="Workspace"
         title="Opening your workspace"
-        description="Syncing your agents, inbox, and settings before you land."
         busyLabel="Checking your session"
       />
     );

@@ -99,10 +99,6 @@ export function AccountsPanel() {
     <div className="space-y-6">
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-1">Your Accounts</h3>
-        <p className="text-xs text-muted-foreground">
-          Switch between workspaces or add a new account type. Your active account determines which
-          workspace and navigation you see.
-        </p>
       </div>
 
       <div className="space-y-3">
@@ -118,10 +114,7 @@ export function AccountsPanel() {
 
       {(canAddPersonal || canAddBusiness) && (
         <div>
-          <p className="text-xs text-muted-foreground mb-3">
-            You can have one personal and one business account. Add the other to unlock its
-            workspace.
-          </p>
+          <p className="text-xs text-muted-foreground mb-3">One personal, one business.</p>
           <div className="flex gap-3">
             {canAddPersonal && (
               <button

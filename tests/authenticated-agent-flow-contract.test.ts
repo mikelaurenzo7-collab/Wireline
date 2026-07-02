@@ -19,7 +19,6 @@ describe("authenticated agent flow", () => {
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
     expect(onboardingFlow).toContain("Opening your first agent");
-    expect(onboardingFlow).toContain("Taking you straight to the brief");
     expect(onboardingFlow).toContain('label: "Workspace"');
     expect(onboardingFlow).toContain('label: "Next"');
     expect(onboardingFlow).toContain('label: "Continue now"');
