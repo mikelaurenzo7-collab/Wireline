@@ -108,7 +108,7 @@ function isAssistantMessage(role: string) {
 function InboxLoadingState({ frameClass }: { frameClass: string }) {
   return (
     <section
-      className={`${frameClass} grid place-items-center px-5`}
+      className={`${frameClass} grid flex-1 place-items-center px-5`}
       aria-busy="true"
       aria-live="polite"
     >
@@ -288,11 +288,11 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   if (threads.length === 0) {
     return (
-      <section className={`${frameClass} grid place-items-center px-5 text-center`}>
+      <section className={`${frameClass} grid flex-1 place-items-center px-5 text-center`}>
         <div className="w-full max-w-lg">
           <EmptyState
             density="default"
-            className="studio-card w-full px-6 py-10 sm:px-8"
+            className="studio-card w-full px-6 py-10 text-center sm:px-8"
             icon={<Mail className="size-5" />}
             title="No email yet"
             action={

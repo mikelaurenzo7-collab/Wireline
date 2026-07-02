@@ -123,7 +123,8 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--wireline-color-canvas-default) 30%, transparent);
+  /* ≥4.5:1 on the dark brand panel — 30% failed WCAG AA (axe color-contrast). */
+  color: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, transparent);
   margin-top: 4px;
 }
 

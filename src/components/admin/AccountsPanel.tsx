@@ -23,7 +23,7 @@ function AccountCard({
     <button
       onClick={onSwitch}
       className={cn(
-        "relative flex items-start gap-4 p-5 border text-left transition-all w-full",
+        "relative flex items-start gap-4 rounded-xl p-5 border text-left transition-all w-full",
         isActive
           ? "border-primary bg-primary/[0.03] shadow-sm"
           : "border-border bg-card hover:border-primary/30 hover:bg-primary/[0.01]",
@@ -31,7 +31,7 @@ function AccountCard({
     >
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
           isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
         )}
       >
@@ -43,12 +43,12 @@ function AccountCard({
             {account.label ?? (account.type === "personal" ? "Personal" : "Business")}
           </span>
           {account.isPrimary && (
-            <span className="inline-flex items-center px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
+            <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
               Primary
             </span>
           )}
           {isActive && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
+            <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
               <Check className="h-2.5 w-2.5" /> Active
             </span>
           )}
@@ -73,9 +73,7 @@ export function AccountsPanel() {
 
   const handleSwitch = (account: Account) => {
     switchAccount(account.id);
-    navigate(account.type === "personal" ? "/app/personal" : "/app/business/live", {
-      replace: true,
-    });
+    navigate("/overview", { replace: true });
   };
 
   const handleAdd = async (type: "personal" | "business") => {
@@ -83,7 +81,7 @@ export function AccountsPanel() {
     const created = await addAccount(type);
     setCreating(null);
     if (created) {
-      navigate(type === "personal" ? "/app/personal" : "/app/business/live", { replace: true });
+      navigate("/overview", { replace: true });
     }
   };
 
@@ -97,10 +95,6 @@ export function AccountsPanel() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-1">Your Accounts</h3>
-      </div>
-
       <div className="space-y-3">
         {accounts.map((account) => (
           <AccountCard
@@ -120,28 +114,28 @@ export function AccountsPanel() {
               <button
                 onClick={() => handleAdd("personal")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
               >
                 {creating === "personal" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                Add Personal Account
+                Add personal account
               </button>
             )}
             {canAddBusiness && (
               <button
                 onClick={() => handleAdd("business")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
               >
                 {creating === "business" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                Add Business Account
+                Add business account
               </button>
             )}
           </div>
