@@ -24,6 +24,7 @@
     "verify:full": "npm run lint && npm run design:check && npm run authz:check && npm run server:bootstrap:check && npm run csp:check && npm run test:run && npm run build && npm run smoke:server",
     "test": "vitest --pool vmThreads --exclude tests/e2e/**",
     "test:run": "vitest run --pool vmThreads --exclude tests/e2e/**",
+    "test:e2e": "playwright test",
     "test:coverage": "vitest run --pool vmThreads --exclude tests/e2e/** --coverage",
     "visual:qa": "node scripts/capture-visual-qa.mjs",
     "design:check": "node scripts/check-wireline-clear-system.mjs",
