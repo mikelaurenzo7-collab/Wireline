@@ -1,4 +1,4 @@
-/** Shared product voice — personal phone agent, configure it however you need. */
+/** Shared product voice for public marketing, workspace copy, and audience positioning. */
 
 export const MARKETING_VOICE = {
   eyebrow: "voice agents · in beta",
