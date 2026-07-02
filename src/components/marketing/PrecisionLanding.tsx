@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
@@ -85,7 +85,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             {[30, 70, 100, 50, 85, 40, 95, 60].map((h, i) => (
               <div
                 key={i}
-                className="w-[3px] rounded-sm bg-[var(--wireline-color-status-success)]"
+                className="wireline-wave-bar w-[3px] rounded-sm bg-[var(--wireline-color-status-success)]"
                 style={{
                   height: `${h}%`,
                   animation: `waveBar 1.2s ease-in-out infinite`,
@@ -137,6 +137,14 @@ const audiences: { key: Audience; label: string }[] = [
   { key: "personal", label: "Personal" },
   { key: "business", label: "Business" },
 ];
+
+function getAudienceTabId(key: Audience) {
+  return `wireline-${key}-audience-tab`;
+}
+
+function getAudiencePanelId(key: Audience) {
+  return `wireline-${key}-audience-panel`;
+}
 
 const HERO_AUDIENCE_COPY: Record<
   Audience,
@@ -298,6 +306,35 @@ export default function PrecisionLanding() {
   const configs = audience === "personal" ? PERSONAL_CONFIGS : BUSINESS_CONFIGS;
   const heroCopy = HERO_AUDIENCE_COPY[audience];
 
+  const selectAudience = (key: Audience, focusAfterSelect = false) => {
+    setAudience(key);
+
+    if (focusAfterSelect) {
+      window.requestAnimationFrame(() => document.getElementById(getAudienceTabId(key))?.focus());
+    }
+  };
+
+  const handleAudienceKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = audiences.findIndex(({ key }) => key === audience);
+    const lastIndex = audiences.length - 1;
+    let nextIndex = currentIndex;
+
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = lastIndex;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    selectAudience(audiences[nextIndex].key, true);
+  };
+
   return (
     <div className="wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
@@ -306,8 +343,8 @@ export default function PrecisionLanding() {
         @keyframes waveBar { 0%,100% { transform: scaleY(.3) } 50% { transform: scaleY(1) } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
         @media (prefers-reduced-motion: reduce) {
-          .wireline-hero-motion { animation: none !important; transform: none !important; }
-          [style*="waveBar"] { animation: none !important; }
+          .wireline-hero-motion,
+          .wireline-wave-bar { animation: none !important; transform: none !important; }
         }
       `}</style>
 
@@ -322,24 +359,32 @@ export default function PrecisionLanding() {
             <div className="wireline-hero-motion" style={{ animation: "fadeUp .7s ease-out both" }}>
               <div
                 className="mb-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-[var(--wireline-elevation-xs)]"
-                role="group"
-                aria-label="Choose agent audience"
+                role="tablist"
+                aria-label="Audience mode"
+                onKeyDown={handleAudienceKeyDown}
               >
-                {audiences.map(({ key, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-pressed={audience === key}
-                    onClick={() => setAudience(key)}
-                    className={`min-h-10 rounded-md px-4 text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
-                      audience === key
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+                {audiences.map(({ key, label }) => {
+                  const selected = audience === key;
+                  return (
+                    <button
+                      key={key}
+                      id={getAudienceTabId(key)}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-controls={getAudiencePanelId(key)}
+                      tabIndex={selected ? 0 : -1}
+                      onClick={() => selectAudience(key)}
+                      className={`min-h-10 rounded-md px-4 text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
+                        selected
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
@@ -413,7 +458,18 @@ export default function PrecisionLanding() {
 
             {/* Right: live call card */}
             <div className="wireline-hero-motion" style={{ animation: "fadeUp .7s ease-out .15s both" }}>
-              <LiveCallCard variant={audience} />
+              {audiences.map(({ key, label }) => (
+                <div
+                  key={key}
+                  id={getAudiencePanelId(key)}
+                  role="tabpanel"
+                  aria-labelledby={getAudienceTabId(key)}
+                  aria-label={`${label} agent preview`}
+                  hidden={audience !== key}
+                >
+                  {audience === key ? <LiveCallCard variant={key} /> : null}
+                </div>
+              ))}
             </div>
           </div>
         </section>
