@@ -1,16 +1,16 @@
 name: Marketing e2e
 
-on:
-  pull_request:
+"on":
+  pull_request: {}
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
 
 concurrency:
-  group: marketing-e2e-${{ github.ref }}
+  group: "marketing-e2e-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
