@@ -1,6 +1,0 @@
-- `[x]` Codify "Wireline Autonomous Director" skill in `.agents/skills/wireline-autonomous-director/SKILL.md`
-- `[x]` Expand `scripts/capture-prod-visual-qa.mjs` with 10 evolutionary focused mode targets
-- `[x]` Seed initial synchronized state ledger `artifacts/wireline-state-ledger.json`
-- `[x]` Terminate legacy schedules and register new 30-run scheduled loop with Evolutionary Execution Engine prompt
-- `[x]` Run code formatting and verification loops
-- `[x]` Perform final git stage, commit, and pre-push validation

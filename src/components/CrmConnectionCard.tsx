@@ -316,7 +316,6 @@ export default function CrmConnectionCard() {
 
   if (!state) return null;
 
-  const groups = [...new Set(PROVIDERS.map((p) => p.group))];
   const connectedCount = PROVIDERS.filter((p) => state[p.key]?.connected).length;
 
   return (
@@ -352,305 +351,290 @@ export default function CrmConnectionCard() {
         </div>
       </div>
 
-      {groups.map((group) => {
-        const groupProviders = PROVIDERS.filter((p) => p.group === group);
-        return (
-          <div key={group} className="space-y-3">
-            <div className="wl-label text-brand/70">{group} Integrations</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3">
-              <AnimatePresence mode="popLayout">
-                {groupProviders.map(({ key, label, logo, beta }) => {
-                  const styles = CONNECTED_STYLES;
-                  const s = state[key];
-                  if (!s) return null;
-                  const isConnecting = connecting === key;
-                  const detail = s.email || s.team || "";
-                  const betaPill = beta ? (
-                    <span
-                      className="ml-1 wl-label px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
-                      title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
-                    >
-                      Beta
-                    </span>
-                  ) : null;
+      {/* One flat grid keeps the page symmetric at every viewport; each card
+          carries its own category chip instead of a one-card section. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
+        <AnimatePresence mode="popLayout">
+          {PROVIDERS.map(({ key, label, logo, group, beta }) => {
+            const styles = CONNECTED_STYLES;
+            const s = state[key];
+            if (!s) return null;
+            const isConnecting = connecting === key;
+            const detail = s.email || s.team || "";
+            const betaPill = beta ? (
+              <span
+                className="ml-1 wl-label px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
+                title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
+              >
+                Beta
+              </span>
+            ) : null;
 
-                  const platformReady = s.configured !== false;
-                  const oauthConnectAvailable =
-                    key !== "apollo" || s.oauth_connect_available !== false;
-                  const apolloPlatformOnly =
-                    key === "apollo" && platformReady && !oauthConnectAvailable && !s.connected;
+            const platformReady = s.configured !== false;
+            const oauthConnectAvailable = key !== "apollo" || s.oauth_connect_available !== false;
+            const apolloPlatformOnly =
+              key === "apollo" && platformReady && !oauthConnectAvailable && !s.connected;
 
-                  return (
-                    <motion.div
-                      key={key}
-                      layout
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={cn(
-                        "rounded-md wl-panel border max-sm:p-2.5 p-3 sm:p-4 h-full flex flex-col",
-                        s.connected ? styles.card : "border-border",
-                      )}
-                    >
-                      <div className="flex items-start gap-3 flex-1">
-                        <div
-                          className={cn(
-                            "w-9 h-9 rounded-md flex items-center justify-center p-1.5 border shrink-0",
-                            s.connected
-                              ? styles.icon
-                              : "bg-muted border border-border text-muted/50",
-                          )}
-                        >
-                          {getIntegrationLogo(key) ?? (
-                            <span className="wl-label font-bold">{logo}</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="text-[var(--wireline-typography-overline-size)] font-semibold text-foreground">
-                              {label}
-                            </div>
-                            {s.connected && (
-                              <CheckCircle2 className={cn("w-3 h-3", styles.check)} />
-                            )}
-                            {betaPill}
-                          </div>
-                          {s.connected ? (
-                            <div className="wl-micro-meta--muted leading-snug mt-0.5 truncate">
-                              {detail && <span>{detail} · </span>}
-                              Connected{" "}
-                              {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
-                            </div>
-                          ) : (
-                            <div className="wl-micro-meta--muted leading-snug mt-0.5">
-                              {apolloPlatformOnly
-                                ? "Platform Apollo API active — optional: connect your workspace below"
-                                : platformReady && oauthConnectAvailable
-                                  ? "Ready to connect — click to authorize"
-                                  : platformReady
-                                    ? "Platform configured"
-                                    : "Platform OAuth credentials are not set on this deployment"}
-                            </div>
-                          )}
-                        </div>
-                        <div className="shrink-0">
-                          {s.connected ? (
-                            <div className="flex items-center gap-2">
-                              {s.instance_url && (
-                                <a
-                                  href={s.instance_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
-                                  title={`Open ${label}`}
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              )}
-                              {key === "salesforce" && (
-                                <Link
-                                  to="/actions/salesforce"
-                                  className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
-                                  title="Configure"
-                                >
-                                  <Settings className="w-3.5 h-3.5" />
-                                </Link>
-                              )}
-                              <ShadButton
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                disableAnimations
-                                onClick={disconnect(key)}
-                                className="h-8 w-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
-                                title="Disconnect"
-                              >
-                                <Unlink className="w-3.5 h-3.5" />
-                              </ShadButton>
-                            </div>
-                          ) : platformReady && oauthConnectAvailable ? (
-                            <ShadButton
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disableAnimations
-                              onClick={connect(key)}
-                              disabled={isConnecting}
-                              className={cn(
-                                "rounded-md wl-micro-meta font-medium",
-                                CONNECTED_STYLES.connect,
-                                isConnecting && "opacity-60 pointer-events-none",
-                              )}
-                            >
-                              {isConnecting ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Link2 className="w-3 h-3" />
-                              )}
-                              Connect
-                            </ShadButton>
-                          ) : (
-                            <span className="wl-micro-meta--muted px-2">Unavailable</span>
-                          )}
-                        </div>
+            return (
+              <motion.div
+                key={key}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "rounded-md wl-panel border max-sm:p-2.5 p-3 sm:p-4 h-full flex flex-col",
+                  s.connected ? styles.card : "border-border",
+                )}
+              >
+                <div className="flex items-start gap-3 flex-1">
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-md flex items-center justify-center p-1.5 border shrink-0",
+                      s.connected ? styles.icon : "bg-muted border border-border text-muted/50",
+                    )}
+                  >
+                    {getIntegrationLogo(key) ?? <span className="wl-label font-bold">{logo}</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="text-[var(--wireline-typography-overline-size)] font-semibold text-foreground">
+                        {label}
                       </div>
-                      {s.connected &&
-                        (() => {
-                          const toolInt = toolIntegrationForProvider(key);
-                          if (!toolInt) return null;
-                          return (
-                            <div className="mt-3 pt-3 border-t border-border hidden sm:block">
-                              <IntegrationCapabilityPanel
-                                integration={toolInt}
-                                accentColor={PROVIDER_ACCENT[key] ?? BRAND.colors.primary}
-                                connected
-                                enabledTools={[]}
-                                compact
-                              />
-                            </div>
-                          );
-                        })()}
+                      {s.connected && <CheckCircle2 className={cn("w-3 h-3", styles.check)} />}
+                      {betaPill}
+                    </div>
+                    {s.connected ? (
+                      <div className="wl-micro-meta--muted leading-snug mt-0.5 truncate">
+                        {detail && <span>{detail} · </span>}
+                        Connected{" "}
+                        {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
+                      </div>
+                    ) : (
+                      <div className="wl-micro-meta--muted leading-snug mt-0.5">
+                        {apolloPlatformOnly
+                          ? `${group} · Platform API active — connecting your workspace is optional`
+                          : platformReady && oauthConnectAvailable
+                            ? `${group} · Ready to connect`
+                            : platformReady
+                              ? `${group} · Platform configured`
+                              : `${group} · Not configured on this deployment`}
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0">
+                    {s.connected ? (
+                      <div className="flex items-center gap-2">
+                        {s.instance_url && (
+                          <a
+                            href={s.instance_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
+                            title={`Open ${label}`}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {key === "salesforce" && (
+                          <Link
+                            to="/actions/salesforce"
+                            className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
+                            title="Configure"
+                          >
+                            <Settings className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disableAnimations
+                          onClick={disconnect(key)}
+                          className="h-8 w-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
+                          title="Disconnect"
+                        >
+                          <Unlink className="w-3.5 h-3.5" />
+                        </ShadButton>
+                      </div>
+                    ) : platformReady && oauthConnectAvailable ? (
+                      <ShadButton
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disableAnimations
+                        onClick={connect(key)}
+                        disabled={isConnecting}
+                        className={cn(
+                          "rounded-md wl-micro-meta font-medium",
+                          CONNECTED_STYLES.connect,
+                          isConnecting && "opacity-60 pointer-events-none",
+                        )}
+                      >
+                        {isConnecting ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Link2 className="w-3 h-3" />
+                        )}
+                        Connect
+                      </ShadButton>
+                    ) : (
+                      <span className="wl-micro-meta--muted px-2">Unavailable</span>
+                    )}
+                  </div>
+                </div>
+                {s.connected &&
+                  (() => {
+                    const toolInt = toolIntegrationForProvider(key);
+                    if (!toolInt) return null;
+                    return (
+                      <div className="mt-3 pt-3 border-t border-border hidden sm:block">
+                        <IntegrationCapabilityPanel
+                          integration={toolInt}
+                          accentColor={PROVIDER_ACCENT[key] ?? BRAND.colors.primary}
+                          connected
+                          enabledTools={[]}
+                          compact
+                        />
+                      </div>
+                    );
+                  })()}
 
-                      {key === "shopify" && !s.connected && (
-                        <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
-                          <div className="wl-label text-muted/90">Your store domain</div>
-                          <Input
-                            type="text"
-                            value={shopDomain}
-                            onChange={(e) => {
-                              setShopDomain(e.target.value);
-                              if (shopError) setShopError(null);
-                            }}
-                            placeholder="your-store.myshopify.com"
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/40"
-                          />
-                          {shopError ? (
-                            <p className="wl-micro-meta text-rose-500 leading-snug">{shopError}</p>
-                          ) : (
-                            <p className="wl-micro-meta leading-snug">
-                              Enter your myshopify.com domain, then click Connect to authorize.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      {key === "slack" && s.connected && (
-                        <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                          <div className="wl-label text-muted/90">Default notify channel</div>
-                          {slackChannelsLoading ? (
-                            <div className="flex items-center gap-2 wl-micro-meta--muted">
-                              <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
-                            </div>
-                          ) : (
-                            <Select
-                              value={s.default_channel_id || CRM_SELECT_UNSET}
-                              onValueChange={async (v) => {
-                                if (!v || v === CRM_SELECT_UNSET) return;
-                                await authFetch("/api/oauth/slack/default-channel", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ channel_id: v }),
-                                });
-                                fetchStatus();
-                              }}
+                {key === "shopify" && !s.connected && (
+                  <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                    <div className="wl-label text-muted/90">Your store domain</div>
+                    <Input
+                      type="text"
+                      value={shopDomain}
+                      onChange={(e) => {
+                        setShopDomain(e.target.value);
+                        if (shopError) setShopError(null);
+                      }}
+                      placeholder="your-store.myshopify.com"
+                      spellCheck={false}
+                      autoCapitalize="off"
+                      className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/40"
+                    />
+                    {shopError ? (
+                      <p className="wl-micro-meta text-rose-500 leading-snug">{shopError}</p>
+                    ) : (
+                      <p className="wl-micro-meta leading-snug">
+                        Enter your myshopify.com domain, then click Connect to authorize.
+                      </p>
+                    )}
+                  </div>
+                )}
+                {key === "slack" && s.connected && (
+                  <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                    <div className="wl-label text-muted/90">Default notify channel</div>
+                    {slackChannelsLoading ? (
+                      <div className="flex items-center gap-2 wl-micro-meta--muted">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
+                      </div>
+                    ) : (
+                      <Select
+                        value={s.default_channel_id || CRM_SELECT_UNSET}
+                        onValueChange={async (v) => {
+                          if (!v || v === CRM_SELECT_UNSET) return;
+                          await authFetch("/api/oauth/slack/default-channel", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ channel_id: v }),
+                          });
+                          fetchStatus();
+                        }}
+                      >
+                        <SelectTrigger
+                          aria-label="Default Slack channel"
+                          className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
+                        >
+                          <SelectValue placeholder="Select channel…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={CRM_SELECT_UNSET}>Select channel…</SelectItem>
+                          {slackChannels.map((ch) => (
+                            <SelectItem key={ch.id} value={ch.id}>
+                              {ch.is_private ? "Private: " : "# "}
+                              {ch.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <p className="wl-micro-meta leading-snug">
+                      After OAuth we auto-pick #general when possible. Agents post bookings and
+                      alerts here — change anytime.
+                    </p>
+                  </div>
+                )}
+                {key === "microsoft_teams" && s.connected && (
+                  <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                    <div className="wl-label text-muted/90">Notify team & channel</div>
+                    {teamsTargetsLoading ? (
+                      <div className="flex items-center gap-2 wl-micro-meta--muted">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…
+                      </div>
+                    ) : (
+                      <Select
+                        value={
+                          s.team_id && s.channel_id
+                            ? `${s.team_id}:${s.channel_id}`
+                            : CRM_SELECT_UNSET
+                        }
+                        onValueChange={async (raw) => {
+                          if (!raw || raw === CRM_SELECT_UNSET) return;
+                          const [team_id, channel_id] = raw.split(":");
+                          const pick = teamsTargets.find(
+                            (t) => t.team_id === team_id && t.channel_id === channel_id,
+                          );
+                          await authFetch("/api/oauth/microsoft_teams/notify-target", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              team_id,
+                              channel_id,
+                              team_name: pick?.team_name,
+                              channel_name: pick?.channel_name,
+                            }),
+                          });
+                          fetchStatus();
+                        }}
+                      >
+                        <SelectTrigger
+                          aria-label="Default Teams team and channel"
+                          className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
+                        >
+                          <SelectValue placeholder="Select team channel…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={CRM_SELECT_UNSET}>Select team channel…</SelectItem>
+                          {teamsTargets.map((t) => (
+                            <SelectItem
+                              key={`${t.team_id}:${t.channel_id}`}
+                              value={`${t.team_id}:${t.channel_id}`}
                             >
-                              <SelectTrigger
-                                aria-label="Default Slack channel"
-                                className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
-                              >
-                                <SelectValue placeholder="Select channel…" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value={CRM_SELECT_UNSET}>Select channel…</SelectItem>
-                                {slackChannels.map((ch) => (
-                                  <SelectItem key={ch.id} value={ch.id}>
-                                    {ch.is_private ? "Private: " : "# "}
-                                    {ch.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                          <p className="wl-micro-meta leading-snug">
-                            After OAuth we auto-pick #general when possible. Agents post bookings
-                            and alerts here — change anytime.
-                          </p>
-                        </div>
-                      )}
-                      {key === "microsoft_teams" && s.connected && (
-                        <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                          <div className="wl-label text-muted/90">Notify team & channel</div>
-                          {teamsTargetsLoading ? (
-                            <div className="flex items-center gap-2 wl-micro-meta--muted">
-                              <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…
-                            </div>
-                          ) : (
-                            <Select
-                              value={
-                                s.team_id && s.channel_id
-                                  ? `${s.team_id}:${s.channel_id}`
-                                  : CRM_SELECT_UNSET
-                              }
-                              onValueChange={async (raw) => {
-                                if (!raw || raw === CRM_SELECT_UNSET) return;
-                                const [team_id, channel_id] = raw.split(":");
-                                const pick = teamsTargets.find(
-                                  (t) => t.team_id === team_id && t.channel_id === channel_id,
-                                );
-                                await authFetch("/api/oauth/microsoft_teams/notify-target", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    team_id,
-                                    channel_id,
-                                    team_name: pick?.team_name,
-                                    channel_name: pick?.channel_name,
-                                  }),
-                                });
-                                fetchStatus();
-                              }}
-                            >
-                              <SelectTrigger
-                                aria-label="Default Teams team and channel"
-                                className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
-                              >
-                                <SelectValue placeholder="Select team channel…" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value={CRM_SELECT_UNSET}>
-                                  Select team channel…
-                                </SelectItem>
-                                {teamsTargets.map((t) => (
-                                  <SelectItem
-                                    key={`${t.team_id}:${t.channel_id}`}
-                                    value={`${t.team_id}:${t.channel_id}`}
-                                  >
-                                    {t.team_name} / {t.channel_name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                          {s.team_name && s.channel_name ? (
-                            <p className="wl-micro-meta leading-snug">
-                              Current: {s.team_name} → {s.channel_name}
-                            </p>
-                          ) : (
-                            <p className="wl-micro-meta leading-snug">
-                              Pick where call alerts post. Without a selection we use your first
-                              team channel.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-          </div>
-        );
-      })}
+                              {t.team_name} / {t.channel_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {s.team_name && s.channel_name ? (
+                      <p className="wl-micro-meta leading-snug">
+                        Current: {s.team_name} → {s.channel_name}
+                      </p>
+                    ) : (
+                      <p className="wl-micro-meta leading-snug">
+                        Pick where call alerts post. Without a selection we use your first team
+                        channel.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

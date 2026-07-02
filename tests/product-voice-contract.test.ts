@@ -16,15 +16,15 @@ describe("product voice cohesion", () => {
     ]);
   });
 
-  it("wires landing and overview surfaces to shared voice constants", () => {
+  it("wires landing and workroom surfaces to shared voice constants", () => {
     const landing = read("src/components/marketing/PrecisionLanding.tsx");
-    const overview = read("src/pages/OverviewPage.tsx");
+    const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE");
-    // Claude Design Overview is a dashboard (greeting + metrics + roster + recent calls),
-    // not a composer surface — the composer-dock utility lives in marketing
-    // and the Studio Workroom now.
-    expect(overview).toContain("WORKSPACE_VOICE");
+    // Claude Design Overview is a dashboard (greeting + metrics + roster + recent
+    // calls) with its own honest copy; the shared workspace voice constants live
+    // where the conversation happens — the Studio Workroom composer.
+    expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 });

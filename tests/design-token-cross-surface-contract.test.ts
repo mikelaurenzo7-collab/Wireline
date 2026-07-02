@@ -65,11 +65,11 @@ describe("cross-surface design token generation", () => {
     expect(designSystem).toContain(".wl-composer-dock");
     expect(designSystem).toContain(".wl-chip-suggestion");
     expect(designSystem).toContain(".wl-panel-elevated");
-    // The composer-dock utility lives on Studio Workroom (the chat composer);
-    // Claude Design Overview is a dashboard and wires the shared voice copy.
+    // The composer-dock utility and the shared workspace voice constants live
+    // on Studio Workroom (the chat composer); Claude Design Overview is a
+    // dashboard with its own honest copy.
     const workroom = read("src/components/StudioWorkroom.tsx");
     expect(workroom).toContain("wl-composer-dock");
-    const overview = read("src/pages/OverviewPage.tsx");
-    expect(overview).toContain("WORKSPACE_VOICE");
+    expect(workroom).toContain("WORKSPACE_VOICE");
   });
 });

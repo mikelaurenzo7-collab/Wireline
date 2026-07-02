@@ -68,7 +68,9 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "deploy", pattern: /Deploy/ },
   ],
   overview: [
-    { id: "overview-title", pattern: /title="Overview"/ },
+    // Nav carries the "Overview" label; the page itself leads with a
+    // personalized greeting headline.
+    { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
     // Agent language only; Assistant was retired by the migration plan.
     { id: "new-agent", pattern: /New agent/ },
     { id: "personal-agents", pattern: /Personal agents/ },

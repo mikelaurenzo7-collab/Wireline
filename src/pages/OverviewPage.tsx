@@ -225,9 +225,10 @@ export default function OverviewPage() {
     async function loadDashboard() {
       setLoadingDashboard(true);
       try {
-        const [statsRes, crmRes, balanceRes] = await Promise.all([
+        const [statsRes, crmRes, calendarRes, balanceRes] = await Promise.all([
           authFetch("/api/dashboard/stats"),
           authFetch("/api/oauth/crm/status"),
+          authFetch("/api/calendar/accounts"),
           authFetch("/api/conversation-balance"),
         ]);
 
@@ -260,8 +261,16 @@ export default function OverviewPage() {
             .map(([name]) =>
               name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
             );
-          const hasNumbers = agents.some((agent) => agent.phone_number);
-          const core: string[] = hasNumbers ? ["Calendar", "SMS"] : ["Calendar"];
+          // Only real links count: a linked calendar account and a live phone
+          // line (which carries SMS). No decorative placeholder connections.
+          const core: string[] = [];
+          if (calendarRes.ok) {
+            const calendarData = await calendarRes.json().catch(() => null);
+            if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
+              core.push("Calendar");
+            }
+          }
+          if (agents.some((agent) => agent.phone_number)) core.push("SMS");
           const allConns = [...core, ...activeProviders];
           setConnectionsCount(allConns.length);
           setConnectionsDetail(
@@ -353,7 +362,7 @@ export default function OverviewPage() {
           </StatusNotice>
         ) : null}
 
-        <section>
+        <section aria-label="Quick actions">
           <div className="flex flex-wrap justify-center gap-2">
             {QUICK_ACTIONS.map(({ href, icon: Icon, title }) => (
               <Link

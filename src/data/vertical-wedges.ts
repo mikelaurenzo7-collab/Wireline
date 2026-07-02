@@ -110,7 +110,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "AI voice + email agent for dental, med spa, chiropractic, and primary care practices. Book appointments and manage intake. Call the medical demo.",
     eyebrow: "For Medical Practices",
-    headline: "Patients waiting on hold becomes patients on the schedule.",
+    headline: "Patients on hold become patients on the schedule.",
     subhead:
       "An AI front desk that answers every call. Qualifies the visit type. Books the next available slot. Sends the patient an SMS confirmation. While your staff focuses on the room.",
     pains: [

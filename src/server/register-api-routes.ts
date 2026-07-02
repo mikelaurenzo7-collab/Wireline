@@ -23,6 +23,7 @@ import settingsRouter from "../routes/settings-routes";
 import carrierRouter from "../routes/carrier-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
+import dashboardRouter from "../routes/dashboard-routes";
 import calendarRouter from "../routes/calendar-routes";
 import workspaceKnowledgeRouter from "../routes/workspace-knowledge-routes";
 import icloudMailRouter from "../routes/icloud-mail-routes";
@@ -61,6 +62,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(subscriptionCheckoutGuardRouter);
   app.use("/api", billingRouter);
   app.use(emailRouter);
+  // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,
+  // /api/nav-counts, /api/export/:type.csv — Overview and Call Logs read these.
+  app.use(dashboardRouter);
   app.use(calendarRouter);
   app.use(workspaceKnowledgeRouter);
   app.use(icloudMailRouter);

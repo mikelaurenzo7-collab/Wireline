@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import TransitionSurface from "../components/TransitionSurface";
+import WorkspaceShell from "../components/WorkspaceShell";
 
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHomeClaude"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
@@ -25,6 +26,16 @@ const loading = (
     busyLabel="Loading route"
   />
 );
+
+/** Admin panels predate the workspace rail — give them the shared shell so
+ *  /admin sits inside the same chrome and rhythm as every other surface. */
+function AdminWorkspace() {
+  return (
+    <WorkspaceShell fullBleed contentClassName="px-4 pt-4 pb-6 sm:px-6 lg:px-8">
+      <AdminSettings />
+    </WorkspaceShell>
+  );
+}
 
 export default function AppRoutes() {
   return (
@@ -52,8 +63,8 @@ export default function AppRoutes() {
         <Route path="/settings/customization" element={<CustomizationSettings />} />
         <Route path="/settings/apps" element={<ClientAppsPage />} />
         <Route path="/settings/*" element={<SettingsPage />} />
-        <Route path="/admin" element={<AdminSettings />} />
-        <Route path="/admin/*" element={<AdminSettings />} />
+        <Route path="/admin" element={<AdminWorkspace />} />
+        <Route path="/admin/*" element={<AdminWorkspace />} />
 
         <Route path="/pulse" element={<Navigate to="/overview" replace />} />
         <Route path="/fleet" element={<Navigate to="/studio" replace />} />
