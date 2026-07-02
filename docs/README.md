@@ -35,7 +35,9 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 
 ## Verification
 
+- `npm run verify:contracts` - focused product voice, marketing metadata, static metadata, and event taxonomy contracts.
 - `npm run verify` - design check, build, and bundled-server smoke.
 - `npm run verify:full` - lint, design/authz/CSP checks, tests, build, and smoke.
+- `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
 - `node apps/browser-extension/scripts/build.mjs --check` - browser extension contract and packaging smoke.
 - `GET /api/health` - deployment health probe.
