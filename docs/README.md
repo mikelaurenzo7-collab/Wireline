@@ -1,22 +1,25 @@
 # Wireline Documentation
 
-Wireline is one agent platform across web, browser, mobile, and ChatGPT. The product model is `Create -> Train -> Run`.
+Wireline is one agent platform across web, browser, mobile, and ChatGPT. The product model is `Create -> Train -> Run`, with Wire as the deliberate launch and integration layer.
 
 ## Active product surface
 
 | Area | Source | Purpose |
 | --- | --- | --- |
-| Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
+| Overview | `src/pages/OverviewPage.tsx` | Calm command center for agents, calls, connections, and Conversation Balance. |
+| Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
 | Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx` | Deep configuration for sources, documents, behavior, voice, policies, and evaluation. |
 | Run | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` | Chat-first execution for calls, texts, follow-up, approvals, and handoff. |
-| Wire | `src/pages/ActionsPage.tsx`, `src/components/ActionsWorkspace.tsx` | Numbers, integrations, routing, connected tools, and launch controls. |
+| Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` | Numbers, integrations, routing, connected tools, and launch controls. |
 | Browser | `apps/browser-extension/` | Wireline Command: explicit page-context handoff into Studio. |
 | Native | `ios/`, `android/` | Call-first control surfaces, widgets, notifications, and native approvals. |
 
 ## Current product rules
 
 - User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, and `Conversation Balance`.
+- Overview is the calm command center; Studio is the workroom.
 - Training owns the heavy configuration surface and document ingestion.
+- Wire/Connections owns numbers, integrations, routing, connected tools, and launch controls.
 - Studio is a chat-first workroom and does not have the old right context rail.
 - Wireline Command is the browser surface name; do not restore the retired extension name.
 - The design system is Wireline Letterpress / Wireline Clear System. Product chrome uses forest-green action, warm paper, ink text, and restrained status colors.
@@ -35,7 +38,7 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 
 ## Verification
 
-- `npm run verify:contracts` - focused product voice, marketing metadata, static metadata, and event taxonomy contracts.
+- `npm run verify:contracts` - focused product voice, authenticated page map, marketing metadata, static metadata, and event taxonomy contracts.
 - `npm run verify` - design check, build, and bundled-server smoke.
 - `npm run verify:full` - lint, design/authz/CSP checks, tests, build, and smoke.
 - `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
