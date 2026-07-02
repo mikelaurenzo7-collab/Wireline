@@ -30,6 +30,9 @@ import icloudMailRouter from "../routes/icloud-mail-routes";
 import emailUnsubscribeRouter from "../routes/email-unsubscribe-routes";
 import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
+import smsRouter from "../routes/sms-routes";
+import webhookRouter from "../routes/webhook-routes";
+import intakeRouter from "../routes/intake-routes";
 
 /**
  * Canonical API route order.
@@ -70,5 +73,12 @@ export function registerApiRoutes(app: Express): void {
   app.use(icloudMailRouter);
   app.use(emailUnsubscribeRouter);
   app.use(metaWebhookRouter);
+  // SMS threads power the Inbox SMS tab (/api/sms/threads*).
+  app.use(smsRouter);
+  // Tenant webhook management — mounted after metaWebhookRouter so the
+  // public /api/webhooks/meta/leads receiver keeps precedence.
+  app.use("/api/webhooks", webhookRouter);
+  // Intake keys + key-authenticated public lead capture (/api/intake/*).
+  app.use("/api/intake", intakeRouter);
   app.use(marketingRuntimeRouter);
 }

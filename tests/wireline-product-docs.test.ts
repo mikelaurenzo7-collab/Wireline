@@ -64,7 +64,7 @@ describe("Wireline product documentation contract", () => {
     const ios = read("ios/README.md");
 
     for (const source of [android, ios]) {
-      expect(source).toContain("Your phone, finally answering for you");
+      expect(source).toContain("Wire your agent");
       expect(source).toContain("Wireline Letterpress");
     }
   });
@@ -73,10 +73,10 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline — Your phone, finally answering for you.");
-    expect(head).toContain("voice AI that picks up your phone");
-    expect(ogImage).toMatch(/Your phone,[\s\S]*finally[\s\S]*answering[\s\S]*for you\./);
-    expect(ogImage).toContain("Calls, bookings, messages, errands, and follow-up.");
+    expect(head).toContain("Wireline — Wire your agent.");
+    expect(head).toContain("trained voice agents that answer, route, book, follow up");
+    expect(ogImage).toMatch(/WIRE YOUR[\s\S]*AGENT/);
+    expect(ogImage).toContain("Answer. Route. Book. Follow up. Text the outcome.");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });

@@ -15,7 +15,7 @@ surface for the agents.
 
 Wireline should be instantly understandable:
 
-> Your phone, finally answering for you.
+> Wire your agent.
 
 The native app is the everyday control surface: ask Wireline, check live calls,
 review recaps, manage callback handoff, and keep the account activated across

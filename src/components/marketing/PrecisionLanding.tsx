@@ -390,7 +390,9 @@ export default function PrecisionLanding() {
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
                 <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
                 <span className="wl-eyebrow text-muted-foreground">
-                  {audience === "business" ? BUSINESS_MARKETING_VOICE.eyebrow : MARKETING_VOICE.eyebrow}
+                  {audience === "business"
+                    ? BUSINESS_MARKETING_VOICE.eyebrow
+                    : MARKETING_VOICE.eyebrow}
                 </span>
               </div>
 
@@ -411,7 +413,10 @@ export default function PrecisionLanding() {
                 {MARKETING_VOICE.subline}
               </p>
 
-              <p id="wireline-audience-note" className="mt-3 max-w-[38rem] text-[14px] leading-[1.6] text-muted-foreground">
+              <p
+                id="wireline-audience-note"
+                className="mt-3 max-w-[38rem] text-[14px] leading-[1.6] text-muted-foreground"
+              >
                 {heroCopy.note}
               </p>
 
@@ -446,7 +451,10 @@ export default function PrecisionLanding() {
 
               <ul className="mt-7 grid gap-2 sm:grid-cols-3" aria-label="Core outcomes">
                 {HERO_OUTCOMES.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                  >
                     <span className="marketing-proof-chip h-[18px] w-[18px]" aria-hidden="true">
                       ✓
                     </span>
@@ -457,7 +465,10 @@ export default function PrecisionLanding() {
             </div>
 
             {/* Right: live call card */}
-            <div className="wireline-hero-motion" style={{ animation: "fadeUp .7s ease-out .15s both" }}>
+            <div
+              className="wireline-hero-motion"
+              style={{ animation: "fadeUp .7s ease-out .15s both" }}
+            >
               {audiences.map(({ key, label }) => (
                 <div
                   key={key}

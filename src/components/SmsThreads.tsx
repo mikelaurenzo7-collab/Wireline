@@ -545,7 +545,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           </Button>
                         </div>
                         <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                          Sent from your Twilio sender · TCPA opt-out applies · STOP keyword
+                          Sent from your Wireline number · TCPA opt-out applies · STOP keyword
                           auto-honored.
                         </p>
                       </div>

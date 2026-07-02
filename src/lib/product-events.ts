@@ -94,7 +94,9 @@ export function isProductEventAudience(
   return !!value && PRODUCT_EVENT_AUDIENCE_SET.has(value);
 }
 
-export function isProductEventSurface(value: string | null | undefined): value is ProductEventSurface {
+export function isProductEventSurface(
+  value: string | null | undefined,
+): value is ProductEventSurface {
   return !!value && PRODUCT_EVENT_SURFACE_SET.has(value);
 }
 

@@ -103,7 +103,7 @@ mustInclude(
 mustInclude(
   "android/README.md",
   androidReadme,
-  /Your phone, finally answering for you/,
+  /Wire your agent/,
   "Android docs must use agent-forward promise",
 );
 mustInclude(
@@ -116,7 +116,7 @@ mustInclude(
 mustInclude(
   "ios/README.md",
   iosReadme,
-  /Your phone, finally answering for you/,
+  /Wire your agent/,
   "iOS docs must use agent-forward promise",
 );
 mustInclude(
@@ -129,13 +129,13 @@ mustInclude(
 mustInclude(
   "index.html",
   staticHead,
-  /Wireline — Your phone, finally answering for you\./,
+  /Wireline — Wire your agent\./,
   "static metadata must use current positioning",
 );
 mustInclude(
   "index.html",
   staticHead,
-  /voice AI that picks up your phone/i,
+  /trained voice agents that answer, route, book, follow up/i,
   "static metadata must describe the Letterpress landing promise",
 );
 mustExcludeTerms(
@@ -148,13 +148,13 @@ mustExcludeTerms(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Your phone,[\s\S]*finally[\s\S]*answering[\s\S]*for you\./,
+  /WIRE YOUR[\s\S]*AGENT/,
   "OG image must use the Letterpress landing promise",
 );
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Calls, bookings, messages, errands, and follow-up\./,
+  /Answer\. Route\. Book\. Follow up\. Text the outcome\./,
   "OG image must reinforce the phone-agent promise",
 );
 mustExcludeTerms(

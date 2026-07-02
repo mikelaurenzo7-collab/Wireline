@@ -322,7 +322,7 @@ export default function Pricing() {
               {[
                 [
                   "Included lines",
-                  "Team and Business include dedicated phone numbers so customers do not have to wire Twilio themselves.",
+                  "Team and Business include dedicated phone numbers so you never wire a carrier yourself.",
                 ],
                 [
                   "Expansion",

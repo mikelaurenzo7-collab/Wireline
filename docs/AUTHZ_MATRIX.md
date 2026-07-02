@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 138  
-**Protected:** 108  
-**Public (allowlisted):** 30  
+**Routes scanned:** 156  
+**Protected:** 124  
+**Public (allowlisted):** 32  
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -35,6 +35,8 @@
 | `GET /api/health/launch-readiness` | Liveness/readiness probes; rate-limited, no PII |
 | `GET /api/health/public` | Liveness/readiness probes; rate-limited, no PII |
 | `GET /api/health/ready` | Liveness/readiness probes; rate-limited, no PII |
+| `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
+| `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
 | `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
@@ -152,6 +154,12 @@
 | health-routes.ts | GET | `/api/health/ready` | — | — | yes | Public (allowlisted) |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/connect` | inline | — | — | Protected |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/disconnect` | inline | — | — | Protected |
+| intake-routes.ts | GET | `/api/intake/keys` | inline | — | — | Protected |
+| intake-routes.ts | POST | `/api/intake/keys` | inline | — | — | Protected |
+| intake-routes.ts | PATCH | `/api/intake/keys/:id` | inline | — | — | Protected |
+| intake-routes.ts | DELETE | `/api/intake/keys/:id` | inline | — | — | Protected |
+| intake-routes.ts | POST | `/api/intake/lead` | — | — | yes | Public (allowlisted) |
+| intake-routes.ts | POST | `/api/intake/leads` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
@@ -172,6 +180,10 @@
 | settings-routes.ts | GET | `/api/user-preferences` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
 | settings-routes.ts | DELETE | `/api/user/account` | inline | — | — | Protected |
+| sms-routes.ts | GET | `/api/sms/threads` | inline | — | — | Protected |
+| sms-routes.ts | POST | `/api/sms/threads/:id/mark-read` | inline | — | — | Protected |
+| sms-routes.ts | GET | `/api/sms/threads/:id/messages` | inline | — | — | Protected |
+| sms-routes.ts | POST | `/api/sms/threads/:id/reply` | inline | — | — | Protected |
 | spend-control-routes.ts | GET | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | PUT | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | GET | `/api/spend/status` | inline | — | — | Protected |
@@ -184,5 +196,13 @@
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |
 | voices-routes.ts | GET | `/api/voices/:id/preview` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | POST | `/api/voices/clone` | inline | — | — | Protected |
+| webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
+| webhook-routes.ts | POST | `/api/webhooks` | inline | yes | — | Protected |
+| webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | yes | — | Protected |
+| webhook-routes.ts | DELETE | `/api/webhooks/:id` | inline | yes | — | Protected |
+| webhook-routes.ts | GET | `/api/webhooks/:id/deliveries` | inline | — | — | Protected |
+| webhook-routes.ts | POST | `/api/webhooks/:id/test` | inline | yes | — | Protected |
+| webhook-routes.ts | DELETE | `/api/webhooks/deliveries/:id` | inline | — | — | Protected |
+| webhook-routes.ts | POST | `/api/webhooks/deliveries/:id/retry` | inline | — | — | Protected |
 | webhooks-elevenlabs-routes.ts | POST | `/api/webhooks/elevenlabs` | — | — | yes | Public (allowlisted) |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |

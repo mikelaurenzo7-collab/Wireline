@@ -12,7 +12,7 @@ The Android app is the everyday control surface for Wireline agents:
 
 ## Product promise
 
-> Your phone, finally answering for you.
+> Wire your agent.
 
 The native product is the daily control surface for agents, calls, recaps, and follow-up. Business and personal workflows use the same backend agent configuration, but the language must stay clear, practical, and agent-forward.
 

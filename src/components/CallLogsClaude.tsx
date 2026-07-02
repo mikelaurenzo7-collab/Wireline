@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
@@ -226,13 +227,24 @@ export default function CallLogsClaude() {
         })}
       </section>
 
-      <WorkspaceTabStrip
-        ariaLabel="Call ops tabs"
-        tabs={tabs}
-        activeId={activeTab}
-        onSelect={(id) => setActiveTab(id as TabId)}
-        className="border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-2.5"
-      />
+      <div className="flex items-center gap-3 border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-2.5">
+        <WorkspaceTabStrip
+          ariaLabel="Call ops tabs"
+          tabs={tabs}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as TabId)}
+          className="mb-0 flex-1 border-b-0 pb-0"
+        />
+        {/* Server-side export: tenant-scoped, audited, cookie-authenticated. */}
+        <a
+          href="/api/export/calls.csv"
+          download
+          className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
+        >
+          <Download size={15} aria-hidden="true" />
+          Export CSV
+        </a>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {error ? (

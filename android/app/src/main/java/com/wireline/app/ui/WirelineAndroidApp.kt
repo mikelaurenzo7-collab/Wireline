@@ -202,7 +202,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
         Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
         Text("WIRELINE", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
-        Text("Your phone, finally answering for you.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text("Wire your agent.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Spacer(Modifier.height(12.dp))

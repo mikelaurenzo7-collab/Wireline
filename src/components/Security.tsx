@@ -52,7 +52,7 @@ const SECTIONS = [
     icon: KeyRound,
     title: "Webhook signature verification",
     items: [
-      "Every inbound webhook (Voice Bridge, Stripe, Twilio, ElevenLabs) is verified with HMAC + timingSafeEqual.",
+      "Every inbound webhook — voice, messaging, and billing — is verified with HMAC + timingSafeEqual.",
       "Failed signatures return 401 and log the IP. Replay attacks return 401 (timestamp tolerance enforced).",
       "Outbound webhooks (when added) sign with the same primitives. No shared secrets in URLs.",
     ],
