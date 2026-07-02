@@ -10,6 +10,11 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",
+    // Sandboxes with a preinstalled Chromium can point at it instead of
+    // downloading a browser (e.g. /opt/pw-browsers/chromium).
+    ...(process.env.WIRELINE_E2E_CHROMIUM
+      ? { launchOptions: { executablePath: process.env.WIRELINE_E2E_CHROMIUM } }
+      : {}),
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
