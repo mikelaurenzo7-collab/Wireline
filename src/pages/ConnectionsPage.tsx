@@ -4,7 +4,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 
 export default function ConnectionsPage() {
   return (
-    <WorkspaceShell title="Connections" contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
         <CrmConnectionCard />
       </WorkspacePageFrame>

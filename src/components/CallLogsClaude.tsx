@@ -492,46 +492,11 @@ function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
 
 function AnalyticsTab() {
   return (
-    <>
-      <div className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-7 py-10 text-center">
-        <div className="wl-eyebrow">Analytics</div>
-        <div className="mx-auto mt-3 max-w-lg font-[var(--wireline-font-family-display)] text-[22px] leading-tight tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
-          Charts appear once your agent has lived a few days.
-        </div>
-        <p className="mx-auto mt-2 max-w-md text-[13px] text-[var(--wireline-color-text-secondary)]">
-          Until then, Floor and Triage are the real story.
-        </p>
-      </div>
-      <div className="mt-4 grid grid-cols-1 gap-3.5 lg:grid-cols-2">
-        <section className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
-          <div className="mb-4 wl-eyebrow ">What we'll track</div>
-          <ul className="flex flex-col gap-2.5 text-[13px] text-[var(--wireline-color-text-primary)]">
-            {[
-              "Volume by hour & day",
-              "Caller sentiment trends",
-              "First-call resolution rate",
-              "Workflow conversion paths",
-              "Where the agent asks for help",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-2.5">
-                <span
-                  className="size-1.5 rounded-full"
-                  style={{ background: "var(--wireline-color-action-primary-default)" }}
-                  aria-hidden="true"
-                />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-6 text-center">
-          <div className="wl-eyebrow">Ops log</div>
-          <p className="mx-auto mt-3 text-[13px] text-[var(--wireline-color-text-secondary)]">
-            No events yet
-          </p>
-        </section>
-      </div>
-    </>
+    <div className="grid place-items-center rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-7 py-16 text-center">
+      <p className="font-[var(--wireline-font-family-display)] text-[22px] leading-tight tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
+        Charts when you have call history
+      </p>
+    </div>
   );
 }
 

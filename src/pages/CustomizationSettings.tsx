@@ -75,7 +75,7 @@ const appCarryover = [
 
 export default function CustomizationSettings() {
   return (
-    <WorkspaceShell title="Customization" contentClassName="pt-1 pb-8">
+    <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame>
         <section>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

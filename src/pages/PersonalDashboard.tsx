@@ -98,7 +98,7 @@ export default function PersonalDashboard() {
     agentDetail?.firstMessage || `Hi, you've reached ${agentName}. How can I help you today?`;
 
   return (
-    <WorkspaceShell title="My Agent" contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-10">
       <PageMeta title="Personal Agent - Wireline" />
 
       <WorkspacePageFrame>

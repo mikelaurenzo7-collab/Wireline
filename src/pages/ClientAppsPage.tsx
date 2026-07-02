@@ -49,7 +49,7 @@ const clientSurfaces = [
 
 export default function ClientAppsPage() {
   return (
-    <WorkspaceShell title="Apps" contentClassName="pt-1 pb-10">
+    <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
         <section
           className="grid gap-4 md:grid-cols-2"

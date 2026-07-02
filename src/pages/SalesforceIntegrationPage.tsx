@@ -187,7 +187,6 @@ export default function SalesforceIntegrationPage() {
 
   return (
     <WorkspaceShell
-      title="Salesforce"
       contentClassName="pt-1 pb-10"
       action={
         <div className="flex items-center gap-2">

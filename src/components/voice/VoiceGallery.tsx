@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Play, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
 
 import { Badge, Button } from "../atoms";
 import { StatusNotice } from "../molecules";
@@ -19,9 +18,18 @@ type VoiceGalleryProps = {
   agentId: string;
   agentName?: string;
   className?: string;
+  /** Studio deep editor — denser layout, no page chrome. */
+  embedded?: boolean;
+  searchInputId?: string;
 };
 
-export default function VoiceGallery({ agentId, agentName, className = "" }: VoiceGalleryProps) {
+export default function VoiceGallery({
+  agentId,
+  agentName,
+  className = "",
+  embedded = false,
+  searchInputId,
+}: VoiceGalleryProps) {
   const [libraryVoices, setLibraryVoices] = useState<VoiceOption[]>([]);
   const [catalogReady, setCatalogReady] = useState(true);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
@@ -141,31 +149,34 @@ export default function VoiceGallery({ agentId, agentName, className = "" }: Voi
   }
 
   const currentLabel = resolveVoiceLabel(selectedVoiceId);
+  const searchId = searchInputId ?? (embedded ? "voice-search" : undefined);
 
   return (
-    <div className={`flex flex-col gap-5 ${className}`}>
-      <section className="studio-card p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="wl-overline">Current</p>
-            {loadingSelection ? (
-              <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                Loading…
-              </div>
-            ) : (
-              <>
-                <p className="mt-2 font-[var(--wireline-font-family-display)] text-2xl tracking-[-0.02em] text-foreground">
-                  {currentLabel}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {providerLabel(selectedProvider)}
-                </p>
-              </>
-            )}
+    <div className={`flex flex-col ${embedded ? "gap-3" : "gap-5"} ${className}`}>
+      {!embedded ? (
+        <section className="studio-card p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="wl-overline">Current</p>
+              {loadingSelection ? (
+                <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  Loading…
+                </div>
+              ) : (
+                <>
+                  <p className="mt-2 font-[var(--wireline-font-family-display)] text-2xl tracking-[-0.02em] text-foreground">
+                    {currentLabel}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {providerLabel(selectedProvider)}
+                  </p>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {notice ? (
         <StatusNotice tone="success" title="Voice updated">
@@ -178,14 +189,22 @@ export default function VoiceGallery({ agentId, agentName, className = "" }: Voi
         </StatusNotice>
       ) : null}
 
-      <section className="studio-card p-5 sm:p-6">
+      <section className={embedded ? "" : "studio-card p-5 sm:p-6"}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <p className="wl-overline">Gallery</p>
-          <label className="grid w-full max-w-xs gap-1.5 sm:w-auto">
-            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              Search
-            </span>
+          {!embedded ? <p className="wl-overline">Gallery</p> : null}
+          <label
+            className={`grid w-full gap-1.5 ${embedded ? "sm:ml-auto sm:max-w-xs" : "max-w-xs sm:w-auto"}`}
+            htmlFor={searchId}
+          >
+            {!embedded ? (
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Search
+              </span>
+            ) : (
+              <span className="sr-only">Search voices</span>
+            )}
             <input
+              id={searchId}
               type="search"
               value={voiceSearch}
               onChange={(event) => setVoiceSearch(event.target.value)}
@@ -195,7 +214,7 @@ export default function VoiceGallery({ agentId, agentName, className = "" }: Voi
           </label>
         </div>
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-2">
+        <div className={`grid gap-5 ${embedded ? "mt-4" : "mt-6"} lg:grid-cols-2`}>
           <div>
             <div className="mb-3 flex items-center justify-center gap-2 lg:justify-start">
               <Sparkles size={14} className="text-primary" aria-hidden="true" />
@@ -258,7 +277,13 @@ export default function VoiceGallery({ agentId, agentName, className = "" }: Voi
                 <Badge variant="outline">Live catalog</Badge>
               )}
             </div>
-            <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+            <div
+              className={
+                embedded
+                  ? "max-h-48 space-y-2 overflow-y-auto pr-1"
+                  : "max-h-[360px] space-y-2 overflow-y-auto pr-1"
+              }
+            >
               {loadingCatalog ? (
                 <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -311,18 +336,6 @@ export default function VoiceGallery({ agentId, agentName, className = "" }: Voi
               )}
             </div>
           </div>
-        </div>
-
-        <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
-          Quick previews help you compare tone in the browser. Full fidelity applies on your
-          provisioned Wireline line.
-        </p>
-        <div className="mt-4 flex justify-center">
-          <Button asChild variant="link" className="px-0 text-sm">
-            <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>
-              Open Studio for deeper setup
-            </Link>
-          </Button>
         </div>
       </section>
     </div>

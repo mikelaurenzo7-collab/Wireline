@@ -1,19 +1,18 @@
-import { Play, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
+import VoiceGallery from "./voice/VoiceGallery";
 import { authFetch } from "../lib/api";
 import {
   AGENT_TOOL_CATALOG,
   BUSINESS_TOOL_NAMES,
   type AgentToolCatalogEntry,
 } from "../lib/agent-capabilities";
-import { normalizeApiVoices, WIRELINE_LIVE_VOICES, type VoiceOption } from "../lib/voice-catalog";
+import { WIRELINE_LIVE_VOICES } from "../lib/voice-catalog";
 import {
   WORKSPACE_INTEGRATION_CATALOG,
   type WorkspaceIntegration,
 } from "../lib/workspace-integration-catalog";
-import { VoicePreviewButton } from "./DeployAgentModal";
 
 const PERSONALITIES = ["Clear", "Warm", "Direct", "Polished"];
 
@@ -30,14 +29,6 @@ export default function StudioAgentWorkspacePanel({
   onTestVoiceInChat,
   className = "",
 }: StudioAgentWorkspacePanelProps) {
-  const [allVoices, setAllVoices] = useState<VoiceOption[]>([]);
-  const [voicesLoading, setVoicesLoading] = useState(false);
-  const [voiceSearch, setVoiceSearch] = useState("");
-  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
-  const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null);
-  const [applyingVoiceId, setApplyingVoiceId] = useState<string | null>(null);
-  const [voiceApplyError, setVoiceApplyError] = useState<string | null>(null);
-
   const [setupPersonality, setSetupPersonality] = useState("Clear");
   const [setupGreeting, setSetupGreeting] = useState(
     `Hello, this is ${agentName || "your agent"}. How can I help?`,
@@ -47,63 +38,18 @@ export default function StudioAgentWorkspacePanel({
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
 
-  const [previewText, setPreviewText] = useState(
-    "Hello, this is your new agent. How can I help you today?",
-  );
-
   useEffect(() => {
     setSetupGreeting(`Hello, this is ${agentName || "your agent"}. How can I help?`);
   }, [agentName]);
 
-  useEffect(() => {
-    if (!agentId) return;
-    setVoicesLoading(true);
-    authFetch("/api/voices")
-      .then((r) => r.json())
-      .then((data) => setAllVoices(normalizeApiVoices(data?.voices)))
-      .catch(() => setAllVoices([]))
-      .finally(() => setVoicesLoading(false));
-  }, [agentId]);
-
-  function playVoice(voice: VoiceOption) {
-    if (playingVoiceId === voice.id) {
-      window.speechSynthesis?.cancel?.();
-      setPlayingVoiceId(null);
-      return;
-    }
-    setPlayingVoiceId(voice.id);
-    if (voice.provider === "xai") {
-      const utterance = new SpeechSynthesisUtterance(
-        `Hello, this is ${voice.name.split(" — ")[0]}. How can I help you today?`,
-      );
-      utterance.onend = () => setPlayingVoiceId(null);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      const url = voice.preview_url || `/api/voices/${encodeURIComponent(voice.id)}/preview`;
-      const audio = new Audio(url);
-      audio.onended = () => setPlayingVoiceId(null);
-      audio.onerror = () => setPlayingVoiceId(null);
-      audio.play().catch(() => setPlayingVoiceId(null));
-    }
-  }
-
-  async function applyVoice(voice: VoiceOption) {
-    if (!agentId) return;
-    setApplyingVoiceId(voice.id);
-    setVoiceApplyError(null);
-    setSelectedVoice(voice);
-    try {
-      const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/voice`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voiceId: voice.id, provider: voice.provider || "11labs" }),
-      });
-      if (!response.ok) throw new Error("Voice could not be saved.");
-    } catch (reason) {
-      setVoiceApplyError(reason instanceof Error ? reason.message : "Voice could not be saved.");
-    } finally {
-      setApplyingVoiceId(null);
-    }
+  async function quickStartVoice() {
+    const voice = WIRELINE_LIVE_VOICES[0];
+    if (!agentId || !voice) return;
+    await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/voice`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voiceId: voice.id, provider: voice.provider }),
+    });
   }
 
   async function applySetup() {
@@ -112,21 +58,6 @@ export default function StudioAgentWorkspacePanel({
     setSetupError(null);
     setSetupNotice(null);
     try {
-      if (selectedVoice) {
-        const voiceResponse = await authFetch(
-          `/api/agent-config/${encodeURIComponent(agentId)}/voice`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              voiceId: selectedVoice.id,
-              provider: selectedVoice.provider || "11labs",
-            }),
-          },
-        );
-        if (!voiceResponse.ok) throw new Error("Voice could not be saved.");
-      }
-
       const personalityText = `${setupPersonality}. Concise. Useful. Business-ready.`;
       if (personalityText) {
         const personalityResponse = await authFetch(
@@ -166,7 +97,7 @@ export default function StudioAgentWorkspacePanel({
         if (!knowledgeResponse.ok) throw new Error("Knowledge could not be saved.");
       }
 
-      setSetupNotice("Setup applied. Voice, personality, and knowledge are saved for this agent.");
+      setSetupNotice("Setup saved.");
     } catch (reason) {
       setSetupError(reason instanceof Error ? reason.message : "Setup could not be applied.");
     } finally {
@@ -177,185 +108,42 @@ export default function StudioAgentWorkspacePanel({
   return (
     <div className={`min-h-0 flex-1 overflow-y-auto border-t border-border/60 ${className}`}>
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-8 sm:py-8">
-        <div>
-          <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-0.022em] text-foreground">
-            Workspace for {agentName}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Everything for this agent lives here. Setup or manage anytime.
-          </p>
-        </div>
+        <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-0.022em] text-foreground">
+          {agentName}
+        </h2>
 
         <div className="studio-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold tracking-tight">Onboard &amp; Customize</h3>
-              <p className="text-sm text-muted-foreground">
-                Start simple. Customize deeply. Everything stays in this workspace.
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                const quickVoice = WIRELINE_LIVE_VOICES[0] || allVoices[0];
-                if (quickVoice) void applyVoice(quickVoice);
-              }}
-              disabled={Boolean(applyingVoiceId)}
-              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium active:scale-[0.985] transition disabled:opacity-60"
-            >
-              Quick Start
-            </button>
-          </div>
-
-          {voiceApplyError ? (
-            <p className="mb-3 text-sm text-destructive" role="alert">
-              {voiceApplyError}
-            </p>
-          ) : null}
-
-          <div>
-            <div className="flex items-baseline justify-between mb-3">
-              <div>
-                <span className="font-medium">Voice Gallery</span>
-                <span className="ml-2 text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                  Hear Wireline Live + Wireline Voice
-                </span>
-              </div>
-              <label htmlFor="voice-search" className="sr-only">
-                Search voices
-              </label>
-              <input
-                id="voice-search"
-                type="text"
-                value={voiceSearch}
-                onChange={(e) => setVoiceSearch(e.target.value)}
-                placeholder="Search voices..."
-                className="text-xs border border-border rounded-lg px-3 py-1 bg-background focus:ring-1 focus:ring-primary/30"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-              <div>
-                <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
-                  <Sparkles size={12} /> Wireline Live
-                </div>
-                <div className="space-y-1">
-                  {WIRELINE_LIVE_VOICES.filter(
-                    (v) => !voiceSearch || v.name.toLowerCase().includes(voiceSearch.toLowerCase()),
-                  ).map((v) => {
-                    const isPlaying = playingVoiceId === v.id;
-                    const isSel = selectedVoice?.id === v.id;
-                    const isApplying = applyingVoiceId === v.id;
-                    return (
-                      <div
-                        key={v.id}
-                        className={`group flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition ${isSel ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                      >
-                        <span>{v.name}</span>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <button
-                            onClick={() => playVoice(v)}
-                            className={`flex items-center gap-1 rounded px-2 py-0.5 ${isPlaying ? "bg-primary text-white" : "hover:bg-muted"}`}
-                            aria-label={`Preview ${v.name}`}
-                          >
-                            <Play size={11} /> {isPlaying ? "Stop" : "Preview"}
-                          </button>
-                          <button
-                            onClick={() => void applyVoice(v)}
-                            disabled={isApplying}
-                            className="rounded bg-primary/10 px-2 py-0.5 text-primary hover:bg-primary/20 disabled:opacity-60"
-                          >
-                            {isApplying ? "Saving…" : "Use"}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
-                  Wireline Voice library
-                </div>
-                <div className="space-y-1 max-h-48 overflow-auto pr-1">
-                  {voicesLoading && (
-                    <div className="text-xs text-muted-foreground py-2">Loading voices…</div>
-                  )}
-                  {!voicesLoading && allVoices.length === 0 && (
-                    <div className="text-xs text-muted-foreground py-2">No voices available.</div>
-                  )}
-                  {allVoices
-                    .filter(
-                      (v) =>
-                        !voiceSearch ||
-                        (v.name || v.id || "").toLowerCase().includes(voiceSearch.toLowerCase()),
-                    )
-                    .slice(0, 12)
-                    .map((v) => {
-                      const isSel = selectedVoice?.id === v.id;
-                      const isApplying = applyingVoiceId === v.id;
-                      return (
-                        <div
-                          key={v.id}
-                          className={`group flex items-center justify-between rounded-xl border px-3 py-2 text-sm transition ${isSel ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                        >
-                          <span className="truncate">
-                            {v.name || v.id}{" "}
-                            <span className="text-[10px] text-muted-foreground">
-                              Wireline Voice
-                            </span>
-                          </span>
-                          <div className="flex items-center gap-1.5 text-xs shrink-0">
-                            <VoicePreviewButton voiceId={v.id} voiceName={v.name || v.id} />
-                            <button
-                              onClick={() => void applyVoice(v)}
-                              disabled={isApplying}
-                              className="rounded bg-primary/10 px-2 py-0.5 text-primary hover:bg-primary/20 disabled:opacity-60"
-                            >
-                              {isApplying ? "Saving…" : "Use"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Quick previews compare tone in the browser. Full fidelity applies on your Wireline
-              line.
-            </p>
-            <div className="mt-2 flex gap-2">
-              <input
-                id="preview-text"
-                value={previewText}
-                onChange={(e) => setPreviewText(e.target.value)}
-                className="flex-1 text-xs border border-border rounded px-2 py-1 bg-background"
-              />
-              <button
-                onClick={() => {
-                  const utterance = new SpeechSynthesisUtterance(previewText || "Hello");
-                  window.speechSynthesis.speak(utterance);
-                }}
-                className="text-xs px-2 py-1 border rounded hover:bg-muted"
-              >
-                Play custom text (demo)
-              </button>
-            </div>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold tracking-tight">Setup</h3>
             <button
               type="button"
-              onClick={onTestVoiceInChat}
-              className="mt-1 text-xs text-primary underline"
+              onClick={() => void quickStartVoice()}
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition active:scale-[0.985]"
             >
-              Test this voice in the chat above →
+              Quick start
             </button>
           </div>
+          <p className="sr-only">Everything stays in this workspace.</p>
+
+          <VoiceGallery
+            agentId={agentId}
+            agentName={agentName}
+            embedded
+            searchInputId="voice-search"
+          />
+          <button
+            type="button"
+            onClick={onTestVoiceInChat}
+            className="mt-3 text-xs font-semibold text-primary hover:underline"
+          >
+            Test in chat
+          </button>
 
           <div className="mb-4 mt-6">
-            <div className="uppercase text-[10px] tracking-[0.12em] text-primary font-medium mb-2">
-              2. Quick Personality &amp; Greeting
+            <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-primary">
+              Personality
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label htmlFor="setup-personality" className="text-xs">
                   Personality
@@ -388,18 +176,18 @@ export default function StudioAgentWorkspacePanel({
           </div>
 
           <div className="mb-4">
-            <div className="uppercase text-[10px] tracking-[0.12em] text-primary font-medium mb-2">
-              3. Seed Initial Knowledge
+            <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-primary">
+              Knowledge
             </div>
-            <label htmlFor="setup-knowledge" className="text-xs block mb-1">
-              Seed Initial Knowledge
+            <label htmlFor="setup-knowledge" className="sr-only">
+              Seed knowledge
             </label>
             <textarea
               id="setup-knowledge"
               value={setupKnowledge}
               onChange={(e) => setSetupKnowledge(e.target.value)}
               className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background min-h-[50px]"
-              placeholder="E.g. Business hours 9-5. Free shipping over $50."
+              placeholder="Business hours, policies, FAQs…"
               aria-describedby="knowledge-help"
             />
             <div id="knowledge-help" className="sr-only">
@@ -424,7 +212,7 @@ export default function StudioAgentWorkspacePanel({
               disabled={applyingSetup}
               className="px-4 py-2 rounded-xl border border-primary text-primary text-sm font-medium active:scale-[0.985] disabled:opacity-60"
             >
-              {applyingSetup ? "Applying…" : "Apply Setup"}
+              {applyingSetup ? "Saving…" : "Save setup"}
             </button>
           </div>
         </div>
@@ -432,13 +220,7 @@ export default function StudioAgentWorkspacePanel({
         <div className="space-y-8">
           <div>
             <div className="flex items-baseline justify-between mb-4">
-              <div>
-                <h3 className="text-xl font-semibold tracking-[-0.02em]">World Connections</h3>
-                <p className="text-sm text-muted-foreground">
-                  Everything {agentName} is wired to. Connections and actions live here, per this
-                  workspace only.
-                </p>
-              </div>
+              <h3 className="text-xl font-semibold tracking-[-0.02em]">World Connections</h3>
               <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
                 Scoped to agent
               </div>
@@ -577,8 +359,7 @@ export default function StudioAgentWorkspacePanel({
             </div>
 
             <div className="mt-2 text-[10px] text-muted-foreground">
-              These are the exact catalogs and groupings from the full system — now organized as
-              this agent's personal wires to the world. Changes here affect only {agentName}.
+              Changes here affect only {agentName}.
             </div>
           </div>
 

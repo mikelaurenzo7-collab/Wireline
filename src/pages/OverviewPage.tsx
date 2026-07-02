@@ -354,9 +354,6 @@ export default function OverviewPage() {
         ) : null}
 
         <section>
-          <p className="wl-section-label mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            Quick actions
-          </p>
           <div className="flex flex-wrap justify-center gap-2">
             {QUICK_ACTIONS.map(({ href, icon: Icon, title }) => (
               <Link
@@ -374,14 +371,9 @@ export default function OverviewPage() {
         <section className="grid gap-4 lg:grid-cols-[1fr_1fr]" aria-label="Agents and recent calls">
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Agents
-                </p>
-                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
-                  Personal + business lines
-                </h2>
-              </div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Agents
+              </p>
               <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
                 Open Studio →
               </Link>
@@ -398,14 +390,9 @@ export default function OverviewPage() {
 
           <article className="studio-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Recent calls
-                </p>
-                <h2 className="mt-1 text-sm font-semibold tracking-[-0.01em] text-foreground">
-                  What changed today
-                </h2>
-              </div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Recent calls
+              </p>
               <Link to="/call-logs" className="text-xs font-semibold text-primary hover:underline">
                 View all →
               </Link>
