@@ -27,4 +27,43 @@ describe("product voice cohesion", () => {
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
+
+  it("keeps the authenticated page map intentional", () => {
+    const routes = read("src/routes/AppRoutes.tsx");
+    expect(routes).toContain('path="/overview"');
+    expect(routes).toContain('path="/studio"');
+    expect(routes).toContain('path="/templates"');
+    expect(routes).toContain('path="/knowledge"');
+    expect(routes).toContain('path="/connections"');
+    expect(routes).toContain('path="/call-logs"');
+    expect(routes).toContain('path="/inbox"');
+    expect(routes).toContain('path="/apps"');
+    expect(routes).toContain('path="/settings"');
+    expect(routes).toContain('path="/admin"');
+    expect(routes).toContain('path="/actions/salesforce"');
+    expect(routes).toContain('to="/connections/salesforce"');
+    expect(routes).not.toContain('path="/dashboard"');
+  });
+
+  it("keeps top-level workspace pages mounted to the current surfaces", () => {
+    expect(read("src/pages/TemplatesPage.tsx")).toContain("AgentTemplates");
+    expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("CreateAgentDialog");
+    expect(read("src/pages/OverviewPage.tsx")).toContain("Workspace metrics");
+    expect(read("src/pages/OverviewPage.tsx")).toContain("Recent calls");
+  });
+
+  it("keeps authenticated surfaces action-first, not explanatory", () => {
+    const docs = read("docs/README.md");
+    expect(docs).toContain("Public pages explain. Authenticated pages execute.");
+    expect(docs).toContain("Use labels, tabs, icons, state, and clear next actions");
+    expect(docs).toContain("Call Logs and Analytics may explain history, coaching, exports, and insights");
+  });
+
+  it("preserves Call Logs as the allowed explanatory analytics surface", () => {
+    const calls = read("src/components/CallLogsClaude.tsx");
+    expect(calls).toContain("Analytics");
+    expect(calls).toContain("coaching_note");
+    expect(calls).toContain("qa_score");
+    expect(calls).toContain("lead_score");
+  });
 });
