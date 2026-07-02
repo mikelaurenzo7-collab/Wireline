@@ -66,7 +66,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   studioChrome: [
     { id: "breadcrumb", pattern: /Studio breadcrumb|Assistant breadcrumb/ },
-    { id: "readiness", pattern: /94% ready|82% ready/ },
+    { id: "readiness", pattern: /Active|Training/ },
     { id: "test-call", pattern: /Run test call|Test call/ },
     { id: "deploy", pattern: /Deploy/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },

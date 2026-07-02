@@ -17,7 +17,6 @@ interface ObservabilityMetrics {
   totalCalls: number;
   activeConnections: number;
   noData?: boolean;
-  isDemoMock?: boolean;
 }
 
 export default function ObservabilityDashboard() {
@@ -85,15 +84,14 @@ export default function ObservabilityDashboard() {
       } catch (err) {
         clientLog.error("observability:telemetry-load", err);
         if (active) {
-          // Elegant target-baseline fallback for pre-production or demo lines
           setMetrics({
-            avgTtftMs: 420,
-            p99TtftMs: 850,
-            pipelineSuccessRate: 99.8,
-            sttErrorRate: 0.05,
-            totalCalls: 14205,
-            activeConnections: 34,
-            isDemoMock: true,
+            avgTtftMs: null,
+            p99TtftMs: null,
+            pipelineSuccessRate: 100,
+            sttErrorRate: 0,
+            totalCalls: 0,
+            activeConnections: 0,
+            noData: true,
           });
           setLoading(false);
         }
@@ -126,12 +124,6 @@ export default function ObservabilityDashboard() {
             Real-time pipeline latency and agent resilience metrics.
           </p>
         </div>
-        {metrics?.isDemoMock && (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-            Demo Metrics
-          </div>
-        )}
         {metrics?.noData && (
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-brand/10 text-brand border border-brand/20">
             <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>

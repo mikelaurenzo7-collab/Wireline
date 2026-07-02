@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { ArrowRight, Bot, Cable, Clock3, Phone, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -7,19 +8,14 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel, WORKSPACE_VOICE } from "../lib/product-copy";
+import { authFetch } from "../lib/api";
+import type { CallLog } from "../types/api";
 
 const QUICK_ACTIONS = [
   { href: "/studio", icon: Sparkles, title: "Open Studio" },
   { href: "/templates", icon: Bot, title: "Browse templates" },
   { href: "/call-logs", icon: Phone, title: "Review calls" },
   { href: "/connections", icon: Cable, title: "Add connection" },
-] as const;
-
-const RECENT_CALLS = [
-  { name: "James Miller", outcome: "Booking", meta: "2:34 PM · 3m 12s" },
-  { name: "Unknown", outcome: "Identified & logged", meta: "1:18 PM · 0m 42s" },
-  { name: "CVS Pharmacy", outcome: "Rx confirmed", meta: "11:45 AM" },
-  { name: "Mom", outcome: "Message taken", meta: "10:02 AM · 1m 22s" },
 ] as const;
 
 function todayLabel() {
@@ -65,7 +61,16 @@ function agentReadiness(agent: WorkspaceAgentSummary) {
   return agent.phone_number ? "Active" : "Training";
 }
 
-function metricRows(agents: WorkspaceAgentSummary[], hasAgents: boolean, activeAgents: number) {
+function metricRows(
+  agents: WorkspaceAgentSummary[],
+  hasAgents: boolean,
+  activeAgents: number,
+  callsCount: number,
+  callsDetail: string,
+  connectionsCount: number,
+  connectionsDetail: string,
+  balanceUsd: number | null,
+) {
   return [
     {
       label: "Agents",
@@ -74,12 +79,30 @@ function metricRows(agents: WorkspaceAgentSummary[], hasAgents: boolean, activeA
     },
     {
       label: "Calls today",
-      value: hasAgents ? String(Math.max(agents.length * 2, 1)) : "0",
-      detail: hasAgents ? "3 handled · 1 transferred" : "Waiting for first call",
+      value: String(callsCount),
+      detail: callsDetail,
     },
-    { label: "Connections", value: "3", detail: "Calendar · SMS · CRM" },
-    { label: "Balance", value: "$187", detail: "Conversation Balance" },
+    {
+      label: "Connections",
+      value: String(connectionsCount),
+      detail: connectionsDetail,
+    },
+    {
+      label: "Balance",
+      value: balanceUsd !== null ? `$${balanceUsd.toFixed(2)}` : "--",
+      detail: "Conversation Balance",
+    },
   ];
+}
+
+function MetricSkeleton() {
+  return (
+    <div className="studio-card min-h-[120px] p-5" aria-hidden="true">
+      <Skeleton shape="text" className="h-3 w-16" />
+      <Skeleton shape="text" className="mt-5 h-8 w-12" />
+      <Skeleton shape="text" className="mt-4 h-3 w-28" />
+    </div>
+  );
 }
 
 function AgentLoadingRows() {
@@ -170,9 +193,103 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
   );
 }
 
+function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
+  if (!createdAt) return "";
+  const date = new Date(createdAt);
+  const timeStr = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (durationSeconds) {
+    const min = Math.floor(durationSeconds / 60);
+    const sec = durationSeconds % 60;
+    const durationStr = min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+    return `${timeStr} · ${durationStr}`;
+  }
+  return timeStr;
+}
+
 export default function OverviewPage() {
   const { user } = useAuth();
   const { agents, loading, degraded } = useAgents();
+
+  const [callsCount, setCallsCount] = useState<number>(0);
+  const [callsDetail, setCallsDetail] = useState<string>("Waiting for first call");
+  const [connectionsCount, setConnectionsCount] = useState<number>(0);
+  const [connectionsDetail, setConnectionsDetail] = useState<string>("Checking connections...");
+  const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
+  const [recentCalls, setRecentCalls] = useState<CallLog[]>([]);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      setLoadingDashboard(true);
+      try {
+        const [statsRes, crmRes, balanceRes] = await Promise.all([
+          authFetch("/api/dashboard/stats"),
+          authFetch("/api/oauth/crm/status"),
+          authFetch("/api/conversation-balance"),
+        ]);
+
+        if (cancelled) return;
+
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          const logs: CallLog[] = data.recentLogs || [];
+          setRecentCalls(logs.slice(0, 4));
+
+          const todayStr = new Date().toISOString().slice(0, 10);
+          const todayLogs = logs.filter((log) => log.created_at?.slice(0, 10) === todayStr);
+          const count = todayLogs.length;
+          setCallsCount(count);
+          if (count > 0) {
+            const inbound = todayLogs.filter((log) => log.direction === "inbound").length;
+            const outbound = todayLogs.filter((log) => log.direction === "outbound").length;
+            setCallsDetail(`${inbound} inbound · ${outbound} outbound`);
+          } else {
+            setCallsDetail(
+              logs.length > 0 ? "No calls today · line active" : "Waiting for first call",
+            );
+          }
+        }
+
+        if (crmRes.ok) {
+          const data = await crmRes.json();
+          const activeProviders = Object.entries(data as Record<string, { connected?: boolean }>)
+            .filter(([, conn]) => conn?.connected)
+            .map(([name]) =>
+              name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
+            );
+          const hasNumbers = agents.some((agent) => agent.phone_number);
+          const core: string[] = hasNumbers ? ["Calendar", "SMS"] : ["Calendar"];
+          const allConns = [...core, ...activeProviders];
+          setConnectionsCount(allConns.length);
+          setConnectionsDetail(
+            allConns.length ? allConns.join(" · ") : "Connect tools in Connections",
+          );
+        } else if (!cancelled) {
+          setConnectionsCount(0);
+          setConnectionsDetail("Connect tools in Connections");
+        }
+
+        if (balanceRes.ok) {
+          const data = await balanceRes.json();
+          setBalanceUsd(data.balance_usd ?? 0);
+        }
+      } catch {
+        if (!cancelled) {
+          setConnectionsDetail("Connect tools in Connections");
+        }
+      } finally {
+        if (!cancelled) setLoadingDashboard(false);
+      }
+    }
+
+    void loadDashboard();
+    return () => {
+      cancelled = true;
+    };
+  }, [agents]);
+
   const personalAgents = agents.filter((agent) => !agent.is_business_agent);
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
   const hasAgents = !loading && agents.length > 0;
@@ -210,17 +327,28 @@ export default function OverviewPage() {
           className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
           aria-label="Workspace metrics"
         >
-          {metricRows(agents, hasAgents, activeAgents).map((item) => (
-            <div key={item.label} className="studio-card min-h-[120px] p-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                {item.label}
-              </p>
-              <div className="mt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">
-                {loading && item.label === "Agents" ? "--" : item.value}
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">{item.detail}</p>
-            </div>
-          ))}
+          {loadingDashboard && loading
+            ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
+            : metricRows(
+                agents,
+                hasAgents,
+                activeAgents,
+                callsCount,
+                callsDetail,
+                connectionsCount,
+                connectionsDetail,
+                balanceUsd,
+              ).map((item) => (
+                <div key={item.label} className="studio-card flex min-h-[120px] flex-col p-5">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    {item.label}
+                  </p>
+                  <div className="mt-auto pt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">
+                    {loading && item.label === "Agents" ? "—" : item.value}
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">{item.detail}</p>
+                </div>
+              ))}
         </section>
 
         {degraded ? (
@@ -287,27 +415,61 @@ export default function OverviewPage() {
               </Link>
             </div>
             <div className="grid gap-0 divide-y divide-border/70">
-              {RECENT_CALLS.map((call) => (
-                <Link
-                  key={`${call.name}-${call.meta}`}
-                  to="/call-logs"
-                  className="group flex items-center gap-3 py-3 first:pt-1 last:pb-1"
-                >
-                  <span className="size-2 rounded-full bg-primary/80" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">
-                      {call.name} — {call.outcome}
+              {loadingDashboard ? (
+                <div className="grid gap-3 py-2" aria-busy="true" aria-label="Loading recent calls">
+                  {Array.from({ length: 3 }, (_, index) => (
+                    <div key={index} className="flex items-center gap-3 py-2">
+                      <Skeleton shape="circle" className="size-2 rounded-full" />
+                      <div className="min-w-0 flex-1">
+                        <Skeleton shape="text" className="h-4 w-48" />
+                        <Skeleton shape="text" className="mt-1.5 h-3 w-32" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : recentCalls.length > 0 ? (
+                recentCalls.map((call) => (
+                  <Link
+                    key={call.id}
+                    to="/call-logs"
+                    className="group flex min-h-[52px] items-center gap-3 py-3 first:pt-1 last:pb-1"
+                  >
+                    <span
+                      className="size-2 shrink-0 rounded-full bg-primary/80"
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-foreground">
+                        {call.customer_number || "Unknown caller"} —{" "}
+                        {call.intent_label || call.summary || "Call logged"}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {call.agent_name || primaryAgent?.name || "Agent"} ·{" "}
+                        {formatCallMeta(call.created_at, call.duration_seconds)}
+                      </span>
                     </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {primaryAgent?.name || "Agent"} · {call.meta}
-                    </span>
-                  </span>
-                  <Clock3
-                    className="size-3.5 text-muted-foreground transition-colors group-hover:text-primary"
-                    aria-hidden="true"
-                  />
-                </Link>
-              ))}
+                    <Clock3
+                      className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                ))
+              ) : (
+                <div className="flex min-h-[180px] flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                  <Phone className="mb-3 size-8 text-muted-foreground/30" aria-hidden="true" />
+                  <p className="text-sm font-medium text-foreground">No calls logged yet</p>
+                  <p className="mt-1.5 max-w-xs text-xs leading-relaxed">
+                    {hasAgents
+                      ? "Your line is ready. Calls will appear here as they complete."
+                      : "Create an agent in Studio to start receiving calls."}
+                  </p>
+                  {!hasAgents ? (
+                    <Button asChild size="sm" className="mt-4">
+                      <Link to="/studio?create=1">Create agent</Link>
+                    </Button>
+                  ) : null}
+                </div>
+              )}
             </div>
           </article>
         </section>

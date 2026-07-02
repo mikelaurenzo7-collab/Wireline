@@ -61,7 +61,7 @@ function agentInitial(name?: string | null) {
 }
 
 function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
-  return agent?.phone_number ? "94% ready" : "82% ready";
+  return agent?.phone_number ? "Active" : "Training";
 }
 
 function cleanPath(pathname: string) {

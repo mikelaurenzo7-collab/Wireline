@@ -61,7 +61,7 @@ function seedMessages(agentName: string): StudioMessage[] {
     {
       id: "seed-ready",
       role: "agent",
-      content: `I'm ready to help you build ${name}. ${name} is at 94% readiness — just needs a test call. What would you like to configure?`,
+      content: `I'm ready to help you build ${name}. ${name} is almost ready — run a test call when you want to hear it live. What would you like to configure?`,
       createdAt: new Date().toISOString(),
     },
     {

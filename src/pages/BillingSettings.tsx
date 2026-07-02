@@ -1,16 +1,86 @@
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Badge } from "../components/atoms";
+import { Badge, Skeleton } from "../components/atoms";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 
-const teamPlan = STRIPE_PLANS.find((plan) => plan.id === "team")!;
+type SubscriptionState = {
+  plan: string | null;
+  plan_name: string | null;
+  status: string | null;
+  current_period_end: string | null;
+};
+
+function formatUsd(value: number | null) {
+  if (value === null) return "—";
+  return `$${value.toFixed(2)}`;
+}
+
+function formatInvoiceDate(value: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function planDetails(planId: string | null) {
+  const plan =
+    STRIPE_PLANS.find((item) => item.id === planId) ??
+    STRIPE_PLANS.find((item) => item.id === "team");
+  if (!plan) return { name: "Team", monthly: 29, features: "Agents · Lines · Shared inbox" };
+  return {
+    name: plan.name,
+    monthly: plan.price_usd_monthly,
+    features: `${plan.max_agents} agents · ${plan.included_phone_numbers} lines · Routing · Approvals · Shared inbox`,
+  };
+}
 
 export default function BillingSettings() {
-  const monthlyPrice = "$" + teamPlan.price_usd_monthly + "/mo";
-  const invoiceTotal = "$" + teamPlan.price_usd_monthly + ".00";
+  const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
+  const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const [statusRes, balanceRes] = await Promise.all([
+          authFetch("/api/billing/status"),
+          authFetch("/api/conversation-balance"),
+        ]);
+        if (cancelled) return;
+        if (statusRes.ok) {
+          const data = await statusRes.json();
+          setSubscription(data.subscription ?? null);
+        }
+        if (balanceRes.ok) {
+          const data = await balanceRes.json();
+          setBalanceUsd(data.balance_usd ?? 0);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activePlan = planDetails(subscription?.plan ?? null);
+  const monthlyPrice = `$${activePlan.monthly}/mo`;
+  const invoiceTotal = `$${activePlan.monthly}.00`;
+  const balanceFill =
+    balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
 
   return (
     <WorkspaceShell title="" eyebrow="" contentClassName="pt-0 pb-10">
@@ -23,49 +93,94 @@ export default function BillingSettings() {
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary-foreground/65">
             Current plan
           </p>
-          <div className="mt-4 flex flex-wrap items-end gap-2">
-            <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.4rem+1.6vw,2.4rem)] font-normal leading-none tracking-[-0.035em]">
-              Team
-            </h2>
-            <span className="pb-1 font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-none tracking-[-0.035em]">
-              — {monthlyPrice}
-            </span>
-          </div>
-          <p className="mt-4 text-sm leading-6 text-primary-foreground/78">
-            {teamPlan.max_agents} agents · {teamPlan.included_phone_numbers} lines · Routing ·
-            Approvals · Shared inbox
-          </p>
+          {loading ? (
+            <div className="mt-4 space-y-3" aria-busy="true">
+              <Skeleton shape="text" className="h-10 w-48 bg-primary-foreground/20" />
+              <Skeleton shape="text" className="h-4 w-full max-w-md bg-primary-foreground/15" />
+            </div>
+          ) : (
+            <>
+              <div className="mt-4 flex flex-wrap items-end gap-2">
+                <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.4rem+1.6vw,2.4rem)] font-normal leading-none tracking-[-0.035em]">
+                  {subscription?.plan_name || activePlan.name}
+                </h2>
+                <span className="pb-1 font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-none tracking-[-0.035em]">
+                  — {monthlyPrice}
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-primary-foreground/78">
+                {activePlan.features}
+              </p>
+              {subscription?.status ? (
+                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-primary-foreground/60">
+                  Status · {subscription.status.replace(/_/g, " ")}
+                </p>
+              ) : null}
+            </>
+          )}
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">
-          <article className="studio-card p-5">
+          <article className="studio-card flex min-h-[148px] flex-col p-5">
             <p className="wl-overline">Conversation Balance</p>
-            <p className="wl-display-3 mt-4">$187</p>
-            <div className="mt-5 h-2 rounded-full bg-muted">
-              <div className="h-full w-[38%] rounded-full bg-primary" />
-            </div>
+            {loading ? (
+              <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                <span className="text-sm">Loading balance…</span>
+              </div>
+            ) : (
+              <>
+                <p className="wl-display-3 mt-auto pt-4">{formatUsd(balanceUsd)}</p>
+                <div className="mt-5 h-2 rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${balanceFill}%` }}
+                  />
+                </div>
+              </>
+            )}
           </article>
-          <article className="studio-card p-5">
+          <article className="studio-card flex min-h-[148px] flex-col p-5">
             <p className="wl-overline">Next invoice</p>
-            <p className="wl-display-3 mt-4">{invoiceTotal}</p>
-            <p className="mt-5 text-sm text-muted-foreground">Due July 1, 2026</p>
+            {loading ? (
+              <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                <span className="text-sm">Loading billing…</span>
+              </div>
+            ) : (
+              <>
+                <p className="wl-display-3 mt-auto pt-4">{invoiceTotal}</p>
+                <p className="mt-5 text-sm text-muted-foreground">
+                  Due {formatInvoiceDate(subscription?.current_period_end ?? null)}
+                </p>
+              </>
+            )}
           </article>
         </section>
 
         <section className="studio-card p-5 sm:p-6">
           <p className="wl-overline">Recent invoices</p>
-          <div className="mt-4 grid gap-2">
-            {["June 2026", "May 2026"].map((month) => (
-              <div
-                key={month}
-                className="flex items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3"
-              >
-                <p className="text-sm font-medium text-foreground">{month}</p>
+          {loading ? (
+            <div className="mt-4 grid gap-2" aria-busy="true">
+              {Array.from({ length: 2 }, (_, index) => (
+                <Skeleton key={index} shape="text" className="h-12 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : subscription?.current_period_end ? (
+            <div className="mt-4 grid gap-2">
+              <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3">
+                <p className="text-sm font-medium text-foreground">
+                  {formatInvoiceDate(subscription.current_period_end)}
+                </p>
                 <p className="text-sm font-semibold text-foreground">{invoiceTotal}</p>
                 <Badge variant="success">Paid</Badge>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Invoices appear here once your subscription is active.
+            </p>
+          )}
         </section>
 
         <section className="studio-card p-5 sm:p-6">

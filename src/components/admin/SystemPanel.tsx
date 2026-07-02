@@ -59,9 +59,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <span className="text-2xl font-display text-foreground">ACTIVE</span>
                   <div className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                 </div>
-                <p className="wl-micro-meta--muted leading-relaxed">
-                  System uptime 99.98% over last 30 days.
-                </p>
+                <p className="wl-micro-meta--muted leading-relaxed">Core services operational.</p>
               </div>
 
               <div className="p-4 rounded-md wl-panel border border-brand/20 bg-brand/5 space-y-3">
@@ -256,7 +254,11 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                             </div>
                             <div className="space-y-1">
                               <p className="wl-label opacity-60">Success Rate</p>
-                              <p className="text-xl font-display">99.8%</p>
+                              <p className="text-xl font-display">
+                                {operationalSlos?.jobs?.queue?.success_rate != null
+                                  ? `${(operationalSlos.jobs.queue.success_rate * 100).toFixed(1)}%`
+                                  : "—"}
+                              </p>
                             </div>
                           </div>
                         )}

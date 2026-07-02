@@ -4,6 +4,9 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { type AgentToolName } from "../lib/agent-capabilities";
 import { formatAgentRoleLabel } from "../lib/product-copy";
+import { useAgents } from "../contexts/AgentsContext";
+import { useAccount } from "../contexts/AccountContext";
+import { computeAgentReadiness } from "./fleet-settings/agent-readiness";
 
 /**
  * StudioAgentCanvas — the spatial Agent Canvas from the handoff bundle.
@@ -46,6 +49,15 @@ const VOICES = [
   { name: "Nova", tone: "Bright · Upbeat" },
   { name: "Taylor", tone: "Neutral · Pro" },
 ] as const;
+
+const CONNECTION_CATALOG: Array<{ tool: AgentToolName; label: string }> = [
+  { tool: "book_appointment", label: "Google Calendar" },
+  { tool: "send_text_message", label: "SMS / Text Messages" },
+  { tool: "crm_log_call", label: "CRM Notes" },
+  { tool: "send_email", label: "Email" },
+  { tool: "shopify_lookup_order", label: "Shopify" },
+  { tool: "square_create_payment_link", label: "Stripe Billing" },
+];
 
 const CANVAS_WORKFLOWS: Array<{ name: AgentToolName; label: string; detail: string }> = [
   { name: "view_recent_interactions", label: "Answer calls", detail: "24/7 coverage" },
@@ -129,19 +141,37 @@ export default function StudioAgentCanvas({
   onEditSection,
   className = "",
 }: StudioAgentCanvasProps) {
+  const { agents } = useAgents();
+  const { accountType } = useAccount();
   const [config, setConfig] = useState<AgentConfig | null>(null);
+  const [integrationStatus, setIntegrationStatus] = useState<Record<
+    string,
+    { connected: boolean }
+  > | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: AgentConfig | null) => {
-        if (!cancelled) setConfig(data);
+    Promise.all([
+      authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`),
+      authFetch("/api/oauth/crm/status"),
+    ])
+      .then(async ([configRes, crmRes]) => {
+        const data = configRes.ok ? ((await configRes.json()) as AgentConfig | null) : null;
+        const crmData = crmRes.ok
+          ? ((await crmRes.json()) as Record<string, { connected: boolean }>)
+          : null;
+        if (!cancelled) {
+          setConfig(data);
+          setIntegrationStatus(crmData);
+        }
       })
       .catch(() => {
-        if (!cancelled) setConfig(null);
+        if (!cancelled) {
+          setConfig(null);
+          setIntegrationStatus(null);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -150,6 +180,17 @@ export default function StudioAgentCanvas({
       cancelled = true;
     };
   }, [agentId]);
+
+  const selectedAgent = useMemo(() => {
+    const summary = agents.find((agent) => agent.id === agentId);
+    if (!summary) return null;
+    return {
+      ...summary,
+      voice_id: config?.voice?.voiceId ?? null,
+      website_url: null,
+      transfer_phone: null,
+    };
+  }, [agents, agentId, config?.voice?.voiceId]);
 
   const business = isBusinessAgent ?? config?.isBusinessAgent ?? false;
   const enabled = useMemo(() => new Set(config?.enabledTools ?? []), [config?.enabledTools]);
@@ -163,12 +204,28 @@ export default function StudioAgentCanvas({
   const personality =
     config?.personality?.trim() ||
     "Response style: Concise, warm, never overpromise. Handles appointment booking, caller identification, FAQ responses.";
-  const docCount = config?.knowledge?.length || 3;
+  const docCount = config?.knowledge?.length ?? 0;
   const directives = config?.directives ?? [];
   const modelLabel = config?.runtime?.model || "Managed Default";
+  const temperature = config?.runtime?.temperature ?? 0.5;
+  const temperaturePct = Math.round(Math.min(1, Math.max(0, temperature)) * 100);
   const situationRows = directives.length
     ? directives.slice(0, 3).map((item) => item.content)
     : DEFAULT_SITUATIONS;
+  const readiness = computeAgentReadiness(selectedAgent, config, integrationStatus, {
+    accountType,
+  });
+  const connectionRows = CONNECTION_CATALOG.map((item) => ({
+    ...item,
+    active: enabled.has(item.tool),
+  }));
+  const businessVars = config?.businessVariables ?? {};
+  const businessName =
+    typeof businessVars.business_name === "string" ? businessVars.business_name : null;
+  const businessWebsite = typeof businessVars.website === "string" ? businessVars.website : null;
+  const supportEmail =
+    typeof businessVars.support_email === "string" ? businessVars.support_email : null;
+  const profileLine = [businessName, businessWebsite, supportEmail].filter(Boolean).join(" · ");
 
   if (loading) {
     return (
@@ -339,8 +396,8 @@ export default function StudioAgentCanvas({
             <div className="grid grid-cols-3 gap-3">
               {[
                 { value: docCount, label: "Docs" },
-                { value: Math.max(directives.length, 12), label: "FAQs" },
-                { value: 4, label: "Scripts" },
+                { value: directives.length, label: "Rules" },
+                { value: activeCount, label: "Workflows" },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -417,11 +474,14 @@ export default function StudioAgentCanvas({
             </div>
           </div>
           <div className="mt-4 h-2 rounded-full bg-[var(--wireline-color-surface-subtle)]">
-            <div className="h-full w-1/2 rounded-full bg-primary" />
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${temperaturePct}%` }}
+            />
           </div>
           <div className="mt-1 flex justify-between font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
             <span>Focused</span>
-            <span>Temperature 0.50</span>
+            <span>Temperature {temperature.toFixed(2)}</span>
             <span>Expressive</span>
           </div>
         </CardShell>
@@ -436,7 +496,9 @@ export default function StudioAgentCanvas({
             <div className="grid gap-3 text-xs text-[var(--wireline-color-text-secondary)]">
               <div className="flex items-center justify-between rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-2">
                 <span>◷ Hours</span>
-                <span className="font-semibold text-foreground">9–5 CT</span>
+                <span className="font-semibold text-foreground">
+                  {config?.businessHours ? "Configured" : "Not set"}
+                </span>
               </div>
               <div className="flex gap-1">{weekdayStrip()}</div>
               <div className="grid grid-cols-2 gap-2">
@@ -448,7 +510,7 @@ export default function StudioAgentCanvas({
                 </span>
               </div>
               <div className="rounded-lg border border-border px-3 py-2 font-mono text-[10px]">
-                {"{business_name}"} · {"{website}"} · {"{support_email}"}
+                {profileLine || "Add business name, website, and support email"}
               </div>
             </div>
           </CardShell>
@@ -460,24 +522,17 @@ export default function StudioAgentCanvas({
             onActivate={() => onEditSection("connections")}
           >
             <div className="grid grid-cols-2 gap-2 text-xs">
-              {[
-                "Google Calendar",
-                "SMS / Text Messages",
-                "CRM Notes",
-                "Email",
-                "Shopify",
-                "Stripe Billing",
-              ].map((connection, index) => (
+              {connectionRows.map((connection) => (
                 <div
-                  key={connection}
+                  key={connection.label}
                   className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[var(--wireline-color-text-secondary)]"
                 >
                   <CheckCircle2
                     className={
-                      index < 3 ? "size-3 text-primary" : "size-3 text-muted-foreground/45"
+                      connection.active ? "size-3 text-primary" : "size-3 text-muted-foreground/45"
                     }
                   />
-                  <span>{connection}</span>
+                  <span>{connection.label}</span>
                 </div>
               ))}
             </div>
@@ -494,10 +549,10 @@ export default function StudioAgentCanvas({
             <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
               <p className="text-xs font-semibold text-foreground">Escalation routing</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Phone: {config?.escalationPhone || "+1 312 555 1234"}
+                Phone: {config?.escalationPhone || "Not set"}
               </p>
               <p className="text-xs text-muted-foreground">
-                Email: {config?.escalationEmail || "mike@trywireline.com"}
+                Email: {config?.escalationEmail || "Not set"}
               </p>
             </div>
             <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] p-3">
@@ -516,24 +571,26 @@ export default function StudioAgentCanvas({
         </CardShell>
 
         <div className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <span className="wl-eyebrow">Setup health</span>
-            <span className="text-xs font-semibold text-primary">94% ready</span>
+            <span className="text-xs font-semibold text-primary">
+              {readiness.score}/{readiness.total} · {readiness.ready ? "Ready" : "In progress"}
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-            {["Identity", "Voice", "Number", "Workflows", "Test call"].map((item, index) => (
+            {readiness.checks.map((item) => (
               <div
-                key={item}
+                key={item.id}
                 className="rounded-lg border border-border px-3 py-2 text-muted-foreground"
               >
                 <span
                   className={
-                    index < 4 ? "text-primary" : "text-[var(--wireline-color-status-warning)]"
+                    item.done ? "text-primary" : "text-[var(--wireline-color-status-warning)]"
                   }
                 >
-                  {index < 4 ? "✓" : "!"}
+                  {item.done ? "✓" : "!"}
                 </span>{" "}
-                {item}
+                {item.label}
               </div>
             ))}
           </div>
