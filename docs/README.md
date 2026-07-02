@@ -30,11 +30,14 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 | [DEPLOY.md](../DEPLOY.md) | Deployment and environment runbook. |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution and verification guidance. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
+| [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md) | Research lanes, prioritization, metrics, and 30/90/180-day execution roadmap. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Billing model and Stripe catalog direction. |
 
 ## Verification
 
+- `npm run verify:contracts` - focused product voice, marketing metadata, static metadata, and event taxonomy contracts.
 - `npm run verify` - design check, build, and bundled-server smoke.
 - `npm run verify:full` - lint, design/authz/CSP checks, tests, build, and smoke.
+- `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
 - `node apps/browser-extension/scripts/build.mjs --check` - browser extension contract and packaging smoke.
 - `GET /api/health` - deployment health probe.
