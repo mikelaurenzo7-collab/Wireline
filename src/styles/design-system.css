@@ -115,6 +115,12 @@
   transform: translateY(-1px);
 }
 
+.marketing-btn-primary:focus-visible,
+.marketing-btn-secondary:focus-visible {
+  outline: 2px solid var(--wireline-action);
+  outline-offset: 3px;
+}
+
 .marketing-btn-secondary {
   border: 1px solid var(--wireline-rule);
   background: var(--wireline-card);
@@ -256,15 +262,4 @@
 
 .bg-primary\/10 {
   background-color: var(--wireline-action-soft) !important;
-}
-
-.border-primary\/25,
-.border-primary\/35 {
-  border-color: color-mix(in srgb, var(--wireline-action) 28%, transparent) !important;
-}
-
-/* Success status text — used across pipelines, checklists, and readiness
- * indicators. Was undefined (colorless); map to the Letterpress success green. */
-.wl-text-success {
-  color: var(--wireline-color-status-success);
 }
