@@ -5,6 +5,9 @@ test("homepage hero has accessible audience tabs and no serious axe violations",
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: /wire your agent/i })).toBeVisible();
+  await expect(page.getByText(/solo business/i)).toBeVisible();
+  await expect(page.getByText("Personal assistants")).toBeVisible();
+  await expect(page.getByText("Teams & call centers")).toBeVisible();
 
   const tablist = page.getByRole("tablist", { name: "Audience mode" });
   await expect(tablist).toBeVisible();
