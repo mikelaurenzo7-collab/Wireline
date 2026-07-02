@@ -39,7 +39,7 @@ import {
   VAPI_VOICE_FALLBACK_MODEL,
   VAPI_VOICE_FALLBACK_PROVIDER,
   resolveVapiVoiceModelSelection,
-} from "./claude-brain";
+} from "./ai-models";
 
 // Retry configuration for transient failures
 const MAX_RETRIES = 3;
