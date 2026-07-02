@@ -14,7 +14,7 @@ const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "Wireline - Wire your agent";
 const DEFAULT_DESCRIPTION =
-  "From personal assistants to call centers and sales teams, Wireline builds trained voice agents that answer, route, book, follow up, and text the outcome.";
+  "From personal assistants to solo business agents, call centers, and sales teams, Wireline builds trained voice agents that answer, route, book, follow up, and text the outcome.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
