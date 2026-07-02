@@ -1,17 +1,6 @@
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  Bot,
-  MessageSquareText,
-  Mic2,
-  MonitorDown,
-  Palette,
-  SlidersHorizontal,
-  Smartphone,
-  Target,
-} from "lucide-react";
+import { ArrowRight, Mic2, Palette, SlidersHorizontal, Target } from "lucide-react";
 
-import { Button } from "../components/atoms";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 
@@ -50,27 +39,9 @@ const customizationLayers = [
   },
 ] as const;
 
-const appCarryover = [
-  {
-    label: "Studio",
-    detail: "Same profile.",
-    icon: Bot,
-  },
-  {
-    label: "Browser",
-    detail: "Context inherits.",
-    icon: MonitorDown,
-  },
-  {
-    label: "Mobile",
-    detail: "Rules travel.",
-    icon: Smartphone,
-  },
-  {
-    label: "ChatGPT",
-    detail: "Aligned drafts.",
-    icon: MessageSquareText,
-  },
+const surfaceLinks = [
+  { label: "Apps", href: "/settings/apps" },
+  { label: "Studio", href: "/studio" },
 ] as const;
 
 export default function CustomizationSettings() {
@@ -107,31 +78,17 @@ export default function CustomizationSettings() {
           </div>
         </section>
 
-        <section className="studio-card p-5 sm:p-6">
-          <div className="flex flex-col items-center gap-2 border-b border-border pb-3 text-center sm:flex-row sm:items-center sm:justify-between">
-            <div className="w-full text-center sm:w-auto sm:text-left">
-              <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Surfaces</h2>
-            </div>
-            <Button asChild variant="link" className="h-auto w-fit px-0 text-sm">
-              <Link to="/settings/apps">
-                Surfaces <ArrowRight aria-hidden="true" size={14} />
-              </Link>
-            </Button>
-          </div>
-          <div className="grid gap-3 pt-5 md:grid-cols-2 xl:grid-cols-4">
-            {appCarryover.map(({ label, detail, icon: Icon }) => (
-              <div
-                key={label}
-                className="rounded-[var(--radius-lg)] border border-border bg-background p-4"
-              >
-                <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
-                  <Icon aria-hidden="true" size={17} />
-                </span>
-                <h3 className="mt-4 text-sm font-semibold text-foreground">{label}</h3>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
-              </div>
-            ))}
-          </div>
+        <section className="mt-6 flex flex-wrap gap-2">
+          {surfaceLinks.map(({ label, href }) => (
+            <Link
+              key={label}
+              to={href}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-muted"
+            >
+              {label}
+              <ArrowRight aria-hidden="true" size={14} className="text-primary" />
+            </Link>
+          ))}
         </section>
       </WorkspacePageFrame>
     </WorkspaceShell>

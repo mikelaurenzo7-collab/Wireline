@@ -227,133 +227,44 @@ export default function StudioAgentWorkspacePanel({
             </div>
 
             <div className="mb-6">
-              <div className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
-                Context Providers
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Context providers
+              </p>
+              <div className="flex flex-wrap gap-2">
                 {(WORKSPACE_INTEGRATION_CATALOG || []).map((integ: WorkspaceIntegration) => (
                   <div
                     key={integ.id}
-                    className="studio-card p-4 hover:border-primary/20 transition-all group"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm"
                   >
-                    <div className="flex justify-between">
-                      <div>
-                        <div className="font-semibold">{integ.label}</div>
-                        <div className="text-[10px] text-muted-foreground">{integ.family}</div>
-                      </div>
-                      <div className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground self-start capitalize">
-                        {integ.connection}
-                      </div>
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground leading-snug">
-                      {integ.detail}
-                    </div>
-                    <div className="mt-2 text-[10px] text-primary group-hover:underline">
-                      Capabilities: {integ.capabilities?.join(" · ")}
-                    </div>
+                    <span className="font-medium">{integ.label}</span>
+                    <span className="text-[10px] capitalize text-muted-foreground">
+                      {integ.connection}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
-                Capabilities & Tools
-              </div>
-              <div className="space-y-4">
-                <div className="studio-card p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="font-medium">Everyday</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      (core actions every agent can use)
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    {(AGENT_TOOL_CATALOG || [])
-                      .filter(
-                        (t: AgentToolCatalogEntry) =>
-                          !["crm", "ecommerce", "team"].some((g) => t.group?.includes(g)) &&
-                          !BUSINESS_TOOL_NAMES.has(t.name),
-                      )
-                      .slice(0, 6)
-                      .map((tool: AgentToolCatalogEntry) => (
-                        <div
-                          key={tool.name}
-                          className="flex items-start gap-2 py-1 border-b border-border/30 last:border-none"
-                        >
-                          <div className="mt-1 h-3 w-3 rounded-sm bg-primary/70 shrink-0" />
-                          <div>
-                            <div className="font-medium text-[13px]">{tool.label}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {tool.description}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                <div className="studio-card p-4">
-                  <div className="font-medium mb-3">Calendar & Meetings</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(AGENT_TOOL_CATALOG || [])
-                      .filter(
-                        (t: AgentToolCatalogEntry) =>
-                          t.group === "calendar" ||
-                          t.name?.includes("appointment") ||
-                          t.name?.includes("zoom"),
-                      )
-                      .map((tool: AgentToolCatalogEntry) => (
-                        <span key={tool.name} className="text-xs px-2.5 py-1 bg-muted rounded-full">
-                          {tool.label}
-                        </span>
-                      ))}
-                    <span className="text-xs px-2.5 py-1 bg-muted rounded-full">
-                      Check availability
-                    </span>
-                    <span className="text-xs px-2.5 py-1 bg-muted rounded-full">Book slots</span>
-                  </div>
-                </div>
-
-                <div className="studio-card p-4">
-                  <div className="font-medium mb-3">CRM, Commerce & Team</div>
-                  <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                        CRM
-                      </div>
-                      {(AGENT_TOOL_CATALOG || [])
-                        .filter((t: AgentToolCatalogEntry) => t.group === "crm")
-                        .map((tool: AgentToolCatalogEntry) => (
-                          <div key={tool.name} className="py-0.5">
-                            {tool.label} — {tool.description}
-                          </div>
-                        ))}
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                        Commerce & Team
-                      </div>
-                      {(AGENT_TOOL_CATALOG || [])
-                        .filter((t: AgentToolCatalogEntry) =>
-                          ["ecommerce", "team"].includes(t.group),
-                        )
-                        .slice(0, 4)
-                        .map((tool: AgentToolCatalogEntry) => (
-                          <div key={tool.name} className="py-0.5 text-xs">
-                            {tool.label}
-                          </div>
-                        ))}
-                      <div className="text-xs mt-1 text-muted-foreground">
-                        Shopify, Square, Slack alerts, etc.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="studio-card p-4 text-xs">
-                  Device & Advanced: Push to phone, reminders, music, webhooks, custom enterprise
-                  triggers. All opt-in per this agent's workspace.
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Tools
+              </p>
+              <div className="studio-card p-4">
+                <div className="flex flex-wrap gap-2">
+                  {(AGENT_TOOL_CATALOG || [])
+                    .filter(
+                      (t: AgentToolCatalogEntry) =>
+                        !BUSINESS_TOOL_NAMES.has(t.name) || t.group === "crm",
+                    )
+                    .slice(0, 18)
+                    .map((tool: AgentToolCatalogEntry) => (
+                      <span
+                        key={tool.name}
+                        className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                      >
+                        {tool.label}
+                      </span>
+                    ))}
                 </div>
               </div>
             </div>
@@ -365,55 +276,34 @@ export default function StudioAgentWorkspacePanel({
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="studio-card p-5 lg:col-span-1">
-              <div className="font-semibold mb-1">Brain</div>
-              <div className="text-xs text-muted-foreground mb-3">
-                Memory, knowledge, training — the agent's mind.
-              </div>
+              <div className="mb-3 font-semibold">Brain</div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Memory</span>{" "}
-                  <span className="text-muted-foreground">persistent recall</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Knowledge & Facts</span>{" "}
-                  <span className="text-muted-foreground">sources</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Training</span>{" "}
-                  <span className="text-muted-foreground">voice, instructions, tests</span>
-                </div>
+                <div>Memory</div>
+                <div>Knowledge</div>
+                <div>Training</div>
               </div>
               <Link
                 to={`/studio?agent=${agentId}`}
-                className="mt-4 inline-block text-xs text-primary"
+                className="mt-4 inline-block text-xs font-semibold text-primary hover:underline"
               >
-                Deep dive in chat →
+                Open Studio →
               </Link>
             </div>
 
             <div className="studio-card p-5">
-              <div className="font-semibold mb-1">Record</div>
-              <div className="text-xs text-muted-foreground mb-3">
-                History and outcomes that train the agent.
-              </div>
-              <div className="text-sm">
-                Live outcomes and full ledger appear in the chat area above. Every wire feeds back
-                here.
-              </div>
+              <div className="mb-3 font-semibold">Record</div>
+              <p className="text-sm text-muted-foreground">Call history lives in the chat above.</p>
             </div>
 
             <div className="studio-card p-5">
-              <div className="font-semibold mb-3">Controls</div>
+              <div className="mb-3 font-semibold">Controls</div>
               <div className="flex flex-col gap-2 text-sm">
                 <Link to={`/studio?agent=${agentId}`} className="hover:text-primary">
-                  Open full chat workspace
+                  Studio
                 </Link>
                 <Link to="/settings" className="hover:text-primary">
-                  Agent-level settings
+                  Settings
                 </Link>
-                <div className="text-[10px] text-muted-foreground mt-1">
-                  All of this agent's configuration lives in one place.
-                </div>
               </div>
             </div>
           </div>
