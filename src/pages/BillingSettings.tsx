@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { Badge, Skeleton } from "../components/atoms";
 import SettingsTabs from "../components/settings/SettingsTabs";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
@@ -83,11 +84,14 @@ export default function BillingSettings() {
     balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
 
   return (
-    <WorkspaceShell title="" eyebrow="" contentClassName="pt-0 pb-10">
-      <div className="mx-auto flex w-full max-w-[680px] flex-col gap-5 pb-10">
+    <WorkspaceShell
+      eyebrow="Settings"
+      title="Billing"
+      description="Plan, conversation balance, and invoices."
+      contentClassName="pt-1 pb-10"
+    >
+      <WorkspacePageFrame narrow>
         <SettingsTabs />
-
-        <h1 className="wl-display-3">Billing</h1>
 
         <section className="rounded-[16px] border border-primary/20 bg-primary p-6 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary-foreground/65">
@@ -173,7 +177,9 @@ export default function BillingSettings() {
                   {formatInvoiceDate(subscription.current_period_end)}
                 </p>
                 <p className="text-sm font-semibold text-foreground">{invoiceTotal}</p>
-                <Badge variant="success">Paid</Badge>
+                <Badge variant="outline">
+                  {(subscription.status || "active").replace(/_/g, " ")}
+                </Badge>
               </div>
             </div>
           ) : (
@@ -203,7 +209,7 @@ export default function BillingSettings() {
             </Link>
           </div>
         </section>
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }

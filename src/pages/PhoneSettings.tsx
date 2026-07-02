@@ -4,6 +4,7 @@ import { Check, Plus, Smartphone } from "lucide-react";
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
@@ -94,8 +95,13 @@ export default function PhoneSettings() {
       : "Provision a dedicated line in one click";
 
   return (
-    <WorkspaceShell eyebrow="Settings" title="Phone & Carrier" contentClassName="pt-1 pb-8">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col pb-10">
+    <WorkspaceShell
+      eyebrow="Settings"
+      title="Phone"
+      description="Provision your line, routing rules, and connected devices."
+      contentClassName="pt-1 pb-8"
+    >
+      <WorkspacePageFrame>
         <SettingsTabs />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(420px,0.72fr)_minmax(320px,0.45fr)]">
@@ -198,22 +204,15 @@ export default function PhoneSettings() {
           <section className="studio-card p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <p className="wl-overline">VIP contacts</p>
-              <Button type="button" variant="secondary" size="sm">
+              <Button type="button" variant="secondary" size="sm" disabled>
                 <Plus size={14} aria-hidden="true" />
                 Add
               </Button>
             </div>
-            <div className="mt-4 grid gap-2">
-              {["Owner", "Family", "Priority client"].map((name) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-muted/45 px-3 py-2 text-sm"
-                >
-                  <span className="font-semibold text-foreground">{name}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground">Ring through</span>
-                </div>
-              ))}
-            </div>
+            <p className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+              VIP routing is coming soon. Contacts and VIP lists will ring through before your agent
+              intercepts.
+            </p>
           </section>
         </div>
 
@@ -253,7 +252,7 @@ export default function PhoneSettings() {
             {error}
           </StatusNotice>
         ) : null}
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }

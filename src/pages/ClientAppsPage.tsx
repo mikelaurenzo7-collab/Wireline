@@ -1,6 +1,7 @@
 import { ArrowUpRight, Car, MessageSquareText, MonitorDown, Smartphone } from "lucide-react";
 
 import { Badge, Button } from "../components/atoms";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const clientSurfaces = [
@@ -48,21 +49,13 @@ const clientSurfaces = [
 
 export default function ClientAppsPage() {
   return (
-    <WorkspaceShell title="" eyebrow="" contentClassName="pt-8 pb-10 lg:pt-10">
-      <div className="mx-auto flex w-full max-w-[940px] flex-col gap-8 pb-8">
-        <section>
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
-            Your control surfaces
-          </p>
-          <h1 className="wl-display-2 mt-4 max-w-[16ch]">
-            One agent system, wherever the conversation starts.
-          </h1>
-          <p className="mt-5 max-w-[54ch] text-[15px] leading-7 text-muted-foreground">
-            Same agents. Same setup. One protected workspace — on your desk, in your pocket, in the
-            car, or inside the tools you already use.
-          </p>
-        </section>
-
+    <WorkspaceShell
+      eyebrow="Your control surfaces"
+      title="Apps"
+      description="Same agents. Same setup. One protected workspace — on your desk, in your pocket, in the car, or inside the tools you already use."
+      contentClassName="pt-1 pb-10"
+    >
+      <WorkspacePageFrame>
         <section
           className="grid gap-4 md:grid-cols-2"
           aria-label="Wireline apps and companion surfaces"
@@ -100,22 +93,18 @@ export default function ClientAppsPage() {
           )}
         </section>
 
-        <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-7 text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
-                One continuous line
-              </p>
-              <p className="mt-3 font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.025em] sm:text-3xl">
-                A call that starts in CarPlay finishes in your Inbox.
-              </p>
-            </div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
-              → phone · chat · browser · inbox
-            </p>
-          </div>
+        <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-7 text-center text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
+            One continuous line
+          </p>
+          <p className="mx-auto mt-3 max-w-[28ch] font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.025em] sm:text-3xl">
+            A call that starts in CarPlay finishes in your Inbox.
+          </p>
+          <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-white/45">
+            phone · chat · browser · inbox
+          </p>
         </section>
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }

@@ -18,7 +18,7 @@ export default function SettingsTabs() {
   return (
     <nav
       aria-label="Settings sections"
-      className="mb-7 flex min-h-[44px] w-full items-center gap-2 overflow-x-auto border-b border-border/70 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="wl-settings-tabs mb-7 flex min-h-[44px] w-full items-center gap-2 overflow-x-auto border-b border-border/70 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {settingsTabs.map((tab) => {
         const active = isActive(pathname, tab.href);

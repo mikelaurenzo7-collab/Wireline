@@ -192,6 +192,28 @@
   color: var(--wireline-color-action-primary-default);
 }
 
+.wl-workspace-page {
+  margin-inline: auto;
+}
+
+.wl-workspace-page-intro {
+  margin-inline: auto;
+  max-width: 40rem;
+}
+
+.wl-workspace-page-intro .wl-display-3 {
+  text-wrap: balance;
+}
+
+.wl-workspace-page .wl-section-label {
+  text-align: center;
+  width: 100%;
+}
+
+.wl-settings-tabs {
+  justify-content: center;
+}
+
 .wl-workspace-header {
   align-items: center;
   justify-content: space-between;

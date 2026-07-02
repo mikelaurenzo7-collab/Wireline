@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Button, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel, WORKSPACE_VOICE } from "../lib/product-copy";
@@ -75,7 +76,7 @@ function metricRows(
     {
       label: "Agents",
       value: String(agents.length),
-      detail: hasAgents ? `${activeAgents} ready` : "Create one",
+      detail: hasAgents ? `${activeAgents} active` : "Create one",
     },
     {
       label: "Calls today",
@@ -298,17 +299,17 @@ export default function OverviewPage() {
 
   return (
     <WorkspaceShell title="Overview" eyebrow="" contentClassName="pt-7 pb-10 lg:pt-8">
-      <div className="wl-overview mx-auto flex w-full max-w-[980px] flex-col gap-8 pb-8">
-        <section className="relative">
+      <WorkspacePageFrame className="wl-overview">
+        <section className="relative text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {todayLabel()}
           </p>
-          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h1 className="wl-display-2">
+          <div className="mt-3 flex flex-col items-center gap-5">
+            <div className="max-w-prose">
+              <h1 className="wl-display-2 text-balance">
                 {dayGreeting()}, {firstName(user?.full_name, user?.email)}.
               </h1>
-              <p className="mt-3 max-w-prose text-[14px] leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
+              <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground sm:mt-4 sm:text-[15px]">
                 {hasAgents
                   ? `Your line is active. ${primaryAgent?.name || "Your agent"} is answering.`
                   : WORKSPACE_VOICE.emptyCue}
@@ -358,10 +359,10 @@ export default function OverviewPage() {
         ) : null}
 
         <section>
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="wl-section-label mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             Quick actions
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {QUICK_ACTIONS.map(({ href, icon: Icon, title }) => (
               <Link
                 key={href}
@@ -482,7 +483,7 @@ export default function OverviewPage() {
             A call that starts on your phone finishes in your Inbox.
           </p>
         </section>
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }

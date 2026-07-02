@@ -314,6 +314,7 @@ function MobileDock({ pathname }: { pathname: string }) {
 export default function WorkspaceShell({
   title,
   eyebrow,
+  description,
   action,
   children,
   contentClassName = "pt-2 pb-8",
@@ -321,6 +322,7 @@ export default function WorkspaceShell({
 }: {
   title: string;
   eyebrow: string;
+  description?: string;
   action?: ReactNode;
   children: ReactNode;
   contentClassName?: string;
@@ -363,6 +365,11 @@ export default function WorkspaceShell({
                     <h1 className="truncate font-[var(--wireline-font-family-display)] text-[clamp(1.1rem,1rem+0.5vw,1.5rem)] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">
                       {title}
                     </h1>
+                  ) : null}
+                  {description ? (
+                    <p className="mx-auto mt-2 max-w-[42ch] text-sm leading-relaxed text-muted-foreground">
+                      {description}
+                    </p>
                   ) : null}
                 </div>
               </div>

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { LogOut, ShieldCheck, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import { Badge, Button } from "../components/atoms";
+import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
@@ -94,7 +95,7 @@ export default function SettingsPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace owner";
-  const email = user?.email || "owner@example.com";
+  const email = user?.email || "";
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -110,39 +111,36 @@ export default function SettingsPage() {
   }
 
   return (
-    <WorkspaceShell title="" eyebrow="" contentClassName="pt-0 pb-10">
-      <div className="mx-auto flex w-full max-w-[700px] flex-col gap-5 pb-10">
+    <WorkspaceShell
+      eyebrow="Settings"
+      title="Account"
+      description="Profile and security for this workspace."
+      contentClassName="pt-1 pb-10"
+    >
+      <WorkspacePageFrame narrow>
         <SettingsTabs />
-
-        <h1 className="wl-display-3">Account</h1>
 
         <section className="studio-card p-5 sm:p-6">
           <p className="wl-overline">Profile</p>
           <div className="mt-5 grid gap-4">
             <ReadOnlyField label="Name" value={displayName} />
-            <ReadOnlyField label="Email" value={email} />
-            <ReadOnlyField label="Company" value="Wireline" />
+            <ReadOnlyField label="Email" value={email || "—"} />
           </div>
         </section>
 
         <section className="studio-card p-5 sm:p-6">
           <p className="wl-overline">Security</p>
           <div className="mt-5 grid gap-3">
-            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
+            <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">Password</p>
-                <p className="mt-1 text-xs text-muted-foreground">Last changed 14 days ago</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Reset via email if you need a new password.
+                </p>
               </div>
-              <Button type="button" variant="secondary" size="sm">
-                Change
+              <Button type="button" variant="secondary" size="sm" asChild>
+                <Link to="/reset-password">Reset password</Link>
               </Button>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Two-factor auth</p>
-                <p className="mt-1 text-xs text-muted-foreground">TOTP via authenticator app</p>
-              </div>
-              <Badge variant="success">Enabled</Badge>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
               <div>
@@ -172,7 +170,7 @@ export default function SettingsPage() {
         </section>
 
         <DangerZone />
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }
