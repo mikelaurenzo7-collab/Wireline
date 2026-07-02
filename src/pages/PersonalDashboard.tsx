@@ -49,7 +49,7 @@ export default function PersonalDashboard() {
     phoneNumbers.find((n) => n.agent_id === personalAgent?.id) || phoneNumbers[0];
 
   const agentName = personalAgent?.name || "Jordan";
-  const voiceId = personalAgent?.voiceId || "ElevenLabs - Professional";
+  const voiceId = personalAgent?.voiceId || "Wireline Voice";
   const greeting =
     personalAgent?.firstMessage ||
     `Hi, you've reached ${personalAgent?.name || "Jordan"}'s personal AI agent. How can I help you?`;

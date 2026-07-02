@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "../components/atoms";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const customizationLayers = [
@@ -75,8 +76,13 @@ const appCarryover = [
 
 export default function CustomizationSettings() {
   return (
-    <WorkspaceShell eyebrow="Workspace" title="Customization" contentClassName="pt-1 pb-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 pb-8">
+    <WorkspaceShell
+      eyebrow="Workspace"
+      title="Customization"
+      description="One profile for brand, voice, authority, and goals across every agent."
+      contentClassName="pt-1 pb-8"
+    >
+      <WorkspacePageFrame>
         <section className="studio-card grid gap-4 border-primary/20 bg-secondary p-5 sm:p-6 xl:grid-cols-[minmax(0,.8fr)_minmax(300px,.55fr)] xl:items-center">
           <div className="text-center">
             <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground">Profile</h2>
@@ -152,7 +158,7 @@ export default function CustomizationSettings() {
             ))}
           </div>
         </section>
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }

@@ -1,10 +1,12 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+
+import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 
 const settingsTabs = [
-  { href: "/settings", label: "Account" },
-  { href: "/settings/billing", label: "Billing" },
-  { href: "/settings/phone", label: "Phone" },
-  { href: "/settings/team", label: "Team" },
+  { id: "account", href: "/settings", label: "Account" },
+  { id: "billing", href: "/settings/billing", label: "Billing" },
+  { id: "phone", href: "/settings/phone", label: "Phone" },
+  { id: "team", href: "/settings/team", label: "Team" },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -14,29 +16,14 @@ function isActive(pathname: string, href: string) {
 
 export default function SettingsTabs() {
   const { pathname } = useLocation();
+  const activeTab = settingsTabs.find((tab) => isActive(pathname, tab.href))?.id ?? "account";
 
   return (
-    <nav
-      aria-label="Settings sections"
-      className="wl-settings-tabs mb-7 flex min-h-[44px] w-full items-center gap-2 overflow-x-auto border-b border-border/70 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-    >
-      {settingsTabs.map((tab) => {
-        const active = isActive(pathname, tab.href);
-        return (
-          <Link
-            key={tab.href}
-            to={tab.href}
-            aria-current={active ? "page" : undefined}
-            className={`inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${
-              active
-                ? "bg-primary text-primary-foreground shadow-[var(--wireline-elevation-sm)]"
-                : "text-foreground hover:bg-muted"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <WorkspaceTabStrip
+      ariaLabel="Settings sections"
+      tabs={settingsTabs}
+      activeId={activeTab}
+      className="mb-7"
+    />
   );
 }

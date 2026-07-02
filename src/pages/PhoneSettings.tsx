@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Plus, Smartphone } from "lucide-react";
+import { Check, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -164,40 +165,33 @@ export default function PhoneSettings() {
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(420px,0.72fr)_minmax(320px,0.45fr)]">
           <section className="studio-card p-5 sm:p-6">
-            <p className="wl-overline">Call forwarding</p>
-            <div className="mt-4 grid gap-2">
-              {[
-                [
-                  "Unknown callers",
-                  "Agent answers, identifies intent, takes a message or patches through.",
-                  "Agent",
-                  true,
-                ],
-                [
-                  "Contacts",
-                  "Ring your phone first. Agent picks up if you miss it.",
-                  "Ring first",
-                  false,
-                ],
-                ["VIP list", "Always rings through. Never intercepted by agent.", "Direct", false],
-              ].map(([title, detail, badge, active]) => (
-                <div
-                  key={String(title)}
-                  className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-3 ${
-                    active ? "border-primary/20 bg-primary/5" : "border-border bg-background"
-                  }`}
+            <p className="wl-overline">Inbound routing</p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              When your Wireline number is provisioned, inbound calls route to the attached agent.
+              Greeting, handoff, and escalation rules are configured in Studio.
+            </p>
+            {attachedAgent ? (
+              <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-center sm:text-left">
+                <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Attached to your line</p>
+              </div>
+            ) : (
+              <p className="mt-4 text-center text-sm text-muted-foreground sm:text-left">
+                No agent attached yet. Provision a line, then attach an agent in Studio.
+              </p>
+            )}
+            <div className="mt-4 flex justify-center sm:justify-start">
+              <Button asChild variant="secondary" size="sm">
+                <Link
+                  to={
+                    attachedAgent
+                      ? `/studio?agent=${encodeURIComponent(attachedAgent.id)}`
+                      : "/studio"
+                  }
                 >
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold tracking-[-.01em] text-foreground">
-                      {title}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</p>
-                  </div>
-                  <span className="shrink-0 rounded-md bg-muted px-2 py-1 font-mono text-[10px] uppercase tracking-[0.09em] text-muted-foreground">
-                    {badge}
-                  </span>
-                </div>
-              ))}
+                  Open Studio
+                </Link>
+              </Button>
             </div>
           </section>
 
@@ -216,30 +210,15 @@ export default function PhoneSettings() {
           </section>
         </div>
 
-        <section className="studio-card mt-5 p-5 sm:p-6">
+        <section className="studio-card mt-5 p-5 sm:p-6 text-center">
           <p className="wl-overline">Connected devices</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-lg bg-muted text-primary">
-                  <Smartphone size={17} aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Mobile device</p>
-                  <p className="text-xs text-muted-foreground">
-                    Wireline app · Shortcuts · CarPlay
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="min-h-[88px] rounded-xl border border-dashed border-border bg-background p-4 text-center text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:bg-muted/40"
-            >
-              + Add device
-              <span className="mt-1 block text-xs font-normal">Apple Watch, iPad, Mac</span>
-            </button>
-          </div>
+          <p className="mx-auto mt-3 max-w-prose text-sm leading-6 text-muted-foreground">
+            iPhone, Android, browser companion, and in-car surfaces all run the same Wireline
+            workspace. Manage them from Apps.
+          </p>
+          <Button asChild variant="secondary" size="sm" className="mt-4">
+            <Link to="/settings/apps">View apps</Link>
+          </Button>
         </section>
 
         {message ? (

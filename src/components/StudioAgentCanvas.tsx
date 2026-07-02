@@ -463,14 +463,16 @@ export default function StudioAgentCanvas({
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-              {["Auto route", "Grok 4.3", "Claude Sonnet", "GPT-5.5"].map((model, index) => (
-                <span
-                  key={model}
-                  className={`rounded-lg border px-2 py-2 ${index === 0 ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border text-muted-foreground"}`}
-                >
-                  {model}
-                </span>
-              ))}
+              {["Auto route", "Wireline Live", "Wireline Pro", "Wireline Deep"].map(
+                (model, index) => (
+                  <span
+                    key={model}
+                    className={`rounded-lg border px-2 py-2 ${index === 0 ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    {model}
+                  </span>
+                ),
+              )}
             </div>
           </div>
           <div className="mt-4 h-2 rounded-full bg-[var(--wireline-color-surface-subtle)]">

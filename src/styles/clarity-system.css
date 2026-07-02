@@ -210,7 +210,8 @@
   width: 100%;
 }
 
-.wl-settings-tabs {
+.wl-settings-tabs,
+.wl-workspace-tabs {
   justify-content: center;
 }
 

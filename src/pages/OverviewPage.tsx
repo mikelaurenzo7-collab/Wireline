@@ -475,11 +475,11 @@ export default function OverviewPage() {
           </article>
         </section>
 
-        <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-6 text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
+        <section className="rounded-[16px] border border-border bg-[var(--wireline-color-text-primary)] p-6 text-center text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-status-success)]">
             One continuous line
           </p>
-          <p className="mt-3 font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.02em]">
+          <p className="mx-auto mt-3 max-w-[28ch] font-[var(--wireline-font-family-display)] text-2xl leading-tight tracking-[-0.02em]">
             A call that starts on your phone finishes in your Inbox.
           </p>
         </section>

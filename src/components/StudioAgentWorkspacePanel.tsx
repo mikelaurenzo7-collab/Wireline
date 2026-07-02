@@ -8,21 +8,12 @@ import {
   BUSINESS_TOOL_NAMES,
   type AgentToolCatalogEntry,
 } from "../lib/agent-capabilities";
+import { normalizeApiVoices, WIRELINE_LIVE_VOICES, type VoiceOption } from "../lib/voice-catalog";
 import {
   WORKSPACE_INTEGRATION_CATALOG,
   type WorkspaceIntegration,
 } from "../lib/workspace-integration-catalog";
 import { VoicePreviewButton } from "./DeployAgentModal";
-
-type Voice = { id: string; name: string; provider?: string; preview_url?: string };
-
-const XAI_VOICES: Voice[] = [
-  { id: "eve", name: "Eve — Bright & Energetic", provider: "xai" },
-  { id: "ara", name: "Ara — Warm & Professional", provider: "xai" },
-  { id: "rex", name: "Rex — Clear & Confident", provider: "xai" },
-  { id: "sal", name: "Sal — Balanced & Friendly", provider: "xai" },
-  { id: "leo", name: "Leo — Direct & Energetic", provider: "xai" },
-];
 
 const PERSONALITIES = ["Clear", "Warm", "Direct", "Polished"];
 
@@ -39,11 +30,11 @@ export default function StudioAgentWorkspacePanel({
   onTestVoiceInChat,
   className = "",
 }: StudioAgentWorkspacePanelProps) {
-  const [allVoices, setAllVoices] = useState<Voice[]>([]);
+  const [allVoices, setAllVoices] = useState<VoiceOption[]>([]);
   const [voicesLoading, setVoicesLoading] = useState(false);
   const [voiceSearch, setVoiceSearch] = useState("");
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
-  const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null);
   const [applyingVoiceId, setApplyingVoiceId] = useState<string | null>(null);
   const [voiceApplyError, setVoiceApplyError] = useState<string | null>(null);
 
@@ -69,12 +60,12 @@ export default function StudioAgentWorkspacePanel({
     setVoicesLoading(true);
     authFetch("/api/voices")
       .then((r) => r.json())
-      .then((data) => setAllVoices(data.voices || []))
+      .then((data) => setAllVoices(normalizeApiVoices(data?.voices)))
       .catch(() => setAllVoices([]))
       .finally(() => setVoicesLoading(false));
   }, [agentId]);
 
-  function playVoice(voice: Voice) {
+  function playVoice(voice: VoiceOption) {
     if (playingVoiceId === voice.id) {
       window.speechSynthesis?.cancel?.();
       setPlayingVoiceId(null);
@@ -96,7 +87,7 @@ export default function StudioAgentWorkspacePanel({
     }
   }
 
-  async function applyVoice(voice: Voice) {
+  async function applyVoice(voice: VoiceOption) {
     if (!agentId) return;
     setApplyingVoiceId(voice.id);
     setVoiceApplyError(null);
@@ -205,7 +196,7 @@ export default function StudioAgentWorkspacePanel({
             </div>
             <button
               onClick={() => {
-                const quickVoice = XAI_VOICES[0] || allVoices[0];
+                const quickVoice = WIRELINE_LIVE_VOICES[0] || allVoices[0];
                 if (quickVoice) void applyVoice(quickVoice);
               }}
               disabled={Boolean(applyingVoiceId)}
@@ -226,7 +217,7 @@ export default function StudioAgentWorkspacePanel({
               <div>
                 <span className="font-medium">Voice Gallery</span>
                 <span className="ml-2 text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                  Hear xAI + ElevenLabs live
+                  Hear Wireline Live + Wireline Voice
                 </span>
               </div>
               <label htmlFor="voice-search" className="sr-only">
@@ -245,10 +236,10 @@ export default function StudioAgentWorkspacePanel({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <div>
                 <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
-                  <Sparkles size={12} /> xAI Grok Voices (built-in)
+                  <Sparkles size={12} /> Wireline Live
                 </div>
                 <div className="space-y-1">
-                  {XAI_VOICES.filter(
+                  {WIRELINE_LIVE_VOICES.filter(
                     (v) => !voiceSearch || v.name.toLowerCase().includes(voiceSearch.toLowerCase()),
                   ).map((v) => {
                     const isPlaying = playingVoiceId === v.id;
@@ -284,7 +275,7 @@ export default function StudioAgentWorkspacePanel({
 
               <div>
                 <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
-                  ElevenLabs (live from API · first 12)
+                  Wireline Voice library
                 </div>
                 <div className="space-y-1 max-h-48 overflow-auto pr-1">
                   {voicesLoading && (
@@ -311,7 +302,7 @@ export default function StudioAgentWorkspacePanel({
                           <span className="truncate">
                             {v.name || v.id}{" "}
                             <span className="text-[10px] text-muted-foreground">
-                              ({v.provider || "11labs"})
+                              Wireline Voice
                             </span>
                           </span>
                           <div className="flex items-center gap-1.5 text-xs shrink-0">
@@ -331,8 +322,8 @@ export default function StudioAgentWorkspacePanel({
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              xAI uses system voice for demo. ElevenLabs uses real API previews. Full quality in
-              calls &amp; tests.
+              Quick previews compare tone in the browser. Full fidelity applies on your Wireline
+              line.
             </p>
             <div className="mt-2 flex gap-2">
               <input

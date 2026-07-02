@@ -387,8 +387,8 @@ export default function PronunciationDictionaryPanel() {
       </div>
 
       <p className="wl-micro-meta--muted text-center mt-4 leading-relaxed">
-        Dictionaries sync to ElevenLabs and apply to every 11labs voice your agents use. Toggle
-        Active off to pause a dictionary without deleting it.
+        Dictionaries sync across your workspace and apply to every Wireline Voice your agents use.
+        Toggle Active off to pause a dictionary without deleting it.
       </p>
     </div>
   );

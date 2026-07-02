@@ -6,7 +6,7 @@ export type ComposerModel = { id: string; label: string; hint?: string };
 
 export const DEFAULT_COMPOSER_MODELS: ComposerModel[] = [
   { id: "auto", label: "Auto route", hint: "Best model per task" },
-  { id: "grok", label: "Grok 4.3", hint: "Fast everyday default" },
+  { id: "grok", label: "Wireline Fast", hint: "Fast everyday default" },
   { id: "gemini-flash", label: "Gemini Flash", hint: "Quick, lightweight" },
   { id: "claude-sonnet", label: "Claude Sonnet", hint: "Careful, polished" },
   { id: "gpt-thinking", label: "GPT-5.5 Thinking", hint: "Deep reasoning" },

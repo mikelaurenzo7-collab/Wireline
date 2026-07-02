@@ -116,7 +116,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "world-connections", pattern: /World Connections/ },
     { id: "real-config-api", pattern: /\/api\/agent-config\// },
     { id: "voice-search", pattern: /htmlFor="voice-search"/ },
-    { id: "voice-cap", pattern: /first 12/ },
+    { id: "voice-cap", pattern: /Wireline Voice library/ },
     { id: "integration-keys", pattern: /key=\{integ\.id\}/ },
     { id: "integration-status", pattern: /integ\.connection/ },
   ],

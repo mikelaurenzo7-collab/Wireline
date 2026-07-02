@@ -45,8 +45,8 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
     <div className="space-y-3 rounded-md border border-ink/[0.08] bg-ink/[0.015] px-3 py-3">
       <p className="leading-relaxed wl-micro-meta">
         Managed calls use OpenAI first and retry through Gemini only if OpenAI is unavailable.
-        Choose any OpenRouter model (including Grok variants) when this agent needs distinctive
-        capabilities and unique reasoning.
+        Choose any supported model when this agent needs distinctive capabilities and unique
+        reasoning.
       </p>
 
       <OpenRouterModelPicker value={runtimeValue} onChange={handleModelChange} />

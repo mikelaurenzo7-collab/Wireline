@@ -189,7 +189,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                     </div>
                     <div>
                       <p className="text-[var(--wireline-typography-overline-size)] font-bold text-foreground leading-tight">
-                        Voice Synthesizer (ElevenLabs)
+                        Voice Synthesizer
                       </p>
                       <p className="wl-micro-meta--muted">
                         High-fidelity production voicings funded with fallback models online.
