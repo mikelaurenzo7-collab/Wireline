@@ -12,7 +12,7 @@ export const WIRELINE_ONE_LINER =
   "Wireline runs calls, texts, follow-up, browser context, email, and integrations through trained agents that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls run through our voice bridge with low-latency speech-to-text and ElevenLabs voice synthesis. Wireline uses fast voice models for the phone runtime, while Claude powers coaching, written review, and higher-reasoning workflows.";
+  "Live calls run through the Wireline voice bridge with low-latency speech-to-text and Wireline voice synthesis. Wireline uses fast voice models for the phone runtime and deeper reasoning models for coaching, written review, and higher-reasoning workflows.";
 
 export const WIRELINE_PLANS = [
   {
@@ -159,8 +159,8 @@ export const WIRELINE_INTEGRATIONS = [
   "Meta (Facebook + Instagram Ads)",
   "X (Twitter)",
   "Stripe",
-  "Twilio (BYO carrier)",
-  "ElevenLabs (voice cloning)",
+  "Bring-your-own carrier",
+  "Wireline voice cloning",
 ] as const;
 
 /**

@@ -63,7 +63,7 @@ export default function BrowserCallWidget({
     });
 
     instance.on("error", (reason: unknown) => {
-      console.error("[wireline:webrtc] Vapi error:", reason);
+      console.error("[wireline:webrtc] voice bridge error:", reason);
       setError(reason instanceof Error ? reason.message : "Voice connection failed.");
       setConnecting(false);
       setCallActive(false);

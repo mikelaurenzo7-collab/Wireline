@@ -205,9 +205,7 @@ export default function StudioWorkspaceV2() {
   if (!active) {
     return (
       <div className="flex h-full min-h-0 flex-col items-center justify-center bg-background px-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Pick an agent from the bar above to open the canvas composer.
-        </p>
+        <p className="text-sm text-muted-foreground">Pick an agent above to open its canvas.</p>
         <Link
           to="/studio?create=1"
           className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm hover:bg-muted"

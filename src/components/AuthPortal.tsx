@@ -234,14 +234,14 @@ const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(
 const AUTH_BRAND = {
   signin: {
     label: "Welcome back",
-    headline: "Your phone, finally answering for you.",
+    headline: "Back on the line.",
     body: "Sign in to your workspace — your agents, calls, and follow-ups are right where you left them.",
   },
   signup: {
     personal: {
       label: "Your workspace",
-      headline: "Your phone, finally answering for you.",
-      body: "A voice AI that answers your phone, talks to the caller, and handles it. Messages, bookings, errands, follow-ups — you get a text with what happened.",
+      headline: "Wire your agent.",
+      body: "A trained voice agent that answers, makes calls, books, and follows up — you get a text with what happened.",
     },
     business: {
       label: "Business workspace",

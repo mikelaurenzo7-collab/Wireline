@@ -534,7 +534,7 @@ export function CarrierPanel({
               className="w-full text-sm bg-muted border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground font-mono h-auto"
             />
             <p className="wl-micro-meta leading-relaxed">
-              A Twilio-verified number you own. Outbound texts go from this number.
+              A carrier-verified number you own. Outbound texts go from this number.
             </p>
           </div>
 
@@ -553,7 +553,7 @@ export function CarrierPanel({
               className="w-full text-sm bg-muted border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-primary/40 text-foreground placeholder:text-muted-foreground font-mono h-auto"
             />
             <p className="wl-micro-meta leading-relaxed">
-              Twilio's pool of numbers with auto-failover. Overrides the single sender above.
+              Wireline's managed number pool with auto-failover. Overrides the single sender above.
             </p>
           </div>
 
