@@ -7,12 +7,15 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings in one shared module", () => {
-    expect(MARKETING_VOICE.headline).toBe("Your phone, finally answering for you.");
-    expect(MARKETING_VOICE.subline).toContain("picks up your phone");
+    expect(MARKETING_VOICE.headline).toBe("Wire your agent.");
+    expect(MARKETING_VOICE.subline).toContain("personal assistants");
+    expect(MARKETING_VOICE.subline).toContain("solo business agents");
+    expect(MARKETING_VOICE.subline).toContain("call centers");
+    expect(MARKETING_VOICE.subline).toContain("sales teams");
     expect(MARKETING_VOICE.proof).toEqual([
-      "Answers with a real voice",
-      "Acts on your behalf",
-      "Texts you what happened",
+      "Personal assistants",
+      "Solo business agents",
+      "Teams & call centers",
     ]);
   });
 
@@ -21,9 +24,6 @@ describe("product voice cohesion", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("MARKETING_VOICE");
-    // Claude Design Overview is a dashboard (greeting + metrics + roster + recent
-    // calls) with its own honest copy; the shared workspace voice constants live
-    // where the conversation happens — the Studio Workroom composer.
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });

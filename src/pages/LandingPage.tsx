@@ -17,14 +17,14 @@ export default function LandingPage() {
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Web, iOS, Android",
     description:
-      "Create, train, and run agents for calls, texts, follow-up, browser context, email, and integrations.",
+      "Build trained voice agents for personal assistants, solo business agents, call centers, sales teams, scheduling, routing, follow-up, and business phone coverage.",
   };
 
   return (
     <>
       <PageMeta
-        title="Wireline | Your phone, finally answering for you"
-        description="A voice AI that picks up your phone, talks to the caller, and handles it. Booking, message-taking, follow-ups, errands, and business coverage in one place."
+        title="Wireline | Wire your agent"
+        description="From personal assistants to solo business agents, call centers, and sales teams, build a trained voice agent that answers, routes, books, follows up, and texts the outcome."
         image="/og-image.png"
       />
       <script

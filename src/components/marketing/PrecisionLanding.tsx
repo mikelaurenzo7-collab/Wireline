@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
@@ -11,38 +11,42 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
   const personal = {
     initial: "M",
     name: "Mike's Agent",
-    role: "Personal agent",
+    role: "Personal assistant",
     caller: "Unknown · (312) 555-0182",
     lines: [
       { from: "caller", text: "Hi, is this Mike? I'm calling about your car warranty." },
       { from: "agent", text: "Mike isn't available. Can I ask what this is regarding?" },
       { from: "caller", text: "It's about an expiring warranty offer." },
-      { from: "agent", text: "Got it. I'll let him know. Thanks for calling." },
+      { from: "agent", text: "Handled. I'll text Mike the summary now." },
     ],
-    tags: ["✓ Handled", "✓ Message sent to Mike", "✓ Caller logged"],
+    tags: ["Screened", "Message sent", "Caller logged"],
   };
 
   const business = {
     initial: "S",
     name: "Sarah — Front Desk",
-    role: "Business agent",
+    role: "Call center agent",
     caller: "Inbound · (630) 555-0198",
     lines: [
       { from: "caller", text: "I'd like to book a service estimate for next week." },
-      { from: "agent", text: "Happy to help! Friday at 11:30 works — should I lock it in?" },
+      { from: "agent", text: "Happy to help. Friday at 11:30 works — should I lock it in?" },
       { from: "caller", text: "Yes, Friday is perfect." },
-      { from: "agent", text: "Booked. I'll text a confirmation now." },
+      { from: "agent", text: "Booked. I'll text a confirmation and route the note." },
     ],
-    tags: ["✓ Booked Fri 11:30", "✓ SMS sent", "✓ Calendar updated"],
+    tags: ["Booked Fri 11:30", "SMS sent", "Calendar updated"],
   };
 
   const data = variant === "personal" ? personal : business;
 
   return (
-    <div className="relative rounded-[20px] border border-border bg-card p-6 shadow-[0_1px_3px_rgba(0,0,0,.03),_0_8px_32px_rgba(0,0,0,.05)]">
+    <aside
+      className="relative rounded-[20px] border border-border bg-card p-5 shadow-[0_1px_3px_rgba(0,0,0,.03),_0_8px_32px_rgba(0,0,0,.05)] sm:p-6"
+      aria-label={`${data.role} live call preview`}
+    >
       {/* Glow */}
       <div
         className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-60"
+        aria-hidden="true"
         style={{
           background: "radial-gradient(ellipse at 60% 30%, rgba(43,85,72,.07), transparent 70%)",
           filter: "blur(40px)",
@@ -50,18 +54,25 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
       />
       <div className="relative">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-[10px] bg-primary font-mono text-[12px] font-bold text-primary-foreground">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-primary font-mono text-[12px] font-bold text-primary-foreground"
+              aria-hidden="true"
+            >
               {data.initial}
             </div>
-            <div>
-              <div className="text-[14px] font-semibold">{data.name}</div>
-              <div className="wl-eyebrow text-primary">On a call</div>
+            <div className="min-w-0">
+              <div className="truncate text-[14px] font-semibold">{data.name}</div>
+              <div className="wl-eyebrow text-primary">{data.role}</div>
+              <div className="mt-1 truncate text-[12px] text-muted-foreground">{data.caller}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5">
-            <span className="marketing-live-dot h-1.5 w-1.5 animate-[pulse_2s_ease-in-out_infinite] rounded-full" />
+          <div className="flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1.5">
+            <span
+              className="marketing-live-dot h-1.5 w-1.5 animate-[pulse_2s_ease-in-out_infinite] rounded-full"
+              aria-hidden="true"
+            />
             <span className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
               Live
             </span>
@@ -70,11 +81,11 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
 
         {/* Waveform */}
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-muted px-4 py-3">
-          <div className="flex h-6 items-end gap-[2px]">
+          <div className="flex h-6 items-end gap-[2px]" aria-hidden="true">
             {[30, 70, 100, 50, 85, 40, 95, 60].map((h, i) => (
               <div
                 key={i}
-                className="w-[3px] rounded-sm bg-[var(--wireline-color-status-success)]"
+                className="wireline-wave-bar w-[3px] rounded-sm bg-[var(--wireline-color-status-success)]"
                 style={{
                   height: `${h}%`,
                   animation: `waveBar 1.2s ease-in-out infinite`,
@@ -89,10 +100,11 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
         </div>
 
         {/* Transcript */}
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-4 flex flex-col gap-2" role="list" aria-label="Example call transcript">
           {data.lines.map((line, i) => (
             <div
               key={i}
+              role="listitem"
               className={`max-w-[88%] rounded-[14px] px-[14px] py-[10px] text-[13px] leading-[1.5] ${
                 line.from === "agent"
                   ? "self-end rounded-br-[4px] bg-primary text-primary-foreground"
@@ -105,15 +117,16 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
         </div>
 
         {/* Tags */}
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Call outcomes">
           {data.tags.map((tag) => (
-            <span key={tag} className="marketing-tag-success">
+            <li key={tag} className="marketing-tag-success inline-flex items-center gap-1.5">
+              <span aria-hidden="true">✓</span>
               {tag}
-            </span>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -124,6 +137,38 @@ const audiences: { key: Audience; label: string }[] = [
   { key: "personal", label: "Personal" },
   { key: "business", label: "Business" },
 ];
+
+function getAudienceTabId(key: Audience) {
+  return `wireline-${key}-audience-tab`;
+}
+
+function getAudiencePanelId(key: Audience) {
+  return `wireline-${key}-audience-panel`;
+}
+
+const HERO_AUDIENCE_COPY: Record<
+  Audience,
+  { cta: string; ctaPath: string; demo: string; note: string; stripLead: string; stripWin: string }
+> = {
+  personal: {
+    cta: "Wire personal agent",
+    ctaPath: "/signup?plan=personal",
+    demo: "Hear a personal call",
+    note: "For unknown callers, appointments, errands, reminders, and side-hustle intake.",
+    stripLead: "Missed calls become missed context.",
+    stripWin: MARKETING_VOICE.differentiator,
+  },
+  business: {
+    cta: "Wire business agent",
+    ctaPath: "/signup?plan=business",
+    demo: "Hear a front desk call",
+    note: "For call centers, sales teams, booking lines, support queues, and after-hours coverage.",
+    stripLead: BUSINESS_MARKETING_VOICE.beforeStrip,
+    stripWin: BUSINESS_MARKETING_VOICE.differentiator,
+  },
+};
+
+const HERO_OUTCOMES = ["Answers live", "Routes the handoff", "Texts the recap"] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
@@ -137,20 +182,20 @@ const businessExtraAgentPrice = planCatalog.business.extra_agent_price_usd ?? 12
 const PERSONAL_CONFIGS = [
   {
     icon: "◉",
-    name: "The Gatekeeper",
-    body: "Answers unknowns with a real voice. Asks who's calling and why. Takes a detailed message or patches them through — then texts you the play-by-play.",
+    name: "Gatekeeper",
+    body: "Screens unknowns, asks intent, patches through only when needed, and texts the recap.",
     plan: "Personal · Day one",
   },
   {
     icon: "◈",
-    name: "The Scheduler",
-    body: "Books appointments, handles reschedules, texts reminders. Calls your dentist, pharmacy, or landlord so you don't have to sit on hold.",
+    name: "Scheduler",
+    body: "Books, reschedules, confirms, and waits on hold with the services you already call.",
     plan: "Personal · Live outbound",
   },
   {
     icon: "◫",
-    name: "The Operator",
-    body: "Your side hustle answering itself. Takes orders, quotes rates, qualifies leads, sends follow-up texts. You build the playbook — it runs it.",
+    name: "Operator",
+    body: "Turns a side hustle into a front desk: quotes, intake, follow-up, and handoff.",
     plan: "Team · Drafting board",
   },
 ];
@@ -159,19 +204,19 @@ const BUSINESS_CONFIGS = [
   {
     icon: "◉",
     name: "Front Desk",
-    body: "A live voice agent that answers every call, books appointments, qualifies leads, and texts the outcome — no hold music, no missed opportunities.",
+    body: "Answers every call, books appointments, qualifies leads, and texts the outcome.",
     plan: "Business · Always on",
   },
   {
     icon: "◈",
     name: "Sales Floor",
-    body: "Agents that qualify inbound leads, follow up with prospects, and hand off hot opportunities — at the exact moment they're ready.",
+    body: "Qualifies inbound demand, follows up fast, and hands hot opportunities to the right rep.",
     plan: "Business · Outbound + CRM",
   },
   {
     icon: "◫",
     name: "Support Line",
-    body: "Handle common questions, book service calls, escalate urgent issues. Your team only picks up when it actually matters.",
+    body: "Handles common questions, books service calls, and escalates urgent issues cleanly.",
     plan: "Business · Full workflows",
   },
 ];
@@ -181,22 +226,22 @@ const STEPS = [
   {
     num: "01",
     title: "Connect",
-    body: "Keep your number. Wireline hooks in via the app, Shortcuts, and CarPlay — or provision a dedicated business line.",
+    body: "Keep your number or provision a business line. Wireline becomes the trained layer on top.",
   },
   {
     num: "02",
     title: "Build",
-    body: "Name it, pick a voice, tell it the job. Chat with Wireline AI to shape the agent — or start from a template.",
+    body: "Name it, pick a voice, define the job, and start from a personal or business playbook.",
   },
   {
     num: "03",
     title: "Train",
-    body: "Feed it scripts, FAQs, and hard limits. Run a test call from your browser — hear exactly what callers hear.",
+    body: "Feed scripts, FAQs, limits, and handoff rules. Test the call before it goes live.",
   },
   {
     num: "04",
     title: "Deploy",
-    body: "Go live. Read every transcript. Coach the weak spots. Your agent learns from every conversation.",
+    body: "Read transcripts, coach weak spots, and keep improving the line after every call.",
   },
 ];
 
@@ -214,7 +259,7 @@ const PLANS = [
       "All templates unlocked",
       "Conversation Balance for live work",
     ],
-    cta: "Start with Personal",
+    cta: "Wire Personal",
     ctaPath: "/signup?plan=personal",
     featured: false,
   },
@@ -231,7 +276,7 @@ const PLANS = [
       "Core integrations and follow-up",
       `Extra agents at $${teamExtraAgentPrice}/mo`,
     ],
-    cta: "Start Team",
+    cta: "Wire Team",
     ctaPath: "/signup?plan=team",
     featured: true,
     badge: "Best next step",
@@ -249,7 +294,7 @@ const PLANS = [
       "Policies, roles, and approvals",
       `Extra agents at $${businessExtraAgentPrice}/mo`,
     ],
-    cta: "Start Business",
+    cta: "Wire Business",
     ctaPath: "/signup?plan=business",
     featured: false,
   },
@@ -259,7 +304,36 @@ const PLANS = [
 export default function PrecisionLanding() {
   const [audience, setAudience] = useState<Audience>("personal");
   const configs = audience === "personal" ? PERSONAL_CONFIGS : BUSINESS_CONFIGS;
-  const personalHeadline = MARKETING_VOICE.headline;
+  const heroCopy = HERO_AUDIENCE_COPY[audience];
+
+  const selectAudience = (key: Audience, focusAfterSelect = false) => {
+    setAudience(key);
+
+    if (focusAfterSelect) {
+      window.requestAnimationFrame(() => document.getElementById(getAudienceTabId(key))?.focus());
+    }
+  };
+
+  const handleAudienceKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = audiences.findIndex(({ key }) => key === audience);
+    const lastIndex = audiences.length - 1;
+    let nextIndex = currentIndex;
+
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = lastIndex;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    selectAudience(audiences[nextIndex].key, true);
+  };
 
   return (
     <div className="wl-viewport-frame bg-background text-foreground">
@@ -268,119 +342,134 @@ export default function PrecisionLanding() {
       <style>{`
         @keyframes waveBar { 0%,100% { transform: scaleY(.3) } 50% { transform: scaleY(1) } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+        @media (prefers-reduced-motion: reduce) {
+          .wireline-hero-motion,
+          .wireline-wave-bar { animation: none !important; transform: none !important; }
+        }
       `}</style>
 
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
         {/* ── HERO ──────────────────────────────────────────────── */}
-        <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail grid items-center gap-12 lg:grid-cols-[1.15fr_.85fr]">
+        <section
+          className="marketing-hero border-b border-border px-5 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20"
+          aria-labelledby="wireline-hero-title"
+        >
+          <div className="wl-public-rail grid items-center gap-10 lg:grid-cols-[1.12fr_.88fr] lg:gap-12">
             {/* Left copy */}
-            <div style={{ animation: "fadeUp .7s ease-out both" }}>
-              {/* Audience toggle */}
-              <div className="mb-8 inline-flex rounded-lg border border-border bg-card p-1">
-                {audiences.map(({ key, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setAudience(key)}
-                    className={`rounded-md px-5 py-2 text-[13px] font-semibold transition-all ${
-                      audience === key
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+            <div className="wireline-hero-motion" style={{ animation: "fadeUp .7s ease-out both" }}>
+              <div
+                className="mb-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-[var(--wireline-elevation-xs)]"
+                role="tablist"
+                aria-label="Audience mode"
+                onKeyDown={handleAudienceKeyDown}
+              >
+                {audiences.map(({ key, label }) => {
+                  const selected = audience === key;
+                  return (
+                    <button
+                      key={key}
+                      id={getAudienceTabId(key)}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-controls={getAudiencePanelId(key)}
+                      tabIndex={selected ? 0 : -1}
+                      onClick={() => selectAudience(key)}
+                      className={`min-h-10 rounded-md px-4 text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
+                        selected
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
 
-              {audience === "personal" ? (
-                <>
-                  <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
-                    <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" />
-                    <span className="wl-eyebrow text-muted-foreground">
-                      {MARKETING_VOICE.eyebrow}
-                    </span>
-                  </div>
-                  <h1
-                    aria-label={personalHeadline}
-                    className="wl-public-section-heading max-w-none"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                      letterSpacing: "-0.035em",
-                    }}
-                  >
-                    Your phone, <em className="not-italic text-primary">finally</em> answering for
-                    you.
-                  </h1>
-                  <p className="wl-public-copy mt-6 max-w-none text-[17px] leading-[1.7]">
-                    {MARKETING_VOICE.subline}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
-                    <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" />
-                    <span className="wl-eyebrow text-muted-foreground">
-                      {BUSINESS_MARKETING_VOICE.eyebrow}
-                    </span>
-                  </div>
-                  <h1
-                    className="wl-public-section-heading max-w-none"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                      letterSpacing: "-0.035em",
-                    }}
-                  >
-                    Your front desk, <em className="not-italic text-primary">open</em> 24/7.
-                  </h1>
-                  <p className="wl-public-copy mt-6 max-w-none text-[17px] leading-[1.7]">
-                    Deploy a fleet of trained voice agents that answer calls, qualify leads, book
-                    appointments, and follow up — all under your brand, on your playbook.
-                  </p>
-                </>
-              )}
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
+                <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
+                <span className="wl-eyebrow text-muted-foreground">
+                  {audience === "business" ? BUSINESS_MARKETING_VOICE.eyebrow : MARKETING_VOICE.eyebrow}
+                </span>
+              </div>
 
-              <div className="mt-9 flex flex-wrap items-center gap-3">
+              <h1
+                id="wireline-hero-title"
+                aria-label={MARKETING_VOICE.headline}
+                className="wl-public-section-heading max-w-[10ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.84] tracking-[-.07em] sm:max-w-[9ch] lg:max-w-[10ch]"
+                style={{
+                  fontFamily:
+                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontWeight: 400,
+                }}
+              >
+                WIRE YOUR <span className="text-primary">AGENT</span>
+              </h1>
+
+              <p className="wl-public-copy mt-6 max-w-[42rem] text-[18px] leading-[1.65] sm:text-[19px]">
+                {MARKETING_VOICE.subline}
+              </p>
+
+              <p id="wireline-audience-note" className="mt-3 max-w-[38rem] text-[14px] leading-[1.6] text-muted-foreground">
+                {heroCopy.note}
+              </p>
+
+              <ul className="mt-6 flex flex-wrap gap-2" aria-label="Designed for">
+                {MARKETING_VOICE.proof.map((item) => (
+                  <li
+                    key={item}
+                    className="rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-muted-foreground"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
-                  to={audience === "business" ? "/signup?plan=business" : "/signup"}
-                  className="marketing-btn-primary flex min-h-11 items-center gap-2 px-6 py-3 text-[15px] font-semibold"
+                  to={heroCopy.ctaPath}
+                  className="marketing-btn-primary min-h-12 w-full px-6 py-3 text-[15px] font-semibold sm:w-auto"
+                  aria-describedby="wireline-audience-note"
                 >
-                  {audience === "business" ? "Start with Business" : "Start with Personal"}{" "}
-                  <ArrowRight size={16} />
+                  {heroCopy.cta}
+                  <ArrowRight size={16} aria-hidden="true" />
                 </Link>
                 <Link
                   to="/showcase"
-                  className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border bg-card px-6 py-3 text-[15px] font-medium text-foreground transition-all hover:border-border/80"
+                  className="marketing-btn-secondary min-h-12 w-full px-6 py-3 text-[15px] font-semibold sm:w-auto"
                 >
-                  <Phone size={15} />{" "}
-                  {audience === "business" ? "Hear it run a front desk" : "Hear it answer a call"}
+                  <Phone size={15} aria-hidden="true" />
+                  {heroCopy.demo}
                 </Link>
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-6">
-                {(audience === "business"
-                  ? BUSINESS_MARKETING_VOICE.proof
-                  : MARKETING_VOICE.proof
-                ).map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-2 text-[13px] text-muted-foreground"
-                  >
-                    <div className="marketing-proof-chip h-[18px] w-[18px]">✓</div>
+              <ul className="mt-7 grid gap-2 sm:grid-cols-3" aria-label="Core outcomes">
+                {HERO_OUTCOMES.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                    <span className="marketing-proof-chip h-[18px] w-[18px]" aria-hidden="true">
+                      ✓
+                    </span>
                     {item}
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
 
             {/* Right: live call card */}
-            <div style={{ animation: "fadeUp .7s ease-out .15s both" }}>
-              <LiveCallCard variant={audience} />
+            <div className="wireline-hero-motion" style={{ animation: "fadeUp .7s ease-out .15s both" }}>
+              {audiences.map(({ key, label }) => (
+                <div
+                  key={key}
+                  id={getAudiencePanelId(key)}
+                  role="tabpanel"
+                  aria-labelledby={getAudienceTabId(key)}
+                  aria-label={`${label} agent preview`}
+                  hidden={audience !== key}
+                >
+                  {audience === key ? <LiveCallCard variant={key} /> : null}
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -393,21 +482,8 @@ export default function PrecisionLanding() {
               fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
             }}
           >
-            {audience === "business" ? (
-              <>
-                {BUSINESS_MARKETING_VOICE.beforeStrip}{" "}
-                <span className="text-[var(--wireline-color-canvas-default)]">
-                  {BUSINESS_MARKETING_VOICE.differentiator}
-                </span>
-              </>
-            ) : (
-              <>
-                Siri silences unknowns.{" "}
-                <span className="text-[var(--wireline-color-canvas-default)]">
-                  {MARKETING_VOICE.differentiator}
-                </span>
-              </>
-            )}
+            {heroCopy.stripLead}{" "}
+            <span className="text-[var(--wireline-color-canvas-default)]">{heroCopy.stripWin}</span>
           </p>
         </div>
 
@@ -416,7 +492,7 @@ export default function PrecisionLanding() {
           <div className="wl-public-rail">
             <div className="mb-12">
               <p className="wl-eyebrow text-primary">
-                02 — {audience === "personal" ? "Configurations" : "Use cases"}
+                Agent playbooks · {audience === "personal" ? "personal" : "business"}
               </p>
               <h2
                 className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
@@ -428,13 +504,13 @@ export default function PrecisionLanding() {
                 }}
               >
                 {audience === "personal"
-                  ? "Configure it for your life."
-                  : "Built for real business volume."}
+                  ? "Configure it for real life."
+                  : "Built for real call volume."}
               </h2>
               <p className="mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
                 {audience === "personal"
-                  ? "One agent. Configure it however you need — personal errands, side hustle, or a full front desk. The playbook is yours."
-                  : "From solo operators to multi-location teams — Wireline agents handle the phones while your team handles the work."}
+                  ? "One agent. Your rules. Personal errands, unknown callers, appointments, and side-hustle intake all run from the same playbook."
+                  : "From solo operators to multi-location teams, Wireline agents keep the phones moving while your team handles the work."}
               </p>
             </div>
 
@@ -444,7 +520,10 @@ export default function PrecisionLanding() {
                   key={name}
                   className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_rgba(43,85,72,.06)]"
                 >
-                  <div className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[var(--wireline-color-action-primary-container)] text-[18px] text-primary">
+                  <div
+                    className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[var(--wireline-color-action-primary-container)] text-[18px] text-primary"
+                    aria-hidden="true"
+                  >
                     {icon}
                   </div>
                   <h3
@@ -470,7 +549,7 @@ export default function PrecisionLanding() {
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
-              <p className="wl-eyebrow text-primary">03 — Four steps</p>
+              <p className="wl-eyebrow text-primary">How it works</p>
               <h2
                 className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
                 style={{
@@ -484,7 +563,7 @@ export default function PrecisionLanding() {
               </h2>
             </div>
 
-            <div className="grid divide-x divide-border overflow-hidden rounded-[16px] border border-border sm:grid-cols-4">
+            <div className="grid overflow-hidden rounded-[16px] border border-border sm:grid-cols-4 sm:divide-x sm:divide-border">
               {STEPS.map(({ num, title, body }) => (
                 <div key={num} className="bg-card p-8 transition-colors hover:bg-muted/40">
                   <div className="mb-7 font-mono text-[13px] font-bold text-primary">{num}</div>
@@ -520,7 +599,7 @@ export default function PrecisionLanding() {
                   letterSpacing: "-0.025em",
                 }}
               >
-                Personal balance. Team capacity.
+                Start wiring. Scale the line.
               </h2>
               <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
                 Create for free, fund live work with Conversation Balance, then move into Team or
@@ -579,10 +658,11 @@ export default function PrecisionLanding() {
                   >
                     {plan.body}
                   </p>
-                  <div className="mb-6 flex flex-col gap-2">
+                  <ul className="mb-6 flex flex-col gap-2">
                     {plan.features.map((f) => (
-                      <div key={f} className="flex items-center gap-2 text-[13px]">
+                      <li key={f} className="flex items-center gap-2 text-[13px]">
                         <span
+                          aria-hidden="true"
                           className={
                             plan.featured
                               ? "text-[var(--wireline-color-status-success)]"
@@ -592,16 +672,17 @@ export default function PrecisionLanding() {
                           ✓
                         </span>
                         {f}
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                   <Link
                     to={plan.ctaPath}
-                    className={`block min-h-11 w-full rounded-lg py-3 text-center text-[13px] font-semibold transition-all ${
+                    className={`block min-h-11 w-full rounded-lg py-3 text-center text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                       plan.featured
                         ? "bg-[var(--wireline-color-canvas-default)] text-[var(--wireline-color-text-primary)] hover:bg-white"
                         : "border border-border hover:border-primary hover:text-primary"
                     }`}
+                    aria-label={`${plan.cta} plan`}
                   >
                     {plan.cta}
                   </Link>
@@ -614,9 +695,10 @@ export default function PrecisionLanding() {
         {/* ── FINAL CTA ─────────────────────────────────────────── */}
         <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
-            <div className="relative overflow-hidden rounded-[20px] marketing-ink-panel px-10 py-16 text-center sm:py-20">
+            <div className="relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-20">
               <div
                 className="pointer-events-none absolute inset-0"
+                aria-hidden="true"
                 style={{
                   background:
                     "radial-gradient(ellipse at 50% 0%, rgba(43,85,72,.2), transparent 60%)",
@@ -649,21 +731,21 @@ export default function PrecisionLanding() {
                 <p className="mx-auto mt-4 max-w-[460px] text-[16px] marketing-ink-panel__soft">
                   {audience === "business"
                     ? "Stand up a front desk in an afternoon. Fund live calls with Conversation Balance."
-                    : "Create first. Fund live work when the line is ready."}
+                    : "Create first. Train the call. Fund live work when the line is ready."}
                 </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
-                    to={audience === "business" ? "/signup?plan=business" : "/signup"}
-                    className="flex min-h-11 items-center gap-2 rounded-[10px] bg-[var(--wireline-color-canvas-default)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-text-primary)] transition-all hover:bg-white hover:-translate-y-px"
+                    to={heroCopy.ctaPath}
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-canvas-default)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-text-primary)] transition-all hover:-translate-y-px hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-canvas-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-text-primary)] sm:w-auto"
                   >
-                    {audience === "business" ? "Start with Business" : "Start with Personal"}{" "}
-                    <ArrowRight size={16} />
+                    {heroCopy.cta}
+                    <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
                     to="/showcase"
-                    className="flex min-h-11 items-center px-7 py-3 text-[15px] font-medium marketing-ink-panel__soft transition-colors hover:text-[var(--wireline-color-canvas-default)]"
+                    className="flex min-h-12 w-full items-center justify-center px-7 py-3 text-[15px] font-medium marketing-ink-panel__soft transition-colors hover:text-[var(--wireline-color-canvas-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-canvas-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-text-primary)] sm:w-auto"
                   >
-                    {audience === "business" ? "Hear it run a front desk" : "Hear it answer a call"}
+                    {heroCopy.demo}
                   </Link>
                 </div>
               </div>

@@ -1,19 +1,19 @@
-/** Shared product voice — personal phone agent, configure it however you need. */
+/** Shared product voice for public marketing, workspace copy, and audience positioning. */
 
 export const MARKETING_VOICE = {
-  eyebrow: "v1 · now in beta",
-  headline: "Your phone, finally answering for you.",
+  eyebrow: "voice agents · in beta",
+  headline: "Wire your agent.",
   subline:
-    "A voice AI that picks up your phone, talks to the caller, and handles it — booking, message-taking, follow-ups, errands. You get a text with what happened.",
-  proof: ["Answers with a real voice", "Acts on your behalf", "Texts you what happened"],
+    "From personal assistants to solo business agents, call centers, and sales teams, build a trained voice agent that answers, routes, books, follows up, and texts the outcome.",
+  proof: ["Personal assistants", "Solo business agents", "Teams & call centers"],
   extensionLead: "Command your agent from any page. Wireline answers while you stay focused.",
-  differentiator: "Wireline answers them.",
+  differentiator: "Wireline puts a trained agent on the line.",
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "for business · v1 in beta",
-  proof: ["Books in your calendar", "Routes urgent calls", "Logs every conversation"],
-  differentiator: "Wireline keeps the line open.",
+  eyebrow: "business agents · in beta",
+  proof: ["Answers every line", "Qualifies and routes", "Logs every handoff"],
+  differentiator: "Wireline keeps the line moving.",
   beforeStrip: "Hold music turns leads away.",
 } as const;
 

@@ -23,151 +23,61 @@
     <line x1="960" y1="0" x2="960" y2="630"/>
   </g>
 
-  <text
-    x="80"
-    y="76"
-    font-family="Space Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
-    font-size="15"
-    font-weight="700"
-    letter-spacing="5"
-    fill="#2B5548"
-  >
+  <text x="80" y="76" font-family="Space Mono, ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" letter-spacing="5" fill="#2B5548">
     WIRELINE · TRYWIRELINE.COM
   </text>
   <line x1="80" y1="96" x2="430" y2="96" stroke="url(#warmRule)" stroke-width="1.25"/>
 
-  <g transform="translate(860, 54)">
-    <rect
-      width="260"
-      height="40"
-      rx="20"
-      ry="20"
-      fill="#EEF5F1"
-      stroke="#D0E8DE"
-      stroke-width="1"
-    />
+  <g transform="translate(838, 54)">
+    <rect width="282" height="40" rx="20" ry="20" fill="#EEF5F1" stroke="#D0E8DE" stroke-width="1"/>
     <circle cx="24" cy="20" r="5.5" fill="#3D9B73"/>
-    <text
-      x="42"
-      y="26"
-      font-family="Space Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
-      font-size="11"
-      font-weight="700"
-      letter-spacing="2"
-      fill="#2B5548"
-    >
-      YOUR AGENT IS LIVE
+    <text x="42" y="26" font-family="Space Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="2" fill="#2B5548">
+      YOUR AGENT IS READY
     </text>
   </g>
 
-  <text
-    x="80"
-    y="230"
-    font-family="Instrument Serif, Georgia, ui-serif, serif"
-    font-size="88"
-    font-weight="400"
-    letter-spacing="-3"
-    fill="#1C1C1A"
-  >
-    Your phone,
+  <text x="80" y="238" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="96" font-weight="400" letter-spacing="-3.5" fill="#1C1C1A">
+    WIRE YOUR
   </text>
-  <text
-    x="80"
-    y="316"
-    font-family="Instrument Serif, Georgia, ui-serif, serif"
-    font-size="88"
-    font-style="italic"
-    font-weight="400"
-    letter-spacing="-3"
-    fill="#2B5548"
-  >
-    finally
-  </text>
-  <text
-    x="350"
-    y="316"
-    font-family="Instrument Serif, Georgia, ui-serif, serif"
-    font-size="88"
-    font-weight="400"
-    letter-spacing="-3"
-    fill="#1C1C1A"
-  >
-    answering
-  </text>
-  <text
-    x="80"
-    y="402"
-    font-family="Instrument Serif, Georgia, ui-serif, serif"
-    font-size="88"
-    font-weight="400"
-    letter-spacing="-3"
-    fill="#1C1C1A"
-  >
-    for you.
+  <text x="80" y="336" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="112" font-style="italic" font-weight="400" letter-spacing="-4" fill="#2B5548">
+    AGENT
   </text>
 
-  <text
-    x="84"
-    y="458"
-    font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif"
-    font-size="27"
-    font-weight="500"
-    fill="#6B6B65"
-  >
-    Calls, bookings, messages, errands, and follow-up.
+  <text x="84" y="408" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="500" fill="#6B6B65">
+    Personal assistants · solo business · teams
+  </text>
+  <text x="84" y="452" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24" font-weight="500" fill="#6B6B65">
+    Answer. Route. Book. Follow up. Text the outcome.
   </text>
 
   <g transform="translate(760, 172)">
-    <rect
-      width="360"
-      height="268"
-      rx="26"
-      ry="26"
-      fill="#FFFFFF"
-      stroke="#E8E7E3"
-      stroke-width="1.5"
-    />
+    <rect width="360" height="268" rx="26" ry="26" fill="#FFFFFF" stroke="#E8E7E3" stroke-width="1.5"/>
     <rect x="24" y="24" width="56" height="56" rx="14" fill="#2B5548"/>
-    <path
-      d="M39 40 L49 64 L56 50 L63 64 L73 40"
-      fill="none"
-      stroke="#FFFFFF"
-      stroke-width="7"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
+    <path d="M39 40 L49 64 L56 50 L63 64 L73 40" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
     <text x="96" y="48" font-family="DM Sans, system-ui, sans-serif" font-size="18" font-weight="700" fill="#1C1C1A">
-      Mike's Agent
+      Wireline Agent
     </text>
     <text x="96" y="72" font-family="Space Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.4" fill="#2B5548">
-      HANDLING CALL
+      TRAINED ON YOUR PLAYBOOK
     </text>
     <rect x="24" y="108" width="238" height="42" rx="16" fill="#F0EFEB"/>
     <text x="42" y="135" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#6B6B65">
-      Who's calling and why?
+      Qualify the request.
     </text>
     <rect x="88" y="162" width="248" height="48" rx="18" fill="#2B5548"/>
     <text x="108" y="192" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#FFFFFF">
-      Got it. I'll text Mike.
+      Routed and summarized.
     </text>
     <g transform="translate(24, 228)">
       <rect width="108" height="24" rx="12" fill="#EEF5F1"/>
       <text x="15" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#2B5548">Handled</text>
       <rect x="118" width="112" height="24" rx="12" fill="#FDF0E7"/>
-      <text x="132" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C4713B">SMS sent</text>
+      <text x="132" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C4713B">Next step</text>
     </g>
   </g>
 
   <line x1="80" y1="588" x2="1120" y2="588" stroke="#2B5548" stroke-opacity="0.14" stroke-width="1"/>
-  <text
-    x="80"
-    y="612"
-    font-family="Space Mono, ui-monospace, monospace"
-    font-size="12"
-    font-weight="700"
-    letter-spacing="3"
-    fill="#A1A19B"
-  >
-    PERSONAL · BUSINESS · VOICE · TEXT · FOLLOW-UP
+  <text x="80" y="612" font-family="Space Mono, ui-monospace, monospace" font-size="12" font-weight="700" letter-spacing="3" fill="#A1A19B">
+    PERSONAL · SOLO BUSINESS · TEAMS · FOLLOW-UP
   </text>
 </svg>
