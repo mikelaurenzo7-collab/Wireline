@@ -7,6 +7,15 @@ export const INLINE_SCRIPT_HASHES = [
   "'sha256-YVxbb9YTn5fdjJ8affeqySUA2vlMISN5svOynGQW+Pk='",
 ] as const;
 
+/**
+ * Static style block injected by the marketing analytics scripts (stable
+ * hash observed across viewports and runs). Allowlisting the exact hash
+ * keeps style-src-elem strict while silencing the recurring CSP violation.
+ */
+export const INLINE_STYLE_HASHES = [
+  "'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw='",
+] as const;
+
 export const MARKETING_SCRIPT_SRCS = [
   "https://plausible.io",
   "https://connect.facebook.net",
@@ -52,7 +61,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
       : `'self' ${inlineHashes} ${marketingSrcs}`;
   const styleSrcElem = isDev
     ? "'self' 'unsafe-inline' https://fonts.googleapis.com"
-    : "'self' https://fonts.googleapis.com";
+    : `'self' ${INLINE_STYLE_HASHES.join(" ")} https://fonts.googleapis.com`;
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,

@@ -204,34 +204,6 @@
   min-height: 0;
 }
 
-/* Inbox has no reason to imitate a modal when the account has no mail yet. */
-.wl-inbox-route > .grid.place-items-center {
-  display: block;
-  min-height: 0;
-  padding: 0;
-  text-align: left;
-}
-
-.wl-inbox-route > .grid.place-items-center > .studio-card {
-  max-width: 46rem;
-  padding: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
-  text-align: left;
-}
-
-.wl-inbox-route > .grid.place-items-center > .studio-card > span {
-  margin-inline: 0;
-}
-
-.wl-inbox-route > .grid.place-items-center > .studio-card > .studio-kicker,
-.wl-inbox-route > .grid.place-items-center > .studio-card > h2,
-.wl-inbox-route > .grid.place-items-center > .studio-card > p {
-  text-align: left;
-}
-
-.wl-inbox-route > .grid.place-items-center > .studio-card > div {
-  justify-content: flex-start;
-}
-
 /* The public hero now carries one purposeful product proof card. */
 .marketing-hero {
   background: linear-gradient(

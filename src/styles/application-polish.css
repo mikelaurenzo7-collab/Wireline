@@ -144,15 +144,6 @@
   box-shadow: none;
 }
 
-[data-wireline-route="/inbox"] .wl-inbox-route [data-slot="empty-state"] {
-  align-items: flex-start;
-  text-align: left;
-}
-
-[data-wireline-route="/inbox"] .wl-inbox-route [data-slot="empty-state"] > div {
-  justify-content: flex-start;
-}
-
 @media (max-width: 767px) {
   .wl-ui-caps .wl-workspace-main {
     --wl-app-rail: 100%;

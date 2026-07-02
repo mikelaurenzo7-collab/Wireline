@@ -20,7 +20,7 @@ const trainingTabs: Array<{ id: TrainingTabId; label: string }> = [
 
 function EmptyTraining() {
   return (
-    <div className="grid h-full min-h-[520px] place-items-center py-8">
+    <div className="grid min-h-[520px] flex-1 place-items-center py-8">
       <EmptyState
         density="default"
         className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
