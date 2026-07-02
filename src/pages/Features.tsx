@@ -43,7 +43,7 @@ export default function Features() {
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
           <div className="wl-public-rail">
             <p className="wl-overline text-primary">How it works</p>
-            <h1 className="mx-auto mt-4 max-w-[13ch] font-[var(--wireline-font-display)] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
+            <h1 className="mx-auto mt-4 max-w-[16ch] font-[var(--wireline-font-display)] text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground [text-wrap:balance]">
               Give every conversation a clear next step.
             </h1>
             <p className="wl-public-copy mt-5">{PRODUCT_VERSATILITY.tagline}</p>

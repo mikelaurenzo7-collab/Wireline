@@ -353,13 +353,13 @@ export default function PrecisionLanding() {
                   {audience === "business" ? "Start with Business" : "Start with Personal"}{" "}
                   <ArrowRight size={16} />
                 </Link>
-                <button
-                  type="button"
+                <Link
+                  to="/showcase"
                   className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border bg-card px-6 py-3 text-[15px] font-medium text-foreground transition-all hover:border-border/80"
                 >
                   <Phone size={15} />{" "}
                   {audience === "business" ? "Hear it run a front desk" : "Hear it answer a call"}
-                </button>
+                </Link>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-6">
@@ -649,12 +649,12 @@ export default function PrecisionLanding() {
                     {audience === "business" ? "Start with Business" : "Start with Personal"}{" "}
                     <ArrowRight size={16} />
                   </Link>
-                  <button
-                    type="button"
-                    className="min-h-11 px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.85)] transition-colors hover:text-[#F7F6F3]"
+                  <Link
+                    to="/showcase"
+                    className="flex min-h-11 items-center px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.85)] transition-colors hover:text-[#F7F6F3]"
                   >
                     {audience === "business" ? "Hear it run a front desk" : "Hear it answer a call"}
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

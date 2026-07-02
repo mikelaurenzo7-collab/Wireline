@@ -55,6 +55,21 @@
   box-shadow: var(--wireline-shadow-sm);
 }
 
+/* Color variants must live here, unlayered, next to the base card: Tailwind
+   utilities (`bg-primary`, `text-primary-foreground`) sit in @layer utilities
+   and lose to the unlayered surface background above — the marketing CTA
+   cards were rendering white-on-white. */
+.wl-stitch-card-brand {
+  border-color: var(--wireline-color-action-primary-default);
+  background: var(--wireline-color-action-primary-default);
+  color: var(--wireline-color-text-onAction);
+}
+
+.wl-stitch-card-tinted {
+  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 25%, transparent);
+  background: var(--wireline-color-action-primary-container);
+}
+
 /* Motion is opt-in. Static information should remain still. */
 .wl-stitch-card-hover,
 .wl-card-action,

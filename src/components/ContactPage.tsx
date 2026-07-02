@@ -113,10 +113,7 @@ export function ContactPage() {
               Personal questions, business coverage, partnerships, and support.
             </p>
           </a>
-          <Link
-            to="/pricing"
-            className="wl-stitch-card border-primary bg-primary p-5 text-primary-foreground"
-          >
+          <Link to="/pricing" className="wl-stitch-card wl-stitch-card-brand p-5">
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-primary-foreground/75">

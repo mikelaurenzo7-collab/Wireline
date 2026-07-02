@@ -179,7 +179,7 @@ export default function SolutionsPage() {
       </section>
 
       <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="wl-stitch-card wl-marketing-center grid justify-items-center gap-6 border-primary/25 bg-[color:var(--wireline-color-action-primary-container)] p-6 sm:p-8">
+        <div className="wl-stitch-card wl-stitch-card-tinted wl-marketing-center grid justify-items-center gap-6 p-6 sm:p-8">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 text-primary">
               <CircleDot size={16} />
