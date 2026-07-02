@@ -16,6 +16,10 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 
 ## Current product rules
 
+- Public pages explain. Authenticated pages execute.
+- Use labels, tabs, icons, state, and clear next actions for authenticated orientation.
+- Avoid authenticated page descriptions unless the user is reviewing history, coaching, analytics, exports, or past actions.
+- Call Logs and Analytics may explain history, coaching, exports, and insights.
 - User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, and `Conversation Balance`.
 - Overview is the calm command center; Studio is the workroom.
 - Training owns the heavy configuration surface and document ingestion.
@@ -38,7 +42,7 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 
 ## Verification
 
-- `npm run verify:contracts` - focused product voice, authenticated page map, marketing metadata, static metadata, and event taxonomy contracts.
+- `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, and event taxonomy contracts.
 - `npm run verify` - design check, build, and bundled-server smoke.
 - `npm run verify:full` - lint, design/authz/CSP checks, tests, build, and smoke.
 - `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
