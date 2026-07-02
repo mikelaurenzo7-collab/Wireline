@@ -1,7 +1,7 @@
 {
-  "name": "Wireline - Your phone, finally answering for you",
+  "name": "Wireline - Wire your agent",
   "short_name": "Wireline",
-  "description": "A voice AI that picks up your phone, talks to the caller, and handles it.",
+  "description": "Trained voice agents for personal assistants, solo business agents, and teams.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
