@@ -149,7 +149,12 @@ export default function CreateAgentDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agentId: body.id,
-          message: [`Role: ${role}.`, `Posture: ${activePosture}.`, `Personality: ${personalityText}`, `First brief: ${finalBrief}`].join("\n"),
+          message: [
+            `Role: ${role}.`,
+            `Posture: ${activePosture}.`,
+            `Personality: ${personalityText}`,
+            `First brief: ${finalBrief}`,
+          ].join("\n"),
         }),
       });
 
@@ -187,15 +192,28 @@ export default function CreateAgentDialog({
                 <Zap size={16} aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <h2 id="create-agent-title" className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground">
+                <h2
+                  id="create-agent-title"
+                  className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
+                >
                   Fast Start
                 </h2>
-                <p id="create-agent-description" className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                <p
+                  id="create-agent-description"
+                  className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
+                >
                   ~3 minutes to your first agent
                 </p>
               </div>
             </div>
-            <Button type="button" variant="ghost" size="icon" onClick={close} aria-label="Close create agent dialog" className="shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={close}
+              aria-label="Close create agent dialog"
+              className="shrink-0"
+            >
               <X aria-hidden="true" size={16} />
             </Button>
           </div>
@@ -205,17 +223,23 @@ export default function CreateAgentDialog({
         </div>
 
         <div className="px-6 py-6">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">Step 1 of 5</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
+            Step 1 of 5
+          </p>
           <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
             What do you need handled?
           </h3>
-          <p className="mt-3 text-sm text-muted-foreground">One sentence is enough — Wireline fills in the rest.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            One sentence is enough — Wireline fills in the rest.
+          </p>
 
           <div className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Agent type">
-            {([
-              ["personal", "Personal", "Unknown callers, errands, appointments"],
-              ["business", "Business", "Front desk, leads, support, scheduling"],
-            ] as const).map(([value, label, detail]) => {
+            {(
+              [
+                ["personal", "Personal", "Unknown callers, errands, appointments"],
+                ["business", "Business", "Front desk, leads, support, scheduling"],
+              ] as const
+            ).map(([value, label, detail]) => {
               const selected = activePosture === value;
               return (
                 <button
@@ -231,11 +255,15 @@ export default function CreateAgentDialog({
                 >
                   <span className="flex items-center justify-between gap-3">
                     <span className="text-sm font-semibold text-foreground">{label}</span>
-                    <span className={`grid size-5 place-items-center rounded-full border text-[10px] ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}>
+                    <span
+                      className={`grid size-5 place-items-center rounded-full border text-[10px] ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
+                    >
                       <Check size={12} aria-hidden="true" />
                     </span>
                   </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {detail}
+                  </span>
                 </button>
               );
             })}
@@ -287,7 +315,9 @@ export default function CreateAgentDialog({
                 className="min-h-[44px] rounded-[var(--radius-md)] border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-primary/45 focus:ring-2 focus:ring-primary/10"
               >
                 {VOICE_OPTIONS.map((voice) => (
-                  <option key={voice.value} value={voice.value}>{voice.label}</option>
+                  <option key={voice.value} value={voice.value}>
+                    {voice.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -309,7 +339,9 @@ export default function CreateAgentDialog({
                 ))}
               </div>
             </div>
-            <label className={`flex min-h-[44px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}>
+            <label
+              className={`flex min-h-[44px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}
+            >
               <input
                 type="checkbox"
                 className="sr-only"
@@ -325,13 +357,19 @@ export default function CreateAgentDialog({
           </div>
 
           {error ? (
-            <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>
+            <p className="mt-4 text-sm text-destructive" role="alert">
+              {error}
+            </p>
           ) : null}
         </div>
 
         <div className="flex items-center justify-end border-t border-border px-6 py-4">
           <Button type="submit" disabled={creating} className="min-w-[140px] justify-center">
-            {creating ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : <WandSparkles aria-hidden="true" size={16} />}
+            {creating ? (
+              <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+            ) : (
+              <WandSparkles aria-hidden="true" size={16} />
+            )}
             Continue →
           </Button>
         </div>

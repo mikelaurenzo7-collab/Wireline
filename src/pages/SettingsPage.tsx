@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogOut, ShieldCheck, Trash2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -94,8 +94,27 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetState, setResetState] = useState<"idle" | "sending" | "sent">("idle");
   const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace owner";
   const email = user?.email || "";
+
+  async function requestPasswordReset() {
+    if (resetState !== "idle" || !email) return;
+    setResetState("sending");
+    setError(null);
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      setResetState("sent");
+    } catch {
+      setError("Couldn't send the reset email. Try again in a moment.");
+      setResetState("idle");
+    }
+  }
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -129,10 +148,20 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">Password</p>
-                <p className="mt-1 text-xs text-muted-foreground">Reset via email.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {resetState === "sent"
+                    ? "Reset link sent — check your email."
+                    : "Reset via email."}
+                </p>
               </div>
-              <Button type="button" variant="secondary" size="sm" asChild>
-                <Link to="/reset-password">Reset password</Link>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={resetState !== "idle"}
+                onClick={() => void requestPasswordReset()}
+              >
+                {resetState === "sending" ? "Sending…" : "Reset password"}
               </Button>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">

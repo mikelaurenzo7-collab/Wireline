@@ -27,7 +27,9 @@ export interface CreateOpenAIRealtimeClientSecretInput {
   apiKeyPurpose?: "runtime" | "chatgpt_demo";
 }
 
-function getOpenAIApiKey(purpose: CreateOpenAIRealtimeClientSecretInput["apiKeyPurpose"] = "runtime"): string {
+function getOpenAIApiKey(
+  purpose: CreateOpenAIRealtimeClientSecretInput["apiKeyPurpose"] = "runtime",
+): string {
   const apiKey =
     (purpose === "chatgpt_demo" ? process.env.OPENAI_API_KEY_CHATKIT?.trim() : "") ||
     process.env.OPENAI_API_KEY?.trim();
@@ -53,7 +55,9 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
       type: "realtime",
       model: input.model?.trim() || OPENAI_REALTIME_DEFAULT_MODEL,
       output_modalities: ["audio"],
-      instructions: input.instructions?.trim().slice(0, 16_000) || buildOpenAIRealtimeInstructions(input.agentName),
+      instructions:
+        input.instructions?.trim().slice(0, 16_000) ||
+        buildOpenAIRealtimeInstructions(input.agentName),
       tools,
       tool_choice: input.toolChoice || "auto",
       audio: {
@@ -80,7 +84,9 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
 export function getOpenAIRealtimeStatus() {
   return {
     configured: Boolean(process.env.OPENAI_API_KEY?.trim()),
-    chatgptDemoConfigured: Boolean(process.env.OPENAI_API_KEY_CHATKIT?.trim() || process.env.OPENAI_API_KEY?.trim()),
+    chatgptDemoConfigured: Boolean(
+      process.env.OPENAI_API_KEY_CHATKIT?.trim() || process.env.OPENAI_API_KEY?.trim(),
+    ),
     defaultModel: OPENAI_REALTIME_DEFAULT_MODEL,
     defaultVoice: normalizeOpenAIRealtimeVoice(process.env.OPENAI_REALTIME_VOICE),
     deepgramFluxRecommended: true,
@@ -91,7 +97,8 @@ export function getOpenAIRealtimeStatus() {
 export async function createOpenAIRealtimeClientSecret(
   input: CreateOpenAIRealtimeClientSecretInput,
 ) {
-  const purpose = input.apiKeyPurpose || (input.userId.startsWith("guest:") ? "chatgpt_demo" : "runtime");
+  const purpose =
+    input.apiKeyPurpose || (input.userId.startsWith("guest:") ? "chatgpt_demo" : "runtime");
   const apiKey = getOpenAIApiKey(purpose);
   const body = buildOpenAIRealtimeSessionConfig(input);
 

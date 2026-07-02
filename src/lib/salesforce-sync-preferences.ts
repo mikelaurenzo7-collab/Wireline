@@ -30,7 +30,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * established enabled behavior.
  */
 export function getSalesforceSyncPreferences(metadata: unknown): SalesforceSyncPreferences {
-  if (!isRecord(metadata) || !isRecord(metadata.wireline) || !isRecord(metadata.wireline.salesforce)) {
+  if (
+    !isRecord(metadata) ||
+    !isRecord(metadata.wireline) ||
+    !isRecord(metadata.wireline.salesforce)
+  ) {
     return { ...DEFAULT_SALESFORCE_SYNC_PREFERENCES };
   }
 

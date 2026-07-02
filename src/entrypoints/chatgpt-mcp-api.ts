@@ -19,9 +19,11 @@ app.use((req, res) => {
   );
   res.status(status).json(body);
 });
-app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  const { status, body } = formatErrorResponse(error);
-  res.status(status).json(body);
-});
+app.use(
+  (error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const { status, body } = formatErrorResponse(error);
+    res.status(status).json(body);
+  },
+);
 
 export default app;

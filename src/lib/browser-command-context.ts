@@ -12,13 +12,19 @@ function readText(value: unknown, maxLength: number): string {
 }
 
 export function readBrowserCommandContext(): BrowserCommandContext | null {
-  if (typeof window === "undefined" || !window.location.hash.startsWith("#browser-context=")) return null;
+  if (typeof window === "undefined" || !window.location.hash.startsWith("#browser-context="))
+    return null;
 
   try {
     const encoded = window.location.hash.slice("#browser-context=".length);
-    const padded = encoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(encoded.length / 4) * 4, "=");
+    const padded = encoded
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(encoded.length / 4) * 4, "=");
     const decoded = JSON.parse(
-      new TextDecoder().decode(Uint8Array.from(atob(padded), (character) => character.charCodeAt(0))),
+      new TextDecoder().decode(
+        Uint8Array.from(atob(padded), (character) => character.charCodeAt(0)),
+      ),
     ) as Record<string, unknown>;
     if (decoded.source !== "browser-extension" || decoded.version !== 1) return null;
 
@@ -45,11 +51,18 @@ export function browserCommandBrief(context: BrowserCommandContext | null): stri
     context.selection ? `User-selected text: ${context.selection}` : "",
     context.link ? `Linked contact: ${context.link}` : "",
   ].filter(Boolean);
-  const request = context.request || "Use this page as background context while I define this agent's job and rules.";
+  const request =
+    context.request ||
+    "Use this page as background context while I define this agent's job and rules.";
   return `${request}\n\n${reference.join("\n")}`;
 }
 
 export function clearBrowserCommandHash() {
-  if (typeof window === "undefined" || !window.location.hash.startsWith("#browser-context=")) return;
-  window.history.replaceState(window.history.state, document.title, `${window.location.pathname}${window.location.search}`);
+  if (typeof window === "undefined" || !window.location.hash.startsWith("#browser-context="))
+    return;
+  window.history.replaceState(
+    window.history.state,
+    document.title,
+    `${window.location.pathname}${window.location.search}`,
+  );
 }

@@ -433,7 +433,7 @@ export default function CrmConnectionCard() {
                         )}
                         {key === "salesforce" && (
                           <Link
-                            to="/actions/salesforce"
+                            to="/connections/salesforce"
                             className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
                             title="Configure"
                           >

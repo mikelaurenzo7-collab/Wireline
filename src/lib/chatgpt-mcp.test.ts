@@ -11,7 +11,8 @@ describe("chatgpt-mcp guest demo state", () => {
   const originalSecret = process.env.MCP_DEMO_STATE_SECRET;
 
   beforeEach(() => {
-    process.env.MCP_DEMO_STATE_SECRET = "test-demo-secret-that-is-longer-than-thirty-two-characters";
+    process.env.MCP_DEMO_STATE_SECRET =
+      "test-demo-secret-that-is-longer-than-thirty-two-characters";
   });
 
   afterEach(() => {
@@ -36,7 +37,9 @@ describe("chatgpt-mcp guest demo state", () => {
   });
 
   it("rejects a tampered preview token", () => {
-    const token = encodeDemoToken(createDemoSpec({ business_name: "Acme", primary_goal: "Answer calls" }));
+    const token = encodeDemoToken(
+      createDemoSpec({ business_name: "Acme", primary_goal: "Answer calls" }),
+    );
     expect(() => decodeDemoToken(`${token}x`)).toThrow(/invalid/i);
   });
 

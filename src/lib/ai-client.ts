@@ -131,14 +131,19 @@ function message(args: {
 }
 
 function extractResponsesText(payload: Record<string, unknown>): string {
-  if (typeof payload.output_text === "string" && payload.output_text.trim()) return payload.output_text;
+  if (typeof payload.output_text === "string" && payload.output_text.trim())
+    return payload.output_text;
   const chunks: string[] = [];
   for (const item of Array.isArray(payload.output) ? payload.output : []) {
     if (!item || typeof item !== "object") continue;
     const record = item as Record<string, unknown>;
     if (typeof record.text === "string") chunks.push(record.text);
     for (const part of Array.isArray(record.content) ? record.content : []) {
-      if (part && typeof part === "object" && typeof (part as Record<string, unknown>).text === "string")
+      if (
+        part &&
+        typeof part === "object" &&
+        typeof (part as Record<string, unknown>).text === "string"
+      )
         chunks.push((part as Record<string, string>).text);
     }
   }
@@ -274,7 +279,8 @@ async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
   if (tool) {
     generationConfig.responseMimeType = "application/json";
     if (contents.length)
-      contents[contents.length - 1].parts[0].text += `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`;
+      contents[contents.length - 1].parts[0].text +=
+        `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`;
   }
   const result = await model.generateContent({ contents, generationConfig });
   const text = result.response.text();
@@ -372,7 +378,9 @@ async function createWithFallbacks(
       });
     }
   } else {
-    log.info(`[ai-runtime] primary circuit breaker is ${circuitBreaker.getState()}; using Gemini fallback`);
+    log.info(
+      `[ai-runtime] primary circuit breaker is ${circuitBreaker.getState()}; using Gemini fallback`,
+    );
   }
 
   return callGemini(body);
@@ -420,4 +428,6 @@ export class RuntimeUnavailableError extends Error {
 }
 
 export const isRuntimeAvailable = () =>
-  Boolean(process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY);
+  Boolean(
+    process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY,
+  );

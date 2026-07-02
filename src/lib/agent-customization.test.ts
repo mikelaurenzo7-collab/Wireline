@@ -16,7 +16,8 @@ describe("customizable agent profile", () => {
       allowed_actions: ["Offer an estimate callback", "Offer an estimate callback"],
       prohibited_topics: ["Medical advice"],
       escalation_policy: "handoff_when_configured",
-      knowledge_summary: "Emergency service is available for active leaks and no heat in freezing weather.",
+      knowledge_summary:
+        "Emergency service is available for active leaks and no heat in freezing weather.",
     });
 
     expect(profile.identity).toEqual({
@@ -49,7 +50,10 @@ describe("customizable agent profile", () => {
   });
 
   it("uses safe defaults when a client omits optional customization", () => {
-    const profile = normalizeAgentCustomization({ business_name: "Northstar HVAC", primary_goal: "Answer calls" });
+    const profile = normalizeAgentCustomization({
+      business_name: "Northstar HVAC",
+      primary_goal: "Answer calls",
+    });
 
     expect(profile.identity.role).toBe("receptionist");
     expect(profile.behavior.rules.length).toBeGreaterThan(0);

@@ -947,7 +947,9 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     const tooShort = words > 0 && words < 8;
                     return (
                       <div className="flex items-center justify-between wl-micro-meta -mt-1 px-1">
-                        <span className={cn(tooLong && "text-primary", tooShort && "text-rose-500")}>
+                        <span
+                          className={cn(tooLong && "text-primary", tooShort && "text-rose-500")}
+                        >
                           {words === 0
                             ? "Write what the agent should say in this stage"
                             : `${words} word${words === 1 ? "" : "s"} · ~${seconds}s read-aloud`}
