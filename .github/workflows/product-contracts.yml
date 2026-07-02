@@ -1,0 +1,35 @@
+name: Product contracts
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Vitest product and metadata contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # package-lock is retained for local installs but has historical root-entry
+      # drift. Install from package.json until full regeneration lands.
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run product contracts
+        run: npm run test:run
