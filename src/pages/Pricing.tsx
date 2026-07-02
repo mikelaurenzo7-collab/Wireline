@@ -138,7 +138,7 @@ export default function Pricing() {
 
       <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
         <section className="border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="wl-public-rail text-center">
             <p className="wl-overline text-primary">Pricing</p>
             <h1
               className="mx-auto mt-4 max-w-4xl text-balance leading-[1.02] tracking-[-0.035em] text-foreground"
@@ -159,7 +159,7 @@ export default function Pricing() {
         </section>
 
         <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto grid max-w-[1360px] gap-4 lg:grid-cols-4 lg:items-stretch">
+          <div className="wl-public-rail mx-auto grid max-w-[1360px] gap-4 lg:grid-cols-4 lg:items-stretch">
             {PRICING_TIERS.map((plan) => {
               const Icon = plan.icon;
               return (
@@ -278,7 +278,7 @@ export default function Pricing() {
         </section>
 
         <section className="border-y border-border bg-card/55 px-5 py-12 sm:px-8 lg:px-10">
-          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[.75fr_1fr] lg:items-center">
+          <div className="wl-public-rail mx-auto grid max-w-6xl gap-8 lg:grid-cols-[.75fr_1fr] lg:items-center">
             <div>
               <p className="wl-overline text-primary">Commercial model</p>
               <h2
@@ -307,7 +307,7 @@ export default function Pricing() {
         </section>
 
         <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[.9fr_1.1fr] lg:items-stretch">
+          <div className="wl-public-rail mx-auto grid max-w-5xl gap-5 lg:grid-cols-[.9fr_1.1fr] lg:items-stretch">
             <div className="rounded-[var(--wireline-radius-xl)] border border-border bg-card p-7">
               <p className="wl-overline text-primary">Phone numbers</p>
               <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-4xl font-normal leading-tight tracking-[-0.03em]">
@@ -351,7 +351,7 @@ export default function Pricing() {
         </section>
 
         <section className="border-t border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mx-auto max-w-3xl">
+          <div className="wl-public-rail mx-auto max-w-3xl">
             <div className="text-center">
               <p className="wl-overline">Questions</p>
               <h2

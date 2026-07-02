@@ -238,14 +238,32 @@ const AUTH_BRAND = {
     body: "Sign in to your workspace — your agents, calls, and follow-ups are right where you left them.",
   },
   signup: {
-    label: "Your workspace",
-    headline: "Your phone, finally answering for you.",
-    body: "A voice AI that answers your phone, talks to the caller, and handles it. Messages, bookings, errands, follow-ups — you get a text with what happened.",
+    personal: {
+      label: "Your workspace",
+      headline: "Your phone, finally answering for you.",
+      body: "A voice AI that answers your phone, talks to the caller, and handles it. Messages, bookings, errands, follow-ups — you get a text with what happened.",
+    },
+    business: {
+      label: "Business workspace",
+      headline: "Your front desk, open 24/7.",
+      body: "Deploy trained voice agents that answer calls, qualify leads, book appointments, and follow up — on your playbook, under your brand.",
+    },
   },
 } as const;
 
-function AuthBrandPanel({ headerActive }: { headerActive: "signin" | "signup" }) {
-  const brand = AUTH_BRAND[headerActive];
+function AuthBrandPanel({
+  headerActive,
+  workspaceMode,
+}: {
+  headerActive: "signin" | "signup";
+  workspaceMode: WorkspaceMode;
+}) {
+  const brand =
+    headerActive === "signin"
+      ? AUTH_BRAND.signin
+      : workspaceMode === "business"
+        ? AUTH_BRAND.signup.business
+        : AUTH_BRAND.signup.personal;
   return (
     <aside className="wl-auth-brand-panel" aria-hidden="true">
       <div className="wl-auth-brand-glow" />
@@ -285,10 +303,9 @@ function AuthShell({
   mode: WorkspaceMode;
   headerActive: "signin" | "signup";
 }) {
-  void mode;
   return (
     <div className="wl-stitch-auth-shell">
-      <AuthBrandPanel headerActive={headerActive} />
+      <AuthBrandPanel headerActive={headerActive} workspaceMode={mode} />
       <main
         id="main-content"
         className="wl-auth-form-panel flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 safe-area-insets"
@@ -335,7 +352,7 @@ function WorkspaceSelector({
     {
       id: "business",
       title: "Business",
-      text: "Shared capacity for several agents, Training, integrations, approvals, and analytics.",
+      text: "Shared capacity for several agents, training, integrations, approvals, and analytics.",
       icon: <Building2 className="h-4 w-4" />,
     },
   ];

@@ -155,6 +155,43 @@
   gap: 2rem;
 }
 
+/* Dark marketing panels — landing CTA bands, featured pricing */
+.marketing-ink-panel {
+  background: var(--wireline-color-text-primary);
+  color: var(--wireline-color-canvas-default);
+}
+
+.marketing-ink-panel__muted {
+  color: color-mix(in srgb, var(--wireline-color-canvas-default) 72%, transparent);
+}
+
+.marketing-ink-panel__soft {
+  color: color-mix(in srgb, var(--wireline-color-canvas-default) 82%, transparent);
+}
+
+.marketing-proof-chip {
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--wireline-color-action-primary-container);
+  color: var(--wireline-color-action-primary-default);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.marketing-live-dot {
+  background: var(--wireline-color-status-success);
+}
+
+.marketing-tag-success {
+  border-radius: 9999px;
+  background: var(--wireline-color-action-primary-container);
+  padding: 0.3125rem 0.625rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--wireline-color-action-primary-default);
+}
+
 .wl-workspace-header {
   align-items: center;
   justify-content: space-between;

@@ -61,7 +61,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5">
-            <span className="h-1.5 w-1.5 animate-[pulse_2s_ease-in-out_infinite] rounded-full bg-[#3D9B73]" />
+            <span className="marketing-live-dot h-1.5 w-1.5 animate-[pulse_2s_ease-in-out_infinite] rounded-full" />
             <span className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
               Live
             </span>
@@ -74,7 +74,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             {[30, 70, 100, 50, 85, 40, 95, 60].map((h, i) => (
               <div
                 key={i}
-                className="w-[3px] rounded-sm bg-[#3D9B73]"
+                className="w-[3px] rounded-sm bg-[var(--wireline-color-status-success)]"
                 style={{
                   height: `${h}%`,
                   animation: `waveBar 1.2s ease-in-out infinite`,
@@ -107,10 +107,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
         {/* Tags */}
         <div className="mt-3 flex flex-wrap gap-1.5">
           {data.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-[#EEF5F1] px-[10px] py-[5px] text-[11px] font-medium text-primary"
-            >
+            <span key={tag} className="marketing-tag-success">
               {tag}
             </span>
           ))}
@@ -218,6 +215,7 @@ const PLANS = [
       "Conversation Balance for live work",
     ],
     cta: "Start with Personal",
+    ctaPath: "/signup?plan=personal",
     featured: false,
   },
   {
@@ -234,6 +232,7 @@ const PLANS = [
       `Extra agents at $${teamExtraAgentPrice}/mo`,
     ],
     cta: "Start Team",
+    ctaPath: "/signup?plan=team",
     featured: true,
     badge: "Best next step",
   },
@@ -251,6 +250,7 @@ const PLANS = [
       `Extra agents at $${businessExtraAgentPrice}/mo`,
     ],
     cta: "Start Business",
+    ctaPath: "/signup?plan=business",
     featured: false,
   },
 ];
@@ -297,7 +297,7 @@ export default function PrecisionLanding() {
               {audience === "personal" ? (
                 <>
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#3D9B73]" />
+                    <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" />
                     <span className="wl-eyebrow text-muted-foreground">
                       {MARKETING_VOICE.eyebrow}
                     </span>
@@ -322,9 +322,9 @@ export default function PrecisionLanding() {
               ) : (
                 <>
                   <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#3D9B73]" />
+                    <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" />
                     <span className="wl-eyebrow text-muted-foreground">
-                      For business · v1 in beta
+                      {BUSINESS_MARKETING_VOICE.eyebrow}
                     </span>
                   </div>
                   <h1
@@ -371,9 +371,7 @@ export default function PrecisionLanding() {
                     key={item}
                     className="flex items-center gap-2 text-[13px] text-muted-foreground"
                   >
-                    <div className="grid h-[18px] w-[18px] place-items-center rounded-full bg-[#EEF5F1] text-[10px] font-bold text-primary">
-                      ✓
-                    </div>
+                    <div className="marketing-proof-chip h-[18px] w-[18px]">✓</div>
                     {item}
                   </div>
                 ))}
@@ -388,9 +386,9 @@ export default function PrecisionLanding() {
         </section>
 
         {/* ── DIFFERENTIATOR STRIP ──────────────────────────────── */}
-        <div className="border-b border-border bg-[#1C1C1A] px-5 py-5 text-center">
+        <div className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p
-            className="text-[18px] text-[rgba(247,246,243,.82)]"
+            className="marketing-ink-panel__soft text-[18px]"
             style={{
               fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
             }}
@@ -398,12 +396,16 @@ export default function PrecisionLanding() {
             {audience === "business" ? (
               <>
                 {BUSINESS_MARKETING_VOICE.beforeStrip}{" "}
-                <span className="text-[#F7F6F3]">{BUSINESS_MARKETING_VOICE.differentiator}</span>
+                <span className="text-[var(--wireline-color-canvas-default)]">
+                  {BUSINESS_MARKETING_VOICE.differentiator}
+                </span>
               </>
             ) : (
               <>
                 Siri silences unknowns.{" "}
-                <span className="text-[#F7F6F3]">{MARKETING_VOICE.differentiator}</span>
+                <span className="text-[var(--wireline-color-canvas-default)]">
+                  {MARKETING_VOICE.differentiator}
+                </span>
               </>
             )}
           </p>
@@ -442,7 +444,7 @@ export default function PrecisionLanding() {
                   key={name}
                   className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_rgba(43,85,72,.06)]"
                 >
-                  <div className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[#EEF5F1] text-[18px] text-primary">
+                  <div className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[var(--wireline-color-action-primary-container)] text-[18px] text-primary">
                     {icon}
                   </div>
                   <h3
@@ -532,7 +534,7 @@ export default function PrecisionLanding() {
                   key={plan.name}
                   className={`relative rounded-[14px] p-8 ${
                     plan.featured
-                      ? "bg-[#1C1C1A] text-[#F7F6F3] shadow-[0_4px_24px_rgba(0,0,0,.12)]"
+                      ? "marketing-ink-panel shadow-[var(--wireline-elevation-lg)]"
                       : "border border-border bg-card"
                   }`}
                 >
@@ -552,7 +554,7 @@ export default function PrecisionLanding() {
                     {plan.name}
                   </div>
                   <div
-                    className={`mb-5 text-[12px] ${plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-muted-foreground"}`}
+                    className={`mb-5 text-[12px] ${plan.featured ? "marketing-ink-panel__muted" : "text-muted-foreground"}`}
                   >
                     {plan.sub}
                   </div>
@@ -567,29 +569,37 @@ export default function PrecisionLanding() {
                       {plan.price}
                     </span>
                     <span
-                      className={`text-[14px] ${plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-muted-foreground"}`}
+                      className={`text-[14px] ${plan.featured ? "marketing-ink-panel__muted" : "text-muted-foreground"}`}
                     >
                       {plan.period}
                     </span>
                   </div>
                   <p
-                    className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "text-[rgba(247,246,243,.78)]" : "text-muted-foreground"}`}
+                    className={`mb-5 min-h-[60px] text-[13px] leading-[1.55] ${plan.featured ? "marketing-ink-panel__soft" : "text-muted-foreground"}`}
                   >
                     {plan.body}
                   </p>
                   <div className="mb-6 flex flex-col gap-2">
                     {plan.features.map((f) => (
                       <div key={f} className="flex items-center gap-2 text-[13px]">
-                        <span className={plan.featured ? "text-[#3D9B73]" : "text-primary"}>✓</span>
+                        <span
+                          className={
+                            plan.featured
+                              ? "text-[var(--wireline-color-status-success)]"
+                              : "text-primary"
+                          }
+                        >
+                          ✓
+                        </span>
                         {f}
                       </div>
                     ))}
                   </div>
                   <Link
-                    to="/signup"
+                    to={plan.ctaPath}
                     className={`block min-h-11 w-full rounded-lg py-3 text-center text-[13px] font-semibold transition-all ${
                       plan.featured
-                        ? "bg-white text-[#1C1C1A] hover:bg-[#F7F6F3]"
+                        ? "bg-[var(--wireline-color-canvas-default)] text-[var(--wireline-color-text-primary)] hover:bg-white"
                         : "border border-border hover:border-primary hover:text-primary"
                     }`}
                   >
@@ -604,7 +614,7 @@ export default function PrecisionLanding() {
         {/* ── FINAL CTA ─────────────────────────────────────────── */}
         <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
-            <div className="relative overflow-hidden rounded-[20px] bg-[#1C1C1A] px-10 py-18 text-center text-[#F7F6F3] sm:py-20">
+            <div className="relative overflow-hidden rounded-[20px] marketing-ink-panel px-10 py-16 text-center sm:py-20">
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{
@@ -636,7 +646,7 @@ export default function PrecisionLanding() {
                     </>
                   )}
                 </h2>
-                <p className="mx-auto mt-4 max-w-[460px] text-[16px] text-[rgba(247,246,243,.72)]">
+                <p className="mx-auto mt-4 max-w-[460px] text-[16px] marketing-ink-panel__soft">
                   {audience === "business"
                     ? "Stand up a front desk in an afternoon. Fund live calls with Conversation Balance."
                     : "Create first. Fund live work when the line is ready."}
@@ -644,14 +654,14 @@ export default function PrecisionLanding() {
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                   <Link
                     to={audience === "business" ? "/signup?plan=business" : "/signup"}
-                    className="flex min-h-11 items-center gap-2 rounded-[10px] bg-[#F7F6F3] px-7 py-3 text-[15px] font-semibold text-[#1C1C1A] transition-all hover:bg-white hover:-translate-y-px"
+                    className="flex min-h-11 items-center gap-2 rounded-[10px] bg-[var(--wireline-color-canvas-default)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-text-primary)] transition-all hover:bg-white hover:-translate-y-px"
                   >
                     {audience === "business" ? "Start with Business" : "Start with Personal"}{" "}
                     <ArrowRight size={16} />
                   </Link>
                   <Link
                     to="/showcase"
-                    className="flex min-h-11 items-center px-7 py-3 text-[15px] font-medium text-[rgba(247,246,243,.85)] transition-colors hover:text-[#F7F6F3]"
+                    className="flex min-h-11 items-center px-7 py-3 text-[15px] font-medium marketing-ink-panel__soft transition-colors hover:text-[var(--wireline-color-canvas-default)]"
                   >
                     {audience === "business" ? "Hear it run a front desk" : "Hear it answer a call"}
                   </Link>

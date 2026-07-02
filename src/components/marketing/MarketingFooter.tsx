@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 const PRODUCT_LINKS = [
   { to: "/for/personal", label: "Use cases" },
   { to: "/solutions/sales", label: "Business" },
-  { to: "/features", label: "Channels" },
+  { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
 ] as const;
 
@@ -47,7 +47,10 @@ export default function MarketingFooter({
               Voice, email, text. Yours.
             </p>
           </div>
-          <nav aria-label="Product" className="marketing-footer-nav flex flex-col items-start gap-1">
+          <nav
+            aria-label="Product"
+            className="marketing-footer-nav flex flex-col items-start gap-1"
+          >
             <p className="wl-overline mb-1">Product</p>
             {PRODUCT_LINKS.map((link) => (
               <Link
@@ -59,7 +62,10 @@ export default function MarketingFooter({
               </Link>
             ))}
           </nav>
-          <nav aria-label="Resources" className="marketing-footer-nav flex flex-col items-start gap-1">
+          <nav
+            aria-label="Resources"
+            className="marketing-footer-nav flex flex-col items-start gap-1"
+          >
             <p className="wl-overline mb-1">Resources</p>
             {RESOURCE_LINKS.map((link) => (
               <Link
