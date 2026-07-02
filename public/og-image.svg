@@ -44,7 +44,7 @@
   </text>
 
   <text x="84" y="408" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="500" fill="#6B6B65">
-    Personal assistants · business teams · sales teams
+    Personal assistants · solo business · teams
   </text>
   <text x="84" y="452" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24" font-weight="500" fill="#6B6B65">
     Answer. Route. Book. Follow up. Text the outcome.
@@ -78,6 +78,6 @@
 
   <line x1="80" y1="588" x2="1120" y2="588" stroke="#2B5548" stroke-opacity="0.14" stroke-width="1"/>
   <text x="80" y="612" font-family="Space Mono, ui-monospace, monospace" font-size="12" font-weight="700" letter-spacing="3" fill="#A1A19B">
-    PERSONAL · BUSINESS · VOICE · TEXT · FOLLOW-UP
+    PERSONAL · SOLO BUSINESS · TEAMS · FOLLOW-UP
   </text>
 </svg>
