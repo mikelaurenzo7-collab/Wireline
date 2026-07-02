@@ -51,4 +51,19 @@ describe("product voice cohesion", () => {
     expect(read("src/pages/OverviewPage.tsx")).toContain("Workspace metrics");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Recent calls");
   });
+
+  it("keeps authenticated surfaces action-first, not explanatory", () => {
+    const docs = read("docs/README.md");
+    expect(docs).toContain("Public pages explain. Authenticated pages execute.");
+    expect(docs).toContain("Use labels, tabs, icons, state, and clear next actions");
+    expect(docs).toContain("Call Logs and Analytics may explain history, coaching, exports, and insights");
+  });
+
+  it("preserves Call Logs as the allowed explanatory analytics surface", () => {
+    const calls = read("src/components/CallLogsClaude.tsx");
+    expect(calls).toContain("Analytics");
+    expect(calls).toContain("coaching_note");
+    expect(calls).toContain("qa_score");
+    expect(calls).toContain("lead_score");
+  });
 });
