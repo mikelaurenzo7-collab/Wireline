@@ -59,6 +59,14 @@
   text-align: center;
 }
 
+/* The shared footer is a left-aligned column layout on every page (the
+   landing page renders it outside .marketing-surface). Without this opt-out,
+   chrome pages center the brand wordmark while the max-width tagline stays
+   in a left-pinned box — two alignments inside one block. */
+.marketing-surface footer .wl-public-rail {
+  text-align: left;
+}
+
 .marketing-surface :is(.wl-public-copy, .wl-public-section-heading, .wl-page-title),
 .marketing-surface .wl-marketing-center > :is(h1, h2, h3, p, div) {
   margin-inline: auto;

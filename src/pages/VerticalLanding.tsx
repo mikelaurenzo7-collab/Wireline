@@ -240,7 +240,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
 
       <section className="border-t border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:p-10">
+          <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
             <div className="grid justify-items-center gap-7 text-center">
               <div className="max-w-2xl">
                 <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">

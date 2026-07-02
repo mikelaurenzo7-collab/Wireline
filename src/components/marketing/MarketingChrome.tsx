@@ -40,7 +40,11 @@ export default function MarketingChrome({
         id="main-content"
         tabIndex={-1}
         className={cn(
-          "relative z-10 flex-1 flex flex-col min-h-0 overflow-y-auto scroll-viewport",
+          /* No nested scroller here: the chrome's root div is the scroll
+             container (foundation's `.wl-ui-caps >` rule). A second
+             overflow-y-auto viewport squeezed long content (legal pages)
+             into the space left over by the always-visible footer. */
+          "relative z-10 flex-1 flex flex-col",
           /* PublicSiteHeader is fixed h-16 — reserve space so hero copy isn't clipped. */
           !authCanvas && "pt-16 sm:pt-20",
           stickyCta && "marketing-has-sticky-cta",

@@ -61,7 +61,7 @@ export default function Blog() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-        <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:p-10">
+        <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
             <div className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
               <ShieldCheck className="h-4 w-4" />A private draft is a good place to begin.
