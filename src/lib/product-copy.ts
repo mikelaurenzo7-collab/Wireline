@@ -4,8 +4,8 @@ export const MARKETING_VOICE = {
   eyebrow: "voice agents · in beta",
   headline: "Wire your agent.",
   subline:
-    "From personal assistants to call centers and sales teams, build a trained voice agent that answers, routes, books, follows up, and texts the outcome.",
-  proof: ["Personal assistants", "Call centers", "Sales teams"],
+    "From personal assistants to solo business agents, call centers, and sales teams, build a trained voice agent that answers, routes, books, follows up, and texts the outcome.",
+  proof: ["Personal assistants", "Solo business agents", "Teams & call centers"],
   extensionLead: "Command your agent from any page. Wireline answers while you stay focused.",
   differentiator: "Wireline puts a trained agent on the line.",
 } as const;
