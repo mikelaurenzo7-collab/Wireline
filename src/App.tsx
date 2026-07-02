@@ -39,12 +39,7 @@ const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 function RouteLoading() {
   return (
     <div className="fixed inset-0 z-[9999]">
-      <TransitionSurface
-        eyebrow="Wireline"
-        title="Loading the next screen"
-        description="Bringing the next part of Wireline into view."
-        busyLabel="Loading"
-      />
+      <TransitionSurface eyebrow="Wireline" title="Loading" busyLabel="Loading" />
     </div>
   );
 }

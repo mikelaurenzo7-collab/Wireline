@@ -18,14 +18,7 @@ const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
-const loading = (
-  <TransitionSurface
-    eyebrow="Workspace"
-    title="Loading the next screen"
-    description="Keeping your workspace context in place while this surface loads."
-    busyLabel="Loading route"
-  />
-);
+const loading = <TransitionSurface eyebrow="Workspace" title="Loading" busyLabel="Loading route" />;
 
 /** Admin panels predate the workspace rail — give them the shared shell so
  *  /admin sits inside the same chrome and rhythm as every other surface. */

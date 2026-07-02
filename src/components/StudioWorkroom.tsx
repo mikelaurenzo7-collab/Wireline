@@ -462,9 +462,7 @@ const StudioWorkroom = forwardRef<
               </button>
             ))}
           </div>
-          <p className="mt-1 text-[10px] text-muted-foreground">
-            Every outcome trains the fleet. Full history + recordings stay attached to the agent.
-          </p>
+          <p className="mt-1 text-[10px] text-muted-foreground">Every outcome trains the fleet.</p>
         </div>
       ) : null}
 

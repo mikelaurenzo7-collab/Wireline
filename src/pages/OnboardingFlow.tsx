@@ -40,7 +40,6 @@ export default function OnboardingFlow() {
       <TransitionSurface
         eyebrow="Create flow"
         title="Opening your first agent"
-        description="Taking you straight to the brief so you can create, train, and run without extra setup steps."
         busyLabel="Routing now"
         details={details}
         actions={

@@ -273,12 +273,7 @@ function FloorTab({
 }) {
   if (loading) return <RowSkeleton />;
   if (!calls.length) {
-    return (
-      <EmptyState
-        title="Floor is quiet."
-        body="No calls in the last few minutes. Live calls appear here as they happen."
-      />
-    );
+    return <EmptyState title="Floor is quiet." body="Live calls appear here." />;
   }
   return (
     <>
@@ -373,7 +368,7 @@ function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
     return (
       <EmptyState
         title="No follow-ups queued."
-        body="High-value or callback-tagged calls land here when they need your attention."
+        body="High-value and callback-tagged calls land here."
       />
     );
   }
