@@ -3,7 +3,7 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { invalidateDashboard } from "./dashboard-cache";
-import * as claudeBrain from "./claude-brain";
+import * as claudeBrain from "./ai-brains";
 import { getErrorMessage } from "./server-utils";
 import { SentryEvents } from "./sentry-events";
 import {
@@ -20,7 +20,7 @@ import {
   CONSENT_RULE_VERSION,
 } from "./tcpa-consent";
 import { reportError } from "./error-reporter";
-import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
+import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { isHardSpendCapExceeded } from "./spend-guards";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
@@ -210,7 +210,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         .limit(1);
 
       const hardCapped = await isHardSpendCapExceeded(userId);
-      const useGeminiFlash = hardCapped || !claudeBrain.isClaudeAvailable();
+      const useGeminiFlash = hardCapped || !claudeBrain.isBrainAvailable();
 
       const cap = await claudeBrain.withAuditCapture(async () => {
         if (useGeminiFlash) {
@@ -277,7 +277,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         })
         .where(eq(schema.callLogs.vapiCallId, call?.id));
 
-      await persistClaudeAuditRecords({
+      await persistRuntimeAuditRecords({
         userId,
         action: "vapi.post_call_analysis",
         records: cap.records,

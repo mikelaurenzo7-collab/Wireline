@@ -2,13 +2,13 @@
 import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
-import * as claudeBrain from "./claude-brain";
+import * as claudeBrain from "./ai-brains";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue } from "./job-queue";
 import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
-import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
+import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
 import {
@@ -158,7 +158,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       result = capture.result;
       records = capture.records;
     } else {
-      if (!claudeBrain.isClaudeAvailable() || !p.transcript) return;
+      if (!claudeBrain.isBrainAvailable() || !p.transcript) return;
       const capture = await claudeBrain.withAuditCapture(() =>
         claudeBrain.postCallAnalysis({
           agentName: p.agentName || "Wireline Agent",
@@ -200,7 +200,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     }
 
     if (records.length) {
-      await persistClaudeAuditRecords({
+      await persistRuntimeAuditRecords({
         userId: p.userId,
         action: "jobs.post_call_enrichment",
         records,
@@ -694,7 +694,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       maxEntries?: number;
       maxPages?: number;
     };
-    if (!claudeBrain.isClaudeAvailable()) {
+    if (!claudeBrain.isBrainAvailable()) {
       throw new Error("Claude is not configured — cannot crawl URL for knowledge.");
     }
     const result = await claudeBrain.knowledgeFromUrl({
@@ -731,7 +731,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 
   if (job.type === "auto_qa_score") {
     const p = job.payload as { callLogId: number | string; userId: string };
-    if (!claudeBrain.isClaudeAvailable()) {
+    if (!claudeBrain.isBrainAvailable()) {
       log.warn("auto_qa_score skipped — claude unavailable", { callLogId: p.callLogId });
       return;
     }

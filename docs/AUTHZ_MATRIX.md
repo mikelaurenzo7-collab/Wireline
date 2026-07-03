@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 156  
-**Protected:** 124  
-**Public (allowlisted):** 32  
+**Routes scanned:** 178  
+**Protected:** 141  
+**Public (allowlisted):** 37  
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -42,6 +42,11 @@
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
 | `POST /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
+| `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
+| `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation + rate limit |
+| `POST /api/twilio-webhook/sms` | Twilio signature validation + rate limit |
+| `POST /api/twilio-webhook/voice-fallback` | Twilio signature validation + rate limit |
+| `POST /api/twilio-webhook/voicemail-complete` | Twilio signature validation + rate limit |
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /api/voices/:id/preview` | Premade voice previews only; cloned/tenant voices are on the authed route |
 | `POST /api/webhooks/elevenlabs` | ElevenLabs HMAC-SHA256 signature |
@@ -160,11 +165,28 @@
 | intake-routes.ts | DELETE | `/api/intake/keys/:id` | inline | — | — | Protected |
 | intake-routes.ts | POST | `/api/intake/lead` | — | — | yes | Public (allowlisted) |
 | intake-routes.ts | POST | `/api/intake/leads` | — | — | yes | Public (allowlisted) |
+| job-routes.ts | GET | `/api/jobs/:id` | inline | — | — | Protected |
+| job-routes.ts | POST | `/api/jobs/:id/run` | inline | — | — | Protected |
+| job-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
+| job-routes.ts | POST | `/api/jobs/prospect` | inline | — | — | Protected |
+| job-routes.ts | GET | `/api/jobs/stats` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | GET | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
+| mobile-routes.ts | GET | `/api/mobile/agents` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/agents/:id` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/calls/:callId/detail` | inline | — | — | Protected |
+| mobile-routes.ts | POST | `/api/mobile/calls/:callId/handoff` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/calls/active` | inline | — | — | Protected |
+| mobile-routes.ts | POST | `/api/mobile/calls/outbound` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/calls/recent` | inline | — | — | Protected |
+| mobile-routes.ts | POST | `/api/mobile/devices` | inline | — | — | Protected |
+| mobile-routes.ts | DELETE | `/api/mobile/devices/:deviceId` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/me` | inline | — | — | Protected |
+| mobile-routes.ts | PUT | `/api/mobile/settings` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
 | pronunciation-routes.ts | GET | `/api/pronunciation-dicts` | inline | — | — | Protected |
@@ -188,9 +210,14 @@
 | spend-control-routes.ts | PUT | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | GET | `/api/spend/status` | inline | — | — | Protected |
 | subscription-checkout-guard-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
+| support-routes.ts | POST | `/api/support/ticket` | — | — | yes | Public (allowlisted) |
 | team-routes.ts | GET | `/api/team` | inline | yes | — | Protected |
 | team-routes.ts | DELETE | `/api/team/:id` | inline | yes | — | Protected |
 | team-routes.ts | POST | `/api/team/invite` | inline | yes | — | Protected |
+| twilio-webhook.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
+| twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
+| twilio-webhook.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
+| twilio-webhook.ts | POST | `/api/twilio-webhook/voicemail-complete` | — | — | yes | Public (allowlisted) |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |

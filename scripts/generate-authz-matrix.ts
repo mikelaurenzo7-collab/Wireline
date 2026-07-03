@@ -70,6 +70,10 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Liveness/readiness probes; rate-limited, no PII",
   },
   { pattern: /^\/api\/public\//, reason: "Aggregated, no-PII marketing counters; rate-limited" },
+  {
+    pattern: /^\/api\/support\/ticket$/,
+    reason: "Public support/contact form; strict validation + 5/15min IP rate limit",
+  },
   { pattern: /^\/(?:api\/)?billing\/plans$/, reason: "Public plan/price comparison table" },
   { pattern: /^\/(?:api\/quotas\/)?plans$/, reason: "Public plan limits comparison table" },
   { pattern: /^\/api\/agents\/roles$/, reason: "Static role reference enum; no tenant data" },

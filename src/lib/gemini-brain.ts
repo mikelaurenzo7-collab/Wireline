@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GEMINI_MODELS } from "./claude-models";
-import { recordGeminiUsage } from "./claude-audit";
+import { GEMINI_MODELS } from "./ai-models";
+import { recordGeminiUsage } from "./ai-audit";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 

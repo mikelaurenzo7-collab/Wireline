@@ -10,6 +10,7 @@ import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
+import { runInBackground } from "../lib/background-work";
 import { placeOutboundCall } from "../lib/vapi-client";
 
 const router = express.Router();
@@ -264,27 +265,24 @@ async function processIntakeLead(
     return { ok: false, error: error.message || "DB insert failed", code: "INSERT_FAILED" };
   }
 
-  dispatchWebhook(key.user_id, "lead.received", {
-    lead_id: insertedId ? Number(insertedId) : undefined,
-    customer_name: customer_name || null,
-    customer_number,
-    context: context || null,
-    metadata,
-    agent_id,
-    intake_key: { id: key.id, name: key.name },
-    auto_dial: !!key.auto_dial && !!agent_id,
-    at: now.toISOString(),
-  }).catch((err) =>
-    log.warn("lead.received webhook dispatch failed", {
-      user_id: key.user_id,
-      error: err instanceof Error ? err.message : String(err),
+  runInBackground("lead.received webhook dispatch", () =>
+    dispatchWebhook(key.user_id, "lead.received", {
+      lead_id: insertedId ? Number(insertedId) : undefined,
+      customer_name: customer_name || null,
+      customer_number,
+      context: context || null,
+      metadata,
+      agent_id,
+      intake_key: { id: key.id, name: key.name },
+      auto_dial: !!key.auto_dial && !!agent_id,
+      at: now.toISOString(),
     }),
   );
 
   let auto_dial_initiated = false;
   if (key.auto_dial && agent_id && insertedId) {
     auto_dial_initiated = true;
-    (async () => {
+    runInBackground("intake auto-dial", async () => {
       try {
         const result = await placeOutboundCall({
           userId: key.user_id,
@@ -330,7 +328,7 @@ async function processIntakeLead(
           .where(eq(schema.outboundLeads.id, insertedId!));
         log.warn("Auto-dial threw for lead", { leadId: insertedId, error: getErrorMessage(err) });
       }
-    })();
+    });
   }
 
   return {
@@ -364,17 +362,15 @@ router.post("/lead", async (req: Request, res: Response) => {
 
     if (result.ok) {
       if (!result.idempotent_replay) {
-        drizzle
-          .update(schema.intakeKeys)
-          .set({
-            lastUsedAt: new Date(),
-            useCount: (key.use_count || 0) + 1,
-          })
-          .where(eq(schema.intakeKeys.id, key.id))
-          .then(
-            () => {},
-            () => {},
-          );
+        runInBackground("intake key use-count", () =>
+          drizzle
+            .update(schema.intakeKeys)
+            .set({
+              lastUsedAt: new Date(),
+              useCount: (key.use_count || 0) + 1,
+            })
+            .where(eq(schema.intakeKeys.id, key.id)),
+        );
       }
       return res.json(result);
     }
@@ -441,17 +437,15 @@ router.post("/leads", async (req: Request, res: Response) => {
 
     const successes = results.filter((r) => r.ok).length;
     if (successes > 0) {
-      drizzle
-        .update(schema.intakeKeys)
-        .set({
-          lastUsedAt: new Date(),
-          useCount: (key.use_count || 0) + successes,
-        })
-        .where(eq(schema.intakeKeys.id, key.id))
-        .then(
-          () => {},
-          () => {},
-        );
+      runInBackground("intake key bulk use-count", () =>
+        drizzle
+          .update(schema.intakeKeys)
+          .set({
+            lastUsedAt: new Date(),
+            useCount: (key.use_count || 0) + successes,
+          })
+          .where(eq(schema.intakeKeys.id, key.id)),
+      );
     }
 
     res.json({
