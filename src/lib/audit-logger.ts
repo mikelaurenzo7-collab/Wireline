@@ -58,9 +58,14 @@ export class AuditLogger {
       await this.drizzle.insert(schema.auditLog).values(record as any);
     } catch (error: any) {
       this.failureCount++;
+      // Drizzle wraps pg errors; the cause carries the actual Postgres
+      // message (constraint, RLS policy, connection), which is what an
+      // operator needs to act on.
+      const cause = error.cause instanceof Error ? error.cause.message : (error.cause ?? undefined);
       log.error("[AuditLogger] Failed to log event", {
         eventType: data.eventType,
         error: error.message,
+        cause,
         totalFailures: this.failureCount,
       });
       return { success: false, error: error.message };
