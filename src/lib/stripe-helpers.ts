@@ -141,6 +141,8 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   await drizzle
     .insert(schema.settings)
     .values({
+      // settings.id is a text PK with no default; the convention is id = userId.
+      id: userId,
       userId: userId,
       subscriptionStatus: localStatus,
       maxAgents: plan?.max_agents ?? 3,

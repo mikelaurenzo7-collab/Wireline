@@ -459,11 +459,11 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
 
   const runtimeProfile: AgentRuntimeProfile = {
     timezone: agentConfig.timezone,
-    business_hours: agentConfig.businessHours,
+    business_hours: agentConfig.businessHours as AgentRuntimeProfile["business_hours"],
     compliance_mode: agentConfig.complianceMode,
     disallowed_topics: agentConfig.disallowedTopics,
     escalation_keywords: agentConfig.escalationKeywords,
-    business_variables: agentConfig.businessVariables,
+    business_variables: agentConfig.businessVariables as AgentRuntimeProfile["business_variables"],
     out_of_hours_message: agentConfig.outOfHoursMessage,
     kpi_focus: agentConfig.kpiFocus,
   };
@@ -541,7 +541,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       // Docs:
       //   speed:        https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
       //   fine-tuning:  https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
-      const provider = agentConfig.voiceProviderOutbound || agentConfig.voiceProvider || "11labs";
+      const provider = agentConfig.voiceProvider || "11labs";
       const speed = resolveElevenLabsSpeed((agentConfig as any)?.voiceSpeed, { outbound: true });
       const clamp01 = (v: unknown, fallback: number): number => {
         if (v == null) return fallback;

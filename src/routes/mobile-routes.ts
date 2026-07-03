@@ -562,7 +562,7 @@ router.get(
           createdAt: schema.callLogs.createdAt,
         })
         .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, req.user.id)))
+        .where(and(eq(schema.callLogs.id, BigInt(callId)), eq(schema.callLogs.userId, req.user.id)))
         .limit(1);
       if (!call) {
         return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });

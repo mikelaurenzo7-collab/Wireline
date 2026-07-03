@@ -442,7 +442,7 @@ router.delete(
       void auditLogger
         .logAccountDeletionRequested({
           userId: uid,
-          scheduledPurgeAt: queueRow.scheduledPurgeAt,
+          scheduledPurgeAt: queueRow.scheduledPurgeAt?.toISOString() ?? "",
           ip: req.ip,
         })
         .catch((err) =>

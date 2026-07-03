@@ -50,7 +50,7 @@ export function validateQuery<T extends ZodSchema>(schema: T) {
       return;
     }
 
-    req.query = result.data;
+    req.query = result.data as typeof req.query;
     next();
   };
 }
@@ -72,7 +72,7 @@ export function validateParams<T extends ZodSchema>(schema: T) {
       return;
     }
 
-    req.params = result.data;
+    req.params = result.data as typeof req.params;
     next();
   };
 }

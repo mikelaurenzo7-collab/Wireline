@@ -27,6 +27,7 @@ export async function syncOutlookCalendar(userId: string) {
   let totalSynced = 0;
 
   for (const account of accounts) {
+    if (!account.accessToken) continue;
     try {
       let accessToken = decryptSecret(account.accessToken);
 

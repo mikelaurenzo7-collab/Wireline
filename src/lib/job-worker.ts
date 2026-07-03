@@ -375,7 +375,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     const [call] = await drizzle
       .select({ transcript: schema.callLogs.transcript })
       .from(schema.callLogs)
-      .where(eq(schema.callLogs.id, p.callId))
+      .where(eq(schema.callLogs.id, BigInt(p.callId)))
       .limit(1);
     if (!call?.transcript) return;
 
@@ -444,7 +444,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       const [data] = await drizzle
         .select()
         .from(schema.deletionQueue)
-        .where(eq(schema.deletionQueue.id, BigInt(p.queue_id)))
+        .where(eq(schema.deletionQueue.id, p.queue_id))
         .limit(1);
       queueRow = data;
     } else {
@@ -703,7 +703,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       maxEntries: p.maxEntries ?? 12,
       maxPages: p.maxPages ?? 5,
     });
-    await persistJobResult(job.id, result as Record<string, unknown>);
+    await persistJobResult(job.id, result as unknown as Record<string, unknown>);
   }
 
   if (job.type === "vapi_webhook") {

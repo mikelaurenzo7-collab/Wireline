@@ -2,7 +2,7 @@
  * Structured Director reply metadata — persisted alongside message content
  * so proposals, suggestions, and creative approvals survive reload.
  */
-import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-Assistants-plan";
+import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-fleet-plan";
 import type { ProposedAction, ProposedChange, ProposedToolToggle } from "./workspace-planner";
 
 export type DirectorSuggestionKind =

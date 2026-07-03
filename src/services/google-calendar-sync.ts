@@ -28,6 +28,7 @@ export async function syncGoogleCalendar(userId: string) {
   let totalSynced = 0;
 
   for (const account of accounts) {
+    if (!account.accessToken) continue;
     try {
       const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,

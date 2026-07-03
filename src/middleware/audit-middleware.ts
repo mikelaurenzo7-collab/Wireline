@@ -63,7 +63,7 @@ export async function persistRuntimeAuditRecords(opts: {
     try {
       const decision = await quotaTracker.checkAndIncrement(
         opts.userId,
-        "ai_tokens_daily",
+        "claude_tokens_daily",
         tokenDelta,
       );
       if (!decision.allowed)

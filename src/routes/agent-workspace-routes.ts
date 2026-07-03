@@ -307,7 +307,14 @@ router.post(
       const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${userMessage}`;
 
       try {
-        const { result, thinking, thinkingDurationMs } = await runStructuredStream(
+        const { result, thinking, thinkingDurationMs } = await runStructuredStream<{
+          reply?: string;
+          config_changes?: unknown;
+          changes?: unknown;
+          tool_toggles?: unknown;
+          toolToggles?: unknown;
+          actions?: unknown;
+        }>(
           {
             system,
             user,

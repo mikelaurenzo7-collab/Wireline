@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strictFunctionTypes": false
+  },
+  "include": [
+    "server.ts",
+    "api/**/*.ts",
+    "src/entrypoints/**/*.ts",
+    "src/types/anthropic-legacy.d.ts"
+  ]
+}

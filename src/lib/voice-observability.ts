@@ -283,6 +283,7 @@ export async function getLatencyTrends(opts: {
   const byDate = new Map<string, { ttfts: number[]; errors: number; total: number }>();
 
   for (const r of rows) {
+    if (!r.createdAt) continue;
     const dateKey = r.createdAt.toISOString().slice(0, 10);
     const bucket = byDate.get(dateKey) ?? { ttfts: [], errors: 0, total: 0 };
     if (r.ttftMs != null) bucket.ttfts.push(r.ttftMs);
