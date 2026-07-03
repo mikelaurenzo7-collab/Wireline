@@ -164,7 +164,9 @@ router.post(
 );
 
 router.get(
-  "/:id",
+  // Constrained to UUID shape so literal paths registered later (notably
+  // /sweep, which Vercel cron GETs) can't be swallowed as an :id match.
+  "/:id([0-9a-fA-F-]{36})",
   authenticateUser,
   jobsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -198,7 +200,7 @@ router.get(
 
 /** Process one owned pending job (serverless kick — cron also drains the queue). */
 router.post(
-  "/:id/run",
+  "/:id([0-9a-fA-F-]{36})/run",
   authenticateUser,
   jobsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
