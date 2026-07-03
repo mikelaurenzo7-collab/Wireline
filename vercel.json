@@ -107,5 +107,11 @@
       "source": "/((?!api/|assets/|legal/|.+\\.[A-Za-z0-9]+$).*)",
       "destination": "/index.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/jobs/sweep",
+      "schedule": "*/5 * * * *"
+    }
   ]
 }

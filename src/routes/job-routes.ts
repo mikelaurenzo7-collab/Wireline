@@ -483,6 +483,14 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       }
     }
 
+    // Drain pending webhook deliveries whose next attempt is due. The
+    // delivery rows carry the retry state machine; this tick is the only
+    // thing that advances it.
+    if (req._sweepMode === "cron" || !req._sweepMode) {
+      const { processWebhookRetries } = await import("../lib/webhook-helpers");
+      await processWebhookRetries();
+    }
+
     let processed = 0;
     for (let i = 0; i < 10; i++) {
       const job = await claim(drizzle);

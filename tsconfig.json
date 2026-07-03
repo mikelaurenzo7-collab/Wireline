@@ -32,7 +32,6 @@
     "src/routes/director-routes.ts",
     "src/components/FastStartWizard.tsx",
     "src/components/FleetSetupNudge.tsx",
-    "src/routes/agent-workspace-routes.ts",
     "src/routes/insights-routes.ts",
     "src/routes/daily-brief-routes.ts",
     "src/routes/admin-vapi-sync-routes.ts",
@@ -41,10 +40,7 @@
     "src/lib/agent-tool-dispatch.ts",
     "src/lib/showcase-assistant.ts",
     "src/lib/vapi-assistant-factory.ts",
-    "src/lib/vapi-client.ts",
-    "src/lib/vapi-handlers.ts",
     "src/lib/daily-brief.ts",
-    "src/lib/job-worker.ts",
     "src/services/google-drive-sync.ts",
     "scripts/sync-wireline-showcase.mts"
   ]

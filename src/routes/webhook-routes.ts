@@ -15,6 +15,7 @@ import {
   dispatchWebhook,
 } from "../lib/webhook-helpers";
 import { encryptSecret, lastFour, isVaultConfigured } from "../lib/secret-vault";
+import { runInBackground } from "../lib/background-work";
 import { webhooksRateLimit } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -323,12 +324,7 @@ router.post(
         })
         .where(eq(schema.webhookDeliveries.id, BigInt(id)));
 
-      attemptWebhookDelivery(id).catch((err: unknown) =>
-        log.warn("webhook delivery attempt failed", {
-          delivery_id: id,
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      );
+      runInBackground(`webhook delivery retry ${id}`, () => attemptWebhookDelivery(id));
       res.json({ success: true });
     } catch (e: any) {
       if (e instanceof AppError) throw e;

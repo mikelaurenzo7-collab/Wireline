@@ -407,14 +407,23 @@ router.post(
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-      // Extract knowledge entries via Claude. Defer the heavy import so
-      // cold-start cost isn't paid on every workspace message.
-      const { knowledgeFromDocument } = await import("../lib/claude-brain");
-      const result = await knowledgeFromDocument({
-        pdfBase64,
-        fileName: typeof fileName === "string" ? fileName.slice(0, 255) : undefined,
-        maxEntries: 12,
-      });
+      // Extract knowledge entries via the managed runtime. Defer the heavy
+      // import so cold-start cost isn't paid on every workspace message.
+      const { knowledgeFromDocument, KnowledgeIngestionUnavailableError } =
+        await import("../lib/ai-brains");
+      let result;
+      try {
+        result = await knowledgeFromDocument({
+          pdfBase64,
+          fileName: typeof fileName === "string" ? fileName.slice(0, 255) : undefined,
+          maxEntries: 12,
+        });
+      } catch (ingestError) {
+        if (ingestError instanceof KnowledgeIngestionUnavailableError) {
+          throw AppError.fromHttpStatus(503, ingestError.message);
+        }
+        throw ingestError;
+      }
 
       // result.entries is an array of { content, tags? } per the
       // existing contract. Insert them into the agent's knowledge base

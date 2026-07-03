@@ -30,9 +30,13 @@ import icloudMailRouter from "../routes/icloud-mail-routes";
 import emailUnsubscribeRouter from "../routes/email-unsubscribe-routes";
 import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
+import twilioWebhookRouter from "../routes/twilio-webhook";
 import smsRouter from "../routes/sms-routes";
 import webhookRouter from "../routes/webhook-routes";
 import intakeRouter from "../routes/intake-routes";
+import supportRouter from "../routes/support-routes";
+import jobRouter from "../routes/job-routes";
+import mobileRouter from "../routes/mobile-routes";
 
 /**
  * Canonical API route order.
@@ -73,6 +77,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(icloudMailRouter);
   app.use(emailUnsubscribeRouter);
   app.use(metaWebhookRouter);
+  // Twilio inbound SMS receiver (/api/twilio-webhook/*) — signature-verified,
+  // TCPA opt-out keywords. The Carrier panel hands this URL to customers.
+  app.use(twilioWebhookRouter);
   // SMS threads power the Inbox SMS tab (/api/sms/threads*).
   app.use(smsRouter);
   // Tenant webhook management — mounted after metaWebhookRouter so the
@@ -80,5 +87,12 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api/webhooks", webhookRouter);
   // Intake keys + key-authenticated public lead capture (/api/intake/*).
   app.use("/api/intake", intakeRouter);
+  // Public support/contact ticket form (/api/support/ticket) — rate-limited.
+  app.use(supportRouter);
+  // Job queue + the cron-driven operations sweep (/api/jobs/sweep): retention
+  // purges, deletion queue, trial expiry, webhook retries, queue draining.
+  app.use("/api/jobs", jobRouter);
+  // Native app data plane (/api/mobile/*) — every route is session-guarded.
+  app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
 }
