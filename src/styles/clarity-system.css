@@ -41,15 +41,8 @@
   text-wrap: balance;
 }
 
-.marketing-hero {
-  background:
-    radial-gradient(
-      circle at 88% 4%,
-      color-mix(in srgb, var(--wireline-color-action-primary-container) 10%, transparent),
-      transparent 28rem
-    ),
-    var(--wireline-color-canvas-default);
-}
+/* .marketing-hero background lives in wireline-signature.css — the ledger
+   ruling and copper counter-glow are part of the Wire signature. */
 
 .marketing-hero__content {
   max-width: none;

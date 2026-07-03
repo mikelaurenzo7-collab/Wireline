@@ -5,6 +5,7 @@
   --wireline-color-surface-container: #EEF5F1;
   --wireline-color-action-primary-pressed: #1E4038;
   --wireline-color-action-primary-default: #2B5548;
+  --wireline-color-action-secondary-default: #C4713B;
   --wireline-color-text-primary: #1C1C1A;
   --wireline-color-text-secondary: #6B6B65;
   --wireline-color-border-default: #E8E7E3;
@@ -120,6 +121,28 @@ h1 {
 .header h1 {
   margin: 0;
   font-size: clamp(30px, 5vw, 42px);
+}
+
+/* The Wire — Wireline's signature: a copper node on the strand that
+   settles into patina. Carried on every public surface, including this
+   consent screen. */
+body.oauth-consent .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.oauth-consent .eyebrow::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    rgba(43, 85, 72, 0.55)
+  );
+  box-shadow: -6px 0 0 -0.5px var(--wireline-color-action-secondary-default);
 }
 
 body.oauth-consent h1 {

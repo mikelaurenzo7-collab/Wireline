@@ -274,7 +274,7 @@ function AuthBrandPanel({
         </Link>
       </div>
       <div className="wl-auth-brand-copy">
-        <p className="wl-auth-brand-label">{brand.label}</p>
+        <p className="wl-auth-brand-label wl-eyebrow--wired">{brand.label}</p>
         <h2 className="wl-auth-brand-headline">{brand.headline}</h2>
         <p className="wl-auth-brand-body">{brand.body}</p>
       </div>

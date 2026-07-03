@@ -502,7 +502,7 @@ export default function PrecisionLanding() {
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
-              <p className="wl-eyebrow text-primary">
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">
                 Agent playbooks · {audience === "personal" ? "personal" : "business"}
               </p>
               <h2
@@ -560,7 +560,7 @@ export default function PrecisionLanding() {
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
-              <p className="wl-eyebrow text-primary">How it works</p>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
               <h2
                 className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
                 style={{
@@ -600,7 +600,7 @@ export default function PrecisionLanding() {
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12 text-center">
-              <p className="wl-eyebrow text-primary">Pricing</p>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
               <h2
                 className="mx-auto mt-4 max-w-[18ch] text-[clamp(34px,4vw,46px)] leading-[1.05]"
                 style={{
