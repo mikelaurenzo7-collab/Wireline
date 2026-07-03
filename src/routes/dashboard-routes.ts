@@ -638,8 +638,13 @@ function rowsToCsv(rows: Record<string, unknown>[], columns: string[]): string {
         .map((col) => {
           const val = row[col];
           if (val == null) return "";
-          const str = String(val).replace(/"/g, '""');
-          return str.includes(",") || str.includes("\n") || str.includes('"') ? `"${str}"` : str;
+          let str = String(val).replace(/"/g, '""');
+          // Formula-injection hardening: exported fields include caller-supplied
+          // text (lead names arrive via the public intake API), and spreadsheet
+          // apps execute cells starting with = + - @ or a tab/CR. Numbers and
+          // dates can't carry formulas, so only string values are prefixed.
+          if (typeof val === "string" && /^[=+\-@\t\r]/.test(str)) str = `'${str}`;
+          return /[",\n\r]/.test(str) ? `"${str}"` : str;
         })
         .join(","),
     )

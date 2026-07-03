@@ -84,7 +84,15 @@
       "destination": "/api/mcp"
     },
     {
+      "source": "/.well-known/oauth-protected-resource/:path*",
+      "destination": "/api/mcp"
+    },
+    {
       "source": "/.well-known/oauth-authorization-server",
+      "destination": "/api/mcp"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server/:path*",
       "destination": "/api/mcp"
     },
     {

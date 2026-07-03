@@ -167,6 +167,9 @@ router.patch(
         }
       }
 
+      if (Object.keys(patch).length === 0)
+        throw AppError.fromHttpStatus(400, "Provide at least one field to update.");
+
       const [data] = (await drizzle
         .update(schema.webhooks)
         .set(patch)
@@ -260,7 +263,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const parsed = parseInt((req.query.limit as string) || "50");
-      const limit = Math.min(Number.isFinite(parsed) ? parsed : 50, 200);
+      const limit = Math.min(Math.max(Number.isFinite(parsed) ? parsed : 50, 1), 200);
       const [hook] = await drizzle
         .select({ id: schema.webhooks.id })
         .from(schema.webhooks)

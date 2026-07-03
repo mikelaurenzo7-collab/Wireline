@@ -61,6 +61,7 @@ export const PRODUCT_EVENT_SURFACES = [
   "ios",
   "android",
   "chatgpt_app",
+  "claude_app",
   "api",
 ] as const;
 

@@ -112,6 +112,7 @@ router.post(
 
       res.json({ ok: result.ok, reason: result.ok ? null : result.reason });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("SMS reply failed", { error: e?.message });
       throw AppError.fromHttpStatus(500, "Reply failed");
     }

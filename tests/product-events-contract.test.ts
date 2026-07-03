@@ -43,6 +43,7 @@ describe("product event taxonomy", () => {
       "ios",
       "android",
       "chatgpt_app",
+      "claude_app",
       "api",
     ]);
   });
