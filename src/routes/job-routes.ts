@@ -348,7 +348,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         const alreadyQueued = new Set((recent || []).map((r) => r.userId));
 
         for (const t of tenants) {
-          if (alreadyQueued.has(t.userId)) continue;
+          if (!t.userId || alreadyQueued.has(t.userId)) continue;
           await enqueue(drizzle, {
             userId: t.userId,
             type: "purge_old_data",
@@ -542,7 +542,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
           );
         const alreadyWarned = new Set(recentWarnings.map((r) => r.userId));
         for (const row of trialsSoon) {
-          if (alreadyWarned.has(row.userId)) continue;
+          if (!row.userId || alreadyWarned.has(row.userId)) continue;
           const daysLeft = Math.max(
             1,
             Math.ceil(((row.trialEndsAt?.getTime() ?? 0) - Date.now()) / (24 * 60 * 60 * 1000)),

@@ -144,7 +144,7 @@ export async function tickDueCadenceRuns({
   let failed = 0;
 
   const cadenceIds = [...new Set(dueRuns.map((r) => r.cadenceId).filter(Boolean))] as string[];
-  const leadIds = [...new Set(dueRuns.map((r) => r.leadId).filter(Boolean))] as string[];
+  const leadIds = [...new Set(dueRuns.map((r) => r.leadId).filter((v): v is bigint => v != null))];
 
   const [cadenceRows, leadRows] = await Promise.all([
     cadenceIds.length

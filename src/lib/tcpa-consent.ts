@@ -586,7 +586,19 @@ export interface ConsentLedgerEntry {
  * call lives at the integration site (server.ts) so this module stays
  * pure / testable.
  */
-export function buildConsentLedgerRow(entry: ConsentLedgerEntry): Record<string, unknown> {
+export interface ConsentLedgerRow {
+  user_id: string;
+  call_id: string | null;
+  customer_number: string;
+  event: ConsentLedgerEvent;
+  rule_version: string;
+  rule: ConsentRule;
+  state: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export function buildConsentLedgerRow(entry: ConsentLedgerEntry): ConsentLedgerRow {
   return {
     user_id: entry.user_id,
     call_id: entry.call_id ?? null,

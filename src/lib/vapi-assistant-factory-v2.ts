@@ -77,7 +77,7 @@ export async function buildVapiAssistant({
             eq(schema.pronunciationDictionaries.active, true),
           ),
         )
-        .catch(() => []),
+        .catch(() => [] as Array<{ dictionaryId: string | null; versionId: string | null }>),
     ]);
   const configured = agentRows[0];
   if (!configured) throw new Error("Agent not found for Vapi assistant request");

@@ -119,7 +119,6 @@ export async function getMicrosoftAccessToken(account: {
     .set({
       accessToken: encryptSecret(updated.access_token),
       expiresAt: BigInt(updated.expires_at),
-      updatedAt: new Date(),
     })
     .where(eq(schema.emailAccounts.id, account.id));
   return updated.access_token;

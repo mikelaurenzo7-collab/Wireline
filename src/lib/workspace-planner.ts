@@ -31,7 +31,7 @@ import {
   type AgentToolName,
 } from "./agent-capabilities";
 import { DIRECTOR_INTEGRATION_TOOLS } from "./director-integration-tools";
-import type { DirectorIntegrationJob } from "./director-Assistants-plan";
+import type { DirectorIntegrationJob } from "./director-fleet-plan";
 
 /** Personality vibes the chat may set — mirrors the Vapi factory. */
 export const WORKSPACE_VIBE_OPTIONS = ["warm", "playful", "authoritative"] as const;

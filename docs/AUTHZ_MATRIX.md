@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 178  
-**Protected:** 141  
+**Routes scanned:** 177  
+**Protected:** 140  
 **Public (allowlisted):** 37  
 **Violations:** 0
 
@@ -165,8 +165,7 @@
 | intake-routes.ts | DELETE | `/api/intake/keys/:id` | inline | — | — | Protected |
 | intake-routes.ts | POST | `/api/intake/lead` | — | — | yes | Public (allowlisted) |
 | intake-routes.ts | POST | `/api/intake/leads` | — | — | yes | Public (allowlisted) |
-| job-routes.ts | GET | `/api/jobs/:id` | inline | — | — | Protected |
-| job-routes.ts | POST | `/api/jobs/:id/run` | inline | — | — | Protected |
+| job-routes.ts | POST | `/api/jobs/:id([0-9a-fA-F-]{36})/run` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/prospect` | inline | — | — | Protected |
 | job-routes.ts | GET | `/api/jobs/stats` | inline | — | — | Protected |

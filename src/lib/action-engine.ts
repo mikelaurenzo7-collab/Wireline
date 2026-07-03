@@ -276,7 +276,7 @@ async function handleUpdateCRM(
   _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const crm = new CRMService(userId);
-  const updated = await crm.updateLead(action.payload);
+  const updated = await crm.updateLead(action.payload as Parameters<CRMService["updateLead"]>[0]);
   return { success: updated };
 }
 async function handleCreateInternalTask(
@@ -303,7 +303,7 @@ async function handleSendContract(
   action: ActionItem,
   _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  const response = await sendContract(userId, action.payload);
+  const response = await sendContract(action.payload as Parameters<typeof sendContract>[0]);
   return { success: !!response };
 }
 async function handleProspectLeads(
@@ -311,7 +311,7 @@ async function handleProspectLeads(
   action: ActionItem,
   _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
-  const leads = await searchLeads(userId, action.payload);
+  const leads = await searchLeads(action.payload as Parameters<typeof searchLeads>[0], userId);
   return { success: Array.isArray(leads) };
 }
 async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {

@@ -287,7 +287,7 @@ router.post(
     }
 
     const id = `agent-${randomUUID()}`;
-    const enabledTools = getDefaultAgentTools(role);
+    const enabledTools = getDefaultAgentTools();
     await drizzle.insert(schema.agents).values({
       id,
       userId: req.user.id,

@@ -22,7 +22,7 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
       and(eq(schema.emailAccounts.userId, userId), eq(schema.emailAccounts.provider, "google")),
     )
     .limit(1);
-  if (!account)
+  if (!account || !account.accessToken)
     return {
       status: "no_accounts",
       message: "No Google Workspace account is connected.",
@@ -45,7 +45,6 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
         accessToken: encryptSecret(tokens.access_token),
         ...(tokens.refresh_token ? { refreshToken: encryptSecret(tokens.refresh_token) } : {}),
         ...(tokens.expiry_date ? { expiresAt: BigInt(tokens.expiry_date) } : {}),
-        updatedAt: new Date(),
       })
       .where(eq(schema.emailAccounts.id, account.id));
   });

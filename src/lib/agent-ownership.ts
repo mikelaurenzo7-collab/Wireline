@@ -32,5 +32,9 @@ export async function findOwnedAgentProfile(
     .from(schema.agents)
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
     .limit(1);
-  return row ?? null;
+  return (
+    (row as
+      | { id: string; name: string; role: string | null; enabledTools: string[] | null }
+      | undefined) ?? null
+  );
 }

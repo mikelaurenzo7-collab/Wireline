@@ -567,7 +567,7 @@ async function saveDemo(principal: McpPrincipal, demoToken: unknown) {
       archetype: roleArchetypes[spec.role] || "Assistant",
       voiceId: pickRotatedVoiceId(existing),
       voiceProvider: "openai",
-      enabledTools: getDefaultAgentTools(spec.role),
+      enabledTools: getDefaultAgentTools(),
       firstMessage: `Hi, this is ${spec.agentName}. How can I help?`,
       isBusinessAgent: spec.businessName !== "Your business",
       businessVariables: {
@@ -936,14 +936,12 @@ router.post("/mcp", async (req, res) => {
           listAgentsForUser(authed.userId),
         ),
       );
-      const summary = agents
-        .slice(0, 20)
-        .map((agent: { id: string; name: string; role?: string; channel?: string }) => ({
-          id: agent.id,
-          name: agent.name,
-          role: agent.role || "assistant",
-          channel: agent.channel || "voice",
-        }));
+      const summary = agents.slice(0, 20).map((agent) => ({
+        id: agent.id,
+        name: agent.name,
+        role: agent.role || "assistant",
+        channel: agent.channel || "voice",
+      }));
       return jsonRpc(res, id, {
         content: [
           {
