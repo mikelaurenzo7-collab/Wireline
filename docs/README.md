@@ -17,6 +17,7 @@ Wireline is one agent platform across web, browser, mobile, and ChatGPT. The pro
 ## Current product rules
 
 - Public pages explain. Authenticated pages execute.
+- The Wire is the signature: copper (#C4713B) is the wire, patina green (#2B5548) is what copper becomes. Public surfaces carry a wired hairline with a copper node; authenticated surfaces stay clean.
 - Use labels, tabs, icons, state, and clear next actions for authenticated orientation.
 - Avoid authenticated page descriptions unless the user is reviewing history, coaching, analytics, exports, or past actions.
 - Call Logs and Analytics may explain history, coaching, exports, and insights.

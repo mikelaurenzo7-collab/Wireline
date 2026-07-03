@@ -680,6 +680,31 @@ mustInclude(
   /Conversation Balance/,
   "landing pricing must explain Conversation Balance",
 );
+const signatureCss = read("src/styles/wireline-signature.css");
+mustInclude(
+  "src/styles/wireline-signature.css",
+  signatureCss,
+  /--wireline-color-action-secondary-default/,
+  "the Wire signature must run on the copper token",
+);
+mustInclude(
+  "src/styles/wireline-signature.css",
+  signatureCss,
+  /prefers-reduced-motion: reduce/,
+  "the Wire pulse must respect reduced motion",
+);
+mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /wl-eyebrow--wired/,
+  "landing section eyebrows must carry the Wire",
+);
+mustInclude(
+  "public/og-image.svg",
+  ogImage,
+  /C4713B/,
+  "OG image must carry the copper wire signature",
+);
 mustExclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
