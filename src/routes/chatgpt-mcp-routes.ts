@@ -44,7 +44,12 @@ const roleArchetypes: Record<string, string> = {
   customer_service: "Customer Support",
 };
 
-type McpPrincipal = { userId: string; email: string; scopes: McpScope[] };
+type McpPrincipal = {
+  userId: string;
+  email: string;
+  scopes: McpScope[];
+  draftSource: "chatgpt_app" | "claude_app";
+};
 type AuthorizationRequest = {
   clientId: string;
   redirectUri: string;
@@ -375,13 +380,14 @@ async function mcpPrincipal(req: Request): Promise<McpPrincipal | null> {
   if (!token || token.length > 1000) return null;
   await ensureMcpSchema();
   const result = (await drizzle.execute(
-    sql`SELECT user_id, email, scope, resource, expires_at FROM wireline_mcp_access_tokens WHERE token_hash = ${tokenHash(token)} LIMIT 1`,
+    sql`SELECT user_id, email, scope, resource, client_id, expires_at FROM wireline_mcp_access_tokens WHERE token_hash = ${tokenHash(token)} LIMIT 1`,
   )) as unknown as {
     rows?: Array<{
       user_id: string;
       email: string;
       scope: string;
       resource: string | null;
+      client_id: string;
       expires_at: Date | string;
     }>;
   };
@@ -393,7 +399,14 @@ async function mcpPrincipal(req: Request): Promise<McpPrincipal | null> {
   )
     return null;
   const scopes = parseScopes(row.scope);
-  return scopes.length ? { userId: row.user_id, email: row.email, scopes } : null;
+  return scopes.length
+    ? {
+        userId: row.user_id,
+        email: row.email,
+        scopes,
+        draftSource: isDynamicClientId(row.client_id || "") ? "claude_app" : "chatgpt_app",
+      }
+    : null;
 }
 
 class McpAuthorizationError extends Error {
@@ -561,7 +574,7 @@ async function saveDemo(principal: McpPrincipal, demoToken: unknown) {
         businessName: spec.businessName,
         primaryGoal: spec.primaryGoal,
         previewTone: spec.tone,
-        source: "chatgpt_app",
+        source: principal.draftSource,
       },
       systemPromptOverride: buildDemoRealtimeInstructions(spec),
     });

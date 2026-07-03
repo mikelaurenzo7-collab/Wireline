@@ -19,6 +19,7 @@ import {
   CHATGPT_ACCOUNT_WIDGET_URI,
   buildAccountBoundWidgetHtml,
 } from "../lib/chatgpt-mcp-account";
+import { isDynamicClientId } from "../lib/mcp-client-registry";
 import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
 import { rateLimit } from "../lib/rate-limit";
 import { drizzle, log, tenantStore } from "../lib/server-context";
@@ -26,7 +27,10 @@ import * as schema from "../db/schema";
 
 const router = express.Router();
 
-type McpPrincipal = AgentDraftPrincipal & { scopes: McpScope[] };
+type McpPrincipal = AgentDraftPrincipal & {
+  scopes: McpScope[];
+  draftSource: "chatgpt_mcp" | "claude_mcp";
+};
 
 class McpAuthorizationError extends Error {
   constructor(readonly requiredScope: McpScope) {
@@ -65,7 +69,7 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
   const raw = /^Bearer\s+(.+)$/i.exec(req.get("authorization") || "")?.[1]?.trim();
   if (!raw || raw.length > 1000) return null;
   const result = (await drizzle.execute(sql`
-    SELECT user_id, email, scope, resource, expires_at
+    SELECT user_id, email, scope, resource, client_id, expires_at
     FROM wireline_mcp_access_tokens
     WHERE token_hash = ${tokenHash(raw)}
     LIMIT 1
@@ -75,6 +79,7 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
       email: string;
       scope: string;
       resource: string | null;
+      client_id: string;
       expires_at: Date | string;
     }>;
   };
@@ -82,7 +87,16 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
   if (!record || new Date(record.expires_at).getTime() <= Date.now()) return null;
   if (record.resource && record.resource !== `${issuer(req)}/mcp`) return null;
   const scopes = parseScopes(record.scope);
-  return scopes.length ? { userId: record.user_id, email: record.email, scopes } : null;
+  return scopes.length
+    ? {
+        userId: record.user_id,
+        email: record.email,
+        scopes,
+        // Dynamically registered clients are Claude connectors; ChatGPT uses
+        // CIMD client ids. Recorded so drafts carry an honest origin.
+        draftSource: isDynamicClientId(record.client_id || "") ? "claude_mcp" : "chatgpt_mcp",
+      }
+    : null;
 }
 
 function requireScope(principal: McpPrincipal | null, scope: McpScope): McpPrincipal {
@@ -432,7 +446,7 @@ router.post("/mcp", async (req, res) => {
     if (name === "create_agent_draft") {
       assertDraftConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
-      const view = await createAgentDraft(authed, inputFromArgs(args));
+      const view = await createAgentDraft(authed, inputFromArgs(args), authed.draftSource);
       const structured = toStructuredDraft(
         view as Awaited<ReturnType<typeof getAgentDraft>>["view"],
         req,

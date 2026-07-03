@@ -33,7 +33,7 @@ export interface AgentCustomizationProfile {
     summary: string;
   };
   lifecycle: "draft";
-  source: "chatgpt_mcp" | "web" | "ios" | "android";
+  source: "chatgpt_mcp" | "claude_mcp" | "web" | "ios" | "android";
 }
 
 export interface AgentCustomizationInput {

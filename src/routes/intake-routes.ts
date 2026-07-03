@@ -381,6 +381,7 @@ router.post("/lead", async (req: Request, res: Response) => {
     const status = result.code === "MISSING_NUMBER" ? 400 : 500;
     return res.status(status).json({ error: result.error, code: result.code });
   } catch (e: any) {
+    if (e instanceof AppError) throw e;
     log.error("Intake lead failed", { error: e?.message || String(e) });
     throw AppError.fromHttpStatus(500, "Intake failed");
   }
@@ -461,6 +462,7 @@ router.post("/leads", async (req: Request, res: Response) => {
       results,
     });
   } catch (e: any) {
+    if (e instanceof AppError) throw e;
     log.error("Bulk intake failed", { error: e?.message || String(e) });
     throw AppError.fromHttpStatus(500, "Bulk intake failed");
   }
@@ -554,6 +556,8 @@ router.patch(
       if (req.body?.default_agent_id !== undefined)
         patch.defaultAgentId = req.body.default_agent_id || null;
       if (req.body?.auto_dial !== undefined) patch.autoDial = !!req.body.auto_dial;
+      if (Object.keys(patch).length === 0)
+        throw AppError.fromHttpStatus(400, "Provide at least one field to update.");
 
       const [data] = await drizzle
         .update(schema.intakeKeys)
@@ -573,6 +577,8 @@ router.patch(
           created_at: schema.intakeKeys.createdAt,
         });
 
+      if (!data) throw AppError.fromHttpStatus(404, "Intake key not found.");
+
       void auditLogger
         .logIntakeKey("updated", {
           userId: req.user.id,
@@ -584,6 +590,7 @@ router.patch(
         .catch(() => {});
       res.json({ key: data });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Failed to update key", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to update key");
     }
