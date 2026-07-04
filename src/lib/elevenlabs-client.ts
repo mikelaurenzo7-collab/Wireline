@@ -160,6 +160,36 @@ export async function generateSample(args: {
   return await r.arrayBuffer();
 }
 
+/**
+ * PCM 16-bit 24 kHz — required by LiveAvatar LITE lip-sync WebSocket.
+ */
+export async function generateSamplePcm24(args: {
+  voiceId: string;
+  text: string;
+  modelId?: string;
+}): Promise<ArrayBuffer> {
+  const r = await fetch(
+    `${BASE}/text-to-speech/${encodeURIComponent(args.voiceId)}?output_format=pcm_24000`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey(),
+        "Content-Type": "application/json",
+        Accept: "audio/pcm",
+      },
+      body: JSON.stringify({
+        text: args.text,
+        model_id: args.modelId || "eleven_turbo_v2_5",
+      }),
+    },
+  );
+  if (!r.ok) {
+    const body = await r.text().catch(() => "");
+    throw new Error(`ElevenLabs TTS ${r.status}: ${body.slice(0, 200)}`);
+  }
+  return await r.arrayBuffer();
+}
+
 function sampleFilename(mime?: string): string {
   switch (mime) {
     case "audio/wav":

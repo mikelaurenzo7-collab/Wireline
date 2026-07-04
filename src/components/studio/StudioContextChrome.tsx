@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
+import AgentPresenceSlot from "../AgentPresenceSlot";
 
 function studioHref(agent: WorkspaceAgentSummary, suffix?: string) {
   const query = new URLSearchParams({ agent: agent.id });
@@ -53,7 +54,16 @@ export default function StudioContextChrome() {
                 <span aria-hidden="true" className="opacity-45">
                   /
                 </span>
-                <span className="truncate font-semibold text-foreground">{activeAgent.name}</span>
+                <span className="truncate font-semibold text-foreground inline-flex items-center gap-2">
+                  <AgentPresenceSlot
+                    name={activeAgent.name}
+                    agentId={activeAgent.id}
+                    role={activeAgent.role}
+                    isBusinessAgent={activeAgent.is_business_agent}
+                    variant="badge"
+                  />
+                  {activeAgent.name}
+                </span>
               </>
             ) : null}
           </nav>

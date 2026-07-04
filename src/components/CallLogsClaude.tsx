@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import AgentFace from "./AgentFace";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 
 /**
@@ -44,10 +45,6 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: "triage", label: "Triage" },
   { id: "analytics", label: "Analytics" },
 ];
-
-function agentInitial(name: string | null | undefined): string {
-  return (name || "A").trim().charAt(0).toUpperCase() || "A";
-}
 
 function formatDuration(seconds: number | null | undefined): string {
   if (!seconds || seconds < 0) return "—";
@@ -311,15 +308,13 @@ function FloorTab({
             key={call.id}
             className="flex items-center gap-4 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
           >
-            <div
-              className="grid size-10 shrink-0 place-items-center rounded-[10px] font-[var(--wireline-font-mono)] text-sm font-bold"
-              style={{
-                background: "var(--wireline-color-action-primary-default)",
-                color: "var(--wireline-color-text-onAction)",
-              }}
-            >
-              {agentInitial(call.agent_name)}
-            </div>
+            <AgentFace
+              seed={call.agent_name || call.agent_id || "agent"}
+              size={40}
+              speaking={isLive(call)}
+              title={call.agent_name ? `${call.agent_name} on call` : "Agent on call"}
+              className="shrink-0"
+            />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">

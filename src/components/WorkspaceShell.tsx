@@ -8,6 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { formatAgentRoleLabel } from "../lib/product-copy";
+import AgentFace from "./AgentFace";
 
 type NavItem = { href: string; label: string; icon: typeof Bot };
 
@@ -53,11 +54,6 @@ function isNativeAppShell() {
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "W").trim();
   return source.charAt(0).toUpperCase() || "W";
-}
-
-function agentInitial(name?: string | null) {
-  const source = (name || "A").trim();
-  return source.charAt(0).toUpperCase() || "A";
 }
 
 function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
@@ -200,11 +196,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
                           aria-current={active ? "page" : undefined}
                           className={`flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
                         >
-                          <span
-                            className={`grid size-7 shrink-0 place-items-center rounded-lg text-[11px] font-semibold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}
-                          >
-                            {agentInitial(agent.name)}
-                          </span>
+                          <AgentFace
+                            seed={agent.name || agent.id}
+                            size={28}
+                            title={`${agent.name} face`}
+                            className="shrink-0"
+                          />
                           <span className="min-w-0">
                             <span className="block truncate text-[12px] font-semibold">
                               {agent.name}
@@ -261,9 +258,12 @@ function DesktopRail({ pathname }: { pathname: string }) {
             className="flex items-center gap-2.5 rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-2.5 py-2 transition-opacity hover:opacity-90"
             aria-label={`Current agent: ${activeAgent.name}`}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
-              {agentInitial(activeAgent.name)}
-            </span>
+            <AgentFace
+              seed={activeAgent.name || activeAgent.id}
+              size={32}
+              title={`${activeAgent.name} face`}
+              className="shrink-0"
+            />
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-medium text-foreground">
                 {activeAgent.name}

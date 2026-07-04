@@ -3,6 +3,7 @@ import Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import AgentFace from "../AgentFace";
 
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
 
@@ -113,6 +114,13 @@ export default function BrowserCallWidget({
 
   return (
     <div className="flex flex-col items-center gap-3">
+      <AgentFace
+        seed={agentName}
+        size={callActive ? 56 : 44}
+        speaking={callActive && speakerActive}
+        title={`${agentName} face`}
+        className="transition-[width,height] duration-200"
+      />
       <ShadButton
         type="button"
         disableAnimations

@@ -440,6 +440,14 @@ export const agents = pgTable(
     }).default("0.75"),
     voiceStyle: decimal("voice_style", { precision: 3, scale: 2 }).default("0.0"),
     voiceSpeakerBoost: boolean("voice_speaker_boost").default(true),
+    /**
+     * Live video presenter (LiveAvatar LITE). Provider stays internal; UI reads
+     * Wireline surface labels from lib/agent-identity. avatar_id is the
+     * LiveAvatar catalog UUID. consent_status gates custom avatars.
+     */
+    videoPresenterProvider: text("video_presenter_provider"),
+    videoPresenterAvatarId: text("video_presenter_avatar_id"),
+    videoPresenterConsentStatus: text("video_presenter_consent_status").default("not_started"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   () => ({

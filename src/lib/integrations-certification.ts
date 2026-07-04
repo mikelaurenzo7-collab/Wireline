@@ -22,7 +22,16 @@ const CERTIFIED_IDS = new Set([
   "elevenlabs",
 ]);
 
-const BETA_IDS = new Set(["salesforce", "docusign", "apollo", "meta", "zoom", "x", "yahoo-oauth"]);
+const BETA_IDS = new Set([
+  "salesforce",
+  "docusign",
+  "apollo",
+  "meta",
+  "zoom",
+  "x",
+  "yahoo-oauth",
+  "liveavatar",
+]);
 
 export function buyerTierForIntegration(id: string): BuyerTier {
   if (CERTIFIED_IDS.has(id)) return "certified";

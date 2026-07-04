@@ -237,6 +237,8 @@ export default function StudioWorkspaceV2() {
       key={active.id}
       agentId={active.id}
       agentName={active.name}
+      agentRole={active.role}
+      isBusinessAgent={active.is_business_agent}
       onTestVoiceInChat={testVoiceInChat}
       className="lg:border-t-0"
     />

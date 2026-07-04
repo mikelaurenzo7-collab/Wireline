@@ -37,6 +37,7 @@ import intakeRouter from "../routes/intake-routes";
 import supportRouter from "../routes/support-routes";
 import jobRouter from "../routes/job-routes";
 import mobileRouter from "../routes/mobile-routes";
+import videoPresenterRouter from "../routes/video-presenter-routes";
 
 /**
  * Canonical API route order.
@@ -48,6 +49,7 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api/health", healthRouter);
   app.use(openaiRealtimeRouter);
   app.use(grokVoiceRouter);
+  app.use(videoPresenterRouter);
   app.use(authOAuthRouter);
   app.use(authRouter);
   app.use(oauthRouter);

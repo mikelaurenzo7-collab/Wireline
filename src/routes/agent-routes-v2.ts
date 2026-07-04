@@ -10,13 +10,14 @@ import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
 import { pickRotatedVoiceId } from "../data/voice-roster";
+import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
   getDefaultAgentTools,
   isAgentToolName,
   normalizeEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
-import { runStructured } from "../lib/ai-structured";
+import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { AI_TOOLS } from "../lib/ai-tools";
 import {
   isGeminiModelId,
@@ -30,6 +31,7 @@ import { listOpenRouterModelsForDirector } from "../lib/openrouter-models";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { resolveAgentEntitlement } from "../lib/agent-entitlements";
+import { runStructured } from "../lib/ai-structured";
 
 const router = Router();
 const roleArchetypes: Record<string, string> = {
@@ -288,6 +290,7 @@ router.post(
 
     const id = `agent-${randomUUID()}`;
     const enabledTools = getDefaultAgentTools();
+    const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
     await drizzle.insert(schema.agents).values({
       id,
       userId: req.user.id,
@@ -300,6 +303,7 @@ router.post(
       enabledTools,
       firstMessage: `Hi, this is ${name}. How can I help?`,
       isBusinessAgent,
+      ...videoPresenter,
     });
     res.status(201).json({
       id,
@@ -321,6 +325,7 @@ router.get(
     const [agentRows, personalities, directives, knowledge] = await Promise.all([
       drizzle
         .select({
+          name: schema.agents.name,
           role: schema.agents.role,
           archetype: schema.agents.archetype,
           flowConfig: schema.agents.flowConfig,
@@ -343,6 +348,9 @@ router.get(
           outOfHoursMessage: schema.agents.outOfHoursMessage,
           kpiFocus: schema.agents.kpiFocus,
           isBusinessAgent: schema.agents.isBusinessAgent,
+          videoPresenterProvider: schema.agents.videoPresenterProvider,
+          videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
+          videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
@@ -379,6 +387,17 @@ router.get(
         .orderBy(desc(schema.knowledge.createdAt)),
     ]);
     const record = agentRows[0];
+    const identity = record
+      ? resolveAgentVideoPresenter({
+          id: req.params.id,
+          name: record.name,
+          role: record.role,
+          isBusinessAgent: record.isBusinessAgent ?? false,
+          videoPresenterProvider: record.videoPresenterProvider,
+          videoPresenterAvatarId: record.videoPresenterAvatarId,
+          videoPresenterConsentStatus: record.videoPresenterConsentStatus,
+        })
+      : null;
     res.json({
       role: record?.role || "customer_service",
       archetype: record?.archetype || "Assistant",
@@ -393,6 +412,7 @@ router.get(
       personality: personalities[0]?.content || "",
       directives,
       knowledge,
+      identity,
       businessProfile: record
         ? {
             business_hours: record.businessHours || null,

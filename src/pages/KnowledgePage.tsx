@@ -7,6 +7,7 @@ import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import VoiceGallery from "../components/voice/VoiceGallery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
+import RoleplaySandbox from "../components/RoleplaySandbox";
 import { useAgents } from "../contexts/AgentsContext";
 
 type TrainingTabId = "knowledge" | "voice" | "flows" | "simulator";
@@ -51,25 +52,28 @@ function FlowsTab({ agentId }: { agentId: string }) {
   );
 }
 
-function SimulatorTab({ agentId }: { agentId: string }) {
+function SimulatorTab({ agentId, agentName }: { agentId: string; agentName: string }) {
   return (
-    <section className="studio-card mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
-      <h2 className="wl-card-title">Simulator</h2>
-      <p className="text-sm leading-6 text-muted-foreground">
-        Live test call, then the transcript.
-      </p>
-      <div className="flex flex-wrap justify-center gap-3">
-        <Button asChild>
-          <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>
-            <Phone size={15} aria-hidden="true" />
-            Test in Studio
-          </Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link to="/call-logs">Call logs</Link>
-        </Button>
-      </div>
-    </section>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <section className="studio-card p-6">
+        <h2 className="wl-card-title">Simulator</h2>
+        <p className="mt-2 max-w-[52ch] text-sm leading-6 text-muted-foreground">
+          Hear {agentName} with your rules and training — then review the transcript in call logs.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button asChild>
+            <Link to={`/studio?agent=${encodeURIComponent(agentId)}&view=workspace`}>
+              <Phone size={15} aria-hidden="true" />
+              Agent presence in Studio
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to="/call-logs">Open call logs</Link>
+          </Button>
+        </div>
+      </section>
+      <RoleplaySandbox agentId={agentId} agentName={agentName} />
+    </div>
   );
 }
 
@@ -140,7 +144,9 @@ export default function KnowledgePage() {
             <VoiceGallery agentId={agentId} agentName={activeAgent?.name} />
           ) : null}
           {activeTab === "flows" ? <FlowsTab agentId={agentId} /> : null}
-          {activeTab === "simulator" ? <SimulatorTab agentId={agentId} /> : null}
+          {activeTab === "simulator" && activeAgent ? (
+            <SimulatorTab agentId={agentId} agentName={activeAgent.name} />
+          ) : null}
         </WorkspacePageFrame>
       )}
     </WorkspaceShell>

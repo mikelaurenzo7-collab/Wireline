@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AudioLines, Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
 
+import AgentFace from "./AgentFace";
 import { authFetch } from "../lib/api";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
@@ -488,15 +489,27 @@ export default function LiveVoiceSandbox({
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="wl-stitch-label">Live voice</p>
-          <h3 className="mt-1 font-display text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
-            Speak with {agentName}
-          </h3>
-          <p className="mt-1 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-            A private browser test using this agent's rules, facts, voice profile, and pronunciation
-            guidance.
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="wl-presence__frame wl-presence--inline shrink-0">
+            <div className="wl-presence__face">
+              <AgentFace
+                seed={agentName}
+                size={44}
+                speaking={state === "speaking"}
+                title={`${agentName} face`}
+              />
+            </div>
+          </div>
+          <div className="min-w-0">
+            <p className="wl-stitch-label">Live voice</p>
+            <h3 className="mt-1 font-display text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
+              Speak with {agentName}
+            </h3>
+            <p className="mt-1 max-w-2xl text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+              A private browser test using this agent's rules, facts, voice profile, and
+              pronunciation guidance.
+            </p>
+          </div>
         </div>
         <button
           type="button"

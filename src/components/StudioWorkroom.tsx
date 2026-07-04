@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, MessageSquareText, Phone, Send, Trash2 } from "luci
 import { Link } from "react-router-dom";
 
 import { Button } from "../components/atoms";
+import AgentFace from "./AgentFace";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
@@ -79,15 +80,27 @@ function seedMessages(agentName: string): StudioMessage[] {
   ];
 }
 
-function AssistantAvatar() {
+function AgentAvatar({ agentName, speaking = false }: { agentName: string; speaking?: boolean }) {
   return (
-    <span className="mt-1 grid size-6 shrink-0 place-items-center rounded-md bg-primary font-mono text-[10px] font-bold text-primary-foreground">
-      W
-    </span>
+    <AgentFace
+      seed={agentName || "agent"}
+      size={24}
+      speaking={speaking}
+      title={`${agentName || "Agent"} face`}
+      className="mt-1 shrink-0"
+    />
   );
 }
 
-function MessageBubble({ message, agentName }: { message: StudioMessage; agentName: string }) {
+function MessageBubble({
+  message,
+  agentName,
+  speaking = false,
+}: {
+  message: StudioMessage;
+  agentName: string;
+  speaking?: boolean;
+}) {
   const isUser = message.role === "Account Holder";
   const suggestions = proposalCount(message);
 
@@ -103,7 +116,7 @@ function MessageBubble({ message, agentName }: { message: StudioMessage; agentNa
 
   return (
     <article className="flex max-w-[90%] items-start gap-3">
-      <AssistantAvatar />
+      <AgentAvatar agentName={agentName} speaking={speaking} />
       <div className="min-w-0">
         <div className="rounded-[10px] border border-border bg-card px-4 py-3 text-[14px] leading-[1.48] text-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -368,12 +381,22 @@ const StudioWorkroom = forwardRef<
           <MessageSkeletons />
         ) : visibleMessages.length ? (
           <div className="flex flex-col gap-5">
-            {visibleMessages.map((message) => (
-              <MessageBubble key={message.id} message={message} agentName={agentName} />
+            {visibleMessages.map((message, index) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                agentName={agentName}
+                speaking={
+                  sending &&
+                  streamState.phase === "replying" &&
+                  message.role === "agent" &&
+                  index === visibleMessages.length - 1
+                }
+              />
             ))}
             {sending ? (
               <div className="flex max-w-[90%] items-start gap-3">
-                <AssistantAvatar />
+                <AgentAvatar agentName={agentName} speaking={streamState.phase === "replying"} />
                 <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
                   {workingLabel}...

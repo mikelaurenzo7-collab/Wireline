@@ -64,6 +64,7 @@
 @import "./styles/clarity-system.css";
 @import "./styles/wireline-signature.css";
 @import "./styles/agent-face.css";
+@import "./styles/agent-presence.css";
 @import "./styles/video-receptionist.css";
 @import "./styles/studio-operations.css";
 

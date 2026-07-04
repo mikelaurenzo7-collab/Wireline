@@ -76,6 +76,7 @@
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@google/generative-ai": "^0.24.1",
+    "@heygen/liveavatar-web-sdk": "^0.0.18",
     "@radix-ui/react-accordion": "^1.2.14",
     "@radix-ui/react-alert-dialog": "^1.1.17",
     "@radix-ui/react-avatar": "^1.2.0",
@@ -107,6 +108,7 @@
     "google-auth-library": "^10.7.0",
     "googleapis": "^171.4.0",
     "imapflow": "^1.4.2",
+    "livekit-client": "^2.15.7",
     "lucide-react": "^0.546.0",
     "motion": "^12.41.0",
     "nodemailer": "^9.0.1",

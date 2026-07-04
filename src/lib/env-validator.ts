@@ -102,6 +102,34 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
+    name: "LIVEAVATAR_API_KEY",
+    group: "voice",
+    required: false,
+    description: "LiveAvatar (HeyGen) photoreal video presenter",
+    validate: nonEmpty,
+  },
+  {
+    name: "HEYGEN_API_KEY",
+    group: "voice",
+    required: false,
+    description: "Legacy alias for LIVEAVATAR_API_KEY",
+    validate: nonEmpty,
+  },
+  {
+    name: "LIVEAVATAR_DEFAULT_AVATAR_ID",
+    group: "voice",
+    required: false,
+    description:
+      "Ops-only bootstrap UUID for live video add-on previews (not required for core agents)",
+    validate: nonEmpty,
+  },
+  {
+    name: "LIVEAVATAR_SANDBOX",
+    group: "voice",
+    required: false,
+    description: "Force sandbox LiveAvatar sessions (true/false)",
+  },
+  {
     name: "GOOGLE_CLIENT_ID",
     group: "oauth",
     required: false,

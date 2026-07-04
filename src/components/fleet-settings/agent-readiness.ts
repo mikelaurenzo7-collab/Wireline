@@ -77,7 +77,7 @@ export function computeAgentReadiness(
       todo: "Pick a voice",
       copilotHint: "Give this agent a warm, professional voice.",
     },
-    // A dedicated number is a Business concept. Personal agents are reached
+    // A dedicated number is a Business concept.
     // by routing your own live call to them (widget / Siri / App Intents) or by
     // having them place calls on your behalf — a number is optional, so it's not
     // part of the personal readiness gate.

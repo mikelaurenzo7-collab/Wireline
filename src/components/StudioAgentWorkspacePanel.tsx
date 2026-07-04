@@ -13,12 +13,15 @@ import {
   WORKSPACE_INTEGRATION_CATALOG,
   type WorkspaceIntegration,
 } from "../lib/workspace-integration-catalog";
+import AgentPresenceLivePreview from "./AgentPresenceLivePreview";
 
 const PERSONALITIES = ["Clear", "Warm", "Direct", "Polished"];
 
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
+  agentRole?: string | null;
+  isBusinessAgent?: boolean;
   onTestVoiceInChat: () => void;
   className?: string;
 };
@@ -26,6 +29,8 @@ type StudioAgentWorkspacePanelProps = {
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
+  agentRole = null,
+  isBusinessAgent = false,
   onTestVoiceInChat,
   className = "",
 }: StudioAgentWorkspacePanelProps) {
@@ -111,6 +116,26 @@ export default function StudioAgentWorkspacePanel({
         <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-0.022em] text-foreground">
           {agentName}
         </h2>
+
+        <section className="studio-card p-6" aria-labelledby="agent-presence-heading">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 id="agent-presence-heading" className="text-lg font-semibold tracking-tight">
+                Agent presence
+              </h3>
+              <p className="mt-1 max-w-[52ch] text-sm text-muted-foreground">
+                Wireline face is included on every agent. Live video is an optional add-on — enable
+                it here when you want a photoreal on-screen presenter.
+              </p>
+            </div>
+          </div>
+          <AgentPresenceLivePreview
+            agentId={agentId}
+            name={agentName}
+            role={agentRole}
+            isBusinessAgent={isBusinessAgent}
+          />
+        </section>
 
         <div className="studio-card p-6">
           <div className="mb-4 flex items-center justify-between gap-3">

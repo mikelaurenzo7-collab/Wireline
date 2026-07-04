@@ -84,6 +84,16 @@ const optional = [
     "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     "Reserved only if Enterprise metered checkout is re-enabled",
   ],
+  [
+    "LIVEAVATAR_API_KEY",
+    "Live video presenter (HeyGen LiveAvatar) — business agent on-screen faces",
+  ],
+  [
+    "LIVEAVATAR_DEFAULT_AVATAR_ID",
+    "Default LiveAvatar catalog UUID assigned to new business agents",
+  ],
+  ["LIVEAVATAR_SANDBOX", "Force sandbox sessions (true/false; auto in non-production)"],
+  ["HEYGEN_API_KEY", "Legacy alias for LIVEAVATAR_API_KEY"],
 ];
 
 const jwtSecretConflict =

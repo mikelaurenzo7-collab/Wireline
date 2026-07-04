@@ -43,7 +43,14 @@ const recommended = [
 
 // Voice remains an independent capability. Its absence is reported, never
 // treated as a core platform or AI Gateway failure.
-const voice = ["VAPI_PRIVATE_KEY", "VITE_VAPI_PUBLIC_KEY", "VAPI_WEBHOOK_SECRET", "ELEVENLABS_API_KEY"];
+const voice = [
+  "VAPI_PRIVATE_KEY",
+  "VITE_VAPI_PUBLIC_KEY",
+  "VAPI_WEBHOOK_SECRET",
+  "ELEVENLABS_API_KEY",
+  "LIVEAVATAR_API_KEY",
+  "LIVEAVATAR_DEFAULT_AVATAR_ID",
+];
 
 function expectedTargets(env) {
   const targets = Array.isArray(env.target) ? env.target : [];

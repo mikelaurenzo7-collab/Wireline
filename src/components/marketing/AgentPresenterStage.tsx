@@ -13,7 +13,6 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import AgentFace from "../AgentFace";
-import { buildAgentIdentityPreview, VIDEO_PRESENTER_PROVIDERS } from "../../lib/agent-identity";
 
 type Line = { who: "caller" | "agent"; text: string };
 
@@ -33,8 +32,8 @@ function prefersReducedMotion() {
 
 export default function AgentPresenterStage({
   name = "Sarah",
-  role = "scheduler",
-  isBusinessAgent = true,
+  role: _role = "scheduler",
+  isBusinessAgent: _isBusinessAgent = true,
   script = DEMO_SCRIPT,
 }: {
   name?: string;
@@ -42,13 +41,6 @@ export default function AgentPresenterStage({
   isBusinessAgent?: boolean;
   script?: Line[];
 }) {
-  const identity = buildAgentIdentityPreview({ name, role, isBusinessAgent });
-  // Customer-facing label only. The raw provider name (`.label`) never renders.
-  const surfaceLabel = VIDEO_PRESENTER_PROVIDERS[identity.video.providerPreference].surfaceLabel;
-  const videoSlotCopy = identity.video.consentRequired
-    ? `${surfaceLabel}, consent-gated`
-    : surfaceLabel;
-
   // Cycle the caption track. Reduced motion rests on the closing agent line.
   const [idx, setIdx] = useState(script.length - 1);
   useEffect(() => {
@@ -116,22 +108,25 @@ export default function AgentPresenterStage({
           Your agent, on screen — not just on the line.
         </h2>
         <p className="mt-4 max-w-[52ch] text-[15px] leading-[1.65] text-muted-foreground">
-          Every agent ships with a face. On your website it becomes a video receptionist that
-          greets, qualifies, and books in person — {identity.video.description.toLowerCase()}
+          Every agent ships with a Wireline face and a catalog pick per agent — included. Add live
+          video when you want photoreal streaming on your site and in preview; the Wireline face
+          stays as fallback.
         </p>
 
         <dl className="mt-6 grid max-w-[440px] gap-3 sm:grid-cols-2">
           <div className="rounded-[12px] border border-border bg-card/60 p-3">
             <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              Video slot
+              Included
             </dt>
-            <dd className="mt-1 text-sm text-foreground">{videoSlotCopy}</dd>
+            <dd className="mt-1 text-sm text-foreground">
+              Per-agent face + catalog presenter pick
+            </dd>
           </div>
           <div className="rounded-[12px] border border-border bg-card/60 p-3">
             <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              Always-on fallback
+              Add-on
             </dt>
-            <dd className="mt-1 text-sm text-foreground">The agent face, on every surface</dd>
+            <dd className="mt-1 text-sm text-foreground">Photoreal live video on your site</dd>
           </div>
         </dl>
 

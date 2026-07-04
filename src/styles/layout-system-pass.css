@@ -370,6 +370,27 @@
 }
 .wl-canvas-card {
   animation: wlCanvasFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Copper wire cap — authenticated Studio signature (quieter than marketing). */
+.wl-canvas-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 2px;
+  border-radius: 999px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 65%, transparent) 58%,
+    transparent
+  );
 }
 @media (prefers-reduced-motion: reduce) {
   .wl-canvas-card {

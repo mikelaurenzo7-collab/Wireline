@@ -80,6 +80,15 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     ["OPENAI_API_KEY"],
   ),
   item(
+    "liveavatar",
+    "Live video presenter",
+    "Photoreal on-screen agent for business receptionists and embeds (LiveAvatar LITE).",
+    "voice",
+    false,
+    ["LIVEAVATAR_API_KEY", "LIVEAVATAR_DEFAULT_AVATAR_ID"],
+    "Wireline SVG face remains the always-on fallback.",
+  ),
+  item(
     "google-workspace",
     "Google Workspace",
     "Gmail, Calendar, Contacts, Drive, and Sheets.",

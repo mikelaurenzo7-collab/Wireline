@@ -2,11 +2,17 @@ import { MessageSquareText, ShieldCheck } from "lucide-react";
 import LiveVoiceSandbox from "./LiveVoiceSandbox";
 import WirelineLiveVoiceProfile from "./WirelineLiveVoiceProfile";
 
-export default function RoleplaySandbox({ agentId }: { agentId: string }) {
+export default function RoleplaySandbox({
+  agentId,
+  agentName = "your agent",
+}: {
+  agentId: string;
+  agentName?: string;
+}) {
   return (
     <div className="space-y-4">
       <WirelineLiveVoiceProfile agentId={agentId} />
-      <LiveVoiceSandbox agentId={agentId} agentName="your agent" />
+      <LiveVoiceSandbox agentId={agentId} agentName={agentName} />
       <div className="grid gap-3 rounded-xl border border-border bg-secondary p-4 sm:grid-cols-2">
         <div className="flex gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-card text-primary">

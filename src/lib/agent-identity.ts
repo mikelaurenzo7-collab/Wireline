@@ -52,7 +52,13 @@ export type AgentIdentityPersonaId =
   | "support_specialist"
   | "private_operator";
 
-export type VideoPresenterProviderId = "heygen" | "tavus" | "d-id" | "simli" | "synthetic";
+export type VideoPresenterProviderId =
+  | "liveavatar"
+  | "heygen"
+  | "tavus"
+  | "d-id"
+  | "simli"
+  | "synthetic";
 
 export type AgentIdentityPersona = {
   id: AgentIdentityPersonaId;
@@ -142,6 +148,13 @@ export const VIDEO_PRESENTER_PROVIDERS: Record<
     fallback: "agent_face";
   }
 > = {
+  liveavatar: {
+    label: "LiveAvatar",
+    surfaceLabel: "Live video",
+    supportsLive: true,
+    consentRequired: true,
+    fallback: "agent_face",
+  },
   heygen: {
     label: "HeyGen",
     surfaceLabel: "Live video",
@@ -228,9 +241,7 @@ export function buildAgentIdentityPreview(input: {
 }): AgentIdentityPreview {
   const persona = personaForRole(input.role, input.isBusinessAgent === true);
   const seed = normalizeFaceSeed(input.faceId || input.name || input.id || persona.defaultName);
-  const providerPreference: VideoPresenterProviderId = input.isBusinessAgent
-    ? "heygen"
-    : "synthetic";
+  const providerPreference: VideoPresenterProviderId = "synthetic";
   const provider = VIDEO_PRESENTER_PROVIDERS[providerPreference];
 
   return {
@@ -239,9 +250,9 @@ export function buildAgentIdentityPreview(input: {
     video: {
       providerPreference,
       status: "not_configured",
-      headline: input.isBusinessAgent ? "Live video slot ready" : "Private avatar identity",
+      headline: "Wireline face",
       description: input.isBusinessAgent
-        ? "Prepared for a consented live presenter while the face remains the fallback."
+        ? "Deterministic Wireline face on every surface. Live video is an optional add-on."
         : "Deterministic face now; live video stays off for personal agents by default.",
       consentRequired: provider.consentRequired,
       fallback: provider.fallback,

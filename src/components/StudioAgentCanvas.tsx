@@ -8,6 +8,8 @@ import { providerLabel, resolveVoiceLabel } from "../lib/voice-catalog";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAccount } from "../contexts/AccountContext";
 import { computeAgentReadiness } from "./fleet-settings/agent-readiness";
+import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
+import type { AgentVideoPresenterConfig } from "../lib/video-presenter/types";
 
 /**
  * StudioAgentCanvas — the spatial Agent Canvas from the handoff bundle.
@@ -34,6 +36,7 @@ type AgentConfig = {
   escalationEmail?: string | null;
   escalationHandoffEnabled?: boolean | null;
   isBusinessAgent?: boolean;
+  identity?: AgentVideoPresenterConfig | null;
 };
 
 type StudioAgentCanvasProps = {
@@ -197,7 +200,6 @@ export default function StudioAgentCanvas({
     (tool) => business || tool.name !== "update_lead_status",
   );
   const activeCount = workflowRows.filter((tool) => enabled.has(tool.name)).length;
-  const initial = (agentName || "A").trim().charAt(0).toUpperCase();
   const roleLabel = formatAgentRoleLabel(config?.role ?? null);
   const voiceName = displayVoiceName(config?.voice?.voiceId);
   const personality = config?.personality?.trim() || "Not set";
@@ -258,11 +260,15 @@ export default function StudioAgentCanvas({
             onActivate={() => onEditSection("identity")}
             className="min-h-[300px]"
           >
-            <div className="mb-4 flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-[12px] bg-[var(--wireline-color-action-primary-default)] font-[var(--wireline-font-mono)] text-base font-bold text-[var(--wireline-color-text-onAction)]">
-                {initial}
-              </div>
-              <div>
+            <div className="mb-4 flex items-start gap-3">
+              <AgentPresenceSlot
+                name={agentName}
+                agentId={agentId}
+                role={config?.role}
+                isBusinessAgent={business}
+                variant="inline"
+              />
+              <div className="min-w-0">
                 <div className="font-[var(--wireline-font-display)] text-[22px] tracking-[-0.01em]">
                   {agentName || "Untitled agent"}
                 </div>
@@ -274,6 +280,14 @@ export default function StudioAgentCanvas({
             <div className="rounded-lg bg-[var(--wireline-color-surface-subtle)] px-3 py-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
               {personality}
             </div>
+            <AgentPresenceMeta
+              name={agentName}
+              agentId={agentId}
+              role={config?.role}
+              isBusinessAgent={business}
+              presenter={config?.identity ?? undefined}
+              className="mt-3"
+            />
           </CardShell>
 
           <CardShell
