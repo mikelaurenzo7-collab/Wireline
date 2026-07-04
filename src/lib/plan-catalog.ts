@@ -189,7 +189,9 @@ function planByPriceKey(priceKey: string | null | undefined): StripePlan | null 
  * rotated or non-synced STRIPE_*_PRICE_ID env vars. Env price IDs remain a
  * fallback for older catalog entries and local development.
  */
-export function planByStripePrice(price: StripeCatalogPriceLike | null | undefined): StripePlan | null {
+export function planByStripePrice(
+  price: StripeCatalogPriceLike | null | undefined,
+): StripePlan | null {
   if (!price) return null;
 
   const metadataPlan = planById(price.metadata?.wireline_plan_id);

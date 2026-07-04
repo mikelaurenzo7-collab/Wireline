@@ -126,15 +126,57 @@ export const AGENT_IDENTITY_PERSONAS: Record<AgentIdentityPersonaId, AgentIdenti
   },
 };
 
+/**
+ * `label` is the internal provider name — for admin, logs, and config only.
+ * NEVER render `label` in customer-facing UI. Customer surfaces read
+ * `surfaceLabel`, which stays in Wireline terms so swapping the underlying
+ * engine never changes what a customer sees.
+ */
 export const VIDEO_PRESENTER_PROVIDERS: Record<
   VideoPresenterProviderId,
-  { label: string; supportsLive: boolean; consentRequired: boolean; fallback: "agent_face" }
+  {
+    label: string;
+    surfaceLabel: string;
+    supportsLive: boolean;
+    consentRequired: boolean;
+    fallback: "agent_face";
+  }
 > = {
-  heygen: { label: "HeyGen", supportsLive: true, consentRequired: true, fallback: "agent_face" },
-  tavus: { label: "Tavus", supportsLive: true, consentRequired: true, fallback: "agent_face" },
-  "d-id": { label: "D-ID", supportsLive: true, consentRequired: true, fallback: "agent_face" },
-  simli: { label: "Simli", supportsLive: true, consentRequired: true, fallback: "agent_face" },
-  synthetic: { label: "Wireline SVG", supportsLive: false, consentRequired: false, fallback: "agent_face" },
+  heygen: {
+    label: "HeyGen",
+    surfaceLabel: "Live video",
+    supportsLive: true,
+    consentRequired: true,
+    fallback: "agent_face",
+  },
+  tavus: {
+    label: "Tavus",
+    surfaceLabel: "Live video",
+    supportsLive: true,
+    consentRequired: true,
+    fallback: "agent_face",
+  },
+  "d-id": {
+    label: "D-ID",
+    surfaceLabel: "Live video",
+    supportsLive: true,
+    consentRequired: true,
+    fallback: "agent_face",
+  },
+  simli: {
+    label: "Simli",
+    surfaceLabel: "Live video",
+    supportsLive: true,
+    consentRequired: true,
+    fallback: "agent_face",
+  },
+  synthetic: {
+    label: "Wireline SVG",
+    surfaceLabel: "Wireline face",
+    supportsLive: false,
+    consentRequired: false,
+    fallback: "agent_face",
+  },
 };
 
 // Stable FNV-1a string hash → deterministic face selection.
@@ -168,7 +210,8 @@ export function personaForRole(
 ): AgentIdentityPersona {
   const normalized = (role || "").trim().toLowerCase();
   if (!isBusinessAgent) return AGENT_IDENTITY_PERSONAS.private_operator;
-  if (normalized === "sales" || normalized === "sdr") return AGENT_IDENTITY_PERSONAS.revenue_operator;
+  if (normalized === "sales" || normalized === "sdr")
+    return AGENT_IDENTITY_PERSONAS.revenue_operator;
   if (normalized === "scheduler" || normalized === "appointment_scheduler")
     return AGENT_IDENTITY_PERSONAS.concierge_scheduler;
   if (normalized === "customer_service" || normalized === "support")
@@ -185,7 +228,9 @@ export function buildAgentIdentityPreview(input: {
 }): AgentIdentityPreview {
   const persona = personaForRole(input.role, input.isBusinessAgent === true);
   const seed = normalizeFaceSeed(input.faceId || input.name || input.id || persona.defaultName);
-  const providerPreference: VideoPresenterProviderId = input.isBusinessAgent ? "heygen" : "synthetic";
+  const providerPreference: VideoPresenterProviderId = input.isBusinessAgent
+    ? "heygen"
+    : "synthetic";
   const provider = VIDEO_PRESENTER_PROVIDERS[providerPreference];
 
   return {

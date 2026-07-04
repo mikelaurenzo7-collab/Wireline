@@ -5,6 +5,7 @@ import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
+import AgentPresenterStage from "../components/marketing/AgentPresenterStage";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
 const STEPS = ["Start", "Ask normally", "Get the result"] as const;
@@ -70,6 +71,10 @@ export default function Showcase() {
             </p>
           </aside>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <AgentPresenterStage />
       </section>
 
       <section className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
