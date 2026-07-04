@@ -59,10 +59,13 @@
    utilities (`bg-primary`, `text-primary-foreground`) sit in @layer utilities
    and lose to the unlayered surface background above — the marketing CTA
    cards were rendering white-on-white. */
+/* On the dark canvas a full patina fill reads as an alert, not an accent.
+   The brand CTA card is a deep console with a patina-leaning border and
+   light text — emphatic but calm, consistent with the closing-CTA console. */
 .wl-stitch-card-brand {
-  border-color: var(--wireline-color-action-primary-default);
-  background: var(--wireline-color-action-primary-default);
-  color: var(--wireline-color-text-onAction);
+  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 42%, var(--wireline-color-border-default));
+  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-stitch-card-tinted {

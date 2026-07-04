@@ -108,7 +108,7 @@ export default function Showcase() {
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="grid justify-items-center gap-7 text-center">
             <div>
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
+              <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--wireline-color-text-secondary)]">
                 <Check className="h-4 w-4" />
                 Your agent starts private.
               </span>
