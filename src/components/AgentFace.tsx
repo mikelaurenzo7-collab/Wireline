@@ -178,8 +178,8 @@ export default function AgentFace({
         <circle cx="67" cy="47" r="3.4" fill={cfg.skin.shade} />
         {/* eyes */}
         <g fill="#20140c">
-          <ellipse className="wl-af-eye" cx="41" cy="46" rx="2.3" ry="3" />
-          <ellipse className="wl-af-eye" cx="55" cy="46" rx="2.3" ry="3" />
+          <ellipse cx="41" cy="46" rx="2.3" ry="3" />
+          <ellipse cx="55" cy="46" rx="2.3" ry="3" />
         </g>
         {/* brows */}
         <g stroke={cfg.hair} strokeWidth="1.8" strokeLinecap="round">

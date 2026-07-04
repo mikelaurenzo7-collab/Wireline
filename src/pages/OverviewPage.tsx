@@ -135,7 +135,7 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
       }`}
     >
       <AgentFace
-        seed={agent.id || agent.name}
+        seed={agent.name || agent.id}
         size={32}
         title={`${agent.name} face`}
         className="shrink-0"
