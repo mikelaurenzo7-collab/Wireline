@@ -714,7 +714,7 @@ export default function PrecisionLanding() {
         {/* ── FINAL CTA ─────────────────────────────────────────── */}
         <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
-            <div className="relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-20">
+            <div className="wl-featured-wire wl-featured-wire--live relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-20">
               <div
                 className="pointer-events-none absolute inset-0"
                 aria-hidden="true"

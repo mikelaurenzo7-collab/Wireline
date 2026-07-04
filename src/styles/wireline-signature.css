@@ -14,56 +14,8 @@
      visitor asks for reduced motion.
    ════════════════════════════════════════════════════════════════════════ */
 
-/* ── The wire rule ─────────────────────────────────────────────────────
-   A 1px line that reads as a strand of wire: copper at the node, settling
-   into patina, fading out. Use in place of a generic <hr> on public
-   surfaces. */
-.wl-wire {
-  position: relative;
-  height: 1px;
-  border: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--wireline-color-action-secondary-default) 55%, transparent) 12%,
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 45%, transparent) 55%,
-    transparent 100%
-  );
-}
-
-/* The node — where the signal sits on the line. */
-.wl-wire::before {
-  content: "";
-  position: absolute;
-  left: 12%;
-  top: 50%;
-  width: 5px;
-  height: 5px;
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: var(--wireline-color-action-secondary-default);
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent);
-}
-
-/* Live variant — a slow pulse travels the wire. Marketing hero only. */
-.wl-wire--live::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 44px;
-  height: 1px;
-  transform: translateY(-50%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--wireline-color-status-success) 85%, transparent),
-    transparent
-  );
-  animation: wl-wire-pulse 5.2s var(--wireline-motion-easing-standard) infinite;
-}
-
+/* The traveling signal — a slow pulse runs the length of a wire. Reused by
+   every live wire on the marketing page (see the closing CTA cap below). */
 @keyframes wl-wire-pulse {
   0% {
     left: -10%;
@@ -139,26 +91,6 @@
     var(--wireline-color-canvas-default);
 }
 
-/* The proof strip's top edge is the hero's wire. */
-.marketing-hero-proof {
-  position: relative;
-}
-
-.marketing-hero-proof::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--wireline-color-action-secondary-default) 45%, transparent),
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 40%, transparent) 40%,
-    var(--wireline-color-border-default) 75%
-  );
-}
-
 /* On the dark auth panel the strand settles into paper, not patina. */
 .wl-auth-brand-label.wl-eyebrow--wired::before,
 .wl-auth-brand-label.wl-eyebrow--wired::after {
@@ -219,10 +151,11 @@
   );
 }
 
-/* ── Wired featured plan ───────────────────────────────────────────────
-   The plan we point to sits on the dark ink panel; it carries the wire on
-   its top edge — the same copper-into-patina cap as the hero's proof strip
-   and the dark auth panel's eyebrow. The recommended line is a wired line. */
+/* ── Wired dark panels ─────────────────────────────────────────────────
+   The rule: every dark ink panel carries the wire on its top edge — the
+   recommended pricing plan and the closing call to action. Copper into
+   settled patina/green, the same language as the dark auth panel's eyebrow.
+   The panels we point to are wired lines. */
 .wl-featured-wire {
   position: relative;
 }
@@ -244,8 +177,26 @@
   );
 }
 
+/* Live variant — the closing CTA is the climax, so its wire carries the
+   traveling signal: a slow green pulse runs the cap as you decide. */
+.wl-featured-wire--live::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 48px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--wireline-color-status-success) 90%, transparent),
+    transparent
+  );
+  animation: wl-wire-pulse 5.6s var(--wireline-motion-easing-standard) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .wl-wire--live::after {
+  .wl-featured-wire--live::after {
     animation: none;
     opacity: 0;
   }

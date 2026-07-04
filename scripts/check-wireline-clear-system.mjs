@@ -717,6 +717,18 @@ mustInclude(
   /wl-wire-step__node/,
   "landing setup steps must be nodes on the wire",
 );
+mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /wl-featured-wire/,
+  "dark ink panels (recommended plan, closing CTA) must carry the wire",
+);
+mustInclude(
+  "src/styles/wireline-signature.css",
+  signatureCss,
+  /\.wl-featured-wire--live::after[\s\S]*?animation: wl-wire-pulse/,
+  "the closing CTA wire must carry the live traveling signal",
+);
 mustExclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
