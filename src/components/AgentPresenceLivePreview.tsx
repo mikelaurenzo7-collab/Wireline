@@ -250,8 +250,10 @@ export default function AgentPresenceLivePreview({
           </p>
           <p className="mt-2 text-sm font-medium text-foreground">Live video presence</p>
           <p className="mt-1 max-w-[52ch] text-xs leading-relaxed text-muted-foreground">
-            {liveVideoAddonPitch()} Your catalog face choice is already saved — enable this to
-            stream photoreal video on your site and in preview.
+            {liveVideoAddonPitch()}{" "}
+            {presenter?.chosenAvatarId
+              ? "Your catalog face is saved — enable this to stream it on your site and in preview."
+              : "Pick a catalog face above, then enable this when you want photoreal streaming."}
           </p>
           {addonOffered ? (
             <button
