@@ -6,6 +6,7 @@ import { Button, Input, Textarea } from "./atoms";
 import AgentFace from "./AgentFace";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
+import { buildAgentIdentityPreview } from "../lib/agent-identity";
 
 const ROLE_TEMPLATES = [
   { value: "scheduler", label: "Scheduler", prompt: "Book appointments" },
@@ -172,6 +173,13 @@ export default function CreateAgentDialog({
 
   if (!open) return null;
 
+  const previewName = name.trim() || defaultAgentName(activePosture, role);
+  const identityPreview = buildAgentIdentityPreview({
+    name: previewName,
+    role,
+    isBusinessAgent: activePosture === "business",
+  });
+
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/58 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-[1px]"
@@ -300,14 +308,16 @@ export default function CreateAgentDialog({
 
           <div className="mt-6 flex items-center gap-3 rounded-[var(--radius-md)] border border-border bg-card/60 p-3">
             <AgentFace
-              seed={name || defaultAgentName(activePosture, role)}
+              seed={identityPreview.seed}
               size={46}
-              title="Agent face preview"
+              title={`${previewName} face preview`}
             />
             <div className="min-w-0">
-              <div className="text-xs font-semibold text-foreground">Your agent has a face</div>
+              <div className="text-xs font-semibold text-foreground">
+                {identityPreview.persona.label} · {identityPreview.persona.shortLabel}
+              </div>
               <div className="text-xs text-muted-foreground">
-                Every agent gets one, drawn from its name. A video presenter is coming to Business.
+                {identityPreview.persona.microcopy} {identityPreview.video.headline}.
               </div>
             </div>
           </div>
