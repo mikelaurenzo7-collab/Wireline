@@ -3,6 +3,7 @@ import { Check, Loader2, Phone, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button, Input, Textarea } from "./atoms";
+import AgentFace from "./AgentFace";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
 
@@ -297,7 +298,21 @@ export default function CreateAgentDialog({
             ))}
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 flex items-center gap-3 rounded-[var(--radius-md)] border border-border bg-card/60 p-3">
+            <AgentFace
+              seed={name || defaultAgentName(activePosture, role)}
+              size={46}
+              title="Agent face preview"
+            />
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-foreground">Your agent has a face</div>
+              <div className="text-xs text-muted-foreground">
+                Every agent gets one, drawn from its name. A video presenter is coming to Business.
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1.5">
               <span className="text-xs font-semibold text-foreground">Agent name</span>
               <Input

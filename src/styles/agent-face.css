@@ -1,0 +1,32 @@
+/* AgentFace — the agent's visual identity. Quiet by default; the mouth
+   moves only while the agent is actively speaking, and never under
+   reduced motion. */
+.wl-agent-face {
+  display: inline-block;
+  border-radius: 24px;
+  flex: none;
+}
+
+.wl-agent-face .wl-af-mouth {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.wl-agent-face--speaking .wl-af-mouth {
+  animation: wl-af-talk 0.36s steps(2, jump-none) infinite alternate;
+}
+
+@keyframes wl-af-talk {
+  from {
+    transform: scaleY(0.5) translateY(-0.5px);
+  }
+  to {
+    transform: scaleY(1.25) translateY(0.5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-agent-face--speaking .wl-af-mouth {
+    animation: none;
+  }
+}
