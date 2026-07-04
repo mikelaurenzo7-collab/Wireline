@@ -255,7 +255,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
               </div>
               <CtaLink
                 href={cfg.primaryCta.href}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-white px-5 text-sm font-semibold text-primary"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[var(--wireline-color-text-primary)] px-5 text-sm font-semibold text-[var(--wireline-color-canvas-default)]"
               >
                 {primaryLabel} <ArrowRight className="h-4 w-4" />
               </CtaLink>

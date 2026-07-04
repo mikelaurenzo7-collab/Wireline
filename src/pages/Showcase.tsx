@@ -118,7 +118,7 @@ export default function Showcase() {
             </div>
             <Link
               to="/signup"
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-white px-5 text-sm font-semibold text-primary"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-[var(--wireline-color-text-primary)] px-5 text-sm font-semibold text-[var(--wireline-color-canvas-default)]"
             >
               Create agent <ArrowRight className="h-4 w-4" />
             </Link>

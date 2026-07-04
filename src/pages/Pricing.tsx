@@ -188,7 +188,7 @@ export default function Pricing() {
                     <span
                       className={`grid size-10 place-items-center rounded-[var(--wireline-radius-md)] border ${
                         plan.featured
-                          ? "border-white/10 bg-white/10 text-[var(--wireline-color-canvas-default)]"
+                          ? "border-white/10 bg-white/10 text-[var(--wireline-color-text-primary)]"
                           : "border-border bg-muted text-primary"
                       }`}
                     >

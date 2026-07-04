@@ -494,7 +494,7 @@ export default function PrecisionLanding() {
             }}
           >
             {heroCopy.stripLead}{" "}
-            <span className="text-[var(--wireline-color-canvas-default)]">{heroCopy.stripWin}</span>
+            <span className="text-[var(--wireline-color-text-primary)]">{heroCopy.stripWin}</span>
           </p>
         </div>
 
