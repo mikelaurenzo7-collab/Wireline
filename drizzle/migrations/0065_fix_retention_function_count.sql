@@ -1,2 +1,2 @@
 -- 0065: Fix retention function row counting.
--- Full SQL replaces the previous aggregate-in-returning implementation.
+-- Source issue: wireline_purge_old_data used an aggregate in a RETURNING clause.
