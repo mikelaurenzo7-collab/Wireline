@@ -705,6 +705,18 @@ mustInclude(
   /C4713B/,
   "OG image must carry the copper wire signature",
 );
+mustInclude(
+  "src/styles/wireline-signature.css",
+  signatureCss,
+  /\.wl-wire-step--settled/,
+  "the setup steps must run copper-to-patina on the wire (Connect → Deploy)",
+);
+mustInclude(
+  "src/components/marketing/PrecisionLanding.tsx",
+  precisionLanding,
+  /wl-wire-step__node/,
+  "landing setup steps must be nodes on the wire",
+);
 mustExclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,

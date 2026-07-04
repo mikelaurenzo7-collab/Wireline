@@ -169,6 +169,81 @@
   );
 }
 
+/* ── Steps on the wire ─────────────────────────────────────────────────
+   The four setup steps are taps on one line. Each step is a node, and the
+   signal runs from it toward the next: raw copper at Connect, settling as
+   it travels, arriving as the settled patina line at Deploy. The palette
+   story — copper is the wire, patina is what it becomes — told inside the
+   product flow, not just as decoration. */
+.wl-wire-step__marker {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.wl-wire-step__node {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--wireline-color-action-secondary-default);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 14%, transparent);
+}
+
+/* The strand leaving each node, running toward the next step. */
+.wl-wire-step__marker::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 70%, transparent),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 40%, transparent) 65%,
+    transparent
+  );
+}
+
+/* Deploy — the copper has become patina; the line is live and settled. */
+.wl-wire-step--settled .wl-wire-step__node {
+  background: var(--wireline-color-action-primary-default);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 14%, transparent);
+}
+
+.wl-wire-step--settled .wl-wire-step__marker::after {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 45%, transparent),
+    transparent 85%
+  );
+}
+
+/* ── Wired featured plan ───────────────────────────────────────────────
+   The plan we point to sits on the dark ink panel; it carries the wire on
+   its top edge — the same copper-into-patina cap as the hero's proof strip
+   and the dark auth panel's eyebrow. The recommended line is a wired line. */
+.wl-featured-wire {
+  position: relative;
+}
+
+.wl-featured-wire::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    var(--wireline-color-action-secondary-default) 30%,
+    color-mix(in srgb, var(--wireline-color-status-success) 85%, transparent) 72%,
+    transparent 96%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wl-wire--live::after {
     animation: none;

@@ -575,9 +575,17 @@ export default function PrecisionLanding() {
             </div>
 
             <div className="grid overflow-hidden rounded-[16px] border border-border sm:grid-cols-4 sm:divide-x sm:divide-border">
-              {STEPS.map(({ num, title, body }) => (
-                <div key={num} className="bg-card p-8 transition-colors hover:bg-muted/40">
-                  <div className="mb-7 font-mono text-[13px] font-bold text-primary">{num}</div>
+              {STEPS.map(({ num, title, body }, idx) => (
+                <div
+                  key={num}
+                  className={`wl-wire-step bg-card p-8 transition-colors hover:bg-muted/40 ${
+                    idx === STEPS.length - 1 ? "wl-wire-step--settled" : ""
+                  }`}
+                >
+                  <div className="wl-wire-step__marker mb-7">
+                    <span className="wl-wire-step__node" aria-hidden="true" />
+                    <span className="font-mono text-[13px] font-bold text-primary">{num}</span>
+                  </div>
                   <h3
                     className="mb-2 text-[22px]"
                     style={{
@@ -624,7 +632,7 @@ export default function PrecisionLanding() {
                   key={plan.name}
                   className={`relative rounded-[14px] p-8 ${
                     plan.featured
-                      ? "marketing-ink-panel shadow-[var(--wireline-elevation-lg)]"
+                      ? "wl-featured-wire marketing-ink-panel shadow-[var(--wireline-elevation-lg)]"
                       : "border border-border bg-card"
                   }`}
                 >
