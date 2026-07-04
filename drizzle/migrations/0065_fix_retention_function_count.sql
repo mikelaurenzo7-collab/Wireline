@@ -1,13 +1,16 @@
 -- 0065: Fix retention function row counting.
 --
 -- Postgres does not allow aggregate functions in a row-returning clause. Count
--- affected rows through a CTE and skip legacy tables/columns that may not exist
--- in every environment.
+-- affected rows through a CTE, skip legacy tables/columns that may not exist in
+-- every environment, and pin search_path so the function stays advisor-clean.
 CREATE OR REPLACE FUNCTION wireline_purge_old_data(
     p_user_id UUID,
     p_retention_days INTEGER DEFAULT 365
 )
-RETURNS TABLE (table_name TEXT, rows_deleted INTEGER) AS $$
+RETURNS TABLE (table_name TEXT, rows_deleted INTEGER)
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
 DECLARE
     v_cutoff_date TIMESTAMP WITH TIME ZONE;
     v_rows_deleted INTEGER;
@@ -48,16 +51,16 @@ BEGIN
 
         IF NOT EXISTS (
             SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = v_table.table_name
-              AND column_name = v_table.user_column
+            FROM information_schema.columns AS c
+            WHERE c.table_schema = 'public'
+              AND c.table_name = v_table.table_name
+              AND c.column_name = v_table.user_column
         ) OR NOT EXISTS (
             SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = v_table.table_name
-              AND column_name = v_table.date_column
+            FROM information_schema.columns AS c
+            WHERE c.table_schema = 'public'
+              AND c.table_name = v_table.table_name
+              AND c.column_name = v_table.date_column
         ) THEN
             CONTINUE;
         END IF;
@@ -78,4 +81,4 @@ BEGIN
 
     RETURN;
 END;
-$$ LANGUAGE plpgsql;
+$$;
