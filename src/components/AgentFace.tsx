@@ -2,78 +2,16 @@
  * AgentFace — every Wireline agent gets a face.
  *
  * A tasteful, deterministic character avatar derived from the agent's
- * identity (id or name), so the same agent always wears the same face
- * across the studio, overview, call logs, and the browser widget. The
- * palette stays inside the Wireline world (warm skin tones on brand
- * gradients, a copper signal node from the Wire), so faces read as one
- * family rather than clip-art.
+ * identity, so the same agent always wears the same face across the studio,
+ * overview, call logs, browser widget, and video-presenter fallback.
  *
- * This is the identity layer. A customer-selected face and a live video
- * presenter (HeyGen) drop in on top of the same slot later — `faceId`
- * lets a stored choice override the deterministic default.
+ * The palette and provider-agnostic presenter policy live in
+ * `lib/agent-identity` so a customer-selected face or live video provider can
+ * override this SVG without changing every surface that renders an agent.
  */
 import { useId } from "react";
 
-type Skin = { base: string; shade: string };
-type Ground = [string, string];
-
-// Warm, brand-harmonized skin tones — a deliberately small, cohesive set.
-const SKINS: Skin[] = [
-  { base: "#E7B48A", shade: "#C98F63" },
-  { base: "#C88A5E", shade: "#A66B41" },
-  { base: "#9A6842", shade: "#7C4F30" },
-  { base: "#F0C9A6", shade: "#D6A57C" },
-  { base: "#6E4A32", shade: "#553827" },
-  { base: "#D89C6E", shade: "#B4774A" },
-];
-
-// Backgrounds pull from the dark brand palette — patina, copper, ink.
-const GROUNDS: Ground[] = [
-  ["#1E3A30", "#132420"],
-  ["#3A2A1B", "#221812"],
-  ["#22322C", "#15201C"],
-  ["#33261A", "#1E1710"],
-  ["#26302E", "#161d1b"],
-];
-
-const HAIR: string[] = ["#241C15", "#3B2A1C", "#12100C", "#4A3524", "#5B4A3A", "#2A2320"];
-
-type HairStyle = "crop" | "bob" | "bun" | "waves" | "fade" | "sweep";
-const HAIR_STYLES: HairStyle[] = ["crop", "bob", "bun", "waves", "fade", "sweep"];
-
-// Stable string hash → deterministic face selection.
-function hash(seed: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-export type AgentFaceConfig = {
-  skin: Skin;
-  ground: Ground;
-  hair: string;
-  hairStyle: HairStyle;
-  accent: string;
-};
-
-const ACCENTS = [
-  "var(--wireline-color-action-secondary-default, #D4823F)",
-  "var(--wireline-color-action-primary-default, #5BA98A)",
-];
-
-export function faceConfigFor(seed: string): AgentFaceConfig {
-  const h = hash(seed || "agent");
-  return {
-    skin: SKINS[h % SKINS.length],
-    ground: GROUNDS[(h >>> 3) % GROUNDS.length],
-    hair: HAIR[(h >>> 6) % HAIR.length],
-    hairStyle: HAIR_STYLES[(h >>> 9) % HAIR_STYLES.length],
-    accent: ACCENTS[(h >>> 12) % ACCENTS.length],
-  };
-}
+import { faceConfigFor, type HairStyle } from "../lib/agent-identity";
 
 function HairShape({ style, color }: { style: HairStyle; color: string }) {
   switch (style) {
