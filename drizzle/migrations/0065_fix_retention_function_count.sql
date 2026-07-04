@@ -1,0 +1,2 @@
+-- 0065: Fix retention function row counting.
+-- Full SQL replaces the previous aggregate-in-returning implementation.
