@@ -63,13 +63,13 @@ export default function Blog() {
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--wireline-color-text-secondary)]">
               <ShieldCheck className="h-4 w-4" />A private draft is a good place to begin.
             </div>
             <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
               Teach an agent the call you keep putting off.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-primary-foreground/75">
+            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[var(--wireline-color-text-secondary)]">
               Name it, describe the task in plain language, and refine the rules as you go.
             </p>
           </div>

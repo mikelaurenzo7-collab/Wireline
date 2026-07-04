@@ -116,7 +116,7 @@ export function ContactPage() {
           <Link to="/pricing" className="wl-stitch-card wl-stitch-card-brand p-5">
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
-            <p className="mt-2 text-sm leading-6 text-primary-foreground/75">
+            <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
               Personal starts at $9. Business coverage starts at $99.
             </p>
           </Link>
