@@ -63,6 +63,7 @@
 @import "./styles/precision-auth.css";
 @import "./styles/clarity-system.css";
 @import "./styles/wireline-signature.css";
+@import "./styles/agent-face.css";
 @import "./styles/studio-operations.css";
 
 body {

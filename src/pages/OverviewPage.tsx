@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Button, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
+import AgentFace from "../components/AgentFace";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -52,10 +53,6 @@ function firstName(name?: string | null, email?: string | null) {
     .replace(/[^A-Za-z]/g, "");
   if (!cleaned || cleaned.length < 2 || cleaned.length > 14) return "there";
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
-}
-
-function agentInitial(name?: string | null) {
-  return (name || "A").trim().charAt(0).toUpperCase() || "A";
 }
 
 function agentReadiness(agent: WorkspaceAgentSummary) {
@@ -137,9 +134,12 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
       }`}
     >
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary font-mono text-[11px] font-bold text-primary-foreground">
-        {agentInitial(agent.name)}
-      </span>
+      <AgentFace
+        seed={agent.id || agent.name}
+        size={32}
+        title={`${agent.name} face`}
+        className="shrink-0"
+      />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-foreground">{agent.name}</span>
         <span className="block truncate text-xs text-muted-foreground">
