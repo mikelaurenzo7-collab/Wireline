@@ -698,7 +698,7 @@ export default function PrecisionLanding() {
                     to={plan.ctaPath}
                     className={`block min-h-11 w-full rounded-lg py-3 text-center text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                       plan.featured
-                        ? "bg-[var(--wireline-color-canvas-default)] text-[var(--wireline-color-text-primary)] hover:bg-white"
+                        ? "bg-[var(--wireline-color-text-primary)] text-[var(--wireline-color-canvas-default)] hover:opacity-90"
                         : "border border-border hover:border-primary hover:text-primary"
                     }`}
                     aria-label={`${plan.cta} plan`}
@@ -755,14 +755,14 @@ export default function PrecisionLanding() {
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
                     to={heroCopy.ctaPath}
-                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-canvas-default)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-text-primary)] transition-all hover:-translate-y-px hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-canvas-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-text-primary)] sm:w-auto"
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-text-primary)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-canvas-default)] transition-all hover:-translate-y-px hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
                   >
                     {heroCopy.cta}
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
                     to="/showcase"
-                    className="flex min-h-12 w-full items-center justify-center px-7 py-3 text-[15px] font-medium marketing-ink-panel__soft transition-colors hover:text-[var(--wireline-color-canvas-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-canvas-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-text-primary)] sm:w-auto"
+                    className="flex min-h-12 w-full items-center justify-center px-7 py-3 text-[15px] font-medium marketing-ink-panel__soft transition-colors hover:text-[var(--wireline-color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
                   >
                     {heroCopy.demo}
                   </Link>

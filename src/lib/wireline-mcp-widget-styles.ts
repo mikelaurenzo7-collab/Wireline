@@ -1,20 +1,20 @@
 /**
- * Canonical Wireline Letterpress styling for ChatGPT MCP HTML widgets.
+ * Canonical Wireline dark styling for ChatGPT MCP HTML widgets.
  * Values mirror design-tokens/wireline.tokens.json — keep in sync via build-design-tokens.
  */
 export const WIRELINE_MCP_WIDGET_TOKENS = {
-  canvas: "#F7F6F3",
-  surface: "#FFFFFF",
-  surfaceSubtle: "#F0EFEB",
-  action: "#2B5548",
-  actionPressed: "#1E4038",
-  text: "#1C1C1A",
-  muted: "#4D4D48",
-  tertiary: "#7B7B75",
-  border: "#E8E7E3",
+  canvas: "#15130F",
+  surface: "#1E1B16",
+  surfaceSubtle: "#242019",
+  action: "#5BA98A",
+  actionPressed: "#4B9276",
+  text: "#F4F2EC",
+  muted: "#B8B3A8",
+  tertiary: "#8B867B",
+  border: "#322D25",
   radiusLg: "12px",
   radiusMd: "10px",
-  shadowCard: "0 8px 24px -16px rgba(28, 28, 26, 0.18)",
+  shadowCard: "0 8px 24px -16px rgba(0, 0, 0, 0.6)",
   fontDisplay: '"Instrument Serif", Georgia, ui-serif, serif',
 } as const;
 
@@ -22,7 +22,7 @@ export function buildWirelineMcpWidgetCss(): string {
   const t = WIRELINE_MCP_WIDGET_TOKENS;
   return `
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   --wl-canvas: ${t.canvas};
   --wl-surface: ${t.surface};
   --wl-surface-subtle: ${t.surfaceSubtle};
@@ -92,7 +92,7 @@ button, a.button {
   text-decoration: none;
   min-height: 44px;
 }
-button.primary { background: var(--wl-action); color: #fff; border-color: var(--wl-action); }
+button.primary { background: var(--wl-action); color: #12100C; border-color: var(--wl-action); }
 button.primary:active { background: var(--wl-action-pressed); }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 button:focus-visible, a.button:focus-visible {

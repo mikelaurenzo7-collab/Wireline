@@ -36,10 +36,10 @@ describe("Wireline design token pipeline", () => {
     const typescript = source("src/constants/generated-design-tokens.ts");
     const values = flatten(tokenSource);
 
-    expect(values["color.canvas.default"]).toBe("#F7F6F3");
-    expect(values["color.action.primary.default"]).toBe("#2B5548");
-    expect(values["color.action.primary.pressed"]).toBe("#1E4038");
-    expect(values["color.text.primary"]).toBe("#1C1C1A");
+    expect(values["color.canvas.default"]).toBe("#15130F");
+    expect(values["color.action.primary.default"]).toBe("#5BA98A");
+    expect(values["color.action.primary.pressed"]).toBe("#4B9276");
+    expect(values["color.text.primary"]).toBe("#F4F2EC");
 
     for (const [path, value] of Object.entries(values)) {
       expect(css).toContain(`--wireline-${path.replaceAll(".", "-")}: ${value};`);

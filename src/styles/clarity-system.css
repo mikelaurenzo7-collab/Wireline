@@ -148,18 +148,22 @@
   gap: 2rem;
 }
 
-/* Dark marketing panels — landing CTA bands, featured pricing */
+/* Emphasis marketing panels — landing CTA bands, featured pricing. On the
+   dark canvas these read as a recessed "console": a deeper warm-black than
+   the page, a hairline border, and light text — so the copper wire cap and
+   the green glow carry the emphasis instead of a jarring light inversion. */
 .marketing-ink-panel {
-  background: var(--wireline-color-text-primary);
-  color: var(--wireline-color-canvas-default);
+  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  color: var(--wireline-color-text-primary);
+  border: 1px solid var(--wireline-color-border-default);
 }
 
 .marketing-ink-panel__muted {
-  color: color-mix(in srgb, var(--wireline-color-canvas-default) 72%, transparent);
+  color: var(--wireline-color-text-tertiary);
 }
 
 .marketing-ink-panel__soft {
-  color: color-mix(in srgb, var(--wireline-color-canvas-default) 82%, transparent);
+  color: var(--wireline-color-text-secondary);
 }
 
 .marketing-proof-chip {

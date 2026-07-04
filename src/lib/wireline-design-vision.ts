@@ -18,10 +18,10 @@ export const WIRELINE_DESIGN_VISION = {
     "44px minimum for primary touch targets; 2px focus-visible rings.",
   ],
   tokens: {
-    canvas: "#F7F6F3",
-    action: "#2B5548",
-    actionPressed: "#1E4038",
-    textTertiary: "#7B7B75",
+    canvas: "#15130F",
+    action: "#5BA98A",
+    actionPressed: "#4B9276",
+    textTertiary: "#8B867B",
   },
   utilities: [
     "wl-composer-dock",
