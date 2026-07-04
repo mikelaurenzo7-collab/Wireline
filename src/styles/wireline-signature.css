@@ -91,6 +91,14 @@
     var(--wireline-color-canvas-default);
 }
 
+/* ── The mark's signal ─────────────────────────────────────────────────
+   The central node of the W picks up copper on public surfaces: the mark
+   is the wire, the node is the signal. Everywhere else the mark stays a
+   single currentColor token (favicon, native icon). */
+.wl-mark-signal {
+  fill: var(--wireline-color-action-secondary-default);
+}
+
 /* On the dark auth panel the strand settles into paper, not patina. */
 .wl-auth-brand-label.wl-eyebrow--wired::before,
 .wl-auth-brand-label.wl-eyebrow--wired::after {

@@ -729,6 +729,12 @@ mustInclude(
   /\.wl-featured-wire--live::after[\s\S]*?animation: wl-wire-pulse/,
   "the closing CTA wire must carry the live traveling signal",
 );
+mustInclude(
+  "src/styles/wireline-signature.css",
+  signatureCss,
+  /\.wl-mark-signal\s*\{\s*fill: var\(--wireline-color-action-secondary-default\)/,
+  "the mark's central node must carry the copper signal on public surfaces",
+);
 mustExclude(
   "src/components/marketing/PrecisionLanding.tsx",
   precisionLanding,
