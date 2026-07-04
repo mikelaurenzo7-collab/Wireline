@@ -3,7 +3,7 @@ import { drizzle, log, auditLogger } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
-import { planByPriceId, type StripePlan } from "./plan-catalog";
+import { planByStripePrice, type StripePlan } from "./plan-catalog";
 import { dispatchWebhook } from "./webhook-helpers";
 import { invalidateDashboard } from "./dashboard-cache";
 
@@ -98,7 +98,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const userId = existing.userId;
   const plan =
     sub.items?.data
-      ?.map((item) => planByPriceId(item.price?.id))
+      ?.map((item) => planByStripePrice(item.price))
       .find((p): p is StripePlan => !!p) ?? null;
   const stripeStatus = sub.status;
 

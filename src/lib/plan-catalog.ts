@@ -25,6 +25,12 @@ export type StripePlan = {
   public?: boolean;
 };
 
+type StripeCatalogPriceLike = {
+  id?: string | null;
+  lookup_key?: string | null;
+  metadata?: Record<string, string> | null;
+};
+
 const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
   personal: "personal",
   "personal-plus": "team",
@@ -44,6 +50,13 @@ const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
   scale: "enterprise",
   enterprise: "enterprise",
   custom: "enterprise",
+};
+
+const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
+  personal: "personal",
+  team: "team",
+  business: "business",
+  enterprise: "enterprise",
 };
 
 /**
@@ -160,6 +173,35 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
         (plan.overagePriceIdEnv ? process.env[plan.overagePriceIdEnv] === priceId : false),
     ) || null
   );
+}
+
+function planByPriceKey(priceKey: string | null | undefined): StripePlan | null {
+  const prefix = priceKey?.trim().toLowerCase().split("_")[0];
+  const planId = prefix ? PRICE_KEY_PLAN_PREFIXES[prefix] : null;
+  return planId ? planById(planId) : null;
+}
+
+/**
+ * Resolve a Stripe price to a Wireline plan using the live Stripe catalog contract first.
+ *
+ * The launch catalog writes wireline_plan_id and wireline_price_key onto every
+ * recurring plan price. Reading that metadata makes webhook sync resilient to
+ * rotated or non-synced STRIPE_*_PRICE_ID env vars. Env price IDs remain a
+ * fallback for older catalog entries and local development.
+ */
+export function planByStripePrice(price: StripeCatalogPriceLike | null | undefined): StripePlan | null {
+  if (!price) return null;
+
+  const metadataPlan = planById(price.metadata?.wireline_plan_id);
+  if (metadataPlan) return metadataPlan;
+
+  const metadataPriceKeyPlan = planByPriceKey(price.metadata?.wireline_price_key);
+  if (metadataPriceKeyPlan) return metadataPriceKeyPlan;
+
+  const lookupKeyPlan = planByPriceKey(price.lookup_key);
+  if (lookupKeyPlan) return lookupKeyPlan;
+
+  return planByPriceId(price.id);
 }
 
 export function planById(id: string | null | undefined): StripePlan | null {
