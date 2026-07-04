@@ -167,7 +167,7 @@ export default function Pricing() {
                   key={plan.id}
                   className={`relative flex min-h-[520px] flex-col rounded-[var(--wireline-radius-xl)] border p-6 transition-all sm:p-7 ${
                     plan.featured
-                      ? "border-primary bg-[var(--wireline-color-text-primary)] text-[var(--wireline-color-canvas-default)] shadow-[var(--wireline-elevation-lg)]"
+                      ? "wl-featured-wire border-primary bg-[var(--wireline-color-text-primary)] text-[var(--wireline-color-canvas-default)] shadow-[var(--wireline-elevation-lg)]"
                       : "border-border bg-card hover:-translate-y-px hover:shadow-[var(--wireline-elevation-md)]"
                   }`}
                 >
