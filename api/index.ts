@@ -8,7 +8,8 @@
 import * as serverModule from "../dist/server.cjs";
 
 // The bundled app is exported on the 'app' property via the build footer
-const app = (serverModule as any).app || (serverModule as any).default || serverModule;
+const bundle = serverModule as unknown as Record<string, unknown>;
+const app = bundle.app || bundle.default || serverModule;
 
 // Export the Express app as the serverless function handler
 // Vercel will invoke this handler for all /api/* requests

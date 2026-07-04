@@ -12,6 +12,7 @@
 // intentionally set high for now to avoid blocking CI during the transition.
 
 import js from "@eslint/js";
+import globals from "globals";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import reactPlugin from "eslint-plugin-react";
@@ -91,6 +92,25 @@ export default [
         },
       ],
       "no-undef": "off", // TypeScript handles this
+    },
+  },
+
+  // ── Browser-extension JS — runs in the browser / service worker ──────
+  {
+    files: ["apps/browser-extension/**/*.js"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.serviceworker, chrome: "readonly" },
+    },
+  },
+
+  // ── Node maintenance scripts outside the root scripts/*.mjs ignore ───
+  {
+    files: ["**/scripts/**/*.mjs", "scripts/lib/**/*.mjs"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {
+      "no-console": "off",
     },
   },
 

@@ -19,7 +19,7 @@ describe("marketing metadata contract", () => {
   it("does not hard-code plan prices into public structured data", () => {
     const staticHead = read("index.html");
 
-    expect(staticHead).toContain('\"@type\":\"SoftwareApplication\"');
-    expect(staticHead).not.toContain('\"@type\":\"Offer\"');
+    expect(staticHead).toContain('"@type":"SoftwareApplication"');
+    expect(staticHead).not.toContain('"@type":"Offer"');
   });
 });

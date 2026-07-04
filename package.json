@@ -18,7 +18,7 @@
     "lint": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit",
     "lint:server": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json",
     "lint:strict": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --noEmit -p tsconfig.strict.json",
-    "lint:eslint": "eslint --max-warnings 0 src/",
+    "lint:eslint": "eslint --max-warnings 0 .",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "verify": "npm run design:check && npm run build && npm run smoke:server",
