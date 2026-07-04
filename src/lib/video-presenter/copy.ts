@@ -82,12 +82,12 @@ export function presenterCustomizationMessage(presenter: AgentVideoPresenterConf
 export function consentLabel(status: VideoPresenterConsentStatus): string {
   switch (status) {
     case "approved":
-      return "Consent approved";
+      return "Face saved";
     case "pending":
-      return "Consent pending";
+      return "Review pending";
     case "rejected":
-      return "Consent declined";
+      return "Not approved";
     default:
-      return "Catalog presenter";
+      return "Catalog face";
   }
 }

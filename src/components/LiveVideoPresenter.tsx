@@ -37,9 +37,18 @@ const LiveVideoPresenter = forwardRef<
     speaking?: boolean;
     className?: string;
     onSpeakingChange?: (speaking: boolean) => void;
+    onRetry?: () => void;
   }
 >(function LiveVideoPresenter(
-  { credentials, fallbackSeed, agentName, speaking = false, className = "", onSpeakingChange },
+  {
+    credentials,
+    fallbackSeed,
+    agentName,
+    speaking = false,
+    className = "",
+    onSpeakingChange,
+    onRetry,
+  },
   ref,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -130,6 +139,15 @@ const LiveVideoPresenter = forwardRef<
             title={`${agentName} face`}
           />
         </div>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="absolute bottom-3 left-1/2 z-[2] -translate-x-1/2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 py-1.5 text-[11px] font-semibold text-foreground hover:border-[var(--wireline-color-action-primary-default)]"
+          >
+            Retry live presenter
+          </button>
+        ) : null}
       </div>
     );
   }

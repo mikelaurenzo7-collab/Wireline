@@ -191,6 +191,10 @@ export default function StudioWorkspaceV2() {
       navigate(`/knowledge?agent=${encodeURIComponent(active.id)}`);
       return;
     }
+    if (section === "identity" || section === "presence") {
+      openWorkspacePanel();
+      return;
+    }
     openWorkspacePanel();
   }
 

@@ -63,7 +63,7 @@ export default function AgentPresenterStage({
       <div className={`vr-stage${speaking ? " vr-speaking" : ""}`}>
         <span className="vr-live">
           <span className="vr-live__dot" aria-hidden="true" />
-          Live
+          Demo
         </span>
         <span className="vr-provider">Wireline</span>
 

@@ -10,10 +10,10 @@ import {
   videoPresenterStatusMessage,
   liveVideoAddonPitch,
 } from "../lib/video-presenter/copy";
-import { isLiveVideoAddonOffered } from "../lib/video-presenter/live-video-addon";
 import type {
   AgentVideoPresenterConfig,
   LiveAvatarSessionCredentials,
+  LiveVideoAddonState,
   VideoPresenterSessionResponse,
 } from "../lib/video-presenter/types";
 import AgentPresenceAvatarPicker from "./AgentPresenceAvatarPicker";
@@ -36,6 +36,8 @@ type PresenterPayload = {
     sandbox: boolean;
     defaultAvatarId?: string | null;
   };
+  addon: LiveVideoAddonState;
+  hasVoice: boolean;
 };
 
 export default function AgentPresenceLivePreview({
@@ -103,10 +105,12 @@ export default function AgentPresenceLivePreview({
         throw new Error(payload.error || "Live video could not be started.");
       }
       if (!payload.configured || !payload.live) {
+        const sessionError = payload as VideoPresenterSessionResponse & { error?: string };
         throw new Error(
-          presenterState?.platform.configured
-            ? "Pick a presenter face below, then preview again."
-            : "Live video is not enabled on this Wireline workspace yet.",
+          sessionError.error ||
+            (presenterState?.platform.configured
+              ? "Pick a presenter face below, then preview again."
+              : "Live video is not enabled on this Wireline workspace yet."),
         );
       }
       setSession({ live: payload.live, fallbackSeed: payload.fallbackSeed });
@@ -149,7 +153,13 @@ export default function AgentPresenceLivePreview({
       );
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload?.message || "Live video could not be enabled.");
+        const message =
+          payload?.message ||
+          payload?.error ||
+          (response.status === 402
+            ? "Upgrade to Wireline Team or higher to add live video."
+            : "Live video could not be enabled.");
+        throw new Error(message);
       }
       setPresenterState((current) =>
         current ? { ...current, presenter: payload.presenter } : current,
@@ -163,8 +173,11 @@ export default function AgentPresenceLivePreview({
 
   const presenter = presenterState?.presenter;
   const platformConfigured = presenterState?.platform.configured ?? false;
+  const addon = presenterState?.addon;
   const liveVideoEnabled = presenter?.provider !== "synthetic" && presenter?.status !== "disabled";
-  const addonOffered = isLiveVideoAddonOffered();
+  const addonPurchasable = addon?.addonOffered && addon?.billingEntitled;
+  const upgradeRequired = addon?.upgradeRequired ?? false;
+  const hasVoice = presenterState?.hasVoice ?? false;
   const statusCopy =
     presenter && videoPresenterStatusMessage(presenter, platformConfigured, isBusinessAgent);
   const previewHint = presenter && videoPresenterPreviewHint(presenter, platformConfigured);
@@ -195,6 +208,10 @@ export default function AgentPresenceLivePreview({
             agentName={name}
             speaking={showSpeaking}
             onSpeakingChange={setVideoSpeaking}
+            onRetry={() => {
+              setSession(null);
+              void connect();
+            }}
           />
           <div className="wl-presence__strip" role="status">
             <strong>Live presenter connected</strong>
@@ -255,7 +272,7 @@ export default function AgentPresenceLivePreview({
               ? "Your catalog face is saved — enable this to stream it on your site and in preview."
               : "Pick a catalog face above, then enable this when you want photoreal streaming."}
           </p>
-          {addonOffered ? (
+          {addonPurchasable ? (
             <button
               type="button"
               onClick={() => void enableLiveVideo()}
@@ -265,6 +282,13 @@ export default function AgentPresenceLivePreview({
               {enabling ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
               Add live video
             </button>
+          ) : upgradeRequired ? (
+            <a
+              href="/settings/billing"
+              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
+            >
+              Upgrade to unlock live video
+            </a>
           ) : (
             <p className="mt-3 text-xs text-muted-foreground">
               Contact Wireline to enable this add-on on your workspace.
@@ -292,7 +316,8 @@ export default function AgentPresenceLivePreview({
           <button
             type="button"
             onClick={() => void playVoiceSample()}
-            disabled={sampleLoading}
+            disabled={sampleLoading || !hasVoice}
+            title={!hasVoice ? "Pick a voice for this agent in Setup first." : undefined}
             className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {sampleLoading ? (

@@ -36,10 +36,21 @@ export type LiveAvatarSessionCredentials = {
   sandbox: boolean;
 };
 
+export type LiveVideoAddonState = {
+  platformConfigured: boolean;
+  addonOffered: boolean;
+  billingEntitled: boolean;
+  liveVideoAddonEnabled: boolean;
+  planId: string | null;
+  upgradeRequired: boolean;
+  reason: string | null;
+};
+
 export type VideoPresenterSessionResponse = {
   configured: boolean;
   fallbackSeed: string;
   presenter: AgentVideoPresenterConfig;
   live?: LiveAvatarSessionCredentials;
   error?: string;
+  code?: string;
 };

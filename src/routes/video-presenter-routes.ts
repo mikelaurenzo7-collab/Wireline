@@ -14,17 +14,35 @@ import {
 } from "../lib/video-presenter/liveavatar-service";
 import {
   agentLiveVideoOptedIn,
-  isLiveVideoAddonOffered,
+  isLiveVideoPlatformAvailable,
   isLiveVideoProvider,
 } from "../lib/video-presenter/live-video-addon";
+import { resolveLiveVideoEntitlement } from "../lib/video-presenter/live-video-entitlements";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
 import { elevenLabsConfigured, generateSamplePcm24 } from "../lib/elevenlabs-client";
+import { isOwnerEmail } from "../lib/auth-service";
 
 const router = express.Router();
+
+function throwLiveVideoBillingError(
+  entitlement: Awaited<ReturnType<typeof resolveLiveVideoEntitlement>>,
+) {
+  if (!entitlement.platformConfigured) {
+    throw AppError.fromHttpStatus(
+      503,
+      entitlement.reason || "Live video is not available on this workspace.",
+    );
+  }
+  throw AppError.fromHttpStatus(
+    402,
+    entitlement.reason || "Upgrade to Wireline Team or higher to add live video.",
+    { code: "LIVE_VIDEO_UPGRADE_REQUIRED", plan_id: entitlement.planId },
+  );
+}
 
 const presenterLimiter = createRateLimiter({
   bucket: "api:video-presenter",
@@ -72,6 +90,18 @@ router.get(
 );
 
 router.get(
+  "/api/video-presenter/entitlement",
+  authenticateUser,
+  presenterLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const entitlement = await resolveLiveVideoEntitlement(req.user.id, {
+      isOwner: isOwnerEmail(req.user.email),
+    });
+    res.json(entitlement);
+  },
+);
+
+router.get(
   "/api/video-presenter/avatars",
   authenticateUser,
   presenterLimiter,
@@ -100,7 +130,16 @@ router.get(
       isBusinessAgent: agent.isBusinessAgent,
       faceId: agent.videoPresenterAvatarId,
     });
-    res.json({ presenter, fallbackSeed: identity.seed, platform: getLiveAvatarStatus() });
+    const addon = await resolveLiveVideoEntitlement(req.user.id, {
+      isOwner: isOwnerEmail(req.user.email),
+    });
+    res.json({
+      presenter,
+      fallbackSeed: identity.seed,
+      platform: getLiveAvatarStatus(),
+      addon,
+      hasVoice: Boolean(agent.voiceId?.trim()),
+    });
   },
 );
 
@@ -172,10 +211,22 @@ router.post(
     });
 
     if (presenter.status !== "ready" || !presenter.avatarId) {
-      res.json({
+      const code = !agentLiveVideoOptedIn(agent)
+        ? "LIVE_VIDEO_NOT_ENABLED"
+        : !presenter.avatarId
+          ? "LIVE_VIDEO_AVATAR_REQUIRED"
+          : "LIVE_VIDEO_NOT_READY";
+      res.status(400).json({
         configured: false,
+        code,
         fallbackSeed: identity.seed,
         presenter,
+        error:
+          code === "LIVE_VIDEO_AVATAR_REQUIRED"
+            ? "Pick a catalog presenter face, then preview again."
+            : code === "LIVE_VIDEO_NOT_ENABLED"
+              ? "Enable the live video add-on before previewing."
+              : "Live presenter is not ready yet.",
       });
       return;
     }
@@ -208,7 +259,13 @@ router.post(
     if (!agent.isBusinessAgent) {
       throw AppError.fromHttpStatus(400, "Live video is available for business agents only.");
     }
-    if (!isLiveVideoAddonOffered()) {
+    const entitlement = await resolveLiveVideoEntitlement(req.user.id, {
+      isOwner: isOwnerEmail(req.user.email),
+    });
+    if (!entitlement.billingEntitled) {
+      throwLiveVideoBillingError(entitlement);
+    }
+    if (!isLiveVideoPlatformAvailable()) {
       throw AppError.fromHttpStatus(503, "Live video add-on is not available on this workspace.");
     }
 

@@ -255,9 +255,9 @@ export default function StudioAgentCanvas({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <CardShell
             label="Identity"
-            action="Edit"
+            action="Presence"
             delay={80}
-            onActivate={() => onEditSection("identity")}
+            onActivate={() => onEditSection("presence")}
             className="min-h-[300px]"
           >
             <div className="mb-4 flex items-start gap-3">
@@ -288,6 +288,15 @@ export default function StudioAgentCanvas({
               presenter={config?.identity ?? undefined}
               className="mt-3"
             />
+            {business ? (
+              <button
+                type="button"
+                onClick={() => onEditSection("presence")}
+                className="mt-2 text-xs font-semibold text-[var(--wireline-color-action-primary-default)] hover:underline"
+              >
+                Customize agent presence
+              </button>
+            ) : null}
           </CardShell>
 
           <CardShell

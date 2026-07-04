@@ -32,7 +32,7 @@ export function isLiveVideoPlatformAvailable(): boolean {
   return getLiveAvatarStatus().configured;
 }
 
-/** Customer-facing add-on is available when ops configured live video keys. */
+/** @deprecated Prefer `addon` from GET /api/agents/:id/video-presenter — includes billing entitlement. */
 export function isLiveVideoAddonOffered(): boolean {
   return isLiveVideoPlatformAvailable();
 }

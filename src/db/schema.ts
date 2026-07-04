@@ -136,6 +136,8 @@ export const settings = pgTable("wireline_settings", {
   // /api/billing/extra-agents endpoint which also adjusts the Stripe
   // subscription item quantity for billing. Defaults to 0.
   extraAgents: integer("extra_agents").default(0).notNull(),
+  /** Explicit ops/enterprise grant for photoreal live video streaming. */
+  liveVideoAddonEnabled: boolean("live_video_addon_enabled").default(false).notNull(),
   vapiPrivateKey: text("vapi_private_key"),
   vapiPhoneNumberId: text("vapi_phone_number_id"),
   retentionDays: integer("retention_days").default(365),
