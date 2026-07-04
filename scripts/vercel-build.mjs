@@ -16,7 +16,8 @@ const projectHint = [
   .join(" ");
 const isDuplicateV0Project = /(^|[\s.-])v0-project([\s.-]|$)/i.test(projectHint);
 const migrationsForced = process.env.WIRELINE_RUN_MIGRATIONS === "true";
-const shouldMigrate = migrationsForced || (environment === "production" && !isDuplicateV0Project);
+const migrationsDisabled = process.env.WIRELINE_RUN_MIGRATIONS === "false";
+const shouldMigrate = !migrationsDisabled && (migrationsForced || (environment === "production" && !isDuplicateV0Project));
 
 run("node", ["scripts/build-design-tokens.mjs"]);
 
