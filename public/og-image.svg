@@ -2,84 +2,89 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <defs>
     <linearGradient id="warmRule" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#C4713B" stop-opacity="0.9"/>
-      <stop offset="45%" stop-color="#2B5548" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#2B5548" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#D4823F" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#5BA98A" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#5BA98A" stop-opacity="0"/>
     </linearGradient>
     <radialGradient id="softGlow" cx="72%" cy="20%" r="58%">
-      <stop offset="0%" stop-color="#D0E8DE" stop-opacity="0.86"/>
-      <stop offset="58%" stop-color="#EEF5F1" stop-opacity="0.42"/>
-      <stop offset="100%" stop-color="#F7F6F3" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#2B5548" stop-opacity="0.38"/>
+      <stop offset="58%" stop-color="#18271F" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#15130F" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="copperGlow" cx="6%" cy="96%" r="42%">
+      <stop offset="0%" stop-color="#D4823F" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#15130F" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
-  <rect width="1200" height="630" fill="#F7F6F3"/>
+  <rect width="1200" height="630" fill="#15130F"/>
   <rect width="1200" height="630" fill="url(#softGlow)"/>
+  <rect width="1200" height="630" fill="url(#copperGlow)"/>
 
-  <g stroke="#E8E7E3" stroke-width="1">
+  <g stroke="#2A2721" stroke-width="1">
     <line x1="0" y1="118" x2="1200" y2="118"/>
     <line x1="0" y1="512" x2="1200" y2="512"/>
     <line x1="240" y1="0" x2="240" y2="630"/>
     <line x1="960" y1="0" x2="960" y2="630"/>
   </g>
 
-  <text x="80" y="76" font-family="Space Mono, ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" letter-spacing="5" fill="#2B5548">
+  <text x="80" y="76" font-family="Space Mono, ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" letter-spacing="5" fill="#5BA98A">
     WIRELINE · TRYWIRELINE.COM
   </text>
   <line x1="80" y1="96" x2="430" y2="96" stroke="url(#warmRule)" stroke-width="1.25"/>
-  <circle cx="80" cy="96" r="3" fill="#C4713B"/>
-  <circle cx="80" cy="96" r="7" fill="#C4713B" fill-opacity="0.18"/>
+  <circle cx="80" cy="96" r="3" fill="#D4823F"/>
+  <circle cx="80" cy="96" r="7" fill="#D4823F" fill-opacity="0.2"/>
 
   <g transform="translate(838, 54)">
-    <rect width="282" height="40" rx="20" ry="20" fill="#EEF5F1" stroke="#D0E8DE" stroke-width="1"/>
-    <circle cx="24" cy="20" r="5.5" fill="#3D9B73"/>
-    <text x="42" y="26" font-family="Space Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="2" fill="#2B5548">
+    <rect width="282" height="40" rx="20" ry="20" fill="#18271F" stroke="#2E4736" stroke-width="1"/>
+    <circle cx="24" cy="20" r="5.5" fill="#54B78F"/>
+    <text x="42" y="26" font-family="Space Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="2" fill="#5BA98A">
       YOUR AGENT IS READY
     </text>
   </g>
 
-  <text x="80" y="238" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="96" font-weight="400" letter-spacing="-3.5" fill="#1C1C1A">
+  <text x="80" y="238" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="96" font-weight="400" letter-spacing="-3.5" fill="#F4F2EC">
     WIRE YOUR
   </text>
-  <text x="80" y="336" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="112" font-style="italic" font-weight="400" letter-spacing="-4" fill="#2B5548">
+  <text x="80" y="336" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="112" font-style="italic" font-weight="400" letter-spacing="-4" fill="#5BA98A">
     AGENT
   </text>
 
-  <text x="84" y="408" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="500" fill="#6B6B65">
+  <text x="84" y="408" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="500" fill="#B8B3A8">
     Personal assistants · solo business · teams
   </text>
-  <text x="84" y="452" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24" font-weight="500" fill="#6B6B65">
+  <text x="84" y="452" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24" font-weight="500" fill="#B8B3A8">
     Answer. Route. Book. Follow up. Text the outcome.
   </text>
 
   <g transform="translate(760, 172)">
-    <rect width="360" height="268" rx="26" ry="26" fill="#FFFFFF" stroke="#E8E7E3" stroke-width="1.5"/>
-    <rect x="24" y="24" width="56" height="56" rx="14" fill="#2B5548"/>
-    <path d="M39 40 L49 64 L56 50 L63 64 L73 40" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="96" y="48" font-family="DM Sans, system-ui, sans-serif" font-size="18" font-weight="700" fill="#1C1C1A">
+    <rect width="360" height="268" rx="26" ry="26" fill="#1E1B16" stroke="#322D25" stroke-width="1.5"/>
+    <rect x="24" y="24" width="56" height="56" rx="14" fill="#5BA98A"/>
+    <path d="M39 40 L49 64 L56 50 L63 64 L73 40" fill="none" stroke="#12100C" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="96" y="48" font-family="DM Sans, system-ui, sans-serif" font-size="18" font-weight="700" fill="#F4F2EC">
       Wireline Agent
     </text>
-    <text x="96" y="72" font-family="Space Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.4" fill="#2B5548">
+    <text x="96" y="72" font-family="Space Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.4" fill="#5BA98A">
       TRAINED ON YOUR PLAYBOOK
     </text>
-    <rect x="24" y="108" width="238" height="42" rx="16" fill="#F0EFEB"/>
-    <text x="42" y="135" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#6B6B65">
+    <rect x="24" y="108" width="238" height="42" rx="16" fill="#242019"/>
+    <text x="42" y="135" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#B8B3A8">
       Qualify the request.
     </text>
-    <rect x="88" y="162" width="248" height="48" rx="18" fill="#2B5548"/>
-    <text x="108" y="192" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#FFFFFF">
+    <rect x="88" y="162" width="248" height="48" rx="18" fill="#5BA98A"/>
+    <text x="108" y="192" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#12100C">
       Routed and summarized.
     </text>
     <g transform="translate(24, 228)">
-      <rect width="108" height="24" rx="12" fill="#EEF5F1"/>
-      <text x="15" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#2B5548">Handled</text>
-      <rect x="118" width="112" height="24" rx="12" fill="#FDF0E7"/>
-      <text x="132" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C4713B">Next step</text>
+      <rect width="108" height="24" rx="12" fill="#18271F"/>
+      <text x="15" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#5BA98A">Handled</text>
+      <rect x="118" width="112" height="24" rx="12" fill="#271811"/>
+      <text x="132" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#D4823F">Next step</text>
     </g>
   </g>
 
-  <line x1="80" y1="588" x2="1120" y2="588" stroke="#2B5548" stroke-opacity="0.14" stroke-width="1"/>
-  <text x="80" y="612" font-family="Space Mono, ui-monospace, monospace" font-size="12" font-weight="700" letter-spacing="3" fill="#A1A19B">
+  <line x1="80" y1="588" x2="1120" y2="588" stroke="#5BA98A" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="80" y="612" font-family="Space Mono, ui-monospace, monospace" font-size="12" font-weight="700" letter-spacing="3" fill="#8B867B">
     PERSONAL · SOLO BUSINESS · TEAMS · FOLLOW-UP
   </text>
 </svg>

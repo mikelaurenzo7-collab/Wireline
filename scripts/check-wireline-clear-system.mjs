@@ -157,14 +157,14 @@ mustExclude(
 mustInclude(
   "design-tokens/wireline.tokens.json",
   tokenSource,
-  /"\$description"\s*:\s*"Wireline Letterpress design tokens/,
-  "token source must describe Wireline Letterpress",
+  /"\$description"\s*:\s*"Wireline dark design tokens/,
+  "token source must describe the Wireline dark system",
 );
 mustInclude(
   "design-tokens/wireline.tokens.json",
   tokenSource,
-  /"default"\s*:\s*\{\s*"\$type"\s*:\s*"color",\s*"\$value"\s*:\s*"#2B5548"\s*\}/,
-  "token source primary action must be #2B5548",
+  /"default"\s*:\s*\{\s*"\$type"\s*:\s*"color",\s*"\$value"\s*:\s*"#5BA98A"\s*\}/,
+  "token source primary action must be the dark luminous patina #5BA98A",
 );
 mustExclude(
   "design-tokens/wireline.tokens.json",
@@ -175,8 +175,8 @@ mustExclude(
 mustInclude(
   "src/styles/foundation.css",
   foundationCss,
-  /color-scheme:\s*light/,
-  "use one light scheme until a complete theme setting exists",
+  /color-scheme:\s*dark/,
+  "the product is dark-only; the root color-scheme must be dark",
 );
 mustInclude(
   "src/styles/foundation.css",
@@ -223,14 +223,14 @@ mustExclude(
 mustInclude(
   "src/styles/tokens.generated.css",
   webTokens,
-  /--wireline-color-action-primary-default:\s*#2B5548/,
-  "web tokens must use Wireline Letterpress",
+  /--wireline-color-action-primary-default:\s*#5BA98A/,
+  "web tokens must carry the dark patina token",
 );
 mustInclude(
   "apps/browser-extension/panel/tokens.generated.css",
   browserTokens,
-  /--wireline-color-action-primary-default:\s*#2B5548/,
-  "browser tokens must use Wireline Letterpress",
+  /--wireline-color-action-primary-default:\s*#5BA98A/,
+  "browser tokens must carry the dark patina token",
 );
 mustInclude(
   "apps/browser-extension/manifest.base.json",
@@ -301,14 +301,14 @@ mustInclude(
 mustInclude(
   "src/constants/generated-design-tokens.ts",
   tokenConstants,
-  /"color\.action\.primary\.default": "#2B5548"/,
-  "TS tokens must use Wireline Letterpress",
+  /"color\.action\.primary\.default": "#5BA98A"/,
+  "TS tokens must carry the dark patina token",
 );
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
   androidTokens,
-  /colorActionPrimaryDefault = Color\(0xFF2B5548\)/,
-  "Android tokens must use Wireline Letterpress",
+  /colorActionPrimaryDefault = Color\(0xFF5BA98A\)/,
+  "Android tokens must carry the dark patina token",
 );
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
@@ -355,14 +355,14 @@ mustInclude(
 mustInclude(
   "ios/Wireline/Theme/WirelineDesignTokens.generated.swift",
   iosTokens,
-  /colorActionPrimaryDefault = Color\(hex: 0x2B5548\)/,
-  "iOS tokens must use Wireline Letterpress",
+  /colorActionPrimaryDefault = Color\(hex: 0x5BA98A\)/,
+  "iOS tokens must carry the dark patina token",
 );
 mustInclude(
   "ios/WirelineShared/WirelineWidgetSnapshot.swift",
   iosWidget,
-  /public static let accent = "2B5548"/,
-  "iOS widget snapshot must use Wireline Letterpress",
+  /public static let accent = "5BA98A"/,
+  "iOS widget snapshot must carry the dark patina token",
 );
 mustInclude(
   "ios/Wireline/Views/RootTabView.swift",
@@ -422,14 +422,14 @@ const mcpWidgetStyles = read("src/lib/wireline-mcp-widget-styles.ts");
 mustInclude(
   "src/lib/wireline-mcp-widget-styles.ts",
   mcpWidgetStyles,
-  /canvas: "#F7F6F3"/,
-  "MCP widget styles must use Wireline Letterpress canvas",
+  /canvas: "#15130F"/,
+  "MCP widget styles must use the Wireline dark canvas",
 );
 mustInclude(
   "src/lib/wireline-mcp-widget-styles.ts",
   mcpWidgetStyles,
-  /action: "#2B5548"/,
-  "MCP widget styles must use Wireline Letterpress action chrome",
+  /action: "#5BA98A"/,
+  "MCP widget styles must use the Wireline dark action chrome",
 );
 mustInclude(
   "src/lib/chatgpt-mcp.ts",
@@ -446,20 +446,20 @@ mustInclude(
 mustInclude(
   "public/static-legal.css",
   legalCss,
-  /--wireline-color-action-primary-default: #2B5548/,
-  "static legal pages must use Wireline Letterpress tokens",
+  /--wireline-color-action-primary-default: #5BA98A/,
+  "static legal pages must use the Wireline dark tokens",
 );
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"theme_color": "#2B5548"/,
-  "manifest must use Letterpress theme color",
+  /"theme_color": "#15130F"/,
+  "manifest must use the dark theme color",
 );
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"background_color": "#F7F6F3"/,
-  "manifest must use warm paper background",
+  /"background_color": "#15130F"/,
+  "manifest must use the dark canvas background",
 );
 mustInclude(
   "public/site.webmanifest",
@@ -488,8 +488,8 @@ mustInclude(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /fill="#F7F6F3"/,
-  "OG image must use warm paper canvas",
+  /fill="#15130F"/,
+  "OG image must use the dark canvas",
 );
 mustInclude(
   "public/og-image.svg",
@@ -702,7 +702,7 @@ mustInclude(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /C4713B/,
+  /D4823F/,
   "OG image must carry the copper wire signature",
 );
 mustInclude(

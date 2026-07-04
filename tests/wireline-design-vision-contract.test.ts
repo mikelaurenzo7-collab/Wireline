@@ -24,7 +24,7 @@ describe("Wireline Letterpress design vision", () => {
   it("exports a single canonical vision manifest", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
     expect(WIRELINE_DESIGN_VISION.system).toBe("Wireline Letterpress");
-    expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#2B5548");
+    expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#5BA98A");
     expect(WIRELINE_DESIGN_VISION.utilities).toContain("wl-panel-elevated");
   });
 
@@ -39,7 +39,7 @@ describe("Wireline Letterpress design vision", () => {
     const foundation = read("src/styles/foundation.css");
     expect(foundation).toContain("--wl-text-tertiary: var(--wireline-color-text-tertiary)");
     expect(read("src/styles/tokens.generated.css")).toContain(
-      "--wireline-color-text-tertiary: #7B7B75",
+      "--wireline-color-text-tertiary: #8B867B",
     );
   });
 

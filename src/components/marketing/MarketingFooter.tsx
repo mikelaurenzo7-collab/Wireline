@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
+import WirelineMark from "../brand/WirelineMark";
 
 const PRODUCT_LINKS = [
   { to: "/for/personal", label: "Use cases" },
@@ -40,7 +41,8 @@ export default function MarketingFooter({
       <div className="wl-public-rail">
         <div className="marketing-footer-rail">
           <div className="marketing-footer-brand">
-            <p className="font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground">
+            <p className="flex items-center gap-2.5 font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground">
+              <WirelineMark className="h-6 w-6 shrink-0 text-primary" signal />
               Wireline
             </p>
             <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">

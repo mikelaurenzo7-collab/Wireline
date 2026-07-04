@@ -167,7 +167,7 @@ export default function Pricing() {
                   key={plan.id}
                   className={`relative flex min-h-[520px] flex-col rounded-[var(--wireline-radius-xl)] border p-6 transition-all sm:p-7 ${
                     plan.featured
-                      ? "wl-featured-wire border-primary bg-[var(--wireline-color-text-primary)] text-[var(--wireline-color-canvas-default)] shadow-[var(--wireline-elevation-lg)]"
+                      ? "wl-featured-wire marketing-ink-panel border-primary shadow-[var(--wireline-elevation-lg)]"
                       : "border-border bg-card hover:-translate-y-px hover:shadow-[var(--wireline-elevation-md)]"
                   }`}
                 >
@@ -188,7 +188,7 @@ export default function Pricing() {
                     <span
                       className={`grid size-10 place-items-center rounded-[var(--wireline-radius-md)] border ${
                         plan.featured
-                          ? "border-white/10 bg-white/10 text-[var(--wireline-color-canvas-default)]"
+                          ? "border-white/10 bg-white/10 text-[var(--wireline-color-text-primary)]"
                           : "border-border bg-muted text-primary"
                       }`}
                     >
@@ -264,7 +264,7 @@ export default function Pricing() {
                     to={plan.ctaPath}
                     className={`mt-8 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[var(--wireline-radius-md)] px-5 text-sm font-semibold transition active:scale-[.985] ${
                       plan.featured
-                        ? "bg-[var(--wireline-color-canvas-default)] text-[var(--wireline-color-text-primary)] hover:bg-white"
+                        ? "bg-[var(--wireline-color-text-primary)] text-[var(--wireline-color-canvas-default)] hover:opacity-90"
                         : "marketing-btn-primary"
                     }`}
                   >

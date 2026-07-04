@@ -10,14 +10,14 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("ChatGPT MCP widget Letterpress styling", () => {
   it("exports canonical Wireline Letterpress tokens for MCP HTML widgets", () => {
-    expect(WIRELINE_MCP_WIDGET_TOKENS.canvas).toBe("#F7F6F3");
-    expect(WIRELINE_MCP_WIDGET_TOKENS.action).toBe("#2B5548");
-    expect(WIRELINE_MCP_WIDGET_TOKENS.shadowCard).toContain("rgba(28, 28, 26");
+    expect(WIRELINE_MCP_WIDGET_TOKENS.canvas).toBe("#15130F");
+    expect(WIRELINE_MCP_WIDGET_TOKENS.action).toBe("#5BA98A");
+    expect(WIRELINE_MCP_WIDGET_TOKENS.shadowCard).toContain("rgba(0, 0, 0");
   });
 
   it("builds accessible widget CSS with Letterpress surfaces and 44px controls", () => {
     const css = buildWirelineMcpWidgetCss();
-    expect(css).toContain("--wl-canvas: #F7F6F3");
+    expect(css).toContain("--wl-canvas: #15130F");
     expect(css).toContain("--wl-tertiary:");
     expect(css).toContain(".composer");
     expect(css).toContain("min-height: 44px");

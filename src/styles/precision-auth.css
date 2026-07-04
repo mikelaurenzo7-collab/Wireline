@@ -1,5 +1,5 @@
-/* Account entry surface — Letterpress two-panel auth.
- * Left: dark brand panel (#1C1C1A) with forest-green glow. Right: form. */
+/* Account entry surface — two-panel auth.
+ * Left: deep console brand panel with a patina-green glow. Right: form. */
 .wl-stitch-auth-shell {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -15,8 +15,9 @@
   justify-content: space-between;
   gap: 2.5rem;
   padding: clamp(2.5rem, 4vw, 3.5rem);
-  background: var(--wireline-color-text-primary);
-  color: var(--wireline-color-canvas-default);
+  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  color: var(--wireline-color-text-primary);
+  border-right: 1px solid var(--wireline-color-border-default);
   animation: fadeIn 0.5s ease-out both;
 }
 
@@ -77,8 +78,7 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  /* >= 4.5:1 on the #1C1C1A brand panel (was 40% -> 3.6:1). */
-  color: color-mix(in srgb, var(--wireline-color-canvas-default) 66%, transparent);
+  color: var(--wireline-color-text-secondary);
   margin-bottom: 1.25rem;
 }
 
@@ -89,13 +89,13 @@
   letter-spacing: -0.03em;
   font-weight: 400;
   margin-bottom: 1.25rem;
-  color: var(--wireline-color-canvas-default);
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-auth-brand-body {
   font-size: 15px;
   line-height: 1.65;
-  color: color-mix(in srgb, var(--wireline-color-canvas-default) 55%, transparent);
+  color: var(--wireline-color-text-secondary);
 }
 
 .wl-auth-brand-grid {
@@ -107,7 +107,7 @@
 }
 
 .wl-auth-brand-grid-cell {
-  background: var(--wireline-color-text-primary);
+  background: var(--wireline-color-surface-default);
   padding: 1rem;
   text-align: center;
 }
@@ -115,7 +115,7 @@
 .wl-auth-brand-grid-name {
   font-family: var(--wireline-font-display);
   font-size: 18px;
-  color: var(--wireline-color-canvas-default);
+  color: var(--wireline-color-text-primary);
 }
 
 .wl-auth-brand-grid-sub {
@@ -123,8 +123,7 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  /* ≥4.5:1 on the dark brand panel — 30% failed WCAG AA (axe color-contrast). */
-  color: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, transparent);
+  color: var(--wireline-color-text-tertiary);
   margin-top: 4px;
 }
 
