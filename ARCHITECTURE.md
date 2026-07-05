@@ -1,31 +1,36 @@
 # Wireline Architecture
 
-Wireline is an AI communications product with one core loop: build an agent, train it, run it, and review outcomes.
+Wireline is an AI communications product with one operating loop: **Create -> Train -> Wire -> Run**.
+
+A customer builds an agent, trains it with durable knowledge and policy, wires it to numbers and tools, then runs work through Studio. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes feed review and continued training.
 
 ## Product boundary
 
-The authenticated product begins in Agent Studio.
+1. A person creates a focused agent.
+2. They train the agent with instructions, knowledge, tone, voice, escalation policy, and workflow behavior.
+3. They wire calendars, email, contacts, CRM, numbers, billing, routing, approvals, and other launch controls when useful.
+4. Voice, messaging, browser context, email, and automation execution use the saved agent profile.
+5. Optional video presenter support gives business agents a live visual face while preserving a Wireline-owned fallback.
+6. Outcomes feed review, coaching, analytics, and retraining.
 
-1. A person creates an agent.
-2. They define instructions, knowledge, tone, and workflow behavior.
-3. They connect calendars, email, contacts, or CRM services when useful.
-4. Voice, messaging, and automation execution use the saved agent profile.
-5. Call and message outcomes feed review and training.
+Historic workspace URLs should redirect into the active agent workflow rather than maintaining parallel management surfaces.
 
-Historic workspace URLs redirect into the active agent workflow rather than maintaining parallel management surfaces.
-
-## Frontend
+## Frontend surfaces
 
 | Concern | Source |
 | --- | --- |
 | Entry | `src/main.tsx` |
 | Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
-| Session boundary | `src/components/layout/AppShell.tsx` |
-| Agent Studio | `src/pages/AgentStudioHome.tsx` |
-| Agent roster | `src/contexts/AgentsContext.tsx` |
-| Shared visual system | `src/index.css`, `src/styles/foundation.css` |
+| Session boundary | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx` |
+| Overview | `src/pages/OverviewPage.tsx` |
+| Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` |
+| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx` |
+| Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
+| Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
+| Agent roster/state | `src/contexts/AgentsContext.tsx` |
+| Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 
-The visual layer is intentionally small: warm off-white surfaces, graphite controls, neutral borders, system fonts, and a high readability floor.
+The visual layer is intentionally restrained: Wireline Letterpress, dark/ink surfaces, warm paper, forest/patina action, copper wire accent, accessible focus states, and no parallel palettes.
 
 ## Core API flow
 
@@ -37,44 +42,70 @@ The visual layer is intentionally small: warm off-white surfaces, graphite contr
 - Enforces account entitlement and agent-cap rules.
 - Creates an agent and starting personality in one transaction.
 - Records an audit event and invalidates account caches.
+- Does not silently provision phone numbers. Wiring happens deliberately after creation.
 
 ### Agent training
 
-`POST /api/train/extract`
+Training endpoints extract clear user instructions into durable agent configuration.
 
-- Requires an authenticated user and an owned agent ID.
-- Converts clear user instructions into directives, knowledge, and personality updates.
-- Persists extracted configuration against the selected agent.
-- Returns a human-readable confirmation for the Studio conversation.
+- Require an authenticated user and an owned agent ID.
+- Convert instructions, files, and source material into directives, knowledge, personality, and tool configuration.
+- Persist extracted configuration against the selected agent.
+- Return human-readable confirmation for the Studio conversation.
 
-### Integrations
+### Wiring and integrations
 
-OAuth and CRM endpoints own authorization and callback validation. Studio reads connection state and sends the user into the relevant connection flow; provider secrets never belong in browser state.
+OAuth, CRM, telephony, billing, and connected-tool endpoints own authorization, callback validation, and provider-specific state. Studio reads connection state and sends users into the relevant connection flow; provider secrets never belong in browser state.
+
+### Runtime execution
+
+Runtime execution reads the saved agent profile, selected model/voice posture, connected tools, balance/entitlement state, and provider configuration. Calls, texts, follow-up, approvals, and handoffs must emit durable events and remain tenant-scoped.
 
 ## Runtime services
 
 - **Auth and authorization:** session middleware plus user-scoped ownership checks.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`.
-- **Voice:** 
-  - Production PSTN calls: Twilio + Vapi-backed execution configured from agent profiles. Default managed model is OpenAI GPT-4o (with Gemini Flash fallback).
-  - Authenticated realtime/live tests (browser + mobile): dedicated xAI Grok voice path (server-provisioned short-lived sessions, knowledge tool only for safety). See `docs/GROK_LIVE_VOICE.md` and `src/lib/voice/grok-voice-*`.
-- **LLM / Reasoning:** 
-  - Primary structured and many voice paths: OpenAI (GPT-5.5 / GPT-4o via env or defaults) with Gemini automatic fallback.
-  - Custom per-agent: OpenRouter (any valid model ID) or catalog options.
-  - Live Grok: xAI realtime voice sessions (separate from Vapi).
-  - Central policy and catalog: `src/lib/ai-models.ts` (VOICE_MODEL_CATALOG, resolveVapiVoiceModelSelection, DEFAULT_MODEL, selectModelForTask). Legacy claude-models references have been consolidated here.
-- **Billing:** Stripe-backed entitlement checks remain server-side.
+- **Billing:** Stripe-backed entitlements, plan catalog, Conversation Balance, checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
+- **Voice:**
+  - Production PSTN calls: Twilio + Vapi-backed execution configured from agent profiles.
+  - Authenticated realtime/live tests: dedicated xAI Grok voice path with server-provisioned short-lived sessions and safety-scoped tools. See `docs/GROK_LIVE_VOICE.md` and `src/lib/voice/grok-voice-*`.
+- **LLM / reasoning:**
+  - Central policy and catalog: `src/lib/ai-models.ts`.
+  - Primary structured and many voice paths: OpenAI with Gemini fallback.
+  - Custom per-agent options: OpenRouter or catalog-backed model IDs.
+  - Live Grok remains separate from Vapi production calls.
+- **Video presenters:**
+  - `src/lib/video-presenter/` wraps provider details behind Wireline-owned copy, status, consent, metering, and fallback language.
+  - Customer surfaces should say presenter, face, or live video add-on, not vendor names.
+- **Browser extension:** Wireline Command only sends active page context by explicit user action. No broad host permissions, background harvesting, token storage, or silent browsing collection.
+- **ChatGPT App:** OAuth-connected MCP surface for account-bound private actions and simulations.
 - **Webhooks:** signature verification and idempotent handling remain server-side.
 
-## Security invariants
+## Data and security invariants
 
 - Tenant-owned queries and writes are scoped to the authenticated user.
-- Provider credentials are environment variables.
-- Billing, webhooks, and account deletion are server-owned workflows.
-- CSP policy checks, authorization checks, and functional tests remain in the full verification path.
+- Provider credentials are environment variables or server-side secrets.
+- Billing, webhooks, account deletion, provider callbacks, and connected-tool writes are server-owned workflows.
+- Browser/mobile clients may initiate intent but must not own authorization decisions.
+- CSP policy checks, authorization checks, product-doc checks, and functional tests remain in the full verification path.
+- Supabase leaked-password protection must be enabled before public launch if it remains disabled in project settings.
+
+## Source-of-truth discipline
+
+| Concern | Canonical source |
+| --- | --- |
+| Product language | `src/lib/product-copy.ts`, `docs/README.md` |
+| Pricing | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts` |
+| Conversation Balance | `src/lib/conversation-balance.ts` |
+| Design | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
+| Models | `src/lib/ai-models.ts` |
+| Video presenter copy | `src/lib/video-presenter/copy.ts` |
+| Repo hygiene | `CODEBASE_HEALTH.md` |
 
 ## Verification
 
-- `npm run verify` — production build and bundled-server import smoke.
-- `npm run verify:full` — type check, authorization coverage, CSP policy consistency, tests, build, and smoke.
+- `npm run verify` — design check, Stripe catalog contract, production build, and bundled-server import smoke.
+- `npm run verify:full` — type check, server lint, authorization coverage, CSP policy consistency, tests, build, and smoke.
+- `npm run verify:contracts` — product voice, metadata, static metadata, and event taxonomy contracts.
+- `node apps/browser-extension/scripts/build.mjs --check` — browser extension packaging and policy check.
 - `GET /api/health` — public production health probe.
