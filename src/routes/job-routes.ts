@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
+ 
 import { Router, Response, NextFunction } from "express";
 import { AppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
@@ -493,15 +493,31 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       await processWebhookRetries();
     }
 
+    // Per-job budget: a single job that stalls on an outbound fetch (Vapi,
+    // Stripe, LLM, Apollo) must not burn the whole cron slot. 30s per job,
+    // and stop pulling new work when total elapsed nears the 60s Vercel cron
+    // ceiling — we leave headroom for the trial-expiry / dunning tail below.
+    const PER_JOB_TIMEOUT_MS = 30_000;
+    const SWEEP_BUDGET_MS = 55_000;
+    const sweepStart = Date.now();
     let processed = 0;
     for (let i = 0; i < 10; i++) {
+      if (Date.now() - sweepStart > SWEEP_BUDGET_MS) break;
       const job = await claim(drizzle);
       if (!job) break;
       try {
-        await handleJob(job);
+        await Promise.race([
+          handleJob(job),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error(`job timed out after ${PER_JOB_TIMEOUT_MS}ms`)),
+              PER_JOB_TIMEOUT_MS,
+            ),
+          ),
+        ]);
         await complete(drizzle, job.id);
         processed++;
-      } catch (sweepErr: any) {
+      } catch (sweepErr: unknown) {
         await fail(drizzle, job, getErrorMessage(sweepErr));
       }
     }

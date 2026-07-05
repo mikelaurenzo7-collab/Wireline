@@ -31,11 +31,14 @@ export function validateStartupEnv() {
   // Rate limiting: without Upstash Redis each Vercel invocation has its own
   // in-memory state, so limits reset on every cold start and provide no real
   // protection. This is a security-relevant missing config, not just a perf nit.
+  // We do not throw (see the note below on why boot-time throws hurt more than
+  // they help), but we log at `error` in prod so it surfaces in incident review
+  // and the daily env-health audit script has a distinct signal to key on.
   if (IS_PROD && (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)) {
-    log.warn(
-      "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set — " +
+    log.error(
+      "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set in production — " +
         "rate limits are per-invocation only and provide no protection in serverless. " +
-        "Set both vars in Vercel project settings to enable global rate limiting.",
+        "Set both vars in Vercel project settings before serving real traffic.",
     );
   }
 

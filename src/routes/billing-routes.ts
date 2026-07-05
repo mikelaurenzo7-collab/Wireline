@@ -205,6 +205,27 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
+        // Live-video add-on is a standalone subscription sharing the customer
+        // with the plan subscription. Route it through the add-on flag path
+        // and skip syncSubscriptionFromStripe (which would clobber the plan
+        // subscription row keyed on user_id).
+        if (sub.metadata?.purpose === "live_video_addon") {
+          const userId = sub.metadata.wireline_user_id;
+          if (userId) {
+            // Only disable on true terminal states or an explicit delete.
+            // past_due / incomplete stay enabled so a temporary card decline
+            // does not yank a paid feature mid-session; Stripe will fire the
+            // delete event once dunning is exhausted.
+            const terminal = new Set(["canceled", "incomplete_expired", "unpaid"]);
+            const disable =
+              event.type === "customer.subscription.deleted" || terminal.has(sub.status);
+            await drizzle
+              .update(schema.settings)
+              .set({ liveVideoAddonEnabled: !disable, updatedAt: new Date() })
+              .where(eq(schema.settings.userId, userId));
+          }
+          break;
+        }
         if (event.type === "customer.subscription.created")
           (sub as unknown as Record<string, unknown>)._auditCreate = true;
         await syncSubscriptionFromStripe(sub);
@@ -877,7 +898,11 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
-      const priceId = process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID;
+      // Canonical env is STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID
+      // is accepted as an alias so ops can standardize on the SKU-shaped name.
+      const priceId =
+        process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID ||
+        process.env.STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID;
       if (!priceId) {
         return res.status(503).json({
           code: "SERVICE_UNAVAILABLE",

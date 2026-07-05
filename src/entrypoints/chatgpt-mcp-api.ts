@@ -2,6 +2,7 @@ import express from "express";
 import chatgptMcpAccountRouter from "../routes/chatgpt-mcp-account-routes";
 import chatgptMcpRouter from "../routes/chatgpt-mcp-routes";
 import { AppError, formatErrorResponse } from "../lib/api-error";
+import { reportError } from "../lib/error-reporter";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -20,8 +21,13 @@ app.use((req, res) => {
   res.status(status).json(body);
 });
 app.use(
-  (error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  (error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const { status, body } = formatErrorResponse(error);
+    if (status >= 500) {
+      reportError(error, {
+        tags: { surface: "mcp", method: req.method, path: req.path, status },
+      });
+    }
     res.status(status).json(body);
   },
 );

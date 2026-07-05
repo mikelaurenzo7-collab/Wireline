@@ -24,9 +24,23 @@ const recurringRuntimeEnvTargets = runtimeEnvTargets.filter((name) =>
   /^(?:STRIPE_BUSINESS_STARTER|STRIPE_PRO)_/.test(name),
 );
 
+// Only enforce the setup → plan-catalog reference for prices that carry a
+// wireline_plan_id in the setup script — those are plan prices. Add-ons
+// (e.g. live video) intentionally live outside plan-catalog and are checked
+// out via dedicated routes; requiring them to appear in plan-catalog would
+// force a bogus reference just to satisfy the contract.
+const setupPlanEnvTargets = new Set();
+for (const [, , envTarget, metadata] of setupCatalog.matchAll(
+  /\{\s*key:\s*"([^"]+)"[\s\S]*?envTarget:\s*"([^"]+)"[\s\S]*?metadata:\s*\{([^}]+)\}/g,
+)) {
+  if (/wireline_plan_id\s*:\s*"[^"]+"/.test(metadata)) {
+    setupPlanEnvTargets.add(envTarget);
+  }
+}
+
 for (const name of setupEnvTargets) {
-  if (!runtimeEnvTargets.includes(name)) {
-    errors.push(`Catalog setup creates ${name}, but plan-catalog.ts does not reference it.`);
+  if (setupPlanEnvTargets.has(name) && !runtimeEnvTargets.includes(name)) {
+    errors.push(`Catalog setup creates plan price ${name}, but plan-catalog.ts does not reference it.`);
   }
 }
 

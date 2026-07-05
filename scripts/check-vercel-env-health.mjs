@@ -53,7 +53,7 @@ const voice = [
   "LIVEAVATAR_DEFAULT_AVATAR_ID",
 ];
 
-const billing = ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID"];
+const billing = ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID"];
 
 function expectedTargets(env) {
   const targets = Array.isArray(env.target) ? env.target : [];

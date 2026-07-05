@@ -48,7 +48,7 @@ export function usePresenceSignals(options?: { enabled?: boolean; pollMs?: numbe
       };
 
       poll();
-      pollTimer = window.setInterval(poll, pollMs);
+      pollTimer = setInterval(poll, pollMs);
     };
 
     const es = new EventSource("/api/Assistants/presence/stream", { withCredentials: true });

@@ -2,7 +2,7 @@
 
 Wireline is the agent operating layer for calls, texts, follow-up, browser context, email, and integrations. One trained agent fleet can answer, route, book, qualify, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
-The current product doctrine is simple:
+The current product doctrine is simple. The customer-facing product loop is **Create -> Train -> Run**; operationally, Wire sits between Train and Run:
 
 1. **Create** a focused agent quickly.
 2. **Train** it deeply with facts, sources, policies, voice, tone, tools, and workflows.
@@ -23,7 +23,7 @@ The current product doctrine is simple:
 ## Tech
 
 - **Web / API**: React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, Vercel-capable server bundle.
-- **Design**: Wireline Letterpress tokens, brand colors, generated platform tokens, and `src/styles/design-system.css` as the visual source of truth.
+- **Design**: The Wireline Letterpress design system — Letterpress tokens, brand colors, generated platform tokens, and `src/styles/design-system.css` as the visual source of truth.
 - **Browser**: Manifest V3 command surface with Chromium and Firefox manifest overlays.
 - **Voice / realtime**: Twilio, Vapi, OpenAI/Gemini fallback paths, xAI Grok realtime test paths, and provider-specific server guards.
 - **Video**: HeyGen/LiveAvatar SDK-backed presenter infrastructure wrapped behind Wireline-owned copy and consent states.

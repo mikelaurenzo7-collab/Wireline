@@ -156,19 +156,6 @@ export default function PhoneSettings() {
               </Button>
             </div>
           </section>
-
-          <section className="studio-card p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <p className={WL_APP_CLASSES.wiredEyebrow}>VIP contacts</p>
-              <Button type="button" variant="secondary" size="sm" disabled>
-                <Plus size={14} aria-hidden="true" />
-                Add
-              </Button>
-            </div>
-            <p className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-              Coming soon
-            </p>
-          </section>
         </div>
 
         <section className="studio-card mt-5 flex flex-col items-center gap-3 p-5 sm:flex-row sm:justify-between sm:p-6">

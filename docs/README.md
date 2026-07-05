@@ -1,6 +1,6 @@
 # Wireline Documentation
 
-Wireline's durable documentation follows the active product model: **Create -> Train -> Wire -> Run**. This index is the canonical map for repo docs; dated plans and one-off research files are historical unless promoted here.
+Wireline's durable documentation follows the active product model. The customer-facing product loop is **Create -> Train -> Run**; the operational surface adds Wire between Train and Run for numbers, integrations, routing, approvals, billing, and launch controls (**Create -> Train -> Wire -> Run**). This index is the canonical map for repo docs; dated plans and one-off research files are historical unless promoted here.
 
 ## Active product surface
 
@@ -23,6 +23,7 @@ Wireline's durable documentation follows the active product model: **Create -> T
 - Wire owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
 - Studio is the workroom; Overview is the calm command center.
 - Avoid authenticated page descriptions unless the user is reviewing history, coaching, analytics, exports, or past actions.
+- Use labels, tabs, icons, state, and clear next actions instead of prose paragraphs.
 - Call Logs and Analytics may explain history, coaching, exports, and insights.
 - User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `presenter`, and `live video add-on`.
 - Customer-facing video-presenter surfaces must not mention vendor names such as HeyGen or LiveAvatar.

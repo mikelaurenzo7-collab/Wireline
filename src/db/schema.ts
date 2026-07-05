@@ -1414,7 +1414,11 @@ export const auditLog = pgTable(
   "wireline_audit_log",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
-    userId: uuid("user_id").notNull(),
+    // Nullable in the DB (see migration 0075): system security events —
+    // failed logins, unauthenticated rate-limit hits, cron auth rejections —
+    // legitimately carry no user id. `actor_email` captures the pre-auth
+    // identity when we have one.
+    userId: uuid("user_id"),
     action: text("action").notNull(),
     provider: text("provider"),
     model: text("model"),
