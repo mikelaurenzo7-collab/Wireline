@@ -9,6 +9,7 @@ import * as schema from "../db/schema";
 import { AuditLogger } from "./audit-logger";
 import { createRbacMiddleware } from "../middleware/require-role";
 import { QuotaTracker, type PlanTier } from "./tenant-quotas";
+import { isUuid } from "./uuid";
 
 export async function fetchWithTimeout(
   url: string,
@@ -35,8 +36,6 @@ const pool = new Pool({
 });
 
 export const tenantStore = new AsyncLocalStorage<string>();
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const _origConnect = pool.connect.bind(pool);
 
 // Savepoint used to remap drizzle's own top-level BEGIN/COMMIT/ROLLBACK so that
@@ -54,8 +53,8 @@ const OUTER_SAVEPOINT = "__wireline_tenant_sp__";
  *
  * To make the context stick on both session- and transaction-mode connections we
  * open a single real transaction at checkout, set the role + GUC `LOCAL` to it,
- * and COMMIT on release. Because pgbouncer pins one backend for the lifetime of an
- * open transaction, the GUC is visible to every query drizzle runs on this client.
+ * and COMMIT on release. Because pgbouncer pins one backend for the lifetime of
+ * an open transaction, the GUC is visible to every query drizzle runs on this client.
  *
  * drizzle borrows a fresh connection per query/transaction, so each checkout has
  * exactly one outer level. When a route uses `drizzle.transaction()`, drizzle emits
@@ -120,7 +119,7 @@ async function scopeClientToTenant(userId: string) {
 /* eslint-disable @typescript-eslint/no-explicit-any -- pg Pool.connect has overloaded callback/promise signatures */
 (pool as any).connect = function tenantScopedConnect(callback?: any): any {
   const userId = tenantStore.getStore();
-  if (!userId || !UUID_RE.test(userId)) {
+  if (!isUuid(userId)) {
     return callback ? _origConnect(callback) : _origConnect();
   }
   if (callback) {
