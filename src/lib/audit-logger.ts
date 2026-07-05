@@ -4,6 +4,15 @@ import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import type { AuditEventType, AuditSeverity } from "../types/audit";
 import { log } from "./server-context";
+import { normalizeUuid } from "./uuid";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeEmailCandidate(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return EMAIL_RE.test(trimmed) ? trimmed.toLowerCase() : undefined;
+}
 
 export class AuditLogger {
   private failureCount = 0;
@@ -36,15 +45,24 @@ export class AuditLogger {
       return { success: false, error: "Missing required fields" };
     }
 
+    const normalizedUserId = normalizeUuid(data.userId);
+    const suppliedUserIdentifier =
+      data.userId && !normalizedUserId ? String(data.userId).trim().slice(0, 320) : undefined;
+    const actorEmail =
+      data.actorEmail ?? normalizeEmailCandidate(suppliedUserIdentifier) ?? undefined;
+    const metadata = suppliedUserIdentifier
+      ? { ...(data.metadata ?? {}), supplied_user_identifier: suppliedUserIdentifier }
+      : data.metadata;
+
     const record = {
       eventType: data.eventType,
-      userId: data.userId,
+      userId: normalizedUserId,
       action: data.action,
       severity: data.severity || "info",
-      actorEmail: data.actorEmail,
+      actorEmail,
       resourceType: data.resourceType,
       resourceId: data.resourceId,
-      metadata: data.metadata,
+      metadata,
       ipAddress: data.ip,
       userAgent: data.userAgent,
       provider: data.provider,
