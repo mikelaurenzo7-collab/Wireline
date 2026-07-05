@@ -69,4 +69,16 @@ describe("video presenter integration", () => {
     const resolve = source("src/lib/video-presenter/resolve-agent-presenter.ts");
     expect(resolve).toContain("chosenAvatarId");
   });
+
+  it("bridges PSTN call audio from Vapi listenUrl into LiveAvatar lip-sync", () => {
+    const schema = source("src/db/schema.ts");
+    expect(schema).toContain('listenUrl: text("listen_url")');
+    const vapi = source("src/routes/vapi/index.ts");
+    expect(vapi).toContain("listenUrl");
+    const bridge = source("src/components/AgentPresencePstnBridge.tsx");
+    expect(bridge).toContain("feedPcmDelta");
+    expect(bridge).toContain("/api/supervisor/stream");
+    const supervisor = source("src/services/supervisor-websocket-service.ts");
+    expect(supervisor).toContain("isAllowedVapiListenUrl");
+  });
 });

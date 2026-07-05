@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Download } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import AgentFace from "./AgentFace";
+import LiveFloorPresence, { type LiveSignalPresence } from "./LiveFloorPresence";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 
 /**
@@ -131,6 +132,39 @@ export default function CallLogsClaude() {
   })();
   const activeTab = params;
   const setActiveTab = setParams;
+  const [presenceSignals, setPresenceSignals] = useState<LiveSignalPresence[]>([]);
+
+  const agentNameForId = useCallback(
+    (agentId: string) => {
+      const match = calls.find((call) => call.agent_id === agentId);
+      return match?.agent_name || "Agent";
+    },
+    [calls],
+  );
+
+  useEffect(() => {
+    if (activeTab !== "floor") return;
+    let cancelled = false;
+
+    const loadPresence = () => {
+      void authFetch("/api/Assistants/presence")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((body: { signals?: LiveSignalPresence[] } | null) => {
+          if (cancelled) return;
+          setPresenceSignals(Array.isArray(body?.signals) ? body!.signals! : []);
+        })
+        .catch(() => {
+          if (!cancelled) setPresenceSignals([]);
+        });
+    };
+
+    loadPresence();
+    const intervalId = window.setInterval(loadPresence, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -256,13 +290,16 @@ export default function CallLogsClaude() {
           </div>
         ) : null}
         {!error && activeTab === "floor" ? (
-          <FloorTab
-            calls={
-              live.length > 0 ? live : today.length > 0 ? today.slice(0, 12) : calls.slice(0, 12)
-            }
-            loading={loading}
-            hasLive={live.length > 0}
-          />
+          <>
+            <LiveFloorPresence signals={presenceSignals} agentNameForId={agentNameForId} />
+            <FloorTab
+              calls={
+                live.length > 0 ? live : today.length > 0 ? today.slice(0, 12) : calls.slice(0, 12)
+              }
+              loading={loading}
+              hasLive={live.length > 0 || presenceSignals.length > 0}
+            />
+          </>
         ) : null}
         {!error && activeTab === "intel" ? <IntelTab items={intel} loading={loading} /> : null}
         {!error && activeTab === "triage" ? (

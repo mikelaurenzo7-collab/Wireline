@@ -9,6 +9,7 @@ import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 type PhoneNumberRecord = {
   id: string;
@@ -132,7 +133,7 @@ export default function PhoneSettings() {
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <section className="studio-card p-5 sm:p-6">
-            <p className="wl-overline">Routing</p>
+            <p className={WL_APP_CLASSES.wiredEyebrow}>Routing</p>
             {attachedAgent ? (
               <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
                 <p className="text-sm font-semibold text-foreground">{attachedAgent.name}</p>
@@ -158,7 +159,7 @@ export default function PhoneSettings() {
 
           <section className="studio-card p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
-              <p className="wl-overline">VIP contacts</p>
+              <p className={WL_APP_CLASSES.wiredEyebrow}>VIP contacts</p>
               <Button type="button" variant="secondary" size="sm" disabled>
                 <Plus size={14} aria-hidden="true" />
                 Add
@@ -171,7 +172,7 @@ export default function PhoneSettings() {
         </div>
 
         <section className="studio-card mt-5 flex flex-col items-center gap-3 p-5 sm:flex-row sm:justify-between sm:p-6">
-          <p className="wl-overline">Apps</p>
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Apps</p>
           <Button asChild variant="secondary" size="sm">
             <Link to="/settings/apps">View apps</Link>
           </Button>

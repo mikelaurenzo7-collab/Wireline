@@ -11,7 +11,7 @@ import * as schema from "../db/schema";
 import { eq, and, desc, ilike } from "drizzle-orm";
 import { isDncBlocked } from "./compliance";
 import { getErrorMessage } from "./server-utils";
-import { isSsrfUrl } from "./webhook-validators";
+import { isAllowedVapiControlUrl } from "./vapi-monitor-url";
 import {
   sanitizePhone,
   KNOWLEDGE_GAP_PREFIX,
@@ -689,17 +689,8 @@ export async function transferLiveCall(
   toNumber: string,
   content = "Transferring your call now — please hold.",
 ): Promise<{ ok: boolean; status: number; error?: string }> {
-  if (!controlUrl || isSsrfUrl(controlUrl)) {
+  if (!isAllowedVapiControlUrl(controlUrl)) {
     return { ok: false, status: 400, error: "Invalid control URL." };
-  }
-  let host: string;
-  try {
-    host = new URL(controlUrl).hostname;
-  } catch {
-    return { ok: false, status: 400, error: "Malformed control URL." };
-  }
-  if (host !== "vapi.ai" && !host.endsWith(".vapi.ai")) {
-    return { ok: false, status: 400, error: "Control URL host not allowed." };
   }
 
   try {

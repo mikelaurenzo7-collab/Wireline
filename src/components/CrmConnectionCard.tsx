@@ -7,6 +7,7 @@ import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
 import { BRAND } from "../constants/brand-colors";
@@ -322,7 +323,7 @@ export default function CrmConnectionCard() {
     <div className="space-y-4">
       <div className="rounded-md wl-panel border border-border px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="wl-label text-brand">Connected stack</p>
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Connected stack</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="chip-brand">{connectedCount} live</span>

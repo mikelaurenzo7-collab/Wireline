@@ -8,6 +8,7 @@ import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 type SubscriptionState = {
   plan: string | null;
@@ -96,9 +97,7 @@ export default function BillingSettings() {
         <SettingsTabs />
 
         <section className="rounded-[16px] border border-primary/20 bg-primary p-6 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary-foreground/65">
-            Current plan
-          </p>
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Current plan</p>
           {loading ? (
             <div className="mt-4 space-y-3" aria-busy="true">
               <Skeleton shape="text" className="h-10 w-48 bg-primary-foreground/20" />
@@ -128,7 +127,7 @@ export default function BillingSettings() {
 
         <section className="grid gap-4 sm:grid-cols-2">
           <article className="studio-card flex min-h-[148px] flex-col p-5">
-            <p className="wl-overline">Conversation Balance</p>
+            <p className={WL_APP_CLASSES.wiredEyebrow}>Conversation Balance</p>
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -147,7 +146,7 @@ export default function BillingSettings() {
             )}
           </article>
           <article className="studio-card flex min-h-[148px] flex-col p-5">
-            <p className="wl-overline">Next invoice</p>
+            <p className={WL_APP_CLASSES.wiredEyebrow}>Next invoice</p>
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -170,7 +169,7 @@ export default function BillingSettings() {
         </section>
 
         <section className="studio-card p-5 sm:p-6">
-          <p className="wl-overline">Recent invoices</p>
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Recent invoices</p>
           {loading ? (
             <div className="mt-4 grid gap-2" aria-busy="true">
               {Array.from({ length: 2 }, (_, index) => (

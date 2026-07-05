@@ -281,8 +281,10 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
       ?.customer?.number;
     // Vapi live-call control URL — lets the Account Holder "take" the call from the
     // mobile app by transferring it (see POST /api/mobile/calls/:id/handoff).
-    const controlUrl = (payload.call as { monitor?: { controlUrl?: string } } | undefined)?.monitor
-      ?.controlUrl;
+    const monitor = (payload.call as { monitor?: { controlUrl?: string; listenUrl?: string } })
+      ?.monitor;
+    const controlUrl = monitor?.controlUrl;
+    const listenUrl = monitor?.listenUrl;
     if (callId) {
       if (["in-progress", "ringing", "queued"].includes(status || "")) {
         await drizzle
@@ -294,12 +296,16 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
             customerNumber: customerNumber || "Unknown",
             status: status,
             controlUrl: controlUrl || null,
+            listenUrl: listenUrl || null,
             startedAt: new Date(),
           })
           .onConflictDoUpdate({
             target: schema.signalPresence.id,
-            // Only overwrite controlUrl when Vapi actually sent one this event.
-            set: controlUrl ? { status, controlUrl } : { status },
+            set: {
+              status,
+              ...(controlUrl ? { controlUrl } : {}),
+              ...(listenUrl ? { listenUrl } : {}),
+            },
           });
         if (agent?.user_id) touchNavCounts(agent.user_id);
 

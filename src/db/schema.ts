@@ -1301,6 +1301,8 @@ export const signalPresence = pgTable(
     // webhook. Lets the Account Holder transfer/take an in-progress call from the
     // mobile app without raw Twilio access. NULL until Vapi reports it.
     controlUrl: text("control_url"),
+    // Vapi monitor.listenUrl — live PCM for in-call presenter lip-sync.
+    listenUrl: text("listen_url"),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
   },
   () => ({

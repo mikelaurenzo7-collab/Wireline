@@ -12,6 +12,7 @@ import { log, drizzle } from "../lib/server-context";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { parseCookieHeader, SESSION_COOKIE_NAME, isProductionRuntime } from "../lib/session-cookie";
+import { isAllowedVapiListenUrl } from "../lib/vapi-monitor-url";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -92,23 +93,74 @@ export function initSupervisorWebSocketServer(server: any) {
 
     log.info("Supervisor WebSocket connected", { callId, mode, userId });
 
-    const verifyCallOwnership = async (): Promise<boolean> => {
+    const verifyCallAccess = async (): Promise<{
+      ok: boolean;
+      listenUrl: string | null;
+    }> => {
+      const [presence] = await drizzle
+        .select({
+          userId: schema.signalPresence.userId,
+          listenUrl: schema.signalPresence.listenUrl,
+        })
+        .from(schema.signalPresence)
+        .where(eq(schema.signalPresence.id, callId))
+        .limit(1);
+      if (presence && presence.userId === userId) {
+        return { ok: true, listenUrl: presence.listenUrl };
+      }
+
       const [callRow] = await drizzle
         .select({ userId: schema.callLogs.userId })
         .from(schema.callLogs)
         .where(eq(schema.callLogs.vapiCallId, callId))
         .limit(1);
-      return !!callRow && callRow.userId === userId;
+      return {
+        ok: !!callRow && callRow.userId === userId,
+        listenUrl: null,
+      };
     };
 
     if (mode === "listen") {
       try {
-        if (!(await verifyCallOwnership())) {
+        const access = await verifyCallAccess();
+        if (!access.ok) {
           ws.close(4004, "Call not found");
           return;
         }
 
-        // Generate and stream simulated audio chunks
+        if (access.listenUrl && isAllowedVapiListenUrl(access.listenUrl)) {
+          const upstream = new WebSocket(access.listenUrl);
+          let upstreamOpen = false;
+
+          upstream.on("open", () => {
+            upstreamOpen = true;
+            log.info("Vapi listen relay connected", { callId, userId });
+          });
+
+          upstream.on("message", (data, isBinary) => {
+            if (ws.readyState === WebSocket.OPEN && isBinary) {
+              ws.send(data);
+            }
+          });
+
+          upstream.on("close", () => {
+            if (ws.readyState === WebSocket.OPEN) ws.close(1000, "Upstream closed");
+          });
+
+          upstream.on("error", (err: Error) => {
+            log.warn("Vapi listen relay upstream error", { callId, error: err.message });
+            if (ws.readyState === WebSocket.OPEN) ws.close(1011, "Upstream error");
+          });
+
+          ws.on("close", () => {
+            if (upstreamOpen) upstream.close();
+            log.info("Supervisor stream socket closed (listen relay)", { callId });
+          });
+
+          return;
+        }
+
+        // Fallback: simulated audio when listenUrl is not yet available (dev / legacy).
         let sampleIndex = 0;
         const sampleRate = 8000;
         const intervalMs = 100;
@@ -148,8 +200,8 @@ export function initSupervisorWebSocketServer(server: any) {
         ws.close(5000, "Internal Server Error");
       }
     } else if (mode === "whisper") {
-      const whisperAllowed = await verifyCallOwnership();
-      if (!whisperAllowed) {
+      const whisperAccess = await verifyCallAccess();
+      if (!whisperAccess.ok) {
         ws.close(4004, "Call not found");
         return;
       }

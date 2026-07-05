@@ -9,6 +9,7 @@ import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 type InviteRole = "admin" | "member" | "viewer";
 
@@ -138,7 +139,7 @@ export default function TeamSettings() {
 
         <section className="studio-card p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <p className="wl-overline">Members</p>
+            <p className={WL_APP_CLASSES.wiredEyebrow}>Members</p>
             <Button
               type="button"
               size="sm"
