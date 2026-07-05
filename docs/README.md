@@ -28,7 +28,7 @@ Wireline's durable documentation follows the active product model. The customer-
 - User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `presenter`, and `live video add-on`.
 - Customer-facing video-presenter surfaces must not mention vendor names such as HeyGen or LiveAvatar.
 - Wireline Command is the browser surface name; do not restore retired extension names.
-- The design system is Wireline Letterpress / Wireline Clear System. Product chrome uses forest or patina action, warm paper/dark canvas, ink text, copper wire accent, and restrained status colors.
+- The design system is Wireline Letterpress / Wireline Clear System, on the Aurora palette. Product chrome uses electric-violet action, a cool obsidian (dark) or cool near-white (light) canvas, ink text, a platinum-silver wire accent, and restrained status colors.
 
 ## Canonical system references
 
