@@ -1,76 +1,76 @@
 {
   "$schema": "https://design-tokens.github.io/community-group/format/",
-  "$description": "Wireline dark design tokens. Luminous patina-green action and copper signal on warm ink (near-black with a warm cast), so the copper Wire glows. Source for web, browser, and native outputs.",
+  "$description": "Wireline dark design tokens. Luminous electric-violet action and platinum-silver signal on true near-black (a cool, neutral obsidian), so the silver Wire glows against deep violet light. Source for web, browser, and native outputs.",
   "color": {
     "canvas": {
-      "default": { "$type": "color", "$value": "#15130F" },
-      "deeper": { "$type": "color", "$value": "#0F0D0A" },
-      "warmer": { "$type": "color", "$value": "#1A1612" }
+      "default": { "$type": "color", "$value": "#0A0A0E" },
+      "deeper": { "$type": "color", "$value": "#050508" },
+      "warmer": { "$type": "color", "$value": "#101018" }
     },
     "surface": {
-      "default": { "$type": "color", "$value": "#1E1B16" },
-      "subtle": { "$type": "color", "$value": "#1A1712" },
-      "raised": { "$type": "color", "$value": "#2A241B" },
-      "container": { "$type": "color", "$value": "#242019" },
-      "strong": { "$type": "color", "$value": "#2F2A22" },
-      "recessed": { "$type": "color", "$value": "#0E0C09" }
+      "default": { "$type": "color", "$value": "#141319" },
+      "subtle": { "$type": "color", "$value": "#100F15" },
+      "raised": { "$type": "color", "$value": "#201E29" },
+      "container": { "$type": "color", "$value": "#18161E" },
+      "strong": { "$type": "color", "$value": "#262330" },
+      "recessed": { "$type": "color", "$value": "#08070B" }
     },
     "text": {
-      "primary": { "$type": "color", "$value": "#F4F2EC" },
-      "secondary": { "$type": "color", "$value": "#B8B3A8" },
-      "tertiary": { "$type": "color", "$value": "#8B867B" },
-      "onAction": { "$type": "color", "$value": "#12100C" }
+      "primary": { "$type": "color", "$value": "#F5F4F8" },
+      "secondary": { "$type": "color", "$value": "#B6B1C6" },
+      "tertiary": { "$type": "color", "$value": "#8B87A0" },
+      "onAction": { "$type": "color", "$value": "#0E0B16" }
     },
     "action": {
       "primary": {
-        "default": { "$type": "color", "$value": "#5BA98A" },
-        "pressed": { "$type": "color", "$value": "#4B9276" },
-        "hover": { "$type": "color", "$value": "#6CB89A" },
-        "container": { "$type": "color", "$value": "#18271F" },
-        "containerStrong": { "$type": "color", "$value": "#213529" }
+        "default": { "$type": "color", "$value": "#A78BFA" },
+        "pressed": { "$type": "color", "$value": "#8B5CF6" },
+        "hover": { "$type": "color", "$value": "#C4B5FD" },
+        "container": { "$type": "color", "$value": "#1E1730" },
+        "containerStrong": { "$type": "color", "$value": "#2E2350" }
       },
       "secondary": {
-        "default": { "$type": "color", "$value": "#D4823F" },
-        "pressed": { "$type": "color", "$value": "#BC6C30" },
-        "hover": { "$type": "color", "$value": "#E19452" },
-        "container": { "$type": "color", "$value": "#271811" },
-        "containerStrong": { "$type": "color", "$value": "#3A2218" }
+        "default": { "$type": "color", "$value": "#C7CCD6" },
+        "pressed": { "$type": "color", "$value": "#A9AFBC" },
+        "hover": { "$type": "color", "$value": "#DEE1E8" },
+        "container": { "$type": "color", "$value": "#1C1D22" },
+        "containerStrong": { "$type": "color", "$value": "#2B2C33" }
       }
     },
     "border": {
-      "default": { "$type": "color", "$value": "#322D25" },
-      "strong": { "$type": "color", "$value": "#48423A" },
-      "soft": { "$type": "color", "$value": "#26221C" }
+      "default": { "$type": "color", "$value": "#262430" },
+      "strong": { "$type": "color", "$value": "#3A3745" },
+      "soft": { "$type": "color", "$value": "#1C1A22" }
     },
     "focus": {
-      "default": { "$type": "color", "$value": "#5BA98A" },
-      "wire": { "$type": "color", "$value": "#D4823F" }
+      "default": { "$type": "color", "$value": "#A78BFA" },
+      "wire": { "$type": "color", "$value": "#C7CCD6" }
     },
     "overlay": {
-      "scrim": { "$type": "color", "$value": "rgba(8, 7, 5, 0.66)" },
-      "vignette": { "$type": "color", "$value": "rgba(15, 13, 10, 0.32)" }
+      "scrim": { "$type": "color", "$value": "rgba(4, 4, 7, 0.7)" },
+      "vignette": { "$type": "color", "$value": "rgba(8, 7, 12, 0.34)" }
     },
     "status": {
-      "success": { "$type": "color", "$value": "#54B78F" },
-      "warning": { "$type": "color", "$value": "#D0A755" },
-      "error": { "$type": "color", "$value": "#DE7373" },
-      "info": { "$type": "color", "$value": "#8E97A7" },
-      "neutral": { "$type": "color", "$value": "#9B9A93" }
+      "success": { "$type": "color", "$value": "#4ADE9A" },
+      "warning": { "$type": "color", "$value": "#E8B85C" },
+      "error": { "$type": "color", "$value": "#EF7B92" },
+      "info": { "$type": "color", "$value": "#93A0C7" },
+      "neutral": { "$type": "color", "$value": "#A29DB0" }
     },
     "feedback": {
-      "success": { "surface": { "$type": "color", "$value": "#152019" }, "border": { "$type": "color", "$value": "#2E4736" } },
-      "warning": { "surface": { "$type": "color", "$value": "#221C10" }, "border": { "$type": "color", "$value": "#4B3F1E" } },
-      "error": { "surface": { "$type": "color", "$value": "#251515" }, "border": { "$type": "color", "$value": "#4C2A2A" } },
-      "info": { "surface": { "$type": "color", "$value": "#181A1F" }, "border": { "$type": "color", "$value": "#343B45" } },
-      "neutral": { "surface": { "$type": "color", "$value": "#1C1915" }, "border": { "$type": "color", "$value": "#36312A" } }
+      "success": { "surface": { "$type": "color", "$value": "#12211A" }, "border": { "$type": "color", "$value": "#2B4A3A" } },
+      "warning": { "surface": { "$type": "color", "$value": "#251E12" }, "border": { "$type": "color", "$value": "#4C3C1E" } },
+      "error": { "surface": { "$type": "color", "$value": "#271620" }, "border": { "$type": "color", "$value": "#4C2836" } },
+      "info": { "surface": { "$type": "color", "$value": "#171928" }, "border": { "$type": "color", "$value": "#33364E" } },
+      "neutral": { "surface": { "$type": "color", "$value": "#18161F" }, "border": { "$type": "color", "$value": "#302D3B" } }
     },
     "glow": {
-      "primary": { "$type": "color", "$value": "rgba(91, 169, 138, 0.22)" },
-      "primarySoft": { "$type": "color", "$value": "rgba(91, 169, 138, 0.10)" },
-      "wire": { "$type": "color", "$value": "rgba(212, 130, 63, 0.20)" },
-      "wireSoft": { "$type": "color", "$value": "rgba(212, 130, 63, 0.08)" }
+      "primary": { "$type": "color", "$value": "rgba(167, 139, 250, 0.22)" },
+      "primarySoft": { "$type": "color", "$value": "rgba(167, 139, 250, 0.10)" },
+      "wire": { "$type": "color", "$value": "rgba(199, 204, 214, 0.20)" },
+      "wireSoft": { "$type": "color", "$value": "rgba(199, 204, 214, 0.08)" }
     },
-    "pressHighlight": { "$type": "color", "$value": "rgba(255, 250, 240, 0.045)" }
+    "pressHighlight": { "$type": "color", "$value": "rgba(255, 255, 255, 0.05)" }
   },
   "space": {
     "025": { "$type": "dimension", "$value": "2px" },
@@ -102,10 +102,10 @@
     "md": { "$type": "shadow", "$value": "0 14px 34px -26px rgba(0, 0, 0, 0.66)" },
     "lg": { "$type": "shadow", "$value": "0 28px 70px -44px rgba(0, 0, 0, 0.72)" },
     "raised": { "$type": "shadow", "$value": "0 2px 8px -3px rgba(0, 0, 0, 0.5)" },
-    "inset": { "$type": "shadow", "$value": "inset 0 1px 0 rgba(255, 248, 232, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.4)" },
-    "insetRaised": { "$type": "shadow", "$value": "inset 0 1px 0 rgba(255, 248, 232, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.5)" },
-    "wirelineRing": { "$type": "shadow", "$value": "0 0 0 1px rgba(91, 169, 138, 0.18), 0 8px 30px -12px rgba(91, 169, 138, 0.20)" },
-    "wireGlow": { "$type": "shadow", "$value": "0 0 0 1px rgba(212, 130, 63, 0.22), 0 8px 30px -12px rgba(212, 130, 63, 0.28)" }
+    "inset": { "$type": "shadow", "$value": "inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.4)" },
+    "insetRaised": { "$type": "shadow", "$value": "inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.5)" },
+    "wirelineRing": { "$type": "shadow", "$value": "0 0 0 1px rgba(167, 139, 250, 0.18), 0 8px 30px -12px rgba(167, 139, 250, 0.20)" },
+    "wireGlow": { "$type": "shadow", "$value": "0 0 0 1px rgba(199, 204, 214, 0.22), 0 8px 30px -12px rgba(199, 204, 214, 0.28)" }
   },
   "layout": {
     "contentMax": { "$type": "dimension", "$value": "1152px" },
