@@ -2,6 +2,15 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Wireline is dark-by-default: ThemeProvider (src/contexts/ThemeContext.tsx)
+ * only ever toggles a `.light` class on <html> for the light/system-resolved-
+ * light theme; there is no `.dark` class and dark is simply the absence of
+ * `.light`. Without this override, Tailwind's `dark:` variant defaults to
+ * `@media (prefers-color-scheme: dark)`, which tracks the OS/browser setting
+ * instead of the theme the user actually picked in-app. Registering it here
+ * makes every existing `dark:*` utility track the real resolved theme. */
+@custom-variant dark (&:where(:not(.light *)));
+
 /* Register the legacy brand/ink/paper and status color names as Tailwind
  * utilities so `text-brand`, `bg-brand`, `border-ink`, `text-paper`,
  * `text-on-brand`, `bg-destructive`, `text-success`, `bg-surface`, etc.
