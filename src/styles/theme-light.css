@@ -1,81 +1,84 @@
-/* Wireline Letterpress — warm paper appearance (optional light mode).
- * Default tokens in tokens.generated.css are warm ink (dark). Apply `.light`
- * on `html` to swap semantic colors for marketing-friendly paper surfaces. */
+/* Wireline Letterpress — Aurora light appearance (optional light mode).
+ * Default tokens in tokens.generated.css are the dark Aurora canvas. Apply
+ * `.light` on `html` to swap semantic colors for a cool, near-white surface
+ * that keeps the same violet/silver identity as dark mode, inverted for
+ * contrast: a deeper, more saturated violet carries the action color so
+ * white text still holds AA contrast on a light background. */
 
 :root.light {
   color-scheme: light;
 
-  --wireline-color-canvas-default: #f6f1e8;
-  --wireline-color-canvas-deeper: #e8e1d5;
-  --wireline-color-canvas-warmer: #faf5ed;
-  --wireline-color-surface-default: #fffdf8;
-  --wireline-color-surface-subtle: #f3ede3;
-  --wireline-color-surface-container: #ebe4d8;
-  --wireline-color-surface-strong: #e2d9cb;
+  --wireline-color-canvas-default: #f6f5fa;
+  --wireline-color-canvas-deeper: #eae8f2;
+  --wireline-color-canvas-warmer: #fbfafd;
+  --wireline-color-surface-default: #ffffff;
+  --wireline-color-surface-subtle: #f1eff7;
+  --wireline-color-surface-container: #e9e6f1;
+  --wireline-color-surface-strong: #dedaea;
   --wireline-color-surface-raised: #ffffff;
-  --wireline-color-surface-recessed: #e8e2d6;
+  --wireline-color-surface-recessed: #eceaf3;
 
-  --wireline-color-text-primary: #1a1712;
-  --wireline-color-text-secondary: #5c564d;
-  --wireline-color-text-tertiary: #8b867b;
-  --wireline-color-text-onAction: #f4f2ec;
+  --wireline-color-text-primary: #171426;
+  --wireline-color-text-secondary: #5b5770;
+  --wireline-color-text-tertiary: #8b87a0;
+  --wireline-color-text-onAction: #ffffff;
 
-  --wireline-color-action-primary-default: #2b5548;
-  --wireline-color-action-primary-pressed: #234539;
-  --wireline-color-action-primary-hover: #3a6e5e;
-  --wireline-color-action-primary-container: #e3efe8;
-  --wireline-color-action-primary-containerStrong: #cbdcd2;
+  --wireline-color-action-primary-default: #6d28d9;
+  --wireline-color-action-primary-pressed: #5b21b6;
+  --wireline-color-action-primary-hover: #7c3aed;
+  --wireline-color-action-primary-container: #ede7fb;
+  --wireline-color-action-primary-containerStrong: #dcd0f7;
 
-  --wireline-color-action-secondary-default: #c4713b;
-  --wireline-color-action-secondary-pressed: #a85f32;
-  --wireline-color-action-secondary-hover: #d6894f;
-  --wireline-color-action-secondary-container: #f6e8dc;
-  --wireline-color-action-secondary-containerStrong: #eed9c4;
+  --wireline-color-action-secondary-default: #6b7280;
+  --wireline-color-action-secondary-pressed: #4b5563;
+  --wireline-color-action-secondary-hover: #808895;
+  --wireline-color-action-secondary-container: #eef0f3;
+  --wireline-color-action-secondary-containerStrong: #dfe3e8;
 
-  --wireline-color-border-default: #ddd5c8;
-  --wireline-color-border-soft: #e8e2d6;
-  --wireline-color-border-strong: #c9bfb0;
+  --wireline-color-border-default: #e1deea;
+  --wireline-color-border-soft: #eceaf3;
+  --wireline-color-border-strong: #c9c4d9;
 
-  --wireline-color-focus-default: #2b5548;
-  --wireline-color-focus-wire: #c4713b;
+  --wireline-color-focus-default: #6d28d9;
+  --wireline-color-focus-wire: #6b7280;
 
-  --wireline-color-overlay-scrim: rgba(26, 23, 18, 0.42);
-  --wireline-color-overlay-vignette: rgba(26, 23, 18, 0.12);
+  --wireline-color-overlay-scrim: rgba(23, 20, 38, 0.42);
+  --wireline-color-overlay-vignette: rgba(23, 20, 38, 0.12);
 
-  --wireline-color-status-success: #2b5548;
-  --wireline-color-status-warning: #9a7b2f;
-  --wireline-color-status-error: #b44a4a;
-  --wireline-color-status-info: #4a6278;
-  --wireline-color-status-neutral: #7a766e;
+  --wireline-color-status-success: #1f9d63;
+  --wireline-color-status-warning: #b4790a;
+  --wireline-color-status-error: #c23b4d;
+  --wireline-color-status-info: #46577a;
+  --wireline-color-status-neutral: #6b6678;
 
-  --wireline-color-feedback-success-surface: #e8f2ec;
-  --wireline-color-feedback-success-border: #b8d4c4;
-  --wireline-color-feedback-warning-surface: #f8f0dd;
-  --wireline-color-feedback-warning-border: #e2cfa0;
-  --wireline-color-feedback-error-surface: #f9e8e8;
-  --wireline-color-feedback-error-border: #e0b4b4;
-  --wireline-color-feedback-info-surface: #e8edf2;
-  --wireline-color-feedback-info-border: #b8c5d4;
-  --wireline-color-feedback-neutral-surface: #f0ede6;
-  --wireline-color-feedback-neutral-border: #d9d3c8;
+  --wireline-color-feedback-success-surface: #e7f5ec;
+  --wireline-color-feedback-success-border: #b7dec5;
+  --wireline-color-feedback-warning-surface: #fbf0dc;
+  --wireline-color-feedback-warning-border: #e7ce9c;
+  --wireline-color-feedback-error-surface: #fbe7ea;
+  --wireline-color-feedback-error-border: #e7b7c0;
+  --wireline-color-feedback-info-surface: #e9ebf3;
+  --wireline-color-feedback-info-border: #c3c9dc;
+  --wireline-color-feedback-neutral-surface: #efedf4;
+  --wireline-color-feedback-neutral-border: #d8d4e3;
 
-  --wireline-color-glow-primary: rgba(43, 85, 72, 0.12);
-  --wireline-color-glow-primarySoft: rgba(43, 85, 72, 0.06);
-  --wireline-color-glow-wire: rgba(196, 113, 59, 0.10);
-  --wireline-color-glow-wireSoft: rgba(196, 113, 59, 0.04);
+  --wireline-color-glow-primary: rgba(109, 40, 217, 0.12);
+  --wireline-color-glow-primarySoft: rgba(109, 40, 217, 0.06);
+  --wireline-color-glow-wire: rgba(107, 114, 128, 0.10);
+  --wireline-color-glow-wireSoft: rgba(107, 114, 128, 0.04);
 
-  --wireline-color-pressHighlight: rgba(26, 23, 18, 0.04);
+  --wireline-color-pressHighlight: rgba(23, 20, 38, 0.04);
 
-  --wireline-elevation-sm: 0 1px 2px rgba(26, 23, 18, 0.06);
-  --wireline-elevation-xs: 0 1px 1px rgba(26, 23, 18, 0.04);
-  --wireline-elevation-card: 0 8px 24px -16px rgba(26, 23, 18, 0.12);
-  --wireline-elevation-md: 0 14px 34px -26px rgba(26, 23, 18, 0.14);
-  --wireline-elevation-lg: 0 28px 70px -44px rgba(26, 23, 18, 0.18);
-  --wireline-elevation-raised: 0 2px 8px -3px rgba(26, 23, 18, 0.08);
-  --wireline-elevation-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(26, 23, 18, 0.06);
-  --wireline-elevation-insetRaised: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(26, 23, 18, 0.08);
-  --wireline-elevation-wirelineRing: 0 0 0 1px rgba(43, 85, 72, 0.12), 0 8px 30px -12px rgba(43, 85, 72, 0.10);
-  --wireline-elevation-wireGlow: 0 0 0 1px rgba(196, 113, 59, 0.14), 0 8px 30px -12px rgba(196, 113, 59, 0.12);
+  --wireline-elevation-sm: 0 1px 2px rgba(23, 20, 38, 0.06);
+  --wireline-elevation-xs: 0 1px 1px rgba(23, 20, 38, 0.04);
+  --wireline-elevation-card: 0 8px 24px -16px rgba(23, 20, 38, 0.12);
+  --wireline-elevation-md: 0 14px 34px -26px rgba(23, 20, 38, 0.14);
+  --wireline-elevation-lg: 0 28px 70px -44px rgba(23, 20, 38, 0.18);
+  --wireline-elevation-raised: 0 2px 8px -3px rgba(23, 20, 38, 0.08);
+  --wireline-elevation-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(23, 20, 38, 0.06);
+  --wireline-elevation-insetRaised: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(23, 20, 38, 0.08);
+  --wireline-elevation-wirelineRing: 0 0 0 1px rgba(109, 40, 217, 0.12), 0 8px 30px -12px rgba(109, 40, 217, 0.10);
+  --wireline-elevation-wireGlow: 0 0 0 1px rgba(107, 114, 128, 0.14), 0 8px 30px -12px rgba(107, 114, 128, 0.12);
 
   --background: var(--wireline-color-canvas-default);
   --foreground: var(--wireline-color-text-primary);
