@@ -60,7 +60,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     label: "Agents",
     description: "Manage personal and business agents.",
     icon: Bot,
-    href: "/agents",
+    href: "/overview",
     category: "Workspace",
   },
   {
@@ -76,7 +76,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     label: "Training",
     description: "Manage the facts, context, sources, and policies agents use.",
     icon: Database,
-    href: "/training",
+    href: "/knowledge",
     category: "Workspace",
   },
   {
@@ -84,7 +84,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     label: "Wire",
     description: "Choose the accounts, integrations, and actions an agent can use.",
     icon: Cable,
-    href: "/actions",
+    href: "/connections",
     category: "Workspace",
   },
   {

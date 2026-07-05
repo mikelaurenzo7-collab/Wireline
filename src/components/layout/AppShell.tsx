@@ -1,7 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppRoutes from "../../routes/AppRoutes";
-import ActivationCheckpoint from "../ActivationCheckpoint";
 import TransitionSurface from "../TransitionSurface";
 import TrialGateModal from "../TrialGateModal";
 import { CommandBar } from "../organisms";
@@ -31,7 +30,6 @@ export default function AppShell() {
     <>
       <AppRoutes />
       <CommandBar />
-      <ActivationCheckpoint />
       <TrialGateModal />
     </>
   );

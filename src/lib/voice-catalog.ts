@@ -1,4 +1,4 @@
-export type VoiceProvider = "xai" | "11labs" | "vapi";
+export type VoiceProvider = "xai" | "11labs" | "vapi" | "presenter";
 
 export type VoiceOption = {
   id: string;
@@ -53,7 +53,13 @@ export function normalizeApiVoices(raw: unknown): VoiceOption[] {
       if (!id) return null;
       const providerRaw = voice.provider?.toLowerCase();
       const provider: VoiceProvider =
-        providerRaw === "xai" ? "xai" : providerRaw === "vapi" ? "vapi" : "11labs";
+        providerRaw === "xai"
+          ? "xai"
+          : providerRaw === "vapi"
+            ? "vapi"
+            : providerRaw === "presenter"
+              ? "presenter"
+              : "11labs";
       return {
         id,
         name: voice.name || id,
@@ -69,6 +75,7 @@ export type VoiceCatalogProviders = {
   elevenlabs: boolean;
   wirelineLive: boolean;
   vapi: boolean;
+  presenter: boolean;
 };
 
 export function resolveVoiceLabel(voiceId: string | null | undefined): string {
@@ -83,12 +90,14 @@ export function resolveVoiceLabel(voiceId: string | null | undefined): string {
 export function providerLabel(provider: string | null | undefined): string {
   if (provider === "xai") return "Wireline Live";
   if (provider === "vapi") return "Wireline Phone";
+  if (provider === "presenter") return "Presenter voice";
   return "Wireline Voice";
 }
 
 export function voiceFamilyLabel(provider: VoiceProvider): string {
   if (provider === "xai") return "Wireline Live";
   if (provider === "vapi") return "Wireline Phone";
+  if (provider === "presenter") return "Presenter voice";
   return "Wireline Voice";
 }
 
@@ -100,23 +109,30 @@ export function voiceRoutingHint(provider: VoiceProvider): string | null {
   if (provider === "vapi") {
     return "Optimized for live phone calls on your Vapi line.";
   }
+  if (provider === "presenter") {
+    return "Matched for on-screen presenter lip-sync. For PSTN phone calls, also pick Wireline Phone or Voice library.";
+  }
   return null;
 }
 
-/** Play a short voice sample in the browser. */
-export function playVoicePreview(voice: VoiceOption, onEnd: () => void): void {
-  if (voice.provider === "xai" || voice.provider === "vapi") {
-    const sampleName = voice.name.split(" — ")[0] || voice.name;
-    const utterance = new SpeechSynthesisUtterance(
-      `Hello, this is ${sampleName}. How can I help you today?`,
-    );
-    utterance.onend = onEnd;
-    utterance.onerror = onEnd;
-    window.speechSynthesis?.cancel?.();
-    window.speechSynthesis?.speak(utterance);
-    return;
+/** Resolve the server preview URL for any voice option. */
+export function voicePreviewUrl(voice: VoiceOption): string {
+  if (voice.preview_url) return voice.preview_url;
+  if (voice.provider === "xai") {
+    return `/api/voices/curated/preview?provider=xai&voiceId=${encodeURIComponent(voice.id)}`;
   }
-  const url = voice.preview_url || `/api/voices/${encodeURIComponent(voice.id)}/preview`;
+  if (voice.provider === "vapi") {
+    return `/api/voices/curated/preview?provider=vapi&voiceId=${encodeURIComponent(voice.id)}`;
+  }
+  if (voice.provider === "presenter") {
+    return `/api/voices/presenter/${encodeURIComponent(voice.id)}/preview`;
+  }
+  return `/api/voices/${encodeURIComponent(voice.id)}/preview`;
+}
+
+/** Play a short voice sample in the browser via server-hosted audio. */
+export function playVoicePreview(voice: VoiceOption, onEnd: () => void): void {
+  const url = voicePreviewUrl(voice);
   const audio = new Audio(url);
   audio.onended = onEnd;
   audio.onerror = onEnd;

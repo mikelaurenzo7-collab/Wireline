@@ -20,11 +20,13 @@ import type {
 import AgentPresenceAvatarPicker from "./AgentPresenceAvatarPicker";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
 import LiveVideoPresenter, { type LiveVideoPresenterHandle } from "./LiveVideoPresenter";
+import { mp3Base64ChunksToPcmBinary } from "../lib/voice/decode-browser-audio";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 
 type PresenterSampleResponse = {
   eventId: string;
   chunks: string[];
+  format?: "pcm24" | "mp3";
   sampleText?: string;
   error?: string;
   code?: string;
@@ -148,7 +150,12 @@ export default function AgentPresenceLivePreview({
       if (!response.ok) {
         throw new Error(payload.error || "Voice sample could not be generated.");
       }
-      await livePresenterRef.current?.streamSample(payload.chunks, payload.eventId);
+      if (payload.format === "mp3") {
+        const pcmBinary = await mp3Base64ChunksToPcmBinary(payload.chunks);
+        await livePresenterRef.current?.streamSampleBinary(pcmBinary, payload.eventId);
+      } else {
+        await livePresenterRef.current?.streamSample(payload.chunks, payload.eventId);
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Voice sample could not be played.");
     } finally {

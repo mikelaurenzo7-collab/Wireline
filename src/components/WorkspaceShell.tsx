@@ -1,6 +1,16 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BookOpen, Bot, Home, Inbox, LayoutGrid, Phone, Settings, Workflow } from "lucide-react";
+import {
+  BookOpen,
+  Bot,
+  BarChart3,
+  Home,
+  Inbox,
+  LayoutGrid,
+  Phone,
+  Settings,
+  Workflow,
+} from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import SkipToContentLink from "./layout/SkipToContentLink";
@@ -21,6 +31,7 @@ const WORKSPACE_NAV: NavItem[] = [
 
 const OPERATE_NAV: NavItem[] = [
   { href: "/call-logs", label: "Call Logs", icon: Phone },
+  { href: "/insights", label: "Insights", icon: BarChart3 },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/apps", label: "Apps", icon: LayoutGrid },
   { href: "/settings", label: "Settings", icon: Settings },

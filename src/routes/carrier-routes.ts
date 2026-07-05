@@ -21,6 +21,7 @@ import {
   vapiAccountHeadroom,
   POPULAR_AREA_CODES,
 } from "../lib/vapi-phone-numbers";
+import { enforceLiveWorkActivation } from "../lib/trial-gate";
 
 interface VapiPhoneNumber {
   id: string;
@@ -94,6 +95,7 @@ router.post(
 router.post(
   "/api/phone-numbers/provision",
   authenticateUser,
+  enforceLiveWorkActivation,
   rateLimiters.phoneNumberRateLimiter,
   validateBody(phoneNumberProvisionSchema),
   async (req: AuthenticatedRequest, res: Response) => {
@@ -279,6 +281,7 @@ router.get(
 router.post(
   "/api/phone-numbers/search",
   authenticateUser,
+  enforceLiveWorkActivation,
   rateLimiters.phoneNumberRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -328,6 +331,7 @@ router.post(
 router.post(
   "/api/phone-numbers/claim",
   authenticateUser,
+  enforceLiveWorkActivation,
   rateLimiters.phoneNumberRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {

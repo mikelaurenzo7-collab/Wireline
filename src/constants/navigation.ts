@@ -10,14 +10,14 @@ export type NavItem = {
 };
 
 const STUDIO_NAV: NavItem[] = [
-  { label: "Agents", path: "/agents", icon: Sparkles, matches: ["/agents"] },
+  { label: "Overview", path: "/overview", icon: Sparkles, matches: ["/overview", "/agents"] },
   {
     label: "Training",
-    path: "/training",
+    path: "/knowledge",
     icon: GraduationCap,
-    matches: ["/training", "/knowledge"],
+    matches: ["/knowledge", "/training"],
   },
-  { label: "Wire", path: "/actions", icon: Cable, matches: ["/actions", "/connections"] },
+  { label: "Wire", path: "/connections", icon: Cable, matches: ["/connections", "/actions"] },
   { label: "Settings", path: "/settings", icon: Settings2, matches: ["/settings", "/admin"] },
 ];
 
@@ -35,22 +35,22 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 }
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/agents": "Agents",
-  "/training": "Training",
-  "/actions": "Wire",
+  "/overview": "Overview",
+  "/knowledge": "Training",
+  "/connections": "Wire",
   "/settings": "Settings",
 };
 
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
-  A: "/agents",
-  T: "/training",
-  W: "/actions",
+  A: "/overview",
+  T: "/knowledge",
+  W: "/connections",
   S: "/settings",
 };
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
-  "/agents": "g a",
-  "/training": "g t",
-  "/actions": "g w",
+  "/overview": "g a",
+  "/knowledge": "g t",
+  "/connections": "g w",
   "/settings": "g s",
 };

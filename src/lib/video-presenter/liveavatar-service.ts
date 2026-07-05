@@ -174,13 +174,19 @@ export async function createLiveAvatarLiteSession(input: {
 }
 
 export async function listPublicAvatars(): Promise<
-  Array<{ id: string; name: string; previewImageUrl?: string | null }>
+  Array<{
+    id: string;
+    name: string;
+    previewImageUrl?: string | null;
+    defaultVoiceId?: string | null;
+  }>
 > {
   const data = await liveAvatarFetch<{
     results?: Array<{
       id?: string;
       name?: string;
       preview_url?: string | null;
+      default_voice_id?: string | null;
     }>;
   }>("/v1/avatars/public?page_size=50", { method: "GET", apiKey: true });
 
@@ -190,6 +196,7 @@ export async function listPublicAvatars(): Promise<
       id: String(row.id || ""),
       name: String(row.name || "Avatar"),
       previewImageUrl: row.preview_url ?? null,
+      defaultVoiceId: row.default_voice_id?.trim() || null,
     }))
     .filter((row) => row.id);
 }

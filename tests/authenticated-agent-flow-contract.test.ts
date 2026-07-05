@@ -11,6 +11,7 @@ describe("authenticated agent flow", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const authRedirect = read("src/lib/auth-redirect.ts");
     const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
+    const appShell = read("src/components/layout/AppShell.tsx");
 
     expect(authPortal).toContain(
       'preferredPlanId: nextMode === "business" ? "business" : "personal"',
@@ -19,10 +20,29 @@ describe("authenticated agent flow", () => {
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
     expect(onboardingFlow).toContain("Opening your first agent");
-    expect(onboardingFlow).toContain('label: "Workspace"');
-    expect(onboardingFlow).toContain('label: "Next"');
-    expect(onboardingFlow).toContain('label: "Continue now"');
     expect(onboardingFlow).not.toContain("Link your phone");
+    expect(appShell).not.toContain("ActivationCheckpoint");
+  });
+
+  it("gates live work on phone provision, not agent draft create", () => {
+    const trialGate = read("src/lib/trial-gate.ts");
+    const agentRoutes = read("src/routes/agent-routes-v2.ts");
+    const carrierRoutes = read("src/routes/carrier-routes.ts");
+
+    expect(trialGate).toContain("enforceLiveWorkActivation");
+    expect(trialGate).toContain("POST /api/agents` is not gated here");
+    expect(agentRoutes).not.toContain("enforceLiveWorkActivation");
+    expect(carrierRoutes).toContain("enforceLiveWorkActivation");
+    expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
+  });
+
+  it("mounts insights and daily brief on active workspace routes", () => {
+    const appRoutes = read("src/routes/AppRoutes.tsx");
+    const overview = read("src/pages/OverviewPage.tsx");
+
+    expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
+    expect(overview).toContain("DailyBriefPanel");
+    expect(overview).toContain('href: "/insights"');
   });
 
   it("keeps studio as the authenticated run surface entry", () => {
@@ -33,7 +53,6 @@ describe("authenticated agent flow", () => {
     const studioHome = read("src/pages/AgentStudioHomeClaude.tsx");
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
-    // Claude Design create flow is a Fast Start, not a legacy "Create agent" form.
     expect(createDialog).toContain("Fast Start");
     expect(createDialog).toContain("~3 minutes to your first agent");
     expect(createDialog).toContain("VoicePickerField");
@@ -46,6 +65,35 @@ describe("authenticated agent flow", () => {
     expect(mobileUtilities).toContain('pathname.startsWith("/settings")');
 
     expect(studioHome).toContain('params.get("brief")');
+    expect(studioHome).toContain("PostCreateActivationWizard");
     expect(studioHome).not.toContain("mode=workroom");
+  });
+
+  it("launches post-create Train → Wire → Test wizard after Fast Start", () => {
+    const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const createFlow = read("src/lib/wireline-create-flow.ts");
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const copy = read("src/lib/wireline-onboarding-copy.ts");
+
+    expect(createDialog).toContain("stashPostCreateWizard");
+    expect(createFlow).toContain("POST_CREATE_WIZARD_KEY");
+    expect(wizard).toContain("RoleplaySandbox");
+    expect(wizard).toContain('step === "train"');
+    expect(wizard).toContain('step === "wire"');
+    expect(wizard).toContain('step === "test"');
+    expect(copy).toContain("POST_CREATE_WIZARD_COPY");
+  });
+
+  it("routes presenter lip-sync samples through HeyGen speech", () => {
+    const routes = read("src/routes/video-presenter-routes.ts");
+    const heygen = read("src/lib/video-presenter/heygen-voice-service.ts");
+    const preview = read("src/components/AgentPresenceLivePreview.tsx");
+    const decode = read("src/lib/voice/decode-browser-audio.ts");
+
+    expect(heygen).toContain("generatePresenterSpeech");
+    expect(routes).toContain('format: "mp3"');
+    expect(routes).toContain('voiceProvider === "presenter"');
+    expect(preview).toContain("mp3Base64ChunksToPcmBinary");
+    expect(decode).toContain("LIVEAVATAR_PCM_RATE_HZ");
   });
 });

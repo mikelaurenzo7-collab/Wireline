@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowRight, Bot, Cable, Clock3, Phone, Sparkles } from "lucide-react";
+import { useEffect, useState, lazy, Suspense } from "react";
+import { ArrowRight, BarChart3, Bot, Cable, Clock3, Phone, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Button, Skeleton } from "../components/atoms";
@@ -13,10 +13,13 @@ import { formatAgentRoleLabel } from "../lib/product-copy";
 import { authFetch } from "../lib/api";
 import type { CallLog } from "../types/api";
 
+const DailyBriefPanel = lazy(() => import("../components/DailyBrief"));
+
 const QUICK_ACTIONS = [
   { href: "/studio", icon: Sparkles, title: "Open Studio" },
   { href: "/templates", icon: Bot, title: "Browse templates" },
   { href: "/call-logs", icon: Phone, title: "Review calls" },
+  { href: "/insights", icon: BarChart3, title: "Open insights" },
   { href: "/connections", icon: Cable, title: "Add connection" },
 ] as const;
 
@@ -376,6 +379,10 @@ export default function OverviewPage() {
             ))}
           </div>
         </section>
+
+        <Suspense fallback={null}>
+          <DailyBriefPanel />
+        </Suspense>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_1fr]" aria-label="Agents and recent calls">
           <article className="studio-card p-5 sm:p-6">

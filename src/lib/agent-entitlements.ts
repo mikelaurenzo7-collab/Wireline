@@ -27,8 +27,7 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
     };
   }
 
-  // Look up plan limits from the plan catalog. If they have no subscription plan,
-  // we default to the "personal" (Solo Agent) plan which permits 1 agent.
+  // Look up plan limits from the plan catalog. No subscription defaults to Personal (1 agent).
   const plan = planById(input.planId);
   const planAgents = plan ? plan.max_agents : 1;
   const purchasedExtras = input.extraAgents ?? 0;

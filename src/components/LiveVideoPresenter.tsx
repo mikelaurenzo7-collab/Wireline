@@ -25,6 +25,7 @@ function decodeBase64PcmChunks(chunks: string[]): string {
 
 export type LiveVideoPresenterHandle = {
   streamSample: (chunks: string[], eventId: string) => Promise<void>;
+  streamSampleBinary: (pcmBinary: string, eventId: string) => Promise<void>;
   feedPcmDelta: (base64Pcm: string) => void;
   flushPcm: () => void;
   isControlConnected: () => boolean;
@@ -140,6 +141,16 @@ const LiveVideoPresenter = forwardRef<
         throw new Error("Voice sample did not include playable audio.");
       }
       session.repeatAudio(pcm);
+    },
+    async streamSampleBinary(pcmBinary: string, _eventId: string) {
+      const session = sessionRef.current;
+      if (!session || session.state !== SessionState.CONNECTED) {
+        throw new Error("Live presenter is not connected yet.");
+      }
+      if (!pcmBinary) {
+        throw new Error("Voice sample did not include playable audio.");
+      }
+      session.repeatAudio(pcmBinary);
     },
     feedPcmDelta(base64Pcm: string) {
       if (!base64Pcm) return;

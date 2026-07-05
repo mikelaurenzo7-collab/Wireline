@@ -204,18 +204,7 @@
   min-height: 0;
 }
 
-/* The public hero now carries one purposeful product proof card. */
-.marketing-hero {
-  background: linear-gradient(
-    180deg,
-    color-mix(
-      in srgb,
-      var(--wireline-color-action-primary-container) 4%,
-      var(--wireline-color-canvas-default)
-    ),
-    var(--wireline-color-canvas-default) 72%
-  );
-}
+/* .marketing-hero background — wireline-signature.css (ledger + copper wash). */
 
 .marketing-operating-model {
   overflow: hidden;

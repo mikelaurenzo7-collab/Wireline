@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 186  
-**Protected:** 149  
-**Public (allowlisted):** 37  
+**Routes scanned:** 189  
+**Protected:** 150  
+**Public (allowlisted):** 39  
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -49,6 +49,8 @@
 | `POST /api/twilio-webhook/voicemail-complete` | Twilio signature validation + rate limit |
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /api/voices/:id/preview` | Premade voice previews only; cloned/tenant voices are on the authed route |
+| `GET /api/voices/curated/preview` | Public Wireline Live / Phone timbre samples; ElevenLabs-backed, no tenant data |
+| `GET /api/voices/presenter/:id/preview` | Public HeyGen presenter voice preview redirect; no tenant data |
 | `POST /api/webhooks/elevenlabs` | ElevenLabs HMAC-SHA256 signature |
 
 ## Full Matrix
@@ -225,12 +227,15 @@
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/sample` | inline | — | — | Protected |
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/session` | inline | — | — | Protected |
 | video-presenter-routes.ts | GET | `/api/video-presenter/avatars` | inline | — | — | Protected |
+| video-presenter-routes.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
 | video-presenter-routes.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
 | video-presenter-routes.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |
 | voices-routes.ts | GET | `/api/voices/:id/preview` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | POST | `/api/voices/clone` | inline | — | — | Protected |
+| voices-routes.ts | GET | `/api/voices/curated/preview` | — | — | yes | Public (allowlisted) |
+| voices-routes.ts | GET | `/api/voices/presenter/:id/preview` | — | — | yes | Public (allowlisted) |
 | webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks` | inline | yes | — | Protected |
 | webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | yes | — | Protected |

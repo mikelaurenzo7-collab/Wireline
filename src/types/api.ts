@@ -207,6 +207,7 @@ export interface TriageData {
 /* ── Nav badge counts ────────────────────────────────────────────── */
 
 export interface NavCounts {
+  "/call-logs": number;
   "/ops": number;
   "/inbox": number;
   "/outbound": number;

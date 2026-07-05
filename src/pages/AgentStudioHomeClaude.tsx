@@ -11,7 +11,9 @@ import {
   clearBrowserCommandHash,
   readBrowserCommandContext,
 } from "../lib/browser-command-context";
-import { consumeCreateWarning } from "../lib/wireline-create-flow";
+import { consumeCreateWarning, consumePostCreateWizard } from "../lib/wireline-create-flow";
+import type { PostCreateWizardPayload } from "../lib/wireline-create-flow";
+import PostCreateActivationWizard from "../components/onboarding/PostCreateActivationWizard";
 
 export default function AgentStudioHomeClaude() {
   const [params] = useSearchParams();
@@ -21,6 +23,7 @@ export default function AgentStudioHomeClaude() {
   const [browserContext] = useState(readBrowserCommandContext);
   const browserBrief = browserCommandBrief(browserContext);
   const [showCreate, setShowCreate] = useState(false);
+  const [postCreateWizard, setPostCreateWizard] = useState<PostCreateWizardPayload | null>(null);
 
   useEffect(() => {
     if (!loading && params.get("create") === "1") setShowCreate(true);
@@ -42,6 +45,8 @@ export default function AgentStudioHomeClaude() {
         duration: 12_000,
       });
     }
+    const wizard = consumePostCreateWizard();
+    if (wizard) setPostCreateWizard(wizard);
   }, [toast]);
 
   return (
@@ -60,6 +65,12 @@ export default function AgentStudioHomeClaude() {
         initialBrief={browserBrief || params.get("brief") || ""}
         business={wantsBusinessAgent}
       />
+      {postCreateWizard ? (
+        <PostCreateActivationWizard
+          payload={postCreateWizard}
+          onClose={() => setPostCreateWizard(null)}
+        />
+      ) : null}
     </>
   );
 }

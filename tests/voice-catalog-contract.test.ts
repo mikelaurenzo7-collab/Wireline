@@ -10,9 +10,31 @@ describe("voice catalog", () => {
     expect(catalog).toContain("WIRELINE_LIVE_VOICES");
     expect(catalog).toContain("VAPI_CURATED_VOICES");
     expect(catalog).toContain("playVoicePreview");
+    expect(catalog).toContain('"presenter"');
+    expect(catalog).toContain("voicePreviewUrl");
+    expect(catalog).not.toContain("speechSynthesis");
     expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain("/api/voices");
+    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
+      "Presenter voice (video)",
+    );
     expect(read("src/routes/voices-routes.ts")).toContain("providers:");
+    expect(read("src/routes/voices-routes.ts")).toContain("presenterVoices");
+    expect(read("src/routes/voices-routes.ts")).toContain("/api/voices/curated/preview");
     expect(read("src/lib/voice/pcm-resample.ts")).toContain("VAPI_LISTEN_PCM_RATE_HZ");
     expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("consumeCreateWarning");
+  });
+
+  it("wires HeyGen presenter voices and matched-face resolution", () => {
+    expect(read("src/lib/video-presenter/heygen-voice-service.ts")).toContain(
+      "listPresenterVoices",
+    );
+    expect(read("src/lib/video-presenter/heygen-voice-service.ts")).toContain(
+      "resolveAvatarDefaultVoice",
+    );
+    expect(read("src/routes/video-presenter-routes.ts")).toContain("matched-voice");
+    expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
+      "matched-voice",
+    );
+    expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
   });
 });

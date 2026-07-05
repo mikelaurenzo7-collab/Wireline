@@ -24,12 +24,15 @@ export type VoicePickerValue =
 type VoicePickerFieldProps = {
   value: VoicePickerValue;
   onChange: (next: VoicePickerValue) => void;
+  /** When a catalog presenter face exposes a default voice, surface a one-tap apply CTA. */
+  suggestedPresenterVoice?: { voiceId: string; name: string } | null;
   className?: string;
 };
 
 export default function VoicePickerField({
   value,
   onChange,
+  suggestedPresenterVoice = null,
   className = "",
 }: VoicePickerFieldProps) {
   const [libraryVoices, setLibraryVoices] = useState<VoiceOption[]>([]);
@@ -37,7 +40,9 @@ export default function VoicePickerField({
     elevenlabs: false,
     wirelineLive: false,
     vapi: false,
+    presenter: false,
   });
+  const [presenterVoices, setPresenterVoices] = useState<VoiceOption[]>([]);
   const [catalogReady, setCatalogReady] = useState(true);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -51,12 +56,14 @@ export default function VoicePickerField({
       .then((data) => {
         if (cancelled) return;
         setLibraryVoices(normalizeApiVoices(data?.voices));
+        setPresenterVoices(normalizeApiVoices(data?.presenterVoices));
         setCatalogReady(data?.configured !== false);
         if (data?.providers) {
           setProviders({
             elevenlabs: Boolean(data.providers.elevenlabs),
             wirelineLive: Boolean(data.providers.wirelineLive),
             vapi: Boolean(data.providers.vapi),
+            presenter: Boolean(data.providers.presenter),
           });
         }
       })
@@ -89,8 +96,16 @@ export default function VoicePickerField({
   const filteredPhone = filterVoices(phoneVoices);
   const filteredLibrary = filterVoices(libraryVoices);
 
+  const filteredPresenter = filterVoices(presenterVoices);
+
   const selectedId = value.mode === "custom" ? value.voiceId : null;
+  const selectedProvider = value.mode === "custom" ? value.provider : null;
   const routingHint = value.mode === "custom" ? voiceRoutingHint(value.provider) : null;
+  const suggestedApplied =
+    suggestedPresenterVoice &&
+    value.mode === "custom" &&
+    value.provider === "presenter" &&
+    value.voiceId === suggestedPresenterVoice.voiceId;
 
   function voicePlayKey(voice: VoiceOption): string {
     return `${voice.provider}:${voice.id}`;
@@ -103,7 +118,6 @@ export default function VoicePickerField({
   function togglePreview(voice: VoiceOption) {
     const key = voicePlayKey(voice);
     if (playingId === key) {
-      window.speechSynthesis?.cancel?.();
       setPlayingId(null);
       return;
     }
@@ -119,6 +133,7 @@ export default function VoicePickerField({
           {providers.wirelineLive ? <Badge variant="outline">Live</Badge> : null}
           {providers.elevenlabs ? <Badge variant="outline">Voice library</Badge> : null}
           {providers.vapi ? <Badge variant="outline">Phone line</Badge> : null}
+          {providers.presenter ? <Badge variant="outline">Presenter</Badge> : null}
         </div>
       </div>
 
@@ -148,6 +163,27 @@ export default function VoicePickerField({
         </p>
       </button>
 
+      {suggestedPresenterVoice && !suggestedApplied ? (
+        <button
+          type="button"
+          onClick={() =>
+            onChange({
+              mode: "custom",
+              voiceId: suggestedPresenterVoice.voiceId,
+              provider: "presenter",
+            })
+          }
+          className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-left transition-colors hover:border-primary/45"
+        >
+          <p className="text-sm font-semibold text-foreground">
+            Use presenter&apos;s matched voice
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {suggestedPresenterVoice.name} — lip-sync aligned with your catalog face pick.
+          </p>
+        </button>
+      ) : null}
+
       {loading ? (
         <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -161,6 +197,7 @@ export default function VoicePickerField({
               icon={<Sparkles size={13} className="text-primary" aria-hidden="true" />}
               voices={filteredLive}
               selectedId={selectedId}
+              selectedProvider={selectedProvider}
               playingId={playingId}
               onSelect={selectVoice}
               onPreview={togglePreview}
@@ -173,6 +210,20 @@ export default function VoicePickerField({
               title="Wireline Phone"
               voices={filteredPhone}
               selectedId={selectedId}
+              selectedProvider={selectedProvider}
+              playingId={playingId}
+              onSelect={selectVoice}
+              onPreview={togglePreview}
+              voicePlayKey={voicePlayKey}
+            />
+          ) : null}
+
+          {filteredPresenter.length ? (
+            <VoiceGroup
+              title="Presenter voice (video)"
+              voices={filteredPresenter}
+              selectedId={selectedId}
+              selectedProvider={selectedProvider}
               playingId={playingId}
               onSelect={selectVoice}
               onPreview={togglePreview}
@@ -184,6 +235,7 @@ export default function VoicePickerField({
             title="Wireline Voice library"
             voices={filteredLibrary}
             selectedId={selectedId}
+            selectedProvider={selectedProvider}
             playingId={playingId}
             onSelect={selectVoice}
             onPreview={togglePreview}
@@ -201,7 +253,7 @@ export default function VoicePickerField({
       {value.mode === "custom" ? (
         <div className="grid gap-1">
           <p className="text-xs text-muted-foreground">
-            Selected · {resolveSelectionLabel(value, libraryVoices)} ·{" "}
+            Selected · {resolveSelectionLabel(value, libraryVoices, presenterVoices)} ·{" "}
             {providerLabel(value.provider)}
           </p>
           {routingHint ? (
@@ -218,9 +270,14 @@ export default function VoicePickerField({
 function resolveSelectionLabel(
   value: Extract<VoicePickerValue, { mode: "custom" }>,
   library: VoiceOption[],
+  presenter: VoiceOption[],
 ): string {
-  const pools = [...WIRELINE_LIVE_VOICES, ...VAPI_CURATED_VOICES, ...library];
-  return pools.find((voice) => voice.id === value.voiceId)?.name ?? value.voiceId;
+  const pools = [...WIRELINE_LIVE_VOICES, ...VAPI_CURATED_VOICES, ...presenter, ...library];
+  return (
+    pools.find((voice) => voice.id === value.voiceId && voice.provider === value.provider)?.name ??
+    pools.find((voice) => voice.id === value.voiceId)?.name ??
+    value.voiceId
+  );
 }
 
 function VoiceGroup({
@@ -228,6 +285,7 @@ function VoiceGroup({
   icon,
   voices,
   selectedId,
+  selectedProvider,
   playingId,
   onSelect,
   onPreview,
@@ -239,6 +297,7 @@ function VoiceGroup({
   icon?: ReactNode;
   voices: readonly VoiceOption[];
   selectedId: string | null;
+  selectedProvider: VoiceProvider | null;
   playingId: string | null;
   onSelect: (voice: VoiceOption) => void;
   onPreview: (voice: VoiceOption) => void;
@@ -257,7 +316,7 @@ function VoiceGroup({
       <div className="grid gap-2">
         {voices.length ? (
           voices.map((voice) => {
-            const selected = selectedId === voice.id;
+            const selected = selectedId === voice.id && selectedProvider === voice.provider;
             const playing = playingId === voicePlayKey(voice);
             return (
               <div

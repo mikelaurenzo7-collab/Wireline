@@ -88,6 +88,14 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Premade voice previews only; cloned/tenant voices are on the authed route",
   },
   {
+    pattern: /^\/api\/voices\/curated\/preview$/,
+    reason: "Public Wireline Live / Phone timbre samples; ElevenLabs-backed, no tenant data",
+  },
+  {
+    pattern: /^\/api\/voices\/presenter\/:id\/preview$/,
+    reason: "Public HeyGen presenter voice preview redirect; no tenant data",
+  },
+  {
     pattern: /^\/(?:api\/)?voice\/metrics$/,
     reason: "Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write",
   },

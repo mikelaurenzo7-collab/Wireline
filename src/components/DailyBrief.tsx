@@ -316,7 +316,7 @@ export default function DailyBrief() {
           )}
 
           <Link
-            to="/ops?tab=triage"
+            to="/call-logs"
             className="app-micro-cta inline-flex items-center gap-2 px-5 py-3 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 transition-all text-brand"
           >
             Open Triage Inbox <ChevronRight className="w-3.5 h-3.5" />

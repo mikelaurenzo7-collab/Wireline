@@ -34,6 +34,15 @@ import {
   elevenLabsConfigured,
   type ElevenLabsVoice,
 } from "../lib/elevenlabs-client";
+import {
+  generateCuratedVoicePreview,
+  isCuratedPreviewProvider,
+} from "../lib/voice/voice-preview-service";
+import {
+  getPresenterVoice,
+  listPresenterVoices,
+  presenterVoicesConfigured,
+} from "../lib/video-presenter/heygen-voice-service";
 
 const router = Router();
 
@@ -111,19 +120,77 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
         })),
     ];
 
+    const presenterVoices = presenterVoicesConfigured()
+      ? await listPresenterVoices().catch((e) => {
+          log.warn("HeyGen listPresenterVoices failed — skipping presenter catalog", {
+            error: getErrorMessage(e),
+          });
+          return [];
+        })
+      : [];
+
     res.json({
       voices: merged,
+      presenterVoices: presenterVoices.map((voice) => ({
+        voice_id: voice.id,
+        name: voice.name,
+        provider: "presenter",
+        preview_url: voice.preview_audio_url ?? null,
+        language: voice.language ?? null,
+        gender: voice.gender ?? null,
+      })),
       configured: elevenLabsConfigured(),
       providers: {
         elevenlabs: elevenLabsConfigured(),
         wirelineLive: Boolean(process.env.XAI_API_KEY?.trim()),
         vapi: Boolean(process.env.VAPI_PRIVATE_KEY?.trim()),
+        presenter: presenterVoicesConfigured(),
       },
     });
   } catch (e) {
     if (e instanceof AppError) throw e;
     log.error("/api/voices GET failed", { error: getErrorMessage(e) });
     throw AppError.fromHttpStatus(500, "Failed to list voices");
+  }
+});
+
+// GET /api/voices/curated/preview — Wireline Live + Phone timbre samples (MP3 stream).
+router.get("/api/voices/curated/preview", async (req: Request, res: Response) => {
+  try {
+    const provider = String(req.query.provider || "")
+      .trim()
+      .toLowerCase();
+    const voiceId = String(req.query.voiceId || req.query.id || "").trim();
+    if (!isCuratedPreviewProvider(provider) || !voiceId) {
+      throw AppError.fromHttpStatus(400, "provider and voiceId are required.");
+    }
+    const audio = await generateCuratedVoicePreview(provider, voiceId);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send(Buffer.from(audio));
+  } catch (e) {
+    if (e instanceof AppError) throw e;
+    log.error("curated voice preview failed", { error: getErrorMessage(e) });
+    throw AppError.fromHttpStatus(500, "Preview failed");
+  }
+});
+
+// GET /api/voices/presenter/:id/preview — HeyGen presenter voice sample (redirect).
+router.get("/api/voices/presenter/:id/preview", async (req: Request, res: Response) => {
+  try {
+    if (!presenterVoicesConfigured()) {
+      throw AppError.fromHttpStatus(503, "Presenter voice previews unavailable.");
+    }
+    const voice = await getPresenterVoice(req.params.id);
+    const previewUrl = voice?.preview_audio_url?.trim();
+    if (!previewUrl) {
+      throw AppError.fromHttpStatus(404, "No preview available for this presenter voice.");
+    }
+    res.redirect(302, previewUrl);
+  } catch (e) {
+    if (e instanceof AppError) throw e;
+    log.error("presenter voice preview failed", { error: getErrorMessage(e) });
+    throw AppError.fromHttpStatus(500, "Preview failed");
   }
 });
 

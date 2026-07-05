@@ -1,15 +1,4 @@
-/**
- * Post-signup onboarding — first-session Fast Start orchestration.
- * North star: time to first useful production call (tenant activation).
- */
-
 import { authFetch } from "./api";
-import {
-  fetchAssistantSetupProgress,
-  fetchActivationStatus,
-  isAssistantSetupComplete,
-  type AssistantSetupProgress,
-} from "./fleet-setup-progress";
 import type { TenantActivationStatus } from "./tenant-activation";
 
 export const FRESH_SIGNUP_SESSION_KEY = "wireline_fresh_signup";
@@ -157,69 +146,4 @@ export function markActivationCelebrated(): void {
   } catch {
     /* ignore */
   }
-}
-
-export type PostSignupEligibility = {
-  shouldShow: boolean;
-  reason: "fresh_signup" | "incomplete_fleet" | null;
-  progress: AssistantSetupProgress | null;
-  planId: string | null;
-  activated: boolean;
-};
-
-/** Whether to auto-open the welcome + Fast Start flow. */
-export async function evaluatePostSignupEligibility(): Promise<PostSignupEligibility> {
-  const [prefs, progress, planId, activation] = await Promise.all([
-    fetchUserPreferences(),
-    fetchAssistantSetupProgress().catch(() => null),
-    authFetch("/api/billing/status")
-      .then((r) => (r.ok ? r.json() : null))
-      .then(
-        (d) =>
-          (d?.subscription?.plan_id ||
-            d?.subscription?.plan ||
-            d?.signup_intent?.plan_id ||
-            null) as string | null,
-      )
-      .catch(() => null),
-    fetchActivationStatus(),
-  ]);
-
-  if (activation) {
-    if (!prefs?.onboarding_completed) {
-      await markOnboardingCompleted();
-      markOnboardingCelebrated();
-    }
-    clearFreshSignupSession();
-    return { shouldShow: false, reason: null, progress, planId, activated: true };
-  }
-
-  if (prefs?.onboarding_completed) {
-    clearFreshSignupSession();
-    return { shouldShow: false, reason: null, progress, planId, activated: false };
-  }
-
-  if (progress && isAssistantSetupComplete(progress)) {
-    clearFreshSignupSession();
-    return { shouldShow: false, reason: null, progress, planId, activated: false };
-  }
-
-  const isWhiteGlove = planId === "business" || planId === "enterprise";
-  if (isWhiteGlove) {
-    clearFreshSignupSession();
-    return { shouldShow: false, reason: null, progress, planId, activated: false };
-  }
-
-  const fresh = isFreshSignupSession();
-  const incomplete = progress ? progress.agents === 0 : true;
-
-  if (fresh) {
-    return { shouldShow: true, reason: "fresh_signup", progress, planId, activated: false };
-  }
-
-  if (!isPostSignupDismissed() && incomplete) {
-    return { shouldShow: true, reason: "incomplete_fleet", progress, planId, activated: false };
-  }
-
-  return { shouldShow: false, reason: null, progress, planId, activated: false };
 }

@@ -27,7 +27,6 @@
     "src/**/*.test.tsx",
     "src/**/__tests__/**",
     "src/components/director/**",
-    "src/components/layout/DirectorLayout.tsx",
     "src/lib/director-*.ts",
     "src/routes/director-routes.ts",
     "src/components/FastStartWizard.tsx",

@@ -46,7 +46,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "ACTIVATION_REQUIRED":
       return {
         title: "Activate live work",
-        body: "Your account is ready. Add Conversation Balance for Personal live work, or choose shared capacity when a team needs routing, numbers, approvals, and pooled operations.",
+        body: "Create and train stay free. Add Conversation Balance for personal live work, or choose Team or Business when shared routing and numbers matter.",
       };
     case "EMAIL_UNVERIFIED":
       return {

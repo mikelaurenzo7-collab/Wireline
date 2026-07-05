@@ -9,7 +9,8 @@ import CreateAgentCatalogFacePicker, {
 import VoicePickerField, { type VoicePickerValue } from "./create-agent/VoicePickerField";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
-import { stashCreateWarning } from "../lib/wireline-create-flow";
+import { stashCreateWarning, stashPostCreateWizard } from "../lib/wireline-create-flow";
+import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 const ROLE_TEMPLATES = [
@@ -57,6 +58,10 @@ export default function CreateAgentDialog({
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>(business ? "receptionist" : "scheduler");
   const [voice, setVoice] = useState<VoicePickerValue>({ mode: "auto" });
+  const [matchedPresenterVoice, setMatchedPresenterVoice] = useState<{
+    voiceId: string;
+    name: string;
+  } | null>(null);
   const [face, setFace] = useState<FacePickerValue>({ mode: "wireline" });
   const [personality, setPersonality] = useState<Personality>("Warm");
   const [brief, setBrief] = useState(initialBrief);
@@ -73,6 +78,7 @@ export default function CreateAgentDialog({
     setRole(nextPosture === "business" ? "receptionist" : "scheduler");
     setName("");
     setVoice({ mode: "auto" });
+    setMatchedPresenterVoice(null);
     setFace({ mode: "wireline" });
     setPersonality("Warm");
     setProvisionNumber(false);
@@ -189,6 +195,12 @@ export default function CreateAgentDialog({
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
       if (postCreateWarning) stashCreateWarning(postCreateWarning);
+      stashPostCreateWizard({
+        agentId: body.id,
+        agentName: finalName,
+        phoneProvisionRequested: provisionNumber,
+      });
+      setPostSignupFlowActive(true);
       navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });
       onClose();
     } catch {
@@ -337,7 +349,11 @@ export default function CreateAgentDialog({
           </label>
 
           <div className="mt-6 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5">
-            <VoicePickerField value={voice} onChange={setVoice} />
+            <VoicePickerField
+              value={voice}
+              onChange={setVoice}
+              suggestedPresenterVoice={matchedPresenterVoice}
+            />
           </div>
 
           <div className="mt-5 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5">
@@ -347,6 +363,7 @@ export default function CreateAgentDialog({
               isBusinessAgent={activePosture === "business"}
               value={face}
               onChange={setFace}
+              onMatchedVoiceChange={setMatchedPresenterVoice}
             />
           </div>
 

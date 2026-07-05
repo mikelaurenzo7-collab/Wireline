@@ -1,15 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
- * Subscription gate for routes that spend money or create deployable agents.
+ * Subscription gate for routes that spend money on live telephony.
  *
- * New accounts are created in `pending_activation`: they can safely inspect
- * Wireline, but they cannot create agents or place outbound calls until a plan
- * is selected. This matches the public paid-entry promise and prevents hidden
- * free usage.
+ * Create → Train stays free: `POST /api/agents` is not gated here. New accounts
+ * start in `pending_activation` until Conversation Balance top-up or a paid plan
+ * clears the row. While pending, wiring numbers and placing calls return 402.
  *
  * Legacy `trialing` tenants remain supported until their existing window ends.
- * We deliberately keep the exported function names and legacy status handling
- * for compatibility with existing users and migrations.
  */
 
 import type { Request, Response, NextFunction } from "express";
@@ -236,10 +233,10 @@ async function isEmailVerified(userId: string): Promise<boolean> {
 }
 
 /**
- * Block deployable agent creation until the account is verified and activated.
- * Legacy trial caps remain in place only for tenants already trialing.
+ * Block live-work spend (number wiring, outbound dial) until the account is
+ * verified and activated. Agent draft creation uses plan entitlements instead.
  */
-export async function enforceTrialAgentCap(req: Request, res: Response, next: NextFunction) {
+export async function enforceLiveWorkActivation(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any)?.user?.id as string | undefined;
   if (!userId) return next();
   if (isOwnerEmail((req as any)?.user?.email)) return next();
@@ -259,7 +256,7 @@ export async function enforceTrialAgentCap(req: Request, res: Response, next: Ne
     return trialBlock(
       res,
       "ACTIVATION_REQUIRED",
-      "Choose operating capacity before creating or deploying an agent.",
+      "Fund live work or choose shared capacity before wiring a number or placing calls.",
       {},
     );
   }
@@ -277,35 +274,11 @@ export async function enforceTrialAgentCap(req: Request, res: Response, next: Ne
     );
   }
 
-  if (t.status === "trialing") {
-    try {
-      const [countRow] = await drizzle
-        .select({ n: sql<number>`count(*)::int` })
-        .from(schema.agents)
-        .where(eq(schema.agents.userId, userId));
-      const current = countRow?.n ?? 0;
-      if (current >= TRIAL_MAX_AGENTS) {
-        return trialBlock(
-          res,
-          "TRIAL_LIMIT_HIT",
-          `Trial accounts are capped at ${TRIAL_MAX_AGENTS} agent. Upgrade to add more.`,
-          {
-            limit: TRIAL_MAX_AGENTS,
-            current,
-            days_left: t.daysLeft,
-          },
-        );
-      }
-    } catch (err: any) {
-      log.warn("enforceTrialAgentCap count failed — allowing", {
-        userId,
-        error: err?.message ?? String(err),
-      });
-    }
-  }
-
   next();
 }
+
+/** @deprecated Use enforceLiveWorkActivation — retained for external imports. */
+export const enforceTrialAgentCap = enforceLiveWorkActivation;
 
 /**
  * Block paid outbound dialing until the account is verified and activated.
@@ -331,7 +304,7 @@ export async function enforceTrialOutboundCap(req: Request, res: Response, next:
     return trialBlock(
       res,
       "ACTIVATION_REQUIRED",
-      "Choose operating capacity before placing a call.",
+      "Fund live work or choose shared capacity before placing a call.",
       {},
     );
   }

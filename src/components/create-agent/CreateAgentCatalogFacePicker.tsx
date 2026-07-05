@@ -10,6 +10,12 @@ type CatalogAvatar = {
   id: string;
   name: string;
   previewImageUrl?: string | null;
+  defaultVoiceId?: string | null;
+};
+
+export type MatchedPresenterVoice = {
+  voiceId: string;
+  name: string;
 };
 
 export type FacePickerValue = { mode: "wireline" } | { mode: "catalog"; avatarId: string };
@@ -20,6 +26,7 @@ type CreateAgentCatalogFacePickerProps = {
   isBusinessAgent: boolean;
   value: FacePickerValue;
   onChange: (next: FacePickerValue) => void;
+  onMatchedVoiceChange?: (voice: MatchedPresenterVoice | null) => void;
 };
 
 export default function CreateAgentCatalogFacePicker({
@@ -28,10 +35,13 @@ export default function CreateAgentCatalogFacePicker({
   isBusinessAgent,
   value,
   onChange,
+  onMatchedVoiceChange,
 }: CreateAgentCatalogFacePickerProps) {
   const [avatars, setAvatars] = useState<CatalogAvatar[]>([]);
   const [catalogReady, setCatalogReady] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [matchedVoice, setMatchedVoice] = useState<MatchedPresenterVoice | null>(null);
+  const [resolvingVoice, setResolvingVoice] = useState(false);
 
   const identity = buildAgentIdentityPreview({
     name: agentName,
@@ -71,6 +81,58 @@ export default function CreateAgentCatalogFacePicker({
     };
   }, [isBusinessAgent]);
 
+  useEffect(() => {
+    if (value.mode !== "catalog") {
+      setMatchedVoice(null);
+      onMatchedVoiceChange?.(null);
+      return;
+    }
+
+    let cancelled = false;
+    setResolvingVoice(true);
+    void authFetch(
+      `/api/video-presenter/avatars/${encodeURIComponent(value.avatarId)}/matched-voice`,
+    )
+      .then(async (response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+        if (payload?.matched && payload.voice?.voiceId) {
+          const next = {
+            voiceId: String(payload.voice.voiceId),
+            name: String(payload.voice.name || "Matched presenter voice"),
+          };
+          setMatchedVoice(next);
+          onMatchedVoiceChange?.(next);
+          return;
+        }
+        setMatchedVoice(null);
+        onMatchedVoiceChange?.(null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMatchedVoice(null);
+          onMatchedVoiceChange?.(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setResolvingVoice(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onMatchedVoiceChange, value]);
+
+  function selectCatalogFace(avatarId: string) {
+    onChange({ mode: "catalog", avatarId });
+  }
+
+  function selectWirelineFace() {
+    onChange({ mode: "wireline" });
+    setMatchedVoice(null);
+    onMatchedVoiceChange?.(null);
+  }
+
   return (
     <div className="grid gap-3">
       <p className={WL_APP_CLASSES.wiredEyebrow}>Agent face</p>
@@ -87,7 +149,7 @@ export default function CreateAgentCatalogFacePicker({
         </div>
         <button
           type="button"
-          onClick={() => onChange({ mode: "wireline" })}
+          onClick={selectWirelineFace}
           className={`ml-auto shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
             value.mode === "wireline"
               ? "border-primary bg-primary/10 text-primary"
@@ -108,45 +170,56 @@ export default function CreateAgentCatalogFacePicker({
           ) : null}
 
           {catalogReady && avatars.length ? (
-            <div className="grid max-h-[min(52vh,28rem)] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
-              {avatars.map((avatar) => {
-                const selected = value.mode === "catalog" && value.avatarId === avatar.id;
-                return (
-                  <button
-                    key={avatar.id}
-                    type="button"
-                    onClick={() => onChange({ mode: "catalog", avatarId: avatar.id })}
-                    className={`relative overflow-hidden rounded-xl border text-left transition-colors ${
-                      selected
-                        ? "border-primary ring-2 ring-primary/25"
-                        : "border-border hover:border-primary/35"
-                    }`}
-                    aria-pressed={selected}
-                  >
-                    {avatar.previewImageUrl ? (
-                      <img
-                        src={avatar.previewImageUrl}
-                        alt=""
-                        className="aspect-[3/4] w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="grid aspect-[3/4] place-items-center bg-muted text-[10px] text-muted-foreground">
+            <>
+              {value.mode === "catalog" && (resolvingVoice || matchedVoice) ? (
+                <p className="rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                  {resolvingVoice
+                    ? "Resolving matched presenter voice…"
+                    : matchedVoice
+                      ? `Matched voice: ${matchedVoice.name}. Apply it in the voice picker above for lip-sync.`
+                      : null}
+                </p>
+              ) : null}
+              <div className="grid max-h-[min(52vh,28rem)] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
+                {avatars.map((avatar) => {
+                  const selected = value.mode === "catalog" && value.avatarId === avatar.id;
+                  return (
+                    <button
+                      key={avatar.id}
+                      type="button"
+                      onClick={() => selectCatalogFace(avatar.id)}
+                      className={`relative overflow-hidden rounded-xl border text-left transition-colors ${
+                        selected
+                          ? "border-primary ring-2 ring-primary/25"
+                          : "border-border hover:border-primary/35"
+                      }`}
+                      aria-pressed={selected}
+                    >
+                      {avatar.previewImageUrl ? (
+                        <img
+                          src={avatar.previewImageUrl}
+                          alt=""
+                          className="aspect-[3/4] w-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="grid aspect-[3/4] place-items-center bg-muted text-[10px] text-muted-foreground">
+                          {avatar.name}
+                        </div>
+                      )}
+                      <span className="block truncate px-2 py-1.5 text-[10px] font-medium text-foreground">
                         {avatar.name}
-                      </div>
-                    )}
-                    <span className="block truncate px-2 py-1.5 text-[10px] font-medium text-foreground">
-                      {avatar.name}
-                    </span>
-                    {selected ? (
-                      <span className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
-                        <Check size={11} aria-hidden="true" />
                       </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
+                      {selected ? (
+                        <span className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                          <Check size={11} aria-hidden="true" />
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           ) : !loading ? (
             <p className="rounded-xl border border-dashed border-border px-3 py-4 text-xs text-muted-foreground">
               Catalog presenters load when live video keys are configured. Your Wireline face is

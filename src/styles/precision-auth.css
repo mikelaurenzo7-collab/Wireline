@@ -1,15 +1,17 @@
 /* Account entry surface — two-panel auth.
- * Left: deep console brand panel with a patina-green glow. Right: form. */
+ * Left: deep console brand panel with a copper paper wash. Right: clean form. */
 .wl-stitch-auth-shell {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100dvh;
+  background: var(--wireline-color-canvas-default);
 }
 
 /* ── Left brand panel ───────────────────────────────────────── */
 .wl-auth-brand-panel {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -21,17 +23,19 @@
   animation: fadeIn 0.5s ease-out both;
 }
 
+/* Copper paper wash — tucked in the brand panel corner so it never bleeds
+   across the center seam into the form column. */
 .wl-auth-brand-glow {
   position: absolute;
-  top: -100px;
-  right: -80px;
-  width: 320px;
-  height: 320px;
+  bottom: -18%;
+  left: -22%;
+  width: min(440px, 72%);
+  height: min(440px, 72%);
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent),
-    transparent 65%
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 16%, transparent),
+    transparent 68%
   );
   pointer-events: none;
 }
@@ -129,11 +133,9 @@
 
 /* ── Right form panel ───────────────────────────────────────── */
 .wl-auth-form-panel {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--wireline-color-action-primary-container) 3%, var(--wireline-color-canvas-default)),
-    var(--wireline-color-canvas-default) 34rem
-  );
+  position: relative;
+  isolation: isolate;
+  background: var(--wireline-color-canvas-default);
 }
 
 .wl-auth-mobile-mark {
@@ -189,4 +191,9 @@
   .wl-stitch-auth-card {
     padding: 1.25rem;
   }
+}
+
+/* MarketingChrome auth wrapper — same cream canvas as the native portal. */
+.auth-portal-canvas {
+  background: var(--wireline-color-canvas-default);
 }

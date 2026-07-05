@@ -90,7 +90,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
-              to="/agents"
+              to="/overview"
               className="shrink-0 flex items-center justify-center h-11 group"
               aria-label={`${branding.brand_name} Studio`}
             >

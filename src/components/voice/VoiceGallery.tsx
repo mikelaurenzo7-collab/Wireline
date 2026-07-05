@@ -33,6 +33,7 @@ export default function VoiceGallery({
   searchInputId,
 }: VoiceGalleryProps) {
   const [libraryVoices, setLibraryVoices] = useState<VoiceOption[]>([]);
+  const [presenterVoices, setPresenterVoices] = useState<VoiceOption[]>([]);
   const [catalogReady, setCatalogReady] = useState(true);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [loadingSelection, setLoadingSelection] = useState(true);
@@ -74,6 +75,7 @@ export default function VoiceGallery({
       .then((data) => {
         if (cancelled) return;
         setLibraryVoices(normalizeApiVoices(data?.voices));
+        setPresenterVoices(normalizeApiVoices(data?.presenterVoices));
         setCatalogReady(data?.configured !== false);
       })
       .catch(() => {
@@ -111,19 +113,31 @@ export default function VoiceGallery({
     [libraryVoices, voiceSearch],
   );
 
+  const filteredPresenter = useMemo(
+    () =>
+      presenterVoices.filter(
+        (voice) => !voiceSearch || voice.name.toLowerCase().includes(voiceSearch.toLowerCase()),
+      ),
+    [presenterVoices, voiceSearch],
+  );
+
+  function voiceKey(voice: VoiceOption): string {
+    return `${voice.provider}:${voice.id}`;
+  }
+
   function playVoice(voice: VoiceOption) {
-    if (playingVoiceId === voice.id) {
-      window.speechSynthesis?.cancel?.();
+    const key = voiceKey(voice);
+    if (playingVoiceId === key) {
       setPlayingVoiceId(null);
       return;
     }
-    setPlayingVoiceId(voice.id);
+    setPlayingVoiceId(key);
     playVoicePreview(voice, () => setPlayingVoiceId(null));
   }
 
   async function applyVoice(voice: VoiceOption) {
     if (!agentId) return;
-    setApplyingVoiceId(voice.id);
+    setApplyingVoiceId(voiceKey(voice));
     setError(null);
     setNotice(null);
     try {
@@ -223,9 +237,11 @@ export default function VoiceGallery({
             </div>
             <div className="grid gap-2">
               {filteredLive.map((voice) => {
-                const isSelected = selectedVoiceId === voice.id;
-                const isPlaying = playingVoiceId === voice.id;
-                const isApplying = applyingVoiceId === voice.id;
+                const isSelected =
+                  selectedVoiceId === voice.id &&
+                  (selectedProvider ?? voice.provider) === voice.provider;
+                const isPlaying = playingVoiceId === voiceKey(voice);
+                const isApplying = applyingVoiceId === voiceKey(voice);
                 return (
                   <div
                     key={voice.id}
@@ -273,9 +289,11 @@ export default function VoiceGallery({
             </div>
             <div className="mb-5 grid max-h-40 gap-2 overflow-y-auto pr-1">
               {filteredPhone.map((voice) => {
-                const isSelected = selectedVoiceId === voice.id;
-                const isPlaying = playingVoiceId === voice.id;
-                const isApplying = applyingVoiceId === voice.id;
+                const isSelected =
+                  selectedVoiceId === voice.id &&
+                  (selectedProvider ?? voice.provider) === voice.provider;
+                const isPlaying = playingVoiceId === voiceKey(voice);
+                const isApplying = applyingVoiceId === voiceKey(voice);
                 return (
                   <div
                     key={`phone-${voice.id}`}
@@ -313,6 +331,62 @@ export default function VoiceGallery({
               })}
             </div>
 
+            {filteredPresenter.length ? (
+              <>
+                <div className="mb-3 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Presenter voice (video)
+                  </p>
+                  <Badge variant="outline">Lip-sync</Badge>
+                </div>
+                <div className="mb-5 grid max-h-40 gap-2 overflow-y-auto pr-1">
+                  {filteredPresenter.map((voice) => {
+                    const isSelected =
+                      selectedVoiceId === voice.id &&
+                      (selectedProvider ?? voice.provider) === voice.provider;
+                    const isPlaying = playingVoiceId === voiceKey(voice);
+                    const isApplying = applyingVoiceId === voiceKey(voice);
+                    return (
+                      <div
+                        key={`presenter-${voice.id}`}
+                        className={`flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                          isSelected
+                            ? "border-primary/30 bg-primary/5"
+                            : "border-border bg-background"
+                        }`}
+                      >
+                        <div className="min-w-0 text-left">
+                          <p className="text-sm font-semibold text-foreground">{voice.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {voiceFamilyLabel(voice.provider)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => playVoice(voice)}
+                          >
+                            <Play size={12} aria-hidden="true" />
+                            {isPlaying ? "Stop" : "Preview"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={isApplying}
+                            onClick={() => void applyVoice(voice)}
+                          >
+                            {isApplying ? "Saving…" : isSelected ? "Selected" : "Use"}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
+
             <div className="mb-3 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 Wireline Voice library
@@ -337,8 +411,10 @@ export default function VoiceGallery({
                 </div>
               ) : filteredLibrary.length ? (
                 filteredLibrary.map((voice) => {
-                  const isSelected = selectedVoiceId === voice.id;
-                  const isApplying = applyingVoiceId === voice.id;
+                  const isSelected =
+                    selectedVoiceId === voice.id &&
+                    (selectedProvider ?? voice.provider) === voice.provider;
+                  const isApplying = applyingVoiceId === voiceKey(voice);
                   return (
                     <div
                       key={voice.id}

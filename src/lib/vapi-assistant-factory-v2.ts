@@ -16,6 +16,7 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
 } from "./ai-models";
+import { pickRotatedVoiceId } from "../data/voice-roster";
 
 export interface AssistantRequestPayload {
   message: { type: string; call?: any };
@@ -89,7 +90,12 @@ export async function buildVapiAssistant({
   const inboundVoice = configured.voiceIdInbound || configured.voiceId;
   const outboundVoice = configured.voiceIdOutbound || configured.voiceId;
   const voiceId = isOutbound ? outboundVoice : inboundVoice;
-  const voiceProvider = configured.voiceProvider || "11labs";
+  let voiceProvider = configured.voiceProvider || "11labs";
+  let effectiveVoiceId = voiceId;
+  if (voiceProvider === "presenter") {
+    voiceProvider = "11labs";
+    effectiveVoiceId = pickRotatedVoiceId(0);
+  }
   const speech = resolveVapiSpeechPipeline();
   const latency = getVoiceLatencyProfile({
     archetype: configured.archetype || undefined,
@@ -146,7 +152,7 @@ export async function buildVapiAssistant({
     },
     voice: {
       provider: voiceProvider,
-      voiceId,
+      voiceId: effectiveVoiceId,
       ...(voiceProvider === "11labs"
         ? {
             model: "eleven_flash_v2_5",

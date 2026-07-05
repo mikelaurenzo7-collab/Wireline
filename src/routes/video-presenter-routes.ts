@@ -12,6 +12,7 @@ import {
   listPublicAvatars,
   mintLiveAvatarLiteSessionToken,
 } from "../lib/video-presenter/liveavatar-service";
+import { resolveAvatarDefaultVoice } from "../lib/video-presenter/heygen-voice-service";
 import {
   agentLiveVideoOptedIn,
   isLiveVideoPlatformAvailable,
@@ -24,6 +25,10 @@ import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { buildAgentIdentityPreview } from "../lib/agent-identity";
 import { elevenLabsConfigured, generateSamplePcm24 } from "../lib/elevenlabs-client";
+import {
+  generatePresenterSpeech,
+  presenterVoicesConfigured,
+} from "../lib/video-presenter/heygen-voice-service";
 import { isOwnerEmail } from "../lib/auth-service";
 
 const router = express.Router();
@@ -75,6 +80,7 @@ async function ownedAgent(agentId: string, userId: string) {
       videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
       videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
       voiceId: schema.agents.voiceId,
+      voiceProvider: schema.agents.voiceProvider,
     })
     .from(schema.agents)
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
@@ -114,6 +120,48 @@ router.get(
     }
     const avatars = await listPublicAvatars();
     res.json({ avatars, sandbox: status.sandbox });
+  },
+);
+
+router.get(
+  "/api/video-presenter/avatars/:avatarId/matched-voice",
+  authenticateUser,
+  presenterLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const status = getLiveAvatarStatus();
+    if (!status.configured) {
+      throw AppError.fromHttpStatus(503, "Live video catalog is not configured.");
+    }
+    const avatarId = req.params.avatarId?.trim();
+    if (!avatarId) throw AppError.fromHttpStatus(400, "avatarId is required.");
+
+    const avatars = await listPublicAvatars();
+    const avatar = avatars.find((row) => row.id === avatarId);
+    if (!avatar) throw AppError.fromHttpStatus(404, "Presenter not found in catalog.");
+
+    let voiceId = avatar.defaultVoiceId?.trim() || null;
+    let voiceName: string | undefined;
+
+    if (!voiceId) {
+      const resolved = await resolveAvatarDefaultVoice(avatarId);
+      voiceId = resolved?.voiceId ?? null;
+      voiceName = resolved?.name;
+    }
+
+    if (!voiceId) {
+      res.json({ avatarId, matched: false as const });
+      return;
+    }
+
+    res.json({
+      avatarId,
+      matched: true as const,
+      voice: {
+        voiceId,
+        name: voiceName ?? `${avatar.name} voice`,
+        provider: "presenter",
+      },
+    });
   },
 );
 
@@ -323,9 +371,7 @@ router.post(
         "Live presenter must be ready before voice preview.",
       );
     }
-    if (!elevenLabsConfigured()) {
-      throw AppError.fromHttpStatus(503, "Voice preview is not configured.");
-    }
+
     const voiceId = agent.voiceId?.trim();
     if (!voiceId) {
       throw new AppError(
@@ -336,6 +382,32 @@ router.post(
     }
 
     const sampleText = `Hi, I'm ${agent.name}. Thanks for calling — how can I help you today?`;
+    const voiceProvider = (agent.voiceProvider || "11labs").trim().toLowerCase();
+
+    if (voiceProvider === "presenter") {
+      if (!presenterVoicesConfigured()) {
+        throw AppError.fromHttpStatus(503, "Presenter voice preview is not configured.");
+      }
+      const mp3 = await generatePresenterSpeech({ voiceId, text: sampleText });
+      const chunkSize = 48_000;
+      const view = new Uint8Array(mp3);
+      const chunks: string[] = [];
+      for (let offset = 0; offset < view.byteLength; offset += chunkSize) {
+        const slice = view.subarray(offset, Math.min(offset + chunkSize, view.byteLength));
+        chunks.push(Buffer.from(slice).toString("base64"));
+      }
+      res.json({
+        eventId: randomUUID(),
+        format: "mp3",
+        chunks,
+        sampleText,
+      });
+      return;
+    }
+
+    if (!elevenLabsConfigured()) {
+      throw AppError.fromHttpStatus(503, "Voice preview is not configured.");
+    }
     const pcm = await generateSamplePcm24({ voiceId, text: sampleText });
 
     const bytesPerSecond = 24_000 * 2;
@@ -348,6 +420,7 @@ router.post(
 
     res.json({
       eventId: randomUUID(),
+      format: "pcm24",
       chunks,
       sampleText,
     });

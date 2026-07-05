@@ -67,28 +67,59 @@
 }
 
 /* ── Ledger ruling ─────────────────────────────────────────────────────
-   The front-desk ledger: faint horizontal rules under the marketing hero.
-   Ink at 4% so it reads as paper texture, not lines. */
+   Front-desk ledger: faint horizontal rules across the hero. Ink at ~3.5%
+   on a masked layer so rules feather in/out — no hard stop at the section
+   edge or a green wash at the top center. */
 .marketing-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 55px,
-      color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent) 55px,
-      color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent) 56px
+    radial-gradient(
+      ellipse 42rem 28rem at 92% -8%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 5%, transparent),
+      transparent 68%
     ),
     radial-gradient(
-      circle at 88% 4%,
-      color-mix(in srgb, var(--wireline-color-action-primary-container) 10%, transparent),
-      transparent 28rem
-    ),
-    radial-gradient(
-      circle at 6% 96%,
-      color-mix(in srgb, var(--wireline-color-action-secondary-container) 32%, transparent),
-      transparent 22rem
+      ellipse 36rem 24rem at 6% 108%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 4%, transparent),
+      transparent 62%
     ),
     var(--wireline-color-canvas-default);
+}
+
+.marketing-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 55px,
+    color-mix(in srgb, var(--wireline-color-text-primary) 3.5%, transparent) 55px,
+    color-mix(in srgb, var(--wireline-color-text-primary) 3.5%, transparent) 56px
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 14%,
+    #000 76%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 14%,
+    #000 76%,
+    transparent 100%
+  );
+}
+
+.marketing-hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* ── The mark's signal ─────────────────────────────────────────────────

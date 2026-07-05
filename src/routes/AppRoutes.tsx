@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import TransitionSurface from "../components/TransitionSurface";
 import WorkspaceShell from "../components/WorkspaceShell";
 
@@ -12,6 +12,7 @@ const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
 const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
 const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 const CallLogsPage = lazy(() => import("../pages/CallLogsPage"));
+const InsightsPage = lazy(() => import("../pages/InsightsPage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
@@ -20,6 +21,12 @@ const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
 const loading = <TransitionSurface eyebrow="Workspace" title="Loading" busyLabel="Loading route" />;
+
+/** Preserve ?tab= when retiring /ops links in emails and Slack. */
+function LegacyOpsRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/call-logs${location.search}`} replace />;
+}
 
 /** Admin panels predate the workspace rail — give them the shared shell so
  *  /admin sits inside the same chrome and rhythm as every other surface. */
@@ -48,6 +55,7 @@ export default function AppRoutes() {
         <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/connections/*" element={<ConnectionsPage />} />
         <Route path="/call-logs" element={<CallLogsPage />} />
+        <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/apps" element={<ClientAppsPage />} />
 
@@ -63,9 +71,11 @@ export default function AppRoutes() {
 
         <Route path="/pulse" element={<Navigate to="/overview" replace />} />
         <Route path="/fleet" element={<Navigate to="/studio" replace />} />
-        <Route path="/ops" element={<Navigate to="/call-logs" replace />} />
-        <Route path="/ops/*" element={<Navigate to="/call-logs" replace />} />
+        <Route path="/ops" element={<LegacyOpsRedirect />} />
+        <Route path="/ops/*" element={<LegacyOpsRedirect />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
+        <Route path="/chat" element={<Navigate to="/studio" replace />} />
+        <Route path="/chat/*" element={<Navigate to="/studio" replace />} />
         <Route path="/actions" element={<Navigate to="/connections" replace />} />
         <Route
           path="/actions/salesforce"

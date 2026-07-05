@@ -73,6 +73,7 @@ router.get(
       ).length;
 
       const counts = {
+        "/call-logs": triageCount,
         "/ops": triageCount,
         "/inbox": emailCount,
         "/outbound": outboundCount,

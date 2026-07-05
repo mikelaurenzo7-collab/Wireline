@@ -3,21 +3,17 @@ import {
   AlertOctagon,
   BarChart3,
   BookOpen,
-  Inbox,
   Calendar,
   CalendarClock,
   Database,
   Gauge,
   ShieldAlert,
-  Globe,
   History,
   Layers,
-  ListTodo,
   Megaphone,
   Mic,
   PhoneOutgoing,
   PlayCircle,
-  Radio,
   Receipt,
   Repeat,
   Star,
@@ -53,18 +49,6 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       { id: "logs", label: "Call History", icon: History },
       { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
       { id: "appointments", label: "Appointments", icon: Calendar },
-    ],
-  },
-  {
-    pathname: "/ops",
-    defaultTab: "floor",
-    ariaLabel: "Recaps sections",
-    layoutIdPrefix: "ops-section",
-    tabs: [
-      { id: "floor", label: "Active calls", icon: Radio },
-      { id: "intel", label: "Actions", icon: ListTodo },
-      { id: "triage", label: "Triage", icon: Inbox },
-      { id: "analytics", label: "Analytics", icon: Globe },
     ],
   },
   {
@@ -107,12 +91,7 @@ export function resolveAppPageSubTabRoute(pathname: string): AppPageSubTabRoute 
 }
 
 /** Human-friendly ?tab= values from docs, emails, and legacy links. */
-const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> = {
-  "/ops": {
-    actions: "intel",
-    action: "intel",
-  },
-};
+const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> = {};
 
 export function normalizeAppPageSubTabParam(
   route: AppPageSubTabRoute,
