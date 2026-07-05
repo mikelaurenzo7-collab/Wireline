@@ -91,22 +91,78 @@
 }
 
 @media (max-width: 639px) {
-  .wl-studio-operations main,
-  .wl-studio-operations :is(header, section, aside, article, div) {
-    min-width: 0;
-  }
+   .wl-studio-operations main,
+   .wl-studio-operations :is(header, section, aside, article, div) {
+     min-width: 0;
+   }
 
-  .wl-studio-operations h1 {
-    font-size: clamp(1.7rem, 8.4vw, 2.35rem) !important;
-    line-height: 1.04 !important;
-    letter-spacing: -0.025em !important;
-  }
+   .wl-studio-operations h1 {
+     font-size: clamp(1.7rem, 8.4vw, 2.35rem) !important;
+     line-height: 1.04 !important;
+     letter-spacing: -0.025em !important;
+   }
 
-  .wl-studio-operations button {
-    max-inline-size: 100%;
-  }
+   .wl-studio-operations button {
+     max-inline-size: 100%;
+   }
 
-  .wl-studio-operations textarea {
-    font-size: 16px !important;
-  }
+   .wl-studio-operations textarea {
+     font-size: 16px !important;
+   }
+}
+
+/* Refined agent roster card hover: subtle lift with glow */
+.wl-overview-roster-card:hover {
+  transform: translateY(calc(-1 * var(--wireline-motion-lift)));
+  box-shadow: var(--wireline-elevation-md), var(--wireline-elevation-inset);
+}
+
+.wl-overview-roster-card:active {
+  transform: scale(var(--wireline-motion-press));
+}
+
+/* Composer textarea micro-interaction */
+.wl-composer-dock__input:focus {
+  box-shadow: inset 0 1px 0 var(--wireline-color-focus-default),
+              0 0 0 1px color-mix(in srgb, var(--wireline-color-focus-default) 35%, transparent);
+}
+
+/* Chip suggestion refined press */
+.wl-chip-suggestion:active {
+  transform: scale(var(--wireline-motion-press));
+  background: var(--wireline-color-surface-raised);
+}
+
+/* Data row press feedback */
+.wl-data-row:active {
+  background: var(--wireline-color-surface-container);
+}
+
+/* Button micro-hover for primary actions */
+.studio-primary-button:hover:not(:disabled) {
+  filter: brightness(1.02);
+}
+
+.marketing-btn-primary:hover {
+  filter: brightness(1.03);
+  transform: translateY(calc(-1 * var(--wireline-motion-lift)));
+}
+
+/* Smooth scroll indicator fade for overflow containers */
+.tab-strip-scroll--fade {
+  mask-image: linear-gradient(to right, transparent 0, black 1rem, black calc(100% - 1rem), transparent 100%);
+}
+
+.wl-overview-roster-card .wl-data-row:hover {
+  background: color-mix(in srgb, var(--wireline-color-surface-raised) 50%, var(--wireline-color-surface-default));
+}
+
+/* Refined status dot pulse */
+.marketing-live-dot {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.6; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
 }

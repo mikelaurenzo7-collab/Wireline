@@ -158,37 +158,46 @@ export default function StudioOverview({
               const AgentIcon = agent.channel === "email" ? MessageSquareText : Phone;
               const description = agentDescription(agent);
               return (
-                <div
-                  key={agent.id}
-                  className={`flex min-w-[210px] flex-1 flex-col rounded-xl border px-3.5 py-3 transition-all sm:min-w-[230px] xl:min-w-0 ${selected ? "border-primary/40 bg-accent shadow-sm" : "border-border bg-background hover:border-primary/20 hover:bg-accent"}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => onSelect(agent.id)}
-                    aria-current={selected ? "page" : undefined}
-                    className="flex items-center gap-3 text-left w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary rounded"
-                  >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-sm font-semibold text-foreground">
-                      {agent.name.slice(0, 1).toUpperCase()}
-                    </span>
-                    <span className="min-w-0 flex-1 overflow-hidden text-left">
-                      <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-foreground">
-                        {selected && <CircleDot className="size-3.5 shrink-0 text-primary" />}
-                        <span className="truncate">{agent.name}</span>
-                      </span>
-                      <span className="mt-px flex items-center gap-1 truncate text-[11px] text-muted-foreground">
-                        {agent.is_business_agent && (
-                          <BriefcaseBusiness className="shrink-0" size={11} />
-                        )}
-                        <AgentIcon className="shrink-0" size={11} />
-                        <span className="truncate capitalize">{description}</span>
-                      </span>
-                    </span>
-                    {selected && (
-                      <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
-                    )}
-                  </button>
-                </div>
+<div
+           key={agent.id}
+           className={cn(
+             "flex min-w-[210px] flex-1 flex-col rounded-xl border px-3.5 py-3 transition-all sm:min-w-[230px]",
+             "group focus-within:border-primary/50 focus-within:shadow-[var(--wireline-elevation-sm)]",
+             selected
+               ? "border-primary/40 bg-primary/[0.04] shadow-[var(--wireline-elevation-sm)]"
+               : "border-border bg-background hover:border-primary/30 hover:bg-primary/[0.02]",
+           )}
+         >
+           <button
+             type="button"
+             onClick={() => onSelect(agent.id)}
+             aria-current={selected ? "page" : undefined}
+             className={cn(
+               "flex items-center gap-3 text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md transition-colors",
+               "group-hover:bg-[color-mix(in_srgb,var(--wireline-color-surface-raised)_25%,transparent)]",
+             )}
+           >
+             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-sm font-semibold text-foreground transition-transform group-hover:scale-105">
+               {agent.name.slice(0, 1).toUpperCase()}
+             </span>
+             <span className="min-w-0 flex-1 overflow-hidden text-left">
+               <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-foreground">
+                 {selected && <CircleDot className="size-3.5 shrink-0 text-primary transition-all" />}
+                 <span className="truncate">{agent.name}</span>
+               </span>
+               <span className="mt-px flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                 {agent.is_business_agent && (
+                   <BriefcaseBusiness className="shrink-0" size={11} />
+                 )}
+                 <AgentIcon className="shrink-0" size={11} />
+                 <span className="truncate capitalize">{description}</span>
+               </span>
+             </span>
+             {selected && (
+               <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
+             )}
+           </button>
+         </div>
               );
             })}
           </div>

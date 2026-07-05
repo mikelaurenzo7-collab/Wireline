@@ -480,24 +480,24 @@ export default function Pricing() {
                 Straight answers before you wire the first line.
               </h2>
             </div>
-            <div className="mt-10 space-y-3">
-              {FAQ.map(([question, answer]) => (
-                <details key={question} className="group wl-stitch-card overflow-hidden rounded-xl">
-                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
-                    <span>{question}</span>
-                    <span
-                      aria-hidden="true"
-                      className="shrink-0 text-lg text-muted-foreground transition-transform group-open:rotate-45"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">
-                    {answer}
-                  </p>
-                </details>
-              ))}
-            </div>
+<div className="space-y-3">
+               {FAQ.map(([question, answer]) => (
+                 <details key={question} className="group wl-stitch-card overflow-hidden rounded-xl transition-colors">
+                   <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground transition-colors hover:bg-[color-mix(in_srgb,var(--wireline-color-surface-raised)_15%,transparent)]">
+                     <span>{question}</span>
+                     <span
+                       aria-hidden="true"
+                       className="shrink-0 text-lg text-muted-foreground transition-transform group-open:rotate-45"
+                     >
+                       +
+                     </span>
+                   </summary>
+                   <p className="border-t border-border/70 px-5 py-4 text-sm leading-6 text-muted-foreground animate-in fade-in-4">
+                     {answer}
+                   </p>
+                 </details>
+               ))}
+             </div>
 
             <div className="mt-12 flex flex-col items-center gap-5 text-center">
               <p className="flex items-center gap-2 text-sm text-muted-foreground">

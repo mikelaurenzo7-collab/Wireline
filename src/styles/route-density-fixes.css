@@ -35,3 +35,27 @@
   margin-inline: auto;
   width: min(100%, 56rem);
 }
+
+/* Refined spacing for overview agent roster on small screens */
+@media (max-width: 639px) {
+  [data-wireline-route="/overview"] .wl-overview-roster-card {
+    min-height: 8rem;
+  }
+
+  [data-wireline-route="/overview"] .grid-cols-1.gap-2 {
+    gap: 0.75rem;
+  }
+}
+
+/* Smooth card entrance on overview */
+[data-wireline-route="/overview"] .wl-overview-shortcut,
+[data-wireline-route="/overview"] .wl-overview-roster-card {
+  animation: wl-reveal var(--wireline-motion-duration-deliberate) var(--wireline-motion-easing-wireline) both;
+}
+
+[data-wireline-route="/overview"] .wl-overview-shortcut:nth-child(1),
+[data-wireline-route="/overview"] .wl-overview-roster-card:nth-child(1) { animation-delay: 20ms; }
+[data-wireline-route="/overview"] .wl-overview-shortcut:nth-child(2),
+[data-wireline-route="/overview"] .wl-overview-roster-card:nth-child(2) { animation-delay: 60ms; }
+[data-wireline-route="/overview"] .wl-overview-shortcut:nth-child(3),
+[data-wireline-route="/overview"] .wl-overview-roster-card:nth-child(3) { animation-delay: 100ms; }

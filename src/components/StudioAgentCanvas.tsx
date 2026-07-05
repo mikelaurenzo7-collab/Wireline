@@ -242,16 +242,16 @@ export default function StudioAgentCanvas({
   if (loading) {
     return (
       <div
-        className={`flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
+        className={`flex h-full min-h-0 flex-col gap-4 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 wl-reveal ${className}`}
         aria-busy="true"
         aria-label="Loading agent canvas"
       >
-        <div className="h-3 w-28 animate-pulse rounded bg-[var(--wireline-color-surface-subtle)]" />
+        <div className="h-3 w-28 animate-pulse rounded bg-[var(--wireline-color-surface-subtle)] wl-skeleton" />
         <div className="grid grid-cols-2 gap-4">
-          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
-          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
+          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)] wl-skeleton" />
+          <div className="h-72 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)] wl-skeleton" />
         </div>
-        <div className="h-40 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)]" />
+        <div className="h-40 animate-pulse rounded-[14px] bg-[var(--wireline-color-surface-subtle)] wl-skeleton" />
       </div>
     );
   }
