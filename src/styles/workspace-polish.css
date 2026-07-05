@@ -1,0 +1,37 @@
+/* Shared workspace polish. Keep this compact and system-level. */
+.wl-workspace-content-inner {
+  max-width: min(1520px, calc(100vw - clamp(1rem, 3vw, 5rem)));
+}
+
+.wl-workspace-main {
+  scrollbar-gutter: stable;
+}
+
+.wl-workspace-shell :where(a, button, input, textarea, select, [role="button"]):focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--wireline-color-focus-default) 18%, transparent);
+}
+
+.wl-workspace-main :where(input, textarea, select) {
+  min-height: 44px;
+  color: var(--wireline-color-text-primary);
+  background: color-mix(in srgb, var(--wireline-color-surface-default) 80%, black 20%);
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 76%, transparent);
+}
+
+@media (max-width: 1023px) {
+  .wl-workspace-shell nav[aria-label="Workspace navigation"] {
+    left: max(0.625rem, env(safe-area-inset-left));
+    right: max(0.625rem, env(safe-area-inset-right));
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    border-radius: 22px;
+    border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 80%, transparent);
+    padding: 0.5rem;
+  }
+
+  .wl-workspace-shell nav[aria-label="Workspace navigation"] a[data-wireline-nav-href] {
+    min-height: 48px;
+    border-radius: 16px;
+  }
+}
