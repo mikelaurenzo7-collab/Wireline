@@ -8,7 +8,7 @@
 
 ## Executive summary
 
-Wireline is a **voice + presenter** AI SaaS on the **Wireline Letterpress** design system (warm ink canvas, forest action, copper wire accent). The product loop is **Create → Train → Wire → Run**; activation is measured when a customer reaches a trained agent on a live line.
+Wireline is a **voice + presenter** AI SaaS on the **Wireline Letterpress** design system (Aurora palette: cool obsidian canvas, electric-violet action, platinum-silver wire accent). The product loop is **Create → Train → Wire → Run**; activation is measured when a customer reaches a trained agent on a live line.
 
 **Differentiation:** No major competitor blends **live conversational voice** with an **on-screen presenter** in one operator console. Retell/Vapi/Synthflow stop at audio; Synthesia/HeyGen stop at rendered video.
 
@@ -91,17 +91,17 @@ Wireline **does not** use generic Material-style dark SaaS palettes (pure black 
 
 | Role | Token direction |
 | --- | --- |
-| Canvas (Ink) | Warm near-black `#15130F` |
-| Surface | Layered warm grays |
-| Text | `#F4F2EC` primary |
-| Action | Forest `#2B5548` |
-| Accent | Copper `#D4823F` |
+| Canvas (Ink) | Cool near-black `#0A0A0E` |
+| Surface | Layered cool graphite/violet grays |
+| Text | `#F5F4F8` primary |
+| Action | Electric violet `#A78BFA` |
+| Accent | Platinum silver `#C7CCD6` |
 | Typography | Instrument Serif (display), DM Sans (body), Space Mono (meta) |
 
 **Appearance:**
 
 - **Ink (default):** Generated tokens — product default.
-- **Paper (optional):** `src/styles/theme-light.css` — warm paper for high-glare environments.
+- **Paper (optional):** `src/styles/theme-light.css` — a cool near-white surface with a deeper, more saturated violet action color for high-glare environments.
 - Toggle: **Settings → Customization → Appearance** (`ThemeProvider`, `localStorage: wireline-theme`).
 
 **Accessibility:** WCAG AA contrast on Ink and Paper; 44px touch targets; visible focus; icon + text status labels.
@@ -197,6 +197,7 @@ Detailed research lanes and KPI taxonomy: [RESEARCH_OPERATING_SYSTEM.md](./RESEA
 - [x] Post-create wizard **Channels** step
 - [x] Pricing **Why Wireline** competitor section
 - [x] Stronger presenter PSTN routing hint in voice catalog
+- [x] Aurora palette rebrand (violet action / silver wire / obsidian canvas) across every generated and hand-authored surface
 
 ### Next (priority order)
 
