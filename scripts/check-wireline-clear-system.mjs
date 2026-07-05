@@ -166,8 +166,8 @@ mustInclude(
 mustInclude(
   "design-tokens/wireline.tokens.json",
   tokenSource,
-  /"default"\s*:\s*\{\s*"\$type"\s*:\s*"color",\s*"\$value"\s*:\s*"#5BA98A"\s*\}/,
-  "token source primary action must be the dark luminous patina #5BA98A",
+  /"default"\s*:\s*\{\s*"\$type"\s*:\s*"color",\s*"\$value"\s*:\s*"#A78BFA"\s*\}/,
+  "token source primary action must be the Aurora electric violet #A78BFA",
 );
 mustExclude(
   "design-tokens/wireline.tokens.json",
@@ -226,14 +226,14 @@ mustExclude(
 mustInclude(
   "src/styles/tokens.generated.css",
   webTokens,
-  /--wireline-color-action-primary-default:\s*#5BA98A/,
-  "web tokens must carry the dark patina token",
+  /--wireline-color-action-primary-default:\s*#A78BFA/,
+  "web tokens must carry the Aurora violet token",
 );
 mustInclude(
   "apps/browser-extension/panel/tokens.generated.css",
   browserTokens,
-  /--wireline-color-action-primary-default:\s*#5BA98A/,
-  "browser tokens must carry the dark patina token",
+  /--wireline-color-action-primary-default:\s*#A78BFA/,
+  "browser tokens must carry the Aurora violet token",
 );
 mustInclude(
   "apps/browser-extension/manifest.base.json",
@@ -304,14 +304,14 @@ mustInclude(
 mustInclude(
   "src/constants/generated-design-tokens.ts",
   tokenConstants,
-  /"color\.action\.primary\.default": "#5BA98A"/,
-  "TS tokens must carry the dark patina token",
+  /"color\.action\.primary\.default": "#A78BFA"/,
+  "TS tokens must carry the Aurora violet token",
 );
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
   androidTokens,
-  /colorActionPrimaryDefault = Color\(0xFF5BA98A\)/,
-  "Android tokens must carry the dark patina token",
+  /colorActionPrimaryDefault = Color\(0xFFA78BFA\)/,
+  "Android tokens must carry the Aurora violet token",
 );
 mustInclude(
   "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
@@ -358,14 +358,14 @@ mustInclude(
 mustInclude(
   "ios/Wireline/Theme/WirelineDesignTokens.generated.swift",
   iosTokens,
-  /colorActionPrimaryDefault = Color\(hex: 0x5BA98A\)/,
-  "iOS tokens must carry the dark patina token",
+  /colorActionPrimaryDefault = Color\(hex: 0xA78BFA\)/,
+  "iOS tokens must carry the Aurora violet token",
 );
 mustInclude(
   "ios/WirelineShared/WirelineWidgetSnapshot.swift",
   iosWidget,
-  /public static let accent = "5BA98A"/,
-  "iOS widget snapshot must carry the dark patina token",
+  /public static let accent = "A78BFA"/,
+  "iOS widget snapshot must carry the Aurora violet token",
 );
 mustInclude(
   "ios/Wireline/Views/RootTabView.swift",
@@ -425,13 +425,13 @@ const mcpWidgetStyles = read("src/lib/wireline-mcp-widget-styles.ts");
 mustInclude(
   "src/lib/wireline-mcp-widget-styles.ts",
   mcpWidgetStyles,
-  /canvas: "#15130F"/,
+  /canvas: "#0A0A0E"/,
   "MCP widget styles must use the Wireline dark canvas",
 );
 mustInclude(
   "src/lib/wireline-mcp-widget-styles.ts",
   mcpWidgetStyles,
-  /action: "#5BA98A"/,
+  /action: "#A78BFA"/,
   "MCP widget styles must use the Wireline dark action chrome",
 );
 mustInclude(
@@ -449,19 +449,19 @@ mustInclude(
 mustInclude(
   "public/static-legal.css",
   legalCss,
-  /--wireline-color-action-primary-default: #5BA98A/,
+  /--wireline-color-action-primary-default: #A78BFA/,
   "static legal pages must use the Wireline dark tokens",
 );
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"theme_color": "#15130F"/,
+  /"theme_color": "#0A0A0E"/,
   "manifest must use the dark theme color",
 );
 mustInclude(
   "public/site.webmanifest",
   manifest,
-  /"background_color": "#15130F"/,
+  /"background_color": "#0A0A0E"/,
   "manifest must use the dark canvas background",
 );
 mustInclude(
@@ -479,19 +479,19 @@ mustExclude(
 mustInclude(
   "public/wireline-icon.svg",
   publicIcon,
-  /fill="#2B5548"/,
-  "public app icon must use Letterpress action green",
+  /fill="#6D28D9"/,
+  "public app icon must use the Aurora violet brand mark",
 );
 mustInclude(
   "public/favicon.svg",
   favicon,
-  /fill="#2B5548"/,
-  "favicon must use Letterpress action green",
+  /fill="#6D28D9"/,
+  "favicon must use the Aurora violet brand mark",
 );
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /fill="#15130F"/,
+  /fill="#0A0A0E"/,
   "OG image must use the dark canvas",
 );
 mustInclude(
@@ -509,14 +509,14 @@ mustExclude(
 mustInclude(
   "apps/browser-extension/assets/icon.svg",
   extensionIcon,
-  /fill="#2B5548"/,
-  "browser extension icon must use Letterpress action green",
+  /fill="#6D28D9"/,
+  "browser extension icon must use the Aurora violet brand mark",
 );
 mustInclude(
   "android/app/src/main/res/drawable/ic_launcher_background.xml",
   androidLauncherBg,
-  /android:fillColor="#2B5548"/,
-  "Android launcher background must use Letterpress action green",
+  /android:fillColor="#6D28D9"/,
+  "Android launcher background must use the Aurora violet brand mark",
 );
 mustInclude(
   "src/components/MobileBrowserUtilities.tsx",
@@ -688,7 +688,7 @@ mustInclude(
   "src/styles/wireline-signature.css",
   signatureCss,
   /--wireline-color-action-secondary-default/,
-  "the Wire signature must run on the copper token",
+  "the Wire signature must run on the silver token",
 );
 mustInclude(
   "src/styles/wireline-signature.css",
@@ -705,14 +705,14 @@ mustInclude(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /D4823F/,
-  "OG image must carry the copper wire signature",
+  /C7CCD6/,
+  "OG image must carry the silver wire signature",
 );
 mustInclude(
   "src/styles/wireline-signature.css",
   signatureCss,
   /\.wl-wire-step--settled/,
-  "the setup steps must run copper-to-patina on the wire (Connect → Deploy)",
+  "the setup steps must run silver-to-violet on the wire (Connect → Deploy)",
 );
 mustInclude(
   "src/components/marketing/PrecisionLanding.tsx",
@@ -736,7 +736,7 @@ mustInclude(
   "src/styles/wireline-signature.css",
   signatureCss,
   /\.wl-mark-signal\s*\{\s*fill: var\(--wireline-color-action-secondary-default\)/,
-  "the mark's central node must carry the copper signal on public surfaces",
+  "the mark's central node must carry the silver signal on public surfaces",
 );
 mustExclude(
   "src/components/marketing/PrecisionLanding.tsx",
@@ -1385,7 +1385,7 @@ mustInclude(
   "src/styles/letterpress-polish.css",
   letterpressPolish,
   /\.wl-eyebrow::before[\s\S]*var\(--wireline-color-action-secondary-default\)/,
-  "letterpress polish must use the copper wire as the eyebrow rule",
+  "letterpress polish must use the silver wire as the eyebrow rule",
 );
 mustInclude(
   "src/lib/wireline-design-vision.ts",
