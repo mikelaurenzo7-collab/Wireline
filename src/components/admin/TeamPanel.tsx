@@ -99,7 +99,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
 
         <Panel title="Enterprise Roster & Access" hint="ACCESS CONTROL" icon={KeyRound} scroll>
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-3 p-5 rounded-md wl-panel border border-brand/20 bg-brand/5 shadow-[0_0_15px_rgba(79,30,123,0.05)]">
+            <div className="flex flex-col md:flex-row gap-3 p-5 rounded-md wl-panel border border-brand/20 bg-brand/5 shadow-[var(--wireline-elevation-wirelineRing)]">
               <div className="flex-1 space-y-2">
                 <label className="wl-label font-bold text-brand ml-1">Provision New Seat</label>
                 <div className="flex gap-2">
@@ -112,7 +112,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                       spellCheck={false}
                       inputMode="email"
                       placeholder="colleague@enterprise.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-white/80 border-brand/20 outline-none focus-visible:ring-brand/40 text-sm transition-all h-auto shadow-sm"
+                      className="w-full pl-10 pr-4 py-2.5 border-brand/20 outline-none focus-visible:ring-brand/40 text-sm transition-all h-auto shadow-sm"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                     />
@@ -120,7 +120,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                   <Select value={inviteRole} onValueChange={setInviteRole}>
                     <SelectTrigger
                       aria-label="Role"
-                      className="w-36 px-4 py-2.5 bg-white/80 border-brand/20 text-xs font-bold cursor-pointer h-auto shadow-sm"
+                      className="w-36 px-4 py-2.5 border-brand/20 text-xs font-bold cursor-pointer h-auto shadow-sm"
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -133,7 +133,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                   </Select>
                   <ShadButton
                     disabled={isInviting || !inviteEmail}
-                    className="bg-brand hover:bg-brand/90 text-white flex items-center gap-2 disabled:opacity-50 shadow-md h-auto px-6 py-2.5"
+                    className="bg-brand hover:bg-brand/90 text-primary-foreground flex items-center gap-2 disabled:opacity-50 shadow-md h-auto px-6 py-2.5"
                     onClick={handleInvite}
                   >
                     {isInviting ? (
@@ -157,7 +157,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
 
               <div className="grid grid-cols-1 gap-2">
                 {members.length === 0 ? (
-                  <div className="py-20 text-center wl-panel border border-dashed border-input rounded-md bg-white/30">
+                  <div className="py-20 text-center wl-panel border border-dashed border-input rounded-md">
                     <User className="w-8 h-8 text-muted/50 mx-auto mb-3" />
                     <p className="text-xs text-muted uppercase tracking-widest font-bold">
                       No identities provisioned
@@ -172,7 +172,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                     return (
                       <div
                         key={m.id}
-                        className="group flex items-center gap-4 p-4 rounded-md wl-panel border border-white/50 hover:border-brand/30 transition-all hover:bg-white/50 hover:shadow-sm"
+                        className="group flex items-center gap-4 p-4 rounded-md wl-panel border border-border hover:border-brand/30 transition-all hover:bg-white/5 hover:shadow-sm"
                       >
                         <div
                           className={cn(
@@ -235,7 +235,9 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                             <p
                               className={cn(
                                 "wl-label font-black mb-0.5",
-                                m.user_id ? "text-emerald-600" : "text-rose-500",
+                                m.user_id
+                                  ? "text-[var(--wireline-color-status-success)]"
+                                  : "text-rose-500",
                               )}
                             >
                               {m.user_id ? "Session Verified" : "Pending Acceptance"}
@@ -321,7 +323,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
           </div>
         </Panel>
 
-        <div className="p-5 rounded-md bg-rose-500/5 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.05)] relative overflow-hidden">
+        <div className="p-5 rounded-md bg-rose-500/5 border border-rose-500/20 shadow-[var(--wireline-elevation-card)] relative overflow-hidden">
           <div className="absolute -right-4 -bottom-4 opacity-5">
             <Lock className="w-24 h-24 text-rose-500" />
           </div>
