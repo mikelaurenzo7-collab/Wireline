@@ -45,6 +45,7 @@ public enum WirelineDesignTokens {
     public static let colorStatusWarning = Color(hex: 0xD0A755)
     public static let colorSurfaceContainer = Color(hex: 0x242019)
     public static let colorSurfaceDefault = Color(hex: 0x1E1B16)
+    public static let colorSurfaceRaised = Color(hex: 0x2A241B)
     public static let colorSurfaceRecessed = Color(hex: 0x0E0C09)
     public static let colorSurfaceStrong = Color(hex: 0x2F2A22)
     public static let colorSurfaceSubtle = Color(hex: 0x1A1712)
@@ -107,7 +108,8 @@ public enum WirelineDesignTokens {
     public static let motionDurationInstant: Double = 0.06
     public static let motionDurationSlow: Double = 0.3
     public static let motionDurationStandard: Double = 0.2
-    public static let pressScale: CGFloat = 0.98
+    public static let pressScale: CGFloat = 0.985
+    public static let liftPx: CGFloat = 1
   }
 
   public enum ZIndex {

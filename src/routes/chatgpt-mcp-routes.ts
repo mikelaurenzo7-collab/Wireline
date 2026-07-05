@@ -632,6 +632,7 @@ router.post("/mcp/oauth/register", express.json({ limit: "64kb" }), async (req, 
     });
     if (!limit.allowed)
       return res.status(429).json({
+        code: "MCP_REGISTER_RATE_LIMITED",
         error: "invalid_client_metadata",
         error_description: "Too many registration attempts. Try again later.",
       });
@@ -655,7 +656,7 @@ router.post("/mcp/oauth/register", express.json({ limit: "64kb" }), async (req, 
   } catch (error) {
     const code = oauthErrorCode(error);
     if (code && error instanceof AppError) {
-      return res.status(400).json({ error: code, error_description: error.message });
+      return res.status(400).json({ code, error: code, error_description: error.message });
     }
     next(error);
   }
@@ -980,11 +981,23 @@ router.post("/mcp", async (req, res) => {
 // session-termination requests with 405 rather than an opaque 404.
 router.get("/mcp", (_req, res) => {
   res.setHeader("Allow", "POST");
-  res.status(405).json({ error: "method_not_allowed", detail: "Send MCP requests as POST /mcp." });
+  res
+    .status(405)
+    .json({
+      code: "MCP_METHOD_NOT_ALLOWED",
+      error: "method_not_allowed",
+      detail: "Send MCP requests as POST /mcp.",
+    });
 });
 router.delete("/mcp", (_req, res) => {
   res.setHeader("Allow", "POST");
-  res.status(405).json({ error: "method_not_allowed", detail: "Sessions are stateless." });
+  res
+    .status(405)
+    .json({
+      code: "MCP_METHOD_NOT_ALLOWED",
+      error: "method_not_allowed",
+      detail: "Sessions are stateless.",
+    });
 });
 
 export default router;

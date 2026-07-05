@@ -42,6 +42,7 @@
   --wireline-color-status-warning: #D0A755;
   --wireline-color-surface-container: #242019;
   --wireline-color-surface-default: #1E1B16;
+  --wireline-color-surface-raised: #2A241B;
   --wireline-color-surface-recessed: #0E0C09;
   --wireline-color-surface-strong: #2F2A22;
   --wireline-color-surface-subtle: #1A1712;
@@ -54,6 +55,7 @@
   --wireline-elevation-insetRaised: inset 0 1px 0 rgba(255, 248, 232, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
   --wireline-elevation-lg: 0 28px 70px -44px rgba(0, 0, 0, 0.72);
   --wireline-elevation-md: 0 14px 34px -26px rgba(0, 0, 0, 0.66);
+  --wireline-elevation-raised: 0 2px 8px -3px rgba(0, 0, 0, 0.5);
   --wireline-elevation-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --wireline-elevation-wireGlow: 0 0 0 1px rgba(212, 130, 63, 0.22), 0 8px 30px -12px rgba(212, 130, 63, 0.28);
   --wireline-elevation-wirelineRing: 0 0 0 1px rgba(91, 169, 138, 0.18), 0 8px 30px -12px rgba(91, 169, 138, 0.20);

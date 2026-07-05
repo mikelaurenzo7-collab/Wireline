@@ -53,7 +53,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           {location.pathname && location.pathname !== "/" && (
             <>
               We couldn't find{" "}
-              <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[var(--wireline-typography-caption-size)] font-mono text-foreground/70">
+              <code className="wl-code">
                 {location.pathname.length > 32
                   ? location.pathname.slice(0, 32) + "…"
                   : location.pathname}

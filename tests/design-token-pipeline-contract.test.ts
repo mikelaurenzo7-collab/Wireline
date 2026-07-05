@@ -65,4 +65,46 @@ describe("Wireline design token pipeline", () => {
     expect(brand).toContain('token["color.action.primary.default"]');
     expect(brand).toContain('token["color.text.primary"]');
   });
+
+  it("emits the press/lift motion scalars to native from the token source, not a hardcoded literal", () => {
+    // Regression guard: the Swift/Kotlin generators previously hardcoded
+    // pressScale = 0.98 while the token source defined 0.985, so iOS/Android
+    // press feedback silently drifted from the web. The generator must now
+    // read motion.press and motion.lift from the single source of truth.
+    const tokenSource = JSON.parse(source("design-tokens/wireline.tokens.json")) as TokenGroup;
+    const values = flatten(tokenSource);
+    const pressScale = values["motion.press"];
+    const liftPx = String(values["motion.lift"]).match(/^(\d+(?:\.\d+)?)px$/)?.[1];
+
+    expect(pressScale).toBe(0.985);
+    expect(liftPx).toBe("1");
+
+    const iosTokens = source("ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
+    const iosSharedTokens = source("ios/WirelineShared/WirelineDesignTokens.generated.swift");
+    const kotlinTokens = source(
+      "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
+    );
+
+    expect(iosTokens).toContain(`public static let pressScale: CGFloat = ${pressScale}`);
+    expect(iosTokens).toContain(`public static let liftPx: CGFloat = ${liftPx}`);
+    expect(iosSharedTokens).toContain(`public static let pressScale: CGFloat = ${pressScale}`);
+    expect(kotlinTokens).toContain(`const val pressScale = ${pressScale}f`);
+    expect(kotlinTokens).toContain(`const val liftPx = ${liftPx}`);
+    // The stale hardcoded literal must never return. Word boundaries avoid
+    // false positives from `0.985` or the pressHighlight color channel.
+    expect(iosTokens).not.toMatch(/pressScale: CGFloat = 0\.98\b/);
+    expect(kotlinTokens).not.toMatch(/pressScale = 0\.98f\b/);
+  });
+
+  it("ships the new surface.raised and elevation.raised tokens to every surface", () => {
+    const css = source("src/styles/tokens.generated.css");
+    const extensionCss = source("apps/browser-extension/panel/tokens.generated.css");
+    const typescript = source("src/constants/generated-design-tokens.ts");
+    expect(css).toContain("--wireline-color-surface-raised: #2A241B");
+    expect(css).toContain("--wireline-elevation-raised:");
+    expect(extensionCss).toContain("--wireline-color-surface-raised: #2A241B");
+    expect(extensionCss).toContain("--wireline-elevation-raised:");
+    expect(typescript).toContain('"color.surface.raised": "#2A241B"');
+    expect(typescript).toContain('"elevation.raised"');
+  });
 });

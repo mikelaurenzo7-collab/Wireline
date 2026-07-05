@@ -123,6 +123,11 @@ const colorEntries = orderedEntries.filter(([path]) => path.startsWith("color.")
 const dimensionEntries = orderedEntries.filter(([path, value]) => ["space.", "radius.", "interaction.", "typography.", "layout."].some((prefix) => path.startsWith(prefix)) && pxNumber(value) !== null);
 const durationEntries = orderedEntries.filter(([path, value]) => path.startsWith("motion.duration.") && millisecondNumber(value) !== null);
 const zIndexEntries = orderedEntries.filter(([path]) => path.startsWith("zIndex."));
+// Numeric motion scalars (press scale, lift) — emitted as native constants so
+// Swift/Kotlin press feedback stays locked to the single token source instead
+// of drifting behind a hardcoded literal.
+const pressScaleValue = values["motion.press"] ?? 0.985;
+const liftPxValue = pxNumber(values["motion.lift"]) ?? 1;
 
 const swift = [
   "// Generated from design-tokens/wireline.tokens.json. Do not edit by hand.",
@@ -139,7 +144,8 @@ const swift = [
   "",
   "  public enum Motion {",
   ...durationEntries.map(([path, value]) => `    public static let ${camel(path)}: Double = ${millisecondNumber(value) / 1000}`),
-  "    public static let pressScale: CGFloat = 0.98",
+  `    public static let pressScale: CGFloat = ${pressScaleValue}`,
+  `    public static let liftPx: CGFloat = ${liftPxValue}`,
   "  }",
   "",
   "  public enum ZIndex {",
@@ -167,7 +173,8 @@ const kotlin = [
   "",
   "  object Motion {",
   ...durationEntries.map(([path, value]) => `    const val ${camel(path)}Millis = ${millisecondNumber(value)}`),
-  "    const val pressScale = 0.98f",
+  `    const val pressScale = ${pressScaleValue}f`,
+  `    const val liftPx = ${liftPxValue}`,
   "  }",
   "",
   "  object ZIndex {",

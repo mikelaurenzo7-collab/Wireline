@@ -36,6 +36,7 @@ describe("Wireline Letterpress polish layer", () => {
       "wl-glow-wire",
       "wl-motion-spring",
       "wl-motion-wireline",
+      "wl-motion-accelerate",
       "wl-press",
       "wl-transition-press",
       "wl-reveal",
@@ -54,6 +55,35 @@ describe("Wireline Letterpress polish layer", () => {
       "wl-press-highlight",
       "wl-eyebrow",
       "wl-display-mark",
+      "wl-banner",
+      "wl-banner__icon",
+      "wl-banner__body",
+      "wl-banner__title",
+      "wl-banner__detail",
+      "wl-banner--info",
+      "wl-banner--success",
+      "wl-banner--warning",
+      "wl-banner--warn",
+      "wl-banner--error",
+      "wl-banner--critical",
+      "wl-segmented",
+      "wl-segmented__item",
+      "wl-data-row",
+      "wl-data-row__leading",
+      "wl-data-row__main",
+      "wl-data-row__title",
+      "wl-data-row__detail",
+      "wl-data-row__trailing",
+      "wl-key-value",
+      "wl-key-value__key",
+      "wl-key-value__value",
+      "wl-field",
+      "wl-field__label",
+      "wl-field__hint",
+      "wl-field__error",
+      "wl-code",
+      "wl-link",
+      "wl-surface-tint",
     ]) {
       expect(polish).toContain(`.${name}`);
     }
@@ -151,6 +181,13 @@ describe("Wireline Letterpress polish layer", () => {
     expect(overview).toContain("wl-chip wl-chip--${");
     expect(overview).toContain("wl-focus-ring-halo");
     expect(overview).toContain("wl-press");
+    // Masterful upgrade: quick actions use the surface-tint hover primitive,
+    // recent-call rows use the data-row primitive, and the empty state uses
+    // the EmptyState atom (which renders wl-empty).
+    expect(overview).toContain("wl-surface-tint");
+    expect(overview).toContain("wl-data-row");
+    expect(overview).toContain("wl-data-row--divided");
+    expect(overview).toContain("EmptyState");
   });
 
   it("uses the polish primitives in the 404 page", () => {
@@ -160,6 +197,30 @@ describe("Wireline Letterpress polish layer", () => {
     expect(notFound).toContain("wl-paper");
     expect(notFound).toContain("wl-press");
     expect(notFound).toContain("wl-focus-ring-halo");
+    // Masterful upgrade: the unfound pathname renders as a wl-code chip
+    // instead of an ad-hoc black-on-dark inline code block.
+    expect(notFound).toContain("wl-code");
+  });
+
+  it("wires the banner tone variants into the Trial and EmailVerify banners", () => {
+    const trial = read("src/components/layout/TrialBanner.tsx");
+    const email = read("src/components/layout/EmailVerifyBanner.tsx");
+    expect(trial).toContain("wl-banner--critical");
+    expect(trial).toContain("wl-banner--warn");
+    expect(trial).toContain("wl-banner__body");
+    expect(email).toContain("wl-banner--info");
+    expect(email).toContain("wl-banner__icon");
+    // The polish layer must define every tone these banners reference.
+    const polish = read("src/styles/letterpress-polish.css");
+    expect(polish).toContain(".wl-banner--warn");
+    expect(polish).toContain(".wl-banner--critical");
+  });
+
+  it("extends the reveal stagger beyond the original five tiers", () => {
+    const polish = read("src/styles/letterpress-polish.css");
+    expect(polish).toContain(".wl-reveal-6");
+    expect(polish).toContain(".wl-reveal-7");
+    expect(polish).toContain(".wl-reveal-8");
   });
 
   it("upgrades the atoms (Button, Card, EmptyState, Skeleton) with the polish primitives", () => {
@@ -169,9 +230,12 @@ describe("Wireline Letterpress polish layer", () => {
     const skeleton = read("src/components/atoms/Skeleton.tsx");
 
     // Button ships a new "wire" copper variant on top of the existing palette.
+    // Accept both single-line (`wire: "..."`) and multi-line (`wire:\n  "..."`)
+    // cva declarations so prettier reformatting cannot drift the contract.
     expect(button).toMatch(/wire:\s*"/);
     expect(button).toContain("var(--wireline-color-action-secondary-default)");
     expect(button).toContain("var(--wireline-elevation-wireGlow)");
+    expect(button).toContain("var(--wireline-color-action-secondary-container)");
 
     // Card adopts the new inset shadow + the paper/recessed/wire elevation variants.
     expect(card).toContain("var(--wireline-elevation-inset)");

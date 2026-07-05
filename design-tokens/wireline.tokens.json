@@ -10,6 +10,7 @@
     "surface": {
       "default": { "$type": "color", "$value": "#1E1B16" },
       "subtle": { "$type": "color", "$value": "#1A1712" },
+      "raised": { "$type": "color", "$value": "#2A241B" },
       "container": { "$type": "color", "$value": "#242019" },
       "strong": { "$type": "color", "$value": "#2F2A22" },
       "recessed": { "$type": "color", "$value": "#0E0C09" }
@@ -100,6 +101,7 @@
     "card": { "$type": "shadow", "$value": "0 8px 24px -16px rgba(0, 0, 0, 0.6)" },
     "md": { "$type": "shadow", "$value": "0 14px 34px -26px rgba(0, 0, 0, 0.66)" },
     "lg": { "$type": "shadow", "$value": "0 28px 70px -44px rgba(0, 0, 0, 0.72)" },
+    "raised": { "$type": "shadow", "$value": "0 2px 8px -3px rgba(0, 0, 0, 0.5)" },
     "inset": { "$type": "shadow", "$value": "inset 0 1px 0 rgba(255, 248, 232, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.4)" },
     "insetRaised": { "$type": "shadow", "$value": "inset 0 1px 0 rgba(255, 248, 232, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.5)" },
     "wirelineRing": { "$type": "shadow", "$value": "0 0 0 1px rgba(91, 169, 138, 0.18), 0 8px 30px -12px rgba(91, 169, 138, 0.20)" },

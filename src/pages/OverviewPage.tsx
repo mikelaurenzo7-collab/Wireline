@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { ArrowRight, BarChart3, Bot, Cable, Clock3, Phone, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Button, Skeleton } from "../components/atoms";
+import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import AgentFace from "../components/AgentFace";
@@ -135,7 +135,7 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
   return (
     <Link
       to={`/studio?agent=${enc}`}
-      className={`group flex min-h-[56px] items-center gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-2 wl-transition-press wl-focus-ring-halo ${
+      className={`group flex min-h-[56px] items-center gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-2 wl-press wl-focus-ring-halo ${
         active
           ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]"
           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
@@ -375,7 +375,7 @@ export default function OverviewPage() {
               <Link
                 key={href}
                 to={href}
-                className="wl-press inline-flex min-h-[42px] items-center gap-2 rounded-[var(--wireline-radius-pill)] border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-muted wl-focus-ring-halo"
+                className="wl-surface-tint inline-flex min-h-[44px] items-center gap-2 rounded-[var(--wireline-radius-pill)] border border-border bg-card px-4 text-sm font-semibold text-foreground wl-focus-ring-halo"
               >
                 <Icon aria-hidden="true" size={15} className="text-primary" />
                 {title}
@@ -417,7 +417,7 @@ export default function OverviewPage() {
                 View all →
               </Link>
             </div>
-            <div className="grid gap-0 divide-y divide-border/70">
+            <div className="grid gap-0">
               {loadingDashboard ? (
                 <div className="grid gap-3 py-2" aria-busy="true" aria-label="Loading recent calls">
                   {Array.from({ length: 3 }, (_, index) => (
@@ -435,38 +435,47 @@ export default function OverviewPage() {
                   <Link
                     key={call.id}
                     to="/call-logs"
-                    className="group flex min-h-[52px] items-center gap-3 py-3 first:pt-1 last:pb-1"
+                    className="wl-data-row wl-data-row--divided group"
                   >
-                    <span
-                      className="size-2 shrink-0 rounded-full bg-primary/80"
-                      aria-hidden="true"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-foreground">
+                    <span className="wl-data-row__leading" aria-hidden="true">
+                      <span className="size-2 rounded-full bg-[var(--wireline-color-action-primary-default)]" />
+                    </span>
+                    <span className="wl-data-row__main">
+                      <span className="wl-data-row__title">
                         {call.customer_number || "Unknown caller"} —{" "}
                         {call.intent_label || call.summary || "Call logged"}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <span className="wl-data-row__detail">
                         {call.agent_name || primaryAgent?.name || "Agent"} ·{" "}
                         {formatCallMeta(call.created_at, call.duration_seconds)}
                       </span>
                     </span>
-                    <Clock3
-                      className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-                      aria-hidden="true"
-                    />
+                    <span className="wl-data-row__trailing">
+                      <Clock3
+                        className="size-3.5 transition-colors group-hover:text-[var(--wireline-color-action-primary-default)]"
+                        aria-hidden="true"
+                      />
+                    </span>
                   </Link>
                 ))
               ) : (
-                <div className="flex min-h-[180px] flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                  <Phone className="mb-3 size-8 text-muted-foreground/30" aria-hidden="true" />
-                  <p className="text-sm font-medium text-foreground">No calls yet</p>
-                  {!hasAgents ? (
-                    <Button asChild size="sm" className="mt-4">
-                      <Link to="/studio?create=1">Create agent</Link>
-                    </Button>
-                  ) : null}
-                </div>
+                <EmptyState
+                  density="compact"
+                  icon={<Phone aria-hidden="true" />}
+                  title="No calls yet"
+                  description={
+                    hasAgents
+                      ? "Your line is live — inbound and outbound calls will land here."
+                      : "Create an agent to start taking calls."
+                  }
+                  action={
+                    !hasAgents ? (
+                      <Button asChild size="sm">
+                        <Link to="/studio?create=1">Create agent</Link>
+                      </Button>
+                    ) : undefined
+                  }
+                />
               )}
             </div>
           </article>

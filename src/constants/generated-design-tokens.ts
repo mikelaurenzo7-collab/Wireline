@@ -42,6 +42,7 @@ export const wirelineTokenValues = {
   "color.status.warning": "#D0A755",
   "color.surface.container": "#242019",
   "color.surface.default": "#1E1B16",
+  "color.surface.raised": "#2A241B",
   "color.surface.recessed": "#0E0C09",
   "color.surface.strong": "#2F2A22",
   "color.surface.subtle": "#1A1712",
@@ -55,6 +56,7 @@ export const wirelineTokenValues = {
     "inset 0 1px 0 rgba(255, 248, 232, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.5)",
   "elevation.lg": "0 28px 70px -44px rgba(0, 0, 0, 0.72)",
   "elevation.md": "0 14px 34px -26px rgba(0, 0, 0, 0.66)",
+  "elevation.raised": "0 2px 8px -3px rgba(0, 0, 0, 0.5)",
   "elevation.sm": "0 1px 2px rgba(0, 0, 0, 0.4)",
   "elevation.wireGlow":
     "0 0 0 1px rgba(212, 130, 63, 0.22), 0 8px 30px -12px rgba(212, 130, 63, 0.28)",

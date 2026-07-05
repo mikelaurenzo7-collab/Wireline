@@ -32,7 +32,10 @@ function countLegacyErrors() {
     while ((m = re.exec(t))) {
       const body = m[2];
       if (!/error\s*:/.test(body)) continue;
-      if (/code\s*:/.test(body)) continue;
+      // Recognize a stable `code` whether it is an explicit key (`code:`) or an
+      // object shorthand property (`code,` / `code}`). The shorthand form is a
+      // valid AppError-style stable code and should not trip the ratchet.
+      if (/\bcode\b\s*[:,}]/.test(body)) continue;
       count++;
       files.push(path.relative(ROOT, file));
     }

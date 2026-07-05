@@ -55,13 +55,6 @@ const voice = [
 
 const billing = ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID"];
 
-function expectedTargets(env) {
-  const targets = Array.isArray(env.target) ? env.target : [];
-  // Development-only gaps are informational; production + preview must be covered.
-  const required = TARGETS.filter((t) => t !== "development");
-  return required.filter((target) => !targets.includes(target));
-}
-
 async function main() {
   const response = await fetch(
     `https://api.vercel.com/v9/projects/${PROJECT_ID}/env?teamId=${TEAM_ID}`,
@@ -88,7 +81,13 @@ async function main() {
         console.log(`  ${strict ? "✗" : "○"} ${key} — not configured`);
         continue;
       }
-      const missingTargets = [...new Set(entries.flatMap(expectedTargets))];
+      // A key may be stored as several per-target entries (Vercel creates
+      // separate rows when you POST a single-target array) or as one entry
+      // covering many targets. Coverage is correct as long as the UNION of
+      // every entry's targets covers the required targets — not the per-entry
+      // missing set, which unions false negatives when entries are split.
+      const covered = new Set(entries.flatMap((entry) => (Array.isArray(entry.target) ? entry.target : [])));
+      const missingTargets = TARGETS.filter((t) => t !== "development" && !covered.has(t));
       const types = [...new Set(entries.map((entry) => entry.type || "plain"))].join(", ");
       console.log(
         `  ${missingTargets.length ? "△" : "✓"} ${key} — ${types}${

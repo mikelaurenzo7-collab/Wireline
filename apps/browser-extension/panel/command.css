@@ -5,22 +5,30 @@
 }
 
 .quick-action {
-  min-height: 42px;
+  min-height: var(--wireline-interaction-target-comfortable, 44px);
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--text);
   font-size: var(--wireline-typography-caption-size);
   font-weight: 700;
+  box-shadow: var(--wireline-elevation-inset);
+  transition:
+    background-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    transform var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
 }
 
-.quick-action:hover {
+.quick-action:hover:not(:disabled) {
   border-color: var(--primary);
-  background: var(--surface-secondary);
+  background: var(--wireline-color-surface-raised);
+  box-shadow: var(--wireline-elevation-raised), var(--wireline-elevation-insetRaised);
 }
 
-.quick-action:active {
+.quick-action:active:not(:disabled) {
   transform: scale(var(--wireline-motion-press));
+  box-shadow: var(--wireline-elevation-inset);
 }
 
 .quick-action:disabled {

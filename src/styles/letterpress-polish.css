@@ -518,3 +518,400 @@
   color: var(--wireline-color-text-primary);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
 }
+
+/* ----------------------------------------------------------------------------
+ * 14. Banner — inline notice with a tone. Authoritative home for the banner
+ *     family; the older partial definition in components.css is overridden
+ *     here so every banner reads as Letterpress paper with a colored rail.
+ *     Tones: --info, --success, --warning, --error. Aliases --warn and
+ *     --critical keep existing TrialBanner / EmailVerifyBanner consumers on
+ *     the correct tone without touching their class hooks.
+ * --------------------------------------------------------------------------*/
+.wl-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-lg);
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary);
+  box-shadow: var(--wireline-elevation-inset);
+}
+
+.wl-banner__icon {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: var(--wireline-radius-sm);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-banner__icon > svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.wl-banner__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-self: center;
+}
+
+.wl-banner__title {
+  font-size: var(--wireline-typography-bodyStrong-size);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-banner__detail {
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 1.55;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.wl-banner--info {
+  border-color: var(--wireline-color-feedback-info-border);
+  background: var(--wireline-color-feedback-info-surface);
+}
+.wl-banner--info .wl-banner__icon {
+  color: var(--wireline-color-status-info);
+  background: color-mix(in srgb, var(--wireline-color-status-info) 14%, transparent);
+}
+
+.wl-banner--success {
+  border-color: var(--wireline-color-feedback-success-border);
+  background: var(--wireline-color-feedback-success-surface);
+}
+.wl-banner--success .wl-banner__icon {
+  color: var(--wireline-color-status-success);
+  background: color-mix(in srgb, var(--wireline-color-status-success) 14%, transparent);
+}
+
+.wl-banner--warning,
+.wl-banner--warn {
+  border-color: var(--wireline-color-feedback-warning-border);
+  background: var(--wireline-color-feedback-warning-surface);
+}
+.wl-banner--warning .wl-banner__icon,
+.wl-banner--warn .wl-banner__icon {
+  color: var(--wireline-color-status-warning);
+  background: color-mix(in srgb, var(--wireline-color-status-warning) 14%, transparent);
+}
+
+.wl-banner--error,
+.wl-banner--critical {
+  border-color: var(--wireline-color-feedback-error-border);
+  background: var(--wireline-color-feedback-error-surface);
+}
+.wl-banner--error .wl-banner__icon,
+.wl-banner--critical .wl-banner__icon {
+  color: var(--wireline-color-status-error);
+  background: color-mix(in srgb, var(--wireline-color-status-error) 14%, transparent);
+}
+
+/* ----------------------------------------------------------------------------
+ * 15. Segmented control — compact, recessed track with raised active item.
+ *     Token-correct replacement for the older definition that referenced a
+ *     non-existent surface token. Use <button data-active> children or the
+ *     .wl-segmented__item class on any focusable element.
+ * --------------------------------------------------------------------------*/
+.wl-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.25rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-md);
+  background: var(--wireline-color-surface-recessed);
+  box-shadow: var(--wireline-elevation-inset);
+}
+
+.wl-segmented__item,
+.wl-segmented button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--wireline-color-text-secondary);
+  font-size: var(--wireline-typography-caption-size);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.375rem 0.75rem;
+  min-height: var(--wireline-interaction-target-comfortable);
+  border-radius: var(--wireline-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  transition:
+    background-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
+}
+
+.wl-segmented__item:hover:not([data-active]):not([aria-selected="true"]):not(.is-active):not(:disabled),
+.wl-segmented button:hover:not([data-active]):not([aria-selected="true"]):not(.is-active):not(:disabled) {
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-segmented__item[data-active],
+.wl-segmented__item[aria-selected="true"],
+.wl-segmented__item.is-active,
+.wl-segmented button[aria-selected="true"],
+.wl-segmented button.is-active {
+  background: var(--wireline-color-surface-raised);
+  color: var(--wireline-color-text-primary);
+  box-shadow: var(--wireline-elevation-raised), var(--wireline-elevation-insetRaised);
+}
+
+.wl-segmented__item:focus-visible,
+.wl-segmented button:focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
+}
+
+.wl-segmented__item:disabled,
+.wl-segmented button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----------------------------------------------------------------------------
+ * 16. Data row — a consistent list row for calls, messages, agents, and
+ *     settings rows. Leading slot, flexible main (title + detail), trailing
+ *     slot, optional divided variant.
+ * --------------------------------------------------------------------------*/
+.wl-data-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.625rem 0.25rem;
+  color: var(--wireline-color-text-primary);
+  transition:
+    background-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard);
+}
+
+.wl-data-row--divided + .wl-data-row--divided {
+  border-top: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 70%, transparent);
+}
+
+.wl-data-row__leading {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-data-row__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.125rem;
+}
+
+.wl-data-row__title {
+  font-size: var(--wireline-typography-body-size);
+  font-weight: 600;
+  color: var(--wireline-color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-data-row__detail {
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 1.45;
+  color: var(--wireline-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-data-row__trailing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  color: var(--wireline-color-text-tertiary);
+}
+
+a.wl-data-row,
+button.wl-data-row {
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+  border-radius: var(--wireline-radius-md);
+}
+
+a.wl-data-row:hover,
+button.wl-data-row:hover {
+  background: var(--wireline-color-surface-raised);
+}
+
+a.wl-data-row:focus-visible,
+button.wl-data-row:focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------------------------
+ * 17. Key/value — definition rows for settings, metadata, and read-only
+ *     summaries. Mono key on the left, value on the right.
+ * --------------------------------------------------------------------------*/
+.wl-key-value {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.375rem 1rem;
+  padding: 0.5rem 0;
+}
+
+.wl-key-value__key {
+  font-family: var(--wireline-font-family-mono);
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-key-value__value {
+  font-size: var(--wireline-typography-body-size);
+  color: var(--wireline-color-text-primary);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.wl-key-value__value--mono {
+  font-family: var(--wireline-font-family-mono);
+  font-size: var(--wireline-typography-caption-size);
+}
+
+/* ----------------------------------------------------------------------------
+ * 18. Field — form field wrapper: label, control, hint, and error. Pair
+ *     with Input/Textarea/Select atoms; the wrapper owns spacing and tone.
+ * --------------------------------------------------------------------------*/
+.wl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.wl-field__label {
+  font-size: var(--wireline-typography-caption-size);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-field__hint {
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 1.5;
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-field__error {
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 1.5;
+  color: var(--wireline-color-status-error);
+}
+
+.wl-field--invalid .wl-field__label {
+  color: var(--wireline-color-status-error);
+}
+
+/* ----------------------------------------------------------------------------
+ * 19. Inline code chip — for pathnames, IDs, and short literals inside
+ *     prose. Warm paper chip, mono, never decorative.
+ * --------------------------------------------------------------------------*/
+.wl-code {
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.85em;
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xs);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-secondary);
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------------------
+ * 20. Wire link — inline copper link with a hairline underline that
+ *     brightens on hover. Use for in-prose navigation, not primary CTAs.
+ * --------------------------------------------------------------------------*/
+.wl-link {
+  color: var(--wireline-color-action-secondary-default);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--wireline-color-action-secondary-default) 40%, transparent);
+  transition:
+    color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
+}
+
+.wl-link:hover {
+  color: var(--wireline-color-action-secondary-hover);
+  border-bottom-color: var(--wireline-color-action-secondary-default);
+}
+
+.wl-link:focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-wire);
+  outline-offset: 2px;
+  border-radius: var(--wireline-radius-xs);
+}
+
+/* ----------------------------------------------------------------------------
+ * 21. Surface tint — hover/active background lift for interactive surfaces
+ *     that should not transform. Pairs with wl-focus-ring-halo.
+ * --------------------------------------------------------------------------*/
+.wl-surface-tint {
+  transition:
+    background-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard);
+}
+
+.wl-surface-tint:hover:not(:disabled) {
+  background: var(--wireline-color-surface-raised);
+  border-color: var(--wireline-color-border-strong);
+  box-shadow: var(--wireline-elevation-raised), var(--wireline-elevation-insetRaised);
+}
+
+.wl-surface-tint:active:not(:disabled) {
+  background: var(--wireline-color-surface-container);
+  box-shadow: var(--wireline-elevation-inset);
+}
+
+/* ----------------------------------------------------------------------------
+ * 22. Accelerate motion utility — mirrors the existing spring/wireline
+ *     helpers for the accelerate easing (entry/exit of departing elements).
+ * --------------------------------------------------------------------------*/
+.wl-motion-accelerate {
+  transition-timing-function: var(--wireline-motion-easing-accelerate);
+}
+
+/* ----------------------------------------------------------------------------
+ * 23. Extended reveal tiers — six through eight for longer lists and the
+ *     Studio agent roster so stagger never hard-caps at five.
+ * --------------------------------------------------------------------------*/
+.wl-reveal-6 { animation-delay: 240ms; }
+.wl-reveal-7 { animation-delay: 280ms; }
+.wl-reveal-8 { animation-delay: 320ms; }

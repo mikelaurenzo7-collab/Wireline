@@ -48,6 +48,7 @@ internal object WirelineDesignTokens {
     val colorStatusWarning = Color(0xFFD0A755)
     val colorSurfaceContainer = Color(0xFF242019)
     val colorSurfaceDefault = Color(0xFF1E1B16)
+    val colorSurfaceRaised = Color(0xFF2A241B)
     val colorSurfaceRecessed = Color(0xFF0E0C09)
     val colorSurfaceStrong = Color(0xFF2F2A22)
     val colorSurfaceSubtle = Color(0xFF1A1712)
@@ -110,7 +111,8 @@ internal object WirelineDesignTokens {
     const val motionDurationInstantMillis = 60
     const val motionDurationSlowMillis = 300
     const val motionDurationStandardMillis = 200
-    const val pressScale = 0.98f
+    const val pressScale = 0.985f
+    const val liftPx = 1
   }
 
   object ZIndex {

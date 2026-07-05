@@ -89,6 +89,13 @@ async function probeOpenAI(
 }
 router.get("/", healthRateLimiter, async (_req, res) => {
   const db = await probeDatabase();
+  // Short edge cache coalesces monitoring bursts (multiple uptime monitors,
+  // Vercel's own probes, and the app's internal checks) so a flood of health
+  // requests does not translate into a flood of Postgres probes. 5s keeps
+  // outage detection latency tight while cutting origin DB load under load.
+  // stale-while-revalidate lets the edge serve a slightly stale 200 while a
+  // fresh probe runs in the background, further reducing cold-origin hits.
+  res.setHeader("Cache-Control", "public, max-age=5, stale-while-revalidate=15");
   res.status(db.ok ? 200 : 503).json({ ok: db.ok, timestamp: new Date().toISOString() });
 });
 router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, res) => {
