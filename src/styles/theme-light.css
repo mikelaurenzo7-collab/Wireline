@@ -49,4 +49,15 @@
   --wireline-elevation-card: 0 8px 24px -16px rgba(26, 23, 18, 0.12);
   --wireline-elevation-md: 0 14px 34px -26px rgba(26, 23, 18, 0.14);
   --wireline-elevation-lg: 0 28px 70px -44px rgba(26, 23, 18, 0.18);
+
+  /* Shadcn semantic aliases inherit warm paper tokens above */
+  --background: var(--wireline-color-canvas-default);
+  --foreground: var(--wireline-color-text-primary);
+  --card: var(--wireline-color-surface-default);
+  --card-foreground: var(--wireline-color-text-primary);
+  --muted: var(--wireline-color-surface-subtle);
+  --muted-foreground: var(--wireline-color-text-secondary);
+  --border: var(--wireline-color-border-default);
+  --input: var(--wireline-color-border-default);
+  --ring: var(--wireline-color-focus-default);
 }

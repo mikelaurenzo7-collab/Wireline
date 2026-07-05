@@ -29,7 +29,12 @@ type AgentConfig = {
   role: string | null;
   archetype: string | null;
   enabledTools: AgentToolName[];
-  voice: { voiceId: string | null; provider: string | null };
+  voice: {
+    voiceId: string | null;
+    provider: string | null;
+    phoneVoiceId?: string | null;
+    phoneVoiceProvider?: string | null;
+  };
   personality: string;
   directives: Array<{ id: string | number; content: string; priority?: number }>;
   knowledge: Array<{ id: string | number; content: string }>;
@@ -208,6 +213,7 @@ export default function StudioAgentCanvas({
   const roleLabel = formatAgentRoleLabel(config?.role ?? null);
   const voiceName = displayVoiceName(config?.voice?.voiceId);
   const isPresenterVoice = config?.voice?.provider === "presenter";
+  const hasPhoneVoice = Boolean(config?.voice?.phoneVoiceId && config?.voice?.phoneVoiceProvider);
   const hasLiveLine = Boolean(selectedAgent?.phone_number);
   const personality = config?.personality?.trim() || "Not set";
   const docCount = config?.knowledge?.length ?? 0;
@@ -330,6 +336,7 @@ export default function StudioAgentCanvas({
             {isPresenterVoice ? (
               <PresenterPstnVoiceNotice
                 hasLiveLine={hasLiveLine}
+                phoneVoiceConfigured={hasPhoneVoice}
                 voiceEditHref={`/training?agent=${encodeURIComponent(agentId)}`}
                 className="mt-4"
               />

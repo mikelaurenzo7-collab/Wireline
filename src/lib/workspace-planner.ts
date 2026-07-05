@@ -11,7 +11,7 @@
  * fills out the exact change for them. The Account Holder reviews a one-click
  * card and approves — nothing mutates without confirmation.
  *
- * This module is the pure planning brain. It calls Claude once with a
+ * This module is the pure planning brain. It calls the managed structured runtime with a
  * forced tool, then validates + filters the result against an allowlist
  * so the chat can never propose a field or capability that doesn't
  * exist. Execution lives in the route handlers (apply-change /
@@ -22,7 +22,7 @@ import {
   runStructuredWithThinking,
   type StructuredToolSchema as ToolSchema,
 } from "./ai-structured";
-import { CLAUDE_MODELS } from "./claude-models";
+import { STRUCTURED_RUNTIME_MODELS } from "./structured-runtime-models";
 import {
   AGENT_TOOL_CATALOG,
   AGENT_TOOL_NAME_VALUES,
@@ -220,7 +220,7 @@ export interface WorkspacePlan {
   toolToggles: ProposedToolToggle[];
   actions: ProposedAction[];
   integrationJobs: DirectorIntegrationJob[];
-  /** Claude's adaptive thinking reasoning (when deep thinking is enabled). */
+  /** Managed runtime adaptive reasoning (when deep thinking is enabled). */
   reasoning?: string;
   /** Approximate thinking duration in ms (for UI badge). */
   thinkingDurationMs?: number;
@@ -487,7 +487,7 @@ function validateFieldValue(field: WorkspaceFieldKey, raw: unknown): string | nu
 }
 
 /**
- * Validate + normalize Claude's raw tool output into a safe WorkspacePlan.
+ * Validate + normalize raw structured output into a safe WorkspacePlan.
  * Anything malformed, out-of-allowlist, or no-op is silently dropped so the
  * UI only ever sees actionable, executable proposals.
  */
@@ -607,7 +607,7 @@ export function normalizePlan(
 }
 
 /**
- * Plan one workspace turn. Calls Claude with a forced tool, then
+ * Plan one workspace turn. Calls the managed runtime with a forced tool, then
  * validates the structured output. Throws if the model layer is
  * unavailable — the caller decides the fallback copy.
  */
@@ -620,11 +620,11 @@ export async function planWorkspace(input: PlanWorkspaceInput): Promise<Workspac
     system: buildSystemPrompt(input),
     user: buildUserContent(input),
     tool: DIRECT_AGENT_TOOL,
-    // Sonnet 4.6: capable enough to read nuanced Account Holder intent and pick
+    // Managed standard model: capable enough to read nuanced Account Holder intent and pick
     // the right field/capability reliably, while staying affordable. The
     // workspace chat is high-frequency, so spam cost is bounded by a
     // per-user rate limiter on the route rather than a model downgrade.
-    model: CLAUDE_MODELS.SONNET,
+    model: STRUCTURED_RUNTIME_MODELS.STANDARD,
     maxTokens: 1500,
   });
   const plan = normalizePlan(raw);

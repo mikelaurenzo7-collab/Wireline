@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { google } from "googleapis";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GEMINI_MODELS } from "../lib/claude-models";
+import { GEMINI_MODELS } from "../lib/ai-models";
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";

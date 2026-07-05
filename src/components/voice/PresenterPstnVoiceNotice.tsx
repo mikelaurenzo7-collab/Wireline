@@ -7,6 +7,8 @@ import { cn } from "../../lib/utils";
 type PresenterPstnVoiceNoticeProps = {
   /** Agent has a provisioned PSTN line. */
   hasLiveLine?: boolean;
+  /** Separate phone voice is configured for PSTN routing. */
+  phoneVoiceConfigured?: boolean;
   className?: string;
   voiceEditHref?: string;
 };
@@ -17,9 +19,12 @@ type PresenterPstnVoiceNoticeProps = {
  */
 export function PresenterPstnVoiceNotice({
   hasLiveLine = false,
+  phoneVoiceConfigured = false,
   className,
   voiceEditHref,
 }: PresenterPstnVoiceNoticeProps) {
+  if (phoneVoiceConfigured) return null;
+
   const hint = voiceRoutingHint("presenter");
   if (!hint) return null;
 

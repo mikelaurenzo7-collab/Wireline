@@ -31,7 +31,6 @@ import {
   type WorkspacePlan,
 } from "./workspace-planner";
 import type { StructuredToolSchema as ToolSchema } from "./ai-structured";
-import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 import {
   DEFAULT_DIRECTOR_MODEL_SELECTION,
   resolveDirectorLlm,
@@ -377,7 +376,7 @@ export function previewDirectorStreamRouting(
   const modelSelection =
     input.designRenderFallback === true &&
     (input.modelSelection ?? DEFAULT_DIRECTOR_MODEL_SELECTION).provider === "wireline"
-      ? { provider: "wireline" as const, tier: "opus" as const }
+      ? { provider: "wireline" as const, tier: "deep" as const }
       : input.modelSelection;
 
   if (focusId) {
@@ -385,11 +384,7 @@ export function previewDirectorStreamRouting(
       selection:
         input.modelSelection?.provider === "openrouter"
           ? input.modelSelection
-          : { provider: "wireline", tier: "sonnet" },
-      autoOpus: false,
-      deepThink: false,
-      claudeSonnet: CLAUDE_MODELS.SONNET,
-      claudeOpus: CLAUDE_DIRECTOR_MODEL,
+          : { provider: "wireline", tier: "standard" },
       modelLabelForOpenRouter: labelForOpenRouterModel,
     });
     const streamMeta = directorStreamMetaModel({ modelKind: coachLlm.modelKind, deepThink: false });
@@ -406,12 +401,9 @@ export function previewDirectorStreamRouting(
   }
 
   const llm = resolveDirectorLlm({
-    selection: modelSelection,
-    autoOpus: autoOpusEligible,
-    deepThink: deepThinkEligible,
+    selection: deepThinkEligible ? { provider: "wireline", tier: "deep" } : modelSelection,
+    autoDeep: autoOpusEligible,
     longDeliverable,
-    claudeSonnet: CLAUDE_MODELS.SONNET,
-    claudeOpus: CLAUDE_DIRECTOR_MODEL,
     modelLabelForOpenRouter: labelForOpenRouterModel,
   });
   const effectiveDeepThink = skipAdaptiveThinking ? false : llm.deepThink;
@@ -452,16 +444,13 @@ export async function buildDirectorStreamContext(
   const modelSelection =
     input.designRenderFallback === true &&
     (input.modelSelection ?? DEFAULT_DIRECTOR_MODEL_SELECTION).provider === "wireline"
-      ? { provider: "wireline" as const, tier: "opus" as const }
+      ? { provider: "wireline" as const, tier: "deep" as const }
       : input.modelSelection;
 
   const llm = resolveDirectorLlm({
-    selection: modelSelection,
-    autoOpus: autoOpusEligible,
-    deepThink: deepThinkEligible,
+    selection: deepThinkEligible ? { provider: "wireline", tier: "deep" } : modelSelection,
+    autoDeep: autoOpusEligible,
     longDeliverable,
-    claudeSonnet: CLAUDE_MODELS.SONNET,
-    claudeOpus: CLAUDE_DIRECTOR_MODEL,
     modelLabelForOpenRouter: labelForOpenRouterModel,
   });
 
@@ -498,11 +487,7 @@ export async function buildDirectorStreamContext(
         selection:
           input.modelSelection?.provider === "openrouter"
             ? input.modelSelection
-            : { provider: "wireline", tier: "sonnet" },
-        autoOpus: false,
-        deepThink: false,
-        claudeSonnet: CLAUDE_MODELS.SONNET,
-        claudeOpus: CLAUDE_DIRECTOR_MODEL,
+            : { provider: "wireline", tier: "standard" },
         modelLabelForOpenRouter: labelForOpenRouterModel,
       });
       return {

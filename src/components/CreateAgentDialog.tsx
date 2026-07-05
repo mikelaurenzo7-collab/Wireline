@@ -11,6 +11,7 @@ import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
 import { stashCreateWarning, stashPostCreateWizard } from "../lib/wireline-create-flow";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
+import { VAPI_CURATED_VOICES } from "../lib/voice-catalog";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 const ROLE_TEMPLATES = [
@@ -138,12 +139,22 @@ export default function CreateAgentDialog({
       let postCreateWarning: string | null = null;
 
       if (voice.mode === "custom") {
+        const defaultPhoneVoice = VAPI_CURATED_VOICES[0];
+        const voicePayload =
+          voice.provider === "presenter"
+            ? {
+                voiceId: voice.voiceId,
+                provider: voice.provider,
+                phoneVoiceId: defaultPhoneVoice.id,
+                phoneVoiceProvider: "vapi",
+              }
+            : { voiceId: voice.voiceId, provider: voice.provider };
         const voiceResponse = await authFetch(
           `/api/agent-config/${encodeURIComponent(body.id)}/voice`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ voiceId: voice.voiceId, provider: voice.provider }),
+            body: JSON.stringify(voicePayload),
           },
         );
         if (!voiceResponse.ok) {

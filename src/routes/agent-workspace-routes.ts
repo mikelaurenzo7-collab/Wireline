@@ -31,6 +31,7 @@ import {
 } from "../lib/agent-capabilities";
 import { executeAction } from "../lib/action-engine";
 import { runStructuredStream } from "../lib/ai-structured";
+import { isRuntimeAvailable } from "../lib/ai-client";
 
 const router = express.Router();
 
@@ -180,7 +181,7 @@ router.post(
       let reasoning: string | undefined;
       let thinkingDurationMs: number | undefined;
 
-      if (!process.env.ANTHROPIC_API_KEY) {
+      if (!isRuntimeAvailable()) {
         reply =
           "I can't respond right now — the LLM isn't configured. Your message is saved; try again later.";
       } else {
@@ -233,7 +234,7 @@ router.post(
     try {
       const agentId = req.params.id;
       const userMessage = req.body.content.trim();
-      if (!process.env.ANTHROPIC_API_KEY) {
+      if (!isRuntimeAvailable()) {
         throw AppError.fromHttpStatus(503, "LLM not configured");
       }
 
@@ -280,7 +281,7 @@ router.post(
         content: userMessage,
       });
 
-      const { CLAUDE_MODELS } = await import("../lib/claude-models");
+      const { STRUCTURED_RUNTIME_MODELS } = await import("../lib/structured-runtime-models");
 
       const DIRECT_AGENT_TOOL_SCHEMA = {
         name: "direct_agent",
@@ -319,7 +320,7 @@ router.post(
             system,
             user,
             tool: DIRECT_AGENT_TOOL_SCHEMA,
-            model: CLAUDE_MODELS.SONNET,
+            model: STRUCTURED_RUNTIME_MODELS.STANDARD,
             maxTokens: 1500,
           },
           {

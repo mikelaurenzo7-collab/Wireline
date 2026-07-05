@@ -15,9 +15,11 @@ import type {
   AgentVideoPresenterConfig,
   LiveAvatarSessionCredentials,
   LiveVideoAddonState,
+  VideoPresenterConsentStatus,
   VideoPresenterSessionResponse,
 } from "../lib/video-presenter/types";
 import AgentPresenceAvatarPicker from "./AgentPresenceAvatarPicker";
+import CustomPresenceConsentPanel from "./video-presenter/CustomPresenceConsentPanel";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
 import LiveVideoPresenter, { type LiveVideoPresenterHandle } from "./LiveVideoPresenter";
 import { mp3Base64ChunksToPcmBinary } from "../lib/voice/decode-browser-audio";
@@ -210,6 +212,31 @@ export default function AgentPresenceLivePreview({
     }
   }, []);
 
+  const submitConsent = useCallback(
+    async (consentStatus: VideoPresenterConsentStatus) => {
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/video-presenter`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ consentStatus }),
+        },
+      );
+      const payload = (await response.json()) as { presenter?: AgentVideoPresenterConfig };
+      if (!response.ok) {
+        throw new Error("Consent could not be saved.");
+      }
+      if (payload.presenter) {
+        setPresenterState((current) =>
+          current ? { ...current, presenter: payload.presenter! } : current,
+        );
+      } else {
+        await loadPresenter();
+      }
+    },
+    [agentId, loadPresenter],
+  );
+
   const presenter = presenterState?.presenter;
   const platformConfigured = presenterState?.platform.configured ?? false;
   const addon = presenterState?.addon;
@@ -303,6 +330,13 @@ export default function AgentPresenceLivePreview({
           onUpdated={(next) =>
             setPresenterState((current) => (current ? { ...current, presenter: next } : current))
           }
+        />
+      ) : null}
+
+      {isBusinessAgent && presenter ? (
+        <CustomPresenceConsentPanel
+          consentStatus={presenter.consentStatus}
+          onSubmit={submitConsent}
         />
       ) : null}
 

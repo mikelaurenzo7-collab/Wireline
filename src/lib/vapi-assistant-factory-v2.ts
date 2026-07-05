@@ -93,8 +93,13 @@ export async function buildVapiAssistant({
   let voiceProvider = configured.voiceProvider || "11labs";
   let effectiveVoiceId = voiceId;
   if (voiceProvider === "presenter") {
-    voiceProvider = "11labs";
-    effectiveVoiceId = pickRotatedVoiceId(0);
+    const phoneProvider = (configured.phoneVoiceProvider || "vapi").toLowerCase();
+    voiceProvider = phoneProvider === "vapi" ? "vapi" : "11labs";
+    effectiveVoiceId =
+      configured.phoneVoiceId ||
+      configured.voiceIdInbound ||
+      configured.voiceId ||
+      pickRotatedVoiceId(0);
   }
   const speech = resolveVapiSpeechPipeline();
   const latency = getVoiceLatencyProfile({

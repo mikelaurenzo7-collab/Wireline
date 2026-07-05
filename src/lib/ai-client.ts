@@ -372,7 +372,11 @@ async function createWithFallbacks(
       return response;
     } catch (primaryError) {
       circuitBreaker.recordFailure(primaryError);
-      log.warn(`[ai-runtime] ${primaryName} request failed; trying Gemini fallback`, {
+      const fallbackMessage =
+        primaryName === "OpenAI"
+          ? "OpenAI request failed; trying Gemini fallback"
+          : `${primaryName} request failed; trying Gemini fallback`;
+      log.warn(`[ai-runtime] ${fallbackMessage}`, {
         error: errorMessage(primaryError),
         breakerState: circuitBreaker.getState(),
       });

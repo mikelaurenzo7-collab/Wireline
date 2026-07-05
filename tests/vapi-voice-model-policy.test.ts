@@ -5,7 +5,7 @@ import {
   VAPI_VOICE_FALLBACK_MODEL,
   isOpenRouterModelId,
   resolveVapiVoiceModelSelection,
-} from "./ai-models";
+} from "../src/lib/ai-models";
 
 /**
  * Managed PSTN / Vapi voice model policy tests.

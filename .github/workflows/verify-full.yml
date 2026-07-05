@@ -1,0 +1,40 @@
+name: Verify full
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-full-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-full:
+    name: Full verification ladder
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: verify:full
+        run: npm run verify:full
+
+      - name: verify:contracts
+        run: npm run verify:contracts
+
+      - name: Browser extension check
+        run: node apps/browser-extension/scripts/build.mjs --check

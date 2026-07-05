@@ -19,11 +19,15 @@ describe("product event taxonomy", () => {
       "signup_started",
       "signup_completed",
       "agent_draft_created",
+      "agent_created",
       "training_asset_added",
+      "post_create_wizard_step_completed",
       "test_call_completed",
       "wire_started",
       "agent_launch_completed",
+      "first_call_completed",
       "live_call_completed",
+      "upgrade_to_paid",
     ]);
   });
 
@@ -50,6 +54,10 @@ describe("product event taxonomy", () => {
 
   it("validates event names, audiences, and surfaces", () => {
     expect(isProductEventName("agent_draft_created")).toBe(true);
+    expect(isProductEventName("agent_created")).toBe(true);
+    expect(isProductEventName("post_create_wizard_step_completed")).toBe(true);
+    expect(isProductEventName("first_call_completed")).toBe(true);
+    expect(isProductEventName("upgrade_to_paid")).toBe(true);
     expect(isProductEventName("agent_created_eventually")).toBe(false);
     expect(isProductEventAudience("solo_business")).toBe(true);
     expect(isProductEventAudience("solo business")).toBe(false);

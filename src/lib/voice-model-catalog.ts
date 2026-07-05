@@ -12,6 +12,6 @@ export {
   type VoiceModelOption,
   type VoiceModelSpeed,
   type VapiVoiceModelSelection,
-} from "./claude-models";
+} from "./ai-models";
 
 export { WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL } from "./voice-model-defaults";

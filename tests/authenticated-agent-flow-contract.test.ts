@@ -130,4 +130,29 @@ describe("authenticated agent flow", () => {
     expect(voices).toContain("curatedPreviewRateLimiter");
     expect(voices).toContain('"/api/voices/curated/preview"');
   });
+
+  it("routes presenter PSTN through dual phone voice columns", () => {
+    const schema = read("src/db/schema.ts");
+    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+    const routes = read("src/routes/agent-routes-v2.ts");
+    const createDialog = read("src/components/CreateAgentDialog.tsx");
+
+    expect(schema).toContain("phoneVoiceId");
+    expect(schema).toContain("phoneVoiceProvider");
+    expect(factory).toContain("configured.phoneVoiceProvider");
+    expect(factory).toContain("configured.phoneVoiceId");
+    expect(routes).toContain("phoneVoiceId");
+    expect(createDialog).toContain("phoneVoiceId");
+    expect(createDialog).toContain('phoneVoiceProvider: "vapi"');
+  });
+
+  it("surfaces custom presence consent FTUX for business agents", () => {
+    const preview = read("src/components/AgentPresenceLivePreview.tsx");
+    const panel = read("src/components/video-presenter/CustomPresenceConsentPanel.tsx");
+
+    expect(preview).toContain("CustomPresenceConsentPanel");
+    expect(preview).toContain("consentStatus");
+    expect(panel).toContain("Submit for review");
+    expect(panel).toContain("rights to use this likeness");
+  });
 });

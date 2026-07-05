@@ -335,6 +335,8 @@ router.get(
           llmTemperature: schema.agents.llmTemperature,
           voiceId: schema.agents.voiceId,
           voiceProvider: schema.agents.voiceProvider,
+          phoneVoiceId: schema.agents.phoneVoiceId,
+          phoneVoiceProvider: schema.agents.phoneVoiceProvider,
           // business profile fields
           businessHours: schema.agents.businessHours,
           timezone: schema.agents.timezone,
@@ -408,7 +410,12 @@ router.get(
         model: record?.llmModel || null,
         temperature: record?.llmTemperature || null,
       },
-      voice: { voiceId: record?.voiceId || null, provider: record?.voiceProvider || null },
+      voice: {
+        voiceId: record?.voiceId || null,
+        provider: record?.voiceProvider || null,
+        phoneVoiceId: record?.phoneVoiceId || null,
+        phoneVoiceProvider: record?.phoneVoiceProvider || null,
+      },
       personality: personalities[0]?.content || "",
       directives,
       knowledge,
@@ -564,11 +571,35 @@ router.patch(
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
     const provider = providerRaw;
+    const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
+    const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
+    const phoneProviders = new Set(["11labs", "vapi"]);
+    if (phoneVoiceProviderRaw && !phoneProviders.has(phoneVoiceProviderRaw)) {
+      throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
+    }
+    const patch: {
+      voiceId: string | null;
+      voiceProvider: string | null;
+      phoneVoiceId?: string | null;
+      phoneVoiceProvider?: string | null;
+    } = { voiceId, voiceProvider: provider };
+    if (provider === "presenter" || phoneVoiceId || phoneVoiceProviderRaw) {
+      patch.phoneVoiceId = phoneVoiceId;
+      patch.phoneVoiceProvider = phoneVoiceProviderRaw;
+    }
     await drizzle
       .update(schema.agents)
-      .set({ voiceId, voiceProvider: provider })
+      .set(patch)
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
-    res.json({ success: true, voice: { voiceId, provider } });
+    res.json({
+      success: true,
+      voice: {
+        voiceId,
+        provider,
+        phoneVoiceId: patch.phoneVoiceId ?? null,
+        phoneVoiceProvider: patch.phoneVoiceProvider ?? null,
+      },
+    });
   },
 );
 

@@ -17,7 +17,10 @@
  *   - Adaptive thinking (Deep analysis) runs only when the Account Holder toggles Deep.
  */
 import { runStructuredWithThinking } from "./ai-structured";
-import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
+import {
+  STRUCTURED_DIRECTOR_DEEP_MODEL,
+  STRUCTURED_RUNTIME_MODELS,
+} from "./structured-runtime-models";
 import {
   DIRECTOR_FLEET_TOOL,
   buildDirectorAssistantSystemPrompt,
@@ -154,7 +157,7 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     !input.shallowOnly &&
     (input.forceDeep === true || (!fleetAudit && wantsOpusModel(input.userMessage)));
   const longDeliverable = wantsLongDeliverable(input.userMessage);
-  const model = useOpus ? CLAUDE_DIRECTOR_MODEL : CLAUDE_MODELS.SONNET;
+  const model = useOpus ? STRUCTURED_DIRECTOR_DEEP_MODEL : STRUCTURED_RUNTIME_MODELS.STANDARD;
   const [connections, research] = await Promise.all([
     loadTenantIntegrationConnections(input.userId),
     fleetAudit

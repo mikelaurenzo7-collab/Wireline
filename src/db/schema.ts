@@ -298,6 +298,9 @@ export const agents = pgTable(
      */
     secondaryVoiceId: text("secondary_voice_id"),
     voiceProvider: text("voice_provider").default("11labs"),
+    /** PSTN line voice when studio voice uses presenter lip-sync. */
+    phoneVoiceId: text("phone_voice_id"),
+    phoneVoiceProvider: text("phone_voice_provider"),
     firstMessage: text("first_message"),
     archetype: text("archetype").default("Receptionist"),
     ambientNoise: text("ambient_noise").default("off"),

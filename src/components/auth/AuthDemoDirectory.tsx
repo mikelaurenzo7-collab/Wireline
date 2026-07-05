@@ -22,7 +22,7 @@ function AgentContactCard({
           className={cn(
             "rounded-md flex items-center justify-center shrink-0",
             landing ? "w-9 h-9" : "w-6 h-6",
-            isDemo ? "bg-black/[0.04]" : "wl-accent-surface",
+            isDemo ? "bg-[var(--wireline-color-surface-container)]" : "wl-accent-surface",
           )}
           data-accent={isDemo ? undefined : agent.tint}
         >
