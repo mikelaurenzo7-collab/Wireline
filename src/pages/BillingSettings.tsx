@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Badge, Skeleton } from "../components/atoms";
+import { ShadButton } from "../components/ui/shadcn/ShadButton";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 type SubscriptionState = {
@@ -55,6 +57,9 @@ export default function BillingSettings() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,12 +89,51 @@ export default function BillingSettings() {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("balance") === "success" || params.get("billing") === "success") {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   const activePlan = planDetails(subscription?.plan ?? null);
   const hasSubscription = Boolean(subscription?.plan && subscription?.current_period_end);
   const monthlyPrice = activePlan.monthly > 0 ? `$${activePlan.monthly}/mo` : "$0";
   const invoiceTotal = `$${activePlan.monthly}.00`;
   const balanceFill =
     balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
+
+  async function addBalance(amountUsd: number) {
+    setTopUpBusy(amountUsd);
+    setActionError(null);
+    try {
+      const res = await authFetch("/api/conversation-balance/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount_usd: amountUsd }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) throw new Error(data?.error || "Could not start checkout.");
+      window.location.href = data.url;
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not start checkout.");
+      setTopUpBusy(null);
+    }
+  }
+
+  async function openBillingPortal() {
+    setPortalBusy(true);
+    setActionError(null);
+    try {
+      const res = await authFetch("/api/billing/portal", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) throw new Error(data?.error || "Could not open billing portal.");
+      window.location.href = data.url;
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not open billing portal.");
+      setPortalBusy(false);
+    }
+  }
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
@@ -121,6 +165,23 @@ export default function BillingSettings() {
                   Status · {subscription.status.replace(/_/g, " ")}
                 </p>
               ) : null}
+              {hasSubscription ? (
+                <ShadButton
+                  type="button"
+                  disableAnimations
+                  variant="outline"
+                  onClick={() => void openBillingPortal()}
+                  disabled={portalBusy}
+                  className="mt-5 inline-flex gap-2 border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+                >
+                  {portalBusy ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <ExternalLink className="size-4" aria-hidden="true" />
+                  )}
+                  Manage subscription
+                </ShadButton>
+              ) : null}
             </>
           )}
         </section>
@@ -141,6 +202,27 @@ export default function BillingSettings() {
                     className="h-full rounded-full bg-primary transition-all"
                     style={{ width: `${balanceFill}%` }}
                   />
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => (
+                    <ShadButton
+                      key={amount}
+                      type="button"
+                      disableAnimations
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void addBalance(amount)}
+                      disabled={topUpBusy !== null}
+                      className="gap-1.5"
+                    >
+                      {topUpBusy === amount ? (
+                        <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Plus className="size-3.5" aria-hidden="true" />
+                      )}
+                      ${amount}
+                    </ShadButton>
+                  ))}
                 </div>
               </>
             )}
@@ -167,6 +249,12 @@ export default function BillingSettings() {
             )}
           </article>
         </section>
+
+        {actionError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {actionError}
+          </p>
+        ) : null}
 
         <section className="studio-card p-5 sm:p-6">
           <p className={WL_APP_CLASSES.wiredEyebrow}>Recent invoices</p>
