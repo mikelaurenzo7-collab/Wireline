@@ -1,49 +1,113 @@
 # Codebase Health
 
+This file is Wireline's repo-health contract. It defines what belongs in source control, what must be deleted or ignored, and which documents are canonical.
+
+## Current north star
+
+Wireline is a dark, precise agent operating layer for calls, texts, follow-up, browser context, email, integrations, and optional video presenters. The product model is **Create -> Train -> Wire -> Run**.
+
+- **Create** is short intake only: name, role, voice, personality, and starting brief.
+- **Train** owns deep configuration: documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
+- **Wire** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
+- **Run / Studio** is chat-first execution for calls, texts, follow-up, approvals, handoff, and review.
+- **Video presenter** is an optional business-agent visual layer. Vendor names stay out of customer-facing copy; the Wireline face remains the fallback.
+
+Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired.
+
 ## Active product boundary
 
-Wireline's authenticated product starts at `/agents` and follows the Create → Train → Run model.
+| Surface | Active source |
+| --- | --- |
+| Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
+| Overview | `src/pages/OverviewPage.tsx` |
+| Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` |
+| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx` |
+| Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
+| Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
+| Shell | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx` |
+| Design | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
+| Billing | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, `docs/business-usage-pricing-decision.md` |
+| Voice | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/GROK_LIVE_VOICE.md` |
+| Video presenter | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts` |
+| Browser extension | `apps/browser-extension/` |
+| ChatGPT App | `docs/CHATGPT_APP.md`, ChatGPT MCP route/tool code |
 
-- Create Agent is short intake only: name, role, voice, personality, and starting brief.
-- Training is the first-class detailed configuration surface for documents, sources, behavior, voice, policies, and evaluation.
-- Run/Studio is chat-first execution for agent work, approvals, calls, texts, follow-up, and handoff.
-- Historic dashboard, operations, command-center, chat, and manager URLs must either redirect into the current product model or be explicitly retired.
-- Active product source: `src/pages/AgentStudioHome.tsx`, `src/routes/AppRoutes.tsx`, `src/components/WorkspaceShell.tsx`, `src/index.css`, `src/styles/foundation.css`, and `src/styles/design-system.css`.
-- The authenticated app does not mount account-switching or branding providers unless a current route explicitly needs them. Old providers were producing unnecessary account/settings fetches from every active session.
+## Source-control rules
 
-## Guardrails
+### Must stay out of the repo
 
-- Do not add visual contracts, screenshot baselines, token aliases, hotfix sheets, AI-session artifacts, or tracked QA output.
-- Do not reintroduce automatic phone-number provisioning at agent creation. An agent begins as a draft, then gets trained and wired deliberately.
-- Keep tenant reads/writes scoped to the authenticated user. Keep auth, authorization, billing, webhooks, rate limits, and CSP policy checks intact.
-- Keep browser extension behavior explicit-user-action only: no broad host permissions, no page harvesting, no token storage, no silent browsing activity collection.
+- `.grok/artifacts/`, `.grok/tmp/`, local agent-session output, generated review summaries, generated execution plans, and local design-agent artifacts.
+- Visual QA output, screenshots, Playwright reports, coverage reports, build output, generated browser-extension packages, local patches, reject files, temporary scripts, and worktree scratchpads.
+- Secrets, exported environment mirrors, customer data, transcripts, raw provider payloads, local test databases, and personal machine paths.
 
-## Database posture
+### Must be deleted when found
 
-- Wireline uses the server Postgres connection and does not use `supabase-js` from the browser.
-- Migration `0045_lockdown_public_supabase_grants.sql` revokes public `anon` and `authenticated` role grants from public tables, sequences, and functions, and changes default privileges so future objects remain server-only.
-- RLS-without-policy notices on server-only tables are fail-closed after grants are revoked; do not create permissive policies merely to silence a linter.
-- Supabase still reports leaked-password protection disabled. Enable it in Supabase Auth settings before public launch.
+- Thin `*-v2` wrappers or one-line re-export files that exist only to bridge a migration.
+- Duplicate docs whose durable content is already represented by `README.md`, `CODEBASE_HEALTH.md`, `ARCHITECTURE.md`, or `docs/README.md`.
+- Generated design reviews, AI review files, temporary execution summaries, or branch-local artifacts.
+- Retired redirect-only routes after the new active surface is stable and no external client depends on the old URL.
+- Old redesign palettes, standalone CSS experiments, mesh/nebula primitives, decorative off-palette colors, or unowned visual contracts.
 
-## Deletion & cleanup rules - Wireline Letterpress era
+### Preserve unless explicitly audited
 
-- **No thin re-export wrappers**: Any file whose sole purpose is `export { default } from "./*-v2"` or similar re-exports of migration artifacts must be deleted. Migration debt of this form is forbidden.
-- **Legacy path handling**: Old redirect components or routes for retired surfaces must be removed once the new surface is stable. Use 410 Gone responses only when necessary for external clients.
-- **Admin-migrate scripts**: These are historical one-time migration tools. Do not delete individual migration files unless they are confirmed obsolete and have no audit value. Prefer moving completed migrations to an `archive/migrations/` folder if they clutter the active routes.
-- **Module size discipline**: No new file should exceed ~15-20k lines without a clear plan to split. Existing large monoliths must be progressively split by responsibility.
-- **Wireline Letterpress supremacy**: All new styling, tokens, class names, and visual components must derive from `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/constants/generated-design-tokens.ts`, and `src/styles/design-system.css`. Do not reintroduce legacy purple, signal blue, dark Studio themes, mesh/nebula primitives, standalone redesign palettes, or ad-hoc color tokens.
-- **Agent language**: User-facing surfaces should say Agents, Training, Wire, Studio, calls, texts, and follow-up. Avoid reviving generic assistant/dashboard/operator language unless it is an external API term or internal implementation name.
-- **Stale artifacts**: Generated files, local visual QA output, standalone redesign exports, temporary screenshots, and one-off migration CSS belong in `.gitignore` or CI cleanup, not committed long-term.
+- Drizzle migrations, historical security notes, billing decisions, authz evidence, public launch runbooks, and product-contract tests.
+- Historical docs with audit value, as long as `docs/README.md` marks them historical or links them under the correct section.
+
+## Design-system discipline
+
+Wireline Letterpress is the only active design system.
+
+- Forest/patina green is action.
+- Ink is structure.
+- Warm paper/dark canvas is calm.
+- Copper is the wire accent, not a broad decorative palette.
+- Instrument Serif carries big ideas; DM Sans carries work; Space Mono carries labels.
+- Touch targets stay at least 44px. Focus rings stay visible. Accessible names must survive visual polish.
+- Do not reintroduce legacy purple, signal blue, dark Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
+
+## Product-language discipline
+
+Use customer-facing language consistently:
+
+- Prefer: `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `presenter`, `face`, `live video add-on`.
+- Avoid reviving generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, or vendor names unless the term is internal code, provider configuration, or an external API name.
+
+## Documentation taxonomy
+
+| Document | Role |
+| --- | --- |
+| `README.md` | Entry point, repo map, verification commands, hygiene contract. |
+| `CODEBASE_HEALTH.md` | Cleanup rules, source-control boundaries, deletion policy. |
+| `ARCHITECTURE.md` | Runtime architecture, data-flow boundaries, security invariants. |
+| `docs/README.md` | Documentation index and canonical/historical status map. |
+| `docs/REPO_HEALTH_AUDIT_2026-07-04.md` | Current health-pass audit, actions, and next priorities. |
+| `docs/business-usage-pricing-decision.md` | Billing catalog and Stripe product model. |
+| `docs/CLIENT_SURFACES.md` | Web, browser, native, and ChatGPT ownership boundaries. |
+| `docs/CHATGPT_APP.md` | ChatGPT App contract and release verification. |
+| `docs/superpowers/**` | Historical planning/spec artifacts only unless promoted into canonical docs. |
 
 ## Verification
 
-- `npm run verify` — design check, production build, and bundled-server import smoke.
-- `npm run verify:full` — type check, design check, authorization coverage, CSP policy, product-doc contracts, tests, build, and smoke.
-- `node apps/browser-extension/scripts/build.mjs --check` — browser extension policy and artifact check.
-- `GET /api/health` — production health probe.
+Run the narrowest sufficient check while developing, then the full gate before merge.
+
+- `npm run verify` — design check, Stripe catalog contract, production build, and bundled-server import smoke.
+- `npm run verify:full` — type check, server lint, design check, Stripe catalog contract, authz, bootstrap, CSP, tests, build, and smoke.
+- `npm run verify:contracts` — product voice, metadata, event taxonomy, and static contracts.
+- `node apps/browser-extension/scripts/build.mjs --check` — browser extension packaging and policy checks.
+- `GET /api/health` — deployed health probe.
 - Review Vercel runtime errors after each deployment.
 
-## Recent health actions - Wireline Letterpress standardization
+## Recent health actions
+
+### 2026-07-04 repo-health pass
+
+- Added `.grok/artifacts/` and `.grok/tmp/` to `.gitignore`.
+- Refreshed `README.md`, `CODEBASE_HEALTH.md`, `ARCHITECTURE.md`, and `docs/README.md` around the active Create -> Train -> Wire -> Run model.
+- Added `docs/REPO_HEALTH_AUDIT_2026-07-04.md` as the current source of truth for this health pass.
+- Removed tracked Grok/generated review artifacts discovered in `.grok/artifacts/`.
+- Marked generated/local AI artifacts as non-durable source-control material.
+
+### Prior Wireline Letterpress standardization
 
 - Replaced the old design contract with `scripts/check-wireline-clear-system.mjs`.
 - Moved source tokens, generated CSS, generated TypeScript, browser extension tokens, native Android tokens, iOS tokens, icons, legal pages, and app manifests to Wireline Letterpress.
