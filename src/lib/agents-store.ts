@@ -6,7 +6,7 @@ import { desc, eq } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
-import { isPostgresMissingColumn } from "./director-store";
+import { isPostgresMissingColumn } from "./postgres-errors";
 
 export interface AgentListRow {
   id: string;
