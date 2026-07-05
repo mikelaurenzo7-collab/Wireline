@@ -169,7 +169,13 @@ export async function buildVapiAssistant({
     backgroundDenoisingEnabled: false,
     backchannelingEnabled: true,
     recordingEnabled: configured.complianceMode !== "hipaa",
-    serverMessages: ["end-of-call-report", "status-update", "conversation-update", "tool-calls"],
+    serverMessages: [
+      "end-of-call-report",
+      "status-update",
+      "conversation-update",
+      "tool-calls",
+      "speech-update",
+    ],
     clientMessages: ["transcript", "hang", "function-call", "speech-update", "conversation-update"],
     functions: await buildRoleToolDefsForTenant(
       configured.role || "customer_service",

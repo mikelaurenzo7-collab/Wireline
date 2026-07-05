@@ -22,6 +22,7 @@ import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
 import { touchNavCounts } from "../../lib/nav-counts-invalidate";
 import { notifyInboundCall } from "../../lib/mobile-push";
+import { clearVapiAssistantSpeaking, setVapiAssistantSpeaking } from "../../lib/vapi-listen-gate";
 import {
   isToolCallFailureResult,
   recordInboundWebhookHealth,
@@ -270,6 +271,22 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
       outcome: "success",
     });
     return res.json({ results });
+  }
+
+  if (message && message.type === "speech-update") {
+    const callId = (payload.call as { id?: string } | undefined)?.id;
+    const role = String((message as { role?: string }).role || "");
+    const status = String((message as { status?: string }).status || "");
+    if (callId && role === "assistant") {
+      if (/start/i.test(status)) setVapiAssistantSpeaking(callId, true);
+      else if (/stop|end/i.test(status)) setVapiAssistantSpeaking(callId, false);
+    } else if (callId && role === "user" && /start/i.test(status)) {
+      setVapiAssistantSpeaking(callId, false);
+    }
+    if (callId && /ended|completed/i.test(status || "")) {
+      clearVapiAssistantSpeaking(callId);
+    }
+    return res.json({ ok: true });
   }
 
   if (message && message.type === "status-update") {

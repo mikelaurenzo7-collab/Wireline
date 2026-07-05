@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
+import { WiredEyebrow } from "./ui/WiredEyebrow";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -94,7 +95,7 @@ export default function WebhooksManager() {
             <Webhook className="w-5 h-5" />
           </div>
           <div>
-            <p className="app-section-title">Outbound Webhooks</p>
+            <WiredEyebrow>Outbound Webhooks</WiredEyebrow>
             <h4 className="font-display italic text-2xl text-foreground leading-tight mt-1">
               Push events anywhere
             </h4>

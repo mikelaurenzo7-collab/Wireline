@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { cn } from "../lib/utils";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { type AgentToolName } from "../lib/agent-capabilities";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 import { providerLabel, resolveVoiceLabel } from "../lib/voice-catalog";
@@ -10,6 +12,7 @@ import { useAccount } from "../contexts/AccountContext";
 import { computeAgentReadiness } from "./fleet-settings/agent-readiness";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
 import AgentPresenceCatalogThumb from "./AgentPresenceCatalogThumb";
+import { WiredEyebrow } from "./ui/WiredEyebrow";
 import type { AgentVideoPresenterConfig } from "../lib/video-presenter/types";
 
 /**
@@ -103,7 +106,7 @@ function CardShell({
       className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_rgba(43,85,72,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
     >
       <div className="mb-3.5 flex items-center justify-between gap-3">
-        <span className="wl-eyebrow">{label}</span>
+        <span className={cn(WL_APP_CLASSES.wiredEyebrow, "wl-eyebrow")}>{label}</span>
         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
           {action}
           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
@@ -249,7 +252,7 @@ export default function StudioAgentCanvas({
       className={`h-full min-h-0 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
     >
       <div className="mb-6">
-        <div className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Agent Canvas</div>
+        <WiredEyebrow>Agent Canvas</WiredEyebrow>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -598,9 +601,9 @@ export default function StudioAgentCanvas({
           </div>
         </CardShell>
 
-        <div className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
+        <div className="studio-card rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <span className="wl-eyebrow">Setup health</span>
+            <WiredEyebrow>Setup health</WiredEyebrow>
             <span className="text-xs font-semibold text-primary">
               {readiness.score}/{readiness.total} · {readiness.ready ? "Ready" : "In progress"}
             </span>

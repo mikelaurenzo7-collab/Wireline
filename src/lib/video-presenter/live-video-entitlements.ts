@@ -20,6 +20,7 @@ export type LiveVideoEntitlement = {
   /** Tenant is allowed to enable live video right now. */
   billingEntitled: boolean;
   liveVideoAddonEnabled: boolean;
+  liveVideoCheckoutAvailable: boolean;
   planId: StripePlanId | null;
   upgradeRequired: boolean;
   reason: string | null;
@@ -42,6 +43,7 @@ export async function resolveLiveVideoEntitlement(
       addonOffered: platformConfigured,
       billingEntitled: true,
       liveVideoAddonEnabled: true,
+      liveVideoCheckoutAvailable: Boolean(process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID),
       planId: "enterprise",
       upgradeRequired: false,
       reason: null,
@@ -75,16 +77,19 @@ export async function resolveLiveVideoEntitlement(
   } else if (!billingEntitled) {
     reason = onPaidPlan
       ? "Activate your subscription to unlock live video."
-      : "Upgrade to Wireline Team or higher to add live video.";
+      : "Subscribe to the live video add-on ($19/mo) or upgrade to Wireline Team to stream photoreal presenters.";
   }
+
+  const checkoutAvailable = Boolean(process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID);
 
   return {
     platformConfigured,
     addonOffered: platformConfigured,
     billingEntitled,
     liveVideoAddonEnabled: workspaceFlag,
+    liveVideoCheckoutAvailable: checkoutAvailable,
     planId,
-    upgradeRequired: platformConfigured && !billingEntitled,
+    upgradeRequired: platformConfigured && !billingEntitled && !checkoutAvailable,
     reason,
   };
 }

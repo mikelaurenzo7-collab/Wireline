@@ -79,6 +79,15 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode === "subscription" && session.subscription) {
+          if (session.metadata?.purpose === "live_video_addon") {
+            const userId = session.metadata.wireline_user_id;
+            if (userId) {
+              await drizzle
+                .update(schema.settings)
+                .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
+                .where(eq(schema.settings.userId, userId));
+            }
+          }
           const subId =
             typeof session.subscription === "string"
               ? session.subscription
@@ -857,6 +866,84 @@ router.post(
     } catch (e: any) {
       log.error("Credit checkout creation failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Credit checkout failed");
+    }
+  },
+);
+
+router.post(
+  "/billing/live-video-checkout",
+  authenticateUser,
+  enforceLaunchHardGate,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+      const priceId = process.env.STRIPE_LIVE_VIDEO_ADDON_PRICE_ID;
+      if (!priceId) {
+        return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
+          error: "Live video add-on is not configured (STRIPE_LIVE_VIDEO_ADDON_PRICE_ID).",
+        });
+      }
+
+      const [row] = await drizzle
+        .select({
+          stripeCustomerId: schema.subscriptions.stripeCustomerId,
+          liveVideoAddonEnabled: schema.settings.liveVideoAddonEnabled,
+        })
+        .from(schema.settings)
+        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+
+      if (row?.liveVideoAddonEnabled) {
+        return res.status(409).json({
+          code: "LIVE_VIDEO_ALREADY_ENABLED",
+          error: "Live video add-on is already active on this workspace.",
+        });
+      }
+
+      let customerId = row?.stripeCustomerId || null;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: req.user.email,
+          metadata: { wireline_user_id: req.user.id },
+        });
+        customerId = customer.id;
+        await drizzle
+          .insert(schema.subscriptions)
+          .values({ userId: req.user.id, stripeCustomerId: customerId, updatedAt: new Date() })
+          .onConflictDoUpdate({
+            target: schema.subscriptions.userId,
+            set: { stripeCustomerId: customerId, updatedAt: new Date() },
+          });
+      }
+
+      const appUrl = resolveCanonicalAppUrl();
+      if ("error" in appUrl) {
+        return res
+          .status(503)
+          .json({ error: "Billing is unavailable: APP_URL is not configured." });
+      }
+      const base = appUrl.url;
+      const addonMeta = {
+        wireline_user_id: req.user.id,
+        purpose: "live_video_addon",
+      };
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: customerId,
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${base}/settings/billing?live_video=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${base}/settings/billing?live_video=canceled`,
+        metadata: addonMeta,
+        subscription_data: { metadata: addonMeta },
+      });
+
+      res.json({ url: session.url });
+    } catch (e: any) {
+      log.error("Live video checkout creation failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Live video checkout failed");
     }
   },
 );

@@ -162,7 +162,7 @@ export default function AgentPresencePstnBridge({
       )}
       {liveVideoActive && session && lipSyncReady ? (
         <p className="mt-2 text-center text-[10px] text-muted-foreground">
-          Live call audio drives lip-sync.
+          Live call audio drives lip-sync when the assistant is speaking.
         </p>
       ) : null}
     </div>

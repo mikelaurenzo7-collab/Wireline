@@ -51,6 +51,7 @@ describe("video presenter integration", () => {
     expect(routes).toContain("LIVE_VIDEO_UPGRADE_REQUIRED");
     const preview = source("src/components/AgentPresenceLivePreview.tsx");
     expect(preview).toContain("Add live video");
+    expect(preview).toContain("live-video-checkout");
     expect(preview).toContain("liveVideoMeteringNote");
     const readiness = source("src/components/fleet-settings/agent-readiness.ts");
     expect(readiness).toContain("softNudges");
@@ -82,6 +83,26 @@ describe("video presenter integration", () => {
     const supervisor = source("src/services/supervisor-websocket-service.ts");
     expect(supervisor).toContain("isAllowedVapiListenUrl");
     expect(supervisor).not.toContain("verifyCallOwnership");
+    expect(source("src/lib/vapi-listen-gate.ts")).toContain("speech-update");
+    expect(supervisor).toContain("isVapiAssistantSpeaking");
+  });
+
+  it("exposes Stripe live video add-on checkout", () => {
+    const billing = source("src/routes/billing-routes.ts");
+    expect(billing).toContain("/billing/live-video-checkout");
+    expect(billing).toContain("live_video_addon");
+    expect(source("scripts/setup-stripe-catalog.mjs")).toContain(
+      "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
+    );
+    expect(source("src/components/StripeBillingCard.tsx")).toContain("live-video-checkout");
+  });
+
+  it("wires Studio canvas wired kickers and copper caps", () => {
+    const canvas = source("src/components/StudioAgentCanvas.tsx");
+    expect(canvas).toContain("WiredEyebrow");
+    expect(canvas).toContain("wl-canvas-card");
+    const readiness = source("src/components/fleet-settings/AgentReadinessStage.tsx");
+    expect(readiness).toContain("Launch readiness");
   });
 
   it("streams call-floor presence via SSE with polling fallback", () => {

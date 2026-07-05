@@ -12,6 +12,7 @@
  */
 import { ArrowDown, Check, Smartphone, Sparkles } from "lucide-react";
 import { computeAgentReadiness } from "./agent-readiness";
+import { WiredEyebrow } from "../ui/WiredEyebrow";
 import { cn } from "../../lib/utils";
 import type { AccountType } from "../../lib/account-type";
 
@@ -38,6 +39,7 @@ export default function AgentReadinessStage({
 
   return (
     <div className="shrink-0 border-b border-border/50 bg-card/30 px-4 py-3 dark:bg-velvet/20">
+      <WiredEyebrow className="mb-2.5">Launch readiness</WiredEyebrow>
       <div className="flex items-center gap-4">
         {/* The one number that matters. */}
         <div className="flex shrink-0 items-baseline gap-1.5">
@@ -60,7 +62,7 @@ export default function AgentReadinessStage({
               key={c.id}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors duration-300",
-                c.done ? "bg-brand" : "bg-ink/[0.1]",
+                c.done ? "bg-primary" : "bg-ink/[0.1]",
               )}
             />
           ))}
@@ -68,13 +70,13 @@ export default function AgentReadinessStage({
 
         {/* Status / next best action. */}
         {ready ? (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-brand/20 bg-brand/[0.06] px-2.5 py-1 wl-label text-brand">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-primary/20 bg-primary/[0.06] px-2.5 py-1 wl-label text-primary">
             <Check className="h-3.5 w-3.5" />
             Ready to go live
           </span>
         ) : nextStep ? (
-          <span className="inline-flex shrink-0 items-center gap-2 rounded-md border border-brand/20 bg-brand/[0.05] px-2.5 py-1">
-            <span className="wl-label text-brand">Next</span>
+          <span className="inline-flex shrink-0 items-center gap-2 rounded-md border border-primary/20 bg-primary/[0.05] px-2.5 py-1">
+            <span className="wl-label text-primary">Next</span>
             <span className="max-w-[220px] truncate text-[var(--wireline-typography-caption-size)] text-foreground/85">
               {nextStep.todo}
             </span>
@@ -84,19 +86,19 @@ export default function AgentReadinessStage({
 
       {!ready ? (
         <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
-          <Sparkles className="h-3 w-3 shrink-0 text-brand/60" />
+          <Sparkles className="h-3 w-3 shrink-0 text-primary/60" />
           Ask Studio below to handle it
           <ArrowDown className="h-3 w-3 shrink-0 text-muted/50" />
           or fine-tune it yourself in the rail on the right.
         </p>
       ) : isPersonal ? (
         <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
-          <Smartphone className="h-3 w-3 shrink-0 text-brand/60" />
+          <Smartphone className="h-3 w-3 shrink-0 text-primary/60" />
           Use it from your phone — tap the widget, ask Siri, or route a live call to your agent.
         </p>
       ) : softNudges.length ? (
         <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/70">
-          <Sparkles className="h-3 w-3 shrink-0 text-brand/50" />
+          <Sparkles className="h-3 w-3 shrink-0 text-primary/50" />
           {softNudges.map((nudge) => (
             <span key={nudge.id} className="inline-flex items-center gap-1">
               <span className="font-medium text-foreground/75">{nudge.label}:</span>

@@ -13,6 +13,12 @@ import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { parseCookieHeader, SESSION_COOKIE_NAME, isProductionRuntime } from "../lib/session-cookie";
 import { isAllowedVapiListenUrl } from "../lib/vapi-monitor-url";
+import {
+  applyVapiListenControlMessage,
+  clearVapiAssistantSpeaking,
+  isVapiAssistantSpeaking,
+  setVapiAssistantSpeaking,
+} from "../lib/vapi-listen-gate";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -131,6 +137,7 @@ export function initSupervisorWebSocketServer(server: any) {
         if (access.listenUrl && isAllowedVapiListenUrl(access.listenUrl)) {
           const upstream = new WebSocket(access.listenUrl);
           let upstreamOpen = false;
+          setVapiAssistantSpeaking(callId, false);
 
           upstream.on("open", () => {
             upstreamOpen = true;
@@ -138,12 +145,17 @@ export function initSupervisorWebSocketServer(server: any) {
           });
 
           upstream.on("message", (data, isBinary) => {
-            if (ws.readyState === WebSocket.OPEN && isBinary) {
+            if (!isBinary) {
+              applyVapiListenControlMessage(callId, data.toString());
+              return;
+            }
+            if (ws.readyState === WebSocket.OPEN && isVapiAssistantSpeaking(callId)) {
               ws.send(data);
             }
           });
 
           upstream.on("close", () => {
+            clearVapiAssistantSpeaking(callId);
             if (ws.readyState === WebSocket.OPEN) ws.close(1000, "Upstream closed");
           });
 
@@ -153,6 +165,7 @@ export function initSupervisorWebSocketServer(server: any) {
           });
 
           ws.on("close", () => {
+            clearVapiAssistantSpeaking(callId);
             if (upstreamOpen) upstream.close();
             log.info("Supervisor stream socket closed (listen relay)", { callId });
           });

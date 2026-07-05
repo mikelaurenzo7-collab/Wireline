@@ -20,6 +20,7 @@ import type {
 import AgentPresenceAvatarPicker from "./AgentPresenceAvatarPicker";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
 import LiveVideoPresenter, { type LiveVideoPresenterHandle } from "./LiveVideoPresenter";
+import { WiredEyebrow } from "./ui/WiredEyebrow";
 
 type PresenterSampleResponse = {
   eventId: string;
@@ -67,6 +68,7 @@ export default function AgentPresenceLivePreview({
   } | null>(null);
   const [videoSpeaking, setVideoSpeaking] = useState(false);
   const [enabling, setEnabling] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [sampleLoading, setSampleLoading] = useState(false);
   const [streamReady, setStreamReady] = useState(false);
   const livePresenterRef = useRef<LiveVideoPresenterHandle>(null);
@@ -182,11 +184,35 @@ export default function AgentPresenceLivePreview({
     }
   }, [agentId]);
 
+  const startLiveVideoCheckout = useCallback(async () => {
+    setCheckoutBusy(true);
+    setError(null);
+    try {
+      const response = await authFetch("/api/billing/live-video-checkout", { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error || "Live video checkout could not be started.");
+      }
+      window.location.assign(payload.url);
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "Live video checkout could not be started.",
+      );
+    } finally {
+      setCheckoutBusy(false);
+    }
+  }, []);
+
   const presenter = presenterState?.presenter;
   const platformConfigured = presenterState?.platform.configured ?? false;
   const addon = presenterState?.addon;
   const liveVideoEnabled = presenter?.provider !== "synthetic" && presenter?.status !== "disabled";
   const addonPurchasable = addon?.addonOffered && addon?.billingEntitled;
+  const canCheckoutAddon =
+    addon?.addonOffered &&
+    addon?.liveVideoCheckoutAvailable &&
+    !addon?.liveVideoAddonEnabled &&
+    !addon?.billingEntitled;
   const upgradeRequired = addon?.upgradeRequired ?? false;
   const hasVoice = presenterState?.hasVoice ?? false;
   const statusCopy =
@@ -275,9 +301,7 @@ export default function AgentPresenceLivePreview({
 
       {isBusinessAgent && !liveVideoEnabled ? (
         <div className="mt-4 rounded-xl border border-dashed border-border bg-[var(--wireline-color-surface-subtle)] px-4 py-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-            Add-on
-          </p>
+          <WiredEyebrow>Add-on</WiredEyebrow>
           <p className="mt-2 text-sm font-medium text-foreground">Live video presence</p>
           <p className="mt-1 max-w-[52ch] text-xs leading-relaxed text-muted-foreground">
             {liveVideoAddonPitch()}{" "}
@@ -297,6 +321,18 @@ export default function AgentPresenceLivePreview({
             >
               {enabling ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
               Add live video
+            </button>
+          ) : canCheckoutAddon ? (
+            <button
+              type="button"
+              onClick={() => void startLiveVideoCheckout()}
+              disabled={checkoutBusy}
+              className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-action-secondary-default)] bg-[var(--wireline-color-action-secondary-default)] px-3 text-xs font-semibold text-[var(--wireline-color-text-on-action)] transition-colors hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {checkoutBusy ? (
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+              ) : null}
+              Subscribe to live video · $19/mo
             </button>
           ) : upgradeRequired ? (
             <a

@@ -166,6 +166,29 @@ const CATALOG = [
     prices: [],
   },
   {
+    key: "live_video",
+    name: "Wireline Live Video",
+    description: "Photoreal presenter streaming add-on for business agents.",
+    metadata: {
+      wireline_product: "live_video_addon",
+      wireline_billing_model: "addon_subscription",
+    },
+    defaultPriceKey: "live_video_monthly",
+    prices: [
+      {
+        key: "live_video_monthly",
+        nickname: "Live Video Add-on - Monthly",
+        envTarget: "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
+        unitAmount: 1900,
+        recurring: { interval: "month", usage_type: "licensed" },
+        metadata: {
+          wireline_price_type: "live_video_addon",
+          wireline_product: "live_video_addon",
+        },
+      },
+    ],
+  },
+  {
     key: "conversation_balance",
     name: "Conversation Balance",
     description:

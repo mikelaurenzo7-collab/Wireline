@@ -651,7 +651,13 @@ Today is ${currentDateTime}.
       "metadata",
       "conversation-update",
     ],
-    serverMessages: ["end-of-call-report", "status-update", "hang", "function-call"],
+    serverMessages: [
+      "end-of-call-report",
+      "status-update",
+      "hang",
+      "function-call",
+      "speech-update",
+    ],
     // Subtle background office ambience by default. A real receptionist
     // sits at a desk with faint room tone, typing, and distant voices —
     // pure silence between agent utterances reads as "robocall". Vapi's
@@ -773,6 +779,10 @@ Today is ${currentDateTime}.
     voicemailMessage: `Hi, this is ${(bizVars.business_name as string) || agentConfigRow?.name || "your Wireline agent"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
     // Always record so we can replay + retrain. Account Holder can disable per-
     // agent if HIPAA mode is on.
+    monitorPlan: {
+      listenEnabled: true,
+      controlEnabled: true,
+    },
     recordingEnabled: true,
     // Post-call analysis — Vapi runs these prompts against the
     // transcript after the call ends + surfaces results in webhook.

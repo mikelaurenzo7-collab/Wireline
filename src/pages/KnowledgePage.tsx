@@ -2,6 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { GraduationCap, WandSparkles } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
+import { WiredEyebrow } from "../components/ui/WiredEyebrow";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -44,7 +45,7 @@ function EmptyTraining() {
 function FlowsTab({ agentId }: { agentId: string }) {
   return (
     <section className="studio-card mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
-      <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Training</p>
+      <WiredEyebrow>Training</WiredEyebrow>
       <h2 className="wl-card-title">Flows</h2>
       <p className="text-sm leading-6 text-muted-foreground">Call rules live in Studio.</p>
       <Button asChild>
@@ -68,7 +69,7 @@ function SimulatorTab({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <section className="studio-card p-6">
-        <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app mb-2">Simulator</p>
+        <WiredEyebrow className="mb-2">Simulator</WiredEyebrow>
         <h2 className="wl-card-title">Live voice test</h2>
         <p className="mt-2 max-w-[52ch] text-sm leading-6 text-muted-foreground">
           Hear {agentName} with your rules and training — with live lip-sync when the video add-on
@@ -127,7 +128,7 @@ export default function KnowledgePage() {
         <EmptyTraining />
       ) : (
         <WorkspacePageFrame>
-          <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Training</p>
+          <WiredEyebrow>Training</WiredEyebrow>
           <div className="mb-7 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <WorkspaceTabStrip
               ariaLabel="Training sections"

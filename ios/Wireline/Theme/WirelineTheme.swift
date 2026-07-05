@@ -139,7 +139,6 @@ extension View {
             .buttonStyle(TouchPressStyle())
             .scrollContentBackground(.hidden)
             .background(BrandMeshBackground())
-            .preferredColorScheme(.light)
     }
 
     func touchPress() -> some View { buttonStyle(TouchPressStyle()) }

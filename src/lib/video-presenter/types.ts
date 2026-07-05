@@ -41,6 +41,7 @@ export type LiveVideoAddonState = {
   addonOffered: boolean;
   billingEntitled: boolean;
   liveVideoAddonEnabled: boolean;
+  liveVideoCheckoutAvailable?: boolean;
   planId: string | null;
   upgradeRequired: boolean;
   reason: string | null;

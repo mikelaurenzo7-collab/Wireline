@@ -130,7 +130,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func symbol(_ name: String) -> UIImage {
-        UIImage(systemName: name) ?? UIImage()
+        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
+        let image = UIImage(systemName: name, withConfiguration: config)?
+            .withTintColor(CarPlayPalette.wireUiColor, renderingMode: .alwaysOriginal)
+        return image ?? UIImage()
     }
 
     private func formatPhone(_ raw: String) -> String {

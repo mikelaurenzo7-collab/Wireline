@@ -511,7 +511,13 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
     ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
-    serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
+    serverMessages: [
+      "tool-calls",
+      "status-update",
+      "conversation-update",
+      "end-of-call-report",
+      "speech-update",
+    ],
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,

@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Widget palette aligned to generated WirelineDesignTokens in WirelineShared.
 enum WidgetColors {
+    static let wire = WirelineDesignTokens.ColorToken.colorActionSecondaryDefault
+    static let wireSoft = WirelineDesignTokens.ColorToken.colorActionSecondaryContainer
     static let accent = WirelineDesignTokens.ColorToken.colorActionPrimaryDefault
     static let accentDeep = WirelineDesignTokens.ColorToken.colorActionPrimaryPressed
     static let accentSoft = WirelineDesignTokens.ColorToken.colorActionPrimaryContainer

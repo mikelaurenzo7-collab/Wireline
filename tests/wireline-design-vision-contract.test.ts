@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MARKETING_VOICE } from "../src/lib/product-copy";
-import { WL_COMPOSER_CLASSES, WL_APP_CLASSES, WL_VISION } from "../src/lib/wireline-design-system";
+import { WL_COMPOSER_CLASSES, WL_VISION } from "../src/lib/wireline-design-system";
 import { WIRELINE_DESIGN_VISION } from "../src/lib/wireline-design-vision";
 import { buildWirelineMcpWidgetCss } from "../src/lib/wireline-mcp-widget-styles";
 
@@ -56,10 +56,12 @@ describe("Wireline Letterpress design vision", () => {
   });
 
   it("centralizes wired eyebrows and operate page intros", () => {
-    expect(read("src/components/ui/WiredEyebrow.tsx")).toContain(WL_APP_CLASSES.wiredEyebrow);
+    expect(read("src/components/ui/WiredEyebrow.tsx")).toContain("WL_APP_CLASSES.wiredEyebrow");
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
+    expect(read("src/pages/SettingsPage.tsx")).toContain("WiredEyebrow");
+    expect(read("src/components/WebhooksManager.tsx")).toContain("WiredEyebrow");
     expect(read("src/hooks/useLivePresence.ts")).toContain("usePresenceSignals");
   });
 

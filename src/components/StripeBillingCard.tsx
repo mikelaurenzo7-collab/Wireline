@@ -24,6 +24,9 @@ import {
   CONVERSATION_BALANCE_COPY,
   CONVERSATION_BALANCE_PRESETS_USD,
 } from "../lib/conversation-balance";
+import { liveVideoAddonPitch, liveVideoMeteringNote } from "../lib/video-presenter/copy";
+import type { LiveVideoAddonState } from "../lib/video-presenter/types";
+import { WiredEyebrow } from "./ui/WiredEyebrow";
 
 type BillingPlanId = "team" | "business" | "enterprise";
 
@@ -80,15 +83,18 @@ export default function StripeBillingCard() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [creditBusy, setCreditBusy] = useState<number | null>(null);
+  const [liveVideoBusy, setLiveVideoBusy] = useState(false);
+  const [liveVideoAddon, setLiveVideoAddon] = useState<LiveVideoAddonState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [statusRes, plansRes] = await Promise.all([
+      const [statusRes, plansRes, entitlementRes] = await Promise.all([
         authFetch("/api/billing/status").then((r) => r.json()),
         authFetch("/api/billing/plans").then((r) => r.json()),
+        authFetch("/api/video-presenter/entitlement").then((r) => (r.ok ? r.json() : null)),
       ]);
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
       setSub(statusRes.subscription || null);
@@ -99,6 +105,7 @@ export default function StripeBillingCard() {
           (storedIntent ? recommendedPlanFromIntent(storedIntent) : null),
       );
       setPlans(plansRes.plans || []);
+      setLiveVideoAddon(entitlementRes);
     } catch (e: any) {
       setError(e?.message || "Load failed");
     } finally {
@@ -115,7 +122,8 @@ export default function StripeBillingCard() {
     if (
       params.get("billing") === "success" ||
       params.get("credits") === "success" ||
-      params.get("balance") === "success"
+      params.get("balance") === "success" ||
+      params.get("live_video") === "success"
     ) {
       const t = setTimeout(refresh, 1500);
       window.history.replaceState({}, "", window.location.pathname);
@@ -204,6 +212,20 @@ export default function StripeBillingCard() {
     }
   };
 
+  const startLiveVideoCheckout = async () => {
+    setLiveVideoBusy(true);
+    setError(null);
+    try {
+      const r = await authFetch("/api/billing/live-video-checkout", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok || !d.url) throw new Error(d.error || "Live video checkout failed");
+      window.location.href = d.url;
+    } catch (e: any) {
+      setError(e?.message || "Live video checkout failed");
+      setLiveVideoBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="wl-panel flex items-center gap-4 p-10">
@@ -254,6 +276,38 @@ export default function StripeBillingCard() {
         />
       )}
       {hasActive && <UsageMeter onUpgrade={openPortal} />}
+      {liveVideoAddon?.addonOffered ? (
+        <div className="rounded-md wl-panel border border-dashed border-border p-6 md:p-8 space-y-3">
+          <WiredEyebrow>Add-on</WiredEyebrow>
+          <h3 className="font-semibold tracking-[-.02em] text-xl text-foreground">
+            Live video presence
+          </h3>
+          <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
+            {liveVideoAddonPitch()} {liveVideoMeteringNote()}
+          </p>
+          {liveVideoAddon.liveVideoAddonEnabled || liveVideoAddon.billingEntitled ? (
+            <p className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-[var(--wireline-color-status-success)]">
+              Active on this workspace
+            </p>
+          ) : liveVideoAddon.liveVideoCheckoutAvailable ? (
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant="outline"
+              onClick={() => void startLiveVideoCheckout()}
+              disabled={liveVideoBusy}
+              className="inline-flex gap-2 px-5 py-2.5 rounded-md border-[color:var(--wireline-color-action-secondary-default)] text-[var(--wireline-color-text-on-action)] bg-[var(--wireline-color-action-secondary-default)] hover:opacity-95"
+            >
+              {liveVideoBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Subscribe · $19/mo
+            </ShadButton>
+          ) : (
+            <p className="text-[var(--wireline-typography-caption-size)] text-muted-foreground">
+              Contact Wireline to enable live video on this workspace.
+            </p>
+          )}
+        </div>
+      ) : null}
       <CreditTopUpCard
         mode={hasActive ? "topup" : "activation"}
         busy={creditBusy}
