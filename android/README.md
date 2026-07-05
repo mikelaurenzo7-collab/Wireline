@@ -23,12 +23,12 @@ The Google Stitch project contains two implementation tracks:
 - **Desktop web deliverables** map to the React web application.
 - **Native mobile deliverables map to both this Compose app and the SwiftUI iOS app.** They are not mobile-web layouts.
 
-Android follows Wireline Letterpress while remaining Material-native:
+Android follows Wireline Letterpress (Aurora palette) while remaining Material-native:
 
-- warm paper canvas `#F7F6F3`, white grouped cards `#FFFFFF`, secondary surfaces `#F0EFEB`, and primary ink `#1C1C1A`
-- forest-green primary action `#2B5548`, pressed state `#1E4038`, and semantic status colors only where status is required
+- cool obsidian canvas `#0A0A0E`, surface cards `#141319`, secondary surfaces `#100F15`, and primary ink `#F5F4F8`
+- electric-violet primary action `#A78BFA`, pressed state `#8B5CF6`, platinum-silver wire accent `#C7CCD6`, and semantic status colors only where status is required
 - compact controls, restrained radius, and a clear 4dp/8dp spacing rhythm
-- no legacy signal blue, purple accents, cyan, mesh, or decorative gradients
+- no legacy forest-green/copper Letterpress palette, signal blue, cyan, mesh, or decorative gradients
 - agent language: agents, calls, texts, recaps, and follow-up—not Live Ops or operator dashboards
 - retain Material 3, TalkBack labels, dynamic font scaling, Android system insets, notification permission, and Telecom behavior
 
