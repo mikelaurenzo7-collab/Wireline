@@ -10,6 +10,7 @@ import {
   providerLabel,
   VAPI_CURATED_VOICES,
   voiceFamilyLabel,
+  voiceRoutingHint,
   WIRELINE_LIVE_VOICES,
   type VoiceCatalogProviders,
   type VoiceOption,
@@ -89,18 +90,24 @@ export default function VoicePickerField({
   const filteredLibrary = filterVoices(libraryVoices);
 
   const selectedId = value.mode === "custom" ? value.voiceId : null;
+  const routingHint = value.mode === "custom" ? voiceRoutingHint(value.provider) : null;
+
+  function voicePlayKey(voice: VoiceOption): string {
+    return `${voice.provider}:${voice.id}`;
+  }
 
   function selectVoice(voice: VoiceOption) {
     onChange({ mode: "custom", voiceId: voice.id, provider: voice.provider });
   }
 
   function togglePreview(voice: VoiceOption) {
-    if (playingId === voice.id) {
+    const key = voicePlayKey(voice);
+    if (playingId === key) {
       window.speechSynthesis?.cancel?.();
       setPlayingId(null);
       return;
     }
-    setPlayingId(voice.id);
+    setPlayingId(key);
     playVoicePreview(voice, () => setPlayingId(null));
   }
 
@@ -157,6 +164,7 @@ export default function VoicePickerField({
               playingId={playingId}
               onSelect={selectVoice}
               onPreview={togglePreview}
+              voicePlayKey={voicePlayKey}
             />
           ) : null}
 
@@ -168,6 +176,7 @@ export default function VoicePickerField({
               playingId={playingId}
               onSelect={selectVoice}
               onPreview={togglePreview}
+              voicePlayKey={voicePlayKey}
             />
           ) : null}
 
@@ -178,6 +187,7 @@ export default function VoicePickerField({
             playingId={playingId}
             onSelect={selectVoice}
             onPreview={togglePreview}
+            voicePlayKey={voicePlayKey}
             emptyMessage={
               catalogReady
                 ? "No library voices matched your search."
@@ -189,9 +199,17 @@ export default function VoicePickerField({
       )}
 
       {value.mode === "custom" ? (
-        <p className="text-xs text-muted-foreground">
-          Selected · {resolveSelectionLabel(value, libraryVoices)} · {providerLabel(value.provider)}
-        </p>
+        <div className="grid gap-1">
+          <p className="text-xs text-muted-foreground">
+            Selected · {resolveSelectionLabel(value, libraryVoices)} ·{" "}
+            {providerLabel(value.provider)}
+          </p>
+          {routingHint ? (
+            <p className="text-xs leading-relaxed text-[var(--wireline-color-action-primary-default)]">
+              {routingHint}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -213,6 +231,7 @@ function VoiceGroup({
   playingId,
   onSelect,
   onPreview,
+  voicePlayKey,
   emptyMessage = "No voices in this group.",
   className = "",
 }: {
@@ -223,6 +242,8 @@ function VoiceGroup({
   playingId: string | null;
   onSelect: (voice: VoiceOption) => void;
   onPreview: (voice: VoiceOption) => void;
+  voicePlayKey: (voice: VoiceOption) => string;
+  voicePlayKey: (voice: VoiceOption) => string;
   emptyMessage?: string;
   className?: string;
 }) {
@@ -238,7 +259,7 @@ function VoiceGroup({
         {voices.length ? (
           voices.map((voice) => {
             const selected = selectedId === voice.id;
-            const playing = playingId === voice.id;
+            const playing = playingId === voicePlayKey(voice);
             return (
               <div
                 key={`${voice.provider}-${voice.id}`}

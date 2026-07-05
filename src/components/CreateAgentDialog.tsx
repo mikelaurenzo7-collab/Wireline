@@ -9,6 +9,7 @@ import CreateAgentCatalogFacePicker, {
 import VoicePickerField, { type VoicePickerValue } from "./create-agent/VoicePickerField";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
+import { stashCreateWarning } from "../lib/wireline-create-flow";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 const ROLE_TEMPLATES = [
@@ -187,13 +188,7 @@ export default function CreateAgentDialog({
 
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
-      if (postCreateWarning) {
-        try {
-          sessionStorage.setItem("wireline:create-warning", postCreateWarning);
-        } catch {
-          /* ignore */
-        }
-      }
+      if (postCreateWarning) stashCreateWarning(postCreateWarning);
       navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });
       onClose();
     } catch {

@@ -77,6 +77,7 @@ describe("video presenter integration", () => {
     expect(vapi).toContain("listenUrl");
     const bridge = source("src/components/AgentPresencePstnBridge.tsx");
     expect(bridge).toContain("feedPcmDelta");
+    expect(bridge).toContain("vapiListenPcmToLiveAvatarBase64");
     expect(bridge).toContain("/api/supervisor/stream");
     const supervisor = source("src/services/supervisor-websocket-service.ts");
     expect(supervisor).toContain("isAllowedVapiListenUrl");

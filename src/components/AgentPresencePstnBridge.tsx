@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { vapiListenPcmToLiveAvatarBase64 } from "../lib/voice/pcm-resample";
 import type {
   AgentVideoPresenterConfig,
   LiveAvatarSessionCredentials,
@@ -22,13 +23,7 @@ type PresenterPayload = {
 };
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
+  return vapiListenPcmToLiveAvatarBase64(buffer);
 }
 
 function listenWebSocketUrl(vapiCallId: string): string {

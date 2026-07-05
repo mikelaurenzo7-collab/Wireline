@@ -5,15 +5,18 @@ import StudioContextChrome from "../components/studio/StudioContextChrome";
 import StudioPageShell from "../components/studio/StudioPageShell";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { useAgents } from "../contexts/AgentsContext";
+import { useToast } from "../contexts/ToastContext";
 import {
   browserCommandBrief,
   clearBrowserCommandHash,
   readBrowserCommandContext,
 } from "../lib/browser-command-context";
+import { consumeCreateWarning } from "../lib/wireline-create-flow";
 
 export default function AgentStudioHomeClaude() {
   const [params] = useSearchParams();
   const { loading } = useAgents();
+  const { toast } = useToast();
   const wantsBusinessAgent = params.get("posture") === "business";
   const [browserContext] = useState(readBrowserCommandContext);
   const browserBrief = browserCommandBrief(browserContext);
@@ -28,6 +31,18 @@ export default function AgentStudioHomeClaude() {
     setShowCreate(true);
     clearBrowserCommandHash();
   }, [browserBrief]);
+
+  useEffect(() => {
+    const warning = consumeCreateWarning();
+    if (warning) {
+      toast({
+        type: "warning",
+        title: "Agent created",
+        message: warning,
+        duration: 12_000,
+      });
+    }
+  }, [toast]);
 
   return (
     <>

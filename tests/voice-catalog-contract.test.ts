@@ -12,5 +12,7 @@ describe("voice catalog", () => {
     expect(catalog).toContain("playVoicePreview");
     expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain("/api/voices");
     expect(read("src/routes/voices-routes.ts")).toContain("providers:");
+    expect(read("src/lib/voice/pcm-resample.ts")).toContain("VAPI_LISTEN_PCM_RATE_HZ");
+    expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("consumeCreateWarning");
   });
 });

@@ -92,6 +92,17 @@ export function voiceFamilyLabel(provider: VoiceProvider): string {
   return "Wireline Voice";
 }
 
+/** Short routing hint for create-flow voice picks. */
+export function voiceRoutingHint(provider: VoiceProvider): string | null {
+  if (provider === "xai") {
+    return "Best for browser simulator and low-latency tests. For PSTN phone calls, prefer Wireline Phone or Voice library.";
+  }
+  if (provider === "vapi") {
+    return "Optimized for live phone calls on your Vapi line.";
+  }
+  return null;
+}
+
 /** Play a short voice sample in the browser. */
 export function playVoicePreview(voice: VoiceOption, onEnd: () => void): void {
   if (voice.provider === "xai" || voice.provider === "vapi") {
