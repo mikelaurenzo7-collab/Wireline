@@ -3,6 +3,8 @@ import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import TrustSignals from "./TrustSignals";
+import RoiCalculator from "./RoiCalculator";
 import { BUSINESS_MARKETING_VOICE, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
@@ -175,9 +177,6 @@ const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan
   (typeof STRIPE_PLANS)[number]
 >;
 
-const teamExtraAgentPrice = planCatalog.team.extra_agent_price_usd ?? 9;
-const businessExtraAgentPrice = planCatalog.business.extra_agent_price_usd ?? 12;
-
 // ─── What it does cards ────────────────────────────────────────────────────
 const PERSONAL_CONFIGS = [
   {
@@ -249,52 +248,35 @@ const STEPS = [
 const PLANS = [
   {
     name: "Personal",
-    sub: "Create first, fund live work",
+    sub: "For one person",
     price: "$0",
     period: "to create",
-    body: "Build and train one agent before billing. Calls, texts, and follow-up draw from Conversation Balance only when live work starts.",
-    features: [
-      `${planCatalog.personal.max_agents} active agent`,
-      `${planCatalog.personal.included_phone_numbers} phone line`,
-      "All templates unlocked",
-      "Conversation Balance for live work",
-    ],
-    cta: "Wire Personal",
+    body: "Build and train one agent for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
+    features: planCatalog.personal.features,
+    cta: "Start with Personal",
     ctaPath: "/signup?plan=personal",
     featured: false,
   },
   {
     name: "Team",
-    sub: "Shared capacity for small teams",
+    sub: "For a small team",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: "Several agents, shared inbox control, routing, approvals, and connected numbers for a focused team lane.",
-    features: [
-      `${planCatalog.team.max_agents} active agents`,
-      `${planCatalog.team.included_phone_numbers} phone lines`,
-      "Routing, approvals, and inbox",
-      "Core integrations and follow-up",
-      `Extra agents at $${teamExtraAgentPrice}/mo`,
-    ],
-    cta: "Wire Team",
+    body: "Several agents, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
+    features: planCatalog.team.features,
+    cta: "Start Team",
     ctaPath: "/signup?plan=team",
     featured: true,
     badge: "Best next step",
   },
   {
     name: "Business",
-    sub: "Revenue and support operations",
+    sub: "Best operating tier",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: "A deeper operating layer for inbound, outbound, approvals, analytics, CRM sync, and role-aware controls.",
-    features: [
-      `${planCatalog.business.max_agents} active agents`,
-      `${planCatalog.business.included_phone_numbers} phone lines`,
-      "CRM sync and analytics",
-      "Policies, roles, and approvals",
-      `Extra agents at $${businessExtraAgentPrice}/mo`,
-    ],
-    cta: "Wire Business",
+    body: "The serious business tier: more agents, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
+    features: planCatalog.business.features,
+    cta: "Start Business",
     ctaPath: "/signup?plan=business",
     featured: false,
   },
@@ -399,19 +381,12 @@ export default function PrecisionLanding() {
               <h1
                 id="wireline-hero-title"
                 aria-label={MARKETING_VOICE.headline}
-                className="wl-public-section-heading max-w-[10ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.84] tracking-[-.07em] sm:max-w-[9ch] lg:max-w-[10ch]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                }}
+                className="wl-display-1 max-w-[10ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.84] tracking-[-.07em] sm:max-w-[9ch] lg:max-w-[10ch]"
               >
                 WIRE YOUR <span className="text-primary">AGENT</span>
               </h1>
 
-              <p className="wl-public-copy mt-6 max-w-[42rem] text-[18px] leading-[1.65] sm:text-[19px]">
-                {MARKETING_VOICE.subline}
-              </p>
+              <p className="wl-lead mt-6 max-w-[42rem]">{MARKETING_VOICE.subline}</p>
 
               <p
                 id="wireline-audience-note"
@@ -505,15 +480,7 @@ export default function PrecisionLanding() {
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">
                 Agent playbooks · {audience === "personal" ? "personal" : "business"}
               </p>
-              <h2
-                className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  letterSpacing: "-0.025em",
-                }}
-              >
+              <h2 className="wl-display-2 mt-4">
                 {audience === "personal"
                   ? "Configure it for real life."
                   : "Built for real call volume."}
@@ -537,17 +504,7 @@ export default function PrecisionLanding() {
                   >
                     {icon}
                   </div>
-                  <h3
-                    className="mb-2 text-[22px] leading-tight"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                      letterSpacing: "-0.015em",
-                    }}
-                  >
-                    {name}
-                  </h3>
+                  <h3 className="wl-display-4 mb-2">{name}</h3>
                   <p className="mb-5 text-[14px] leading-[1.6] text-muted-foreground">{body}</p>
                   <p className="wl-eyebrow text-muted-foreground">{plan}</p>
                 </div>
@@ -561,17 +518,7 @@ export default function PrecisionLanding() {
           <div className="wl-public-rail">
             <div className="mb-12">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2
-                className="mt-4 text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  letterSpacing: "-0.025em",
-                }}
-              >
-                Live before lunch.
-              </h2>
+              <h2 className="wl-display-2 mt-4">Live before lunch.</h2>
             </div>
 
             <div className="grid overflow-hidden rounded-[16px] border border-border sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -586,17 +533,7 @@ export default function PrecisionLanding() {
                     <span className="wl-wire-step__node" aria-hidden="true" />
                     <span className="font-mono text-[13px] font-bold text-primary">{num}</span>
                   </div>
-                  <h3
-                    className="mb-2 text-[22px]"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                      letterSpacing: "-0.015em",
-                    }}
-                  >
-                    {title}
-                  </h3>
+                  <h3 className="wl-display-4 mb-2">{title}</h3>
                   <p className="text-[13px] leading-[1.6] text-muted-foreground">{body}</p>
                 </div>
               ))}
@@ -609,15 +546,7 @@ export default function PrecisionLanding() {
           <div className="wl-public-rail">
             <div className="mb-12 text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-              <h2
-                className="mx-auto mt-4 max-w-[18ch] text-[clamp(34px,4vw,46px)] leading-[1.05]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  letterSpacing: "-0.025em",
-                }}
-              >
+              <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
                 Start wiring. Scale the line.
               </h2>
               <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
@@ -641,31 +570,14 @@ export default function PrecisionLanding() {
                       {plan.badge}
                     </div>
                   )}
-                  <div
-                    className="mb-1 text-[24px]"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {plan.name}
-                  </div>
+                  <div className="wl-display-4 mb-1">{plan.name}</div>
                   <div
                     className={`mb-5 text-[12px] ${plan.featured ? "marketing-ink-panel__muted" : "text-muted-foreground"}`}
                   >
                     {plan.sub}
                   </div>
                   <div className="mb-4 flex items-baseline gap-1">
-                    <span
-                      className="text-[44px] leading-none tracking-[-0.03em]"
-                      style={{
-                        fontFamily:
-                          "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      }}
-                    >
-                      {plan.price}
-                    </span>
+                    <span className="wl-display-2 leading-none">{plan.price}</span>
                     <span
                       className={`text-[14px] ${plan.featured ? "marketing-ink-panel__muted" : "text-muted-foreground"}`}
                     >
@@ -711,6 +623,13 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
+        {/* ── ROI CALCULATOR ──────────────────────────────────────── */}
+        <section className="px-5 py-4 sm:px-8 lg:px-10">
+          <div className="wl-public-rail">
+            <RoiCalculator />
+          </div>
+        </section>
+
         {/* ── FINAL CTA ─────────────────────────────────────────── */}
         <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
@@ -724,15 +643,7 @@ export default function PrecisionLanding() {
                 }}
               />
               <div className="relative">
-                <h2
-                  className="mx-auto max-w-[18ch] text-[clamp(34px,4.5vw,50px)] leading-[1.05]"
-                  style={{
-                    fontFamily:
-                      "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                    fontWeight: 400,
-                    letterSpacing: "-0.03em",
-                  }}
-                >
+                <h2 className="wl-display-2 mx-auto max-w-[18ch]">
                   {audience === "business" ? (
                     <>
                       Stop missing calls.
@@ -771,6 +682,8 @@ export default function PrecisionLanding() {
             </div>
           </div>
         </section>
+
+        <TrustSignals />
 
         <MarketingFooter />
       </main>

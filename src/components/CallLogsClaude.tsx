@@ -514,11 +514,116 @@ function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
 }
 
 function AnalyticsTab() {
+  return <AnalyticsContent />;
+}
+
+function AnalyticsContent() {
+  const [calls, setCalls] = useState<Call[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    authFetch("/api/calls?limit=500")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: CallsResponse | null) => {
+        if (cancelled) return;
+        setCalls(Array.isArray(body?.calls) ? body!.calls! : []);
+      })
+      .catch(() => {
+        if (!cancelled) setCalls([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const totalCalls = calls.length;
+  const totalMinutes = calls.reduce((sum, c) => sum + (c.duration_seconds ?? 0), 0) / 60;
+  const avgDuration = totalCalls > 0 ? totalMinutes / totalCalls : 0;
+  const avgQaScore = useMemo(() => {
+    const scored = calls.filter((c) => typeof c.qa_score === "number");
+    if (!scored.length) return null;
+    return scored.reduce((s, c) => s + (c.qa_score ?? 0), 0) / scored.length;
+  }, [calls]);
+
+  const weekdayTrend = useMemo(() => {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const buckets = new Array(7).fill(0);
+    for (const call of calls) {
+      if (!call.created_at) continue;
+      const d = new Date(call.created_at);
+      if (Number.isNaN(d.getTime())) continue;
+      buckets[d.getDay()] += 1;
+    }
+    const max = Math.max(...buckets, 1);
+    return days.map((label, i) => ({
+      label,
+      count: buckets[i],
+      pct: Math.round((buckets[i] / max) * 100),
+    }));
+  }, [calls]);
+
+  const metrics = [
+    { label: "Total calls", value: totalCalls },
+    { label: "Total minutes", value: totalMinutes.toFixed(1) },
+    { label: "Avg duration", value: avgDuration > 0 ? `${avgDuration.toFixed(1)} min` : "—" },
+    { label: "Avg QA score", value: avgQaScore != null ? avgQaScore.toFixed(1) : "—" },
+  ];
+
+  if (loading) return <RowSkeleton />;
+  if (!calls.length) {
+    return (
+      <EmptyState title="No call history yet." body="Metrics will appear when calls are logged." />
+    );
+  }
+
   return (
-    <div className="grid place-items-center rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-7 py-16 text-center">
-      <p className="font-[var(--wireline-font-family-display)] text-[22px] leading-tight tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
-        Charts when you have call history
-      </p>
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {metrics.map((m) => (
+          <div
+            key={m.label}
+            className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-4"
+          >
+            <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--wireline-color-text-tertiary)]">
+              {m.label}
+            </div>
+            <div className="mt-1.5 font-[var(--wireline-font-family-display)] text-[clamp(1.2rem,1rem+0.5vw,1.6rem)] leading-none tracking-[-0.02em] text-[var(--wireline-color-text-primary)]">
+              {m.value}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
+        <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--wireline-color-text-tertiary)]">
+          Call volume by day of week
+        </div>
+        <div className="flex items-end gap-2">
+          {weekdayTrend.map((day) => (
+            <div key={day.label} className="flex flex-1 flex-col items-center gap-1.5">
+              <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
+                {day.count}
+              </span>
+              <div
+                className="w-full rounded-sm"
+                style={{
+                  height: `${Math.max(day.pct, 4)}%`,
+                  minHeight: 4,
+                  background: "var(--wireline-color-action-primary-default)",
+                  opacity: day.pct > 0 ? 0.85 : 0.15,
+                }}
+              />
+              <span className="text-[10px] text-[var(--wireline-color-text-tertiary)]">
+                {day.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

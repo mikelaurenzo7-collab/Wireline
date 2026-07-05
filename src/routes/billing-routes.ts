@@ -791,7 +791,7 @@ router.post(
 // Prepaid credit top-up — a one-time Stripe payment on the WEB. Credits absorb
 // voice overage (see credit-wallet + voice-usage). Deliberately web-only: the
 // iOS app stays read-only on billing to remain clear of Apple's IAP rules.
-const CREDIT_MIN_USD = 10;
+const CREDIT_MIN_USD = 5;
 const CREDIT_MAX_USD = 1000;
 
 router.post(

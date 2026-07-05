@@ -5,6 +5,7 @@ import oauthRouter from "../routes/oauth";
 import agentRouter from "../routes/agent-routes-v2";
 import agentWorkspaceRouter from "../routes/agent-workspace-routes";
 import qaRouter from "../routes/qa-routes";
+import qaV2Router from "../routes/qa-routes-v2";
 import vapiRouter from "../routes/vapi-v2";
 import healthRouter from "../routes/health-routes";
 import openaiRealtimeRouter from "../routes/openai-realtime-routes";
@@ -38,6 +39,16 @@ import supportRouter from "../routes/support-routes";
 import jobRouter from "../routes/job-routes";
 import mobileRouter from "../routes/mobile-routes";
 import videoPresenterRouter from "../routes/video-presenter-routes";
+import activationRouter from "../routes/activation-routes";
+import outboundRouter from "../routes/outbound-routes";
+import cadenceRouter from "../routes/cadence-routes";
+import campaignRouter from "../routes/campaign-routes";
+import complianceRouter from "../routes/compliance-routes";
+import knowledgeRouter from "../routes/knowledge-routes";
+import learningRouter from "../routes/learning-routes";
+import openapiRouter from "../routes/openapi-routes";
+import supervisorRouter from "../routes/supervisor-routes";
+import voiceObservabilityRouter from "../routes/voice-observability-routes";
 
 /**
  * Canonical API route order.
@@ -97,4 +108,15 @@ export function registerApiRoutes(app: Express): void {
   // Native app data plane (/api/mobile/*) — every route is session-guarded.
   app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
+  app.use(activationRouter);
+  app.use(outboundRouter);
+  app.use("/api/qa", qaV2Router);
+  app.use(cadenceRouter);
+  app.use(campaignRouter);
+  app.use(complianceRouter);
+  app.use(knowledgeRouter);
+  app.use(learningRouter);
+  app.use(openapiRouter);
+  app.use(supervisorRouter);
+  app.use(voiceObservabilityRouter);
 }

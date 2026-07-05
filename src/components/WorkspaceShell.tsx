@@ -41,6 +41,8 @@ const MOBILE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
   { href: "/studio", label: "Studio", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { href: "/call-logs", label: "Call Logs", icon: Phone },
+  { href: "/connections", label: "Connections", icon: Workflow },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
