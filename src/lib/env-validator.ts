@@ -167,6 +167,12 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     description: "Stripe signing secret",
   },
   {
+    name: "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
+    group: "billing",
+    required: false,
+    description: "Stripe price ID for photoreal live video add-on ($19/mo)",
+  },
+  {
     name: "UPSTASH_REDIS_REST_URL",
     group: "infrastructure",
     required: false,

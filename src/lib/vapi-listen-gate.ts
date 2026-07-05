@@ -1,7 +1,11 @@
 /**
  * Gates Vapi monitor.listenUrl PCM relay to assistant speech windows.
- * Vapi's transport stream is mixed caller+agent; speech-update events (webhook
- * or listen WebSocket JSON) tell us when the assistant is speaking.
+ * Vapi's transport stream is mixed caller+agent; speech-update events on the
+ * listen WebSocket (or webhook) tell us when the assistant is speaking.
+ *
+ * Primary path: `applyVapiListenControlMessage` on the listen relay socket
+ * (same serverless invocation as PCM forwarding). Webhook updates are best-effort
+ * when Upstash is unavailable across instances — default is closed (no PCM relay).
  */
 
 const assistantSpeakingByCall = new Map<string, boolean>();

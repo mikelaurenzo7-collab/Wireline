@@ -49,12 +49,17 @@ const voice = [
   "VAPI_WEBHOOK_SECRET",
   "ELEVENLABS_API_KEY",
   "LIVEAVATAR_API_KEY",
+  "HEYGEN_API_KEY",
   "LIVEAVATAR_DEFAULT_AVATAR_ID",
 ];
 
+const billing = ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID"];
+
 function expectedTargets(env) {
   const targets = Array.isArray(env.target) ? env.target : [];
-  return TARGETS.filter((target) => !targets.includes(target));
+  // Development-only gaps are informational; production + preview must be covered.
+  const required = TARGETS.filter((t) => t !== "development");
+  return required.filter((target) => !targets.includes(target));
 }
 
 async function main() {
@@ -102,6 +107,7 @@ async function main() {
   const missingGateway = report("AI GATEWAY", gateway, false);
   const missingRecommended = report("RECOMMENDED OPERATIONS", recommended, false);
   const missingVoice = report("VOICE CAPABILITY · INDEPENDENT", voice, false);
+  const missingBilling = report("BILLING ADD-ONS", billing, false);
 
   console.log("\nDECISION");
   if (missingCore) {

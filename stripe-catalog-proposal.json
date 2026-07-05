@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-26T17:11:35.738Z",
+  "generated_at": "2026-07-05T00:57:08.717Z",
   "account_id": "acct_1TXb0SJohDtfy3Ik",
   "status": "applied_with_archive_warnings",
   "api_version": "2026-02-25.clover",
@@ -9,22 +9,16 @@
     "open_checkout_sessions": 0,
     "active_products_before": [
       "Conversation Balance",
-      "Front Desk",
-      "Office Assistant",
-      "Sales & Reception",
-      "Wireline Concierge",
-      "Wireline Custom",
+      "Wireline Business",
       "Wireline Enterprise",
-      "Wireline Everyday",
-      "Wireline Household",
       "Wireline Personal",
-      "Wireline Plus",
       "Wireline Team"
     ],
     "active_products_after": [
       "Conversation Balance",
       "Wireline Business",
       "Wireline Enterprise",
+      "Wireline Live Video",
       "Wireline Personal",
       "Wireline Team"
     ]
@@ -54,13 +48,19 @@
         "key": "business",
         "id": "prod_UmBfLUSGnmawRb",
         "name": "Wireline Business",
-        "action": "created"
+        "action": "updated"
       },
       {
         "key": "enterprise",
         "id": "prod_UkpP0IZWml8RV3",
         "name": "Wireline Enterprise",
         "action": "updated"
+      },
+      {
+        "key": "live_video",
+        "id": "prod_UpIyInJ8uVlple",
+        "name": "Wireline Live Video",
+        "action": "created"
       },
       {
         "key": "conversation_balance",
@@ -99,7 +99,7 @@
         "id": "price_1TmdHjJohDtfy3Ik40LV69mU",
         "product": "Wireline Team",
         "nickname": "Wireline Team - Voice Overage",
-        "action": "created",
+        "action": "reused",
         "env_target": "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID"
       },
       {
@@ -107,7 +107,7 @@
         "id": "price_1TmdHkJohDtfy3Ik2UTD8Bur",
         "product": "Wireline Business",
         "nickname": "Wireline Business - Monthly",
-        "action": "created",
+        "action": "reused",
         "env_target": "STRIPE_PRO_PRICE_ID"
       },
       {
@@ -115,7 +115,7 @@
         "id": "price_1TmdHkJohDtfy3IkOYlSAMEr",
         "product": "Wireline Business",
         "nickname": "Wireline Business - Annual",
-        "action": "created",
+        "action": "reused",
         "env_target": "STRIPE_PRO_ANNUAL_PRICE_ID"
       },
       {
@@ -123,7 +123,7 @@
         "id": "price_1TmdHkJohDtfy3Ik5g6UijYD",
         "product": "Wireline Business",
         "nickname": "Wireline Business - Extra Agent",
-        "action": "created",
+        "action": "reused",
         "env_target": "STRIPE_PRO_EXTRA_AGENT_PRICE_ID"
       },
       {
@@ -131,15 +131,23 @@
         "id": "price_1TmdHlJohDtfy3Ik7xEVAwgF",
         "product": "Wireline Business",
         "nickname": "Wireline Business - Voice Overage",
-        "action": "created",
+        "action": "reused",
         "env_target": "STRIPE_PRO_OVERAGE_PRICE_ID"
+      },
+      {
+        "key": "live_video_monthly",
+        "id": "price_1TpeMnJohDtfy3Ikv7t00l2v",
+        "product": "Wireline Live Video",
+        "nickname": "Live Video Add-on - Monthly",
+        "action": "created",
+        "env_target": "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID"
       },
       {
         "key": "balance_5",
         "id": "price_1TmdHlJohDtfy3IkCw69mRvP",
         "product": "Conversation Balance",
         "nickname": "Conversation Balance - $5",
-        "action": "created",
+        "action": "reused",
         "env_target": null
       },
       {
@@ -147,7 +155,7 @@
         "id": "price_1TmdHmJohDtfy3Ikfxu8uEh5",
         "product": "Conversation Balance",
         "nickname": "Conversation Balance - $10",
-        "action": "created",
+        "action": "reused",
         "env_target": null
       },
       {
@@ -155,7 +163,7 @@
         "id": "price_1TmdHmJohDtfy3IkT8vKATIJ",
         "product": "Conversation Balance",
         "nickname": "Conversation Balance - $25",
-        "action": "created",
+        "action": "reused",
         "env_target": null
       },
       {
@@ -163,7 +171,7 @@
         "id": "price_1TmdHmJohDtfy3IkMUhaEQUJ",
         "product": "Conversation Balance",
         "nickname": "Conversation Balance - $50",
-        "action": "created",
+        "action": "reused",
         "env_target": null
       }
     ],
@@ -217,7 +225,8 @@
     "STRIPE_PRO_PRICE_ID": "price_1TmdHkJohDtfy3Ik2UTD8Bur",
     "STRIPE_PRO_ANNUAL_PRICE_ID": "price_1TmdHkJohDtfy3IkOYlSAMEr",
     "STRIPE_PRO_EXTRA_AGENT_PRICE_ID": "price_1TmdHkJohDtfy3Ik5g6UijYD",
-    "STRIPE_PRO_OVERAGE_PRICE_ID": "price_1TmdHlJohDtfy3Ik7xEVAwgF"
+    "STRIPE_PRO_OVERAGE_PRICE_ID": "price_1TmdHlJohDtfy3Ik7xEVAwgF",
+    "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID": "price_1TpeMnJohDtfy3Ikv7t00l2v"
   },
   "guardrails": [
     "No Personal recurring subscription price was created.",
