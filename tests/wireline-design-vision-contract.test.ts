@@ -30,20 +30,43 @@ describe("Wireline Letterpress design vision", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
     expect(WIRELINE_DESIGN_VISION.system).toBe("Wireline Letterpress");
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#5BA98A");
-    expect(WIRELINE_DESIGN_VISION.utilities).toContain("wl-panel-elevated");
+    expect(WIRELINE_DESIGN_VISION.utilities).toEqual(
+      expect.objectContaining({
+        surface: expect.arrayContaining(["wl-paper", "wl-paper-elevated"]),
+        feedback: expect.arrayContaining(["wl-focus-ring"]),
+        layout: expect.arrayContaining(["wl-metric-tile", "wl-empty", "wl-skeleton"]),
+        voice: expect.arrayContaining(["wl-eyebrow", "wl-display-mark"]),
+        chips: expect.arrayContaining(["wl-chip", "wl-chip--success", "wl-chip--primary"]),
+      }),
+    );
+    expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-panel-elevated");
+    expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-composer-dock");
   });
 
   it("defines panel and composer primitives in the design system stylesheet", () => {
-    const css = read("src/styles/design-system.css");
-    for (const utility of WIRELINE_DESIGN_VISION.utilities) {
+    const designSystemCss = read("src/styles/design-system.css");
+    for (const utility of WIRELINE_DESIGN_VISION.legacyAliases) {
       if (
         utility.startsWith("wl-composer") ||
         utility.startsWith("wl-panel") ||
         utility.startsWith("wl-chip")
       ) {
-        expect(css).toContain(`.${utility}`);
+        expect(designSystemCss).toContain(`.${utility}`);
       }
     }
+    const polishCss = read("src/styles/letterpress-polish.css");
+    for (const group of Object.values(WIRELINE_DESIGN_VISION.utilities)) {
+      for (const utility of group) {
+        expect(polishCss).toContain(`.${utility}`);
+      }
+    }
+  });
+
+  it("exposes the refined motion vocabulary in the vision manifest", () => {
+    expect(WIRELINE_DESIGN_VISION.motion.durations).toContain("deliberate 440ms");
+    expect(WIRELINE_DESIGN_VISION.motion.easings).toContain("wireline");
+    expect(WIRELINE_DESIGN_VISION.motion.easings).toContain("spring");
+    expect(WIRELINE_DESIGN_VISION.motion.pressScale).toBe(0.985);
   });
 
   it("defines authenticated Letterpress signature utilities", () => {

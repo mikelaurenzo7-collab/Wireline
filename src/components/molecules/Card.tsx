@@ -10,15 +10,20 @@ import { cn } from "@/lib/utils";
  * feature components to retain domain-specific layout through className.
  */
 export const cardVariants = cva(
-  "rounded-[var(--wireline-radius-lg)] text-[var(--wireline-color-text-primary)]",
+  "rounded-[var(--wireline-radius-lg)] text-[var(--wireline-color-text-primary)] wl-transition-press",
   {
     variants: {
       elevation: {
         "0": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-md)]",
-        "1": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-[var(--wireline-elevation-sm)]",
-        "2": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-[var(--wireline-elevation-md)]",
-        "3": "border border-[var(--wireline-color-border-strong)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-md)]",
-        glow: "border border-[var(--wireline-color-border-strong)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-md)]",
+        "1": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)]",
+        "2": "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
+        "3": "border border-[var(--wireline-color-border-strong)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
+        paper:
+          "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)]",
+        recessed:
+          "border border-[var(--wireline-color-border-soft)] bg-[var(--wireline-color-surface-recessed)] shadow-[inset_0_2px_6px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,248,232,0.03)]",
+        glow: "border border-[var(--wireline-color-border-strong)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-wirelineRing),var(--wireline-elevation-insetRaised)]",
+        wire: "border border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_32%,transparent)] bg-[var(--wireline-color-surface-default)] rounded-[var(--wireline-radius-xl)] shadow-[var(--wireline-elevation-wireGlow),var(--wireline-elevation-inset)]",
       },
     },
     defaultVariants: {

@@ -1,0 +1,520 @@
+/* ============================================================================
+ * Wireline Letterpress — polish layer
+ * ----------------------------------------------------------------------------
+ * A small, opinionated set of utility classes that refine the dark system
+ * without adding a parallel palette. Use these instead of bespoke inline
+ * styles when you need:
+ *   - letterpress embossed/inset depth (no glass, no glow noise)
+ *   - a refined focus ring with optional copper wire halo
+ *   - spring / wireline motion curves
+ *   - forest/copper glow utilities
+ *   - a consistent "paper card" surface
+ *   - a refined empty state and metric tile
+ *
+ * The system is dark-only. Do not introduce light variants.
+ * ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+ * 1. Embossed depth — subtle inset highlight + bottom shadow. Used on cards,
+ *    panels, and the workspace shell sidebar so the warm ink reads as a
+ *    letterpress surface and not a flat fill.
+ * --------------------------------------------------------------------------*/
+.wl-letterpress {
+  background: var(--wireline-color-surface-default);
+  border: 1px solid var(--wireline-color-border-default);
+  box-shadow: var(--wireline-elevation-inset);
+}
+
+.wl-letterpress-raised {
+  background: var(--wireline-color-surface-default);
+  border: 1px solid var(--wireline-color-border-default);
+  box-shadow: var(--wireline-elevation-insetRaised);
+}
+
+.wl-letterpress-recessed {
+  background: var(--wireline-color-surface-recessed);
+  border: 1px solid var(--wireline-color-border-soft);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 248, 232, 0.03);
+}
+
+/* Soft, single-elevation card with the warm inset highlight. Use for
+ * primary surfaces that should feel like printed paper. */
+.wl-paper {
+  background: var(--wireline-color-surface-default);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  box-shadow: var(--wireline-elevation-sm), var(--wireline-elevation-inset);
+}
+
+.wl-paper-elevated {
+  background: var(--wireline-color-surface-default);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  box-shadow: var(--wireline-elevation-md), var(--wireline-elevation-insetRaised);
+}
+
+/* ----------------------------------------------------------------------------
+ * 2. Focus rings — visible, on-brand, and never lost. The default ring uses
+ *    the forest patina. The wire variant pulls in a copper halo for moments
+ *    when the user is acting on a wire/integration surface.
+ * --------------------------------------------------------------------------*/
+.wl-focus-ring:focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
+  outline-offset: var(--wireline-interaction-focus-offset);
+  border-radius: var(--wireline-radius-sm);
+}
+
+.wl-focus-ring-halo:focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
+  outline-offset: var(--wireline-interaction-focus-offset);
+  box-shadow:
+    0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-primary);
+  border-radius: var(--wireline-radius-sm);
+}
+
+.wl-focus-ring-wire:focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-wire);
+  outline-offset: var(--wireline-interaction-focus-offset);
+  box-shadow:
+    0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-wire);
+  border-radius: var(--wireline-radius-sm);
+}
+
+/* ----------------------------------------------------------------------------
+ * 3. Glow — restrained forest or copper radiance. Use sparingly and only
+ *    on the active affordance, never on a static surface.
+ * --------------------------------------------------------------------------*/
+.wl-glow-primary {
+  box-shadow: var(--wireline-elevation-wirelineRing);
+}
+
+.wl-glow-wire {
+  box-shadow: var(--wireline-elevation-wireGlow);
+}
+
+.wl-text-glow-primary {
+  text-shadow: 0 0 24px var(--wireline-color-glow-primary);
+}
+
+.wl-text-glow-wire {
+  text-shadow: 0 0 24px var(--wireline-color-glow-wire);
+}
+
+/* ----------------------------------------------------------------------------
+ * 4. Motion — spring and wireline curves. Apply to transform-bearing
+ *    properties for a press / mount feel that is calmer than the default.
+ * --------------------------------------------------------------------------*/
+.wl-motion-spring {
+  transition-timing-function: var(--wireline-motion-easing-spring);
+}
+
+.wl-motion-wireline {
+  transition-timing-function: var(--wireline-motion-easing-wireline);
+}
+
+.wl-motion-decelerate {
+  transition-timing-function: var(--wireline-motion-easing-decelerate);
+}
+
+.wl-transition-press {
+  transition:
+    transform var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    background-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    border-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard);
+}
+
+/* Press: scale down 1.5% on active and lift 1px on hover. Use only on
+ * elements that are not already on a transform: rule. */
+.wl-press {
+  transition:
+    transform var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard),
+    box-shadow var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard),
+    background-color var(--wireline-motion-duration-standard) var(--wireline-motion-easing-standard);
+  will-change: transform;
+}
+
+.wl-press:hover:not(:disabled) {
+  transform: translateY(calc(-1 * var(--wireline-motion-lift)));
+}
+
+.wl-press:active:not(:disabled) {
+  transform: scale(var(--wireline-motion-press));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-press,
+  .wl-press:hover:not(:disabled),
+  .wl-press:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * 5. Surface chips — the family of small "status" pills used in agent rows,
+ *    metric tiles, and the workspace rail. Each variant uses the dark
+ *    surface token family plus a feedback surface and border.
+ * --------------------------------------------------------------------------*/
+.wl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: var(--wireline-radius-pill);
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-subtle);
+  padding: 0.25rem 0.625rem;
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-chip__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.wl-chip--success {
+  color: var(--wireline-color-status-success);
+  background: var(--wireline-color-feedback-success-surface);
+  border-color: var(--wireline-color-feedback-success-border);
+}
+
+.wl-chip--warning {
+  color: var(--wireline-color-status-warning);
+  background: var(--wireline-color-feedback-warning-surface);
+  border-color: var(--wireline-color-feedback-warning-border);
+}
+
+.wl-chip--error {
+  color: var(--wireline-color-status-error);
+  background: var(--wireline-color-feedback-error-surface);
+  border-color: var(--wireline-color-feedback-error-border);
+}
+
+.wl-chip--info {
+  color: var(--wireline-color-status-info);
+  background: var(--wireline-color-feedback-info-surface);
+  border-color: var(--wireline-color-feedback-info-border);
+}
+
+.wl-chip--primary {
+  color: var(--wireline-color-action-primary-default);
+  background: var(--wireline-color-action-primary-container);
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 32%,
+    transparent
+  );
+}
+
+.wl-chip--wire {
+  color: var(--wireline-color-action-secondary-default);
+  background: var(--wireline-color-action-secondary-container);
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-secondary-default) 32%,
+    transparent
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * 6. Metric tile — refined Overview / Insights tile with a top wireline
+ *    glow and a generous baseline.
+ * --------------------------------------------------------------------------*/
+.wl-metric-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 7.5rem;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-xl);
+  background: var(--wireline-color-surface-default);
+  box-shadow: var(--wireline-elevation-inset);
+  overflow: hidden;
+}
+
+.wl-metric-tile::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 40%, transparent) 50%,
+    transparent 100%
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.wl-metric-tile__label {
+  font-family: var(--wireline-font-family-mono);
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-metric-tile__value {
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.75rem, 1.45rem + 1.4vw, 2.25rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--wireline-color-text-primary);
+  margin-block: auto;
+}
+
+.wl-metric-tile__detail {
+  font-size: var(--wireline-typography-caption-size);
+  color: var(--wireline-color-text-secondary);
+}
+
+/* ----------------------------------------------------------------------------
+ * 7. Empty state — a single, deliberate pattern for "no data" surfaces.
+ *    Use the icon as a mono-weight glyph and keep the prose tight.
+ * --------------------------------------------------------------------------*/
+.wl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1.5rem;
+  min-height: 12rem;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--wireline-radius-md);
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-empty__title {
+  font-size: var(--wireline-typography-bodyStrong-size);
+  font-weight: 600;
+  color: var(--wireline-color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.wl-empty__detail {
+  max-width: 32ch;
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 1.55;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ----------------------------------------------------------------------------
+ * 8. Skeleton — refined gradient that matches the surface family and
+ *    prefers a 1.6s slow shimmer so it reads as paper settling, not
+ *    waiting for content.
+ * --------------------------------------------------------------------------*/
+.wl-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--wireline-color-surface-subtle);
+  border-radius: var(--wireline-radius-sm);
+}
+
+.wl-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--wireline-color-text-primary) 5%, transparent) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: wl-skeleton-shimmer 1.6s var(--wireline-motion-easing-wireline) infinite;
+}
+
+@keyframes wl-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-skeleton::after {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * 9. Section divider — a soft horizontal rule with a copper wire underglow
+ *    for use between hero/section transitions on public marketing surfaces.
+ * --------------------------------------------------------------------------*/
+.wl-divider {
+  height: 1px;
+  background: var(--wireline-color-border-default);
+  border: 0;
+  margin: 0;
+}
+
+.wl-divider-wire {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 50%, transparent) 50%,
+    transparent 100%
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * 10. Eyebrow & Wire — replaces ad-hoc mono text wrappers. Renders the
+ *     Wireline voice label and the connecting copper wire used on auth,
+ *     marketing, and workspace intros.
+ * --------------------------------------------------------------------------*/
+.wl-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--wireline-font-family-mono);
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-eyebrow::before {
+  content: "";
+  width: 1.5rem;
+  height: 1px;
+  background: var(--wireline-color-action-secondary-default);
+  box-shadow: 0 0 8px var(--wireline-color-glow-wire);
+  flex-shrink: 0;
+}
+
+.wl-eyebrow--no-rule::before {
+  display: none;
+}
+
+.wl-eyebrow--primary {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-eyebrow--primary::before {
+  background: var(--wireline-color-action-primary-default);
+  box-shadow: 0 0 8px var(--wireline-color-glow-primary);
+}
+
+.wl-eyebrow--muted {
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-eyebrow--muted::before {
+  background: var(--wireline-color-border-strong);
+  box-shadow: none;
+}
+
+/* ----------------------------------------------------------------------------
+ * 11. Stagger reveal — gentle mount for lists and the Workspace rail.
+ *     Honors reduced motion.
+ * --------------------------------------------------------------------------*/
+.wl-reveal {
+  animation: wl-reveal var(--wireline-motion-duration-deliberate) var(--wireline-motion-easing-wireline) both;
+}
+
+.wl-reveal-1 { animation-delay: 40ms; }
+.wl-reveal-2 { animation-delay: 80ms; }
+.wl-reveal-3 { animation-delay: 120ms; }
+.wl-reveal-4 { animation-delay: 160ms; }
+.wl-reveal-5 { animation-delay: 200ms; }
+
+@keyframes wl-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-reveal {
+    animation: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * 12. Press highlight — a one-tap press feedback overlay for surfaces that
+ *     cannot use transform. Apply to buttons, list rows, and card headers.
+ * --------------------------------------------------------------------------*/
+.wl-press-highlight {
+  position: relative;
+  isolation: isolate;
+}
+
+.wl-press-highlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--wireline-color-pressHighlight);
+  opacity: 0;
+  transition: opacity var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.wl-press-highlight:active::before,
+.wl-press-highlight[data-pressed="true"]::before {
+  opacity: 1;
+}
+
+.wl-press-highlight > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ----------------------------------------------------------------------------
+ * 13. Letterpress heading — display headings on the dark canvas get a soft
+ *     warm drop that reinforces the ink-and-paper metaphor. Apply on the
+ *     outer display heading of a page, not on inline copy.
+ * --------------------------------------------------------------------------*/
+.wl-display-mark {
+  font-family: var(--wireline-font-family-display);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+  text-wrap: balance;
+  color: var(--wireline-color-text-primary);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+}

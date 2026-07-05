@@ -3,20 +3,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-export const emptyStateVariants = cva(
-  "wl-inline-empty flex flex-col items-center justify-center text-center",
-  {
-    variants: {
-      density: {
-        default: "py-8",
-        compact: "py-4",
-      },
-    },
-    defaultVariants: {
-      density: "default",
+export const emptyStateVariants = cva("wl-empty wl-press-highlight", {
+  variants: {
+    density: {
+      default: "py-8",
+      compact: "py-4",
+      hero: "py-12 min-h-[18rem]",
     },
   },
-);
+  defaultVariants: {
+    density: "default",
+  },
+});
 
 export interface EmptyStateProps
   extends
@@ -26,6 +24,8 @@ export interface EmptyStateProps
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
+  /** Renders an inline wireline copper accent before the title. */
+  accent?: boolean;
 }
 
 export function EmptyState({
@@ -33,6 +33,7 @@ export function EmptyState({
   title,
   description,
   action,
+  accent = false,
   density,
   className,
   ...props
@@ -43,10 +44,13 @@ export function EmptyState({
       className={cn(emptyStateVariants({ density }), className)}
       {...props}
     >
-      {icon && <div className="mb-3 text-2xl text-muted-foreground">{icon}</div>}
-      <h2 className="wl-inline-empty__label text-base font-semibold text-foreground">{title}</h2>
-      {description && <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
+      {icon ? <div className="wl-empty__icon">{icon}</div> : null}
+      {accent ? (
+        <span className="wl-eyebrow wl-eyebrow--no-rule text-[10px]">Ready when you are</span>
+      ) : null}
+      <h2 className="wl-empty__title">{title}</h2>
+      {description ? <p className="wl-empty__detail">{description}</p> : null}
+      {action ? <div className="wl-empty__actions">{action}</div> : null}
     </section>
   );
 }
