@@ -68,6 +68,7 @@
 @import "./styles/agent-presence.css";
 @import "./styles/video-receptionist.css";
 @import "./styles/studio-operations.css";
+@import "./styles/workspace-polish.css";
 
 body {
   background: var(--wireline-color-canvas-default);
