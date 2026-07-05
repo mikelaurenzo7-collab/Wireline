@@ -4,6 +4,19 @@
 **Branch:** `main` (pre-push certification run)  
 **Baseline:** `db5e72b6` → certification commit (this release)
 
+## Vigilant 4th pass (2026-07-05)
+
+Code review fixes after initial certification merge:
+
+| Finding | Severity | Fix |
+|---------|----------|-----|
+| Voice PATCH wiped `phone_voice_*` when updating presenter without phone fields | P0 | Partial PATCH — only touch phone columns when explicit or defaulting new presenter |
+| Training gallery replaced presenter with vapi when picking phone voice | P1 | `VoiceGallery` dual-path: phone section updates `phoneVoiceId` while keeping `presenter` |
+| Vapi factory fell back to presenter `voiceId` on PSTN | P1 | PSTN uses `phoneVoiceId` or rotated default only |
+| Consent FTUX swallowed save errors | P2 | `CustomPresenceConsentPanel` surfaces error state |
+
+Added [`tests/dual-voice-routing-contract.test.ts`](../tests/dual-voice-routing-contract.test.ts) and expanded `verify:contracts`.
+
 ## Summary
 
 Composer 2.5 certification closes the runtime-policy migration, enforces the full verification ladder in CI, ships honest dual-voice PSTN routing for presenter agents, extends the activation funnel taxonomy, adds post-create wizard persistence tests, and wires Business custom-presence consent FTUX.
@@ -21,7 +34,7 @@ Composer 2.5 certification closes the runtime-policy migration, enforces the ful
 | CSP drift | `npm run csp:check` | ✅ pass |
 | Runtime policy | `npm run runtime:policy:check` | ✅ pass (no `claude-*.ts` in `src/lib`) |
 | API error shape | `npm run api-error:check` | ✅ 0 legacy responses |
-| Unit + contract tests | `npm run test:run` | ✅ **221** tests |
+| Unit + contract tests | `npm run test:run` | ✅ **224** tests |
 | Product contracts | `npm run verify:contracts` | ✅ 15 tests |
 | Production build | `npm run build` | ✅ pass |
 | Server smoke | `npm run smoke:server` | ✅ bundle imports |

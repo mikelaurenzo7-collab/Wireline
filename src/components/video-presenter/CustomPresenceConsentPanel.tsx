@@ -19,6 +19,7 @@ export default function CustomPresenceConsentPanel({
   const [step, setStep] = useState<Step>("rights");
   const [saving, setSaving] = useState(false);
   const [rightsAccepted, setRightsAccepted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (consentStatus === "approved" || consentStatus === "pending") {
     return null;
@@ -26,8 +27,11 @@ export default function CustomPresenceConsentPanel({
 
   async function submitPending() {
     setSaving(true);
+    setError(null);
     try {
       await onSubmit("pending");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Consent could not be saved.");
     } finally {
       setSaving(false);
     }
@@ -41,6 +45,7 @@ export default function CustomPresenceConsentPanel({
       <div className="wl-banner__body">
         <p className={WL_APP_CLASSES.wiredEyebrow}>Custom presence</p>
         <h3 className="wl-banner__title">Your presence on the line</h3>
+        {error ? <p className="wl-banner__detail text-destructive">{error}</p> : null}
         {step === "rights" ? (
           <>
             <p className="wl-banner__detail">

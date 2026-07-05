@@ -32,6 +32,19 @@ export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
   { id: "Cole", name: "Cole — Direct & Grounded", provider: "vapi" },
 ] as const;
 
+/** Default PSTN voice when presenter lip-sync is the Studio voice. */
+export const DEFAULT_PRESENTER_PHONE_VOICE = VAPI_CURATED_VOICES[0];
+
+export function defaultPresenterPhoneVoicePayload(): {
+  phoneVoiceId: string;
+  phoneVoiceProvider: "vapi";
+} {
+  return {
+    phoneVoiceId: DEFAULT_PRESENTER_PHONE_VOICE.id,
+    phoneVoiceProvider: "vapi",
+  };
+}
+
 /** @deprecated Use WIRELINE_LIVE_VOICES */
 export const XAI_VOICE_OPTIONS = WIRELINE_LIVE_VOICES;
 
@@ -110,7 +123,7 @@ export function voiceRoutingHint(provider: VoiceProvider): string | null {
     return "Optimized for live phone calls on your Vapi line.";
   }
   if (provider === "presenter") {
-    return "Studio and browser preview use presenter lip-sync. PSTN phone calls fall back to a voice-library substitute — pick Wireline Phone for the same sound on live calls.";
+    return "Studio and browser preview use presenter lip-sync. Pick a Wireline Phone voice below for live PSTN calls.";
   }
   return null;
 }

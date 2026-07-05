@@ -41,6 +41,8 @@ export default function VoiceGallery({
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [phoneVoiceId, setPhoneVoiceId] = useState<string | null>(null);
+  const [phoneVoiceProvider, setPhoneVoiceProvider] = useState<string | null>(null);
   const [applyingVoiceId, setApplyingVoiceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -55,6 +57,8 @@ export default function VoiceGallery({
         if (cancelled || !data) return;
         setSelectedVoiceId(data.voice?.voiceId ?? null);
         setSelectedProvider(data.voice?.provider ?? null);
+        setPhoneVoiceId(data.voice?.phoneVoiceId ?? null);
+        setPhoneVoiceProvider(data.voice?.phoneVoiceProvider ?? null);
       })
       .catch(() => {
         if (!cancelled) setError("Could not load the current voice for this agent.");
@@ -135,29 +139,66 @@ export default function VoiceGallery({
     playVoicePreview(voice, () => setPlayingVoiceId(null));
   }
 
-  async function applyVoice(voice: VoiceOption) {
+  async function applyVoice(voice: VoiceOption, target: "studio" | "phone" = "studio") {
     if (!agentId) return;
     setApplyingVoiceId(voiceKey(voice));
     setError(null);
     setNotice(null);
     try {
+      const isPresenterDualPhone =
+        target === "phone" && selectedProvider === "presenter" && selectedVoiceId;
+      const payload = isPresenterDualPhone
+        ? {
+            voiceId: selectedVoiceId,
+            provider: "presenter",
+            phoneVoiceId: voice.id,
+            phoneVoiceProvider: voice.provider === "vapi" ? "vapi" : "11labs",
+          }
+        : {
+            voiceId: voice.id,
+            provider: voice.provider,
+          };
       const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/voice`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          voiceId: voice.id,
-          provider: voice.provider,
-        }),
+        body: JSON.stringify(payload),
       });
+      const data = (await response.json()) as {
+        voice?: {
+          voiceId?: string | null;
+          provider?: string | null;
+          phoneVoiceId?: string | null;
+          phoneVoiceProvider?: string | null;
+        };
+      };
       if (!response.ok) throw new Error("Voice could not be saved.");
-      setSelectedVoiceId(voice.id);
-      setSelectedProvider(voice.provider);
-      setNotice(`${voice.name} is now assigned to ${agentName || "this agent"}.`);
+      if (isPresenterDualPhone) {
+        setPhoneVoiceId(data.voice?.phoneVoiceId ?? voice.id);
+        setPhoneVoiceProvider(data.voice?.phoneVoiceProvider ?? voice.provider);
+        setNotice(`${voice.name} is now your phone voice for live calls.`);
+      } else {
+        setSelectedVoiceId(data.voice?.voiceId ?? voice.id);
+        setSelectedProvider(data.voice?.provider ?? voice.provider);
+        if (data.voice?.phoneVoiceId) setPhoneVoiceId(data.voice.phoneVoiceId);
+        if (data.voice?.phoneVoiceProvider) setPhoneVoiceProvider(data.voice.phoneVoiceProvider);
+        if (voice.provider !== "presenter") {
+          setPhoneVoiceId(null);
+          setPhoneVoiceProvider(null);
+        }
+        setNotice(`${voice.name} is now assigned to ${agentName || "this agent"}.`);
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Voice could not be saved.");
     } finally {
       setApplyingVoiceId(null);
     }
+  }
+
+  function isPhoneVoiceSelected(voice: VoiceOption): boolean {
+    if (selectedProvider === "presenter") {
+      return phoneVoiceId === voice.id && (phoneVoiceProvider ?? "vapi") === voice.provider;
+    }
+    return selectedVoiceId === voice.id && (selectedProvider ?? voice.provider) === voice.provider;
   }
 
   const currentLabel = resolveVoiceLabel(selectedVoiceId);
@@ -289,9 +330,7 @@ export default function VoiceGallery({
             </div>
             <div className="mb-5 grid max-h-40 gap-2 overflow-y-auto pr-1">
               {filteredPhone.map((voice) => {
-                const isSelected =
-                  selectedVoiceId === voice.id &&
-                  (selectedProvider ?? voice.provider) === voice.provider;
+                const isSelected = isPhoneVoiceSelected(voice);
                 const isPlaying = playingVoiceId === voiceKey(voice);
                 const isApplying = applyingVoiceId === voiceKey(voice);
                 return (
@@ -321,7 +360,7 @@ export default function VoiceGallery({
                         type="button"
                         size="sm"
                         disabled={isApplying}
-                        onClick={() => void applyVoice(voice)}
+                        onClick={() => void applyVoice(voice, "phone")}
                       >
                         {isApplying ? "Saving…" : isSelected ? "Selected" : "Use"}
                       </Button>

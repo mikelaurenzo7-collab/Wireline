@@ -18,6 +18,7 @@ import {
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
+import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { AI_TOOLS } from "../lib/ai-tools";
 import {
   isGeminiModelId,
@@ -563,6 +564,14 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+    const [voiceState] = await drizzle
+      .select({
+        phoneVoiceId: schema.agents.phoneVoiceId,
+        phoneVoiceProvider: schema.agents.phoneVoiceProvider,
+      })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .limit(1);
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
     const providerRaw =
       cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "11labs" : null);
@@ -577,15 +586,26 @@ router.patch(
     if (phoneVoiceProviderRaw && !phoneProviders.has(phoneVoiceProviderRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
     }
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const hasPhoneVoiceId = Object.prototype.hasOwnProperty.call(body, "phoneVoiceId");
+    const hasPhoneVoiceProvider = Object.prototype.hasOwnProperty.call(body, "phoneVoiceProvider");
     const patch: {
       voiceId: string | null;
       voiceProvider: string | null;
       phoneVoiceId?: string | null;
       phoneVoiceProvider?: string | null;
     } = { voiceId, voiceProvider: provider };
-    if (provider === "presenter" || phoneVoiceId || phoneVoiceProviderRaw) {
-      patch.phoneVoiceId = phoneVoiceId;
-      patch.phoneVoiceProvider = phoneVoiceProviderRaw;
+
+    if (provider !== "presenter") {
+      patch.phoneVoiceId = null;
+      patch.phoneVoiceProvider = null;
+    } else if (hasPhoneVoiceId || hasPhoneVoiceProvider) {
+      if (hasPhoneVoiceId) patch.phoneVoiceId = phoneVoiceId;
+      if (hasPhoneVoiceProvider) patch.phoneVoiceProvider = phoneVoiceProviderRaw;
+    } else if (!voiceState?.phoneVoiceId || !voiceState?.phoneVoiceProvider) {
+      const defaults = defaultPresenterPhoneVoicePayload();
+      patch.phoneVoiceId = defaults.phoneVoiceId;
+      patch.phoneVoiceProvider = defaults.phoneVoiceProvider;
     }
     await drizzle
       .update(schema.agents)
@@ -596,8 +616,14 @@ router.patch(
       voice: {
         voiceId,
         provider,
-        phoneVoiceId: patch.phoneVoiceId ?? null,
-        phoneVoiceProvider: patch.phoneVoiceProvider ?? null,
+        phoneVoiceId:
+          patch.phoneVoiceId !== undefined
+            ? patch.phoneVoiceId
+            : (voiceState?.phoneVoiceId ?? null),
+        phoneVoiceProvider:
+          patch.phoneVoiceProvider !== undefined
+            ? patch.phoneVoiceProvider
+            : (voiceState?.phoneVoiceProvider ?? null),
       },
     });
   },

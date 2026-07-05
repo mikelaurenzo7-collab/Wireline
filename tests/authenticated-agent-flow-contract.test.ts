@@ -143,7 +143,7 @@ describe("authenticated agent flow", () => {
     expect(factory).toContain("configured.phoneVoiceId");
     expect(routes).toContain("phoneVoiceId");
     expect(createDialog).toContain("phoneVoiceId");
-    expect(createDialog).toContain('phoneVoiceProvider: "vapi"');
+    expect(createDialog).toContain("defaultPresenterPhoneVoicePayload");
   });
 
   it("surfaces custom presence consent FTUX for business agents", () => {
