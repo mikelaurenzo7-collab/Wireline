@@ -1,18 +1,19 @@
-/* ════════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════════════
    THE WIRE — Wireline's signature motif.
 
-   Copper is the wire; verdigris is what copper becomes. The palette is not
-   decoration, it is the material: raw copper (#C4713B) carries the signal,
-   patina green (#2B5548) is the settled line. Every public surface carries
-   its wire — a hairline running copper into patina with a node where the
-   signal lives. Warm paper and a serif can be templated; the wire is ours.
+   Silver is the wire; violet is the signal it carries. The palette is not
+   decoration, it is the material: platinum silver (#C7CCD6) is the line,
+   electric violet (#A78BFA) is where the signal lives. Every public surface
+   carries its wire — a hairline running silver into violet with a node where
+   the signal lives. A cool obsidian canvas and a serif can be templated; the
+   wire is ours.
 
    Rules of use:
    - Public/marketing surfaces carry the wire. Authenticated surfaces stay
      clean (docs/README: public pages explain, authenticated pages execute).
    - The pulse animates only where motion is welcome, and never when the
      visitor asks for reduced motion.
-   ════════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════════════ */
 
 /* The traveling signal — a slow pulse runs the length of a wire. Reused by
    every live wire on the marketing page (see the closing CTA cap below). */
@@ -33,10 +34,10 @@
   }
 }
 
-/* ── Wired eyebrow ─────────────────────────────────────────────────────
-   Section eyebrows on public pages carry the node-and-dash: a copper node,
-   a short strand settling to patina, then the label. Centered variants get
-   the mirrored strand on the right. */
+/* ── Wired eyebrow ──────────────────────────────────────────────────────
+   Section eyebrows on public pages carry the node-and-dash: a silver node,
+   a short strand carrying the signal to violet, then the label. Centered
+   variants get the mirrored strand on the right. */
 .wl-eyebrow--wired {
   display: inline-flex;
   align-items: center;
@@ -66,10 +67,10 @@
   border-radius: 999px;
 }
 
-/* ── Ledger ruling ─────────────────────────────────────────────────────
+/* ── Ledger ruling ──────────────────────────────────────────────────────
    Front-desk ledger: faint horizontal rules across the hero. Ink at ~3.5%
    on a masked layer so rules feather in/out — no hard stop at the section
-   edge or a green wash at the top center. */
+   edge or a violet wash at the top center. */
 .marketing-hero {
   position: relative;
   isolation: isolate;
@@ -122,15 +123,15 @@
   z-index: 1;
 }
 
-/* ── The mark's signal ─────────────────────────────────────────────────
-   The central node of the W picks up copper on public surfaces: the mark
+/* ── The mark's signal ────────────────────────────────────────────
+   The central node of the W picks up silver on public surfaces: the mark
    is the wire, the node is the signal. Everywhere else the mark stays a
    single currentColor token (favicon, native icon). */
 .wl-mark-signal {
   fill: var(--wireline-color-action-secondary-default);
 }
 
-/* On the dark auth panel the strand settles into paper, not patina. */
+/* On the dark auth panel the strand settles into canvas, not violet. */
 .wl-auth-brand-label.wl-eyebrow--wired::before,
 .wl-auth-brand-label.wl-eyebrow--wired::after {
   background: linear-gradient(
@@ -140,12 +141,12 @@
   );
 }
 
-/* ── Steps on the wire ─────────────────────────────────────────────────
+/* ── Steps on the wire ────────────────────────────────────────────────
    The four setup steps are taps on one line. Each step is a node, and the
-   signal runs from it toward the next: raw copper at Connect, settling as
-   it travels, arriving as the settled patina line at Deploy. The palette
-   story — copper is the wire, patina is what it becomes — told inside the
-   product flow, not just as decoration. */
+   signal runs from it toward the next: raw silver at Connect, gathering
+   charge as it travels, arriving as the live violet action line at Deploy.
+   The palette story — silver is the wire, violet is the signal — told
+   inside the product flow, not just as decoration. */
 .wl-wire-step__marker {
   display: flex;
   align-items: center;
@@ -175,7 +176,7 @@
   );
 }
 
-/* Deploy — the copper has become patina; the line is live and settled. */
+/* Deploy — the silver has become live violet; the line is charged and settled. */
 .wl-wire-step--settled .wl-wire-step__node {
   background: var(--wireline-color-action-primary-default);
   box-shadow: 0 0 0 4px
@@ -190,10 +191,10 @@
   );
 }
 
-/* ── Wired dark panels ─────────────────────────────────────────────────
+/* ── Wired dark panels ────────────────────────────────────────────
    The rule: every dark ink panel carries the wire on its top edge — the
-   recommended pricing plan and the closing call to action. Copper into
-   settled patina/green, the same language as the dark auth panel's eyebrow.
+   recommended pricing plan and the closing call to action. Silver into
+   live violet, the same language as the dark auth panel's eyebrow.
    The panels we point to are wired lines. */
 .wl-featured-wire {
   position: relative;
