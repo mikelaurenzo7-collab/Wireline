@@ -82,6 +82,7 @@ export default function DailyBrief() {
         setNeedsKey(true);
         return;
       }
+      if (r.status === 404) return;
       if (!r.ok) throw new Error(d.error);
       setData(d);
     } catch (e: any) {
