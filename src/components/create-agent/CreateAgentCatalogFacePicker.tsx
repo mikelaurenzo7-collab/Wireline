@@ -108,8 +108,8 @@ export default function CreateAgentCatalogFacePicker({
           ) : null}
 
           {catalogReady && avatars.length ? (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {avatars.slice(0, 12).map((avatar) => {
+            <div className="grid max-h-[min(52vh,28rem)] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
+              {avatars.map((avatar) => {
                 const selected = value.mode === "catalog" && value.avatarId === avatar.id;
                 return (
                   <button

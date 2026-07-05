@@ -83,4 +83,19 @@ describe("video presenter integration", () => {
     expect(supervisor).toContain("isAllowedVapiListenUrl");
     expect(supervisor).not.toContain("verifyCallOwnership");
   });
+
+  it("streams call-floor presence via SSE with polling fallback", () => {
+    const hook = source("src/hooks/usePresenceSignals.ts");
+    expect(hook).toContain("/api/Assistants/presence/stream");
+    expect(hook).toContain("/api/Assistants/presence");
+    const calls = source("src/components/CallLogsClaude.tsx");
+    expect(calls).toContain("usePresenceSignals");
+    expect(calls).not.toContain("setInterval(loadPresence");
+  });
+
+  it("shows the full catalog in Fast Start face picker", () => {
+    const picker = source("src/components/create-agent/CreateAgentCatalogFacePicker.tsx");
+    expect(picker).toContain("avatars.map");
+    expect(picker).not.toContain("avatars.slice(0, 12)");
+  });
 });

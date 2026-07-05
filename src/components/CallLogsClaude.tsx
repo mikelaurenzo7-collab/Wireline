@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+
+import { usePresenceSignals } from "../hooks/usePresenceSignals";
 import { Download } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import AgentFace from "./AgentFace";
-import LiveFloorPresence, { type LiveSignalPresence } from "./LiveFloorPresence";
+import LiveFloorPresence from "./LiveFloorPresence";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 
 /**
@@ -132,7 +134,7 @@ export default function CallLogsClaude() {
   })();
   const activeTab = params;
   const setActiveTab = setParams;
-  const [presenceSignals, setPresenceSignals] = useState<LiveSignalPresence[]>([]);
+  const presenceSignals = usePresenceSignals({ enabled: activeTab === "floor" });
 
   const agentNameForId = useCallback(
     (agentId: string) => {
@@ -141,30 +143,6 @@ export default function CallLogsClaude() {
     },
     [calls],
   );
-
-  useEffect(() => {
-    if (activeTab !== "floor") return;
-    let cancelled = false;
-
-    const loadPresence = () => {
-      void authFetch("/api/Assistants/presence")
-        .then((response) => (response.ok ? response.json() : null))
-        .then((body: { signals?: LiveSignalPresence[] } | null) => {
-          if (cancelled) return;
-          setPresenceSignals(Array.isArray(body?.signals) ? body!.signals! : []);
-        })
-        .catch(() => {
-          if (!cancelled) setPresenceSignals([]);
-        });
-    };
-
-    loadPresence();
-    const intervalId = window.setInterval(loadPresence, 5000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [activeTab]);
 
   useEffect(() => {
     let cancelled = false;
