@@ -199,9 +199,9 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
   return (
     <div className="space-y-4">
       {!summary.healthy && (
-        <div className="flex items-center gap-2 p-3 rounded-md bg-amber-50 border border-amber-200">
+        <div className="flex items-center gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-200">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-          <p className="text-xs text-amber-800">
+          <p className="text-xs text-[var(--wireline-color-status-warning)]">
             Voice reliability is below operating thresholds in the last {summary.windowDays} days.
             Review latency, hangups, tool calls, escalations, and webhook health below.
           </p>
@@ -214,19 +214,19 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             key={tile.label}
             className={cn(
               "rounded-md border p-4 wl-panel",
-              tile.healthy ? "border-brand/20 bg-brand/5" : "border-amber-200/70 bg-amber-50/40",
+              tile.healthy ? "border-brand/20 bg-brand/5" : "border-amber-200/70 bg-amber-500/10",
             )}
           >
             <div className="flex items-center gap-2 mb-2">
               <tile.icon
-                className={cn("w-3.5 h-3.5", tile.healthy ? "text-brand" : "text-amber-700")}
+                className={cn("w-3.5 h-3.5", tile.healthy ? "text-brand" : "text-amber-600")}
               />
               <p className="font-mono wl-label text-muted">{tile.label}</p>
             </div>
             <p
               className={cn(
                 "font-display italic text-2xl",
-                tile.healthy ? "text-foreground" : "text-amber-900",
+                tile.healthy ? "text-foreground" : "text-amber-600",
               )}
             >
               {tile.value}
@@ -243,7 +243,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--wireline-color-border-soft)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="ms" />
                   <Tooltip />
@@ -251,9 +251,9 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                     type="monotone"
                     dataKey="avgTtftMs"
                     name="Avg TTFT"
-                    stroke="var(--brand)"
+                    stroke="var(--wireline-color-action-primary-default)"
                     strokeWidth={2}
-                    fill="var(--brand)"
+                    fill="var(--wireline-color-action-primary-default)"
                     fillOpacity={0.08}
                   />
                   <Area
@@ -275,7 +275,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--wireline-color-border-soft)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" />
                   <Tooltip />
