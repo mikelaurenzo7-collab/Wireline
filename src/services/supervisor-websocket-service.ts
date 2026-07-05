@@ -160,7 +160,12 @@ export function initSupervisorWebSocketServer(server: any) {
           return;
         }
 
-        // Fallback: simulated audio when listenUrl is not yet available (dev / legacy).
+        if (isProductionRuntime()) {
+          ws.close(4005, "Live call audio is not available for this call yet.");
+          return;
+        }
+
+        // Dev-only fallback: simulated audio when listenUrl is not yet available.
         let sampleIndex = 0;
         const sampleRate = 8000;
         const intervalMs = 100;
@@ -212,7 +217,7 @@ export function initSupervisorWebSocketServer(server: any) {
           if (payload.type === "whisper" && payload.text) {
             const text = payload.text;
 
-            if (!(await verifyCallOwnership())) {
+            if (!(await verifyCallAccess()).ok) {
               ws.close(4004, "Call not found");
               return;
             }

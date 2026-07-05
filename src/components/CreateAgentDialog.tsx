@@ -129,23 +129,39 @@ export default function CreateAgentDialog({
         return;
       }
 
+      let postCreateWarning: string | null = null;
+
       if (voice.mode === "custom") {
-        await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/voice`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ voiceId: voice.voiceId, provider: voice.provider }),
-        });
+        const voiceResponse = await authFetch(
+          `/api/agent-config/${encodeURIComponent(body.id)}/voice`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voiceId: voice.voiceId, provider: voice.provider }),
+          },
+        );
+        if (!voiceResponse.ok) {
+          postCreateWarning = "Voice could not be saved — pick one in Studio.";
+        }
       }
 
       if (activePosture === "business" && face.mode === "catalog") {
-        await authFetch(`/api/agents/${encodeURIComponent(body.id)}/video-presenter`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            avatarId: face.avatarId,
-            consentStatus: "approved",
-          }),
-        });
+        const faceResponse = await authFetch(
+          `/api/agents/${encodeURIComponent(body.id)}/video-presenter`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              avatarId: face.avatarId,
+              consentStatus: "approved",
+            }),
+          },
+        );
+        if (!faceResponse.ok) {
+          postCreateWarning =
+            postCreateWarning ??
+            "Presenter face could not be saved — pick one under Agent presence in Studio.";
+        }
       }
 
       const personalityText = `${personality}. Concise. Useful. ${activePosture === "business" ? "Business-ready." : "Personal and discreet."}`;
@@ -171,6 +187,13 @@ export default function CreateAgentDialog({
 
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
+      if (postCreateWarning) {
+        try {
+          sessionStorage.setItem("wireline:create-warning", postCreateWarning);
+        } catch {
+          /* ignore */
+        }
+      }
       navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });
       onClose();
     } catch {

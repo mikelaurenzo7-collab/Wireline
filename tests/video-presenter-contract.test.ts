@@ -80,5 +80,6 @@ describe("video presenter integration", () => {
     expect(bridge).toContain("/api/supervisor/stream");
     const supervisor = source("src/services/supervisor-websocket-service.ts");
     expect(supervisor).toContain("isAllowedVapiListenUrl");
+    expect(supervisor).not.toContain("verifyCallOwnership");
   });
 });
