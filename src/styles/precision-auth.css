@@ -17,7 +17,18 @@
   justify-content: space-between;
   gap: 2.5rem;
   padding: clamp(2.5rem, 4vw, 3.5rem);
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  /* Deep console brand panel — dark in BOTH themes so the copper wash and
+     emerald mark carry the brand. Pin the semantic tokens locally so every
+     descendant (headline, grid cells, badge) resolves against a dark canvas
+     even when the page is rendered in light mode. */
+  --wireline-color-canvas-default: #15130f;
+  --wireline-color-surface-default: #1e1b16;
+  --wireline-color-text-primary: #f4f2ec;
+  --wireline-color-text-secondary: #b8b3a8;
+  --wireline-color-text-tertiary: #8b867b;
+  --wireline-color-border-default: #322d25;
+  --wireline-color-action-primary-default: #5ba98a;
+  background: color-mix(in srgb, #15130f 62%, #000);
   color: var(--wireline-color-text-primary);
   border-right: 1px solid var(--wireline-color-border-default);
   animation: fadeIn 0.5s ease-out both;

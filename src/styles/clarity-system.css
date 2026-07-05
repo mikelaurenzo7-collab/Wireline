@@ -153,7 +153,18 @@
    the page, a hairline border, and light text — so the copper wire cap and
    the green glow carry the emphasis instead of a jarring light inversion. */
 .marketing-ink-panel {
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  /* Ink panels are a dark, recessed "console" in BOTH themes so the copper wire
+     cap and green glow carry the emphasis instead of a jarring inversion. Pin
+     the semantic tokens locally so every descendant (text, buttons, and the
+     soft/muted variants) resolves against a dark canvas even when the page is
+     rendered in light mode. Dark mode is unchanged — these are its own values. */
+  --wireline-color-canvas-default: #15130f;
+  --wireline-color-text-primary: #f4f2ec;
+  --wireline-color-text-secondary: #b8b3a8;
+  --wireline-color-text-tertiary: #8b867b;
+  --wireline-color-border-default: #322d25;
+  --border: #322d25;
+  background: color-mix(in srgb, #15130f 62%, #000);
   color: var(--wireline-color-text-primary);
   border: 1px solid var(--wireline-color-border-default);
 }

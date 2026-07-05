@@ -63,8 +63,18 @@
    The brand CTA card is a deep console with a patina-leaning border and
    light text — emphatic but calm, consistent with the closing-CTA console. */
 .wl-stitch-card-brand {
+  /* Deep console CTA card — dark in BOTH themes. Pin the semantic tokens locally
+     so the patina border, light text, and any nested controls resolve against a
+     dark canvas even when the page is rendered in light mode. */
+  --wireline-color-canvas-default: #15130f;
+  --wireline-color-surface-default: #1e1b16;
+  --wireline-color-text-primary: #f4f2ec;
+  --wireline-color-text-secondary: #b8b3a8;
+  --wireline-color-text-tertiary: #8b867b;
+  --wireline-color-border-default: #322d25;
+  --wireline-color-action-primary-default: #5ba98a;
   border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 42%, var(--wireline-color-border-default));
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  background: color-mix(in srgb, #15130f 62%, #000);
   color: var(--wireline-color-text-primary);
 }
 
