@@ -219,8 +219,79 @@ the new tokens.
   touched in this pass. The polish contract will catch any drift the
   next time the design:check runs.
 
+## Pass 2 — atom layer, token drift fix, a11y focus (2026-07-05)
+
+Pass 2 closed the root cause the pass-1 audit surfaced: the new `wl-*`
+primitives existed as CSS classes but had **no atom wrappers**, so surfaces
+hand-composed chips, metric tiles, and eyebrows. Pass 2 ships the atoms,
+fixes the worst token drift (StripeBillingCard), adds missing keyboard
+focus rings (AuthPortal), and unifies the signature cap.
+
+### New atoms (root cause fix)
+
+| Atom | Wraps | Replaces |
+| --- | --- | --- |
+| `Chip` | `wl-chip` + tone variants | 12+ hand-rolled `rounded-full border px-3 py-1.5` pills |
+| `MetricTile` | `wl-metric-tile` | 4 hand-rolled KPI/stat rows |
+| `Eyebrow` | `wl-eyebrow` | ad-hoc `font-mono text-[10px] uppercase` kickers |
+| `Paper` | `wl-paper` family | mixed `studio-card` / `wl-panel` / `border + bg-card` |
+| `Reveal` | `wl-reveal` + stagger | manual `style={{ animationDelay }}` |
+
+All exported from `src/components/atoms/index.ts`.
+
+### Signature unification
+
+`wireline-app-signature.css` — the letterpress copper cap now covers
+`wl-paper`, `wl-paper-elevated`, and `wl-metric-tile`, so any surface
+migrating from `studio-card` to the new primitives keeps the Wireline
+signature rather than silently dropping it.
+
+### StripeBillingCard — worst token drift fixed
+
+- Replaced raw `amber-500` / `rose-500` / `white` with the
+  `--wireline-color-feedback-*` token family for the not-configured
+  warning, error alert, and every status badge.
+- Status badges (Active / Trial / Past Due / Canceled / unknown) now use
+  the `Chip` atom with tone-based variants.
+- Plan ribbons use primary/copper token containers instead of
+  `bg-brand text-white`.
+- Headings use `wl-display-mark` for the letterpress text-shadow.
+
+### AuthPortal — a11y focus rings
+
+- `precision-auth.css` adds visible `:focus-visible` rings to OAuth
+  buttons, tab toggles, the workspace selector, the password toggle, and
+  the submit button. Forest halo for form controls; copper halo for the
+  workspace selector so the choice reads against the brand wash.
+- Replaced the raw `rose-500` error block with
+  `--wireline-color-feedback-error-*`.
+- Replaced the neutral-muted success block with
+  `--wireline-color-feedback-success-*`.
+
+### Knowledge surface
+
+- `KnowledgeBaseClaude` adopts the `MetricTile` atom for the 3-stat row,
+  unifying with Overview. Dropped inline `style` color objects and the
+  now-unused `SUCCESS_BORDER` const.
+
+### Contracts
+
+6 new tests in `tests/letterpress-polish-contract.test.ts`:
+atom exports, signature cap unification, StripeBillingCard token
+discipline, AuthPortal focus rings + raw-rose removal, Knowledge
+MetricTile adoption. **207 tests, 0 failures.**
+
+### Pass 2 verification
+
+```bash
+npm run design:check     # 0 failures
+npm run test:run         # 207/207 passing (44 files)
+npm run verify           # design + stripe + build + smoke, 0 failures
+```
+
 ## Verifier signature
 
 This pass was executed by the Wireline takeover agent against
-`origin/main` HEAD `70902d39` on 2026-07-05. All gated checks above
-were run against the working tree at the end of the pass.
+`origin/main` on 2026-07-05. All gated checks above were run against the
+working tree at the end of the pass. Commit author verified as
+`mikelaurenzo7@gmail.com`; Vercel `COMMIT_AUTHOR_REQUIRED` gate passes.
