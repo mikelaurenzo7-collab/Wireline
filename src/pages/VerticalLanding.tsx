@@ -166,14 +166,17 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             return (
               <article
                 key={pain.title}
-                className="wl-stitch-card marketing-pain-card flex items-center gap-4 p-5 sm:p-6"
+                className="wl-stitch-card marketing-pain-card flex items-start gap-4 p-5 sm:p-6"
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-muted text-primary">
                   <Icon className="h-4 w-4" />
                 </span>
-                <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">
-                  {title}
-                </h3>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">
+                    {title}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{pain.body}</p>
+                </div>
               </article>
             );
           })}

@@ -95,7 +95,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 29,
     max_agents: 4,
     voice_minutes_monthly: 500,
-    overage_per_min_usd: 0.16,
+    overage_per_min_usd: 0.18,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_BUSINESS_STARTER_PRICE_ID",
     extra_agent_price_usd: 9,

@@ -198,10 +198,24 @@ export default function Pricing() {
               Personal is balance-led. Team and Business sell operating capacity: agents, numbers,
               routing, approvals, integrations, support, and reliability.
             </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/signup"
+                className="marketing-btn-primary min-h-12 px-6 text-sm font-semibold"
+              >
+                Start free <ArrowRight size={14} />
+              </Link>
+              <a
+                href="#tiers"
+                className="inline-flex min-h-12 items-center gap-2 rounded-[var(--wireline-radius-md)] border border-border bg-card px-5 text-sm font-semibold text-foreground transition hover:bg-muted"
+              >
+                Compare plans
+              </a>
+            </div>
           </div>
         </section>
 
-        <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+        <section id="tiers" className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail mx-auto grid max-w-[1360px] gap-4 lg:grid-cols-4 lg:items-stretch">
             {PRICING_TIERS.map((plan) => {
               const Icon = plan.icon;

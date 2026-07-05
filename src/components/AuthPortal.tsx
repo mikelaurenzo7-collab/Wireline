@@ -707,7 +707,6 @@ export default function AuthPortal() {
                       aria-label={showPassword ? "Hide password" : "Show password"}
                       aria-pressed={showPassword}
                       className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
-                      tabIndex={-1}
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" aria-hidden="true" />

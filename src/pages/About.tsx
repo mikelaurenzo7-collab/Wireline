@@ -98,7 +98,7 @@ export default function About() {
               <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
                 {principle.title}
               </h3>
-              {/* Details shown in action on other pages */}
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{principle.copy}</p>
             </article>
           ))}
         </div>
