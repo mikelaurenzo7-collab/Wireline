@@ -205,7 +205,7 @@ Detailed research lanes and KPI taxonomy: [RESEARCH_OPERATING_SYSTEM.md](./RESEA
 - [ ] Integration tests: theme storage, pricing section, wizard channels
 - [ ] Supabase advisor fixes (leaked password protection)
 - [ ] Production Stripe live checkout proof
-- [ ] Studio banner when agent uses presenter voice on phone-only deployments
+- [x] Studio banner when agent uses presenter voice on phone-only deployments
 
 ---
 

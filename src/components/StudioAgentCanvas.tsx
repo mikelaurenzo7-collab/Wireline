@@ -13,6 +13,7 @@ import { computeAgentReadiness } from "./fleet-settings/agent-readiness";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
 import AgentPresenceCatalogThumb from "./AgentPresenceCatalogThumb";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
+import { PresenterPstnVoiceNotice } from "./voice/PresenterPstnVoiceNotice";
 import type { AgentVideoPresenterConfig } from "../lib/video-presenter/types";
 
 /**
@@ -206,6 +207,8 @@ export default function StudioAgentCanvas({
   const activeCount = workflowRows.filter((tool) => enabled.has(tool.name)).length;
   const roleLabel = formatAgentRoleLabel(config?.role ?? null);
   const voiceName = displayVoiceName(config?.voice?.voiceId);
+  const isPresenterVoice = config?.voice?.provider === "presenter";
+  const hasLiveLine = Boolean(selectedAgent?.phone_number);
   const personality = config?.personality?.trim() || "Not set";
   const docCount = config?.knowledge?.length ?? 0;
   const directives = config?.directives ?? [];
@@ -324,6 +327,13 @@ export default function StudioAgentCanvas({
             <div className="mt-1 text-xs text-[var(--wireline-color-text-secondary)]">
               {providerLabel(config?.voice?.provider)}
             </div>
+            {isPresenterVoice ? (
+              <PresenterPstnVoiceNotice
+                hasLiveLine={hasLiveLine}
+                voiceEditHref={`/training?agent=${encodeURIComponent(agentId)}`}
+                className="mt-4"
+              />
+            ) : null}
             <div className="mt-4 flex h-8 items-end gap-0.5" aria-hidden="true">
               {[40, 80, 100, 55, 70, 90, 45, 65, 78, 52].map((height, index) => (
                 <div
