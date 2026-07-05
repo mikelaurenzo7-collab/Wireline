@@ -3,6 +3,7 @@
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import type { AuditEventType, AuditSeverity } from "../types/audit";
+import { normalizeAuditUserIdForRecord } from "./audit-user-id";
 import { log } from "./server-context";
 
 export class AuditLogger {
@@ -27,7 +28,6 @@ export class AuditLogger {
     latencyMs?: number;
     requestId?: string;
   }): Promise<{ success: boolean; error?: string }> {
-    // Validate required fields
     if (!data.action || !data.eventType) {
       log.error("[AuditLogger] Missing required fields", {
         action: data.action,
@@ -36,20 +36,28 @@ export class AuditLogger {
       return { success: false, error: "Missing required fields" };
     }
 
+    const normalizedIdentity = normalizeAuditUserIdForRecord(data.userId, data.metadata);
+    if (normalizedIdentity.droppedUserId) {
+      log.warn("[AuditLogger] Dropped non-UUID userId from audit record", {
+        eventType: data.eventType,
+        action: data.action,
+      });
+    }
+
     const record = {
       eventType: data.eventType,
-      userId: data.userId,
+      userId: normalizedIdentity.userId,
       action: data.action,
       severity: data.severity || "info",
       actorEmail: data.actorEmail,
       resourceType: data.resourceType,
       resourceId: data.resourceId,
-      metadata: data.metadata,
+      metadata: normalizedIdentity.metadata,
       ipAddress: data.ip,
       userAgent: data.userAgent,
       provider: data.provider,
       model: data.model,
-      costUsd: data.costUsd ? String(data.costUsd) : undefined, // decimal as string
+      costUsd: data.costUsd !== undefined ? String(data.costUsd) : undefined,
       latencyMs: data.latencyMs,
       requestId: data.requestId,
     };
@@ -58,9 +66,6 @@ export class AuditLogger {
       await this.drizzle.insert(schema.auditLog).values(record as any);
     } catch (error: any) {
       this.failureCount++;
-      // Drizzle wraps pg errors; the cause carries the actual Postgres
-      // message (constraint, RLS policy, connection), which is what an
-      // operator needs to act on.
       const cause = error.cause instanceof Error ? error.cause.message : (error.cause ?? undefined);
       log.error("[AuditLogger] Failed to log event", {
         eventType: data.eventType,
@@ -160,7 +165,7 @@ export class AuditLogger {
       userId: params.userId,
       action,
       severity: "critical",
-      metadata: { resource: params.resource, ...params.metadata },
+      metadata: { ...params.metadata, resource: params.resource },
       ip: params.ip,
       userAgent: params.userAgent,
       requestId: params.requestId,
@@ -217,12 +222,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log a knowledge / settings modification event. Used by surfaces that
-   * mutate cross-agent knowledge (Google Drive ingest, manual KB edits)
-   * which the legacy code reaches via the convenience name
-   * `logDataModification`.
-   */
   async logDataModification(
     eventType: AuditEventType,
     params: {
@@ -243,11 +242,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log a billing-related event (Stripe webhook, checkout, portal open).
-   * Captures the Stripe subscription / customer ID and the plan tier
-   * for SOC 2 CC1.4 (system-of-record auth trail for paid features).
-   */
   async logBilling(
     action:
       | "subscription_created"
@@ -294,11 +288,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log intake-key lifecycle (the keys that authenticate inbound lead
-   * webhooks). These keys grant write access to /api/intake/lead so
-   * their creation/rotation/deletion is security-relevant.
-   */
   async logIntakeKey(
     action: "created" | "updated" | "deleted",
     params: {
@@ -326,11 +315,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log webhook CRUD. The signing secret is encrypted at rest (see
-   * src/lib/secret-vault.ts) and is NEVER logged here — only the
-   * webhook URL, event filter set, and active flag.
-   */
   async logWebhook(
     action: "created" | "updated" | "deleted" | "tested",
     params: {
@@ -360,11 +344,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log DNC (Do-Not-Call) list mutations — required for TCPA/DNC
-   * compliance evidence. Tracks how many numbers were added/removed
-   * and the source ("manual", "csv_import", "complaint", etc).
-   */
   async logDnc(
     action: "added" | "removed",
     params: {
@@ -390,9 +369,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log quota-override administrative changes (Item 1) and refusals.
-   */
   async logQuotaOverride(
     action: "set" | "denied",
     params: {
@@ -419,11 +395,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log job-queue sweep activity — both successful sweeps (with the
-   * count of jobs processed) and denials (for would-be tenants who
-   * lacked admin/owner role).
-   */
   async logJobSweep(
     action: "started" | "completed" | "denied",
     params: {
@@ -450,10 +421,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log account self-deletion. This is irreversible so it carries
-   * critical severity and is emitted BEFORE the auth row is removed.
-   */
   async logAccountDeletion(params: { userId: string; tablesTouched: string[]; ip?: string }) {
     return await this.log({
       eventType: "data.account_deleted",
@@ -467,10 +434,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log a GDPR account-deletion REQUEST (soft-delete; reversible during the
-   * 30-day grace period via /api/account/cancel-deletion).
-   */
   async logAccountDeletionRequested(params: {
     userId: string;
     scheduledPurgeAt: string;
@@ -488,9 +451,6 @@ export class AuditLogger {
     });
   }
 
-  /**
-   * Log a GDPR account-deletion cancellation (within the grace period).
-   */
   async logAccountDeletionCancelled(params: { userId: string; ip?: string }) {
     return await this.log({
       eventType: "data.account_deletion_cancelled",
