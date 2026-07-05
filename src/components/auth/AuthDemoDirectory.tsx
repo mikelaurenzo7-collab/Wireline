@@ -92,14 +92,14 @@ function AgentContactCard({
     }
 
     return (
-      <div className="rounded-md border border-white/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
+      <div className="rounded-md border border-white/8 bg-card/70 px-2 py-1.5 hover:border-brand/20 transition-colors">
         {card}
       </div>
     );
   }
 
   return (
-    <div className="relative rounded-md p-3 overflow-hidden border border-white/8 bg-white/60">
+    <div className="relative rounded-md p-3 overflow-hidden border border-white/8 bg-card/60">
       <div className="flex items-start gap-3">
         <div
           className={cn(
@@ -109,7 +109,7 @@ function AgentContactCard({
           data-accent={isDemo ? undefined : agent.tint}
         >
           <Phone
-            className={cn("w-3.5 h-3.5", isDemo ? "text-zinc-400" : "wl-accent-text")}
+            className={cn("w-3.5 h-3.5", isDemo ? "text-muted" : "wl-accent-text")}
             strokeWidth={2.4}
           />
         </div>
