@@ -1,26 +1,33 @@
 # Wireline
 
-Wireline is a horizontal agent platform for calls, texts, follow-up, browser context, email, and integrations. One fleet of agents handles inbound calls, outbound dialing, SMS, email, browser context, and follow-up for businesses and operators. It includes native iOS and Android apps, Wireline Command for browsers, and a ChatGPT app, all backed by the same protected agent runtime.
+Wireline is the agent operating layer for calls, texts, follow-up, browser context, email, and integrations. One trained agent fleet can answer, route, book, qualify, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+
+The current product doctrine is simple:
+
+1. **Create** a focused agent quickly.
+2. **Train** it deeply with facts, sources, policies, voice, tone, tools, and workflows.
+3. **Wire** it to numbers, integrations, routing, approvals, and billing controls.
+4. **Run** it in Studio, where calls, texts, follow-up, approvals, handoffs, and review happen.
 
 ## Key capabilities
 
-- **Agents**: Customizable voice, SMS, and email agents with training, instructions, tone, tools, and integrations.
-- **Create -> Train -> Run**: Simple agent intake, first-class Training for sources and behavior, and a chat-first workroom for execution.
-- **Voice**: Production calls through approved telephony and voice providers, with authenticated realtime voice sessions available for low-latency tests.
-- **Wireline Command**: A Manifest V3 side-panel/sidebar command surface for Chrome, Edge, Opera, and Firefox. It deliberately brings the active page, selected text, or a linked phone number into Studio; it has no broad host permission, background harvesting, or copied credentials.
-- **Native mobile**: iOS and Android as thin, high-quality daily control surfaces.
-- **ChatGPT App**: OAuth-connected, account-bound MCP tools for private drafting, refinement, and account-aware simulations.
-- **Studio workspace**: Web workspace for building, training, reviewing, and operating agents at scale.
-- **Infrastructure**: Postgres + Drizzle, RLS tenant isolation, Stripe billing, strong auth, rate limiting, and verification gates.
+- **Agents**: Customizable voice, SMS, email, and follow-up agents with training, instructions, tone, tools, integrations, and account-aware memory.
+- **Create -> Train -> Wire -> Run**: Short intake, first-class Training, deliberate wiring, and a chat-first Studio workroom.
+- **Voice**: Production calls through approved telephony and voice providers, with authenticated realtime test paths for low-latency validation.
+- **Video presenters**: Optional live visual presenter layer for business agents; customer surfaces keep vendor names hidden and preserve a Wireline face fallback.
+- **Wireline Command**: Manifest V3 side-panel/sidebar command surface for Chrome, Edge, Opera, and Firefox. It brings active-page context into Studio only by explicit user action.
+- **Native mobile**: iOS and Android as thin, high-quality control surfaces for calls, approvals, notifications, widgets, and daily review.
+- **ChatGPT App**: OAuth-connected, account-bound MCP tools for private drafting, refinement, simulation, and account-aware workflows.
+- **Infrastructure**: Postgres + Drizzle, server-owned data access, RLS tenant isolation, Stripe billing, authz checks, CSP checks, rate limiting, and verification gates.
 
 ## Tech
 
-- Web: React 19 + Vite, Express, TypeScript, Tailwind, and the Wireline Letterpress design system.
-- API: Serverless-capable (Vercel), Drizzle ORM on Supabase Postgres.
-- Browser: Manifest V3 command surface with Chromium and Firefox manifest overlays.
-- Voice: Production voice provider integrations plus dedicated realtime test paths.
-- Models: Managed model providers with fallback and override paths.
-- Mobile: Native Kotlin/Compose and SwiftUI.
+- **Web / API**: React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, Vercel-capable server bundle.
+- **Design**: Wireline Letterpress tokens, brand colors, generated platform tokens, and `src/styles/design-system.css` as the visual source of truth.
+- **Browser**: Manifest V3 command surface with Chromium and Firefox manifest overlays.
+- **Voice / realtime**: Twilio, Vapi, OpenAI/Gemini fallback paths, xAI Grok realtime test paths, and provider-specific server guards.
+- **Video**: HeyGen/LiveAvatar SDK-backed presenter infrastructure wrapped behind Wireline-owned copy and consent states.
+- **Mobile**: Native Kotlin/Compose and SwiftUI.
 
 ## Getting started
 
@@ -38,31 +45,40 @@ node apps/browser-extension/scripts/build.mjs
 
 Load the generated target package from `apps/browser-extension/dist/chromium` or `apps/browser-extension/dist/firefox` for local browser testing. See `apps/browser-extension/README.md`.
 
-## Verification (required before changes land)
+## Verification before changes land
 
 ```bash
-npm run verify       # design check + build + server smoke
-npm run verify:full  # lint + design + authz + csp + tests + build + smoke
+npm run verify       # design check + Stripe catalog contract + build + server smoke
+npm run verify:full  # lint + server lint + design + Stripe + authz + CSP + tests + build + smoke
+npm run verify:contracts
 node apps/browser-extension/scripts/build.mjs --check
 node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
 ```
 
-## Product and repository contracts
+Use `npm run verify` for focused implementation branches and `npm run verify:full` before merge, release, or anything touching auth, billing, CSP, routes, data access, provider integrations, or shared runtime contracts.
 
-See:
+## Repository map
 
-- `CODEBASE_HEALTH.md` - guardrails, cleanup policy, deletion rules, and health standards
-- `ARCHITECTURE.md` - system design and runtime flows
-- `docs/CLIENT_SURFACES.md` - client ownership, repository boundaries, and staged extraction plan
-- `docs/CHATGPT_APP.md` - ChatGPT App contract and release verification
-- `docs/` - launch plans, SOC 2, SLAs, and operational references
-- `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, and `src/styles/design-system.css` - visual truth
+| Area | Source of truth |
+| --- | --- |
+| Repo health | `CODEBASE_HEALTH.md`, `docs/REPO_HEALTH_AUDIT_2026-07-04.md` |
+| Architecture | `ARCHITECTURE.md`, `src/server/register-api-routes.ts`, `src/routes/AppRoutes.tsx` |
+| Product docs | `docs/README.md`, `docs/CLIENT_SURFACES.md`, `docs/CHATGPT_APP.md` |
+| Pricing and billing | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts` |
+| Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
+| Voice and models | `src/lib/ai-models.ts`, `src/lib/voice/`, `src/routes/grok-voice-routes.ts`, `docs/GROK_LIVE_VOICE.md` |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts` |
+| Browser extension | `apps/browser-extension/` |
+| Native apps | `ios/`, `android/` |
+| Tests and checks | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts` |
 
-## Project status
+## Repository hygiene contract
 
-Active development covers Create -> Train -> Run, Wireline Letterpress standardization, native mobile control surfaces, Wireline Command, ChatGPT App readiness, usage and Conversation Balance foundations, and ongoing codebase health and legacy removal.
-
-All changes must pass `npm run verify` (and full where applicable). Follow default-deny authz, Zod validation, structured logging, and source-of-truth discipline (`ai-models.ts`, schema, brand-colors, plan-catalog, and related contracts).
+- Do not commit generated visual QA output, screenshots, local agent artifacts, `.grok/artifacts`, temporary patches, coverage, Playwright output, or build output.
+- Do not add new canonical docs without linking them from `docs/README.md` or explicitly marking them historical.
+- Do not create parallel design systems, duplicate source-of-truth files, or temporary `*-v2` migration wrappers.
+- Keep provider credentials, user data, billing, webhook validation, and tenant-scoped reads server-owned.
+- Keep browser extension behavior explicit-user-action only: no broad host permissions, no silent browsing, no token storage, no page harvesting.
 
 ## License
 
