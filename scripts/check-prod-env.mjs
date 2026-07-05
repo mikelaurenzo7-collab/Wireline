@@ -2,7 +2,8 @@
 // Production environment-variable check.
 //
 // Runs before deploy (manually invoked, or via CI) to surface missing
-// secrets BEFORE they manifest as 500s in production.
+// secrets and launch-critical control-plane confirmations BEFORE they manifest
+// as 500s, broken checkout, or avoidable security findings in production.
 //
 // Usage:
 //   node scripts/check-prod-env.mjs
@@ -47,6 +48,15 @@ const recommended = [
   ["STRIPE_SECRET_KEY", "Stripe billing endpoints"],
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
+
+  // Manual control-plane confirmation. Supabase Auth leaked-password protection
+  // cannot be inferred from env locally, but the production advisor flagged it
+  // disabled during the 2026-07-05 review. Set this confirmation only after
+  // enabling it in Supabase Auth settings.
+  [
+    "SUPABASE_LEAKED_PASSWORD_PROTECTION_ENABLED",
+    "Set to true after enabling Supabase Auth leaked-password protection: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection",
+  ],
 
   // Current public subscription checkout is for shared capacity only.
   // These env names are transitional code identifiers mapped to the live
@@ -101,7 +111,12 @@ const jwtSecretConflict =
   process.env.SUPABASE_JWT_SECRET &&
   process.env.INTERNAL_JWT_SECRET !== process.env.SUPABASE_JWT_SECRET;
 
-const missing = (vars) => vars.filter(([k, _d, value]) => !(value ?? process.env[k]));
+const present = (key, value) => {
+  const resolved = value ?? process.env[key];
+  if (key === "SUPABASE_LEAKED_PASSWORD_PROTECTION_ENABLED") return resolved === "true";
+  return Boolean(resolved);
+};
+const missing = (vars) => vars.filter(([key, _description, value]) => !present(key, value));
 
 const missingRequired = jwtSecretConflict
   ? [
@@ -120,7 +135,7 @@ const banner = (s) => `\n${"-".repeat(64)}\n  ${s}\n${"-".repeat(64)}`;
 console.log(banner("Wireline - production env check"));
 
 if (missingRequired.length === 0 && missingRecommended.length === 0) {
-  console.log("OK: all required and recommended env vars are set.\n");
+  console.log("OK: all required and recommended env vars/control-plane confirmations are set.\n");
   if (missingOptional.length) {
     console.log("  Optional (informational only):");
     missingOptional.forEach(([k, d]) => console.log(`    - ${k} - ${d}`));
@@ -134,7 +149,7 @@ if (missingRequired.length) {
 }
 
 if (missingRecommended.length) {
-  console.log("\nMISSING RECOMMENDED env vars (features will be degraded):\n");
+  console.log("\nMISSING RECOMMENDED env vars/control-plane confirmations (features or launch posture will be degraded):\n");
   missingRecommended.forEach(([k, d]) => console.log(`    - ${k}\n      ${d}`));
 }
 
