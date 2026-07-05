@@ -482,3 +482,63 @@ This pass was executed by the Wireline takeover agent on 2026-07-05 as a
 vigilant E2E 2nd pass. All gated checks above were run against the
 working tree at the end of the pass and were green. Merged to
 `origin/main`.
+
+---
+
+# 3rd pass — dead code purge, palette redirect, dark-canvas visibility
+
+The 2nd pass deployment (`ab39cde2`) was confirmed READY on Vercel
+before this pass began. This pass purges dead code, redirects 300+ raw
+Tailwind rose/amber usages to the Wireline status tokens, and fixes
+invisible-on-dark-canvas inputs and hover states.
+
+## Dead code purge (460 lines removed)
+
+| File | Lines | Why dead |
+| --- | --- | --- |
+| `src/components/ContactProfile.tsx` | 443 | Zero importers. Only `lib/contact-profile.ts` (a different file, the server-side builder) is used by `contact-routes.ts`. The component was an orphaned `recharts` consumer. |
+| `src/routes/LegacyRedirects.tsx` | 9 | Zero importers. Redirected to `/phone` which is not even a route. |
+
+## Palette consistency (300+ usages, zero component churn)
+
+`src/index.css` `@theme inline` now redirects Tailwind `rose-300..700`
+to `var(--wireline-color-status-error)` and `amber-200..800` to
+`var(--wireline-color-status-warning)`. Every error/danger surface
+(DNC manager, usage overage, delete actions, status pills, daily brief)
+and every warning surface (low credit, usage threshold) across 8+
+components now resolves to the canonical Wireline status colors instead
+of Tailwind's generic rose/amber ramp. Opacity modifiers (`rose-500/10`)
+still create lightness variation via `color-mix`. A pipeline-contract
+test guards the redirect.
+
+## Dark-canvas visibility fixes
+
+| Surface | Before | After |
+| --- | --- | --- |
+| CreateAgentSection (3 inputs, core Create flow) | `bg-black/5` (invisible on #15130F) | `var(--wireline-color-surface-recessed)` |
+| DncManager search input | `bg-black/10` + `ring-rose-500/50` (retired palette) | recessed surface + Wireline focus token |
+| WorkspaceSidebar (4 hover states, primary nav) | `hover:bg-black/[0.04]` (invisible hover) | `hover:bg-[var(--wireline-color-surface-subtle)]` |
+
+## Server robustness (confirmed, no changes needed)
+
+Verified the server error handling is already world-class:
+- `express-async-errors` auto-catches async rejections from all 320+
+  route handlers (no manual try/catch needed)
+- 404 catch-all for unmatched API routes
+- Error-handling middleware with `formatErrorResponse` + Sentry
+  reporting for 5xx
+- `process.on("unhandledRejection")` + `process.on("uncaughtException")`
+  as last-resort safety nets
+
+## Verification (3rd pass, all green)
+
+```
+npm run verify:full   # ALL gates green (lint, eslint, design, stripe, authz,
+                      # csp, bootstrap, 212 tests, build, smoke)
+```
+
+## Verifier signature (3rd pass)
+
+This pass was executed by the Wireline takeover agent on 2026-07-05 as a
+vigilant E2E 3rd pass. All gated checks were green. Merged to
+`origin/main` as commit `4212d2e9`.
