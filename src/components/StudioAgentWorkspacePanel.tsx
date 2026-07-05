@@ -110,6 +110,16 @@ export default function StudioAgentWorkspacePanel({
     }
   }
 
+  useEffect(() => {
+    if (window.location.hash !== "#agent-presence") return;
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById("agent-presence")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [agentId]);
+
   return (
     <div className={`min-h-0 flex-1 overflow-y-auto border-t border-border/60 ${className}`}>
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-8 sm:py-8">
@@ -117,7 +127,11 @@ export default function StudioAgentWorkspacePanel({
           {agentName}
         </h2>
 
-        <section className="studio-card p-6" aria-labelledby="agent-presence-heading">
+        <section
+          id="agent-presence"
+          className="studio-card scroll-mt-6 p-6"
+          aria-labelledby="agent-presence-heading"
+        >
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 id="agent-presence-heading" className="text-lg font-semibold tracking-tight">

@@ -62,11 +62,11 @@ export default function AgentPresenceSlot({
     );
   }
 
-  const rootClass = `wl-presence wl-presence--${variant}${className ? ` ${className}` : ""}`;
+  const rootClass = `wl-presence wl-presence--${variant}${variant === "stage" ? " wl-presence--ink" : ""}${className ? ` ${className}` : ""}`;
 
   return (
     <div className={rootClass}>
-      <div className="wl-presence__frame">
+      <div className={`wl-presence__frame${variant === "stage" ? " wl-presence__frame--ink" : ""}`}>
         {showLiveBadge ? (
           <span className="wl-presence__live">
             <span className="wl-presence__live-dot" aria-hidden="true" />

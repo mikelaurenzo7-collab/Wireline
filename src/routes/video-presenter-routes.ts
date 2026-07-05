@@ -37,10 +37,11 @@ function throwLiveVideoBillingError(
       entitlement.reason || "Live video is not available on this workspace.",
     );
   }
-  throw AppError.fromHttpStatus(
+  throw new AppError(
     402,
+    "LIVE_VIDEO_UPGRADE_REQUIRED",
     entitlement.reason || "Upgrade to Wireline Team or higher to add live video.",
-    { code: "LIVE_VIDEO_UPGRADE_REQUIRED", plan_id: entitlement.planId },
+    { plan_id: entitlement.planId },
   );
 }
 
@@ -198,7 +199,11 @@ router.post(
       throw AppError.fromHttpStatus(400, "Live video is available for business agents only.");
     }
     if (!agentLiveVideoOptedIn(agent)) {
-      throw AppError.fromHttpStatus(400, "Enable the live video add-on before starting a session.");
+      throw new AppError(
+        400,
+        "LIVE_VIDEO_NOT_ENABLED",
+        "Enable the live video add-on before starting a session.",
+      );
     }
 
     const presenter = resolveAgentVideoPresenter(agent);
@@ -295,19 +300,38 @@ router.post(
       throw AppError.fromHttpStatus(400, "Live video is available for business agents only.");
     }
     if (!agentLiveVideoOptedIn(agent)) {
-      throw AppError.fromHttpStatus(400, "Enable the live video add-on before voice preview.");
+      throw new AppError(
+        400,
+        "LIVE_VIDEO_NOT_ENABLED",
+        "Enable the live video add-on before voice preview.",
+      );
     }
 
     const presenter = resolveAgentVideoPresenter(agent);
+    if (!presenter.avatarId) {
+      throw new AppError(
+        400,
+        "LIVE_VIDEO_AVATAR_REQUIRED",
+        "Pick a catalog presenter face before voice preview.",
+      );
+    }
     if (presenter.status !== "ready") {
-      throw AppError.fromHttpStatus(400, "Live presenter must be ready before voice preview.");
+      throw new AppError(
+        400,
+        "LIVE_VIDEO_NOT_READY",
+        "Live presenter must be ready before voice preview.",
+      );
     }
     if (!elevenLabsConfigured()) {
       throw AppError.fromHttpStatus(503, "Voice preview is not configured.");
     }
     const voiceId = agent.voiceId?.trim();
     if (!voiceId) {
-      throw AppError.fromHttpStatus(400, "Pick a voice for this agent before previewing.");
+      throw new AppError(
+        400,
+        "LIVE_VIDEO_NO_VOICE",
+        "Pick a voice for this agent before previewing.",
+      );
     }
 
     const sampleText = `Hi, I'm ${agent.name}. Thanks for calling — how can I help you today?`;

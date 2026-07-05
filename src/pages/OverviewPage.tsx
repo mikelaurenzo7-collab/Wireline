@@ -309,7 +309,7 @@ export default function OverviewPage() {
   return (
     <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
       <WorkspacePageFrame className="wl-overview">
-        <section className="relative text-center">
+        <section className="relative wl-overview-greeting text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {todayLabel()}
           </p>

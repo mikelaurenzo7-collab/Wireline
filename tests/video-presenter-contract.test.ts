@@ -38,16 +38,22 @@ describe("video presenter integration", () => {
     const routes = source("src/routes/video-presenter-routes.ts");
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
     expect(routes).toContain("generateSamplePcm24");
-    expect(routes).toContain("sessionToken");
+    expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
+    const live = source("src/components/LiveVideoPresenter.tsx");
+    expect(live).toContain("feedPcmDelta");
+    const sandbox = source("src/components/LiveVoiceSandbox.tsx");
+    expect(sandbox).toContain("onAgentAudioDelta");
   });
 
   it("offers live video as an explicit opt-in add-on", () => {
     const routes = source("src/routes/video-presenter-routes.ts");
     expect(routes).toContain("/video-presenter/enable");
+    expect(routes).toContain("LIVE_VIDEO_UPGRADE_REQUIRED");
     const preview = source("src/components/AgentPresenceLivePreview.tsx");
     expect(preview).toContain("Add live video");
+    expect(preview).toContain("liveVideoMeteringNote");
     const readiness = source("src/components/fleet-settings/agent-readiness.ts");
-    expect(readiness).not.toContain('"presence"');
+    expect(readiness).toContain("softNudges");
   });
 
   it("imports catalog listing for the avatar picker route", () => {

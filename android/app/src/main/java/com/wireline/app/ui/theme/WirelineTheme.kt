@@ -46,6 +46,8 @@ object Brand {
     val AccentSoft = WirelineDesignTokens.ColorToken.colorActionPrimaryContainer
     val AccentDeep = WirelineDesignTokens.ColorToken.colorTextPrimary
     val AccentTint = WirelineDesignTokens.ColorToken.colorActionPrimaryContainer
+    val Wire = WirelineDesignTokens.ColorToken.colorActionSecondaryDefault
+    val WireSoft = WirelineDesignTokens.ColorToken.colorActionSecondaryContainer
 
     val Destructive = WirelineDesignTokens.ColorToken.colorStatusError
     val Success = WirelineDesignTokens.ColorToken.colorStatusSuccess

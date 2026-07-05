@@ -26,6 +26,10 @@ enum Brand {
     static let accentDeep = WirelineDesignTokens.ColorToken.colorTextPrimary
     static let accentTint = WirelineDesignTokens.ColorToken.colorActionPrimaryContainer
 
+    /// Copper wire — the signature accent on cards and chrome (secondary action token).
+    static let wire = WirelineDesignTokens.ColorToken.colorActionSecondaryDefault
+    static let wireSoft = WirelineDesignTokens.ColorToken.colorActionSecondaryContainer
+
     // ── Semantic feedback ────────────────────────────────────────────────────
     static let destructive = WirelineDesignTokens.ColorToken.colorStatusError
     static let signal = WirelineDesignTokens.ColorToken.colorStatusSuccess
@@ -110,9 +114,23 @@ struct AssistantCard<Content: View>: View {
     }
 }
 
-/// Flat root surface: layered tones and outlines take priority over decoration.
+/// Flat root surface: layered tones, faint ledger ruling, restrained depth.
 struct BrandMeshBackground: View {
-    var body: some View { Brand.canvas.ignoresSafeArea() }
+    var body: some View {
+        ZStack {
+            Brand.canvas
+            LinearGradient(
+                colors: [
+                    Brand.wireSoft.opacity(0.14),
+                    Color.clear,
+                    Brand.accentSoft.opacity(0.08),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .ignoresSafeArea()
+    }
 }
 
 extension View {
@@ -133,6 +151,19 @@ extension View {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .stroke(Brand.border.opacity(borderOpacity), lineWidth: 1)
             )
+            .overlay(alignment: .top) {
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [Brand.wire, Brand.accent.opacity(0.35), .clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 2)
+                    .padding(.horizontal, WirelineDesignTokens.Metric.space200)
+                    .padding(.top, 1)
+            }
     }
 
     /// Backward-compatible name for existing views while they migrate to the

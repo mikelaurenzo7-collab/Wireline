@@ -29,7 +29,7 @@ export default function AgentReadinessStage({
   accountType = "personal",
 }: AgentReadinessStageProps) {
   const isPersonal = accountType === "personal";
-  const { score, total, checks, nextStep, ready } = computeAgentReadiness(
+  const { score, total, checks, nextStep, ready, softNudges } = computeAgentReadiness(
     agent,
     agentConfig,
     integrationStatus,
@@ -93,6 +93,16 @@ export default function AgentReadinessStage({
         <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
           <Smartphone className="h-3 w-3 shrink-0 text-brand/60" />
           Use it from your phone — tap the widget, ask Siri, or route a live call to your agent.
+        </p>
+      ) : softNudges.length ? (
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/70">
+          <Sparkles className="h-3 w-3 shrink-0 text-brand/50" />
+          {softNudges.map((nudge) => (
+            <span key={nudge.id} className="inline-flex items-center gap-1">
+              <span className="font-medium text-foreground/75">{nudge.label}:</span>
+              <span>{nudge.hint}</span>
+            </span>
+          ))}
         </p>
       ) : null}
     </div>

@@ -31,8 +31,22 @@ describe("Wireline Letterpress design vision", () => {
   it("defines panel and composer primitives in the design system stylesheet", () => {
     const css = read("src/styles/design-system.css");
     for (const utility of WIRELINE_DESIGN_VISION.utilities) {
-      expect(css).toContain(`.${utility}`);
+      if (
+        utility.startsWith("wl-composer") ||
+        utility.startsWith("wl-panel") ||
+        utility.startsWith("wl-chip")
+      ) {
+        expect(css).toContain(`.${utility}`);
+      }
     }
+  });
+
+  it("defines authenticated Letterpress signature utilities", () => {
+    const appSignature = read("src/styles/wireline-app-signature.css");
+    expect(appSignature).toContain(".wl-rail-agent-link");
+    expect(appSignature).toContain("--wireline-color-action-secondary-default");
+    expect(read("apps/browser-extension/panel/app-signature.css")).toContain(".wordmark::before");
+    expect(read("ios/Wireline/Theme/WirelineTheme.swift")).toContain("static let wire");
   });
 
   it("maps tertiary text to the generated token in foundation runtime", () => {

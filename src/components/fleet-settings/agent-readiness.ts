@@ -25,6 +25,12 @@ export interface ReadinessCheck {
   copilotHint: string;
 }
 
+export interface SoftReadinessNudge {
+  id: string;
+  label: string;
+  hint: string;
+}
+
 export interface AgentReadiness {
   /** Number of satisfied checks. */
   score: number;
@@ -44,6 +50,8 @@ export interface AgentReadiness {
   nextStep: ReadinessCheck | null;
   /** True once every check passes. */
   ready: boolean;
+  /** Optional polish — never blocks the launch score. */
+  softNudges: SoftReadinessNudge[];
 }
 
 export function computeAgentReadiness(
@@ -130,6 +138,17 @@ export function computeAgentReadiness(
   // next step is the first incomplete check after identity.
   const nextStep = checks.find((c) => c.id !== "agent" && !c.done) ?? null;
 
+  const isBusiness =
+    !isPersonal && !!(selectedAgent?.is_business_agent ?? selectedAgent?.isBusinessAgent ?? false);
+  const softNudges: SoftReadinessNudge[] = [];
+  if (isBusiness && hasAgent && !agentConfig?.identity?.chosenAvatarId) {
+    softNudges.push({
+      id: "presenter-face",
+      label: "Presenter face",
+      hint: "Pick a catalog face in Agent presence (optional).",
+    });
+  }
+
   return {
     score,
     total,
@@ -137,5 +156,6 @@ export function computeAgentReadiness(
     flags: { hasAgent, hasVoice, hasPhone, hasKnowledge, hasRules, connectedIntegrations },
     nextStep,
     ready: score === total,
+    softNudges,
   };
 }

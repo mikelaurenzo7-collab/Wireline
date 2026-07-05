@@ -1,0 +1,69 @@
+/* Wireline Command — extension panel signature (matches web app letterpress). */
+
+.panel-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.panel-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 48px,
+    color-mix(in srgb, var(--wireline-color-text-primary) 2.5%, transparent) 48px,
+    color-mix(in srgb, var(--wireline-color-text-primary) 2.5%, transparent) 49px
+  );
+  opacity: 0.45;
+}
+
+.panel-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.panel-hero,
+.context-card,
+.handoff-form {
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-hero::before,
+.context-card::before,
+.handoff-form::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0.85rem;
+  right: 0.85rem;
+  height: 2px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 55%, transparent) 50%,
+    transparent
+  );
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wordmark::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--wireline-color-action-secondary-default);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 20%, transparent);
+}

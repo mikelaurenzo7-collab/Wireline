@@ -69,6 +69,11 @@ export function liveVideoAddonPitch(): string {
   return "Photoreal on-screen presenter for your website and video slot — billed as an add-on. Your agent voice stays on Wireline; this is visual only.";
 }
 
+/** Shown on the live-video add-on card — sets metering expectations without vendor jargon. */
+export function liveVideoMeteringNote(): string {
+  return "~1 credit per minute while the live presenter preview is connected.";
+}
+
 export function presenterCustomizationMessage(presenter: AgentVideoPresenterConfig): string | null {
   if (presenter.chosenAvatarId) {
     return "Custom for this agent";

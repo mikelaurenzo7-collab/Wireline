@@ -31,6 +31,9 @@ export const WIRELINE_DESIGN_VISION = {
     "wl-panel",
     "wl-panel-elevated",
     "wl-composer-hero",
+    "wl-eyebrow--wired--app",
+    "wl-rail-agent-link",
+    "wl-overview-greeting",
   ],
   voiceModules: ["MARKETING_VOICE", "WORKSPACE_VOICE", "PRODUCT_POSTURE"],
   studioCanvas: {

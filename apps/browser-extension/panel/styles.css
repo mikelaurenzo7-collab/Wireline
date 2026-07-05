@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   --canvas: var(--wireline-color-canvas-default);
   --surface: var(--wireline-color-surface-default);
   --surface-secondary: var(--wireline-color-surface-subtle);

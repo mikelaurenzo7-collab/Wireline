@@ -221,3 +221,58 @@
     transform: scaleY(0.7);
   }
 }
+
+/* ── Ink frame — copper corner marks on stage surfaces (Wireline signature) ── */
+.wl-presence--ink .wl-presence__frame--ink,
+.wl-presence__frame--ink {
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 88%, #000);
+  background:
+    radial-gradient(
+      140% 90% at 12% 0%,
+      color-mix(in srgb, var(--wireline-color-action-primary-container) 22%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      90% 70% at 100% 100%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-container) 18%, transparent),
+      transparent 52%
+    ),
+    color-mix(in srgb, var(--wireline-color-canvas-default) 68%, #000);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--wireline-color-action-secondary-default) 12%, transparent),
+    var(--wireline-elevation-sm);
+}
+
+.wl-presence__frame--ink::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  pointer-events: none;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-text-primary) 6%, transparent);
+}
+
+.wl-presence--ink .wl-presence__frame--ink::before {
+  left: 0.65rem;
+  right: 0.65rem;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 65%, transparent) 48%,
+    transparent 100%
+  );
+}
+
+/* Catalog face thumbnail — peeks from identity slot when a face is saved */
+.wl-presence__catalog-thumb {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid var(--wireline-color-canvas-default);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--wireline-color-action-secondary-default) 55%, transparent),
+    var(--wireline-elevation-sm);
+}

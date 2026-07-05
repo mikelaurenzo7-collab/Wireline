@@ -1,0 +1,123 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Wireline Letterpress — authenticated app signature.
+
+   Marketing carries the full wire story; the product carries a quieter
+   ledger: copper caps on cards, wired eyebrows in workspace chrome, and a
+   faint ruling on the canvas so authenticated surfaces feel unmistakably
+   Wireline without competing with task density.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Ledger canvas (workspace shell) ─────────────────────────────────── */
+.wl-workspace-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.wl-workspace-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 55px,
+    color-mix(in srgb, var(--wireline-color-text-primary) 2.5%, transparent) 55px,
+    color-mix(in srgb, var(--wireline-color-text-primary) 2.5%, transparent) 56px
+  );
+  opacity: 0.55;
+}
+
+.wl-workspace-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Letterpress card cap (studio + workspace cards) ─────────────────── */
+.wl-workspace-content .studio-card,
+.wl-workspace-content .wl-agent-card,
+.wl-overview .studio-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.wl-workspace-content .studio-card::before,
+.wl-workspace-content .wl-agent-card::before,
+.wl-overview .studio-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 2px;
+  border-radius: 999px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--wireline-color-action-secondary-default),
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 58%, transparent) 52%,
+    transparent
+  );
+}
+
+/* ── Wired workspace eyebrows ────────────────────────────────────────── */
+.wl-workspace-eyebrow.wl-eyebrow--wired,
+.wl-eyebrow.wl-eyebrow--wired--app {
+  font-family: var(--wireline-font-family-mono);
+  font-size: var(--wireline-typography-overline-size);
+  font-weight: 600;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
+  text-transform: uppercase;
+  color: var(--wireline-color-text-secondary);
+}
+
+/* ── Sidebar agent rail — copper node on active row ──────────────────── */
+.wl-rail-agent-link {
+  position: relative;
+}
+
+.wl-rail-agent-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -0.35rem;
+  top: 50%;
+  width: 3px;
+  height: 1.35rem;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    180deg,
+    var(--wireline-color-action-secondary-default),
+    var(--wireline-color-action-primary-default)
+  );
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent);
+}
+
+/* ── Overview greeting — subtle copper strand under display type ─────── */
+.wl-overview-greeting {
+  position: relative;
+}
+
+.wl-overview-greeting::after {
+  content: "";
+  display: block;
+  width: min(9rem, 42%);
+  height: 1px;
+  margin: 1.1rem auto 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--wireline-color-action-secondary-default) 18%,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 45%, transparent) 72%,
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-workspace-shell::before {
+    opacity: 0.35;
+  }
+}

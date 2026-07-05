@@ -9,6 +9,7 @@ import {
   videoPresenterPreviewHint,
   videoPresenterStatusMessage,
   liveVideoAddonPitch,
+  liveVideoMeteringNote,
 } from "../lib/video-presenter/copy";
 import type {
   AgentVideoPresenterConfig,
@@ -25,6 +26,7 @@ type PresenterSampleResponse = {
   chunks: string[];
   sampleText?: string;
   error?: string;
+  code?: string;
 };
 
 type PresenterPayload = {
@@ -66,6 +68,7 @@ export default function AgentPresenceLivePreview({
   const [videoSpeaking, setVideoSpeaking] = useState(false);
   const [enabling, setEnabling] = useState(false);
   const [sampleLoading, setSampleLoading] = useState(false);
+  const [streamReady, setStreamReady] = useState(false);
   const livePresenterRef = useRef<LiveVideoPresenterHandle>(null);
   const showSpeaking = speakingProp || videoSpeaking;
 
@@ -114,6 +117,7 @@ export default function AgentPresenceLivePreview({
         );
       }
       setSession({ live: payload.live, fallbackSeed: payload.fallbackSeed });
+      setStreamReady(false);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Live video could not be started.");
       setSession(null);
@@ -127,6 +131,13 @@ export default function AgentPresenceLivePreview({
     setSampleLoading(true);
     setError(null);
     try {
+      const deadline = Date.now() + 12_000;
+      while (!livePresenterRef.current?.isStreamReady() && Date.now() < deadline) {
+        await new Promise((resolve) => window.setTimeout(resolve, 120));
+      }
+      if (!livePresenterRef.current?.isControlConnected()) {
+        throw new Error("Wait for the live presenter stream to connect, then try again.");
+      }
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(agentId)}/video-presenter/sample`,
         { method: "POST" },
@@ -200,7 +211,7 @@ export default function AgentPresenceLivePreview({
       ) : null}
 
       {session ? (
-        <div className="wl-presence wl-presence--stage">
+        <div className="wl-presence wl-presence--stage wl-presence--ink">
           <LiveVideoPresenter
             ref={livePresenterRef}
             credentials={session.live}
@@ -208,8 +219,10 @@ export default function AgentPresenceLivePreview({
             agentName={name}
             speaking={showSpeaking}
             onSpeakingChange={setVideoSpeaking}
+            onStreamReady={() => setStreamReady(true)}
             onRetry={() => {
               setSession(null);
+              setStreamReady(false);
               void connect();
             }}
           />
@@ -272,6 +285,9 @@ export default function AgentPresenceLivePreview({
               ? "Your catalog face is saved — enable this to stream it on your site and in preview."
               : "Pick a catalog face above, then enable this when you want photoreal streaming."}
           </p>
+          <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/90">
+            {liveVideoMeteringNote()}
+          </p>
           {addonPurchasable ? (
             <button
               type="button"
@@ -316,8 +332,14 @@ export default function AgentPresenceLivePreview({
           <button
             type="button"
             onClick={() => void playVoiceSample()}
-            disabled={sampleLoading || !hasVoice}
-            title={!hasVoice ? "Pick a voice for this agent in Setup first." : undefined}
+            disabled={sampleLoading || !hasVoice || !streamReady}
+            title={
+              !hasVoice
+                ? "Pick a voice for this agent in Setup first."
+                : !streamReady
+                  ? "Wait for the live presenter stream to connect."
+                  : undefined
+            }
             className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-xs font-semibold text-foreground transition-colors hover:border-[var(--wireline-color-action-primary-default)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {sampleLoading ? (

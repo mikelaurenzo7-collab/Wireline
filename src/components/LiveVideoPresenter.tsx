@@ -25,7 +25,10 @@ function decodeBase64PcmChunks(chunks: string[]): string {
 
 export type LiveVideoPresenterHandle = {
   streamSample: (chunks: string[], eventId: string) => Promise<void>;
+  feedPcmDelta: (base64Pcm: string) => void;
+  flushPcm: () => void;
   isControlConnected: () => boolean;
+  isStreamReady: () => boolean;
 };
 
 const LiveVideoPresenter = forwardRef<
@@ -38,6 +41,7 @@ const LiveVideoPresenter = forwardRef<
     className?: string;
     onSpeakingChange?: (speaking: boolean) => void;
     onRetry?: () => void;
+    onStreamReady?: () => void;
   }
 >(function LiveVideoPresenter(
   {
@@ -48,19 +52,32 @@ const LiveVideoPresenter = forwardRef<
     className = "",
     onSpeakingChange,
     onRetry,
+    onStreamReady: onStreamReadyChange,
   },
   ref,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<LiveAvatarSession | null>(null);
+  const pcmAccumRef = useRef("");
   const [streamReady, setStreamReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [lipSyncActive, setLipSyncActive] = useState(false);
+
+  const flushAccumulatedPcm = (force = false) => {
+    const session = sessionRef.current;
+    if (!session || session.state !== SessionState.CONNECTED) return;
+    const minBytes = 4_800;
+    if (!force && pcmAccumRef.current.length < minBytes) return;
+    if (!pcmAccumRef.current) return;
+    session.repeatAudio(pcmAccumRef.current);
+    pcmAccumRef.current = "";
+  };
 
   useEffect(() => {
     setFailed(false);
     setStreamReady(false);
     setLipSyncActive(false);
+    pcmAccumRef.current = "";
 
     if (!credentials.sessionToken?.trim()) {
       setFailed(true);
@@ -73,9 +90,10 @@ const LiveVideoPresenter = forwardRef<
     sessionRef.current = session;
     let cancelled = false;
 
-    const onStreamReady = () => {
+    const handleStreamReady = () => {
       if (cancelled || !videoRef.current) return;
       setStreamReady(true);
+      onStreamReadyChange?.();
       session.attach(videoRef.current);
       videoRef.current.muted = true;
     };
@@ -90,7 +108,7 @@ const LiveVideoPresenter = forwardRef<
       onSpeakingChange?.(false);
     };
 
-    session.on(SessionEvent.SESSION_STREAM_READY, onStreamReady);
+    session.on(SessionEvent.SESSION_STREAM_READY, handleStreamReady);
     session.on(AgentEventsEnum.AVATAR_SPEAK_STARTED, onSpeakStarted);
     session.on(AgentEventsEnum.AVATAR_SPEAK_ENDED, onSpeakEnded);
     session.on(SessionEvent.SESSION_DISCONNECTED, () => {
@@ -103,13 +121,13 @@ const LiveVideoPresenter = forwardRef<
 
     return () => {
       cancelled = true;
-      session.off(SessionEvent.SESSION_STREAM_READY, onStreamReady);
+      session.off(SessionEvent.SESSION_STREAM_READY, handleStreamReady);
       session.off(AgentEventsEnum.AVATAR_SPEAK_STARTED, onSpeakStarted);
       session.off(AgentEventsEnum.AVATAR_SPEAK_ENDED, onSpeakEnded);
       void session.stop().catch(() => undefined);
       sessionRef.current = null;
     };
-  }, [credentials.sessionToken, onSpeakingChange]);
+  }, [credentials.sessionToken, onSpeakingChange, onStreamReadyChange]);
 
   useImperativeHandle(ref, () => ({
     async streamSample(chunks: string[], _eventId: string) {
@@ -123,14 +141,27 @@ const LiveVideoPresenter = forwardRef<
       }
       session.repeatAudio(pcm);
     },
+    feedPcmDelta(base64Pcm: string) {
+      if (!base64Pcm) return;
+      try {
+        pcmAccumRef.current += atob(base64Pcm);
+        flushAccumulatedPcm(false);
+      } catch {
+        /* ignore malformed deltas */
+      }
+    },
+    flushPcm() {
+      flushAccumulatedPcm(true);
+    },
     isControlConnected: () => sessionRef.current?.state === SessionState.CONNECTED,
+    isStreamReady: () => streamReady,
   }));
 
   const showSpeaking = speaking || lipSyncActive;
 
   if (failed) {
     return (
-      <div className={`wl-presence__frame ${className}`.trim()}>
+      <div className={`wl-presence__frame wl-presence__frame--ink ${className}`.trim()}>
         <div className="wl-presence__face">
           <AgentFace
             seed={fallbackSeed}
@@ -153,7 +184,9 @@ const LiveVideoPresenter = forwardRef<
   }
 
   return (
-    <div className={`wl-presence__frame wl-presence-live ${className}`.trim()}>
+    <div
+      className={`wl-presence__frame wl-presence__frame--ink wl-presence-live ${className}`.trim()}
+    >
       <video
         ref={videoRef}
         autoPlay

@@ -9,6 +9,7 @@ import { useAgents } from "../contexts/AgentsContext";
 import { useAccount } from "../contexts/AccountContext";
 import { computeAgentReadiness } from "./fleet-settings/agent-readiness";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
+import AgentPresenceCatalogThumb from "./AgentPresenceCatalogThumb";
 import type { AgentVideoPresenterConfig } from "../lib/video-presenter/types";
 
 /**
@@ -248,7 +249,7 @@ export default function StudioAgentCanvas({
       className={`h-full min-h-0 overflow-y-auto bg-[var(--wireline-color-canvas-default)] p-4 sm:p-6 lg:p-7 ${className}`}
     >
       <div className="mb-6">
-        <div className="wl-eyebrow">Agent Canvas</div>
+        <div className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Agent Canvas</div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -261,13 +262,21 @@ export default function StudioAgentCanvas({
             className="min-h-[300px]"
           >
             <div className="mb-4 flex items-start gap-3">
-              <AgentPresenceSlot
-                name={agentName}
-                agentId={agentId}
-                role={config?.role}
-                isBusinessAgent={business}
-                variant="inline"
-              />
+              <div className="relative shrink-0">
+                <AgentPresenceSlot
+                  name={agentName}
+                  agentId={agentId}
+                  role={config?.role}
+                  isBusinessAgent={business}
+                  variant="inline"
+                />
+                {config?.identity?.chosenAvatarId ? (
+                  <AgentPresenceCatalogThumb
+                    avatarId={config.identity.chosenAvatarId}
+                    className="absolute -bottom-1 -right-1"
+                  />
+                ) : null}
+              </div>
               <div className="min-w-0">
                 <div className="font-[var(--wireline-font-display)] text-[22px] tracking-[-0.01em]">
                   {agentName || "Untitled agent"}

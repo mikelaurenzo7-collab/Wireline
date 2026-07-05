@@ -165,7 +165,7 @@ export default function StudioWorkspaceV2() {
     if (active?.id) writeStudioLastAgentId(active.id);
   }, [active?.id]);
 
-  function openWorkspacePanel() {
+  function openWorkspacePanel(hash?: string) {
     if (!active) return;
     setParams((current) => {
       const next = new URLSearchParams(current);
@@ -173,6 +173,13 @@ export default function StudioWorkspaceV2() {
       next.set("view", "workspace");
       return next;
     });
+    if (hash) {
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}#${hash}`,
+      );
+    }
   }
 
   function returnToCanvas() {
@@ -192,7 +199,7 @@ export default function StudioWorkspaceV2() {
       return;
     }
     if (section === "identity" || section === "presence") {
-      openWorkspacePanel();
+      openWorkspacePanel(section === "presence" ? "agent-presence" : undefined);
       return;
     }
     openWorkspacePanel();

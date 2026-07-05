@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -70,9 +71,30 @@ fun StitchMeshSurface(modifier: Modifier = Modifier) {
     Box(modifier = modifier.background(Brand.Canvas))
 }
 
+/** Copper-to-patina cap — shared Letterpress signature on native cards. */
+@Composable
+private fun WirelineLetterpressCap(modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(2.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        Brand.Wire,
+                        Brand.Accent.copy(alpha = 0.35f),
+                        Color.Transparent,
+                    ),
+                ),
+            ),
+    )
+}
+
 /**
  * AssistantCard displays information inside a flat card matching the Wireline Precision design system:
- * white, 8dp, 1dp warm border, 16dp internal spacing, and no ornamental gradient or heavy elevation.
+ * warm paper surface, copper cap, 1dp border, 16dp internal spacing.
  */
 @Composable
 fun AssistantCard(
@@ -86,11 +108,14 @@ fun AssistantCard(
         border = BorderStroke(1.dp, Brand.Border),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            content = content,
-        )
+        Column(modifier = Modifier.padding(bottom = 16.dp)) {
+            WirelineLetterpressCap(modifier = Modifier.padding(top = 1.dp))
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                content = content,
+            )
+        }
     }
 }
 
@@ -119,8 +144,10 @@ fun AskWirelineHeroCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         interactionSource = interactionSource,
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
+        Column {
+            WirelineLetterpressCap(modifier = Modifier.padding(top = 1.dp))
+            Row(
+                modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -146,6 +173,7 @@ fun AskWirelineHeroCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
                     color = Brand.Text2,
                 )
             }
+        }
         }
     }
 }

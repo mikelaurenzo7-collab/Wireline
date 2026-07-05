@@ -158,7 +158,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
       <div className="flex min-h-0 flex-1 flex-col pt-4">
         <div className="flex items-center justify-between px-2.5 pb-2">
-          <p className="wl-eyebrow">Agents</p>
+          <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Agents</p>
           {agents.length ? (
             <Link
               to="/studio?create=1"
@@ -194,7 +194,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
                           key={agent.id}
                           to={`/studio?agent=${encodeURIComponent(agent.id)}`}
                           aria-current={active ? "page" : undefined}
-                          className={`flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                          className={`wl-rail-agent-link flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
                         >
                           <AgentFace
                             seed={agent.name || agent.id}

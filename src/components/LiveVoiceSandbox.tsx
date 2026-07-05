@@ -98,9 +98,14 @@ function voiceActivity(state: VoiceState) {
 export default function LiveVoiceSandbox({
   agentId,
   agentName,
+  onAgentAudioDelta,
+  onAgentAudioEnd,
 }: {
   agentId: string;
   agentName: string;
+  /** When set, agent PCM from the live voice session is forwarded (e.g. LiveAvatar lip-sync). */
+  onAgentAudioDelta?: (base64Pcm: string) => void;
+  onAgentAudioEnd?: () => void;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState("");
@@ -173,6 +178,7 @@ export default function LiveVoiceSandbox({
     if (!context) return;
     const pcm = decodePcm(encoded);
     if (!pcm.length) return;
+    onAgentAudioDelta?.(encoded);
     const buffer = context.createBuffer(1, pcm.length, RATE);
     const channel = buffer.getChannelData(0);
     for (let i = 0; i < pcm.length; i += 1) channel[i] = pcm[i] / 32768;
@@ -363,6 +369,7 @@ export default function LiveVoiceSandbox({
         assistantLineId.current = null;
         assistantTranscriptMode.current = null;
         userLineId.current = null;
+        onAgentAudioEnd?.();
         if (!pendingTools.current) setState("listening");
       }
       if (type === "response.function_call_arguments.done") {
