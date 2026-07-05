@@ -136,15 +136,17 @@ app.use("/api", (req, res) => {
 
 app.use(
   (error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    log.error("API error", {
+    const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
+    const errorContext = {
       requestId: res.locals.requestId,
       method: req.method,
       path: req.path,
+      status,
       error: getErrorMessage(error),
-    });
-    const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
-    // External alerting for real 5xx only — 4xx are user errors, not incidents.
+    };
+
     if (status >= 500) {
+      log.error("API error", errorContext);
       reportError(error, {
         tags: {
           surface: "api",
@@ -154,7 +156,12 @@ app.use(
         },
         requestId: res.locals.requestId,
       });
+    } else {
+      // Expected client / validation failures should be visible but should not
+      // pollute Vercel's runtime-error stream as production incidents.
+      log.warn("API client error", errorContext);
     }
+
     res.status(status).json(body);
   },
 );
