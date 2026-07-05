@@ -9,6 +9,7 @@ import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 import AgentFace from "./AgentFace";
+import { WiredEyebrow } from "./ui/WiredEyebrow";
 
 type NavItem = { href: string; label: string; icon: typeof Bot };
 
@@ -147,9 +148,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </span>
       </Link>
 
-      <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app px-2.5 pb-2 pt-2.5">
-        Workspace
-      </p>
+      <WiredEyebrow className="px-2.5 pb-2 pt-2.5">Workspace</WiredEyebrow>
       <nav className="flex flex-col gap-0.5" aria-label="Workspace">
         {WORKSPACE_NAV.map((item) => (
           <RailLink key={item.href} item={item} pathname={pathname} />
@@ -158,7 +157,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
       <div className="flex min-h-0 flex-1 flex-col pt-4">
         <div className="flex items-center justify-between px-2.5 pb-2">
-          <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Agents</p>
+          <WiredEyebrow>Agents</WiredEyebrow>
           {agents.length ? (
             <Link
               to="/studio?create=1"
@@ -239,9 +238,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </nav>
       </div>
 
-      <p className="shrink-0 px-2.5 pb-2 pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
-        Operate
-      </p>
+      <WiredEyebrow className="shrink-0 px-2.5 pb-2 pt-4">Operate</WiredEyebrow>
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
         {OPERATE_NAV.map((item) => (
           <RailLink key={item.href} item={item} pathname={pathname} />
@@ -357,11 +354,7 @@ export default function WorkspaceShell({
             <div className="relative mb-4 pb-3 lg:mb-5">
               <div className="wl-workspace-content-inner mx-auto flex w-full max-w-[1480px] items-center justify-center px-3 sm:px-6 md:px-12 lg:px-20">
                 <div className="flex min-w-0 flex-col items-center text-center wl-centered-header">
-                  {eyebrow ? (
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      {eyebrow}
-                    </p>
-                  ) : null}
+                  {eyebrow ? <WiredEyebrow>{eyebrow}</WiredEyebrow> : null}
                   {title ? (
                     <h1 className="truncate font-[var(--wireline-font-family-display)] text-[clamp(1.1rem,1rem+0.5vw,1.5rem)] font-normal leading-[1.05] tracking-[-0.022em] text-foreground">
                       {title}

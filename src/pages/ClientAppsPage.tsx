@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import { Badge, Button } from "../components/atoms";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const clientSurfaces = [
@@ -68,6 +68,11 @@ export default function ClientAppsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
+        <WorkspacePageIntro
+          eyebrow="Surfaces"
+          title="Apps"
+          description="Wireline on every device you work from — browser, phone, and AI assistants."
+        />
         <section
           className="grid gap-4 md:grid-cols-2"
           aria-label="Wireline apps and companion surfaces"

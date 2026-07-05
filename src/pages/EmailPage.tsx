@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom";
 
 import EmailInbox from "../components/EmailInbox";
 import SmsThreads from "../components/SmsThreads";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 
@@ -37,6 +37,11 @@ export default function EmailPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame className="min-h-full flex-1">
+        <WorkspacePageIntro
+          eyebrow="Operate"
+          title="Inbox"
+          description="Email and SMS your agents are handling — one ledger for follow-up."
+        />
         <WorkspaceTabStrip
           ariaLabel="Inbox channels"
           tabs={inboxTabs}

@@ -360,8 +360,8 @@ function TemplateCard({
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={{ y: -2 }}
       className={cn(
-        "relative rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
-        hovered ? "border-brand/20 shadow-md shadow-brand/8" : "shadow-sm",
+        "relative studio-card rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
+        hovered ? "border-primary/20 shadow-md shadow-primary/8" : "shadow-sm",
       )}
       data-accent={template.accent}
       onMouseEnter={() => setHovered(true)}
@@ -392,7 +392,7 @@ function TemplateCard({
                 "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
                   ? "bg-muted border border-border text-foreground/70"
-                  : "bg-brand/10 border-brand/30 text-brand",
+                  : "bg-primary/10 border-primary/30 text-primary",
                 alreadyDeployed && "hidden sm:inline-flex",
               )}
             >
@@ -451,10 +451,10 @@ function CustomAgentCard() {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-md border border-brand/25 dark:border-white/10 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
+      className="studio-card rounded-md border border-primary/25 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
     >
       <div className="w-12 h-12 rounded-md border border-border bg-card flex items-center justify-center">
-        <Sparkles className="w-5 h-5 text-brand" />
+        <Sparkles className="w-5 h-5 text-primary" />
       </div>
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
@@ -578,7 +578,7 @@ export default function AgentTemplates() {
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-brand/50 text-foreground placeholder:text-muted/70"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-primary/50 text-foreground placeholder:text-muted/70"
           />
         </div>
 
@@ -594,8 +594,8 @@ export default function AgentTemplates() {
               className={cn(
                 "rounded-full wl-label",
                 activeCategory === cat
-                  ? "bg-brand/15 border-brand/40 text-brand"
-                  : "text-muted hover:text-foreground hover:border-brand/25",
+                  ? "bg-primary/15 border-primary/40 text-primary"
+                  : "text-muted hover:text-foreground hover:border-primary/25",
               )}
             >
               {cat}

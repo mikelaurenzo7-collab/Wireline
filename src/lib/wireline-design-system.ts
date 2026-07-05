@@ -66,6 +66,8 @@ export const WL_APP_CLASSES = {
   bannerWarn: "wl-banner wl-banner--warn",
   bannerCritical: "wl-banner wl-banner--critical",
   bannerCta: "app-micro-cta",
+  /** Call ops, inbox, and other operate-route shells */
+  operateSurface: "wl-operate-surface",
 } as const;
 
 /** Assistants coach / composer streaming UI */

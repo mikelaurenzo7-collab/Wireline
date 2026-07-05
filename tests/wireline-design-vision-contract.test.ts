@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MARKETING_VOICE } from "../src/lib/product-copy";
-import { WL_COMPOSER_CLASSES, WL_VISION } from "../src/lib/wireline-design-system";
+import { WL_COMPOSER_CLASSES, WL_APP_CLASSES, WL_VISION } from "../src/lib/wireline-design-system";
 import { WIRELINE_DESIGN_VISION } from "../src/lib/wireline-design-vision";
 import { buildWirelineMcpWidgetCss } from "../src/lib/wireline-mcp-widget-styles";
 
@@ -13,9 +13,14 @@ const AUTHENTICATED_SURFACE_GLOBS = [
   "src/pages/OverviewPage.tsx",
   "src/pages/AgentsPage.tsx",
   "src/pages/SettingsPage.tsx",
+  "src/pages/EmailPage.tsx",
+  "src/pages/TemplatesPage.tsx",
+  "src/pages/ClientAppsPage.tsx",
+  "src/pages/ConnectionsPage.tsx",
   "src/components/WorkspaceShell.tsx",
   "src/components/CreateAgentDialog.tsx",
   "src/components/StudioWorkroom.tsx",
+  "src/components/CallLogsClaude.tsx",
 ];
 
 const OLD_PALETTE = /#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF|rgba\(93,\s*63,\s*211/i;
@@ -44,9 +49,18 @@ describe("Wireline Letterpress design vision", () => {
   it("defines authenticated Letterpress signature utilities", () => {
     const appSignature = read("src/styles/wireline-app-signature.css");
     expect(appSignature).toContain(".wl-rail-agent-link");
+    expect(appSignature).toContain(".wl-operate-surface .studio-card");
     expect(appSignature).toContain("--wireline-color-action-secondary-default");
     expect(read("apps/browser-extension/panel/app-signature.css")).toContain(".wordmark::before");
     expect(read("ios/Wireline/Theme/WirelineTheme.swift")).toContain("static let wire");
+  });
+
+  it("centralizes wired eyebrows and operate page intros", () => {
+    expect(read("src/components/ui/WiredEyebrow.tsx")).toContain(WL_APP_CLASSES.wiredEyebrow);
+    expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
+    expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
+    expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
+    expect(read("src/hooks/useLivePresence.ts")).toContain("usePresenceSignals");
   });
 
   it("maps tertiary text to the generated token in foundation runtime", () => {

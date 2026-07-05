@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { WiredEyebrow } from "../ui/WiredEyebrow";
 import { cn } from "../../lib/utils";
 
 type WorkspacePageFrameProps = {
@@ -44,9 +45,7 @@ export function WorkspacePageIntro({
 }: WorkspacePageIntroProps) {
   return (
     <header className="wl-workspace-page-intro text-center">
-      {eyebrow ? (
-        <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">{eyebrow}</p>
-      ) : null}
+      {eyebrow ? <WiredEyebrow>{eyebrow}</WiredEyebrow> : null}
       <h1 className={cn("wl-display-3", eyebrow && "mt-3")}>{title}</h1>
       {description ? (
         <p className="mx-auto mt-4 max-w-[48ch] text-sm leading-7 text-muted-foreground">

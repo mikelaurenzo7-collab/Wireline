@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 
+import { cn } from "../lib/utils";
 import { usePresenceSignals } from "../hooks/usePresenceSignals";
 import { Download } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import AgentFace from "./AgentFace";
 import LiveFloorPresence from "./LiveFloorPresence";
+import { WiredEyebrow } from "./ui/WiredEyebrow";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 
 /**
@@ -192,9 +195,9 @@ export default function CallLogsClaude() {
   ];
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className={cn(WL_APP_CLASSES.operateSurface, "flex h-full min-h-0 flex-col")}>
       <div className="border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-3">
-        <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Call ops</p>
+        <WiredEyebrow>Call ops</WiredEyebrow>
       </div>
       <section
         aria-label="Call ops metrics"
@@ -219,7 +222,7 @@ export default function CallLogsClaude() {
               className={`px-4 py-3 sm:flex-1 sm:px-5 sm:py-3.5 ${phoneBorders}`}
             >
               <div
-                className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app"
+                className={cn(WL_APP_CLASSES.wiredEyebrow)}
                 style={
                   kpi.accent === "warning"
                     ? { color: "var(--wireline-color-status-warning)" }

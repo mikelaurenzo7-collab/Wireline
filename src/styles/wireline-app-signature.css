@@ -37,14 +37,18 @@
 /* ── Letterpress card cap (studio + workspace cards) ─────────────────── */
 .wl-workspace-content .studio-card,
 .wl-workspace-content .wl-agent-card,
-.wl-overview .studio-card {
+.wl-overview .studio-card,
+.wl-operate-surface .studio-card,
+.wl-inbox-route .studio-card {
   position: relative;
   overflow: hidden;
 }
 
 .wl-workspace-content .studio-card::before,
 .wl-workspace-content .wl-agent-card::before,
-.wl-overview .studio-card::before {
+.wl-overview .studio-card::before,
+.wl-operate-surface .studio-card::before,
+.wl-inbox-route .studio-card::before {
   content: "";
   position: absolute;
   top: 0;
