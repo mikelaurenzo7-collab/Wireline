@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { IS_PROD, log } from "./src/lib/server-context";
 import { AppError, formatErrorResponse } from "./src/lib/api-error";
+import { reportError } from "./src/lib/error-reporter";
 import { normalizeApiErrorResponse } from "./src/middleware/normalize-api-error-response";
 import { assertSameOrigin } from "./src/middleware/same-origin";
 import { installWebhookBodyParsers } from "./src/lib/body-parsers";
@@ -79,7 +80,8 @@ app.use((_req, res, next) => {
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
   res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, nonce, connectSrc));
-  if (IS_PROD) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  if (IS_PROD)
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   next();
 });
 
@@ -106,15 +108,42 @@ app.use("/api", (req, res) => {
   res.status(status).json(body);
 });
 
-app.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  log.error("API error", {
-    requestId: res.locals.requestId,
-    method: req.method,
-    path: req.path,
-    error: getErrorMessage(error),
-  });
-  const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
-  res.status(status).json(body);
+app.use(
+  (error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    log.error("API error", {
+      requestId: res.locals.requestId,
+      method: req.method,
+      path: req.path,
+      error: getErrorMessage(error),
+    });
+    const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined);
+    // External alerting for real 5xx only — 4xx are user errors, not incidents.
+    if (status >= 500) {
+      reportError(error, {
+        tags: {
+          surface: "api",
+          method: req.method,
+          path: req.path,
+          status,
+        },
+        requestId: res.locals.requestId,
+      });
+    }
+    res.status(status).json(body);
+  },
+);
+
+// Process-level safety nets. Vercel isolates function invocations so these
+// mostly protect the long-running local/dev server, but they also add a last
+// line of defense on the bundled Vercel function if a stray promise rejects
+// outside any request scope.
+process.on("unhandledRejection", (reason) => {
+  log.error("unhandledRejection", { error: getErrorMessage(reason) });
+  reportError(reason, { tags: { surface: "process", kind: "unhandledRejection" } });
+});
+process.on("uncaughtException", (error) => {
+  log.error("uncaughtException", { error: getErrorMessage(error) });
+  reportError(error, { tags: { surface: "process", kind: "uncaughtException" } });
 });
 
 async function startServer() {

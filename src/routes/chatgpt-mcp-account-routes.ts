@@ -399,7 +399,7 @@ router.post("/mcp", async (req, res) => {
           tools: { listChanged: false },
           resources: { subscribe: false, listChanged: false },
         },
-        serverInfo: { name: "wireline", version: "2.1.0" },
+        serverInfo: { name: "wireline-chatgpt", version: "2.1.0" },
         instructions:
           "Wireline requires a connected Wireline account. Use it to create and refine a real private agent draft in the user’s workspace. Before a create or update operation, summarize identity, goal, rules, knowledge, action boundaries, and escalation policy; only write after the user explicitly confirms. Private voice simulations are tool-free. Never claim an agent is live, has a number, or completed an external action unless Wireline confirms it.",
       });
