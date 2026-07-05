@@ -15,12 +15,14 @@ export default function RouteChangeA11y() {
 
   useEffect(() => {
     const id = window.setTimeout(() => {
-      if (!location.hash) window.scrollTo({ top: 0, left: 0 });
+      if (!location.hash) {
+        window.scrollTo({ top: 0, left: 0 });
 
-      const target = document.querySelector<HTMLElement>("main h1, h1, main");
-      if (target) {
-        if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
-        target.focus({ preventScroll: true });
+        const target = document.querySelector<HTMLElement>("main h1, h1, main");
+        if (target) {
+          if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+          target.focus({ preventScroll: true });
+        }
       }
 
       if (first.current) {
