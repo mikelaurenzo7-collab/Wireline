@@ -196,7 +196,7 @@ export function AuditActivityPanel() {
                     <CartesianGrid
                       vertical={false}
                       strokeDasharray="3 3"
-                      stroke="rgba(0,0,0,0.05)"
+                      stroke="var(--wireline-color-border-soft)"
                     />
                     <XAxis
                       dataKey="date"
@@ -204,7 +204,7 @@ export function AuditActivityPanel() {
                       tickLine={false}
                       tick={{
                         fontSize: "var(--wireline-typography-overline-size)",
-                        fill: "rgba(0,0,0,0.4)",
+                        fill: "var(--muted-foreground)",
                       }}
                       tickFormatter={(val: any) =>
                         new Date(val).toLocaleDateString(undefined, {
