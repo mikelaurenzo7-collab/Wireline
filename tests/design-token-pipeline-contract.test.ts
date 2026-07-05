@@ -107,4 +107,18 @@ describe("Wireline design token pipeline", () => {
     expect(typescript).toContain('"color.surface.raised": "#2A241B"');
     expect(typescript).toContain('"elevation.raised"');
   });
+
+  it("redirects raw Tailwind rose/amber status utilities to the Wireline status tokens", () => {
+    // The @theme inline block in index.css must redirect rose-* and amber-*
+    // to the Wireline error/warning tokens so 300+ raw utility usages across
+    // 8+ components all resolve to the canonical Wireline status colors
+    // without touching a single component file. Regression guard: if anyone
+    // removes these redirects, error/danger/warning surfaces revert to
+    // Tailwind's generic rose/amber ramp and break the dark Letterpress system.
+    const indexCss = source("src/index.css");
+    expect(indexCss).toContain("--color-rose-500: var(--wireline-color-status-error)");
+    expect(indexCss).toContain("--color-rose-600: var(--wireline-color-status-error)");
+    expect(indexCss).toContain("--color-amber-500: var(--wireline-color-status-warning)");
+    expect(indexCss).toContain("--color-amber-600: var(--wireline-color-status-warning)");
+  });
 });

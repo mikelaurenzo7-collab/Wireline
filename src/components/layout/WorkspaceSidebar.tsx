@@ -144,7 +144,7 @@ export default function WorkspaceSidebar({
 
           <button
             onClick={toggleCollapsed}
-            className="p-1.5 rounded-md hover:bg-black/[0.04] text-on-surface-variant hover:text-on-surface transition-colors"
+            className="p-1.5 rounded-md hover:bg-[var(--wireline-color-surface-subtle)] text-on-surface-variant hover:text-on-surface transition-colors"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? (
@@ -178,7 +178,7 @@ export default function WorkspaceSidebar({
                       to={item.path}
                       className={cn(
                         "group flex items-center gap-3 px-3 py-[9px] rounded-md transition-all duration-150",
-                        "hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                        "hover:bg-[var(--wireline-color-surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                         active
                           ? "bg-primary/10 text-primary font-medium border-l-3 border-primary -ml-[1px] pl-[11px]"
                           : "text-on-surface hover:text-on-surface",
@@ -231,7 +231,7 @@ export default function WorkspaceSidebar({
           <Link
             to="/help"
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-black/[0.04] text-sm",
+              "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-[var(--wireline-color-surface-subtle)] text-sm",
               isCollapsed && "justify-center px-2",
             )}
           >
@@ -243,7 +243,7 @@ export default function WorkspaceSidebar({
             <Link
               to="/founder"
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-black/[0.04] text-sm",
+                "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-[var(--wireline-color-surface-subtle)] text-sm",
                 isCollapsed && "justify-center px-2",
               )}
             >

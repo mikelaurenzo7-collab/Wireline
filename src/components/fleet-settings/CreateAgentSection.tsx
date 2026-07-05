@@ -90,7 +90,7 @@ export default function CreateAgentSection({
             <Select value={newAgentRole} onValueChange={(v) => setNewAgentRole(v as RoleValue)}>
               <SelectTrigger
                 aria-label="Business role"
-                className="w-full text-xs bg-black/5 border border-white/10 rounded-md pl-3 pr-7 py-2 text-foreground h-auto"
+                className="w-full text-xs bg-[var(--wireline-color-surface-recessed)] border border-[var(--wireline-color-border-soft)] rounded-md pl-3 pr-7 py-2 text-foreground h-auto"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -119,7 +119,7 @@ export default function CreateAgentSection({
             placeholder="e.g. sales-bot-1"
             value={newAgentId}
             onChange={(e) => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-            className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 font-mono"
+            className="w-full text-sm bg-[var(--wireline-color-surface-recessed)] border border-[var(--wireline-color-border-soft)] rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 font-mono"
           />
         </div>
         <div className="space-y-1.5">
@@ -134,7 +134,7 @@ export default function CreateAgentSection({
             placeholder="e.g. Sophie"
             value={newAgentName}
             onChange={(e) => setNewAgentName(e.target.value)}
-            className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55"
+            className="w-full text-sm bg-[var(--wireline-color-surface-recessed)] border border-[var(--wireline-color-border-soft)] rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55"
           />
         </div>
       </div>

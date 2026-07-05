@@ -546,7 +546,7 @@ export default function DncManager() {
                       value={addPhone}
                       onChange={(e) => setAddPhone(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                      className="pl-9 bg-black/10 border-input text-sm text-foreground placeholder:text-foreground/55 focus-visible:ring-rose-500/50"
+                      className="pl-9 bg-[var(--wireline-color-surface-recessed)] border-input text-sm text-foreground placeholder:text-foreground/55 focus-visible:ring-[var(--wireline-color-focus-default)]"
                     />
                   </div>
                 </div>

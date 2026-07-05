@@ -45,6 +45,26 @@
   --color-border: var(--wireline-color-border-default);
   --color-input: var(--wireline-color-border-default);
   --color-ring: var(--wireline-color-focus-default);
+
+  /* Redirect raw Tailwind rose/amber status utilities to the Wireline
+   * status tokens so every error/danger surface (DNC, usage overage,
+   * delete actions, status pills) and every warning surface (low credit,
+   * usage threshold) reads as the single canonical Wireline error/warning
+   * color — not Tailwind's generic rose/amber ramp. Opacity modifiers
+   * (rose-500/10, amber-500/8) still create lightness variation via
+   * color-mix, so backgrounds and borders keep their depth. This fixes
+   * 300+ raw rose/amber usages across 8+ components without touching a
+   * single component file. */
+  --color-rose-300: var(--wireline-color-status-error);
+  --color-rose-400: var(--wireline-color-status-error);
+  --color-rose-500: var(--wireline-color-status-error);
+  --color-rose-600: var(--wireline-color-status-error);
+  --color-rose-700: var(--wireline-color-status-error);
+  --color-amber-200: var(--wireline-color-status-warning);
+  --color-amber-400: var(--wireline-color-status-warning);
+  --color-amber-500: var(--wireline-color-status-warning);
+  --color-amber-600: var(--wireline-color-status-warning);
+  --color-amber-800: var(--wireline-color-status-warning);
 }
 
 /* Wireline — Letterpress design system. */
