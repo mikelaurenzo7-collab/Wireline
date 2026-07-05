@@ -1,7 +1,6 @@
 /**
  * useStreamingChat — A hook for consuming SSE streaming responses from
- * Claude-backed chat endpoints (/api/director/messages/stream,
- * /api/agents/:id/workspace/messages/stream).
+ * Claude-backed chat endpoints (/api/agents/:id/workspace/messages/stream).
  *
  * Emits granular state updates so the UI can show:
  *   1. Live thinking chunks as Claude reasons
@@ -18,10 +17,6 @@ import {
   parseApiErrorFromText,
   refreshSessionIfNeeded,
 } from "../lib/api";
-import {
-  isRecoverableDirectorPayload,
-  isTerminalDirectorStreamPayload,
-} from "../lib/director-reply-utils";
 
 export type StreamPhase =
   | "idle"
@@ -51,7 +46,7 @@ export interface StreamingState {
   isDeep: boolean;
   /** True once the server has started the SSE stream (meta or later). */
   streamEstablished: boolean;
-  /** Live mission log — what the Director is doing right now. */
+  /** Live mission log — what the agent is doing right now. */
   actions: StreamTurnAction[];
   /** Grounded research citations as they resolve (before `done`). */
   sources: { title?: string; uri?: string }[];
@@ -128,8 +123,46 @@ const dispatchSseEvent = (
 };
 
 /** True for the early SSE meta frame before model routing completes. */
-export function isDirectorBootstrapMeta(data: Record<string, unknown>): boolean {
+export function isStreamBootstrapMeta(data: Record<string, unknown>): boolean {
   return data.status === "connecting" && typeof data.model !== "string";
+}
+
+/**
+ * True when a stream payload carries agent-config proposals (changes,
+ * tool toggles, actions, integration jobs, or clarifying questions) —
+ * shared shape across every Claude-backed workspace chat endpoint.
+ */
+function payloadHasProposals(data: Record<string, unknown>): boolean {
+  const changes = data.changes;
+  const toolToggles = data.toolToggles;
+  const actions = data.actions;
+  const integrationJobs = data.integrationJobs;
+  const clarifyingQuestions = data.clarifyingQuestions;
+  return (
+    (Array.isArray(changes) && changes.length > 0) ||
+    (Array.isArray(toolToggles) && toolToggles.length > 0) ||
+    (Array.isArray(actions) && actions.length > 0) ||
+    (Array.isArray(integrationJobs) && integrationJobs.length > 0) ||
+    (Array.isArray(clarifyingQuestions) && clarifyingQuestions.length > 0)
+  );
+}
+
+/** True once a streamed reply payload represents a finished, actionable turn. */
+function isTerminalStreamPayload(data: Record<string, unknown> | undefined): boolean {
+  if (!data) return false;
+  if (payloadHasProposals(data)) return true;
+  if (data.deliverableArtifact && typeof data.deliverableArtifact === "object") return true;
+  if (Array.isArray(data.approvals) && data.approvals.length > 0) return true;
+  return false;
+}
+
+/** True when a partial/aborted stream still left behind a usable reply. */
+function isRecoverableStreamPayload(data: Record<string, unknown> | undefined): boolean {
+  if (!data) return false;
+  if (isTerminalStreamPayload(data)) return true;
+  const reply = data.reply;
+  if (typeof reply !== "string") return false;
+  return Boolean(reply.trim());
 }
 
 /** Parse SSE line batches incrementally. Exported for tests. */
@@ -278,8 +311,8 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       const finishWithPartialReply = (): boolean => {
         if (completionRef.current || !latestReplyRef.current) return false;
         const payload = latestReplyRef.current;
-        if (!terminalReplyRef.current && !isTerminalDirectorStreamPayload(payload)) return false;
-        if (!isRecoverableDirectorPayload(payload)) return false;
+        if (!terminalReplyRef.current && !isTerminalStreamPayload(payload)) return false;
+        if (!isRecoverableStreamPayload(payload)) return false;
         setState((s) => ({ ...s, phase: "done", reply: payload }));
         finalizeComplete(payload);
         return true;
@@ -325,7 +358,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
             case "meta": {
               streamEstablishedRef.current = true;
               window.clearTimeout(handshakeTimeoutId);
-              const bootstrapOnly = isDirectorBootstrapMeta(data);
+              const bootstrapOnly = isStreamBootstrapMeta(data);
               if (bootstrapOnly) {
                 armPrepareTimeout();
               } else {
@@ -412,7 +445,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
             case "reply":
               streamEstablishedRef.current = true;
               latestReplyRef.current = data;
-              if (isTerminalDirectorStreamPayload(data)) {
+              if (isTerminalStreamPayload(data)) {
                 terminalReplyRef.current = true;
               }
               setState((s) => ({
@@ -483,32 +516,32 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
 
         if (finishWithPartialReply()) return;
 
-        const msg = "Stream ended before the Director finished replying";
+        const msg = "Stream ended before the reply finished";
         setState({ ...INITIAL_STATE, phase: "error", error: msg });
         finalizeError(msg);
       } catch (e: unknown) {
         if ((e as Error)?.name === "AbortError") {
           if (finishWithPartialReply()) return;
           if (handshakeTimedOut) {
-            const msg = "Director took too long to connect — try again or refresh";
+            const msg = "Took too long to connect — try again or refresh";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
             finalizeError(msg);
             return;
           }
           if (prepareTimedOut) {
-            const msg = "Director is still preparing your turn — try again in a moment";
+            const msg = "Still preparing your turn — try again in a moment";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
             finalizeError(msg);
             return;
           }
           if (timedOut) {
-            const msg = "Stream timed out before the Director finished";
+            const msg = "Stream timed out before the reply finished";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
             finalizeError(msg);
             return;
           }
           if (streamEstablishedRef.current) {
-            finalizeError("Stream disconnected before the Director finished");
+            finalizeError("Stream disconnected before the reply finished");
           }
           return;
         }
