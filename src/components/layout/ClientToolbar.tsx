@@ -62,7 +62,7 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
           presentation="drawer"
           showClose={false}
           aria-label="Page actions"
-          overlayClassName="bg-[rgba(11,28,48,0.42)]"
+          overlayClassName="bg-[var(--wireline-color-overlay-scrim)]"
         >
           <DialogTitle className="sr-only">Page actions</DialogTitle>
           <DialogDescription className="sr-only">
