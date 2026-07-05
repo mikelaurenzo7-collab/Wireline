@@ -6,8 +6,10 @@ import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
 import {
   normalizeApiVoices,
+  playVoicePreview,
   providerLabel,
   resolveVoiceLabel,
+  VAPI_CURATED_VOICES,
   voiceFamilyLabel,
   WIRELINE_LIVE_VOICES,
   type VoiceOption,
@@ -93,6 +95,14 @@ export default function VoiceGallery({
     [voiceSearch],
   );
 
+  const filteredPhone = useMemo(
+    () =>
+      VAPI_CURATED_VOICES.filter(
+        (voice) => !voiceSearch || voice.name.toLowerCase().includes(voiceSearch.toLowerCase()),
+      ),
+    [voiceSearch],
+  );
+
   const filteredLibrary = useMemo(
     () =>
       libraryVoices.filter(
@@ -108,19 +118,7 @@ export default function VoiceGallery({
       return;
     }
     setPlayingVoiceId(voice.id);
-    if (voice.provider === "xai") {
-      const utterance = new SpeechSynthesisUtterance(
-        `Hello, this is ${voice.name.split(" — ")[0]}. How can I help you today?`,
-      );
-      utterance.onend = () => setPlayingVoiceId(null);
-      window.speechSynthesis.speak(utterance);
-      return;
-    }
-    const url = voice.preview_url || `/api/voices/${encodeURIComponent(voice.id)}/preview`;
-    const audio = new Audio(url);
-    audio.onended = () => setPlayingVoiceId(null);
-    audio.onerror = () => setPlayingVoiceId(null);
-    audio.play().catch(() => setPlayingVoiceId(null));
+    playVoicePreview(voice, () => setPlayingVoiceId(null));
   }
 
   async function applyVoice(voice: VoiceOption) {
@@ -134,7 +132,7 @@ export default function VoiceGallery({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           voiceId: voice.id,
-          provider: voice.provider === "xai" ? "xai" : "11labs",
+          provider: voice.provider,
         }),
       });
       if (!response.ok) throw new Error("Voice could not be saved.");
@@ -267,6 +265,54 @@ export default function VoiceGallery({
           </div>
 
           <div>
+            <div className="mb-3 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Wireline Phone
+              </p>
+              <Badge variant="outline">Line included</Badge>
+            </div>
+            <div className="mb-5 grid max-h-40 gap-2 overflow-y-auto pr-1">
+              {filteredPhone.map((voice) => {
+                const isSelected = selectedVoiceId === voice.id;
+                const isPlaying = playingVoiceId === voice.id;
+                const isApplying = applyingVoiceId === voice.id;
+                return (
+                  <div
+                    key={`phone-${voice.id}`}
+                    className={`flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                      isSelected ? "border-primary/30 bg-primary/5" : "border-border bg-background"
+                    }`}
+                  >
+                    <div className="min-w-0 text-left">
+                      <p className="text-sm font-semibold text-foreground">{voice.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {voiceFamilyLabel(voice.provider)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => playVoice(voice)}
+                      >
+                        <Play size={12} aria-hidden="true" />
+                        {isPlaying ? "Stop" : "Preview"}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={isApplying}
+                        onClick={() => void applyVoice(voice)}
+                      >
+                        {isApplying ? "Saving…" : isSelected ? "Selected" : "Use"}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="mb-3 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 Wireline Voice library

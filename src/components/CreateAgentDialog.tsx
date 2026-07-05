@@ -1,12 +1,15 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Check, Loader2, Phone, WandSparkles, X, Zap } from "lucide-react";
+import { Loader2, Check, Phone, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button, Input, Textarea } from "./atoms";
-import AgentFace from "./AgentFace";
+import CreateAgentCatalogFacePicker, {
+  type FacePickerValue,
+} from "./create-agent/CreateAgentCatalogFacePicker";
+import VoicePickerField, { type VoicePickerValue } from "./create-agent/VoicePickerField";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
-import { buildAgentIdentityPreview } from "../lib/agent-identity";
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 const ROLE_TEMPLATES = [
   { value: "scheduler", label: "Scheduler", prompt: "Book appointments" },
@@ -14,13 +17,6 @@ const ROLE_TEMPLATES = [
   { value: "customer_service", label: "Support", prompt: "Handle pharmacy calls" },
   { value: "sales", label: "Sales", prompt: "Qualify leads" },
   { value: "custom", label: "Custom", prompt: "Something else" },
-] as const;
-
-const VOICE_OPTIONS = [
-  { value: "", label: "Auto voice" },
-  { value: "21m00Tcm4TlvDq8ikWAM", label: "Aria · Warm" },
-  { value: "pNInz6obpgDQGcFmaJgB", label: "Marcus · Deep" },
-  { value: "EXAVITQu4vr4xnSDxMaL", label: "Taylor · Gentle" },
 ] as const;
 
 const PERSONALITY_OPTIONS = ["Clear", "Warm", "Direct", "Polished"] as const;
@@ -59,7 +55,8 @@ export default function CreateAgentDialog({
   const [posture, setPosture] = useState<Posture>(business ? "business" : "personal");
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>(business ? "receptionist" : "scheduler");
-  const [voiceId, setVoiceId] = useState("");
+  const [voice, setVoice] = useState<VoicePickerValue>({ mode: "auto" });
+  const [face, setFace] = useState<FacePickerValue>({ mode: "wireline" });
   const [personality, setPersonality] = useState<Personality>("Warm");
   const [brief, setBrief] = useState(initialBrief);
   const [provisionNumber, setProvisionNumber] = useState(false);
@@ -74,7 +71,8 @@ export default function CreateAgentDialog({
     setPosture(nextPosture);
     setRole(nextPosture === "business" ? "receptionist" : "scheduler");
     setName("");
-    setVoiceId("");
+    setVoice({ mode: "auto" });
+    setFace({ mode: "wireline" });
     setPersonality("Warm");
     setProvisionNumber(false);
     setBrief(initialBrief || defaultBrief(nextPosture));
@@ -131,11 +129,22 @@ export default function CreateAgentDialog({
         return;
       }
 
-      if (voiceId) {
+      if (voice.mode === "custom") {
         await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/voice`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ voiceId, provider: "11labs" }),
+          body: JSON.stringify({ voiceId: voice.voiceId, provider: voice.provider }),
+        });
+      }
+
+      if (activePosture === "business" && face.mode === "catalog") {
+        await authFetch(`/api/agents/${encodeURIComponent(body.id)}/video-presenter`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            avatarId: face.avatarId,
+            consentStatus: "approved",
+          }),
         });
       }
 
@@ -174,11 +183,6 @@ export default function CreateAgentDialog({
   if (!open) return null;
 
   const previewName = name.trim() || defaultAgentName(activePosture, role);
-  const identityPreview = buildAgentIdentityPreview({
-    name: previewName,
-    role,
-    isBusinessAgent: activePosture === "business",
-  });
 
   return (
     <div
@@ -188,7 +192,7 @@ export default function CreateAgentDialog({
       <form
         onSubmit={create}
         onKeyDown={onKeyDown}
-        className="studio-card my-auto max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto p-0 shadow-2xl"
+        className="studio-card my-auto max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto p-0 shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-agent-title"
@@ -227,14 +231,12 @@ export default function CreateAgentDialog({
             </Button>
           </div>
           <div className="mt-4 h-1 rounded-full bg-muted">
-            <div className="h-full w-1/5 rounded-full bg-primary" />
+            <div className="h-full w-2/5 rounded-full bg-primary" />
           </div>
         </div>
 
         <div className="px-6 py-6">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
-            Step 1 of 5
-          </p>
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Step 1 · Brief, voice, and face</p>
           <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
             What do you need handled?
           </h3>
@@ -306,46 +308,28 @@ export default function CreateAgentDialog({
             ))}
           </div>
 
-          <div className="mt-6 flex items-center gap-3 rounded-[var(--radius-md)] border border-border bg-card/60 p-3">
-            <AgentFace
-              seed={identityPreview.seed}
-              size={46}
-              title={`${previewName} face preview`}
+          <label className="mt-6 grid gap-1.5">
+            <span className="text-xs font-semibold text-foreground">Agent name</span>
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={defaultAgentName(activePosture, role)}
+              autoComplete="off"
             />
-            <div className="min-w-0">
-              <div className="text-xs font-semibold text-foreground">
-                {identityPreview.persona.label} · {identityPreview.persona.shortLabel}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {identityPreview.persona.microcopy} {identityPreview.video.headline}.
-              </div>
-            </div>
+          </label>
+
+          <div className="mt-6 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5">
+            <VoicePickerField value={voice} onChange={setVoice} />
           </div>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1.5">
-              <span className="text-xs font-semibold text-foreground">Agent name</span>
-              <Input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={defaultAgentName(activePosture, role)}
-                autoComplete="off"
-              />
-            </label>
-            <label className="grid gap-1.5">
-              <span className="text-xs font-semibold text-foreground">Voice</span>
-              <select
-                value={voiceId}
-                onChange={(event) => setVoiceId(event.target.value)}
-                className="min-h-[44px] rounded-[var(--radius-md)] border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-primary/45 focus:ring-2 focus:ring-primary/10"
-              >
-                {VOICE_OPTIONS.map((voice) => (
-                  <option key={voice.value} value={voice.value}>
-                    {voice.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="mt-5 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5">
+            <CreateAgentCatalogFacePicker
+              agentName={previewName}
+              role={role}
+              isBusinessAgent={activePosture === "business"}
+              value={face}
+              onChange={setFace}
+            />
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">

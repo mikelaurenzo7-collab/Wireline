@@ -111,7 +111,15 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
         })),
     ];
 
-    res.json({ voices: merged, configured: elevenLabsConfigured() });
+    res.json({
+      voices: merged,
+      configured: elevenLabsConfigured(),
+      providers: {
+        elevenlabs: elevenLabsConfigured(),
+        wirelineLive: Boolean(process.env.XAI_API_KEY?.trim()),
+        vapi: Boolean(process.env.VAPI_API_KEY?.trim()),
+      },
+    });
   } catch (e) {
     if (e instanceof AppError) throw e;
     log.error("/api/voices GET failed", { error: getErrorMessage(e) });

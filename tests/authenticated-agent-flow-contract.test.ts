@@ -36,6 +36,8 @@ describe("authenticated agent flow", () => {
     // Claude Design create flow is a Fast Start, not a legacy "Create agent" form.
     expect(createDialog).toContain("Fast Start");
     expect(createDialog).toContain("~3 minutes to your first agent");
+    expect(createDialog).toContain("VoicePickerField");
+    expect(createDialog).toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Wire an agent."');
     expect(productCopy).toContain('emptyCue: "Brief it. Train it.');
 
