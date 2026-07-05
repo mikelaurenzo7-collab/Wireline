@@ -263,7 +263,7 @@ export default function Developers() {
               <div className="bg-black/40 p-4 border border-white/5 rounded-md space-y-2 min-h-[140px]">
                 {logs.map((log, index) => {
                   let badgeColor = "text-primary";
-                  if (log.includes("[WARN]")) badgeColor = "text-yellow-500";
+                  if (log.includes("[WARN]")) badgeColor = "text-[var(--wireline-color-status-warning)]";
                   return (
                     <p
                       key={`${log}-${index}`}

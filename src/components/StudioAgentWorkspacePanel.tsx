@@ -240,7 +240,7 @@ export default function StudioAgentWorkspacePanel({
             </p>
           ) : null}
           {setupNotice ? (
-            <p className="mb-3 text-sm text-emerald-700" role="status">
+            <p className="mb-3 text-sm text-[var(--wireline-color-status-success)]" role="status">
               {setupNotice}
             </p>
           ) : null}
