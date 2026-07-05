@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
-import { fetchInsight, InsightSkeleton, ErrCard } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, Empty } from "./shared";
 import { cn } from "../../lib/utils";
 
 export default function HeatmapView({ days }: { days: number }) {
@@ -34,6 +34,10 @@ export default function HeatmapView({ days }: { days: number }) {
   if (!data) return null;
 
   const grid = data.grid || [];
+  const hasActivity = grid.some((g: any) => g.count > 0);
+  if (!hasActivity) {
+    return <Empty label="No call activity recorded in this window." />;
+  }
   const max = Math.max(1, ...grid.map((g: any) => g.count));
   const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 

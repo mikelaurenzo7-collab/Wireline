@@ -33,6 +33,7 @@ import { useToast } from "../contexts/ToastContext";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Skeleton } from "./ui/shadcn/Skeleton";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Template definitions — unlocked starting points, not plan locks.
@@ -476,6 +477,7 @@ export default function AgentTemplates() {
   const [deploying, setDeploying] = useState<string | null>(null);
   const [deployedNames, setDeployedNames] = useState<string[]>([]);
   const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const refetchAgents = async () => {
     try {
@@ -489,7 +491,7 @@ export default function AgentTemplates() {
   };
 
   useEffect(() => {
-    refetchAgents();
+    refetchAgents().finally(() => setInitialLoading(false));
   }, []);
 
   useEffect(() => {
@@ -605,33 +607,55 @@ export default function AgentTemplates() {
       </div>
 
       <div className="flex-1 min-h-0 scroll-viewport px-4 py-4">
-        <AnimatePresence mode="popLayout">
-          {visible.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="py-20 text-center text-[var(--wireline-color-text-tertiary)] font-[var(--wireline-font-family-display)] text-lg"
-            >
-              No templates match your search
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-          <AnimatePresence mode="popLayout">
-            {visible.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onDeploy={handleOpenDeploy}
-                deploying={deploying === template.id}
-                deployedCount={deployedCounts.get(template.name.toLowerCase()) ?? 0}
-              />
+        {initialLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="studio-card rounded-md border border-border bg-card p-4 space-y-3"
+              >
+                <div className="flex items-start justify-between">
+                  <Skeleton className="h-10 w-10 rounded-md" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                </div>
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-9 w-full rounded-md mt-2" />
+              </div>
             ))}
-          </AnimatePresence>
+          </div>
+        ) : (
+          <>
+            <AnimatePresence mode="popLayout">
+              {visible.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="py-20 text-center text-[var(--wireline-color-text-tertiary)] font-[var(--wireline-font-family-display)] text-lg"
+                >
+                  No templates match your search
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <CustomAgentCard />
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+              <AnimatePresence mode="popLayout">
+                {visible.map((template) => (
+                  <TemplateCard
+                    key={template.id}
+                    template={template}
+                    onDeploy={handleOpenDeploy}
+                    deploying={deploying === template.id}
+                    deployedCount={deployedCounts.get(template.name.toLowerCase()) ?? 0}
+                  />
+                ))}
+              </AnimatePresence>
+
+              <CustomAgentCard />
+            </div>
+          </>
+        )}
       </div>
 
       <DeployAgentModal

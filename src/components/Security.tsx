@@ -204,8 +204,11 @@ export default function Security() {
                 Supabase RLS policy coverage + GraphQL exposure cleanup for all tenant tables.
               </li>
               <li>EU data residency (Frankfurt / Dublin) — target 2026 Q4.</li>
-              <li>Hardware-key 2FA for Account Holder logins.</li>
-              <li>Paid bug bounty program (private invite first, then public).</li>
+              <li>Hardware-key 2FA for Account Holder logins — target 2026 Q3.</li>
+              <li>
+                Paid bug bounty program — private invite launch target 2026 Q3, public program 2026
+                Q4.
+              </li>
             </ul>
           </div>
 

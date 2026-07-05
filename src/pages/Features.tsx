@@ -9,6 +9,12 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Workflow,
+  ShoppingBag,
+  BarChart3,
+  Mail,
+  CreditCard,
+  Store,
+  Puzzle,
 } from "lucide-react";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import MarketingFooter from "../components/marketing/MarketingFooter";
@@ -131,6 +137,40 @@ export default function Features() {
                 <FlowNode icon={Contact} label="Systems" sub="Approved access" compact />
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="border-b border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="wl-public-rail">
+            <p className="wl-overline text-primary">Works with your stack</p>
+            <h2 className="wl-public-section-heading mt-3">Plug into the tools you already use.</h2>
+            <p className="wl-public-copy mt-5">
+              Wireline connects to the platforms that run your business — no manual data entry, no
+              missed context.
+            </p>
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { icon: ShoppingBag, label: "Shopify" },
+                { icon: Store, label: "Square" },
+                { icon: BarChart3, label: "HubSpot" },
+                { icon: CreditCard, label: "Stripe" },
+                { icon: Puzzle, label: "Salesforce" },
+                { icon: Mail, label: "Resend" },
+              ].map(({ icon: Icon, label }) => (
+                <div
+                  key={label}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-4 text-center transition-all hover:border-primary/20 hover:-translate-y-0.5"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/5 text-primary">
+                    <Icon size={18} />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-center text-[var(--wireline-typography-caption-size)] text-muted-foreground">
+              Calendars, CRMs, email, and payments — connected only when you approve them.
+            </p>
           </div>
         </section>
 

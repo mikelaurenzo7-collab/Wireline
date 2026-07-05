@@ -1,16 +1,67 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Clock3, MessageSquare, PhoneCall, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Clock3,
+  MessageSquare,
+  PhoneCall,
+  ShieldCheck,
+  Brain,
+  CalendarCheck,
+  Sparkles,
+  Workflow,
+  Globe,
+  BarChart3,
+} from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const DIFFERENCES = [
-  { icon: PhoneCall, title: "It makes the call.", copy: "Handles the conversation." },
+  {
+    icon: PhoneCall,
+    title: "It makes the call.",
+    copy: "Handles the conversation — voice, email, or text.",
+  },
   {
     icon: MessageSquare,
     title: "You explain it normally.",
-    copy: "Your voice, playbook, and Training.",
+    copy: "Your voice, playbook, and Training — no scripts, no flowcharts.",
   },
-  { icon: Clock3, title: "You get the answer back.", copy: "A clear next step." },
+  {
+    icon: Clock3,
+    title: "You get the answer back.",
+    copy: "A clear next step: booked, handed off, or logged.",
+  },
+  {
+    icon: Brain,
+    title: "It remembers what you taught it.",
+    copy: "Every lesson, objection, and preference stays in the agent's memory.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "It books real time on your calendar.",
+    copy: "Availability checks, timezone-aware, no double-booking.",
+  },
+  {
+    icon: Workflow,
+    title: "It works across channels.",
+    copy: "Starts on voice, follows up by email or text — connected and coherent.",
+  },
+  {
+    icon: Globe,
+    title: "It handles after-hours coverage.",
+    copy: "24/7 without overtime, burnout, or missed calls.",
+  },
+  {
+    icon: BarChart3,
+    title: "You see every outcome.",
+    copy: "Transcripts, summaries, and analytics for every conversation.",
+  },
+  {
+    icon: Sparkles,
+    title: "It improves with every call.",
+    copy: "Learning loop captures patterns and refines responses over time.",
+  },
 ] as const;
 
 const TABLE_ROWS = [
@@ -18,6 +69,13 @@ const TABLE_ROWS = [
   ["Wait on hold", "Your agent waits and reports back"],
   ["Repeat the same details", "Your agent keeps the instructions"],
   ["Receive another task", "You get a clear next step"],
+  ["Miss after-hours calls", "Your agent picks up 24/7, no voicemail tag"],
+  ["Train a new receptionist", "Your agent ships with your playbook on day one"],
+  ["Log calls manually in a CRM", "Your agent writes the summary and syncs the record"],
+  [
+    "Follow up on every inbound lead",
+    "Your agent qualifies, books, or hands off — nothing falls through",
+  ],
 ] as const;
 
 export default function Compare() {

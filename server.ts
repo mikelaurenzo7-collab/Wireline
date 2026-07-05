@@ -1,6 +1,7 @@
 import "dotenv/config";
 import "express-async-errors";
 import express from "express";
+import type { Server } from "node:http";
 import cors from "cors";
 import path from "path";
 import { randomUUID } from "node:crypto";
@@ -19,6 +20,31 @@ import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import gatewayCatalogRouter from "./src/lib/gateway-catalog";
+
+const SHUTDOWN_GRACE_MS = 30_000;
+let server: Server | null = null;
+
+function gracefulShutdown(signal: string) {
+  log.info("Shutdown received", { signal });
+  if (!server) {
+    process.exit(0);
+    return;
+  }
+
+  // Stop accepting new connections immediately.
+  server.close(() => {
+    log.info("Server closed cleanly");
+    process.exit(0);
+  });
+
+  // Force exit after grace period if connections are still open.
+  const force = setTimeout(() => {
+    log.warn("Shutdown force-exit after grace period", { signal, graceMs: SHUTDOWN_GRACE_MS });
+    process.exit(1);
+  }, SHUTDOWN_GRACE_MS);
+  // Let the event loop drain if the close callback fires first.
+  force.unref();
+}
 
 /**
  * Canonical Wireline server entrypoint.
@@ -163,6 +189,8 @@ async function startServer() {
 if (process.env.VERCEL !== "1") {
   void startServer().then(() => {
     const port = Number(process.env.PORT) || 3000;
-    app.listen(port, () => log.info("Wireline server started", { port }));
+    server = app.listen(port, () => log.info("Wireline server started", { port }));
+    process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+    process.on("SIGINT", () => gracefulShutdown("SIGINT"));
   });
 }

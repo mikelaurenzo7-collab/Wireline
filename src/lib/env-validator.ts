@@ -34,6 +34,9 @@ const isStripe = (value: string) => /^sk_(test|live)_/.test(value);
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isE164 = (value: string) => /^\+[1-9]\d{6,14}$/.test(value);
 
+const isCommaSeparatedEmails = (value: string) =>
+  !value || value.split(",").every((entry) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.trim()));
+
 export const ENV_REGISTRY: EnvVarConfig[] = [
   {
     name: "POSTGRES_URL",
@@ -42,6 +45,15 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     description: "PostgreSQL connection string",
     validate: isPostgresUrl,
     formatHint: "postgresql://user:pass@host:port/db",
+  },
+  {
+    name: "DATABASE_POOL_URL",
+    group: "core",
+    required: false,
+    requiredInProd: true,
+    description: "PostgreSQL pooler/proxy URL (Supabase Transaction mode pooler on :6543)",
+    validate: (value) => !value || isPostgresUrl(value),
+    formatHint: "postgresql://user:pass@host:6543/db",
   },
   {
     name: "INTERNAL_JWT_SECRET",
@@ -238,11 +250,25 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: (value) => !value || isEmail(value),
   },
   {
+    name: "OWNER_EMAILS",
+    group: "operational",
+    required: false,
+    description: "Comma-separated additional platform owner emails",
+    validate: (value) => !value || isCommaSeparatedEmails(value),
+  },
+  {
     name: "OWNER_PHONE",
     group: "operational",
     required: false,
     description: "Platform owner escalation phone",
     validate: (value) => !value || isE164(value),
+  },
+  {
+    name: "VERCEL_OIDC_TOKEN",
+    group: "ai",
+    required: false,
+    description: "Vercel OIDC token for AI Gateway access in production",
+    validate: nonEmpty,
   },
 ];
 

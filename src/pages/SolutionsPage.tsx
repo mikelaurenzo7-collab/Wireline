@@ -141,7 +141,9 @@ export default function SolutionsPage() {
               <h3 className="wl-section-title mt-5 text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
                 {title}
               </h3>
-              {/* Visual step - details in demo */}
+              <p className="mt-3 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                {page.sequence[index][1]}
+              </p>
             </li>
           ))}
         </ol>

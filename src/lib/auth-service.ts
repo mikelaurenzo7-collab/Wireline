@@ -4,6 +4,7 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
+import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 
 /** Lazy so importing auth-service does not crash the whole API when env is misconfigured. */
 let cachedJwtSecret: string | null = null;
@@ -104,6 +105,22 @@ export function generateToken(user: { id: string; email: string }): string {
     .digest("base64url");
 
   return `${base64Header}.${base64Payload}.${signature}`;
+}
+
+/**
+ * Verify a Wireline session JWT and return the decoded payload.
+ * Returns `null` when the token is invalid, expired, or malformed.
+ * This is the symmetric counterpart to `generateToken` — callers that
+ * need to introspect a session token without pulling the secret can use
+ * this instead of `verifyInternalJwt` directly.
+ */
+export async function verifyToken(token: string): Promise<JwtPayload | null> {
+  try {
+    const secret = getJwtSecret();
+    return await verifyInternalJwt(token, secret);
+  } catch {
+    return null;
+  }
 }
 
 /**

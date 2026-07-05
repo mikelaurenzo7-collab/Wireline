@@ -190,9 +190,11 @@ export default function PublicChangelog() {
           <div className="mt-12 pt-6 border-t border-border">
             <p className="text-eyebrow mb-2">Coming up</p>
             <ul className="marketing-body space-y-1 list-disc pl-5">
-              <li>iOS app — listen-in + whisper-coach on the go</li>
-              <li>Recipe marketplace — community-contributed agent templates</li>
-              <li>Annual Wireline Report — every Dec 31, your year in calls</li>
+              <li>iOS app — listen-in + whisper-coach on the go. Target Q3 2026.</li>
+              <li>Recipe marketplace — community-contributed agent templates. Target Q4 2026.</li>
+              <li>
+                Annual Wireline Report — every Dec 31, your year in calls. First edition Jan 2027.
+              </li>
             </ul>
           </div>
         </div>
