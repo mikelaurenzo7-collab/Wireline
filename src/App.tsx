@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { AccountProvider } from "./contexts/AccountContext";
 import TransitionSurface from "./components/TransitionSurface";
+import RouteChangeA11y from "./components/RouteChangeA11y";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Features = lazy(() => import("./pages/Features"));
@@ -100,6 +101,7 @@ export default function App() {
   return (
     <div className="wl-ui-caps w-full max-w-[100vw] overflow-x-hidden safe-area-insets">
       <BrowserRouter>
+        <RouteChangeA11y />
         <AuthProvider>
           <ThemeProvider>
             <ToastProvider>
