@@ -171,7 +171,7 @@ export default function QualityView({ days }: { days: number }) {
             {distribution.map((bucket: any) => (
               <div key={bucket.label} className="flex items-center gap-3">
                 <span className="wl-micro-meta--muted w-28 shrink-0">{bucket.label}</span>
-                <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
@@ -195,7 +195,7 @@ export default function QualityView({ days }: { days: number }) {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius={70}>
-                <PolarGrid stroke="rgba(0,0,0,0.06)" />
+                <PolarGrid stroke="var(--wireline-color-border-soft)" />
                 <PolarAngleAxis
                   dataKey="dimension"
                   tick={{ fill: "var(--muted-foreground)", fontSize: 9 }}
@@ -229,7 +229,7 @@ export default function QualityView({ days }: { days: number }) {
                     <stop offset="95%" stopColor={QA_BRAND} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--wireline-color-border-soft)" />
                 <XAxis
                   dataKey="day"
                   tick={{ fill: "var(--muted-foreground)", fontSize: 9 }}
@@ -318,7 +318,7 @@ export default function QualityView({ days }: { days: number }) {
                   <p className="wl-micro-meta--muted mt-0.5">{desc}</p>
                 </div>
                 <div className="w-28 flex items-center gap-2 shrink-0">
-                  <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
