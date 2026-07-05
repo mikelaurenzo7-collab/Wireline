@@ -1,56 +1,15 @@
-/* Typography Scale Module - Consolidated & Extracted */
-
-/* All-caps with perfect larger sizing for titles (responsive) */
-.wl-page-title,
-.wl-app-page-title,
-.wl-section-title,
-.wl-card-title,
-.wl-pro-title,
-.wl-workspace-title {
-  text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-
-.wl-page-title {
-  font-size: clamp(2.25rem, 5vw + 1rem, 4rem);
-}
-
-.wl-app-page-title {
-  font-size: clamp(1.5rem, 3.5vw + 0.75rem, 2.5rem);
-}
-
-.wl-section-title {
-  font-size: clamp(1.35rem, 3vw + 0.6rem, 2rem);
-}
-
-.wl-card-title {
-  font-size: clamp(1.1rem, 2.5vw + 0.5rem, 1.5rem);
-}
+/* Typography Module — canonical definitions live in typography-prose.css.
+ * Only the .wl-metric-value class remains here because it is uniquely
+ * defined (no peer override) and used across the overview/dashboard layer.
+ * The legacy .wl-page-title, .wl-app-page-title, .wl-section-title,
+ * .wl-card-title, .wl-pro-title, .wl-workspace-title, .wl-overline,
+ * .wl-pro-eyebrow, and .wl-micro-meta classes are now defined in
+ * typography-prose.css where they use the Wireline token system. */
 
 .wl-metric-value {
-  text-transform: uppercase;
+  font-family: var(--wireline-font-family-display), Georgia, serif;
+  text-transform: none;
   font-size: clamp(2.25rem, 4vw + 1rem, 3.25rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-/* Mobile refinements for all-caps readability */
-@media (max-width: 640px) {
-  .wl-page-title {
-    font-size: clamp(1.75rem, 6vw, 2.8rem);
-  }
-  .wl-app-page-title {
-    font-size: clamp(1.35rem, 4vw, 2rem);
-  }
-}
-
-/* Additional typography utilities from consolidated system */
-.wl-overline,
-.wl-pro-eyebrow,
-.wl-micro-meta {
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: -0.03em;
 }

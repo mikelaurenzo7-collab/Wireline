@@ -8,7 +8,6 @@ import "./styles/foundation.css";
 import "./index.css";
 import "./styles/responsive.css";
 import "./styles/ruthless-mobile-cleanup.css";
-import "./styles/ruthless-mobile-cleanup-corrections.css";
 import "./styles/agent-tabs-compact.css";
 
 if (typeof window !== "undefined") {

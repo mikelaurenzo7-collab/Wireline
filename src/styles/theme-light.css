@@ -6,10 +6,14 @@
   color-scheme: light;
 
   --wireline-color-canvas-default: #f6f1e8;
+  --wireline-color-canvas-deeper: #e8e1d5;
+  --wireline-color-canvas-warmer: #faf5ed;
   --wireline-color-surface-default: #fffdf8;
   --wireline-color-surface-subtle: #f3ede3;
   --wireline-color-surface-container: #ebe4d8;
   --wireline-color-surface-strong: #e2d9cb;
+  --wireline-color-surface-raised: #ffffff;
+  --wireline-color-surface-recessed: #e8e2d6;
 
   --wireline-color-text-primary: #1a1712;
   --wireline-color-text-secondary: #5c564d;
@@ -18,23 +22,31 @@
 
   --wireline-color-action-primary-default: #2b5548;
   --wireline-color-action-primary-pressed: #234539;
+  --wireline-color-action-primary-hover: #3a6e5e;
   --wireline-color-action-primary-container: #e3efe8;
+  --wireline-color-action-primary-containerStrong: #cbdcd2;
 
   --wireline-color-action-secondary-default: #c4713b;
   --wireline-color-action-secondary-pressed: #a85f32;
+  --wireline-color-action-secondary-hover: #d6894f;
   --wireline-color-action-secondary-container: #f6e8dc;
+  --wireline-color-action-secondary-containerStrong: #eed9c4;
 
   --wireline-color-border-default: #ddd5c8;
+  --wireline-color-border-soft: #e8e2d6;
   --wireline-color-border-strong: #c9bfb0;
 
   --wireline-color-focus-default: #2b5548;
+  --wireline-color-focus-wire: #c4713b;
 
   --wireline-color-overlay-scrim: rgba(26, 23, 18, 0.42);
+  --wireline-color-overlay-vignette: rgba(26, 23, 18, 0.12);
 
   --wireline-color-status-success: #2b5548;
   --wireline-color-status-warning: #9a7b2f;
   --wireline-color-status-error: #b44a4a;
   --wireline-color-status-info: #4a6278;
+  --wireline-color-status-neutral: #7a766e;
 
   --wireline-color-feedback-success-surface: #e8f2ec;
   --wireline-color-feedback-success-border: #b8d4c4;
@@ -44,13 +56,27 @@
   --wireline-color-feedback-error-border: #e0b4b4;
   --wireline-color-feedback-info-surface: #e8edf2;
   --wireline-color-feedback-info-border: #b8c5d4;
+  --wireline-color-feedback-neutral-surface: #f0ede6;
+  --wireline-color-feedback-neutral-border: #d9d3c8;
+
+  --wireline-color-glow-primary: rgba(43, 85, 72, 0.12);
+  --wireline-color-glow-primarySoft: rgba(43, 85, 72, 0.06);
+  --wireline-color-glow-wire: rgba(196, 113, 59, 0.10);
+  --wireline-color-glow-wireSoft: rgba(196, 113, 59, 0.04);
+
+  --wireline-color-pressHighlight: rgba(26, 23, 18, 0.04);
 
   --wireline-elevation-sm: 0 1px 2px rgba(26, 23, 18, 0.06);
+  --wireline-elevation-xs: 0 1px 1px rgba(26, 23, 18, 0.04);
   --wireline-elevation-card: 0 8px 24px -16px rgba(26, 23, 18, 0.12);
   --wireline-elevation-md: 0 14px 34px -26px rgba(26, 23, 18, 0.14);
   --wireline-elevation-lg: 0 28px 70px -44px rgba(26, 23, 18, 0.18);
+  --wireline-elevation-raised: 0 2px 8px -3px rgba(26, 23, 18, 0.08);
+  --wireline-elevation-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(26, 23, 18, 0.06);
+  --wireline-elevation-insetRaised: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(26, 23, 18, 0.08);
+  --wireline-elevation-wirelineRing: 0 0 0 1px rgba(43, 85, 72, 0.12), 0 8px 30px -12px rgba(43, 85, 72, 0.10);
+  --wireline-elevation-wireGlow: 0 0 0 1px rgba(196, 113, 59, 0.14), 0 8px 30px -12px rgba(196, 113, 59, 0.12);
 
-  /* Shadcn semantic aliases inherit warm paper tokens above */
   --background: var(--wireline-color-canvas-default);
   --foreground: var(--wireline-color-text-primary);
   --card: var(--wireline-color-surface-default);
