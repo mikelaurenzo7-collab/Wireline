@@ -130,8 +130,6 @@ const androidAssistantWidget = read(
 const chatgptWidget = read("src/lib/chatgpt-mcp.ts");
 const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
 const productCopy = read("src/lib/product-copy.ts");
-const directorCopy = read("src/lib/director-copy.ts");
-const directorComposerAccessory = read("src/components/director/DirectorComposerAccessory.tsx");
 const designVision = read("src/lib/wireline-design-vision.ts");
 const studioAgentPreference = read("src/lib/studio-agent-preference.ts");
 const studioActiveAgentHook = read("src/hooks/useStudioActiveAgentId.ts");
@@ -1200,29 +1198,6 @@ mustExclude(
   /Train by talking\.|what to learn or do|PanelRightOpen|Working context|Detailed view/,
   "Studio workroom must stay clean/minimal: no right rail, no training-first copy",
 );
-mustInclude(
-  "src/lib/director-copy.ts",
-  directorCopy,
-  /Agent audit[\s\S]*Opening agent coach[\s\S]*Orchestrate your agents from/,
-  "Director visible copy must use current agent language",
-);
-mustInclude(
-  "src/components/director/DirectorComposerAccessory.tsx",
-  directorComposerAccessory,
-  /All agents/,
-  "Director coach selector must use agent language",
-);
-for (const [file, source] of [
-  ["src/lib/director-copy.ts", directorCopy],
-  ["src/components/director/DirectorComposerAccessory.tsx", directorComposerAccessory],
-]) {
-  mustExclude(
-    file,
-    source,
-    /Assistants coach|Assistants audit|Deep Assistants|Plan your Assistants|Assistants only|Some Assistant data/,
-    "Director visible copy must not revive retired Assistant positioning",
-  );
-}
 // Claude Design Training (Knowledge / Voice / Flows / Simulator) — four tabs
 // mounted directly in KnowledgePage; Knowledge tab is the spatial Claude
 // Design surface bound to /api/agent-config.
@@ -1350,6 +1325,18 @@ mustBeDeleted("scripts/og-image.svg", "retired logo-only OG source must stay del
 mustBeDeleted(
   "scripts/check-active-surface-drift.mjs",
   "retired Ametrine surface contract must stay deleted",
+);
+mustBeDeleted(
+  "src/routes/director-routes.ts",
+  "unmounted Director API (superseded by Studio Workroom's agent-workspace routes) must stay deleted",
+);
+mustBeDeleted(
+  "src/components/director",
+  "unmounted Director chat UI (superseded by StudioWorkroom) must stay deleted",
+);
+mustBeDeleted(
+  "src/components/layout/DirectorLayout.tsx",
+  "unmounted Director layout must stay deleted",
 );
 mustInclude(
   "src/index.css",
