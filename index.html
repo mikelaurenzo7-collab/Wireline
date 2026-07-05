@@ -2,6 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("wireline-theme");
+          var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var useLight =
+            stored === "light" || (stored !== "dark" && stored === "system" && !systemDark);
+          if (useLight) document.documentElement.classList.add("light");
+        } catch (e) {
+          /* ignore */
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="stylesheet" href="/app-shell.css" />
 

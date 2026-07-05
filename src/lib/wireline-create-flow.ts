@@ -1,8 +1,11 @@
 /** Session key for non-fatal warnings after Fast Start agent creation. */
 export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 
-/** Post-create wizard payload — Train → Wire → Test after Fast Start. */
+/** Post-create wizard payload — Train → Channels → Wire → Test after Fast Start. */
 export const POST_CREATE_WIZARD_KEY = "wireline:post-create-wizard";
+export const POST_CREATE_WIZARD_STEP_KEY = "wireline:post-create-wizard-step";
+
+export type PostCreateWizardStep = "train" | "channels" | "wire" | "test";
 
 export type PostCreateWizardPayload = {
   agentId: string;
@@ -16,22 +19,59 @@ export type PostCreateWizardPayload = {
 export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {
   try {
     sessionStorage.setItem(POST_CREATE_WIZARD_KEY, JSON.stringify(payload));
+    sessionStorage.setItem(POST_CREATE_WIZARD_STEP_KEY, "train");
   } catch {
     /* ignore quota / private mode */
   }
 }
 
-export function consumePostCreateWizard(): PostCreateWizardPayload | null {
+/** Read wizard payload without clearing — survives refresh and cross-route navigation. */
+export function readPostCreateWizard(): PostCreateWizardPayload | null {
   try {
     const raw = sessionStorage.getItem(POST_CREATE_WIZARD_KEY);
     if (!raw) return null;
-    sessionStorage.removeItem(POST_CREATE_WIZARD_KEY);
     const parsed = JSON.parse(raw) as PostCreateWizardPayload;
     if (!parsed?.agentId || !parsed?.agentName) return null;
     return parsed;
   } catch {
     return null;
   }
+}
+
+export function stashPostCreateWizardStep(step: PostCreateWizardStep): void {
+  try {
+    sessionStorage.setItem(POST_CREATE_WIZARD_STEP_KEY, step);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readPostCreateWizardStep(): PostCreateWizardStep | null {
+  try {
+    const step = sessionStorage.getItem(POST_CREATE_WIZARD_STEP_KEY);
+    if (step === "train" || step === "channels" || step === "wire" || step === "test") {
+      return step;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPostCreateWizard(): void {
+  try {
+    sessionStorage.removeItem(POST_CREATE_WIZARD_KEY);
+    sessionStorage.removeItem(POST_CREATE_WIZARD_STEP_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @deprecated Use readPostCreateWizard + clearPostCreateWizard on dismiss. */
+export function consumePostCreateWizard(): PostCreateWizardPayload | null {
+  const payload = readPostCreateWizard();
+  if (payload) clearPostCreateWizard();
+  return payload;
 }
 
 export function stashCreateWarning(message: string): void {

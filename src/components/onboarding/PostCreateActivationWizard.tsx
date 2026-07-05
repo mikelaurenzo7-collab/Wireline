@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Phone, Sparkles, X } from "lucide-react";
+import { Check, Cable, Loader2, MessageSquare, Phone, Sparkles, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import RoleplaySandbox from "../RoleplaySandbox";
@@ -11,10 +11,20 @@ import {
   YOURE_LIVE_COPY,
 } from "../../lib/wireline-onboarding-copy";
 import { setPostSignupFlowActive } from "../../lib/post-signup-onboarding";
-import type { PostCreateWizardPayload } from "../../lib/wireline-create-flow";
+import {
+  clearPostCreateWizard,
+  readPostCreateWizardStep,
+  stashPostCreateWizardStep,
+  type PostCreateWizardPayload,
+  type PostCreateWizardStep,
+} from "../../lib/wireline-create-flow";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 
-type WizardStep = "train" | "wire" | "test" | "complete";
+type WizardStep = PostCreateWizardStep | "complete";
+
+function isWizardStep(value: string | null): value is PostCreateWizardStep {
+  return value === "train" || value === "channels" || value === "wire" || value === "test";
+}
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "");
@@ -39,14 +49,22 @@ export default function PostCreateActivationWizard({
   payload,
   onClose,
 }: PostCreateActivationWizardProps) {
-  const [step, setStep] = useState<WizardStep>("train");
+  const [step, setStepState] = useState<WizardStep>(() => {
+    const stored = readPostCreateWizardStep();
+    return isWizardStep(stored) ? stored : "train";
+  });
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [loadingPhone, setLoadingPhone] = useState(true);
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
 
-  const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"];
+  const stepOrder: WizardStep[] = ["train", "channels", "wire", "test", "complete"];
   const stepIndex = stepOrder.indexOf(step);
+
+  const setStep = useCallback((next: WizardStep) => {
+    setStepState(next);
+    if (isWizardStep(next)) stashPostCreateWizardStep(next);
+  }, []);
 
   const refreshPhone = useCallback(async () => {
     setLoadingPhone(true);
@@ -109,6 +127,7 @@ export default function PostCreateActivationWizard({
 
   function dismiss() {
     setPostSignupFlowActive(false);
+    clearPostCreateWizard();
     onClose();
   }
 
@@ -158,7 +177,7 @@ export default function PostCreateActivationWizard({
         </header>
 
         <div className="flex gap-2 border-b border-border px-5 py-3 sm:px-6">
-          {(["train", "wire", "test"] as const).map((id, index) => {
+          {(["train", "channels", "wire", "test"] as const).map((id, index) => {
             const active = step === id;
             const done = stepIndex > index || step === "complete";
             const labels = POST_CREATE_WIZARD_COPY.steps;
@@ -207,10 +226,63 @@ export default function PostCreateActivationWizard({
                     {POST_CREATE_WIZARD_COPY.steps.train.primary}
                   </Link>
                 </Button>
-                <Button type="button" size="sm" onClick={() => setStep("wire")}>
+                <Button type="button" size="sm" onClick={() => setStep("channels")}>
                   {POST_CREATE_WIZARD_COPY.steps.train.secondary}
                 </Button>
               </div>
+            </section>
+          ) : null}
+
+          {step === "channels" ? (
+            <section className="grid gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {POST_CREATE_WIZARD_COPY.steps.channels.title}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {POST_CREATE_WIZARD_COPY.steps.channels.detail}
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Phone size={15} aria-hidden="true" className="text-primary" />
+                    {POST_CREATE_WIZARD_COPY.steps.channels.phoneTitle}
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    {POST_CREATE_WIZARD_COPY.steps.channels.phoneDetail}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-card px-4 py-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Cable size={15} aria-hidden="true" className="text-primary" />
+                    {POST_CREATE_WIZARD_COPY.steps.channels.connectionsTitle}
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    {POST_CREATE_WIZARD_COPY.steps.channels.connectionsDetail}
+                  </p>
+                  <Button asChild variant="secondary" size="sm" className="mt-3">
+                    <Link to="/connections" onClick={() => stashPostCreateWizardStep("channels")}>
+                      {POST_CREATE_WIZARD_COPY.steps.channels.connectionsCta}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Opens Wire in this tab — return to Studio to resume this guide.
+              </p>
+              <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+                <MessageSquare
+                  size={14}
+                  className="mt-0.5 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+                Studio is your chat-first run surface — test voice and script before you wire more
+                channels.
+              </p>
+              <Button type="button" size="sm" onClick={() => setStep("wire")}>
+                {POST_CREATE_WIZARD_COPY.steps.channels.continue}
+              </Button>
             </section>
           ) : null}
 

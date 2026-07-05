@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Mic2, Palette, SlidersHorizontal, Target } from "lucide-react";
 
+import AppearanceSettings from "../components/settings/AppearanceSettings";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 
@@ -48,7 +49,9 @@ export default function CustomizationSettings() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame>
-        <section>
+        <AppearanceSettings />
+
+        <section className="mt-6">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {customizationLayers.map(({ label, title, detail, action, href, icon: Icon }) => (
               <Link

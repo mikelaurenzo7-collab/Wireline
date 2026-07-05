@@ -35,7 +35,21 @@ describe("Wireline product documentation contract", () => {
     expect(readme).toContain("Agents");
     expect(readme).toContain("Training");
     expect(readme).toContain("Wireline Command");
+    expect(readme).toContain("WIRELINE_2026_ROADMAP.md");
     expectNoTerms(readme, retiredProductTerms);
+  });
+
+  it("keeps the 2026 roadmap aligned with Letterpress and activation doctrine", () => {
+    const roadmap = read("docs/WIRELINE_2026_ROADMAP.md");
+    const theme = read("src/contexts/ThemeContext.tsx");
+    const themeLight = read("src/styles/theme-light.css");
+
+    expect(roadmap).toContain("Create → Train → Wire → Run");
+    expect(roadmap).toContain("Letterpress");
+    expect(roadmap).toContain("voice + presenter");
+    expect(roadmap).toContain("Material-style dark SaaS");
+    expect(theme).toContain("wireline-theme");
+    expect(themeLight).toContain(":root.light");
   });
 
   it("keeps extension docs positioned as Wireline Command", () => {

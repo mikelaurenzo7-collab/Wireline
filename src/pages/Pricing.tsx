@@ -107,6 +107,49 @@ const COMMERCIAL_RULES = [
   ["Scale", "Team and Business add agents, lines, approvals, routing, and reliability."],
 ] as const;
 
+const COMPETITOR_POSITIONING = [
+  {
+    platform: "Wireline",
+    useCase: "Voice + live presenter agents",
+    deployment: "Self-serve SaaS",
+    pricing: "Free create/train; Conversation Balance + Team/Business capacity",
+    edge: "Only lane blending live calls with on-screen presenter lip-sync and Letterpress UX.",
+    highlight: true,
+  },
+  {
+    platform: "Retell AI",
+    useCase: "Phone sales/support agents",
+    deployment: "SaaS builder",
+    pricing: "~$0.07/min pay-as-you-go",
+    edge: "Strong analytics and warm transfer; no live avatar surface.",
+    highlight: false,
+  },
+  {
+    platform: "Vapi.ai",
+    useCase: "Developer voice toolkit",
+    deployment: "API / SDK",
+    pricing: "~$0.05/min + line fees",
+    edge: "Flexible for engineers; not a guided operator console.",
+    highlight: false,
+  },
+  {
+    platform: "Synthflow AI",
+    useCase: "SMB voice agents",
+    deployment: "Multi-tenant SaaS",
+    pricing: "~$0.08/min tiers",
+    edge: "HIPAA posture; drag-drop flows without presenter video.",
+    highlight: false,
+  },
+  {
+    platform: "Synthesia / avatar video",
+    useCase: "Scripted video avatars",
+    deployment: "Marketing video SaaS",
+    pricing: "Subscription + credits",
+    edge: "Offline video only — not live conversational agents.",
+    highlight: false,
+  },
+] as const;
+
 const FAQ = [
   [
     "Does Personal require a subscription?",
@@ -347,6 +390,63 @@ export default function Pricing() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="border-y border-border bg-card/40 px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail mx-auto max-w-6xl">
+            <div className="max-w-2xl">
+              <p className="wl-overline text-primary">Why Wireline</p>
+              <h2
+                className="mt-3 text-balance text-[clamp(2rem,4vw,3.25rem)] leading-[1.06] tracking-[-0.03em]"
+                style={{
+                  fontFamily:
+                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                  fontWeight: 400,
+                }}
+              >
+                Live voice with a face — not another light-mode phone console.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
+                Voice platforms stop at audio. Avatar tools stop at rendered video. Wireline is
+                building the lane where callers meet a trained agent with a presenter — on a warm
+                ink canvas designed for long operating sessions.
+              </p>
+            </div>
+            <div className="mt-10 overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="px-3 py-3 font-semibold">Platform</th>
+                    <th className="px-3 py-3 font-semibold">Use case</th>
+                    <th className="px-3 py-3 font-semibold">Deployment</th>
+                    <th className="px-3 py-3 font-semibold">Pricing posture</th>
+                    <th className="px-3 py-3 font-semibold">Gap vs Wireline</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPETITOR_POSITIONING.map((row) => (
+                    <tr
+                      key={row.platform}
+                      className={`border-b border-border/70 ${row.highlight ? "bg-primary/5" : ""}`}
+                    >
+                      <td className="px-3 py-4 font-semibold text-foreground">{row.platform}</td>
+                      <td className="px-3 py-4 text-muted-foreground">{row.useCase}</td>
+                      <td className="px-3 py-4 text-muted-foreground">{row.deployment}</td>
+                      <td className="px-3 py-4 text-muted-foreground">{row.pricing}</td>
+                      <td className="px-3 py-4 text-foreground">{row.edge}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+              Competitor pricing is indicative from public pages (Retell, Vapi, Synthflow,
+              Synthesia, and avatar video tools) and should be refreshed before external campaigns.
+              Wireline commercial truth is the tier cards above plus{" "}
+              <span className="text-foreground">docs/business-usage-pricing-decision.md</span> in
+              the repository.
+            </p>
           </div>
         </section>
 

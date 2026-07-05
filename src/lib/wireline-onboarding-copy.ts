@@ -146,6 +146,18 @@ export const POST_CREATE_WIZARD_COPY = {
       primary: "Open Training",
       secondary: "Looks good — continue",
     },
+    channels: {
+      label: "Channels",
+      title: "Connect where customers reach you",
+      detail:
+        "Phone is the default lane. Open Connections when you need CRM, SMS, email, or other tools wired in.",
+      phoneTitle: "Business phone line",
+      phoneDetail: "Provision a US number on the next step — callers reach this agent directly.",
+      connectionsTitle: "Connections hub",
+      connectionsDetail: "Salesforce, SMS threads, email inbox, and routing live under Wire.",
+      connectionsCta: "Open Connections",
+      continue: "Continue to phone line",
+    },
     wire: {
       label: "Wire",
       title: "Connect a live line",

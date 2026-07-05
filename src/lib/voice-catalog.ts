@@ -110,7 +110,7 @@ export function voiceRoutingHint(provider: VoiceProvider): string | null {
     return "Optimized for live phone calls on your Vapi line.";
   }
   if (provider === "presenter") {
-    return "Matched for on-screen presenter lip-sync. For PSTN phone calls, also pick Wireline Phone or Voice library.";
+    return "Studio and browser preview use presenter lip-sync. PSTN phone calls fall back to a voice-library substitute — pick Wireline Phone for the same sound on live calls.";
   }
   return null;
 }

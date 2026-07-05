@@ -66,10 +66,11 @@ describe("authenticated agent flow", () => {
 
     expect(studioHome).toContain('params.get("brief")');
     expect(studioHome).toContain("PostCreateActivationWizard");
+    expect(studioHome).toContain("readPostCreateWizard");
     expect(studioHome).not.toContain("mode=workroom");
   });
 
-  it("launches post-create Train → Wire → Test wizard after Fast Start", () => {
+  it("launches post-create Train → Channels → Wire → Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
@@ -77,11 +78,18 @@ describe("authenticated agent flow", () => {
 
     expect(createDialog).toContain("stashPostCreateWizard");
     expect(createFlow).toContain("POST_CREATE_WIZARD_KEY");
+    expect(createFlow).toContain("readPostCreateWizard");
+    expect(createFlow).toContain("clearPostCreateWizard");
+    expect(createFlow).toContain("POST_CREATE_WIZARD_STEP_KEY");
     expect(wizard).toContain("RoleplaySandbox");
     expect(wizard).toContain('step === "train"');
+    expect(wizard).toContain('step === "channels"');
     expect(wizard).toContain('step === "wire"');
     expect(wizard).toContain('step === "test"');
+    expect(wizard).toContain("clearPostCreateWizard");
+    expect(wizard).toContain("stashPostCreateWizardStep");
     expect(copy).toContain("POST_CREATE_WIZARD_COPY");
+    expect(copy).toContain("channels:");
   });
 
   it("routes presenter lip-sync samples through HeyGen speech", () => {

@@ -11,7 +11,7 @@ import {
   clearBrowserCommandHash,
   readBrowserCommandContext,
 } from "../lib/browser-command-context";
-import { consumeCreateWarning, consumePostCreateWizard } from "../lib/wireline-create-flow";
+import { consumeCreateWarning, readPostCreateWizard } from "../lib/wireline-create-flow";
 import type { PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import PostCreateActivationWizard from "../components/onboarding/PostCreateActivationWizard";
 
@@ -45,7 +45,7 @@ export default function AgentStudioHomeClaude() {
         duration: 12_000,
       });
     }
-    const wizard = consumePostCreateWizard();
+    const wizard = readPostCreateWizard();
     if (wizard) setPostCreateWizard(wizard);
   }, [toast]);
 
@@ -68,7 +68,9 @@ export default function AgentStudioHomeClaude() {
       {postCreateWizard ? (
         <PostCreateActivationWizard
           payload={postCreateWizard}
-          onClose={() => setPostCreateWizard(null)}
+          onClose={() => {
+            setPostCreateWizard(null);
+          }}
         />
       ) : null}
     </>
