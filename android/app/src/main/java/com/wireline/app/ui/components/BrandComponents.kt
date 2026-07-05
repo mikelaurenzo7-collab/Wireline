@@ -58,7 +58,7 @@ fun Medallion(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = "Wireline",
             tint = Brand.Accent,
             modifier = Modifier.size(size * 0.42f),
         )
@@ -158,7 +158,7 @@ fun AskWirelineHeroCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
                     .background(Brand.AccentSoft),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Default.Mic, contentDescription = null, tint = Brand.Accent)
+                Icon(Icons.Default.Mic, contentDescription = "Ask Wireline", tint = Brand.Accent)
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
@@ -229,7 +229,7 @@ fun CallbackNumberPromptCard(onClick: () -> Unit, modifier: Modifier = Modifier)
             ) {
                 Icon(
                     imageVector = Icons.Default.PhoneInTalk,
-                    contentDescription = null,
+                    contentDescription = "Set callback number",
                     tint = Brand.Accent
                 )
             }

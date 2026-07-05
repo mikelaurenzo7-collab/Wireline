@@ -30,7 +30,7 @@
 
 body {
   margin: 0;
-  min-width: 300px;
+  min-width: 0;
   background: var(--canvas);
   color: var(--text);
 }
@@ -46,7 +46,7 @@ textarea:focus-visible {
 }
 
 .panel-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   gap: var(--wireline-space-200);
@@ -100,13 +100,23 @@ textarea:focus-visible {
   text-transform: uppercase;
 }
 
-.context-card h1 {
+.section-heading h2 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
+.context-card .page-title {
   margin: 9px 0 4px;
   font-family: var(--font-display), "Instrument Serif", Georgia, serif;
   font-weight: 400;
   font-size: var(--wireline-typography-h3-size);
   line-height: 1.2;
   letter-spacing: -0.02em;
+  color: var(--text);
 }
 
 .muted,

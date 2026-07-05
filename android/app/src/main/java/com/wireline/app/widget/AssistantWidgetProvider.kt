@@ -23,6 +23,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.wireline.app.MainActivity
+import com.wireline.app.ui.theme.WirelineDesignTokens
 
 class AssistantWidgetProvider : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = AssistantStatusWidget()

@@ -19,6 +19,7 @@ describe("ChatGPT MCP widget Letterpress styling", () => {
     const css = buildWirelineMcpWidgetCss();
     expect(css).toContain("--wl-canvas: #15130F");
     expect(css).toContain("--wl-tertiary:");
+    expect(css).toContain("--wl-font-ui");
     expect(css).toContain(".composer");
     expect(css).toContain("min-height: 44px");
     expect(css).toContain("outline: 2px solid var(--wl-action)");

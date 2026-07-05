@@ -37,6 +37,10 @@
 	<string>Wireline adds events to your calendar when an agent books an appointment or follow-up for you.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Wireline lets you ask Siri to place or hand off calls through your agents.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Wireline can open Apple Music to play songs your agent recommends during a call.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Wireline adds reminders to your list when an agent schedules a follow-up.</string>
 
 	<key>UIApplicationSceneManifest</key>
 	<dict>

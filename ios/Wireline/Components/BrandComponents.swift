@@ -3,6 +3,7 @@ import SwiftUI
 struct Medallion: View {
     let systemImage: String
     var size: CGFloat = 44
+    var label: String?
 
     var body: some View {
         Image(systemName: systemImage)
@@ -10,13 +11,14 @@ struct Medallion: View {
             .foregroundStyle(Brand.accent)
             .frame(width: size, height: size)
             .background(Brand.accentSoft, in: Circle())
+            .accessibilityHidden(true)
     }
 }
 
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(Brand.h1)
+            .font(.headline.weight(.semibold))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -33,7 +35,7 @@ struct AssistantRow: View {
         HStack(spacing: 12) {
             Medallion(systemImage: icon(for: agent.archetype), size: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text(agent.name).font(Brand.h1).foregroundStyle(Brand.text)
+                Text(agent.name).font(.headline.weight(.semibold)).foregroundStyle(Brand.text)
                 Text(postureLabel(for: agent))
                     .font(Brand.caption)
                     .foregroundStyle(Brand.text2)
@@ -50,6 +52,8 @@ struct AssistantRow: View {
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(agent.name), \(postureLabel(for: agent))")
     }
 
     private func postureLabel(for agent: Agent) -> String {
@@ -90,13 +94,15 @@ struct CallCard: View {
                 .fill(isLive ? Brand.signal : Brand.text3)
                 .frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {
-                Text(call.customerNumber ?? "Unknown caller").font(Brand.h1).foregroundStyle(Brand.text)
+                Text(call.customerNumber ?? "Unknown caller").font(.headline.weight(.semibold)).foregroundStyle(Brand.text)
                 Text(call.status?.capitalized ?? "Call update").font(Brand.caption).foregroundStyle(Brand.text2)
             }
             Spacer()
             Image(systemName: "waveform").foregroundStyle(Brand.accent)
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(isLive ? "Live" : "Recent") call from \(call.customerNumber ?? "unknown")")
     }
 
     private var isLive: Bool { (call.status ?? "").lowercased() == "in-progress" }
@@ -114,7 +120,9 @@ struct BrandEmptyState: View {
             Text(message).font(Brand.body).foregroundStyle(Brand.text2).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 28) // consistent with web 4px rhythm + token feel
+        .padding(.vertical, 28)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(message)")
     }
 }
 

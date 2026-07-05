@@ -419,15 +419,13 @@ router.post("/mcp", async (req, res) => {
         ],
       });
     if (method === "resources/read") {
-      if (
-        text(params.uri) !== CHATGPT_ACCOUNT_WIDGET_URI &&
-        text(params.uri) !== CHATGPT_MCP_RESOURCE_URI
-      )
+      const requestedUri = text(params.uri);
+      if (requestedUri !== CHATGPT_ACCOUNT_WIDGET_URI && requestedUri !== CHATGPT_MCP_RESOURCE_URI)
         return jsonRpcError(res, id, -32002, "Resource not found.");
       return jsonRpc(res, id, {
         contents: [
           {
-            uri: CHATGPT_ACCOUNT_WIDGET_URI,
+            uri: requestedUri,
             mimeType: "text/html;profile=mcp-app",
             text: buildAccountBoundWidgetHtml(),
             _meta: resourceMeta(req),

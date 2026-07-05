@@ -28,17 +28,26 @@ struct CallAgentIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let agents = try await WirelineAPI.shared.agents()
-        guard let agent = agents.first(where: {
-            $0.name.localizedCaseInsensitiveContains(agentName)
-        }) else {
-            return .result(dialog: "I couldn't find an agent named \(agentName).")
+        guard KeychainStore.loadToken() != nil else {
+            return .result(dialog: "Open Wireline and sign in first.")
         }
-        try await WirelineAPI.shared.placeCall(
-            agentId: agent.id,
-            to: phoneNumber,
-            context: context.isEmpty ? nil : context
-        )
-        return .result(dialog: "\(agent.name) is calling \(phoneNumber) now.")
+        do {
+            let agents = try await WirelineAPI.shared.agents()
+            guard let agent = agents.first(where: {
+                $0.name.localizedCaseInsensitiveContains(agentName)
+            }) else {
+                return .result(dialog: "I couldn't find an agent named \(agentName).")
+            }
+            try await WirelineAPI.shared.placeCall(
+                agentId: agent.id,
+                to: phoneNumber,
+                context: context.isEmpty ? nil : context
+            )
+            return .result(dialog: "\(agent.name) is calling \(phoneNumber) now.")
+        } catch let WirelineAPI.APIError.http(status, _) where status == 401 || status == 403 {
+            return .result(dialog: "Your session has expired. Open Wireline to sign in again.")
+        } catch {
+            return .result(dialog: "I couldn't place that call right now. Try again in a moment.")
+        }
     }
 }

@@ -22,6 +22,10 @@ android {
         buildConfigField("String", "WIRELINE_BASE_URL", "\"https://trywireline.com\"")
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8

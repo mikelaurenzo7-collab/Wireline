@@ -72,6 +72,8 @@ private struct AskWirelineWidgetView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Ask Wireline, tap to start")
         default:
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: "mic.fill")
@@ -91,6 +93,8 @@ private struct AskWirelineWidgetView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Ask Wireline, tap to start")
         }
     }
 }

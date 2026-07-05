@@ -13,11 +13,16 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class WirelineApi(context: Context) {
     private val appContext = context.applicationContext
     private val tokenStore = AuthTokenStore(appContext)
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
     private val jsonMediaType = "application/json".toMediaType()
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     private val baseUrl = BuildConfig.WIRELINE_BASE_URL.trimEnd('/')

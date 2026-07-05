@@ -18,16 +18,16 @@
   <body>
     <main class="panel-shell">
       <header class="panel-header panel-hero">
-        <div class="wordmark" aria-label="Wireline">WIRELINE</div>
+        <div class="wordmark" role="heading" aria-level="2" aria-label="Wireline">WIRELINE</div>
         <p>Command your agent from any page. Wireline answers while you stay focused.</p>
       </header>
 
       <section class="context-card" aria-labelledby="page-context-title">
         <div class="section-heading">
-          <span>Current page</span>
+          <h2 id="page-context-title">Current page</h2>
           <button id="refresh-context" class="quiet-button" type="button">Refresh</button>
         </div>
-        <h1 id="page-context-title">Loading page context...</h1>
+        <p id="page-title" class="page-title">Loading page context...</p>
         <p id="page-host" class="muted">Only this tab is inspected when you ask.</p>
         <p id="selection-preview" class="selection-preview" hidden></p>
       </section>

@@ -194,8 +194,9 @@ export function buildChatGptWidgetHtml(): string {
     if (content.role) $("role").textContent = String(content.role).replace(/_/g, " ");
     if (content.business_name) $("business").textContent = content.business_name;
   };
+  const isValidOrigin = (origin) => origin === "https://chatgpt.com" || origin.endsWith(".chatgpt.com") || origin === "null";
   window.addEventListener("message", (event) => {
-    if (event.source !== window.parent || !event.data || event.data.jsonrpc !== "2.0") return;
+    if (!isValidOrigin(event.origin) || event.source !== window.parent || !event.data || event.data.jsonrpc !== "2.0") return;
     const msg = event.data;
     if (msg.id && state.pending.has(msg.id)) {
       const pending = state.pending.get(msg.id); clearTimeout(pending.timer); state.pending.delete(msg.id);

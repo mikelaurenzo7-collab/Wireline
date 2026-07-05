@@ -123,6 +123,7 @@ async function registerMenus() {
     id: "wireline-call-number",
     title: "Prepare a Wireline call to this number",
     contexts: ["link"],
+    targetUrlPatterns: ["tel:*"],
   });
 }
 
@@ -179,7 +180,8 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return { opened: true };
     }
     if (message?.type === "wireline:open-workspace") {
-      await api.tabs.create({ url: "https://trywireline.com/studio" });
+      const url = ROUTES.get("studio");
+      await api.tabs.create({ url });
       return { opened: true };
     }
     throw new Error("Unsupported Wireline Command request.");

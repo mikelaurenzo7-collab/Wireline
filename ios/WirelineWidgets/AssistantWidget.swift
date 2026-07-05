@@ -8,12 +8,12 @@ struct AssistantWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { _ in
             AssistantWidgetView()
-                .widgetURL(URL(string: "assistant://route"))
+                .widgetURL(URL(string: "wireline://agents"))
                 .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("Wireline Agents")
         .description("Open Wireline agents with mono clarity — coverage, handoff, and live work.")
-        .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
     }
 
     struct Entry: TimelineEntry { let date: Date }
@@ -52,11 +52,36 @@ private struct AssistantWidgetView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        case .systemMedium:
+            HStack(spacing: 14) {
+                Image(systemName: "sparkles")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(WidgetColors.accent)
+                    .frame(width: 44, height: 44)
+                    .background(WidgetColors.accentSoft, in: Circle())
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Wireline Agents").font(Brand.bodyStrong).foregroundStyle(WidgetColors.text)
+                    Text("Coverage, handoff, and live work.")
+                        .font(Brand.caption)
+                        .foregroundStyle(WidgetColors.text2)
+                        .lineLimit(2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(WidgetColors.text3)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(WidgetColors.panel)
         default:
             VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(Brand.bodyStrong)
-                    .foregroundStyle(WidgetColors.accent)
+                HStack {
+                    Image(systemName: "sparkles")
+                        .font(Brand.bodyStrong)
+                        .foregroundStyle(WidgetColors.accent)
+                    Spacer()
+                }
                 Spacer()
                 Text("100% Coverage")
                     .font(Brand.h1)
@@ -70,6 +95,8 @@ private struct AssistantWidgetView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .background(WidgetColors.panel)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Wireline agents, all active calls screened")
         }
     }
 }

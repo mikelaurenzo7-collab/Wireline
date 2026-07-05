@@ -14,6 +14,8 @@ struct SignInView: View {
                 Text("Your call agent, built around your rules.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Wireline, your call agent, built around your rules")
 
             VStack(spacing: 12) {
                 TextField("Email", text: $email)
@@ -23,11 +25,18 @@ struct SignInView: View {
                     .autocorrectionDisabled()
                     .padding(14)
                     .background(Brand.panel2, in: RoundedRectangle(cornerRadius: Brand.radiusMd))
+                    .accessibilityLabel("Email address")
 
                 SecureField("Password", text: $password)
                     .textContentType(.password)
+                    .submitLabel(.go)
                     .padding(14)
                     .background(Brand.panel2, in: RoundedRectangle(cornerRadius: Brand.radiusMd))
+                    .accessibilityLabel("Password")
+                    .onSubmit {
+                        guard !email.isEmpty, !password.isEmpty, !auth.isWorking else { return }
+                        Task { await auth.signIn(email: email, password: password) }
+                    }
             }
 
             if let error = auth.errorMessage {
@@ -41,6 +50,8 @@ struct SignInView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(auth.isWorking || email.isEmpty || password.isEmpty)
+            .accessibilityLabel(auth.isWorking ? "Signing in" : "Sign in")
+            .accessibilityHint("Signs in to your Wireline account")
 
             Spacer()
             Text("New to Wireline? Create an account on the web.")

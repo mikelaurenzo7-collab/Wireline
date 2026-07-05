@@ -24,10 +24,11 @@ class WirelineCallConnection(
     }
 
     override fun onAnswer() {
-        setActive()
         scope.launch {
             val result = runCatching { WirelineApi(appContext).handoffCall(callId) }
-            if (result.isFailure) {
+            if (result.isSuccess) {
+                setActive()
+            } else {
                 setDisconnected(DisconnectCause(DisconnectCause.ERROR, "Wireline handoff failed"))
                 destroy()
             }

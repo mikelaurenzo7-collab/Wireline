@@ -1,6 +1,6 @@
 const api = globalThis.browser ?? globalThis.chrome;
 
-const title = document.querySelector("#page-context-title");
+const title = document.querySelector("#page-title");
 const host = document.querySelector("#page-host");
 const selectionPreview = document.querySelector("#selection-preview");
 const request = document.querySelector("#request");
@@ -22,20 +22,16 @@ const actionPrompts = {
 };
 
 function sendMessage(message) {
-  return new Promise((resolve, reject) => {
-    api.runtime.sendMessage(message, (response) => {
-      const runtimeError = api.runtime.lastError;
-      if (runtimeError) {
-        reject(new Error(runtimeError.message));
-        return;
-      }
+  return api.runtime.sendMessage(message)
+    .then((response) => {
       if (!response?.ok) {
-        reject(new Error(response?.error || "Wireline Command could not complete that request."));
-        return;
+        throw new Error(response?.error || "Wireline Command could not complete that request.");
       }
-      resolve(response.result);
+      return response.result;
+    })
+    .catch((error) => {
+      throw error instanceof Error ? error : new Error(error?.message || String(error));
     });
-  });
 }
 
 function toHost(value) {

@@ -5,6 +5,7 @@
 }
 
 .quick-action {
+  cursor: pointer;
   min-height: var(--wireline-interaction-target-comfortable, 44px);
   border: 1px solid var(--border);
   border-radius: var(--radius-control);

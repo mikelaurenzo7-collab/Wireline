@@ -5,7 +5,18 @@
     "display_name": "Wireline",
     "subtitle": "Build phone agents",
     "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI phone-agent drafts from ChatGPT. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
-    "category": "BUSINESS"
+    "category": "BUSINESS",
+    "logo_url": "https://trywireline.com/wireline-icon.svg",
+    "website_url": "https://trywireline.com",
+    "contact_email": "support@trywireline.com",
+    "privacy_policy_url": "https://trywireline.com/chatgpt-app-privacy.html"
+  },
+  "oauth": {
+    "client_url": "https://chatgpt.com/oauth/wireline/client.json",
+    "authorization_url": "https://trywireline.com/mcp/oauth/authorize",
+    "token_url": "https://trywireline.com/mcp/oauth/token",
+    "scope": "agents.read agents.write demo.voice",
+    "authorization_content_type": "application/json"
   },
   "tools": {
     "create_agent_draft": {

@@ -121,6 +121,8 @@ private struct WalletWidgetView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 .background(WidgetColors.panel)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Wallet balance: \(formattedBalance()), available credits")
             }
         }
     }
@@ -146,6 +148,8 @@ private struct WalletWidgetView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(WidgetColors.panel)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Sign in to see balance")
         }
     }
 }

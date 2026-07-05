@@ -140,9 +140,9 @@ Wireline launches those apps; it does not pilot them.
 
 **Direction: native first, Wireline Letterpress second.** Wireline keeps SF Pro, system
 materials, standard controls, CallKit surfaces, and App Intent behavior, then
-layers the product identity on top: warm paper canvas `#F7F6F3`, white panels
-`#FFFFFF`, secondary surfaces `#F0EFEB`, forest-green primary action `#2B5548`,
-pressed action `#1E4038`, and primary ink `#1C1C1A`.
+layers the product identity on top: warm ink canvas `#15130F`, surface panels
+`#1E1B16`, secondary surfaces `#1A1712`, patina-green primary action `#5BA98A`,
+pressed action `#4B9276`, copper-wire accent `#D4823F`, and primary ink `#F4F2EC`.
 
 ## Build
 

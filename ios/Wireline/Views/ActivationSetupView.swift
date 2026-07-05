@@ -51,12 +51,15 @@ struct ActivationSetupView: View {
             Image(systemName: icon)
                 .foregroundStyle(Brand.accent)
                 .frame(width: 28)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)
                 Text(detail).font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(detail)")
     }
 
     private func openSettings() {

@@ -14,6 +14,7 @@ struct SettingsView: View {
                 TextField("+15551234567", text: $handoffPhone)
                     .keyboardType(.phonePad)
                     .textContentType(.telephoneNumber)
+                    .accessibilityLabel("Callback phone number")
             } header: {
                 Text("Callback number")
             } footer: {

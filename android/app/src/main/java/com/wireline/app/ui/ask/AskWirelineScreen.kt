@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -156,7 +155,7 @@ fun AskWirelineScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Mic,
-                                contentDescription = null,
+                                contentDescription = "Wireline",
                                 tint = Color.White,
                                 modifier = Modifier.size(28.dp)
                             )
@@ -197,10 +196,10 @@ fun AskWirelineScreen(
                                     color = Brand.Text2,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Icon(
+Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Clear",
-                                    tint = Color.Gray,
+                                    contentDescription = "Dismiss",
+                                    tint = Brand.Text3,
                                     modifier = Modifier
                                         .size(16.dp)
                                         .clickable { answerText = null }
@@ -254,12 +253,12 @@ fun AskWirelineScreen(
                                         .background(Brand.AccentSoft, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Phone,
-                                        contentDescription = null,
-                                        tint = Brand.Accent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
+Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = "Place a call",
+                                    tint = Brand.Accent,
+                                    modifier = Modifier.size(16.dp)
+                                )
                                 }
                                 Spacer(Modifier.width(14.dp))
                                 Text(
@@ -271,8 +270,8 @@ fun AskWirelineScreen(
                                 Spacer(Modifier.weight(1f))
                                 Icon(
                                     imageVector = if (expandOutbound) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = Color.Gray
+                                    contentDescription = if (expandOutbound) "Collapse" else "Expand",
+                                    tint = Brand.Text3
                                 )
                             }
 
@@ -386,7 +385,7 @@ fun AskWirelineScreen(
                     OutlinedTextField(
                         value = inputText,
                         onValueChange = { inputText = it },
-                        placeholder = { Text("Ask about agents, wallet balance, or call digests...", color = Color.Gray) },
+                        placeholder = { Text("Ask about agents, wallet balance, or call digests...", color = Brand.Text3) },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 1,
                         trailingIcon = {
@@ -397,7 +396,7 @@ fun AskWirelineScreen(
                                 Icon(
                                     imageVector = Icons.Default.Send,
                                     contentDescription = "Send",
-                                    tint = if (inputText.isNotBlank()) Brand.Accent else Color.Gray
+                                    tint = if (inputText.isNotBlank()) Brand.Accent else Brand.Text3
                                 )
                             }
                         },
@@ -424,9 +423,9 @@ fun AskWirelineScreen(
                 
                 Spacer(Modifier.height(8.dp))
                 
-                Text("• \"Which agents do I have on my roster?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
-                Text("• \"What is my wallet credit balance?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
-                Text("• \"Show me which calls need attention\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
+                Text("• \"Which agents do I have on my roster?\"", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, modifier = Modifier.padding(vertical = 2.dp))
+                Text("• \"What is my wallet credit balance?\"", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, modifier = Modifier.padding(vertical = 2.dp))
+                Text("• \"Show me which calls need attention\"", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, modifier = Modifier.padding(vertical = 2.dp))
             }
         }
     }
@@ -457,12 +456,27 @@ private fun ActionRowCard(
                     .background(Brand.AccentSoft, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Brand.Accent,
-                    modifier = Modifier.size(16.dp)
-                )
+Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = Brand.Accent,
+                modifier = Modifier.size(16.dp)
+            )
+            }
+            Spacer(Modifier.width(14.dp))
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = Brand.Text
+            )
+            Spacer(Modifier.weight(1f))
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = title,
+                tint = Brand.Text3,
+                modifier = Modifier.size(16.dp)
+            )
             }
             Spacer(Modifier.width(14.dp))
             Text(
@@ -475,7 +489,7 @@ private fun ActionRowCard(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color.Gray,
+                tint = Brand.Text3,
                 modifier = Modifier.size(16.dp)
             )
         }

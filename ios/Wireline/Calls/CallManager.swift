@@ -30,6 +30,7 @@ final class CallManager: NSObject {
         config.maximumCallGroups = 1
         config.maximumCallsPerCallGroup = 1
         config.supportedHandleTypes = [.phoneNumber, .generic]
+        config.localizedName = "Wireline"
         provider = CXProvider(configuration: config)
         super.init()
         provider.setDelegate(self, queue: nil)

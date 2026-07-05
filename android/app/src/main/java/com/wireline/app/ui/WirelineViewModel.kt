@@ -81,14 +81,20 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
     fun placeCall(agentId: String, customerNumber: String, context: String) = viewModelScope.launch {
         state = state.copy(isWorking = true, error = null)
         runCatching { api.placeCall(agentId, customerNumber, context) }
-            .onSuccess { refresh() }
+            .onSuccess {
+                state = state.copy(isWorking = false)
+                refresh()
+            }
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }
 
     fun takeCall(callId: String) = viewModelScope.launch {
         state = state.copy(isWorking = true, error = null)
         runCatching { api.handoffCall(callId) }
-            .onSuccess { refresh() }
+            .onSuccess {
+                state = state.copy(isWorking = false)
+                refresh()
+            }
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }
 

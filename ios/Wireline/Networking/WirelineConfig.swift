@@ -22,4 +22,6 @@ enum WirelineConfig {
     static var mobileAPIBase: URL {
         baseURL.appendingPathComponent("/api/mobile")
     }
+
+    static let sessionCookieName = "wireline_session"
 }

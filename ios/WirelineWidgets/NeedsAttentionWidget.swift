@@ -112,6 +112,8 @@ private struct NeedsAttentionWidgetView: View {
                 .padding(16)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 .background(WidgetColors.panel)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(count == 0 ? "All caught up, no calls need follow-up" : "\(count) \(count == 1 ? "call needs" : "calls need") follow-up")
             }
         }
     }
@@ -137,6 +139,8 @@ private struct NeedsAttentionWidgetView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(WidgetColors.panel)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Sign in to see status")
         }
     }
 }

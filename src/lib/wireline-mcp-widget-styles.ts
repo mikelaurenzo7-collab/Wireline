@@ -35,13 +35,15 @@ export function buildWirelineMcpWidgetCss(): string {
   --wl-radius-lg: ${t.radiusLg};
   --wl-radius-md: ${t.radiusMd};
   --wl-shadow-card: ${t.shadowCard};
-  font-family: ${t.fontDisplay};
+  --wl-font-display: ${t.fontDisplay};
+  --wl-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
   background: transparent;
   color: var(--wl-text);
+  font-family: var(--wl-font-ui);
 }
 #app { max-width: 680px; margin: 0 auto; padding: 14px; }
 .card {
@@ -52,13 +54,14 @@ body {
   box-shadow: var(--wl-shadow-card);
 }
 .eyebrow {
+  font-family: var(--wl-font-display);
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--wl-muted);
 }
-h2 { margin: 5px 0 4px; font-size: 20px; line-height: 1.2; letter-spacing: -0.02em; }
+h2 { font-family: var(--wl-font-display); margin: 5px 0 4px; font-size: 20px; line-height: 1.2; letter-spacing: -0.02em; }
 p { margin: 0; line-height: 1.45; color: var(--wl-muted); }
 .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
 .meta div {
