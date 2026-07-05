@@ -117,7 +117,7 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       providers: {
         elevenlabs: elevenLabsConfigured(),
         wirelineLive: Boolean(process.env.XAI_API_KEY?.trim()),
-        vapi: Boolean(process.env.VAPI_API_KEY?.trim()),
+        vapi: Boolean(process.env.VAPI_PRIVATE_KEY?.trim()),
       },
     });
   } catch (e) {

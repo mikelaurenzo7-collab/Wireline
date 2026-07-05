@@ -243,7 +243,6 @@ function VoiceGroup({
   onSelect: (voice: VoiceOption) => void;
   onPreview: (voice: VoiceOption) => void;
   voicePlayKey: (voice: VoiceOption) => string;
-  voicePlayKey: (voice: VoiceOption) => string;
   emptyMessage?: string;
   className?: string;
 }) {

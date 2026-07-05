@@ -77,6 +77,7 @@ export function resolveAgentVideoPresenter(input: {
     description: videoPresenterStatusMessage(
       {
         provider: providerPreference,
+        chosenAvatarId,
         avatarId,
         avatarSource,
         consentStatus,

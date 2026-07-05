@@ -173,6 +173,12 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     description: "Stripe price ID for photoreal live video add-on ($19/mo)",
   },
   {
+    name: "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID",
+    group: "billing",
+    required: false,
+    description: "SKU-shaped alias for STRIPE_LIVE_VIDEO_ADDON_PRICE_ID; either is honored",
+  },
+  {
     name: "UPSTASH_REDIS_REST_URL",
     group: "infrastructure",
     required: false,

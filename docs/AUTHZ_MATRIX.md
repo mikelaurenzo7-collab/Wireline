@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 177  
-**Protected:** 140  
+**Routes scanned:** 186  
+**Protected:** 149  
 **Public (allowlisted):** 37  
 **Violations:** 0
 
@@ -106,6 +106,7 @@
 | billing-routes.ts | POST | `/api/billing/credit-checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/extra-agents` | inline | — | — | Protected |
+| billing-routes.ts | POST | `/api/billing/live-video-checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/plans` | — | — | yes | Public (allowlisted) |
 | billing-routes.ts | POST | `/api/billing/portal` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/status` | inline | — | — | Protected |
@@ -218,6 +219,14 @@
 | twilio-webhook.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/voicemail-complete` | — | — | yes | Public (allowlisted) |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
+| video-presenter-routes.ts | GET | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
+| video-presenter-routes.ts | PATCH | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
+| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
+| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/sample` | inline | — | — | Protected |
+| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/session` | inline | — | — | Protected |
+| video-presenter-routes.ts | GET | `/api/video-presenter/avatars` | inline | — | — | Protected |
+| video-presenter-routes.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
+| video-presenter-routes.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |
 | voices-routes.ts | GET | `/api/voices/:id/preview` | — | — | yes | Public (allowlisted) |
