@@ -69,6 +69,8 @@ htmlcov/
 *.rej
 .tmp/
 .agents/
+.grok/artifacts/
+.grok/tmp/
 .cursor/
 scratch/
 terminals/
