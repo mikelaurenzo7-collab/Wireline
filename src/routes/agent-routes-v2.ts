@@ -557,7 +557,13 @@ router.patch(
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
-    const provider = cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "11labs" : null);
+    const providerRaw =
+      cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "11labs" : null);
+    const allowedProviders = new Set(["11labs", "xai", "vapi", "presenter"]);
+    if (providerRaw && !allowedProviders.has(providerRaw)) {
+      throw AppError.fromHttpStatus(400, "Invalid voice provider.");
+    }
+    const provider = providerRaw;
     await drizzle
       .update(schema.agents)
       .set({ voiceId, voiceProvider: provider })

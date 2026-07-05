@@ -54,9 +54,7 @@ export default function PostCreateActivationWizard({
       const response = await authFetch("/api/phone-numbers");
       const body = response.ok ? await response.json() : null;
       const numbers = Array.isArray(body?.numbers) ? body.numbers : [];
-      const match =
-        numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId) ??
-        numbers[0];
+      const match = numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId);
       setPhoneNumber(match?.phone_number ?? null);
     } catch {
       setPhoneNumber(null);
@@ -83,7 +81,16 @@ export default function PostCreateActivationWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agent_id: payload.agentId }),
       });
-      const body = await response.json().catch(() => ({}));
+      const body = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        code?: string;
+      };
+      if (response.status === 402 && body?.code === "ACTIVATION_REQUIRED") {
+        setWireError(POST_CREATE_WIZARD_COPY.steps.wire.activationRequired);
+        return;
+      }
       if (!response.ok || body?.ok === false) {
         throw new Error(body?.error || body?.message || "Could not provision a number.");
       }
@@ -232,9 +239,9 @@ export default function PostCreateActivationWizard({
                     {formatPhone(phoneNumber)}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {payload.phoneProvisionRequested
+                    {payload.phoneProvisioned
                       ? "Your line is connected from Fast Start."
-                      : "A number is already on this workspace."}
+                      : "This number is wired to this agent."}
                   </p>
                 </div>
               ) : (

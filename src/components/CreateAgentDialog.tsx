@@ -126,7 +126,6 @@ export default function CreateAgentDialog({
         body: JSON.stringify({
           name: finalName,
           role,
-          deferPhoneProvision: !provisionNumber,
           is_business_agent: activePosture === "business",
         }),
       });
@@ -192,6 +191,16 @@ export default function CreateAgentDialog({
         }),
       });
 
+      let phoneProvisioned = false;
+      if (provisionNumber) {
+        const provisionResponse = await authFetch("/api/phone-numbers/provision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agent_id: body.id }),
+        });
+        phoneProvisioned = provisionResponse.ok;
+      }
+
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
       if (postCreateWarning) stashCreateWarning(postCreateWarning);
@@ -199,6 +208,7 @@ export default function CreateAgentDialog({
         agentId: body.id,
         agentName: finalName,
         phoneProvisionRequested: provisionNumber,
+        phoneProvisioned,
       });
       setPostSignupFlowActive(true);
       navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });

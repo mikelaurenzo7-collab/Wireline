@@ -88,6 +88,19 @@ export default function CreateAgentCatalogFacePicker({
       return;
     }
 
+    const avatar = avatars.find((row) => row.id === value.avatarId);
+    const hintedVoiceId = avatar?.defaultVoiceId?.trim();
+    if (hintedVoiceId) {
+      const next = {
+        voiceId: hintedVoiceId,
+        name: `${avatar?.name ?? "Presenter"} voice`,
+      };
+      setMatchedVoice(next);
+      onMatchedVoiceChange?.(next);
+      setResolvingVoice(false);
+      return;
+    }
+
     let cancelled = false;
     setResolvingVoice(true);
     void authFetch(
@@ -121,7 +134,7 @@ export default function CreateAgentCatalogFacePicker({
     return () => {
       cancelled = true;
     };
-  }, [onMatchedVoiceChange, value]);
+  }, [avatars, onMatchedVoiceChange, value]);
 
   function selectCatalogFace(avatarId: string) {
     onChange({ mode: "catalog", avatarId });

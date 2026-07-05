@@ -10,6 +10,33 @@ import { getErrorMessage } from "../server-utils";
 
 const HEYGEN_API_BASE = "https://api.heygen.com";
 
+const TRUSTED_HEYGEN_MEDIA_HOSTS = new Set([
+  "heygen.ai",
+  "files.heygen.ai",
+  "resource.heygen.ai",
+  "static.heygen.ai",
+]);
+
+function isTrustedHeyGenMediaUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    if (TRUSTED_HEYGEN_MEDIA_HOSTS.has(host)) return true;
+    return host.endsWith(".heygen.ai") || host.endsWith(".heygen.com");
+  } catch {
+    return false;
+  }
+}
+
+export function assertTrustedHeyGenMediaUrl(rawUrl: string): string {
+  const trimmed = rawUrl.trim();
+  if (!trimmed || !isTrustedHeyGenMediaUrl(trimmed)) {
+    throw AppError.fromHttpStatus(502, "Untrusted presenter media URL.");
+  }
+  return trimmed;
+}
+
 export type PresenterVoice = {
   id: string;
   name: string;
@@ -180,10 +207,11 @@ export async function generatePresenterSpeech(args: {
     }),
   });
 
-  const audioUrl = payload.data?.audio_url?.trim();
-  if (!audioUrl) {
+  const rawAudioUrl = payload.data?.audio_url?.trim();
+  if (!rawAudioUrl) {
     throw AppError.fromHttpStatus(502, "HeyGen returned no audio for this voice.");
   }
+  const audioUrl = assertTrustedHeyGenMediaUrl(rawAudioUrl);
 
   const audioResponse = await fetchWithTimeout(audioUrl, { method: "GET" });
   if (!audioResponse.ok) {

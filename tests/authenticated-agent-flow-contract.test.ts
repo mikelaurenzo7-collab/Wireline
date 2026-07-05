@@ -91,9 +91,35 @@ describe("authenticated agent flow", () => {
     const decode = read("src/lib/voice/decode-browser-audio.ts");
 
     expect(heygen).toContain("generatePresenterSpeech");
+    expect(heygen).toContain("assertTrustedHeyGenMediaUrl");
     expect(routes).toContain('format: "mp3"');
     expect(routes).toContain('voiceProvider === "presenter"');
     expect(preview).toContain("mp3Base64ChunksToPcmBinary");
     expect(decode).toContain("LIVEAVATAR_PCM_RATE_HZ");
+  });
+
+  it("provisions on Fast Start when the user opts in", () => {
+    const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const createFlow = read("src/lib/wireline-create-flow.ts");
+
+    expect(createDialog).toContain('"/api/phone-numbers/provision"');
+    expect(createDialog).toContain("phoneProvisioned");
+    expect(createDialog).not.toContain("deferPhoneProvision");
+    expect(createFlow).toContain("phoneProvisioned");
+  });
+
+  it("scopes wizard phone state to the created agent only", () => {
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+
+    expect(wizard).toContain("row.agent_id === payload.agentId");
+    expect(wizard).not.toContain("numbers[0]");
+    expect(wizard).toContain("ACTIVATION_REQUIRED");
+  });
+
+  it("rate-limits public curated voice previews", () => {
+    const voices = read("src/routes/voices-routes.ts");
+
+    expect(voices).toContain("curatedPreviewRateLimiter");
+    expect(voices).toContain('"/api/voices/curated/preview"');
   });
 });

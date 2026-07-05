@@ -7,8 +7,10 @@ export const POST_CREATE_WIZARD_KEY = "wireline:post-create-wizard";
 export type PostCreateWizardPayload = {
   agentId: string;
   agentName: string;
-  /** User checked "Provision number" during create — line may already exist. */
+  /** User checked "Provision number" during Fast Start. */
   phoneProvisionRequested: boolean;
+  /** Provision succeeded during create (false when gated or skipped). */
+  phoneProvisioned: boolean;
 };
 
 export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {

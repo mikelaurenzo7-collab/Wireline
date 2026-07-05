@@ -153,6 +153,8 @@ export const POST_CREATE_WIZARD_COPY = {
         "Provision a US number so callers reach this agent. Conversation Balance or a paid plan is required.",
       primary: "Provision number",
       skip: "Wire later",
+      activationRequired:
+        "Fund live work or choose shared capacity to provision a number — use the activation prompt to continue.",
     },
     test: {
       label: "Test",

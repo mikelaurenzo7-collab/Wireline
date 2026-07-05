@@ -12,7 +12,10 @@ import {
   listPublicAvatars,
   mintLiveAvatarLiteSessionToken,
 } from "../lib/video-presenter/liveavatar-service";
-import { resolveAvatarDefaultVoice } from "../lib/video-presenter/heygen-voice-service";
+import {
+  resolveAvatarDefaultVoice,
+  getPresenterVoice,
+} from "../lib/video-presenter/heygen-voice-service";
 import {
   agentLiveVideoOptedIn,
   isLiveVideoPlatformAvailable,
@@ -135,11 +138,7 @@ router.get(
     const avatarId = req.params.avatarId?.trim();
     if (!avatarId) throw AppError.fromHttpStatus(400, "avatarId is required.");
 
-    const avatars = await listPublicAvatars();
-    const avatar = avatars.find((row) => row.id === avatarId);
-    if (!avatar) throw AppError.fromHttpStatus(404, "Presenter not found in catalog.");
-
-    let voiceId = avatar.defaultVoiceId?.trim() || null;
+    let voiceId = String(req.query.default_voice_id || "").trim() || null;
     let voiceName: string | undefined;
 
     if (!voiceId) {
@@ -153,12 +152,14 @@ router.get(
       return;
     }
 
+    const voice = await getPresenterVoice(voiceId);
+
     res.json({
       avatarId,
       matched: true as const,
       voice: {
         voiceId,
-        name: voiceName ?? `${avatar.name} voice`,
+        name: voiceName ?? voice?.name ?? "Presenter voice",
         provider: "presenter",
       },
     });
