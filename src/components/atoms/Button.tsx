@@ -13,15 +13,16 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-sm hover:bg-[var(--wireline-color-action-primary-pressed)] hover:shadow-md",
+          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-action-primary-hover)] hover:shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
         primary:
-          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-sm hover:bg-[var(--wireline-color-action-primary-pressed)] hover:shadow-md",
+          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-action-primary-hover)] hover:shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
+        wire: "bg-[var(--wireline-color-action-secondary-container)] text-[var(--wireline-color-action-secondary-default)] border border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_32%,transparent)] shadow-[var(--wireline-elevation-wireGlow),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-action-secondary-containerStrong)] hover:border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_48%,transparent)] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--wireline-color-action-secondary-default)_40%,transparent),0_12px_36px_-12px_color-mix(in_srgb,var(--wireline-color-action-secondary-default)_36%,transparent)]",
         destructive:
-          "bg-[var(--wireline-color-status-error)] text-[var(--wireline-color-text-onAction)] shadow-sm hover:bg-[var(--wireline-color-status-error)]/90 hover:shadow-md",
+          "bg-[var(--wireline-color-status-error)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-status-error)]/90 hover:shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
         outline:
-          "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] text-[var(--wireline-color-text-primary)] shadow-sm hover:border-[var(--wireline-color-border-strong)]/45 hover:bg-[var(--wireline-color-action-primary-container)] hover:text-[var(--wireline-color-text-primary)]",
+          "border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] text-[var(--wireline-color-text-primary)] shadow-[var(--wireline-elevation-xs),var(--wireline-elevation-inset)] hover:border-[var(--wireline-color-border-strong)]/45 hover:bg-[var(--wireline-color-action-primary-container)] hover:text-[var(--wireline-color-text-primary)]",
         secondary:
-          "bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-primary)] shadow-sm hover:bg-[var(--wireline-color-surface-subtle)]/80 hover:shadow-md",
+          "bg-[var(--wireline-color-surface-subtle)] text-[var(--wireline-color-text-primary)] shadow-[var(--wireline-elevation-xs),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-surface-subtle)]/80 hover:shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-insetRaised)]",
         ghost:
           "text-[var(--wireline-color-text-primary)] hover:bg-[var(--wireline-color-action-primary-container)] hover:text-[var(--wireline-color-text-primary)]",
         link: "h-auto text-[var(--wireline-color-action-primary-default)] underline-offset-4 hover:underline",

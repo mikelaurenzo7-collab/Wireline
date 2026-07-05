@@ -38,6 +38,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md) | Cleanup policy, deletion rules, source-control boundaries, and health standards. |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Runtime architecture, route/data boundaries, provider posture, and security invariants. |
 | [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md) | Current codebase/repo health-pass findings, actions, and next priorities. |
+| [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md) | **Active** — takeover pass: design system beautification, polish layer, contracts, and verified upgrades. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App contract and release verification. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Billing model, Stripe catalog direction, and Conversation Balance posture. |

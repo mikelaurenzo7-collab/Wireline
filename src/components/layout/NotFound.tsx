@@ -34,7 +34,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         initial={{ opacity: 0, scale: 0.92, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="font-display italic text-brand-display text-[6rem] sm:text-[8rem] lg:text-[10rem] xl:text-[12rem] leading-none select-none"
+        className="wl-display-mark italic text-brand-display text-[6rem] sm:text-[8rem] lg:text-[10rem] xl:text-[12rem] leading-none select-none"
       >
         404
       </motion.div>
@@ -45,8 +45,8 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         transition={{ delay: 0.1, duration: 0.5 }}
         className="space-y-3 max-w-md"
       >
-        <p className="text-eyebrow">Error 404</p>
-        <h2 className="font-display italic text-2xl md:text-3xl text-foreground leading-tight">
+        <p className="wl-eyebrow">Error 404</p>
+        <h2 className="wl-display-mark text-2xl md:text-3xl text-foreground leading-tight">
           Page not found
         </h2>
         <p className="text-caption leading-relaxed max-w-md">
@@ -91,13 +91,13 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
             />
             <a
               href="tel:+16305811834"
-              className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-white/10 hover:border-white/20 transition-colors shadow-[var(--wireline-elevation-md)]"
+              className="group relative flex items-center gap-3 p-4 rounded-md wl-paper wl-press wl-focus-ring-halo"
             >
               <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 wl-brand-icon-solid">
                 <Phone className="w-4 h-4 text-on-brand" strokeWidth={2.4} />
               </div>
               <div className="text-left flex-1 min-w-0">
-                <p className="text-eyebrow !text-[0.625rem]">Try the demo</p>
+                <p className="wl-eyebrow wl-eyebrow--no-rule !text-[0.625rem]">Try the demo</p>
                 <p className="text-sm text-foreground font-medium truncate">(630) 581-1834</p>
               </div>
             </a>
@@ -176,14 +176,14 @@ function NotFoundCard({
   return (
     <Link
       to={to}
-      className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-white/10 hover:border-white/20 transition-colors"
+      className="group relative flex items-center gap-3 p-4 rounded-md wl-paper wl-press wl-focus-ring-halo"
       data-accent={accent}
     >
       <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-white/8 wl-accent-icon-chip">
         <Icon className="w-4 h-4" strokeWidth={2.2} />
       </div>
       <div className="text-left flex-1 min-w-0">
-        <p className="wl-label-muted !text-[0.625rem]">{hint}</p>
+        <p className="wl-eyebrow wl-eyebrow--no-rule !text-[0.625rem]">{hint}</p>
         <p className="text-[var(--wireline-typography-caption-size)] text-foreground font-medium">
           {label}
         </p>

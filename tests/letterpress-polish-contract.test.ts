@@ -1,0 +1,219 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { WIRELINE_DESIGN_VISION } from "../src/lib/wireline-design-vision";
+
+const root = process.cwd();
+const read = (path: string) => readFileSync(resolve(root, path), "utf8");
+
+/**
+ * Contract: Wireline Letterpress polish layer.
+ *
+ * Guards the polish primitives that ship in `src/styles/letterpress-polish.css`
+ * and ensures the new utilities are wired into the design system, the
+ * design-vision manifest, and the auth + marketing surfaces. Any change that
+ * breaks one of these invariants must update the manifest and this test in
+ * the same change.
+ */
+describe("Wireline Letterpress polish layer", () => {
+  it("imports the polish stylesheet from the global index", () => {
+    const indexCss = read("src/index.css");
+    expect(indexCss).toContain('@import "./styles/letterpress-polish.css"');
+  });
+
+  it("ships the new polish primitives in the polish stylesheet", () => {
+    const polish = read("src/styles/letterpress-polish.css");
+    for (const name of [
+      "wl-paper",
+      "wl-paper-elevated",
+      "wl-letterpress",
+      "wl-letterpress-raised",
+      "wl-letterpress-recessed",
+      "wl-focus-ring",
+      "wl-focus-ring-halo",
+      "wl-focus-ring-wire",
+      "wl-glow-primary",
+      "wl-glow-wire",
+      "wl-motion-spring",
+      "wl-motion-wireline",
+      "wl-press",
+      "wl-transition-press",
+      "wl-reveal",
+      "wl-chip",
+      "wl-chip--success",
+      "wl-chip--warning",
+      "wl-chip--error",
+      "wl-chip--info",
+      "wl-chip--primary",
+      "wl-chip--wire",
+      "wl-metric-tile",
+      "wl-empty",
+      "wl-skeleton",
+      "wl-divider",
+      "wl-divider-wire",
+      "wl-press-highlight",
+      "wl-eyebrow",
+      "wl-display-mark",
+    ]) {
+      expect(polish).toContain(`.${name}`);
+    }
+  });
+
+  it("uses copper wire as the eyebrow rule and forest as the press highlight", () => {
+    const polish = read("src/styles/letterpress-polish.css");
+    expect(polish).toMatch(
+      /\.wl-eyebrow::before[\s\S]*var\(--wireline-color-action-secondary-default\)/,
+    );
+    expect(polish).toMatch(
+      /\.wl-press-highlight::before[\s\S]*var\(--wireline-color-pressHighlight\)/,
+    );
+  });
+
+  it("honors prefers-reduced-motion for shimmer and press", () => {
+    const polish = read("src/styles/letterpress-polish.css");
+    expect(polish).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*\.wl-skeleton::after[\s\S]*animation: none/,
+    );
+    expect(polish).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*\.wl-press[\s\S]*transform: none/,
+    );
+  });
+
+  it("does not reintroduce the retired purple/blue palette", () => {
+    const polish = read("src/styles/letterpress-polish.css");
+    expect(polish).not.toMatch(/#5D3FD3|#451EBB|#C77DFF|#F8F9FF|#EFF4FF|#E5EEFF/i);
+  });
+
+  it("exposes the refined motion vocabulary in the design vision manifest", () => {
+    expect(WIRELINE_DESIGN_VISION.motion.durations).toContain("deliberate 440ms");
+    expect(WIRELINE_DESIGN_VISION.motion.easings).toEqual(
+      expect.arrayContaining(["standard", "spring", "wireline", "emphasized"]),
+    );
+    expect(WIRELINE_DESIGN_VISION.motion.pressScale).toBe(0.985);
+  });
+
+  it("lists every new polish utility group in the design vision manifest", () => {
+    expect(WIRELINE_DESIGN_VISION.utilities).toEqual(
+      expect.objectContaining({
+        surface: expect.arrayContaining([
+          "wl-paper",
+          "wl-paper-elevated",
+          "wl-letterpress",
+          "wl-letterpress-raised",
+          "wl-letterpress-recessed",
+        ]),
+        feedback: expect.arrayContaining([
+          "wl-focus-ring",
+          "wl-focus-ring-halo",
+          "wl-focus-ring-wire",
+          "wl-glow-primary",
+          "wl-glow-wire",
+        ]),
+        motion: expect.arrayContaining([
+          "wl-press",
+          "wl-motion-spring",
+          "wl-motion-wireline",
+          "wl-transition-press",
+          "wl-reveal",
+        ]),
+        chips: expect.arrayContaining([
+          "wl-chip",
+          "wl-chip--success",
+          "wl-chip--warning",
+          "wl-chip--error",
+          "wl-chip--info",
+          "wl-chip--primary",
+          "wl-chip--wire",
+        ]),
+        layout: expect.arrayContaining([
+          "wl-metric-tile",
+          "wl-empty",
+          "wl-skeleton",
+          "wl-divider",
+          "wl-divider-wire",
+          "wl-press-highlight",
+        ]),
+        voice: expect.arrayContaining([
+          "wl-eyebrow",
+          "wl-eyebrow--primary",
+          "wl-eyebrow--muted",
+          "wl-eyebrow--no-rule",
+          "wl-display-mark",
+        ]),
+      }),
+    );
+  });
+
+  it("uses the polish primitives in the Overview greeting, metrics, and agent row", () => {
+    const overview = read("src/pages/OverviewPage.tsx");
+    expect(overview).toContain("wl-metric-tile");
+    expect(overview).toContain("wl-reveal");
+    expect(overview).toContain("wl-chip wl-chip--${");
+    expect(overview).toContain("wl-focus-ring-halo");
+    expect(overview).toContain("wl-press");
+  });
+
+  it("uses the polish primitives in the 404 page", () => {
+    const notFound = read("src/components/layout/NotFound.tsx");
+    expect(notFound).toContain("wl-display-mark");
+    expect(notFound).toContain("wl-eyebrow");
+    expect(notFound).toContain("wl-paper");
+    expect(notFound).toContain("wl-press");
+    expect(notFound).toContain("wl-focus-ring-halo");
+  });
+
+  it("upgrades the atoms (Button, Card, EmptyState, Skeleton) with the polish primitives", () => {
+    const button = read("src/components/atoms/Button.tsx");
+    const card = read("src/components/molecules/Card.tsx");
+    const empty = read("src/components/atoms/EmptyState.tsx");
+    const skeleton = read("src/components/atoms/Skeleton.tsx");
+
+    // Button ships a new "wire" copper variant on top of the existing palette.
+    expect(button).toMatch(/wire:\s*\n\s+"/);
+    expect(button).toContain("var(--wireline-color-action-secondary-default)");
+
+    // Card adopts the new inset shadow + the paper/recessed/wire elevation variants.
+    expect(card).toContain("var(--wireline-elevation-inset)");
+    expect(card).toContain("var(--wireline-elevation-insetRaised)");
+    expect(card).toMatch(/paper:\s*"/);
+    expect(card).toMatch(/recessed:\s*"/);
+    expect(card).toMatch(/wire:\s*"/);
+    expect(card).toContain("wl-transition-press");
+
+    // EmptyState renders the new letterpress primitive.
+    expect(empty).toContain("wl-empty");
+    expect(empty).toContain("wl-eyebrow");
+
+    // Skeleton reuses the new shimmer primitive.
+    expect(skeleton).toContain("wl-skeleton");
+  });
+
+  it("registers the new tokens in the generated artifact", () => {
+    const tokens = read("src/styles/tokens.generated.css");
+    expect(tokens).toContain("--wireline-color-action-primary-hover: #6CB89A");
+    expect(tokens).toContain("--wireline-color-action-secondary-hover: #E19452");
+    expect(tokens).toContain("--wireline-color-canvas-deeper: #0F0D0A");
+    expect(tokens).toContain("--wireline-color-canvas-warmer: #1A1612");
+    expect(tokens).toContain("--wireline-color-surface-recessed: #0E0C09");
+    expect(tokens).toContain("--wireline-color-border-soft: #26221C");
+    expect(tokens).toContain("--wireline-color-focus-wire: #D4823F");
+    expect(tokens).toContain("--wireline-color-glow-primary:");
+    expect(tokens).toContain("--wireline-color-glow-wire:");
+    expect(tokens).toContain("--wireline-color-pressHighlight:");
+    expect(tokens).toContain("--wireline-motion-easing-spring:");
+    expect(tokens).toContain("--wireline-motion-easing-wireline:");
+    expect(tokens).toContain("--wireline-elevation-inset:");
+    expect(tokens).toContain("--wireline-elevation-insetRaised:");
+    expect(tokens).toContain("--wireline-elevation-wirelineRing:");
+    expect(tokens).toContain("--wireline-elevation-wireGlow:");
+    expect(tokens).toContain("--wireline-radius-2xl: 28px");
+    expect(tokens).toContain("--wireline-radius-xs: 6px");
+    expect(tokens).toContain("--wireline-motion-duration-deliberate: 440ms");
+    expect(tokens).toContain("--wireline-interaction-target-primary: 48px");
+  });
+
+  it("does not add a parallel palette or non-durable CSS module", () => {
+    expect(existsSync(resolve(root, "src/styles/letterpress-polish.css"))).toBe(true);
+    expect(existsSync(resolve(root, "src/styles/zip-platform-tokens.css"))).toBe(false);
+  });
+});

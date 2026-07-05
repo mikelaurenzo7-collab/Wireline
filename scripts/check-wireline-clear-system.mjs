@@ -43,6 +43,9 @@ const studioOperationsCss = read("src/styles/studio-operations.css");
 const workspaceShell = read("src/components/WorkspaceShell.tsx");
 const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
 const mobileBrowserUtilities = read("src/components/MobileBrowserUtilities.tsx");
+const letterpressPolish = read("src/styles/letterpress-polish.css");
+const indexCss = read("src/index.css");
+const designVisionSource = read("src/lib/wireline-design-vision.ts");
 const agentsPage = read("src/pages/AgentsPage.tsx");
 const overviewPage = read("src/pages/OverviewPage.tsx");
 // ActionsPage retired with the outbound dialer; Wire/Connections lives under
@@ -1347,6 +1350,54 @@ mustBeDeleted("scripts/og-image.svg", "retired logo-only OG source must stay del
 mustBeDeleted(
   "scripts/check-active-surface-drift.mjs",
   "retired Ametrine surface contract must stay deleted",
+);
+mustInclude(
+  "src/index.css",
+  indexCss,
+  /@import\s+"\.\/styles\/letterpress-polish\.css"/,
+  "index.css must import the Letterpress polish layer",
+);
+mustInclude(
+  "src/styles/letterpress-polish.css",
+  letterpressPolish,
+  /\.wl-paper\s*\{[\s\S]*var\(--wireline-elevation-inset\)/,
+  "letterpress polish must define the paper surface primitive with inset shadow",
+);
+mustInclude(
+  "src/styles/letterpress-polish.css",
+  letterpressPolish,
+  /\.wl-focus-ring:focus-visible\s*\{[\s\S]*var\(--wireline-color-focus-default\)/,
+  "letterpress polish must define the on-brand focus ring primitive",
+);
+mustInclude(
+  "src/styles/letterpress-polish.css",
+  letterpressPolish,
+  /\.wl-metric-tile[\s\S]*var\(--wireline-font-family-display\)/,
+  "letterpress polish must define the metric tile primitive in display type",
+);
+mustInclude(
+  "src/styles/letterpress-polish.css",
+  letterpressPolish,
+  /\.wl-empty[\s\S]*var\(--wireline-color-surface-subtle\)/,
+  "letterpress polish must define the empty state primitive",
+);
+mustInclude(
+  "src/styles/letterpress-polish.css",
+  letterpressPolish,
+  /\.wl-eyebrow::before[\s\S]*var\(--wireline-color-action-secondary-default\)/,
+  "letterpress polish must use the copper wire as the eyebrow rule",
+);
+mustInclude(
+  "src/lib/wireline-design-vision.ts",
+  designVisionSource,
+  /"wl-paper"[\s\S]*"wl-metric-tile"[\s\S]*"wl-empty"/,
+  "design vision manifest must list the new polish primitives",
+);
+mustExclude(
+  "src/styles/letterpress-polish.css",
+  letterpressPolish,
+  /#5D3FD3|#451EBB|#F8F9FF|#EFF4FF|#E5EEFF|#0B1C30/i,
+  "letterpress polish must not reintroduce the retired purple/blue palette",
 );
 
 if (failures.length) {

@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-export const skeletonVariants = cva("animate-pulse bg-[var(--wireline-color-surface-subtle)]", {
+export const skeletonVariants = cva("wl-skeleton", {
   variants: {
     shape: {
       default: "rounded-[var(--wireline-radius-md)]",
@@ -11,6 +11,7 @@ export const skeletonVariants = cva("animate-pulse bg-[var(--wireline-color-surf
       control: "rounded-[var(--wireline-radius-md)]",
       text: "h-4 rounded-[var(--wireline-radius-sm)]",
       surface: "rounded-[var(--wireline-radius-lg)]",
+      paper: "rounded-[var(--wireline-radius-xl)]",
     },
   },
   defaultVariants: {

@@ -77,28 +77,32 @@ function metricRows(
       label: "Agents",
       value: String(agents.length),
       detail: hasAgents ? `${activeAgents} active` : "Create one",
+      tone: hasAgents ? ("success" as const) : ("warning" as const),
     },
     {
       label: "Calls today",
       value: String(callsCount),
       detail: callsDetail,
+      tone: callsCount > 0 ? ("success" as const) : ("neutral" as const),
     },
     {
       label: "Connections",
       value: String(connectionsCount),
       detail: connectionsDetail,
+      tone: connectionsCount > 0 ? ("primary" as const) : ("neutral" as const),
     },
     {
       label: "Balance",
       value: balanceUsd !== null ? `$${balanceUsd.toFixed(2)}` : "--",
       detail: "Conversation Balance",
+      tone: balanceUsd !== null && balanceUsd > 0 ? ("wire" as const) : ("neutral" as const),
     },
   ];
 }
 
 function MetricSkeleton() {
   return (
-    <div className="studio-card min-h-[120px] p-5" aria-hidden="true">
+    <div className="wl-metric-tile" aria-hidden="true">
       <Skeleton shape="text" className="h-3 w-16" />
       <Skeleton shape="text" className="mt-5 h-8 w-12" />
       <Skeleton shape="text" className="mt-4 h-3 w-28" />
@@ -131,7 +135,7 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
   return (
     <Link
       to={`/studio?agent=${enc}`}
-      className={`group flex min-h-[56px] items-center gap-3 rounded-[10px] border px-3 py-2 transition-colors ${
+      className={`group flex min-h-[56px] items-center gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-2 wl-transition-press wl-focus-ring-halo ${
         active
           ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]"
           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
@@ -150,12 +154,10 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
         </span>
       </span>
       <span
-        className={`inline-flex shrink-0 items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.1em] ${active ? "text-[var(--wireline-color-status-success)]" : "text-[var(--wireline-color-status-warning)]"}`}
+        className={`wl-chip wl-chip--${active ? "success" : "warning"} shrink-0`}
+        aria-label={`Agent status: ${agentReadiness(agent)}`}
       >
-        <span
-          className={`size-1.5 rounded-full ${active ? "bg-[var(--wireline-color-status-success)]" : "bg-[var(--wireline-color-status-warning)]"}`}
-          aria-hidden="true"
-        />
+        <span className="wl-chip__dot" aria-hidden="true" />
         {agentReadiness(agent)}
       </span>
       <ArrowRight
@@ -346,16 +348,18 @@ export default function OverviewPage() {
                 connectionsCount,
                 connectionsDetail,
                 balanceUsd,
-              ).map((item) => (
-                <div key={item.label} className="studio-card flex min-h-[120px] flex-col p-5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    {item.label}
-                  </p>
-                  <div className="mt-auto pt-3 font-[var(--wireline-font-family-display)] text-[2rem] leading-none text-foreground">
+              ).map((item, index) => (
+                <article
+                  key={item.label}
+                  className={`wl-metric-tile wl-reveal wl-reveal-${index + 1}`}
+                  data-tone={item.tone}
+                >
+                  <p className="wl-metric-tile__label">{item.label}</p>
+                  <div className="wl-metric-tile__value">
                     {loading && item.label === "Agents" ? "—" : item.value}
                   </div>
-                  <p className="mt-3 text-xs text-muted-foreground">{item.detail}</p>
-                </div>
+                  <p className="wl-metric-tile__detail">{item.detail}</p>
+                </article>
               ))}
         </section>
 
@@ -371,7 +375,7 @@ export default function OverviewPage() {
               <Link
                 key={href}
                 to={href}
-                className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-muted"
+                className="wl-press inline-flex min-h-[42px] items-center gap-2 rounded-[var(--wireline-radius-pill)] border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-muted wl-focus-ring-halo"
               >
                 <Icon aria-hidden="true" size={15} className="text-primary" />
                 {title}
