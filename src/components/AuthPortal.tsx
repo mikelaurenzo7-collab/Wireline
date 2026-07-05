@@ -741,14 +741,17 @@ export default function AuthPortal() {
               )}
 
               {error && (
-                <div className="flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-600">
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-xl border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] p-3 text-sm text-[var(--wireline-color-status-error)]"
+                >
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>{error}</div>
                 </div>
               )}
               {message && (
-                <div className="flex items-start gap-2 rounded-xl border border-border bg-muted p-3 text-sm text-foreground">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="flex items-start gap-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-3 text-sm text-[var(--wireline-color-text-primary)]">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--wireline-color-status-success)]" />
                   <div>{message}</div>
                 </div>
               )}

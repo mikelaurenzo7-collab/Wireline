@@ -169,8 +169,9 @@ describe("Wireline Letterpress polish layer", () => {
     const skeleton = read("src/components/atoms/Skeleton.tsx");
 
     // Button ships a new "wire" copper variant on top of the existing palette.
-    expect(button).toMatch(/wire:\s*\n\s+"/);
+    expect(button).toMatch(/wire:\s*"/);
     expect(button).toContain("var(--wireline-color-action-secondary-default)");
+    expect(button).toContain("var(--wireline-elevation-wireGlow)");
 
     // Card adopts the new inset shadow + the paper/recessed/wire elevation variants.
     expect(card).toContain("var(--wireline-elevation-inset)");
@@ -210,6 +211,55 @@ describe("Wireline Letterpress polish layer", () => {
     expect(tokens).toContain("--wireline-radius-xs: 6px");
     expect(tokens).toContain("--wireline-motion-duration-deliberate: 440ms");
     expect(tokens).toContain("--wireline-interaction-target-primary: 48px");
+  });
+
+  it("exports the new atoms (Chip, MetricTile, Eyebrow, Paper, Reveal) from the atom barrel", () => {
+    const index = read("src/components/atoms/index.ts");
+    expect(index).toContain('export * from "./Chip"');
+    expect(index).toContain('export * from "./MetricTile"');
+    expect(index).toContain('export * from "./Eyebrow"');
+    expect(index).toContain('export * from "./Paper"');
+    expect(index).toContain('export * from "./Reveal"');
+    for (const atom of ["Chip", "MetricTile", "Eyebrow", "Paper", "Reveal"]) {
+      expect(existsSync(resolve(root, `src/components/atoms/${atom}.tsx`))).toBe(true);
+    }
+  });
+
+  it("unifies the letterpress cap to cover wl-paper and wl-metric-tile in the app signature", () => {
+    const signature = read("src/styles/wireline-app-signature.css");
+    expect(signature).toMatch(/\.wl-workspace-content \.wl-paper::before/);
+    expect(signature).toMatch(/\.wl-overview \.wl-metric-tile::before/);
+    expect(signature).toMatch(/\.wl-operate-surface \.wl-paper::before/);
+  });
+
+  it("keeps StripeBillingCard free of the raw amber/rose/white palette", () => {
+    const card = read("src/components/StripeBillingCard.tsx");
+    expect(card).not.toMatch(/amber-500|rose-500|text-white/);
+    expect(card).toContain("Chip");
+    expect(card).toContain("var(--wireline-color-feedback-warning-surface)");
+    expect(card).toContain("var(--wireline-color-feedback-error-surface)");
+  });
+
+  it("adds visible focus rings to the auth surface", () => {
+    const auth = read("src/styles/precision-auth.css");
+    expect(auth).toMatch(
+      /\.wl-stitch-oauth-btn:focus-visible[\s\S]*var\(--wireline-color-focus-default\)/,
+    );
+    expect(auth).toMatch(/box-shadow:[\s\S]*var\(--wireline-color-glow-primary\)/);
+    expect(auth).toMatch(/var\(--wireline-color-glow-wire\)/);
+  });
+
+  it("removes the raw rose palette from AuthPortal error and success notices", () => {
+    const portal = read("src/components/AuthPortal.tsx");
+    expect(portal).not.toMatch(/border-rose-500|bg-rose-500|text-rose-600/);
+    expect(portal).toContain("var(--wireline-color-feedback-error-border)");
+    expect(portal).toContain("var(--wireline-color-feedback-success-surface)");
+  });
+
+  it("adopts the MetricTile atom in the Knowledge surface", () => {
+    const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
+    expect(knowledge).toContain("MetricTile");
+    expect(knowledge).toContain("wl-metric-tile");
   });
 
   it("does not add a parallel palette or non-durable CSS module", () => {

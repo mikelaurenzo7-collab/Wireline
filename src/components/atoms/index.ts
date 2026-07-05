@@ -1,11 +1,16 @@
 export * from "./Badge";
 export * from "./Button";
+export * from "./Chip";
 export * from "./Dialog";
 export * from "./DropdownMenu";
 export * from "./EmptyState";
+export * from "./Eyebrow";
 export { HelpTooltip, helpTooltipVariants } from "./HelpTooltip";
 export * from "./Input";
+export * from "./MetricTile";
 export * from "./NativeSelect";
+export * from "./Paper";
+export * from "./Reveal";
 export * from "./Skeleton";
 export { Switch, switchThumbVariants, switchVariants } from "./Switch";
 export * from "./Textarea";

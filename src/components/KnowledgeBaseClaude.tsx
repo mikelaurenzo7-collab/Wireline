@@ -2,6 +2,7 @@ import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "r
 import { FileText, Loader2, UploadCloud } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
+import { MetricTile } from "./atoms";
 
 /**
  * KnowledgeBaseClaude — Claude Design Knowledge surface for the Training tab.
@@ -40,7 +41,6 @@ type AssetBody = {
 
 const TEXT_HEX_DEEP = "var(--wireline-color-action-primary-pressed)";
 const SUCCESS_SURFACE = "var(--wireline-color-feedback-success-surface)";
-const SUCCESS_BORDER = "var(--wireline-color-feedback-success-border)";
 
 function fileBadge(content: string | undefined): string {
   if (!content) return "DOC";
@@ -214,19 +214,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       />
 
       <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-3" aria-label="Knowledge stats">
-        {stats.map((stat) => (
-          <div
+        {stats.map((stat, index) => (
+          <MetricTile
             key={stat.label}
-            className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-5 text-center"
-          >
-            <div
-              className="font-[var(--wireline-font-family-display)] text-[2.25rem] leading-none"
-              style={{ color: TEXT_HEX_DEEP }}
-            >
-              {loading ? "—" : stat.value}
-            </div>
-            <div className="mt-1 wl-eyebrow ">{stat.label}</div>
-          </div>
+            label={stat.label}
+            value={loading ? "—" : stat.value}
+            reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
+            className="items-center text-center [&_.wl-metric-tile__value]:text-[2.25rem]"
+          />
         ))}
       </section>
 
@@ -241,12 +236,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       {notice ? (
         <div
           role="status"
-          className="rounded-[10px] border px-4 py-2.5 text-[13px]"
-          style={{
-            borderColor: SUCCESS_BORDER,
-            background: SUCCESS_SURFACE,
-            color: TEXT_HEX_DEEP,
-          }}
+          className="rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-2.5 text-[13px] text-[var(--wireline-color-action-primary-pressed)]"
         >
           {notice}
         </div>

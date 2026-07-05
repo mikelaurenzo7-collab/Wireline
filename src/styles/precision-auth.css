@@ -164,6 +164,26 @@
   font-size: 0.9375rem;
 }
 
+/* Visible focus for every keyboard-reachable auth control. The auth surface
+   historically had no visible focus indicator on OAuth buttons, tab toggles,
+   the workspace selector, the password show/hide, and the submit button. */
+.wl-stitch-oauth-btn:focus-visible,
+.wl-stitch-auth-card button:focus-visible,
+.wl-stitch-auth-card [role="tab"]:focus-visible,
+.wl-stitch-auth-card a:focus-visible {
+  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
+  outline-offset: var(--wireline-interaction-focus-offset);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-primary);
+  border-radius: var(--radius-md);
+}
+
+/* Workspace selector buttons keep a copper halo on focus so the choice is
+   legible against the warm brand panel wash. */
+.wl-stitch-auth-card button[type="button"]:focus-visible {
+  outline-color: var(--wireline-color-focus-wire);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-wire);
+}
+
 .wl-stitch-auth-divider {
   font-family: var(--wireline-font-mono);
   font-size: 0.6875rem;

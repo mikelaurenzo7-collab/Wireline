@@ -34,21 +34,38 @@
   z-index: 1;
 }
 
-/* ── Letterpress card cap (studio + workspace cards) ─────────────────── */
+/* ── Letterpress card cap (studio + workspace cards + polish primitives) ──
+   The cap covers every authenticated card surface so migrating from
+   studio-card to the wl-paper / wl-metric-tile primitives keeps the
+   Wireline copper cap rather than silently dropping the signature. */
 .wl-workspace-content .studio-card,
 .wl-workspace-content .wl-agent-card,
+.wl-workspace-content .wl-paper,
+.wl-workspace-content .wl-paper-elevated,
 .wl-overview .studio-card,
+.wl-overview .wl-paper,
+.wl-overview .wl-metric-tile,
 .wl-operate-surface .studio-card,
-.wl-inbox-route .studio-card {
+.wl-operate-surface .wl-paper,
+.wl-operate-surface .wl-metric-tile,
+.wl-inbox-route .studio-card,
+.wl-inbox-route .wl-paper {
   position: relative;
   overflow: hidden;
 }
 
 .wl-workspace-content .studio-card::before,
 .wl-workspace-content .wl-agent-card::before,
+.wl-workspace-content .wl-paper::before,
+.wl-workspace-content .wl-paper-elevated::before,
 .wl-overview .studio-card::before,
+.wl-overview .wl-paper::before,
+.wl-overview .wl-metric-tile::before,
 .wl-operate-surface .studio-card::before,
-.wl-inbox-route .studio-card::before {
+.wl-operate-surface .wl-paper::before,
+.wl-operate-surface .wl-metric-tile::before,
+.wl-inbox-route .studio-card::before,
+.wl-inbox-route .wl-paper::before {
   content: "";
   position: absolute;
   top: 0;

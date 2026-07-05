@@ -27,6 +27,7 @@ import {
 import { liveVideoAddonPitch, liveVideoMeteringNote } from "../lib/video-presenter/copy";
 import type { LiveVideoAddonState } from "../lib/video-presenter/types";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
+import { Chip } from "./atoms";
 
 type BillingPlanId = "team" | "business" | "enterprise";
 
@@ -239,14 +240,12 @@ export default function StripeBillingCard() {
 
   if (!stripeConfigured) {
     return (
-      <div className="rounded-md wl-panel border border-amber-500/25 bg-amber-500/[0.04] p-8 md:p-10 space-y-4">
+      <div className="wl-paper rounded-md border border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] p-8 md:p-10 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
+          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 border border-[var(--wireline-color-feedback-warning-border)] bg-[color:color-mix(in_srgb,var(--wireline-color-status-warning)_14%,transparent)]">
+            <AlertTriangle className="w-5 h-5 text-[var(--wireline-color-status-warning)]" />
           </div>
-          <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-            Billing is finishing setup
-          </h3>
+          <h3 className="wl-display-mark text-2xl text-foreground">Billing is finishing setup</h3>
         </div>
         <p className="max-w-2xl text-[var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
@@ -316,10 +315,12 @@ export default function StripeBillingCard() {
       {error && (
         <div
           role="alert"
-          className="rounded-md bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"
+          className="rounded-md border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] p-4 flex items-center gap-3"
         >
-          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-          <p className="text-[var(--wireline-typography-overline-size)] text-rose-500">{error}</p>
+          <AlertTriangle className="w-4 h-4 text-[var(--wireline-color-status-error)] shrink-0" />
+          <p className="text-[var(--wireline-typography-overline-size)] text-[var(--wireline-color-status-error)]">
+            {error}
+          </p>
         </div>
       )}
       {hasActive ? (
@@ -479,17 +480,17 @@ function PlanPicker({
                 data-accent={accent}
               >
                 {!isSignupMatch && plan.id === "team" && (
-                  <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                  <div className="absolute top-0 left-0 px-3 py-1 wl-label rounded-br-md border border-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_40%,transparent)] bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
                     First shared tier
                   </div>
                 )}
                 {!isSignupMatch && plan.id === "business" && (
-                  <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                  <div className="absolute top-0 left-0 px-3 py-1 wl-label rounded-br-md border border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_40%,transparent)] bg-[var(--wireline-color-action-secondary-container)] text-[var(--wireline-color-action-secondary-default)] shadow-[var(--wireline-elevation-wireGlow)]">
                     Expanded operations
                   </div>
                 )}
                 {isSignupMatch && (
-                  <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                  <div className="absolute top-0 left-0 px-3 py-1 wl-label rounded-br-md border border-[color-mix(in_srgb,var(--wireline-color-action-primary-default)_40%,transparent)] bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm)]">
                     Matched from visit
                   </div>
                 )}
@@ -579,20 +580,14 @@ function ActiveSubCard({
     : null;
   const statusBadge =
     sub.status === "active"
-      ? {
-          label: "Active",
-          cls: "bg-brand/15 border-[color-mix(in_srgb,var(--wireline-signal)_30%,transparent)] wl-text-success",
-        }
+      ? { label: "Active", tone: "success" as const }
       : sub.status === "trialing"
-        ? { label: "Trial", cls: "bg-brand/15 border-brand/30 text-brand" }
+        ? { label: "Trial", tone: "primary" as const }
         : sub.status === "past_due"
-          ? { label: "Past Due", cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" }
+          ? { label: "Past Due", tone: "warning" as const }
           : sub.status === "canceled"
-            ? { label: "Canceled", cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" }
-            : {
-                label: (sub.status || "Unknown").toLowerCase(),
-                cls: "bg-white/10 border-border text-muted",
-              };
+            ? { label: "Canceled", tone: "error" as const }
+            : { label: (sub.status || "Unknown").toLowerCase(), tone: "neutral" as const };
   return (
     <div
       className="rounded-md wl-panel border border-border p-8 md:p-10 relative overflow-hidden"
@@ -607,26 +602,23 @@ function ActiveSubCard({
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="wl-label-muted opacity-70">Current plan</span>
-              <span
-                className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-full wl-label border",
-                  statusBadge.cls,
-                )}
-              >
+              <Chip tone={statusBadge.tone} dot>
                 {statusBadge.label}
-              </span>
-              {sub.cancel_at_period_end && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full wl-label border bg-rose-500/15 border-rose-500/30 text-rose-500">
-                  Cancels at period end
-                </span>
-              )}
+              </Chip>
+              {sub.cancel_at_period_end && <Chip tone="warning">Cancels at period end</Chip>}
             </div>
-            <h3 className="font-semibold tracking-[-.02em] text-3xl md:text-4xl text-foreground">
+            <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
               {sub.plan_name || sub.plan || "—"}
             </h3>
             <p className="text-[var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
               {sub.max_agents ? (
-                <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
+                <span
+                  className={
+                    agentCount >= sub.max_agents
+                      ? "text-[var(--wireline-color-status-warning)]"
+                      : ""
+                  }
+                >
                   {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "agent" : "agents"} in use
                 </span>
               ) : (
