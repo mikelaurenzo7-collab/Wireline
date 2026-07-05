@@ -29,7 +29,7 @@ describe("Wireline Letterpress design vision", () => {
   it("exports a single canonical vision manifest", () => {
     expect(WL_VISION).toBe(WIRELINE_DESIGN_VISION);
     expect(WIRELINE_DESIGN_VISION.system).toBe("Wireline Letterpress");
-    expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#5BA98A");
+    expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
     expect(WIRELINE_DESIGN_VISION.utilities).toEqual(
       expect.objectContaining({
         surface: expect.arrayContaining(["wl-paper", "wl-paper-elevated"]),
@@ -92,7 +92,7 @@ describe("Wireline Letterpress design vision", () => {
     const foundation = read("src/styles/foundation.css");
     expect(foundation).toContain("--wl-text-tertiary: var(--wireline-color-text-tertiary)");
     expect(read("src/styles/tokens.generated.css")).toContain(
-      "--wireline-color-text-tertiary: #8B867B",
+      "--wireline-color-text-tertiary: #8B87A0",
     );
   });
 

@@ -30,7 +30,7 @@ Historic workspace URLs should redirect into the active agent workflow rather th
 | Agent roster/state | `src/contexts/AgentsContext.tsx` |
 | Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 
-The visual layer is intentionally restrained: Wireline Letterpress, dark/ink surfaces, warm paper, forest/patina action, copper wire accent, accessible focus states, and no parallel palettes.
+The visual layer is intentionally restrained: Wireline Letterpress (Aurora palette), dark/ink surfaces, a cool obsidian canvas, electric-violet action, a platinum-silver wire accent, accessible focus states, and no parallel palettes.
 
 ## Core API flow
 

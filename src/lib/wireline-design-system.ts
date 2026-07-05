@@ -17,14 +17,14 @@ export const WL_AUTHENTICATED_SURFACE_CONTRACT = AUTHENTICATED_SURFACE_CONTRACT;
 export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */
-  accentHex: "#2B5548",
+  accentHex: "#A78BFA",
 } as const;
 
 /** Workspace surfaces, settings, insights, ops panels */
 export const WL_APP_CLASSES = {
   pageContext: "wl-page-context tracking-tight",
   pageContextAccent: "wl-page-context-accent",
-  /** Wired copper strand — authenticated section kickers */
+  /** Wired silver strand — authenticated section kickers */
   wiredEyebrow: "wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app",
   workspaceEyebrow: "wl-workspace-eyebrow",
   workspaceTitle: "wl-workspace-title",

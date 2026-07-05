@@ -3,15 +3,15 @@
  * Values mirror design-tokens/wireline.tokens.json — keep in sync via build-design-tokens.
  */
 export const WIRELINE_MCP_WIDGET_TOKENS = {
-  canvas: "#15130F",
-  surface: "#1E1B16",
-  surfaceSubtle: "#242019",
-  action: "#5BA98A",
-  actionPressed: "#4B9276",
-  text: "#F4F2EC",
-  muted: "#B8B3A8",
-  tertiary: "#8B867B",
-  border: "#322D25",
+  canvas: "#0A0A0E",
+  surface: "#141319",
+  surfaceSubtle: "#18161E",
+  action: "#A78BFA",
+  actionPressed: "#8B5CF6",
+  text: "#F5F4F8",
+  muted: "#B6B1C6",
+  tertiary: "#8B87A0",
+  border: "#262430",
   radiusLg: "12px",
   radiusMd: "10px",
   shadowCard: "0 8px 24px -16px rgba(0, 0, 0, 0.6)",
@@ -95,7 +95,7 @@ button, a.button {
   text-decoration: none;
   min-height: 44px;
 }
-button.primary { background: var(--wl-action); color: #12100C; border-color: var(--wl-action); }
+button.primary { background: var(--wl-action); color: #0E0B16; border-color: var(--wl-action); }
 button.primary:active { background: var(--wl-action-pressed); }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 button:focus-visible, a.button:focus-visible {

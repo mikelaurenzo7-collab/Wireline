@@ -20,21 +20,21 @@ export const AGENT_FACE_SKINS: Skin[] = [
   { base: "#D89C6E", shade: "#B4774A" },
 ];
 
-// Backgrounds pull from the dark brand palette — patina, copper, ink.
+// Backgrounds pull from the dark brand palette — violet, graphite, obsidian.
 export const AGENT_FACE_GROUNDS: Ground[] = [
-  ["#1E3A30", "#132420"],
-  ["#3A2A1B", "#221812"],
-  ["#22322C", "#15201C"],
-  ["#33261A", "#1E1710"],
-  ["#26302E", "#161d1b"],
+  ["#241B3D", "#150F26"],
+  ["#2E2A3D", "#19161F"],
+  ["#231D33", "#141021"],
+  ["#2A2735", "#17151E"],
+  ["#1F1B2E", "#110E1A"],
 ];
 
 export const AGENT_FACE_HAIR = ["#241C15", "#3B2A1C", "#12100C", "#4A3524", "#5B4A3A", "#2A2320"];
 export const AGENT_FACE_HAIR_STYLES: HairStyle[] = ["crop", "bob", "bun", "waves", "fade", "sweep"];
 
 const AGENT_FACE_ACCENTS = [
-  "var(--wireline-color-action-secondary-default, #D4823F)",
-  "var(--wireline-color-action-primary-default, #5BA98A)",
+  "var(--wireline-color-action-secondary-default, #C7CCD6)",
+  "var(--wireline-color-action-primary-default, #A78BFA)",
 ];
 
 export type AgentFaceConfig = {

@@ -1,14 +1,14 @@
 :root {
-  --wireline-color-canvas-default: #15130F;
-  --wireline-color-surface-default: #1E1B16;
-  --wireline-color-surface-subtle: #1A1712;
-  --wireline-color-surface-container: #18271F;
-  --wireline-color-action-primary-pressed: #4B9276;
-  --wireline-color-action-primary-default: #5BA98A;
-  --wireline-color-action-secondary-default: #D4823F;
-  --wireline-color-text-primary: #F4F2EC;
-  --wireline-color-text-secondary: #B8B3A8;
-  --wireline-color-border-default: #322D25;
+  --wireline-color-canvas-default: #0A0A0E;
+  --wireline-color-surface-default: #141319;
+  --wireline-color-surface-subtle: #100F15;
+  --wireline-color-surface-container: #1E1730;
+  --wireline-color-action-primary-pressed: #8B5CF6;
+  --wireline-color-action-primary-default: #A78BFA;
+  --wireline-color-action-secondary-default: #C7CCD6;
+  --wireline-color-text-primary: #F5F4F8;
+  --wireline-color-text-secondary: #B6B1C6;
+  --wireline-color-border-default: #262430;
   --wireline-primary: var(--wireline-color-action-primary-default);
   --wireline-primary-container: var(--wireline-color-action-primary-default);
   --wireline-text: var(--wireline-color-text-primary);
@@ -101,7 +101,7 @@ a:hover {
   justify-content: center;
   border-radius: 12px;
   background: var(--wireline-primary-container);
-  color: #12100C;
+  color: #0E0B16;
 }
 
 h1,
@@ -123,8 +123,8 @@ h1 {
   font-size: clamp(30px, 5vw, 42px);
 }
 
-/* The Wire — Wireline's signature: a copper node on the strand that
-   settles into patina. Carried on every public surface, including this
+/* The Wire — Wireline's signature: a silver node on the strand that
+   settles into violet. Carried on every public surface, including this
    consent screen. */
 body.oauth-consent .eyebrow {
   display: inline-flex;
@@ -140,7 +140,7 @@ body.oauth-consent .eyebrow::before {
   background: linear-gradient(
     90deg,
     var(--wireline-color-action-secondary-default),
-    rgba(91, 169, 138, 0.55)
+    rgba(167, 139, 250, 0.55)
   );
   box-shadow: -6px 0 0 -0.5px var(--wireline-color-action-secondary-default);
 }
@@ -203,7 +203,7 @@ button {
   border-radius: 12px;
   padding: 12px 16px;
   background: var(--wireline-primary-container);
-  color: #12100C;
+  color: #0E0B16;
   cursor: pointer;
   font: inherit;
   font-weight: 700;

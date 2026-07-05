@@ -55,15 +55,15 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 
 ## Design-system discipline
 
-Wireline Letterpress is the only active design system.
+Wireline Letterpress — Aurora palette — is the only active design system.
 
-- Forest/patina green is action.
+- Electric violet is action.
 - Ink is structure.
-- Warm paper/dark canvas is calm.
-- Copper is the wire accent, not a broad decorative palette.
+- A cool, near-black obsidian canvas is calm in dark mode; a cool near-white canvas carries the same story in light mode.
+- Silver is the wire accent, not a broad decorative palette.
 - Instrument Serif carries big ideas; DM Sans carries work; Space Mono carries labels.
 - Touch targets stay at least 44px. Focus rings stay visible. Accessible names must survive visual polish.
-- Do not reintroduce legacy purple, signal blue, dark Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
+- Do not reintroduce the retired forest-green/copper Letterpress palette, signal blue, dark Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
 
 ## Product-language discipline
 
@@ -98,6 +98,11 @@ Run the narrowest sufficient check while developing, then the full gate before m
 - Review Vercel runtime errors after each deployment.
 
 ## Recent health actions
+
+### 2026-07-05 Aurora rebrand
+
+- Replaced the Letterpress forest-green/copper palette with the Aurora violet/silver/obsidian palette across `design-tokens/wireline.tokens.json` and every generated surface (web, browser extension, iOS, Android), the optional light theme, static legal pages, the ChatGPT MCP widget, app/OS icon marks, the OG share image, and the design contract + tests that pin exact hex values.
+- Flipped the design-vision "no purple" rule: Aurora violet is now canon, and the retired forest-green/copper palette is what must not return.
 
 ### 2026-07-04 repo-health pass
 

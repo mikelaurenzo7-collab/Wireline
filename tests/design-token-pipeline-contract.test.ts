@@ -36,10 +36,10 @@ describe("Wireline design token pipeline", () => {
     const typescript = source("src/constants/generated-design-tokens.ts");
     const values = flatten(tokenSource);
 
-    expect(values["color.canvas.default"]).toBe("#15130F");
-    expect(values["color.action.primary.default"]).toBe("#5BA98A");
-    expect(values["color.action.primary.pressed"]).toBe("#4B9276");
-    expect(values["color.text.primary"]).toBe("#F4F2EC");
+    expect(values["color.canvas.default"]).toBe("#0A0A0E");
+    expect(values["color.action.primary.default"]).toBe("#A78BFA");
+    expect(values["color.action.primary.pressed"]).toBe("#8B5CF6");
+    expect(values["color.text.primary"]).toBe("#F5F4F8");
 
     for (const [path, value] of Object.entries(values)) {
       expect(css).toContain(`--wireline-${path.replaceAll(".", "-")}: ${value};`);
@@ -100,11 +100,11 @@ describe("Wireline design token pipeline", () => {
     const css = source("src/styles/tokens.generated.css");
     const extensionCss = source("apps/browser-extension/panel/tokens.generated.css");
     const typescript = source("src/constants/generated-design-tokens.ts");
-    expect(css).toContain("--wireline-color-surface-raised: #2A241B");
+    expect(css).toContain("--wireline-color-surface-raised: #201E29");
     expect(css).toContain("--wireline-elevation-raised:");
-    expect(extensionCss).toContain("--wireline-color-surface-raised: #2A241B");
+    expect(extensionCss).toContain("--wireline-color-surface-raised: #201E29");
     expect(extensionCss).toContain("--wireline-elevation-raised:");
-    expect(typescript).toContain('"color.surface.raised": "#2A241B"');
+    expect(typescript).toContain('"color.surface.raised": "#201E29"');
     expect(typescript).toContain('"elevation.raised"');
   });
 
