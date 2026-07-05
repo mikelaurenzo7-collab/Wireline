@@ -34,7 +34,10 @@ function DangerZone() {
 
   return (
     <section className="studio-card border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
-      <p className="wl-overline" style={{ color: "var(--wireline-color-status-error)" }}>
+      <p
+        className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app"
+        style={{ color: "var(--wireline-color-status-error)" }}
+      >
         Danger zone
       </p>
       <h3 className="mt-2 text-sm font-semibold text-foreground">Delete account</h3>
@@ -135,7 +138,7 @@ export default function SettingsPage() {
         <SettingsTabs />
 
         <section className="studio-card p-5 sm:p-6">
-          <p className="wl-overline">Profile</p>
+          <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Profile</p>
           <div className="mt-5 grid gap-4">
             <ReadOnlyField label="Name" value={displayName} />
             <ReadOnlyField label="Email" value={email || "—"} />
@@ -143,7 +146,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="studio-card p-5 sm:p-6">
-          <p className="wl-overline">Security</p>
+          <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Security</p>
           <div className="mt-5 grid gap-3">
             <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>

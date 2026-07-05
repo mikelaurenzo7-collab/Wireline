@@ -181,6 +181,9 @@ export default function CallLogsClaude() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-3">
+        <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Call ops</p>
+      </div>
       <section
         aria-label="Call ops metrics"
         className="grid grid-cols-2 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] sm:flex sm:items-stretch sm:divide-x sm:divide-[var(--wireline-color-border-default)]"
@@ -204,7 +207,7 @@ export default function CallLogsClaude() {
               className={`px-4 py-3 sm:flex-1 sm:px-5 sm:py-3.5 ${phoneBorders}`}
             >
               <div
-                className="wl-eyebrow"
+                className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app"
                 style={
                   kpi.accent === "warning"
                     ? { color: "var(--wireline-color-status-warning)" }
@@ -287,7 +290,7 @@ function FloorTab({
   return (
     <>
       <div
-        className="mb-4 inline-flex items-center gap-2 wl-eyebrow "
+        className="mb-4 inline-flex items-center gap-2 wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app"
         style={{ color: "var(--wireline-color-action-primary-default)" }}
       >
         <span
@@ -440,7 +443,7 @@ function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
   return (
     <>
       <div
-        className="mb-4 inline-flex items-center gap-2 wl-eyebrow "
+        className="mb-4 inline-flex items-center gap-2 wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app"
         style={{ color: "var(--wireline-color-status-warning)" }}
       >
         <span

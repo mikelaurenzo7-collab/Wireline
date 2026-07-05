@@ -45,9 +45,7 @@ export function WorkspacePageIntro({
   return (
     <header className="wl-workspace-page-intro text-center">
       {eyebrow ? (
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          {eyebrow}
-        </p>
+        <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">{eyebrow}</p>
       ) : null}
       <h1 className={cn("wl-display-3", eyebrow && "mt-3")}>{title}</h1>
       {description ? (

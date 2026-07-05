@@ -24,6 +24,8 @@ export const WL_BRAND = {
 export const WL_APP_CLASSES = {
   pageContext: "wl-page-context tracking-tight",
   pageContextAccent: "wl-page-context-accent",
+  /** Wired copper strand — authenticated section kickers */
+  wiredEyebrow: "wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app",
   workspaceEyebrow: "wl-workspace-eyebrow",
   workspaceTitle: "wl-workspace-title",
   bodyCaption: "wl-body-caption",

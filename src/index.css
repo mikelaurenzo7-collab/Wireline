@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -73,7 +73,6 @@ body {
   background: var(--wireline-color-canvas-default);
   color: var(--wireline-color-text-primary);
   font-family:
-    "Inter",
     var(--wireline-font-family-body),
     "DM Sans",
     ui-sans-serif,
@@ -82,9 +81,9 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  font-weight: 450;
+  font-weight: 400;
   --wl-font-display: "Instrument Serif";
-  --wl-font-sans: "Inter";
+  --wl-font-sans: "DM Sans";
   --wl-font-mono: "Space Mono";
   font-feature-settings:
     "kern" 1,

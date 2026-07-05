@@ -147,7 +147,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </span>
       </Link>
 
-      <p className="px-2.5 pb-2 pt-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
+      <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app px-2.5 pb-2 pt-2.5">
         Workspace
       </p>
       <nav className="flex flex-col gap-0.5" aria-label="Workspace">

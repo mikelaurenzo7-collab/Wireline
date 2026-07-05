@@ -44,6 +44,7 @@ function EmptyTraining() {
 function FlowsTab({ agentId }: { agentId: string }) {
   return (
     <section className="studio-card mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
+      <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Training</p>
       <h2 className="wl-card-title">Flows</h2>
       <p className="text-sm leading-6 text-muted-foreground">Call rules live in Studio.</p>
       <Button asChild>
@@ -67,7 +68,8 @@ function SimulatorTab({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <section className="studio-card p-6">
-        <h2 className="wl-card-title">Simulator</h2>
+        <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app mb-2">Simulator</p>
+        <h2 className="wl-card-title">Live voice test</h2>
         <p className="mt-2 max-w-[52ch] text-sm leading-6 text-muted-foreground">
           Hear {agentName} with your rules and training — with live lip-sync when the video add-on
           is on.
@@ -125,6 +127,7 @@ export default function KnowledgePage() {
         <EmptyTraining />
       ) : (
         <WorkspacePageFrame>
+          <p className="wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app">Training</p>
           <div className="mb-7 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <WorkspaceTabStrip
               ariaLabel="Training sections"
