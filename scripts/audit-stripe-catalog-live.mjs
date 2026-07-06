@@ -19,6 +19,7 @@ const EXPECTED_ACTIVE_PRODUCTS = new Set([
   "Conversation Balance",
   "Wireline Business",
   "Wireline Enterprise",
+  "Wireline Live Video",
   "Wireline Personal",
   "Wireline Team",
 ]);
@@ -36,6 +37,7 @@ const EXPECTED_PRICE_KEYS = new Set([
   "team_extra_agent",
   "team_monthly",
   "team_voice_overage",
+  "live_video_monthly",
 ]);
 
 const RETIRED_PRODUCT_NAMES = new Set([

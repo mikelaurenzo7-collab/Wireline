@@ -52,7 +52,26 @@ Status: **Executed** — verified findings implemented; deferred items documente
 
 | Check | Result |
 | --- | --- |
-| `npm run verify:full` | Run after final changes |
-| `node apps/browser-extension/scripts/build.mjs --check` | Passed earlier |
+| `npm run verify:full` | **Passed** (320 tests) |
+| Vercel env health (`check-vercel-env-health.mjs`) | **CORE READY** — Upstash on all targets |
+| Production `/api/health` | **200** `ok: true` |
+| Production `/api/health/public` | **200** operational |
+| Stripe live audit (`npm run stripe:audit-live`) | **Warnings only** — 5 legacy default prices on retired products (no deactivation without approval) |
+| Supabase security advisor | **1 WARN** — enable leaked-password protection |
 | Android `assembleDebug` | Blocked — no JDK on machine |
-| Stripe live audit | Blocked — no `STRIPE_SECRET_KEY` |
+
+## Stripe live audit inventory (2026-07-06)
+
+**Active launch catalog (expected):** Conversation Balance, Wireline Personal/Team/Business/Enterprise, Wireline Live Video — 13 launch-active prices, 0 live subs on retired SKUs.
+
+**Owner approval required before deactivation** (default prices on retired products):
+
+| Product | Price nickname |
+| --- | --- |
+| Wireline Concierge | Operator — Monthly ($59/mo) |
+| Wireline Household | Studio — Monthly ($29/mo) |
+| Wireline Plus | Plus — Monthly ($15/mo) |
+| Wireline Everyday | Everyday — Monthly ($7/mo) |
+| Wireline Custom | Scale — Monthly ($699/mo) |
+
+**Operational scripts:** `npm run stripe:audit-live` (requires `VERCEL_TOKEN`).
