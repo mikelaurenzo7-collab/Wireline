@@ -14,8 +14,8 @@ const CERTIFIED_IDS = new Set([
   "twilio",
   "stripe",
   "resend",
-  "google-oauth",
-  "microsoft-oauth",
+  "google-workspace",
+  "microsoft-365",
   "hubspot",
   "slack",
   "shopify",
@@ -29,8 +29,10 @@ const BETA_IDS = new Set([
   "meta",
   "zoom",
   "x",
-  "yahoo-oauth",
+  "x-ads",
+  "yahoo",
   "liveavatar",
+  "heygen",
 ]);
 
 export function buyerTierForIntegration(id: string): BuyerTier {

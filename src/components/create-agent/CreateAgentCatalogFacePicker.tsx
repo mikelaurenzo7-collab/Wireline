@@ -220,6 +220,11 @@ export default function CreateAgentCatalogFacePicker({
                           {avatar.name}
                         </div>
                       )}
+                      {avatar.defaultVoiceId ? (
+                        <span className="absolute left-1.5 top-1.5 rounded-md border border-primary/25 bg-background/85 px-1.5 py-0.5 text-[9px] font-semibold text-primary shadow-sm">
+                          Voice match
+                        </span>
+                      ) : null}
                       <span className="block truncate px-2 py-1.5 text-[10px] font-medium text-foreground">
                         {avatar.name}
                       </span>

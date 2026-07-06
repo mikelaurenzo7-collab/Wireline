@@ -35,6 +35,9 @@ describe("voice catalog", () => {
     expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
       "matched-voice",
     );
+    expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
+      "Voice match",
+    );
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
   });
 });

@@ -309,9 +309,7 @@ function VoiceGroup({
     <div className={className}>
       <div className="mb-2 flex items-center gap-2">
         {icon}
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          {title}
-        </p>
+        <p className="font-mono text-[10px] uppercase text-muted-foreground">{title}</p>
       </div>
       <div className="grid gap-2">
         {voices.length ? (
