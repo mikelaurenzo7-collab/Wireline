@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -250,9 +251,9 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                 AgentChips(state.agents, agent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("Phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
                 OutlinedTextField(value = context, onValueChange = { context = it }, label = { Text("What should Wireline handle?") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Checkbox(checked = consentConfirmed, onCheckedChange = { consentConfirmed = it })
-                    Text("I have consent to call this number for this purpose.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
+                    OutboundConsentFields()
                 }
                 Button(
                     onClick = { agent?.let { model.placeCall(it.id, number, context, consentConfirmed) } },
@@ -314,7 +315,12 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
         Text(if (isBusinessAgent) "Name the agent and describe how it should represent your business. Refine policies from Command next." else "Name the help you want. You can add knowledge, actions, and voice from Command next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, placeholder = { Text("Casey") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Text("What kind of help?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
-        choices.chunked(2).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { row.forEach { (value, label) -> FilterChip(selected = role == value, onClick = { role = value }, label = { Text(label, maxLines = 1) }, modifier = Modifier.weight(1f)) }; if (row.size == 1) Spacer(Modifier.weight(1f)) } }
+        if (state.agentRoles.isEmpty() && state.isWorking) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Brand.Accent, trackColor = Brand.Border)
+            Text("Loading agent roles…", style = MaterialTheme.typography.bodySmall, color = Brand.Text3)
+        } else {
+            choices.chunked(2).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { row.forEach { (value, label) -> FilterChip(selected = role == value, onClick = { role = value }, label = { Text(label, maxLines = 1) }, modifier = Modifier.weight(1f)) }; if (row.size == 1) Spacer(Modifier.weight(1f)) } }
+        }
         ErrorText(state.error)
         Button(onClick = { onCreate(name, role, isBusinessAgent) }, enabled = name.isNotBlank() && !state.isWorking, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm)) {
             if (state.isWorking) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White) else { Icon(Icons.Default.Add, contentDescription = "Create agent"); Spacer(Modifier.width(8.dp)); Text("Create agent") }
@@ -358,6 +364,21 @@ fun SectionCard(content: @Composable () -> Unit) = AssistantCard { content() }
 @Composable
 private fun AgentChips(agents: List<Agent>, selectedId: String?, onSelect: (String) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { agents.take(3).forEach { agent -> AssistChip(onClick = { onSelect(agent.id) }, label = { Text(agent.name) }, modifier = Modifier.padding(vertical = 4.dp), colors = AssistChipDefaults.assistChipColors(containerColor = if (agent.id == selectedId) Brand.AccentSoft else Brand.Panel2)) } }
+}
+
+@Composable
+fun OutboundConsentFields() {
+    val uriHandler = LocalUriHandler.current
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(OutboundConsentCopy.LABEL, style = MaterialTheme.typography.bodySmall, color = Brand.Text)
+        Text(OutboundConsentCopy.HELP, style = MaterialTheme.typography.labelSmall, color = Brand.Text3)
+        TextButton(
+            onClick = { uriHandler.openUri(OutboundConsentCopy.LEGAL_URL) },
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            Text(OutboundConsentCopy.LEARN_MORE, style = MaterialTheme.typography.labelSmall, color = Brand.Accent)
+        }
+    }
 }
 
 @Composable

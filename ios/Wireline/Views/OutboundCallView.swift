@@ -6,6 +6,7 @@ import SwiftUI
 struct OutboundCallView: View {
     let agents: [Agent]
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var selectedAgentId: String = ""
     @State private var number = ""
@@ -27,8 +28,19 @@ struct OutboundCallView: View {
                         .keyboardType(.phonePad)
                     TextField("Instruction (optional)", text: $context, axis: .vertical)
                         .lineLimit(2...4)
-                    Toggle("I have consent to call this number for this purpose.", isOn: $consentConfirmed)
-                        .font(.footnote)
+                    Toggle(isOn: $consentConfirmed) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(OutboundConsentCopy.label)
+                                .font(.footnote)
+                            Text(OutboundConsentCopy.help)
+                                .font(.caption)
+                                .foregroundStyle(Brand.text2)
+                            Button(OutboundConsentCopy.learnMore) {
+                                openURL(OutboundConsentCopy.legalURL)
+                            }
+                            .font(.caption)
+                        }
+                    }
                 }
                 if let errorMessage {
                     Text(errorMessage).font(.footnote).foregroundStyle(Brand.destructive)

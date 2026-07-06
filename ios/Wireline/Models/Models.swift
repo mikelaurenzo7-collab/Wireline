@@ -91,6 +91,16 @@ struct AgentList: Codable {
     let agents: [Agent]
 }
 
+struct AgentRole: Codable, Identifiable {
+    let id: String
+    let label: String
+    let archetype: String
+}
+
+struct AgentRoleList: Codable {
+    let roles: [AgentRole]
+}
+
 struct ActiveCall: Codable, Identifiable {
     let callId: String
     let agentId: String?

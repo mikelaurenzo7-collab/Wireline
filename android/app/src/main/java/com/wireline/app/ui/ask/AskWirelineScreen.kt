@@ -332,18 +332,14 @@ Icon(
                                     )
 
                                     Row(
-                                        verticalAlignment = Alignment.CenterVertically,
+                                        verticalAlignment = Alignment.Top,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
                                         Checkbox(
                                             checked = outboundConsent,
                                             onCheckedChange = { outboundConsent = it },
                                         )
-                                        Text(
-                                            "I have consent to call this number for this purpose.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Brand.Text2,
-                                        )
+                                        OutboundConsentFields()
                                     }
 
                                     Button(

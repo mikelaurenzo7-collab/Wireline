@@ -25,6 +25,11 @@ actor WirelineAPI {
         return list.agents
     }
 
+    func agentRoles() async throws -> [AgentRole] {
+        let list: AgentRoleList = try await get("/api/mobile/agents/roles")
+        return list.roles
+    }
+
     func activeCalls() async throws -> [ActiveCall] {
         let list: ActiveCallList = try await get("/api/mobile/calls/active")
         return list.calls

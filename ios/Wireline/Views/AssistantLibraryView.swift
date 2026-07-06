@@ -2,6 +2,8 @@ import SwiftUI
 
 struct AssistantLibraryView: View {
     @State private var agents: [Agent] = []
+    @State private var agentRoles: [AgentRole] = []
+    @State private var rolesLoading = false
     @State private var loadError: String?
     @State private var showCreate = false
     @State private var name = ""
@@ -47,6 +49,16 @@ struct AssistantLibraryView: View {
         }
     }
 
+    private var roleChoices: [AgentRole] {
+        if !agentRoles.isEmpty { return agentRoles }
+        return [
+            AgentRole(id: "scheduler", label: "Personal agent", archetype: "Scheduler"),
+            AgentRole(id: "customer_service", label: "Support desk", archetype: "Support"),
+            AgentRole(id: "receptionist", label: "Front desk", archetype: "Receptionist"),
+            AgentRole(id: "custom", label: "Operations", archetype: "Custom"),
+        ]
+    }
+
     private var createSheet: some View {
         NavigationStack {
             Form {
@@ -62,11 +74,14 @@ struct AssistantLibraryView: View {
                 }
                 Section("Start with one clear job") {
                     TextField("Name", text: $name)
-                    Picker("Job", selection: $role) {
-                        Text("Personal agent").tag("scheduler")
-                        Text("Support desk").tag("customer_service")
-                        Text("Front desk").tag("receptionist")
-                        Text("Operations").tag("custom")
+                    if rolesLoading && agentRoles.isEmpty {
+                        ProgressView("Loading agent roles…")
+                    } else {
+                        Picker("Job", selection: $role) {
+                            ForEach(roleChoices, id: \.id) { choice in
+                                Text(choice.label).tag(choice.id)
+                            }
+                        }
                     }
                 }
                 Section {
@@ -95,8 +110,19 @@ struct AssistantLibraryView: View {
                     Button("Cancel") { showCreate = false }
                 }
             }
+            .task { await loadRoles() }
         }
         .presentationDetents([.medium])
+    }
+
+    @MainActor private func loadRoles() async {
+        rolesLoading = true
+        defer { rolesLoading = false }
+        do {
+            agentRoles = try await WirelineAPI.shared.agentRoles()
+        } catch {
+            agentRoles = []
+        }
     }
 
     @MainActor private func load() async {

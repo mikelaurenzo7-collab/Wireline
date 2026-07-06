@@ -17,8 +17,17 @@ describe("mobile TCPA consent contract", () => {
   it("requires hasExpressWrittenConsent on iOS outbound dial", () => {
     const api = read("ios/Wireline/Networking/WirelineAPI.swift");
     const view = read("ios/Wireline/Views/OutboundCallView.swift");
+    const copy = read("ios/Wireline/OutboundConsentCopy.swift");
     expect(api).toContain("hasExpressWrittenConsent");
     expect(view).toMatch(/consentConfirmed/);
+    expect(copy).toContain("permission to call");
+  });
+
+  it("loads agent roles from mobile API on iOS create sheet", () => {
+    const api = read("ios/Wireline/Networking/WirelineAPI.swift");
+    const view = read("ios/Wireline/Views/AssistantLibraryView.swift");
+    expect(api).toContain("/api/mobile/agents/roles");
+    expect(view).toContain("agentRoles");
   });
 
   it("server mobile outbound schema accepts consent flag", () => {

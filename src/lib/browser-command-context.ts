@@ -7,8 +7,18 @@ export type BrowserCommandContext = {
   request: string;
 };
 
+/** Reject extension handoffs older than this — limits stale/forged fragment replay. */
+export const BROWSER_COMMAND_CONTEXT_MAX_AGE_MS = 10 * 60 * 1000;
+
 function readText(value: unknown, maxLength: number): string {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
+function isFreshCapture(capturedAt: unknown): boolean {
+  if (typeof capturedAt !== "string" || !capturedAt.trim()) return true;
+  const parsed = Date.parse(capturedAt);
+  if (Number.isNaN(parsed)) return false;
+  return Date.now() - parsed <= BROWSER_COMMAND_CONTEXT_MAX_AGE_MS;
 }
 
 export function readBrowserCommandContext(): BrowserCommandContext | null {
@@ -27,6 +37,7 @@ export function readBrowserCommandContext(): BrowserCommandContext | null {
       ),
     ) as Record<string, unknown>;
     if (decoded.source !== "browser-extension" || decoded.version !== 1) return null;
+    if (!isFreshCapture(decoded.capturedAt)) return null;
 
     return {
       title: readText(decoded.title, 180),

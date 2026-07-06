@@ -27,6 +27,16 @@ Status: **Executed** — verified findings implemented; deferred items documente
 | iOS sign-out clears server session + unregisters device | **Done** |
 | Contract tests: TCPA, draft live guard, platform SLO | **Done** |
 
+## Phase 2 — Design / UX polish (executed)
+
+| Item | Status |
+| --- | --- |
+| Canonical outbound consent copy (web module + native constants) | **Done** |
+| TCPA consent UI: help text + Learn more → `/trust/legal` | **Done** — Android + iOS |
+| Android role picker loading state | **Done** |
+| iOS role catalog from `/api/mobile/agents/roles` | **Done** |
+| Browser handoff fragment TTL (10 min) | **Done** |
+
 ## Deferred (documented, not in this pass)
 
 | Issue | Reason |
