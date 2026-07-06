@@ -54,6 +54,7 @@ import voiceObservabilityRouter from "../routes/voice-observability-routes";
 import insightsRouter from "../routes/insights-routes";
 import pipelineRouter from "../routes/pipeline-routes";
 import dailyBriefRouter from "../routes/daily-brief-routes";
+import quotaRouter from "../routes/quota-routes";
 
 /**
  * Canonical API route order.
@@ -139,5 +140,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(dailyBriefRouter);
   // Pipeline kanban + campaign attribution for Insights Attribution tab.
   app.use(pipelineRouter);
+  app.use("/api/quotas", quotaRouter);
   app.use(voiceObservabilityRouter);
 }

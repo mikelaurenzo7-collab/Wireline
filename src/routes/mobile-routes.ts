@@ -15,6 +15,7 @@
  * (scripts/generate-authz-matrix.ts) sees it as protected.
  */
 import { Router, Response } from "express";
+import { randomUUID } from "node:crypto";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import { AppError } from "../lib/api-error";
@@ -34,9 +35,40 @@ import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
+import { pickRotatedVoiceId } from "../data/voice-roster";
+import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
+import {
+  getDefaultAgentTools,
+  isAgentToolName,
+  normalizeEnabledTools,
+  type AgentToolName,
+} from "../lib/agent-capabilities";
+import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+
+const roleArchetypes: Record<string, string> = {
+  sales: "Sales Representative",
+  scheduler: "Personal Assistant",
+  appointment_scheduler: "Appointment Scheduler",
+  receptionist: "Receptionist",
+  customer_service: "Customer Support",
+  custom: "Custom Assistant",
+};
+
+function cleanText(value: unknown, max: number): string {
+  return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+async function ownedAgent(agentId: string, userId: string) {
+  const [agent] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  return agent;
+}
 
 /** General mobile read/write limiter — keyed per user. */
 const mobileRateLimiter = createRateLimiter({
@@ -141,6 +173,87 @@ router.get(
   },
 );
 
+// ── POST /api/mobile/agents — native-safe agent creation adapter ──────────
+const mobileCreateAgentSchema = z.object({
+  name: z.string().min(1).max(120),
+  role: z.string().max(80).optional(),
+  is_business_agent: z.boolean().optional().default(false),
+});
+
+router.post(
+  "/api/mobile/agents",
+  authenticateUser,
+  mobileSensitiveRateLimiter,
+  validate({ body: mobileCreateAgentSchema }),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const name = cleanText(req.body?.name, 120);
+      const role = cleanText(req.body?.role, 80) || "scheduler";
+      const isBusinessAgent = req.body?.is_business_agent === true;
+      const [{ count }] = await drizzle
+        .select({ count: sql<number>`count(*)` })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, req.user.id));
+      const [settingsRow] = await drizzle
+        .select({
+          subscriptionStatus: schema.settings.subscriptionStatus,
+          maxAgents: schema.settings.maxAgents,
+          extraAgents: schema.settings.extraAgents,
+          planId: schema.subscriptions.plan,
+        })
+        .from(schema.settings)
+        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+      const entitlement = resolveAgentEntitlement({
+        isOwner: isOwnerEmail(req.user.email),
+        subscriptionStatus: settingsRow?.subscriptionStatus,
+        planId: settingsRow?.planId,
+        maxAgents: settingsRow?.maxAgents,
+        extraAgents: settingsRow?.extraAgents,
+      });
+      if (agentCapHit(Number(count), entitlement)) {
+        return res.status(402).json({
+          code: "AGENT_CAPACITY_REACHED",
+          error: "Your plan has reached its agent capacity.",
+        });
+      }
+
+      const id = `agent-${randomUUID()}`;
+      const existing = Number(count);
+      const voiceId = pickRotatedVoiceId(existing);
+      const enabledTools = getDefaultAgentTools();
+      const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
+      await drizzle.insert(schema.agents).values({
+        id,
+        userId: req.user.id,
+        name,
+        role,
+        channel: "voice",
+        archetype: roleArchetypes[role] || "Assistant",
+        voiceId,
+        voiceProvider: "11labs",
+        enabledTools,
+        firstMessage: `Hi, this is ${name}. How can I help?`,
+        isBusinessAgent,
+        ...videoPresenter,
+      });
+      res.status(201).json({
+        id,
+        name,
+        role,
+        archetype: roleArchetypes[role] || "Assistant",
+        channels: ["voice"],
+        voiceId,
+        isBusinessAgent,
+      });
+    } catch (err) {
+      log.error("POST /api/mobile/agents failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to create agent.");
+    }
+  },
+);
+
 // ── GET /api/mobile/agents — roster for the app ────────────────────────────
 router.get(
   "/api/mobile/agents",
@@ -201,6 +314,175 @@ router.get(
       if (err instanceof AppError) throw err;
       log.error("GET /api/mobile/agents/:id failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load agent.");
+    }
+  },
+);
+
+// ── GET /api/mobile/agents/:id/config — native setup adapter ──────────────
+router.get(
+  "/api/mobile/agents/:id/config",
+  authenticateUser,
+  mobileRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await ownedAgent(req.params.id, req.user.id))) {
+        throw AppError.fromHttpStatus(404, "Agent not found.");
+      }
+      const [agentRows, personalities, directives, knowledge] = await Promise.all([
+        drizzle
+          .select({
+            name: schema.agents.name,
+            role: schema.agents.role,
+            archetype: schema.agents.archetype,
+            enabledTools: schema.agents.enabledTools,
+            voiceId: schema.agents.voiceId,
+            voiceProvider: schema.agents.voiceProvider,
+            isBusinessAgent: schema.agents.isBusinessAgent,
+            videoPresenterProvider: schema.agents.videoPresenterProvider,
+            videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
+            videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
+          })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+          .limit(1),
+        drizzle
+          .select({ content: schema.personality.content })
+          .from(schema.personality)
+          .where(
+            and(
+              eq(schema.personality.agentId, req.params.id),
+              eq(schema.personality.userId, req.user.id),
+            ),
+          )
+          .limit(1),
+        drizzle
+          .select()
+          .from(schema.directives)
+          .where(
+            and(
+              eq(schema.directives.agentId, req.params.id),
+              eq(schema.directives.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.directives.priority)),
+        drizzle
+          .select()
+          .from(schema.knowledge)
+          .where(
+            and(
+              eq(schema.knowledge.agentId, req.params.id),
+              eq(schema.knowledge.userId, req.user.id),
+            ),
+          )
+          .orderBy(desc(schema.knowledge.createdAt)),
+      ]);
+      const record = agentRows[0];
+      const identity = record
+        ? resolveAgentVideoPresenter({
+            id: req.params.id,
+            name: record.name,
+            role: record.role,
+            isBusinessAgent: record.isBusinessAgent ?? false,
+            videoPresenterProvider: record.videoPresenterProvider,
+            videoPresenterAvatarId: record.videoPresenterAvatarId,
+            videoPresenterConsentStatus: record.videoPresenterConsentStatus,
+          })
+        : null;
+      res.json({
+        role: record?.role || "customer_service",
+        archetype: record?.archetype || "Assistant",
+        enabledTools: normalizeEnabledTools(record?.enabledTools),
+        personality: personalities[0]?.content || "",
+        directives,
+        knowledge,
+        identity,
+      });
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("GET /api/mobile/agents/:id/config failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to load agent setup.");
+    }
+  },
+);
+
+const mobileManualConfigSchema = z.object({
+  type: z.enum(["personality", "directive", "knowledge", "flow"]),
+  content: z.string().min(1).max(12000),
+});
+
+router.post(
+  "/api/mobile/agents/:id/config/manual",
+  authenticateUser,
+  mobileSensitiveRateLimiter,
+  validate({ body: mobileManualConfigSchema }),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await ownedAgent(req.params.id, req.user.id))) {
+        throw AppError.fromHttpStatus(404, "Agent not found.");
+      }
+      const type = req.body.type as "personality" | "directive" | "knowledge" | "flow";
+      const content = cleanText(req.body.content, 12000);
+      if (type === "personality") {
+        await drizzle
+          .insert(schema.personality)
+          .values({ agentId: req.params.id, userId: req.user.id, content })
+          .onConflictDoUpdate({
+            target: schema.personality.agentId,
+            set: { userId: req.user.id, content },
+          });
+      } else if (type === "directive") {
+        await drizzle
+          .insert(schema.directives)
+          .values({ agentId: req.params.id, userId: req.user.id, content, priority: 5 });
+      } else if (type === "knowledge") {
+        await drizzle.insert(schema.knowledge).values({
+          agentId: req.params.id,
+          userId: req.user.id,
+          content,
+        });
+      } else {
+        await drizzle
+          .update(schema.agents)
+          .set({ flowConfig: content })
+          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+      }
+      res.json({ success: true });
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("POST /api/mobile/agents/:id/config/manual failed", {
+        error: getErrorMessage(err),
+      });
+      throw AppError.fromHttpStatus(500, "Failed to save agent setup.");
+    }
+  },
+);
+
+const mobileToolsSchema = z.object({ enabled_tools: z.array(z.string()).default([]) });
+
+router.post(
+  "/api/mobile/agents/:id/tools",
+  authenticateUser,
+  mobileSensitiveRateLimiter,
+  validate({ body: mobileToolsSchema }),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!(await ownedAgent(req.params.id, req.user.id))) {
+        throw AppError.fromHttpStatus(404, "Agent not found.");
+      }
+      const raw = req.body.enabled_tools as string[];
+      if (raw.some((tool) => !isAgentToolName(tool))) {
+        throw AppError.fromHttpStatus(400, "enabled_tools must contain known agent tools");
+      }
+      const enabledTools = normalizeEnabledTools(raw as AgentToolName[]);
+      await drizzle
+        .update(schema.agents)
+        .set({ enabledTools })
+        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+      res.json({ success: true, enabledTools });
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("POST /api/mobile/agents/:id/tools failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to update agent tools.");
     }
   },
 );

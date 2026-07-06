@@ -50,7 +50,7 @@ class WirelineApi(context: Context) {
 
     suspend fun me(): MobileMe = get("/api/mobile/me")
     suspend fun agents(): AgentList = get("/api/mobile/agents")
-    suspend fun agentSetup(agentId: String): MobileAgentSetup = get("/api/agent-config/${escape(agentId)}")
+    suspend fun agentSetup(agentId: String): MobileAgentSetup = get("/api/mobile/agents/${escape(agentId)}/config")
     suspend fun activeCalls(): ActiveCallList = get("/api/mobile/calls/active")
     suspend fun recentCalls(limit: Int = 20): RecentCallsResponse = get("/api/mobile/calls/recent?limit=$limit")
     suspend fun wallet(): WalletResponse = get("/api/mobile/wallet")
@@ -62,7 +62,7 @@ class WirelineApi(context: Context) {
         isBusinessAgent: Boolean = false,
     ): Agent {
         return post(
-            "/api/agents",
+            "/api/mobile/agents",
             JSONObject()
                 .put("name", name)
                 .put("role", role)
@@ -82,12 +82,12 @@ class WirelineApi(context: Context) {
     }
 
     suspend fun saveSetupEntry(agentId: String, type: String, content: String) {
-        postRaw("/api/agent-config/${escape(agentId)}/manual", JSONObject().put("type", type).put("content", content))
+        postRaw("/api/mobile/agents/${escape(agentId)}/config/manual", JSONObject().put("type", type).put("content", content))
     }
 
     suspend fun setEnabledTools(agentId: String, enabledTools: List<String>) {
         postRaw(
-            "/api/agents/${escape(agentId)}/import",
+            "/api/mobile/agents/${escape(agentId)}/tools",
             JSONObject().put("enabled_tools", JSONArray(enabledTools))
         )
     }

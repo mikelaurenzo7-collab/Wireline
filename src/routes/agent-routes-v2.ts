@@ -246,6 +246,12 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
   }
 });
 
+router.get("/api/agents/roles", authenticateUser, (_req: AuthenticatedRequest, res: Response) => {
+  res.json({
+    roles: Object.entries(roleArchetypes).map(([id, label]) => ({ id, label })),
+  });
+});
+
 router.post(
   "/api/agents",
   authenticateUser,

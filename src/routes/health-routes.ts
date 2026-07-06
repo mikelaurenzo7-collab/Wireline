@@ -167,6 +167,19 @@ router.get(
 router.get("/actions", healthRateLimiter, authenticateUser, requirePlatformAdmin, (_req, res) =>
   res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
 );
+router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) =>
+  res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
+);
+router.get("/slos", healthRateLimiter, requireMonitorToken, (_req, res) =>
+  res.json({
+    status: "ok",
+    targets: {
+      availability: "99.5%",
+      incident_response: "P0/P1 post-incident report within 72 hours",
+    },
+    timestamp: new Date().toISOString(),
+  }),
+);
 router.get("/public", healthRateLimiter, async (_req, res) => {
   const [voice, reasoning] = await Promise.all([
     probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),

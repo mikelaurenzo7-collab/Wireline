@@ -2,13 +2,13 @@ import Foundation
 
 enum MobileSetupAPI {
     static func load(agentId: String) async throws -> MobileAgentSetup {
-        try await request(path: "/api/agent-config/\(escaped(agentId))", method: "GET")
+        try await request(path: "/api/mobile/agents/\(escaped(agentId))/config", method: "GET")
     }
 
     static func save(agentId: String, type: String, content: String) async throws {
         struct Payload: Encodable { let type: String; let content: String }
         let _: EmptyResponse = try await request(
-            path: "/api/agent-config/\(escaped(agentId))/manual",
+            path: "/api/mobile/agents/\(escaped(agentId))/config/manual",
             method: "POST",
             body: Payload(type: type, content: content)
         )
@@ -17,7 +17,7 @@ enum MobileSetupAPI {
     static func updateActions(agentId: String, enabled: [String]) async throws {
         struct Payload: Encodable { let enabled_tools: [String] }
         let _: EmptyResponse = try await request(
-            path: "/api/agents/\(escaped(agentId))/import",
+            path: "/api/mobile/agents/\(escaped(agentId))/tools",
             method: "POST",
             body: Payload(enabled_tools: enabled)
         )

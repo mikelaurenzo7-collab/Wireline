@@ -88,7 +88,7 @@ approved production voice provider; the app never sees prompt text.
 
 Bearer-token only. The app signs in via the existing `POST /api/auth/signin`,
 stores the JWT in the Keychain, and sends `Authorization: Bearer <jwt>` on every
-`/api/mobile/*` call. Native requests carry no `Origin`/`Referer` and never send
+mobile request. The target contract is `/api/mobile/*`; native setup helpers use the mobile adapter for agent creation, setup, tool toggles, calls, wallet, devices, and handoff. Native requests carry no `Origin`/`Referer` and never send
 cookies, so the surface is structurally not CSRF-reachable. Refresh via
 `POST /api/auth/refresh`.
 

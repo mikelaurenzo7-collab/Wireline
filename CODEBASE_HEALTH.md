@@ -81,6 +81,11 @@ Use customer-facing language consistently:
 | `ARCHITECTURE.md` | Runtime architecture, data-flow boundaries, security invariants. |
 | `docs/README.md` | Documentation index and canonical/historical status map. |
 | `docs/REPO_HEALTH_AUDIT_2026-07-04.md` | Current health-pass audit, actions, and next priorities. |
+| `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` | Active rebuild/delete triage for excluded and unmounted product surfaces. |
+| `docs/PRODUCT_SHOWCASE_MATRIX.md` | Active whole-product showcase matrix and feature-status discipline. |
+| `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` | Active phased level-up plan for repo, product, trust, cost, and surfaces. |
+| `docs/TRUST_CONVERSION_PACK.md` | Active customer trust, compliance, and proof posture. |
+| `docs/LAUNCH_READINESS_AND_MARGIN.md` | Active launch readiness and account-level margin cockpit plan. |
 | `docs/business-usage-pricing-decision.md` | Billing catalog and Stripe product model. |
 | `docs/CLIENT_SURFACES.md` | Web, browser, native, and ChatGPT ownership boundaries. |
 | `docs/CHATGPT_APP.md` | ChatGPT App contract and release verification. |
@@ -90,14 +95,21 @@ Use customer-facing language consistently:
 
 Run the narrowest sufficient check while developing, then the full gate before merge.
 
-- `npm run verify` — design check, Stripe catalog contract, production build, and bundled-server import smoke.
-- `npm run verify:full` — type check, server lint, design check, Stripe catalog contract, authz, bootstrap, CSP, tests, build, and smoke.
+- `npm run verify` — design check, source-control hygiene, route registry, docs index, design-token parity, Stripe catalog contract, production build, and bundled-server import smoke.
+- `npm run verify:full` — type check, server lint, design/source-control/route/docs/token checks, Stripe catalog contract, authz, bootstrap, CSP, tests, build, and smoke.
 - `npm run verify:contracts` — product voice, metadata, event taxonomy, and static contracts.
 - `node apps/browser-extension/scripts/build.mjs --check` — browser extension packaging and policy checks.
 - `GET /api/health` — deployed health probe.
 - Review Vercel runtime errors after each deployment.
 
 ## Recent health actions
+
+### 2026-07-06 level-up guardrails
+
+- Promoted source-control hygiene, route registry invariants, docs index integrity, and design-token parity into the normal verification path.
+- Added `docs/PRODUCT_SHOWCASE_MATRIX.md` so all Wireline features are showcased while retaining live/beta/planned/historical status discipline.
+- Added `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` as the phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion.
+- Removed the stale browser `wireline_token` bearer fallback so web auth stays httpOnly-cookie based while native remains explicit Bearer auth.
 
 ### 2026-07-05 Aurora rebrand
 

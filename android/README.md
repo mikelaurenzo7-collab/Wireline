@@ -4,7 +4,7 @@ Native Kotlin + Jetpack Compose client for the Wireline mobile API.
 
 The Android app is the everyday control surface for Wireline agents:
 
-- Sign in through `POST /api/auth/signin`, then reuse the `wireline_session` JWT as `Authorization: Bearer` on `/api/mobile/*`.
+- Sign in through `POST /api/auth/signin`, then reuse the `wireline_session` JWT as `Authorization: Bearer` on mobile requests. The target contract is `/api/mobile/*`; native setup helpers use the mobile adapter for agent creation, setup, tool toggles, calls, wallet, devices, and handoff.
 - Register a Firebase Cloud Messaging token with `POST /api/mobile/devices`.
 - Ask Wireline to place a call, review call updates and recaps, manage callback handoff, and check usage balance.
 - Present inbound Wireline calls through Android Telecom as a self-managed `ConnectionService`.

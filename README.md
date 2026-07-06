@@ -48,7 +48,7 @@ Load the generated target package from `apps/browser-extension/dist/chromium` or
 ## Verification before changes land
 
 ```bash
-npm run verify       # design check + Stripe catalog contract + build + server smoke
+npm run verify       # design + source-control + routes + docs + token parity + Stripe + build + smoke
 npm run verify:full  # lint + server lint + design + Stripe + authz + CSP + tests + build + smoke
 npm run verify:contracts
 node apps/browser-extension/scripts/build.mjs --check
@@ -61,9 +61,9 @@ Use `npm run verify` for focused implementation branches and `npm run verify:ful
 
 | Area | Source of truth |
 | --- | --- |
-| Repo health | `CODEBASE_HEALTH.md`, `docs/REPO_HEALTH_AUDIT_2026-07-04.md` |
+| Repo health | `CODEBASE_HEALTH.md`, `docs/REPO_HEALTH_AUDIT_2026-07-04.md`, `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` |
 | Architecture | `ARCHITECTURE.md`, `src/server/register-api-routes.ts`, `src/routes/AppRoutes.tsx` |
-| Product docs | `docs/README.md`, `docs/CLIENT_SURFACES.md`, `docs/CHATGPT_APP.md` |
+| Product docs | `docs/README.md`, `docs/CLIENT_SURFACES.md`, `docs/CHATGPT_APP.md`, `docs/PRODUCT_SHOWCASE_MATRIX.md`, `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` |
 | Pricing and billing | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts` |
 | Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 | Voice and models | `src/lib/ai-models.ts`, `src/lib/voice/`, `src/routes/grok-voice-routes.ts`, `docs/GROK_LIVE_VOICE.md` |
@@ -75,7 +75,7 @@ Use `npm run verify` for focused implementation branches and `npm run verify:ful
 ## Repository hygiene contract
 
 - Do not commit generated visual QA output, screenshots, local agent artifacts, `.grok/artifacts`, temporary patches, coverage, Playwright output, or build output.
-- Do not add new canonical docs without linking them from `docs/README.md` or explicitly marking them historical.
+- Do not add new canonical docs without linking them from `docs/README.md` or explicitly marking them historical. The standard verification gate now checks this.
 - Do not create parallel design systems, duplicate source-of-truth files, or temporary `*-v2` migration wrappers.
 - Keep provider credentials, user data, billing, webhook validation, and tenant-scoped reads server-owned.
 - Keep browser extension behavior explicit-user-action only: no broad host permissions, no silent browsing, no token storage, no page harvesting.
