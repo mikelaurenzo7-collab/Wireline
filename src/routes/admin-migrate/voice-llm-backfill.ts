@@ -6,27 +6,28 @@ import { sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../../types/auth";
 import { authorizeMigration, optionalAuth } from "./auth";
 import { jobsRateLimit } from "../../middleware/api-rate-limits";
+import { VAPI_TENANT_DEFAULT_MODEL, VAPI_TENANT_DEFAULT_PROVIDER } from "../../lib/ai-models";
 
 const router = Router();
 
 // The cutover values. New signups already default to these via the
 // schema (wireline_settings.voice_llm_provider / voice_llm_model), but
-// tenants created before the 2026-Q1 Sonnet-voice tiering pass still
-// carry the legacy Gemini voice path. This endpoint flips them.
-const LEGACY_PROVIDER = "google";
-const LEGACY_MODEL = "gemini-3.5-flash";
-const TARGET_PROVIDER = "anthropic";
-const TARGET_MODEL = "claude-sonnet-4-6";
+// tenants created before the OpenAI-native runtime pass can still carry
+// legacy Gemini or Claude voice paths. This endpoint flips them.
+const LEGACY_PAIRS = [
+  { provider: "google", model: "gemini-3.5-flash" },
+  { provider: "anthropic", model: "claude-sonnet-4-6" },
+] as const;
+const TARGET_PROVIDER = VAPI_TENANT_DEFAULT_PROVIDER;
+const TARGET_MODEL = VAPI_TENANT_DEFAULT_MODEL;
 
 /**
- * One-shot tenant backfill — flip legacy `google` / `gemini-3.5-flash`
- * voice-LLM settings rows to `anthropic` / `claude-sonnet-4-6`.
+ * One-shot tenant backfill: flip legacy voice-LLM settings rows to the
+ * OpenAI-native managed default.
  *
- * Backlog item 3 from AUDIT_WINS.md. The 2026-Q1 tiering pass changed
- * the schema *default* only, which affects new signups; existing
- * tenants keep running Gemini on the live voice path until an Account Holder
- * updates them. This endpoint performs the wholesale migration the
- * audit note called for: gated, dry-run-first, and audited.
+ * This catches both the old Gemini voice path and the intermediate Claude
+ * voice path. It performs the wholesale migration as a gated, dry-run-first,
+ * audited operation.
  *
  * Safety:
  *   - Gated by authorizeMigration (OWNER_EMAIL or X-Migration-Token).
@@ -54,8 +55,8 @@ router.post(
       const countRes: any = await drizzle.execute(sql`
         SELECT COUNT(*)::int AS n
         FROM wireline_settings
-        WHERE voice_llm_provider = ${LEGACY_PROVIDER}
-          AND voice_llm_model = ${LEGACY_MODEL};
+        WHERE (voice_llm_provider = 'google' AND voice_llm_model = 'gemini-3.5-flash')
+           OR (voice_llm_provider = 'anthropic' AND voice_llm_model = 'claude-sonnet-4-6');
       `);
       const candidates: number = Number(countRes?.rows?.[0]?.n ?? countRes?.[0]?.n ?? 0) || 0;
 
@@ -68,7 +69,7 @@ router.post(
           ok: true,
           dryRun: true,
           candidates,
-          from: { provider: LEGACY_PROVIDER, model: LEGACY_MODEL },
+          from: LEGACY_PAIRS,
           to: { provider: TARGET_PROVIDER, model: TARGET_MODEL },
           message:
             candidates === 0
@@ -82,8 +83,8 @@ router.post(
         SET voice_llm_provider = ${TARGET_PROVIDER},
             voice_llm_model = ${TARGET_MODEL},
             updated_at = now()
-        WHERE voice_llm_provider = ${LEGACY_PROVIDER}
-          AND voice_llm_model = ${LEGACY_MODEL};
+        WHERE (voice_llm_provider = 'google' AND voice_llm_model = 'gemini-3.5-flash')
+           OR (voice_llm_provider = 'anthropic' AND voice_llm_model = 'claude-sonnet-4-6');
       `);
       const updated: number = Number(updateRes?.rowCount ?? updateRes?.count ?? candidates) || 0;
 
@@ -93,7 +94,7 @@ router.post(
           userId: actorId,
           changes: {
             migration: "voice-llm-backfill",
-            from: { provider: LEGACY_PROVIDER, model: LEGACY_MODEL },
+            from: LEGACY_PAIRS,
             to: { provider: TARGET_PROVIDER, model: TARGET_MODEL },
             rows_updated: updated,
           },
@@ -113,7 +114,7 @@ router.post(
         ok: true,
         dryRun: false,
         updated,
-        from: { provider: LEGACY_PROVIDER, model: LEGACY_MODEL },
+        from: LEGACY_PAIRS,
         to: { provider: TARGET_PROVIDER, model: TARGET_MODEL },
         message: `Migrated ${updated} tenant settings row(s) to ${TARGET_PROVIDER}/${TARGET_MODEL}.`,
       });

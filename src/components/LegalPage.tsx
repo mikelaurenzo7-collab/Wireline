@@ -93,7 +93,7 @@ export function PrivacyPolicy() {
     <LegalLayout title="Privacy Policy" icon={Shield}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, Anthropic, Stripe, and Vercel. Last updated May 9, 2026."
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, OpenAI, Google Gemini, Stripe, and Vercel. Last updated May 9, 2026."
         path="/privacy"
       />
 
@@ -137,8 +137,9 @@ export function PrivacyPolicy() {
       <Section title="3. How We Use Your Data">
         <p>
           We use collected data to: provide and operate the Wireline platform; process AI requests
-          via Anthropic's Claude API; route and log voice calls via our voice network; send
-          scheduled email briefs via your linked Gmail/Outlook account; and bill you via Stripe.
+          via OpenAI's API with Google Gemini as a managed fallback; route and log voice calls via
+          our voice network; send scheduled email briefs via your linked Gmail/Outlook account; and
+          bill you via Stripe.
         </p>
         <p>
           We do <strong>not</strong> sell or share your personal information with third parties for
@@ -157,7 +158,10 @@ export function PrivacyPolicy() {
             <strong>Voice AI Infrastructure</strong> — Real-time voice processing and call routing
           </li>
           <li>
-            <strong>Anthropic</strong> (anthropic.com) — AI model inference (Claude)
+            <strong>OpenAI</strong> (openai.com) — AI model inference
+          </li>
+          <li>
+            <strong>Google Gemini</strong> (google.com) — AI model fallback inference
           </li>
           <li>
             <strong>Stripe</strong> (stripe.com) — Payment processing and billing

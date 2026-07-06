@@ -4,12 +4,13 @@ import { Router, Request, Response } from "express";
 import { AppError } from "../../lib/api-error";
 import { drizzle, log } from "../../lib/server-context";
 import * as schema from "../../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../../types/auth";
 import { WIRELINE_PERSONAS } from "../../lib/wireline-agent-personas";
 import type { WirelinePersonaId } from "../../lib/wireline-agent-escalation";
 import { purgeAccount } from "../../lib/account-deletion";
 import { authorizeMigration, optionalAuth } from "./auth";
+import { VAPI_TENANT_DEFAULT_MODEL, VAPI_TENANT_DEFAULT_PROVIDER } from "../../lib/ai-models";
 
 const router = Router();
 
@@ -533,7 +534,7 @@ router.post(
 
 /**
  * Secure, admin-only dry-runnable route to backfill legacy settings.
- * Updates settings rows where voiceLlmProvider = 'google' to 'anthropic' and 'claude-sonnet-4-6'.
+ * Updates legacy Google/Claude voice defaults to the OpenAI-native managed default.
  *
  * Body: { dryRun?: boolean }
  */
@@ -546,7 +547,7 @@ router.post(
     const dryRun = req.body.dryRun !== false && req.query.dry_run !== "false";
 
     try {
-      // Find rows that match the legacy condition
+      // Find rows that still match a retired managed voice default.
       const matchingRows = await drizzle
         .select({
           id: schema.settings.id,
@@ -555,7 +556,18 @@ router.post(
           voiceLlmModel: schema.settings.voiceLlmModel,
         })
         .from(schema.settings)
-        .where(eq(schema.settings.voiceLlmProvider, "google"));
+        .where(
+          or(
+            and(
+              eq(schema.settings.voiceLlmProvider, "google"),
+              eq(schema.settings.voiceLlmModel, "gemini-3.5-flash"),
+            ),
+            and(
+              eq(schema.settings.voiceLlmProvider, "anthropic"),
+              eq(schema.settings.voiceLlmModel, "claude-sonnet-4-6"),
+            ),
+          ),
+        );
 
       if (dryRun) {
         log.info("[backfill-voice-defaults] Dry-run backfill voice settings defaults", {
@@ -574,15 +586,26 @@ router.post(
         });
       }
 
-      // Execute update query to backfill Anthropic defaults
+      // Execute update query to backfill the OpenAI-native managed defaults.
       const result = await drizzle
         .update(schema.settings)
         .set({
-          voiceLlmProvider: "anthropic",
-          voiceLlmModel: "claude-sonnet-4-6",
+          voiceLlmProvider: VAPI_TENANT_DEFAULT_PROVIDER,
+          voiceLlmModel: VAPI_TENANT_DEFAULT_MODEL,
           updatedAt: new Date(),
         })
-        .where(eq(schema.settings.voiceLlmProvider, "google"));
+        .where(
+          or(
+            and(
+              eq(schema.settings.voiceLlmProvider, "google"),
+              eq(schema.settings.voiceLlmModel, "gemini-3.5-flash"),
+            ),
+            and(
+              eq(schema.settings.voiceLlmProvider, "anthropic"),
+              eq(schema.settings.voiceLlmModel, "claude-sonnet-4-6"),
+            ),
+          ),
+        );
 
       const updatedCount = (result as any)?.rowCount ?? matchingRows.length;
 

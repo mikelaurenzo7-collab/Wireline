@@ -22,4 +22,38 @@ describe("marketing metadata contract", () => {
     expect(staticHead).toContain('"@type":"SoftwareApplication"');
     expect(staticHead).not.toContain('"@type":"Offer"');
   });
+
+  it("keeps public pricing, contact, and ROI copy aligned to the active catalog", () => {
+    const pricing = read("src/pages/Pricing.tsx");
+    const contact = read("src/components/ContactPage.tsx");
+    const roi = read("src/components/marketing/RoiCalculator.tsx");
+    const catalog = read("src/lib/plan-catalog.ts");
+
+    expect(catalog).toContain('id: "team"');
+    expect(catalog).toContain("price_usd_monthly: 29");
+    expect(catalog).toContain('id: "business"');
+    expect(catalog).toContain("price_usd_monthly: 59");
+
+    expect(pricing).toContain("Build and train one agent for free");
+    expect(contact).toContain(
+      "Create and train for free. Team starts at $29/mo; Business starts at $59/mo.",
+    );
+    expect(contact).toContain('searchParams.get("intent") ?? searchParams.get("topic")');
+    expect(contact).toContain("Preferred callback");
+    expect(roi).toContain("Net annual savings (after Wireline Business)");
+    expect(roi).toContain("Business tier billed at $59/mo");
+    expect(pricing).toContain("Buying posture");
+    expect(pricing).toContain("Usage-based API minutes plus model and line economics");
+
+    for (const source of [pricing, contact, roi]) {
+      expect(source).not.toContain("Personal starts at $9");
+      expect(source).not.toContain("Business coverage starts at $99");
+      expect(source).not.toContain("Wireline Pro");
+      expect(source).not.toContain("Account Holder tier");
+      expect(source).not.toContain("Everyday tier");
+      expect(source).not.toContain("~$0.07/min");
+      expect(source).not.toContain("~$0.05/min");
+      expect(source).not.toContain("~$0.08/min");
+    }
+  });
 });

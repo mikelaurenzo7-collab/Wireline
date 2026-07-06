@@ -25,13 +25,19 @@ const INQUIRY_TYPES = [
 export function ContactPage() {
   const [searchParams] = useSearchParams();
   const salesAgent = WIRELINE_FEATURED_TEAM_AGENT;
-  const initialIntent = searchParams.get("intent");
+  const initialIntent = searchParams.get("intent") ?? searchParams.get("topic");
+  const startsAsSales = ["sales", "business", "enterprise"].includes(
+    initialIntent?.toLowerCase() ?? "",
+  );
   const [inquiryType, setInquiryType] = useState<(typeof INQUIRY_TYPES)[number]["value"]>(
-    initialIntent === "sales" ? "sales" : "personal",
+    startsAsSales ? "sales" : "personal",
   );
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(
+    initialIntent?.toLowerCase() === "enterprise" ? "Enterprise rollout" : "",
+  );
+  const [phone, setPhone] = useState("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -41,7 +47,11 @@ export function ContactPage() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
-    const composedBody = company ? `Company: ${company}\n\n${body}` : body;
+    const contextLines = [
+      company ? `Company: ${company}` : null,
+      phone ? `Preferred callback: ${phone}` : null,
+    ].filter(Boolean);
+    const composedBody = contextLines.length ? `${contextLines.join("\n")}\n\n${body}` : body;
     try {
       const response = await fetch("/api/support/ticket", {
         method: "POST",
@@ -117,7 +127,7 @@ export function ContactPage() {
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
-              Personal starts at $9. Business coverage starts at $99.
+              Create and train for free. Team starts at $29/mo; Business starts at $59/mo.
             </p>
           </Link>
         </section>
@@ -170,6 +180,17 @@ export function ContactPage() {
                   />
                 </label>
               </div>
+              <label className="grid gap-2 text-sm font-semibold text-foreground">
+                Callback number{" "}
+                <span className="font-normal text-muted-foreground">(optional)</span>
+                <Input
+                  type="tel"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="Best number for a fit call or rollout question"
+                />
+              </label>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Subject
                 <Input

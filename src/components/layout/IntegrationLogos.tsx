@@ -225,11 +225,20 @@ const ALL_LOGOS: Record<string, LogoDef> = {
     ),
   },
   // Cloud & AI partners:
-  anthropic: {
-    name: "Anthropic",
+  openai: {
+    name: "OpenAI",
     svg: (
-      <svg viewBox="0 0 24 24" aria-label="Anthropic" width="100%" height="100%">
-        <path d="M12 2L1 21.5h4.8L8 15.2h8l2.2 6.3h4.8L12 2zm-2.8 9.5L12 5.8l2.8 5.7h-5.6z" />
+      <svg viewBox="0 0 64 24" aria-label="OpenAI" width="100%" height="100%">
+        <text
+          x="2"
+          y="16"
+          fontFamily="Inter, Arial, sans-serif"
+          fontSize="13"
+          fontWeight="650"
+          letterSpacing="0"
+        >
+          OpenAI
+        </text>
       </svg>
     ),
   },
@@ -296,7 +305,7 @@ const INTEGRATES_WITH: LogoDef[] = [
 ];
 
 const POWERED_BY: LogoDef[] = [
-  ALL_LOGOS.anthropic,
+  ALL_LOGOS.openai,
   ALL_LOGOS.gemini,
   ALL_LOGOS.elevenlabs,
   ALL_LOGOS.vapi,

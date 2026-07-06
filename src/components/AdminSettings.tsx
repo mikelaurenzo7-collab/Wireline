@@ -16,6 +16,7 @@ import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
+import { VAPI_TENANT_DEFAULT_MODEL, VAPI_TENANT_DEFAULT_PROVIDER } from "../lib/ai-models";
 
 // Modularized Panels
 import { AccountsPanel } from "./admin/AccountsPanel";
@@ -67,8 +68,8 @@ export default function AdminSettings() {
     vapi_phone_inbound_agent_id: "",
     subscription_status: "active",
     max_agents: 3,
-    voice_llm_provider: "anthropic",
-    voice_llm_model: "claude-sonnet-4-6",
+    voice_llm_provider: VAPI_TENANT_DEFAULT_PROVIDER,
+    voice_llm_model: VAPI_TENANT_DEFAULT_MODEL,
     twilio_messaging_enabled: false,
     twilio_lookup_enabled: false,
     twilio_manager_alerts_enabled: false,
@@ -192,8 +193,8 @@ export default function AdminSettings() {
           vapi_phone_inbound_agent_id: settingsRes.vapi_phone_inbound_agent_id || "",
           subscription_status: settingsRes.subscription_status || "active",
           max_agents: settingsRes.max_agents || 3,
-          voice_llm_provider: settingsRes.voice_llm_provider || "anthropic",
-          voice_llm_model: settingsRes.voice_llm_model || "claude-sonnet-4-6",
+          voice_llm_provider: settingsRes.voice_llm_provider || VAPI_TENANT_DEFAULT_PROVIDER,
+          voice_llm_model: settingsRes.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
           twilio_messaging_enabled: !!settingsRes.twilio_messaging_enabled,
           twilio_lookup_enabled: !!settingsRes.twilio_lookup_enabled,
           twilio_manager_alerts_enabled: !!settingsRes.twilio_manager_alerts_enabled,

@@ -20,8 +20,25 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { AdminSaveBar } from "./AdminSaveBar";
 import { OPS_ADMIN } from "../../lib/wireline-ops-design";
+import { VAPI_TENANT_DEFAULT_MODEL, VAPI_TENANT_DEFAULT_PROVIDER } from "../../lib/ai-models";
 
 const CARRIER_AGENT_UNSET = "__unset__";
+const COGNITIVE_ROUTING_OPTIONS = [
+  {
+    v: VAPI_TENANT_DEFAULT_PROVIDER,
+    model: VAPI_TENANT_DEFAULT_MODEL,
+    label: "OpenAI GPT-4o",
+    sub: "PRIMARY",
+    desc: "Default live-call model for adaptive tone, tool reliability, and natural cadence.",
+  },
+  {
+    v: "google",
+    model: "gemini-3.5-flash",
+    label: "Gemini 3.5 Flash",
+    sub: "FAST FALLBACK",
+    desc: "Low-latency outage fallback when OpenAI is unavailable.",
+  },
+] as const;
 
 interface CarrierPanelProps {
   settings: CarrierSettings;
@@ -213,20 +230,7 @@ export function CarrierPanel({
                 <div className="rounded-md wl-panel border border-input p-4 space-y-3 bg-black/10">
                   <div className="wl-label text-primary">Custom Model Selection</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {[
-                      {
-                        v: "anthropic",
-                        label: "Claude Sonnet 4.6",
-                        sub: "PRIMARY",
-                        desc: "Default live-call model for adaptive tone, tool reliability, and natural cadence.",
-                      },
-                      {
-                        v: "google",
-                        label: "Gemini 3.5 Flash",
-                        sub: "FAST FALLBACK",
-                        desc: "Low-latency outage fallback for Anthropic voice disruptions; GPT can remain a second-tier recovery path.",
-                      },
-                    ].map((p) => (
+                    {COGNITIVE_ROUTING_OPTIONS.map((p) => (
                       <ShadButton
                         key={p.v}
                         type="button"
@@ -236,8 +240,7 @@ export function CarrierPanel({
                           onUpdateSettings({
                             ...settings,
                             voice_llm_provider: p.v,
-                            voice_llm_model:
-                              p.v === "anthropic" ? "claude-sonnet-4-6" : "gemini-3.5-flash",
+                            voice_llm_model: p.model,
                           })
                         }
                         className={cn(

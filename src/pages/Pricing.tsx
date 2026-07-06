@@ -120,32 +120,32 @@ const COMPETITOR_POSITIONING = [
     platform: "Retell AI",
     useCase: "Phone sales/support agents",
     deployment: "SaaS builder",
-    pricing: "~$0.07/min pay-as-you-go",
-    edge: "Strong analytics and warm transfer; no live avatar surface.",
+    pricing: "Metered voice AI with enterprise infrastructure options",
+    edge: "Strong phone automation; Wireline adds a guided operating console and live presenter lane.",
     highlight: false,
   },
   {
     platform: "Vapi.ai",
     useCase: "Developer voice toolkit",
     deployment: "API / SDK",
-    pricing: "~$0.05/min + line fees",
-    edge: "Flexible for engineers; not a guided operator console.",
+    pricing: "Usage-based API minutes plus model and line economics",
+    edge: "Flexible for engineers; Wireline packages the runtime into customer-ready workflows.",
+    highlight: false,
+  },
+  {
+    platform: "Bland AI",
+    useCase: "SMB voice agents",
+    deployment: "Voice-agent platform",
+    pricing: "Usage tiers with higher-volume platform commitments",
+    edge: "Built for call volume; Wireline is betting on a calmer workspace and presenter trust layer.",
     highlight: false,
   },
   {
     platform: "Synthflow AI",
-    useCase: "SMB voice agents",
-    deployment: "Multi-tenant SaaS",
-    pricing: "~$0.08/min tiers",
-    edge: "HIPAA posture; drag-drop flows without presenter video.",
-    highlight: false,
-  },
-  {
-    platform: "Synthesia / avatar video",
-    useCase: "Scripted video avatars",
-    deployment: "Marketing video SaaS",
-    pricing: "Subscription + credits",
-    edge: "Offline video only — not live conversational agents.",
+    useCase: "SMB and enterprise voice workflows",
+    deployment: "No-code voice platform",
+    pricing: "Volume, integrations, security, and support drive contract scope",
+    edge: "Flow builder depth; Wireline differentiates with live presenter identity and first-call activation.",
     highlight: false,
   },
 ] as const;
@@ -434,7 +434,7 @@ export default function Pricing() {
                     <th className="px-3 py-3 font-semibold">Platform</th>
                     <th className="px-3 py-3 font-semibold">Use case</th>
                     <th className="px-3 py-3 font-semibold">Deployment</th>
-                    <th className="px-3 py-3 font-semibold">Pricing posture</th>
+                    <th className="px-3 py-3 font-semibold">Buying posture</th>
                     <th className="px-3 py-3 font-semibold">Gap vs Wireline</th>
                   </tr>
                 </thead>
@@ -455,11 +455,9 @@ export default function Pricing() {
               </table>
             </div>
             <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-              Competitor pricing is indicative from public pages (Retell, Vapi, Synthflow,
-              Synthesia, and avatar video tools) and should be refreshed before external campaigns.
-              Wireline commercial truth is the tier cards above plus{" "}
-              <span className="text-foreground">docs/business-usage-pricing-decision.md</span> in
-              the repository.
+              Public market pages change often. Wireline commercial truth is the tier cards above
+              plus <span className="text-foreground">docs/business-usage-pricing-decision.md</span>{" "}
+              in the repository.
             </p>
           </div>
         </section>

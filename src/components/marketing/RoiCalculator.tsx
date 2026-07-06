@@ -17,14 +17,14 @@
  *     become recoverable revenue (some callers truly didn't need help).
  *   - $22/hr median US admin-assistant wage (BLS 2025 mean).
  *   - 52 weeks/year.
- *   - Wireline Account Holder tier ($59/mo) used as the baseline for payback math.
- *     Everyday tier ($7) would shrink payback further; Custom (Custom)
- *     scales with more agents/minutes.
+ *   - Wireline Business tier ($59/mo) used as the baseline for payback math.
+ *     Personal can start lower through Conversation Balance; Enterprise is
+ *     scoped around rollout and committed usage.
  *
  * Honest output:
  *   - Annual revenue recovered
  *   - Annual labor cost saved
- *   - Net annual savings AFTER Wireline Account Holder tier ($708)
+ *   - Net annual savings AFTER Wireline Business tier ($708)
  *   - Payback days (when net first crosses zero)
  *   - A single line of plain-English summary for skim readers
  *
@@ -38,8 +38,8 @@ import { Calculator, TrendingUp, Clock } from "lucide-react";
 import { Slider } from "../ui/shadcn/Slider";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
-const WIRELINE_PRO_MONTHLY_USD = 59;
-const WIRELINE_PRO_ANNUAL_USD = WIRELINE_PRO_MONTHLY_USD * 12;
+const WIRELINE_BUSINESS_MONTHLY_USD = 59;
+const WIRELINE_BUSINESS_ANNUAL_USD = WIRELINE_BUSINESS_MONTHLY_USD * 12;
 const RECEPTIONIST_HOURLY_USD = 22; // US median, BLS 2025
 const MISSED_CALL_RECOVERY_PCT = 0.82;
 
@@ -114,11 +114,11 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
     const revenueRecovered = recoveredCallsPerYear * sliders.avgValue;
     const laborSaved = sliders.receptionistHours * RECEPTIONIST_HOURLY_USD * 52;
     const totalRecovered = revenueRecovered + laborSaved;
-    const netAnnual = totalRecovered - WIRELINE_PRO_ANNUAL_USD;
+    const netAnnual = totalRecovered - WIRELINE_BUSINESS_ANNUAL_USD;
     // Payback days = (cost / total_recovered) * 365, floored at 0
     const paybackDays =
       totalRecovered > 0
-        ? Math.max(1, Math.round((WIRELINE_PRO_ANNUAL_USD / totalRecovered) * 365))
+        ? Math.max(1, Math.round((WIRELINE_BUSINESS_ANNUAL_USD / totalRecovered) * 365))
         : Infinity;
 
     return {
@@ -273,7 +273,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               }
             >
               <p className="wl-label-muted leading-none mb-1">
-                Net annual savings (after Wireline Pro)
+                Net annual savings (after Wireline Business)
               </p>
               <p className="font-display italic text-3xl leading-none text-foreground">
                 {fmtUsd(Math.max(0, results.netAnnual))}
@@ -308,7 +308,8 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         <p className="mt-3 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
           Assumes Wireline recovers 82% of missed calls (the rest were wrong-numbers or
           window-shoppers). Labor saved uses $22/hr (US BLS 2025 admin-assistant median). Wireline
-          Account Holder tier billed at $59/mo. Switch tiers anytime.
+          Business tier billed at $59/mo. Create and train for free; live work uses Conversation
+          Balance.
         </p>
       </div>
     </motion.section>

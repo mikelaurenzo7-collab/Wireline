@@ -35,10 +35,8 @@ const required = [
 ];
 
 const recommended = [
-  ["ANTHROPIC_API_KEY", "Claude - required for /api/claude/* recipes"],
-  ["OPENROUTER_API_KEY", "OpenRouter - required for default Grok tenant voice routing"],
-  ["WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL", "Launch default: x-ai/grok-4.3"],
-  ["GEMINI_API_KEY", "Gemini Flash fallback when OpenRouter/Grok is unavailable"],
+  ["OPENAI_API_KEY", "Direct OpenAI fallback and OpenAI Realtime sessions"],
+  ["GEMINI_API_KEY", "Gemini fallback when OpenAI or AI Gateway is unavailable"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
   ["VAPI_PRIVATE_KEY", "Vapi outbound/inbound voice agents"],
   ["TWILIO_AUTH_TOKEN", "Twilio inbound SMS signature validation", process.env.TWILIO_AUTH_TOKEN],
@@ -66,14 +64,15 @@ const recommended = [
 ];
 
 const optional = [
-  ["OPENAI_API_KEY", "Optional GPT second-tier fallback / degraded-mode recovery"],
+  ["OPENROUTER_API_KEY", "Explicit per-agent custom-model pass-through"],
+  ["WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL", "Default OpenRouter model when a tenant opts in"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth - disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
   ["MICROSOFT_CLIENT_ID", "Outlook OAuth"],
   ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
   ["SENTRY_DSN", "Backend error monitoring"],
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
-  ["CLAUDE_MONTHLY_BUDGET_USD", "Optional rolling-24h Claude spend alert threshold"],
+  ["CLAUDE_MONTHLY_BUDGET_USD", "Legacy alias for rolling-24h AI spend alert threshold"],
   ["STRIPE_BUSINESS_PRICE_ID", "Reserved only if Enterprise self-serve checkout is re-enabled"],
   ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Reserved only if Enterprise annual checkout is re-enabled"],
   [
