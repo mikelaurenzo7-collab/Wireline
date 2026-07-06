@@ -4,7 +4,6 @@ import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { MetricStatTile } from "../ui/MetricStatTile";
 import { EmptyState } from "../ui/EmptyState";
 import { BrainCircuit } from "lucide-react";
-import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
 
 type AgentRow = { id: string; name: string };
 
@@ -63,11 +62,9 @@ export default function LearningMetricsView() {
   if (agents.length === 0) {
     return (
       <EmptyState
-        eyebrow="Learning loop"
-        title="No agents yet"
-        description="Deploy an agent to start capturing lessons from live calls."
+        title="No agents"
         icon={BrainCircuit}
-        actions={[...OPS_INSIGHTS_EMPTY.funnel.actions]}
+        actions={[{ label: "Studio", to: "/studio", primary: true }]}
       />
     );
   }

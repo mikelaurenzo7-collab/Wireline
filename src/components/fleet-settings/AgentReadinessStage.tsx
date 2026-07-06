@@ -10,9 +10,8 @@
  * needs to be the hero of the canvas. Readiness comes from the shared
  * `computeAgentReadiness` helper, so it always matches the rail's X/6 score.
  */
-import { ArrowDown, Check, Smartphone, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { computeAgentReadiness } from "./agent-readiness";
-import { WiredEyebrow } from "../ui/WiredEyebrow";
 import { cn } from "../../lib/utils";
 import type { AccountType } from "../../lib/account-type";
 
@@ -29,8 +28,7 @@ export default function AgentReadinessStage({
   integrationStatus,
   accountType = "personal",
 }: AgentReadinessStageProps) {
-  const isPersonal = accountType === "personal";
-  const { score, total, checks, nextStep, ready, softNudges } = computeAgentReadiness(
+  const { score, total, checks, nextStep, ready } = computeAgentReadiness(
     agent,
     agentConfig,
     integrationStatus,
@@ -39,7 +37,6 @@ export default function AgentReadinessStage({
 
   return (
     <div className="shrink-0 border-b border-border/50 bg-card/30 px-4 py-3 dark:bg-velvet/20">
-      <WiredEyebrow className="mb-2.5">Launch readiness</WiredEyebrow>
       <div className="flex items-center gap-4">
         {/* The one number that matters. */}
         <div className="flex shrink-0 items-baseline gap-1.5">
@@ -83,30 +80,6 @@ export default function AgentReadinessStage({
           </span>
         ) : null}
       </div>
-
-      {!ready ? (
-        <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
-          <Sparkles className="h-3 w-3 shrink-0 text-primary/60" />
-          Ask Studio below to handle it
-          <ArrowDown className="h-3 w-3 shrink-0 text-muted/50" />
-          or fine-tune it yourself in the rail on the right.
-        </p>
-      ) : isPersonal ? (
-        <p className="mt-2 flex items-center gap-1.5 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/75">
-          <Smartphone className="h-3 w-3 shrink-0 text-primary/60" />
-          Use it from your phone — tap the widget, ask Siri, or route a live call to your agent.
-        </p>
-      ) : softNudges.length ? (
-        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted/70">
-          <Sparkles className="h-3 w-3 shrink-0 text-primary/50" />
-          {softNudges.map((nudge) => (
-            <span key={nudge.id} className="inline-flex items-center gap-1">
-              <span className="font-medium text-foreground/75">{nudge.label}:</span>
-              <span>{nudge.hint}</span>
-            </span>
-          ))}
-        </p>
-      ) : null}
     </div>
   );
 }

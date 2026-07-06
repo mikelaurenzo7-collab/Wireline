@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
-import { WiredEyebrow } from "./ui/WiredEyebrow";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -146,16 +145,9 @@ export default function IntakeKeysManager() {
             <Inbox className="w-5 h-5" />
           </div>
           <div>
-            <WiredEyebrow>Inbound Intake API</WiredEyebrow>
-            <h4 className="font-display italic text-2xl text-foreground leading-tight mt-1">
-              Capture leads from anywhere
-            </h4>
-            <p className="text-[var(--wireline-typography-overline-size)] text-muted mt-1">
-              Issue an API key, point your form / CRM / Zapier at{" "}
-              <span className="font-mono text-foreground/80">POST /api/intake/lead</span>, and leads
-              land straight in Outbound + Triage. Fires{" "}
-              <span className="font-mono text-foreground/80">lead.received</span> webhook events.
-            </p>
+          <h4 className="font-display italic text-2xl text-foreground leading-tight">
+            Intake API
+          </h4>
           </div>
         </div>
         <ShadButton

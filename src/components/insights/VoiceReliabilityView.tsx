@@ -19,74 +19,11 @@ import {
 } from "recharts";
 import { cn } from "../../lib/utils";
 import { VOICE_VARIABLE_COST_PER_MIN_USD } from "../../lib/plan-catalog";
+import type {
+  VoiceLatencyRecentCallRow,
+  VoiceReliabilityResponse,
+} from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
-
-interface VoiceReliabilityPayload {
-  summary: {
-    windowDays: number;
-    totalCalls: number;
-    healthy: boolean;
-    latency: {
-      ttftP50Ms: number | null;
-      ttftP95Ms: number | null;
-      ttfAudioP50Ms: number | null;
-      healthy: boolean;
-    };
-    hangups: {
-      abnormalCount: number;
-      abnormalRatePct: number;
-      byReason: Record<string, number>;
-    };
-    toolCalls: {
-      total: number;
-      failed: number;
-      successRatePct: number | null;
-    };
-    escalations: {
-      attempted: number;
-      succeeded: number;
-      successRatePct: number | null;
-    };
-    webhooks: {
-      total: number;
-      failures: number;
-      failureRatePct: number | null;
-    };
-    economics: {
-      cogsPerMinUsd: number | null;
-      estimatedCogsPerMinUsd: number;
-      revenuePerMinUsd: number | null;
-      grossMarginPct: number | null;
-      totalCostUsd: number;
-      totalMinutes: number;
-    };
-  };
-  trends: Array<{
-    date: string;
-    totalCalls: number;
-    avgTtftMs: number | null;
-    p95TtftMs: number | null;
-    abnormalHangupRate: number;
-    toolCallFailureRate: number;
-    webhookFailureRate: number;
-    cogsPerMinUsd: number | null;
-  }>;
-  generatedAt: string;
-}
-
-interface RecentCallRow {
-  id: bigint;
-  vapiCallId: string | null;
-  createdAt: string;
-  durationSeconds: number | null;
-  ttftMs: number | null;
-  ttfAudioMs: number | null;
-  sttError: boolean | null;
-  ttsError: boolean | null;
-  pipelineError: string | null;
-  sentiment: string | null;
-  outcomeTag: string | null;
-}
 
 function formatPct(value: number | null, fallback = "—"): string {
   return value == null ? fallback : `${value.toFixed(1)}%`;
@@ -97,8 +34,8 @@ function formatUsd(value: number | null, digits = 3): string {
 }
 
 export default function VoiceReliabilityView({ days }: { days: number }) {
-  const [data, setData] = useState<VoiceReliabilityPayload | null>(null);
-  const [recent, setRecent] = useState<RecentCallRow[]>([]);
+  const [data, setData] = useState<VoiceReliabilityResponse | null>(null);
+  const [recent, setRecent] = useState<VoiceLatencyRecentCallRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -109,8 +46,8 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     setErr(null);
 
     Promise.all([
-      fetchInsight<VoiceReliabilityPayload>(`/api/insights/voice-reliability?days=${days}`),
-      fetchInsight<{ calls: RecentCallRow[] }>(`/api/insights/latency/recent?limit=25`).catch(
+      fetchInsight<VoiceReliabilityResponse>(`/api/insights/voice-reliability?days=${days}`),
+      fetchInsight<{ calls: VoiceLatencyRecentCallRow[] }>(`/api/insights/latency/recent?limit=25`).catch(
         () => ({ calls: [] }),
       ),
     ])

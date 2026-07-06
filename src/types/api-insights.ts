@@ -40,30 +40,183 @@ export interface InsightsLeaderboardResponse {
   agents: InsightsLeaderboardAgentRow[];
 }
 
-export interface InsightsTopicCluster {
-  topic: string;
+export interface InsightsTopicRow {
+  name: string;
   count: number;
-  sample_summary?: string;
+  category: string;
+  trend?: "growing" | "new" | "steady" | "declining";
+  example_quote?: string;
+  label?: string;
+  topic?: string;
+  id?: string;
 }
 
 /** GET /api/insights/topics */
 export interface InsightsTopicsResponse {
-  topics: InsightsTopicCluster[];
+  topics: InsightsTopicRow[];
   total_analyzed?: number;
   message?: string;
   cached?: boolean;
 }
 
-export interface InsightsFailureMode {
-  mode: string;
+export interface InsightsFailureModeRow {
+  failure_type: string;
+  severity: "critical" | "high" | "medium" | "low";
+  fix_target: string;
   count: number;
-  recommendation?: string;
+  description: string;
+  recommended_fix: string;
+  label?: string;
+  failure?: string;
+  id?: string;
 }
 
 /** GET /api/insights/failure-modes */
 export interface InsightsFailureModesResponse {
-  failure_modes: InsightsFailureMode[];
-  total_analyzed?: number;
+  modes: InsightsFailureModeRow[];
   message?: string;
   cached?: boolean;
 }
+
+export interface VoiceReliabilitySummaryResponse {
+  windowDays: number;
+  totalCalls: number;
+  healthy: boolean;
+  latency: {
+    ttftP50Ms: number | null;
+    ttftP95Ms: number | null;
+    ttfAudioP50Ms: number | null;
+    healthy: boolean;
+  };
+  hangups: {
+    abnormalCount: number;
+    abnormalRatePct: number;
+    byReason: Record<string, number>;
+  };
+  toolCalls: {
+    total: number;
+    failed: number;
+    successRatePct: number | null;
+  };
+  escalations: {
+    attempted: number;
+    succeeded: number;
+    successRatePct: number | null;
+  };
+  webhooks: {
+    total: number;
+    failures: number;
+    failureRatePct: number | null;
+  };
+  economics: {
+    cogsPerMinUsd: number | null;
+    estimatedCogsPerMinUsd: number;
+    revenuePerMinUsd: number | null;
+    grossMarginPct: number | null;
+    totalCostUsd: number;
+    totalMinutes: number;
+  };
+}
+
+export interface VoiceReliabilityTrendPointResponse {
+  date: string;
+  totalCalls: number;
+  avgTtftMs: number | null;
+  p95TtftMs: number | null;
+  abnormalHangupRate: number;
+  toolCallFailureRate: number;
+  webhookFailureRate: number;
+  cogsPerMinUsd: number | null;
+}
+
+/** GET /api/insights/voice-reliability */
+export interface VoiceReliabilityResponse {
+  summary: VoiceReliabilitySummaryResponse;
+  trends: VoiceReliabilityTrendPointResponse[];
+  generatedAt: string;
+}
+
+export interface VoiceLatencyRecentCallRow {
+  id: bigint | number | string;
+  vapiCallId: string | null;
+  createdAt: string;
+  durationSeconds: number | null;
+  ttftMs: number | null;
+  ttfAudioMs: number | null;
+  sttError: boolean | null;
+  ttsError: boolean | null;
+  pipelineError: string | null;
+  sentiment: string | null;
+  outcomeTag: string | null;
+}
+
+export interface InsightsAttributionRow {
+  source: string;
+  calls: number;
+  total_seconds: number;
+  booked: number;
+  qualified: number;
+}
+
+/** GET /api/insights/campaign-attribution */
+export interface InsightsAttributionResponse {
+  days: number;
+  attribution: InsightsAttributionRow[];
+}
+
+export interface InsightsHeatmapCell {
+  weekday: number;
+  hour: number;
+  count: number;
+  avg_score: number;
+}
+
+/** GET /api/insights/heatmap */
+export interface InsightsHeatmapResponse {
+  window_days: number;
+  grid: InsightsHeatmapCell[];
+}
+
+export interface InsightsQaDimensionAverages {
+  greeting?: number;
+  discovery?: number;
+  solution?: number;
+  objection?: number;
+  closing?: number;
+}
+
+export interface InsightsQaDistributionBucket {
+  label: string;
+  count: number;
+  color?: string;
+}
+
+export interface InsightsQaTrendPoint {
+  day: string;
+  avg: number;
+}
+
+/** GET /api/qa/stats */
+export interface InsightsQaStatsResponse {
+  count: number;
+  avgScore: number;
+  dimensions?: InsightsQaDimensionAverages;
+  distribution?: InsightsQaDistributionBucket[];
+  trend?: InsightsQaTrendPoint[];
+}
+
+export interface VoiceLatencyTrendPoint {
+  date: string;
+  avgTtftMs: number | null;
+  p95TtftMs: number | null;
+  errorRate: number;
+}
+
+/** GET /api/insights/latency */
+export interface VoiceLatencyInsightsResponse {
+  days: number;
+  trends: VoiceLatencyTrendPoint[];
+  generated_at: string;
+}
+
+export type { AuditSummary } from "../lib/audit-summary";

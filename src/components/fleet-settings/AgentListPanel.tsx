@@ -149,9 +149,7 @@ export default function AgentListPanel({
           ) : agents.length === 0 ? (
             <EmptyState
               icon={Bot}
-              eyebrow={OPS_CHANNEL_EMPTY.fleetAgents.eyebrow}
               title={OPS_CHANNEL_EMPTY.fleetAgents.title}
-              description={OPS_CHANNEL_EMPTY.fleetAgents.description}
               density="compact"
               withHalo={false}
             />

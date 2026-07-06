@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
-import { WiredEyebrow } from "../components/ui/WiredEyebrow";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -35,14 +34,7 @@ function DangerZone() {
 
   return (
     <section className="studio-card border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
-      <WiredEyebrow style={{ color: "var(--wireline-color-status-error)" }}>
-        Danger zone
-      </WiredEyebrow>
-      <h3 className="mt-2 text-sm font-semibold text-foreground">Delete account</h3>
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        This permanently removes your agents, call logs, and billing history. Type DELETE to
-        confirm.
-      </p>
+      <h3 className="text-sm font-semibold text-foreground">Delete account</h3>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           aria-label="Type DELETE to confirm"
@@ -136,25 +128,18 @@ export default function SettingsPage() {
         <SettingsTabs />
 
         <section className="studio-card p-5 sm:p-6">
-          <WiredEyebrow>Profile</WiredEyebrow>
-          <div className="mt-5 grid gap-4">
+          <h2 className="text-sm font-semibold text-foreground">Profile</h2>
+          <div className="mt-4 grid gap-4">
             <ReadOnlyField label="Name" value={displayName} />
             <ReadOnlyField label="Email" value={email || "—"} />
           </div>
         </section>
 
         <section className="studio-card p-5 sm:p-6">
-          <WiredEyebrow>Security</WiredEyebrow>
-          <div className="mt-5 grid gap-3">
+          <h2 className="text-sm font-semibold text-foreground">Security</h2>
+          <div className="mt-4 grid gap-3">
             <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Password</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {resetState === "sent"
-                    ? "Reset link sent — check your email."
-                    : "Reset via email."}
-                </p>
-              </div>
+              <p className="text-sm font-semibold text-foreground">Password</p>
               <Button
                 type="button"
                 variant="secondary"
@@ -162,17 +147,14 @@ export default function SettingsPage() {
                 disabled={resetState !== "idle"}
                 onClick={() => void requestPasswordReset()}
               >
-                {resetState === "sending" ? "Sending…" : "Reset password"}
+                {resetState === "sending" ? "Sending…" : resetState === "sent" ? "Sent" : "Reset password"}
               </Button>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
-              <div>
-                <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <ShieldCheck size={15} className="text-primary" aria-hidden="true" />
-                  Session
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">Sign out of this browser.</p>
-              </div>
+              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <ShieldCheck size={15} className="text-primary" aria-hidden="true" />
+                Session
+              </p>
               <Button
                 type="button"
                 variant="secondary"

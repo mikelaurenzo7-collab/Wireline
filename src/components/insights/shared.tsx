@@ -14,7 +14,7 @@ import { authFetch, readApiJson } from "../../lib/api";
 
 import { BRAND } from "../../constants/brand-colors";
 import { Skeleton } from "../ui/shadcn/Skeleton";
-import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Button } from "../atoms";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
 
@@ -86,13 +86,14 @@ type InsightEmptyKey = keyof typeof OPS_INSIGHTS_EMPTY;
 export function InsightEmpty({
   configKey,
   icon,
-  descriptionOverride,
+  titleOverride,
   actionsOverride,
   success,
 }: {
   configKey: InsightEmptyKey;
   icon: LucideIcon;
-  descriptionOverride?: string;
+  /** Replaces the config title — e.g. a one-line API status. */
+  titleOverride?: string;
   actionsOverride?: Array<{
     label: string;
     to?: string;
@@ -109,9 +110,7 @@ export function InsightEmpty({
       density="compact"
       withHalo={false}
       icon={icon}
-      eyebrow={config.eyebrow}
-      title={config.title}
-      description={descriptionOverride ?? config.description}
+      title={titleOverride ?? config.title}
       actions={actionsOverride ?? [...config.actions]}
       accent={success ? WL_BRAND.accent : undefined}
     />
@@ -128,9 +127,7 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
       density="compact"
       withHalo={false}
       icon={Icon}
-      eyebrow={green ? "All clear" : "Insights"}
-      title={green ? "Looking good" : "No data yet"}
-      description={label}
+      title={green ? "All clear" : "No data"}
       accent={green ? WL_BRAND.accent : undefined}
     />
   );
@@ -148,7 +145,7 @@ export function ErrCard({ error, onRetry }: { error: string; onRetry?: () => voi
       <div className="flex-1 min-w-0 space-y-3">
         <span className="block">{error}</span>
         {onRetry && (
-          <ShadButton
+          <Button
             type="button"
             variant="outline"
             size="sm"
@@ -157,7 +154,7 @@ export function ErrCard({ error, onRetry }: { error: string; onRetry?: () => voi
             className="border-destructive/40 text-destructive hover:bg-destructive/10"
           >
             <RotateCw className="w-3.5 h-3.5" /> Try again
-          </ShadButton>
+          </Button>
         )}
       </div>
     </div>

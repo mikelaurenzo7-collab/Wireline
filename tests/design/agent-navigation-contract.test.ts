@@ -83,7 +83,7 @@ describe("agent navigation contract", () => {
   });
 
   it("translates the Zip handoff into current control-surface and pricing language", () => {
-    expect(appsPage).toMatch(/Wireline in ChatGPT/);
+    expect(appsPage).toMatch(/ChatGPT/);
     expect(appsPage).toMatch(/Browser Companion/);
     expect(appsPage).not.toMatch(/One assistant system|Same assistants|New assistant/);
     expect(pricingPage).toMatch(/STRIPE_PLANS/);

@@ -58,26 +58,21 @@ function QuickLink({
   to,
   icon: Icon,
   title,
-  description,
 }: {
   to: string;
   icon: ComponentType<{ className?: string }>;
   title: string;
-  description: string;
 }) {
   return (
     <Link
       to={to}
-      className="group flex items-start gap-3 rounded-md border border-ink/[0.08] bg-ink/[0.015] p-3 transition hover:border-brand/25 hover:bg-brand/[0.045]"
+      className="group flex items-center gap-3 rounded-md border border-ink/[0.08] bg-ink/[0.015] p-3 transition hover:border-brand/25 hover:bg-brand/[0.045]"
     >
-      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md border border-brand/15 bg-brand/8 text-brand">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-brand/15 bg-brand/8 text-brand">
         <Icon className="h-4 w-4" />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-foreground">{title}</span>
-        <span className="mt-1 block text-xs leading-relaxed text-muted">{description}</span>
-      </span>
-      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-foreground/55 transition group-hover:translate-x-0.5 group-hover:text-brand" />
+      <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">{title}</span>
+      <ArrowRight className="h-4 w-4 shrink-0 text-foreground/55 transition group-hover:translate-x-0.5 group-hover:text-brand" />
     </Link>
   );
 }
@@ -391,12 +386,7 @@ export default function AgentConfigPanel({
 
         <section className="rounded-md border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between gap-3 border-b border-ink/[0.08] pb-3">
-            <div>
-              <p className="wl-label text-brand tracking-[0.2em]">Training moved out</p>
-              <h4 className="mt-1 font-display text-xl italic text-foreground">
-                Training, workflows, and tests
-              </h4>
-            </div>
+            <h4 className="font-display text-xl italic text-foreground">Training</h4>
             <GraduationCap className="h-5 w-5 text-brand" />
           </div>
 
@@ -405,20 +395,9 @@ export default function AgentConfigPanel({
               to={`${trainingHref}&tab=database`}
               icon={BookOpen}
               title="Training sources"
-              description={`${knowledgeCount} source details saved. Add FAQs, policies, services, prices, and business context.`}
             />
-            <QuickLink
-              to={`${trainingHref}&tab=flow`}
-              icon={Workflow}
-              title="Workflows"
-              description="Build the call flow, handoffs, qualification steps, and escalation paths."
-            />
-            <QuickLink
-              to={`${trainingHref}&tab=simulator`}
-              icon={Sparkles}
-              title="Simulator"
-              description="Test realistic customer scenarios before sending real calls to the agent."
-            />
+            <QuickLink to={`${trainingHref}&tab=flow`} icon={Workflow} title="Workflows" />
+            <QuickLink to={`${trainingHref}&tab=simulator`} icon={Sparkles} title="Simulator" />
           </div>
 
           <div className="grid grid-cols-3 gap-2 pt-1 text-center">
@@ -437,16 +416,6 @@ export default function AgentConfigPanel({
               <p className="wl-label-muted">Connected</p>
             </div>
           </div>
-        </section>
-
-        <section className="rounded-md border border-brand/15 bg-brand/[0.035] p-4">
-          <p className="wl-label text-brand tracking-[0.2em]">Recommended path</p>
-          <ol className="mt-3 space-y-2 text-sm leading-relaxed text-foreground/72">
-            <li>1. Create the agent name and role here.</li>
-            <li>2. Pick the voice and model.</li>
-            <li>3. Add sources and workflows in Training.</li>
-            <li>4. Test in Simulator, then go live.</li>
-          </ol>
         </section>
       </div>
     </main>

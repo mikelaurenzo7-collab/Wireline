@@ -356,9 +356,7 @@ export default function Integrations() {
                     icon={Mail}
                     density="compact"
                     withHalo={false}
-                    eyebrow={OPS_CHANNEL_EMPTY.integrations.eyebrow}
                     title={OPS_CHANNEL_EMPTY.integrations.title}
-                    description={OPS_CHANNEL_EMPTY.integrations.description}
                     className="py-8"
                     actions={[
                       {

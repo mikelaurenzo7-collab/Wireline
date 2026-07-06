@@ -2,8 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { GraduationCap, WandSparkles } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
-import { WiredEyebrow } from "../components/ui/WiredEyebrow";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import VoiceGallery from "../components/voice/VoiceGallery";
@@ -45,9 +44,7 @@ function EmptyTraining() {
 function FlowsTab({ agentId }: { agentId: string }) {
   return (
     <section className="studio-card mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
-      <WiredEyebrow>Training</WiredEyebrow>
       <h2 className="wl-card-title">Flows</h2>
-      <p className="text-sm leading-6 text-muted-foreground">Call rules live in Studio.</p>
       <Button asChild>
         <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>Open Studio</Link>
       </Button>
@@ -69,13 +66,8 @@ function SimulatorTab({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <section className="studio-card p-6">
-        <WiredEyebrow className="mb-2">Simulator</WiredEyebrow>
         <h2 className="wl-card-title">Live voice test</h2>
-        <p className="mt-2 max-w-[52ch] text-sm leading-6 text-muted-foreground">
-          Hear {agentName} with your rules and training — with live lip-sync when the video add-on
-          is on.
-        </p>
-        <div className="mt-6 space-y-4">
+        <div className="mt-5 space-y-4">
           <WirelineLiveVoiceProfile agentId={agentId} />
           <AgentPresenceVoiceBridge
             agentId={agentId}
@@ -128,8 +120,8 @@ export default function KnowledgePage() {
         <EmptyTraining />
       ) : (
         <WorkspacePageFrame>
-          <WiredEyebrow>Training</WiredEyebrow>
-          <div className="mb-7 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+          <WorkspacePageIntro title="Training" />
+          <div className="mb-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <WorkspaceTabStrip
               ariaLabel="Training sections"
               tabs={trainingTabs}

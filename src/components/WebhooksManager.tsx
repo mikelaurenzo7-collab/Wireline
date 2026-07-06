@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
-import { WiredEyebrow } from "./ui/WiredEyebrow";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -94,16 +93,7 @@ export default function WebhooksManager() {
           <div className={WL_APP_CLASSES.settingsIcon}>
             <Webhook className="w-5 h-5" />
           </div>
-          <div>
-            <WiredEyebrow>Outbound Webhooks</WiredEyebrow>
-            <h4 className="font-display italic text-2xl text-foreground leading-tight mt-1">
-              Push events anywhere
-            </h4>
-            <p className="text-[var(--wireline-typography-overline-size)] text-muted mt-1">
-              Connect Wireline to Slack, Discord, your CRM, Zapier, n8n, or any HTTPS endpoint.
-              Signed with HMAC-SHA256.
-            </p>
-          </div>
+          <h4 className="font-display italic text-2xl text-foreground leading-tight">Webhooks</h4>
         </div>
         <ShadButton
           type="button"
@@ -143,9 +133,7 @@ export default function WebhooksManager() {
         ) : hooks.length === 0 ? (
           <EmptyState
             icon={Webhook}
-            eyebrow="Webhooks"
-            title="No webhooks configured"
-            description="Add a webhook to push events to Slack, CRM, or Zapier."
+            title="No webhooks"
             actions={[{ label: "Add webhook", onClick: () => setShowForm(true), primary: true }]}
           />
         ) : (

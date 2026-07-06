@@ -251,9 +251,7 @@ export default function Pipeline() {
           {totalLeads === 0 && !loading && !loadErr && (
             <EmptyState
               icon={Kanban}
-              eyebrow={OPS_CHANNEL_EMPTY.pipeline.eyebrow}
               title={OPS_CHANNEL_EMPTY.pipeline.title}
-              description={OPS_CHANNEL_EMPTY.pipeline.description}
               actions={[...OPS_CHANNEL_EMPTY.pipeline.actions]}
               density="compact"
               withHalo={false}

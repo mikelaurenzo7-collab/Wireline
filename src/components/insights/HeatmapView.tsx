@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
+import type { InsightsHeatmapCell, InsightsHeatmapResponse } from "../../types/api-insights";
 import { fetchInsight, InsightSkeleton, ErrCard, Empty } from "./shared";
 import { cn } from "../../lib/utils";
 
 export default function HeatmapView({ days }: { days: number }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<InsightsHeatmapResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -14,7 +14,7 @@ export default function HeatmapView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    fetchInsight(`/api/insights/heatmap?days=${days}`)
+    fetchInsight<InsightsHeatmapResponse>(`/api/insights/heatmap?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -34,26 +34,22 @@ export default function HeatmapView({ days }: { days: number }) {
   if (!data) return null;
 
   const grid = data.grid || [];
-  const hasActivity = grid.some((g: any) => g.count > 0);
+  const hasActivity = grid.some((g) => g.count > 0);
   if (!hasActivity) {
-    return <Empty label="No call activity recorded in this window." />;
+    return <Empty label="No call activity" />;
   }
-  const max = Math.max(1, ...grid.map((g: any) => g.count));
+  const max = Math.max(1, ...grid.map((g) => g.count));
   const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-7 md:p-10")}>
-      <div className="mb-6">
-        <p className="wl-insight-label text-brand/70">Activity · {data.window_days}d</p>
-        <h3 className="font-display italic text-2xl text-foreground leading-tight">
-          Calls by Hour × Weekday
-        </h3>
+      <div className="sr-only">
+        <h2>Calls by Hour × Weekday · {data.window_days}d</h2>
       </div>
-      {/* Screen Reader Twin-View for Heatmap */}
       <div className="sr-only">
         <h2>Heatmap Data</h2>
         <dl>
-          {grid.map((cell: any, i: number) => {
+          {grid.map((cell: InsightsHeatmapCell, i: number) => {
             if (cell.count === 0) return null;
             return (
               <div key={`sr-heat-${i}`}>
@@ -86,7 +82,7 @@ export default function HeatmapView({ days }: { days: number }) {
               <tr key={w}>
                 <td className="app-section-title pr-3 py-1">{wd}</td>
                 {Array.from({ length: 24 }).map((_, h) => {
-                  const cell = grid.find((g: any) => g.weekday === w && g.hour === h);
+                  const cell = grid.find((g) => g.weekday === w && g.hour === h);
                   const intensity = cell ? cell.count / max : 0;
                   const opacity = 0.05 + intensity * 0.95;
                   return (

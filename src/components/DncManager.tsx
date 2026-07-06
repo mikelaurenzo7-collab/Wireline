@@ -389,7 +389,6 @@ export default function DncManager() {
                 ) : loadErr ? (
                   <EmptyState
                     icon={Shield}
-                    eyebrow="DNC list unavailable"
                     title="Couldn't load the suppression list"
                     description={loadErr}
                     actions={[{ label: "Retry", onClick: refresh, primary: true }]}
@@ -400,17 +399,9 @@ export default function DncManager() {
                 ) : filtered.length === 0 ? (
                   <EmptyState
                     icon={Shield}
-                    eyebrow={
-                      (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
-                        .eyebrow
-                    }
                     title={
                       (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
                         .title
-                    }
-                    description={
-                      (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
-                        .description
                     }
                     density="compact"
                     withHalo={false}

@@ -342,7 +342,7 @@ const QuotaUsage: JsonSchema = {
 const BillingStatus: JsonSchema = {
   type: "object",
   description:
-    "Stripe-mirrored subscription status for the calling tenant. `subscription` mirrors the row; voice number slots mirror `subscription.max_agents` (one provisioned line per seat on the tier).",
+    "Tenant billing snapshot: subscription mirror, trial block, email verification, and signup intent.",
   properties: {
     stripe_configured: { type: "boolean" },
     agent_count: { type: "integer" },
@@ -355,11 +355,13 @@ const BillingStatus: JsonSchema = {
       description:
         "Max provisioned voice numbers while active — equals the subscribed plan agent cap (one number slot per purchased agent seat).",
     },
+    email_verified: { type: "boolean" },
     subscription: {
       type: ["object", "null"],
       description: "Mirrored Stripe subscription summary.",
       properties: {
         plan: { type: ["string", "null"] },
+        plan_id: { type: ["string", "null"] },
         plan_name: { type: ["string", "null"] },
         max_agents: {
           type: ["integer", "null"],
@@ -369,8 +371,33 @@ const BillingStatus: JsonSchema = {
         current_period_end: { type: ["string", "null"], format: "date-time" },
         cancel_at_period_end: { type: "boolean" },
         has_customer: { type: "boolean" },
+        customer_state: { type: ["string", "null"] },
         has_subscription: { type: "boolean" },
         updated_at: { type: ["string", "null"], format: "date-time" },
+      },
+      additionalProperties: true,
+    },
+    trial: {
+      type: ["object", "null"],
+      properties: {
+        status: { type: "string" },
+        days_left: { type: ["integer", "null"] },
+        ends_at: { type: ["string", "null"], format: "date-time" },
+        outbound_used: { type: "integer" },
+        outbound_cap: { type: "integer" },
+        agents_cap: { type: "integer" },
+        agents_used: { type: "integer" },
+      },
+      additionalProperties: true,
+    },
+    signup_intent: {
+      type: ["object", "null"],
+      properties: {
+        plan_id: { type: ["string", "null"] },
+        wedge: { type: ["string", "null"] },
+        utm_source: { type: ["string", "null"] },
+        utm_medium: { type: ["string", "null"] },
+        utm_campaign: { type: ["string", "null"] },
       },
       additionalProperties: true,
     },

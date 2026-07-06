@@ -1,21 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
+import type { InsightsTopicsResponse } from "../../types/api";
+import { Button } from "../atoms";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
-import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export default function TopicsView() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<InsightsTopicsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
   const load = (refresh = false) => {
     setLoading(true);
     setErr(null);
-    fetchInsight(`/api/insights/topics${refresh ? "?refresh=1" : ""}`)
+    fetchInsight<InsightsTopicsResponse>(`/api/insights/topics${refresh ? "?refresh=1" : ""}`)
       .then(setData)
       .catch((e) => setErr(e instanceof Error ? e.message : "Request failed"))
       .finally(() => setLoading(false));
@@ -28,44 +28,38 @@ export default function TopicsView() {
   if (err) return <ErrCard error={err} onRetry={() => load()} />;
   if (!data) return null;
   if (data.message)
-    return <InsightEmpty configKey="topics" icon={RefreshCw} descriptionOverride={data.message} />;
+    return <InsightEmpty configKey="topics" icon={RefreshCw} titleOverride={data.message} />;
 
   const topics = data.topics || [];
   if (topics.length === 0) {
     return <InsightEmpty configKey="topics" icon={RefreshCw} />;
   }
 
-  const max = Math.max(1, ...topics.map((t: any) => t.count));
+  const max = Math.max(1, ...topics.map((t) => t.count));
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 wl-insight-label">
-          {!data.cached && (
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+          {!data.cached ? (
             <span className="relative flex h-1.5 w-1.5" aria-hidden>
               <span className="absolute inline-flex h-full w-full rounded-full bg-brand/60 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand" />
             </span>
-          )}
-          {data.cached ? "Cached" : "Fresh"} · {data.total_analyzed} signals analyzed
+          ) : null}
+          {data.cached ? "Cached" : "Fresh"}
+          {typeof data.total_analyzed === "number" ? ` · ${data.total_analyzed}` : null}
         </div>
-        <ShadButton
-          type="button"
-          disableAnimations
-          variant="outline"
-          size="sm"
-          onClick={() => load(true)}
-          className="rounded-full wl-insight-label hover:text-foreground hover:border-brand/25"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={() => load(true)}>
           <RefreshCw className="w-3 h-3" /> Refresh
-        </ShadButton>
+        </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {topics.map((t: any, i: number) => {
+        {topics.map((t, i) => {
           const pct = (t.count / max) * 100;
           return (
             <motion.div
-              key={t.label ?? t.topic ?? t.id ?? `topic-${i}`}
+              key={t.label ?? t.topic ?? t.id ?? `${t.name}-${i}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
@@ -88,13 +82,13 @@ export default function TopicsView() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2 py-0.5 rounded-full wl-label bg-brand/15 text-brand border border-brand/30">
+                  <span className="px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-[0.08em] bg-brand/15 text-brand border border-brand/30">
                     {t.category}
                   </span>
-                  {t.trend && (
+                  {t.trend ? (
                     <span
                       className={cn(
-                        "px-2 py-0.5 rounded-full wl-label",
+                        "px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-[0.08em]",
                         t.trend === "growing" && "bg-brand/15 text-brand border border-brand/30",
                         t.trend === "new" && "bg-brand-2/15 text-brand-2 border border-brand-2/30",
                         t.trend === "steady" &&
@@ -105,13 +99,8 @@ export default function TopicsView() {
                     >
                       {t.trend}
                     </span>
-                  )}
+                  ) : null}
                 </div>
-                {t.example_quote && (
-                  <p className="text-xs text-foreground/65 italic leading-relaxed mt-2">
-                    "{t.example_quote}"
-                  </p>
-                )}
               </div>
             </motion.div>
           );

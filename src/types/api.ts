@@ -481,12 +481,16 @@ export type {
 } from "./api-billing";
 
 export type {
-  InsightsFailureMode,
+  InsightsFailureModeRow,
   InsightsFailureModesResponse,
   InsightsFunnelResponse,
   InsightsFunnelStage,
   InsightsLeaderboardAgentRow,
   InsightsLeaderboardResponse,
-  InsightsTopicCluster,
+  InsightsTopicRow,
   InsightsTopicsResponse,
+  VoiceLatencyRecentCallRow,
+  VoiceReliabilityResponse,
+  VoiceReliabilitySummaryResponse,
+  VoiceReliabilityTrendPointResponse,
 } from "./api-insights";

@@ -430,8 +430,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                 <EmptyState
                   density="compact"
                   icon={<Sparkles className="size-5" />}
-                  title="No conversations match this search."
-                  description="Filter by sender, subject or outcome."
+                  title="No matches"
                 />
               </li>
             )}
@@ -444,8 +443,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               density="default"
               className="min-h-[360px] border-dashed border-border bg-card p-8"
               icon={<Sparkles className="size-5" />}
-              title="Choose a conversation."
-              description="Pick thread. Set outcome."
+              title="Select thread"
             />
           ) : detailLoading ? (
             <div

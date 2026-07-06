@@ -42,6 +42,18 @@ describe("API response contract", () => {
 
     const leaderboard = read("src/components/insights/LeaderboardView.tsx");
     expect(leaderboard).toContain("InsightsLeaderboardResponse");
-    expect(read("src/types/api-insights.ts")).toContain("InsightsFunnelResponse");
+    const insightsTypes = read("src/types/api-insights.ts");
+    expect(insightsTypes).toContain("InsightsFunnelResponse");
+    expect(insightsTypes).toContain("InsightsAttributionResponse");
+    expect(insightsTypes).toContain("InsightsHeatmapResponse");
+    expect(insightsTypes).toContain("InsightsQaStatsResponse");
+    expect(insightsTypes).toContain("VoiceLatencyInsightsResponse");
+  });
+
+  it("syncs billing status OpenAPI schema with live route fields", () => {
+    const openapi = read("src/lib/openapi-spec.ts");
+    expect(openapi).toContain("email_verified");
+    expect(openapi).toContain("signup_intent");
+    expect(openapi).toContain("trial:");
   });
 });

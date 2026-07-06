@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ExternalLink, Loader2, Plus } from "lucide-react";
 
 import { Badge, Button, Skeleton } from "../components/atoms";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -9,7 +8,6 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
-import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 type SubscriptionState = {
   plan: string | null;
@@ -140,7 +138,9 @@ export default function BillingSettings() {
         <SettingsTabs />
 
         <section className="rounded-[16px] border border-primary/20 bg-primary p-6 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Current plan</p>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary-foreground/70">
+            Current plan
+          </h2>
           {loading ? (
             <div className="mt-4 space-y-3" aria-busy="true">
               <Skeleton shape="text" className="h-10 w-48 bg-primary-foreground/20" />
@@ -156,9 +156,6 @@ export default function BillingSettings() {
                   — {monthlyPrice}
                 </span>
               </div>
-              <p className="mt-4 text-sm leading-6 text-primary-foreground/78">
-                {activePlan.features}
-              </p>
               {subscription?.status ? (
                 <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-primary-foreground/60">
                   Status · {subscription.status.replace(/_/g, " ")}
@@ -187,7 +184,9 @@ export default function BillingSettings() {
 
         <section className="grid gap-4 sm:grid-cols-2">
           <article className="studio-card flex min-h-[148px] flex-col p-5">
-            <p className={WL_APP_CLASSES.wiredEyebrow}>Conversation Balance</p>
+            <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Conversation Balance
+            </h2>
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -227,7 +226,9 @@ export default function BillingSettings() {
             )}
           </article>
           <article className="studio-card flex min-h-[148px] flex-col p-5">
-            <p className={WL_APP_CLASSES.wiredEyebrow}>Next invoice</p>
+            <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Next invoice
+            </h2>
             {loading ? (
               <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -236,15 +237,12 @@ export default function BillingSettings() {
             ) : hasSubscription ? (
               <>
                 <p className="wl-display-3 mt-auto pt-4">{invoiceTotal}</p>
-                <p className="mt-5 text-sm text-muted-foreground">
+                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
                   Due {formatInvoiceDate(subscription?.current_period_end ?? null)}
                 </p>
               </>
             ) : (
-              <>
-                <p className="wl-display-3 mt-auto pt-4">—</p>
-                <p className="mt-5 text-sm text-muted-foreground">No subscription</p>
-              </>
+              <p className="wl-display-3 mt-auto pt-4">—</p>
             )}
           </article>
         </section>
@@ -256,7 +254,9 @@ export default function BillingSettings() {
         ) : null}
 
         <section className="studio-card p-5 sm:p-6">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Recent invoices</p>
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Recent invoices
+          </h2>
           {loading ? (
             <div className="mt-4 grid gap-2" aria-busy="true">
               {Array.from({ length: 2 }, (_, index) => (
@@ -276,29 +276,10 @@ export default function BillingSettings() {
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">No invoices yet</p>
+            <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+              —
+            </p>
           )}
-        </section>
-
-        <section className="studio-card p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ShieldCheck size={15} className="text-primary" aria-hidden="true" />
-                Clear commercial model
-              </p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Plans add capacity. Conversation Balance pays for live calls, texts, and
-                provider-backed actions.
-              </p>
-            </div>
-            <Link
-              to="/pricing"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
-            >
-              View pricing <ArrowRight size={14} />
-            </Link>
-          </div>
         </section>
       </WorkspacePageFrame>
     </WorkspaceShell>

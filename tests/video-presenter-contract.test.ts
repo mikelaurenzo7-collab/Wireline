@@ -102,7 +102,7 @@ describe("video presenter integration", () => {
     expect(canvas).toContain("WiredEyebrow");
     expect(canvas).toContain("wl-canvas-card");
     const readiness = source("src/components/fleet-settings/AgentReadinessStage.tsx");
-    expect(readiness).toContain("Launch readiness");
+    expect(readiness).toContain("launch checks complete");
   });
 
   it("streams call-floor presence via SSE with polling fallback", () => {

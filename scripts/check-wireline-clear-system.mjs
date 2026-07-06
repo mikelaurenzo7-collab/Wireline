@@ -624,8 +624,8 @@ mustInclude(
 mustInclude(
   "src/pages/BillingSettings.tsx",
   billingSettingsPage,
-  /Plans add capacity\. Conversation Balance pays/,
-  "billing must position plans + balance per the Claude Design",
+  /Conversation Balance/,
+  "billing must expose conversation balance controls",
 );
 mustInclude(
   "src/routes/account-routes.ts",

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import { WiredEyebrow } from "../ui/WiredEyebrow";
 import { cn } from "../../lib/utils";
 
 type WorkspacePageFrameProps = {
@@ -10,7 +9,7 @@ type WorkspacePageFrameProps = {
   narrow?: boolean;
 };
 
-/** Consistent centered content rail for authenticated workspace pages. */
+/** Consistent content rail for authenticated workspace pages. */
 export function WorkspacePageFrame({
   children,
   className,
@@ -19,7 +18,7 @@ export function WorkspacePageFrame({
   return (
     <div
       className={cn(
-        "wl-workspace-page mx-auto flex w-full flex-col gap-6 pb-8 sm:gap-7",
+        "wl-workspace-page mx-auto flex w-full flex-col gap-5 pb-8 sm:gap-6",
         narrow ? "max-w-[700px]" : "max-w-[980px]",
         className,
       )}
@@ -30,29 +29,16 @@ export function WorkspacePageFrame({
 }
 
 type WorkspacePageIntroProps = {
-  eyebrow?: string;
   title: string;
-  description?: string;
   action?: ReactNode;
 };
 
-/** Centered page intro when the shell header is intentionally omitted. */
-export function WorkspacePageIntro({
-  eyebrow,
-  title,
-  description,
-  action,
-}: WorkspacePageIntroProps) {
+/** Minimal page title — no eyebrows or explanatory copy in the workspace shell. */
+export function WorkspacePageIntro({ title, action }: WorkspacePageIntroProps) {
   return (
-    <header className="wl-workspace-page-intro text-center">
-      {eyebrow ? <WiredEyebrow>{eyebrow}</WiredEyebrow> : null}
-      <h1 className={cn("wl-display-3", eyebrow && "mt-3")}>{title}</h1>
-      {description ? (
-        <p className="mx-auto mt-4 max-w-[48ch] text-sm leading-7 text-muted-foreground">
-          {description}
-        </p>
-      ) : null}
-      {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
+    <header className="wl-workspace-page-intro flex items-center justify-between gap-4">
+      <h1 className="wl-display-3">{title}</h1>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </header>
   );
 }

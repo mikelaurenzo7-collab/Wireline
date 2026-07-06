@@ -280,7 +280,6 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         <EmptyState
           icon={<MessageSquare className="size-5" />}
           title={OPS_CHANNEL_EMPTY.sms.title}
-          description={OPS_CHANNEL_EMPTY.sms.description}
           action={
             <Button asChild>
               <a href="/connections">Open Connections</a>
@@ -293,8 +292,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       return (
         <EmptyState
           icon={<Sparkles className="size-5" />}
-          title="No threads match this search"
-          description={`Nothing matched “${search.trim()}”.`}
+          title="No matches"
           action={
             <Button type="button" variant="secondary" onClick={() => setSearch("")}>
               Clear search
@@ -429,7 +427,6 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     <EmptyState
                       icon={<MessageSquare className="size-5" />}
                       title={OPS_CHANNEL_EMPTY.inboxDetail.title}
-                      description={OPS_CHANNEL_EMPTY.inboxDetail.description}
                       density="compact"
                     />
                   ) : (

@@ -290,9 +290,7 @@ export default function Cadences() {
       {!showBuilder && cadences.length === 0 && (
         <EmptyState
           icon={Repeat}
-          eyebrow={OPS_CHANNEL_EMPTY.cadences.eyebrow}
           title={OPS_CHANNEL_EMPTY.cadences.title}
-          description={OPS_CHANNEL_EMPTY.cadences.description}
           density="compact"
           withHalo={false}
           className="py-6"

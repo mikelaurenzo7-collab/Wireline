@@ -37,11 +37,7 @@ export default function EmailPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame className="min-h-full flex-1">
-        <WorkspacePageIntro
-          eyebrow="Operate"
-          title="Inbox"
-          description="Email and SMS your agents are handling — one ledger for follow-up."
-        />
+        <WorkspacePageIntro title="Inbox" />
         <WorkspaceTabStrip
           ariaLabel="Inbox channels"
           tabs={inboxTabs}

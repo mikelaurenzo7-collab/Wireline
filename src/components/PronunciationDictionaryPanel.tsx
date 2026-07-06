@@ -313,9 +313,7 @@ export default function PronunciationDictionaryPanel() {
         ) : dicts.length === 0 ? (
           <EmptyState
             icon={BookOpen}
-            eyebrow="Pronunciation"
-            title="No dictionaries yet"
-            description="Create your first one above to teach agents how to pronounce names, products, or brand terms."
+            title="No dictionaries"
           />
         ) : (
           dicts.map((dict) => (

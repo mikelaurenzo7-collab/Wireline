@@ -16,6 +16,7 @@ import { authFetch, readApiJson } from "../../lib/api";
 import { formatMoney, safeFixed } from "../../lib/safe-number";
 import { cn } from "../../lib/utils";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, SpendStat } from "./shared";
+import type { AuditSummary } from "../../types/api-insights";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Switch } from "../ui/shadcn/Switch";
@@ -150,9 +151,7 @@ function SpendBudgetCard() {
           </div>
           <div>
             <div className="wl-insight-label tracking-[0.32em] wl-accent-text">Monthly Budget</div>
-            <div className="text-sm text-foreground/70 mt-1">
-              Period <span className="font-mono">{period}</span> · resets on the 1st (UTC)
-            </div>
+            <div className="text-sm text-foreground/70 mt-1 font-mono">{period}</div>
           </div>
         </div>
         {(isWarn || status?.hard_capped_now) && (
@@ -202,10 +201,7 @@ function SpendBudgetCard() {
           )}
         </div>
       ) : (
-        <div className="text-sm text-foreground/70">
-          No monthly limit set. Configure one below for webhook warnings — overages bill through
-          your plan.
-        </div>
+        <div className="text-sm text-foreground/70">No limit set</div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
@@ -240,13 +236,7 @@ function SpendBudgetCard() {
       </div>
 
       <label className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
-        <div>
-          <div className="text-sm text-foreground">Hard cap outbound work</div>
-          <div className="text-[var(--wireline-typography-overline-size)] text-foreground/70 mt-1">
-            When enabled, Wireline blocks new outbound calls and messages after the monthly limit is
-            reached.
-          </div>
-        </div>
+        <div className="text-sm text-foreground">Hard cap outbound work</div>
         <Switch
           checked={draft.hard_cap}
           onCheckedChange={(checked) => setDraft({ ...draft, hard_cap: checked })}
@@ -254,13 +244,7 @@ function SpendBudgetCard() {
         />
       </label>
 
-      <div className="flex items-center justify-between gap-4 pt-1">
-        <div className="text-[var(--wireline-typography-overline-size)] text-foreground/70">
-          Threshold crossings fire{" "}
-          <span className="font-mono text-foreground/75">spend.warning</span> and{" "}
-          <span className="font-mono text-foreground/75">spend.exceeded</span> webhook events — wire
-          them to Slack/CRM in Admin.
-        </div>
+      <div className="flex items-center justify-end gap-4 pt-1">
         <ShadButton
           type="button"
           disableAnimations
@@ -292,7 +276,7 @@ function SpendBudgetCard() {
 /* ─────────────────────────  AI Spend View  ─────────────────────── */
 
 export default function AISpendView({ days }: { days: number }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AuditSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -301,7 +285,7 @@ export default function AISpendView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    fetchInsight(`/api/audit/summary?days=${days}`)
+    fetchInsight<AuditSummary>(`/api/audit/summary?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -331,8 +315,8 @@ export default function AISpendView({ days }: { days: number }) {
   const { totals, by_day = [], by_action = [], by_model = [] } = data;
   const callsHaveHappened = totals.calls > 0;
 
-  const maxDay = Math.max(0.01, ...by_day.map((d: any) => Number(d.cost)));
-  const maxAction = Math.max(0.01, ...by_action.map((a: any) => Number(a.cost)));
+  const maxDay = Math.max(0.01, ...by_day.map((d) => Number(d.cost)));
+  const maxAction = Math.max(0.01, ...by_action.map((a) => Number(a.cost)));
 
   return (
     <div className="space-y-5">
@@ -374,7 +358,7 @@ export default function AISpendView({ days }: { days: number }) {
               <p className="wl-insight-label text-brand/70">Spend per Day · {data.window_days}d</p>
             </div>
             <div className="space-y-2">
-              {by_day.map((d: any, i: number) => {
+              {by_day.map((d, i) => {
                 const pct = (Number(d.cost) / maxDay) * 100;
                 return (
                   <motion.div
@@ -412,7 +396,7 @@ export default function AISpendView({ days }: { days: number }) {
             <div className={cn(WL_APP_CLASSES.insightStatCard, "p-5 space-y-3")}>
               <div className="wl-insight-label text-brand/70">Spend by Recipe</div>
               <div className="space-y-2">
-                {by_action.slice(0, 12).map((a: any, i: number) => {
+                {by_action.slice(0, 12).map((a, i) => {
                   const pct = (Number(a.cost) / maxAction) * 100;
                   return (
                     <div key={a.action} className="space-y-1">
@@ -443,7 +427,7 @@ export default function AISpendView({ days }: { days: number }) {
             <div className={cn(WL_APP_CLASSES.insightStatCard, "p-5 space-y-3")}>
               <div className="wl-insight-label text-brand/70">Spend by Model</div>
               <div className="space-y-3">
-                {by_model.map((m: any) => (
+                {by_model.map((m) => (
                   <div
                     key={m.model}
                     className="flex items-baseline justify-between border-b border-border pb-3 last:border-0 last:pb-0"

@@ -19,13 +19,13 @@
  */
 import React from "react";
 import { cn } from "../../lib/utils";
-import { ShadButton } from "./shadcn/ShadButton";
+import { Button } from "../atoms";
 
 type VoidSize = "sm" | "md" | "lg";
 type VoidVariant = "primary" | "secondary";
 
 interface VoidButtonProps extends Omit<
-  React.ComponentProps<typeof ShadButton>,
+  React.ComponentProps<typeof Button>,
   "variant" | "size" | "disableAnimations"
 > {
   children: React.ReactNode;
@@ -53,7 +53,7 @@ export function VoidButton({
   ...props
 }: VoidButtonProps) {
   return (
-    <ShadButton
+    <Button
       type="button"
       variant="ghost"
       disableAnimations
@@ -85,6 +85,6 @@ export function VoidButton({
       <span className="absolute inset-0 void-shimmer-stripe" aria-hidden="true" />
 
       <span className="relative z-[1] inline-flex items-center gap-inherit">{children}</span>
-    </ShadButton>
+    </Button>
   );
 }

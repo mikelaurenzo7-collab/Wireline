@@ -6,11 +6,7 @@ export default function TemplatesPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
-        <WorkspacePageIntro
-          eyebrow="Workspace"
-          title="Templates"
-          description="Start from a proven agent recipe, then train and deploy in minutes."
-        />
+        <WorkspacePageIntro title="Templates" />
         <AgentTemplates />
       </WorkspacePageFrame>
     </WorkspaceShell>

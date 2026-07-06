@@ -71,172 +71,118 @@ export const OPS_COPY = {
 /** Channel & ops empty states – one copy source for route-level CTAs */
 export const OPS_CHANNEL_EMPTY = {
   floor: {
-    eyebrow: "Active calls",
     title: "No active callers",
-    description: "Live here. Listen in.",
     actions: [
       { label: "View call history", to: "/phone" },
       { label: "Open roster", to: "/agents", primary: true },
     ],
   },
   fleetRail: {
-    eyebrow: "Full versatility",
     title: "No agents yet",
-    description: "Create your first agent to see availability and assignments.",
     actions: [{ label: "Open roster", to: "/agents", primary: true }],
   },
   fleetAgents: {
-    eyebrow: "Full versatility",
     title: "No roster yet",
-    description: "Create. Cover channels.",
   },
   agentRecall: {
-    eyebrow: "Recall",
     title: "No calls yet",
-    description: "Summaries after calls.",
   },
   agentDockCalls: {
-    eyebrow: "Latest calls",
     title: "No calls yet",
-    description: "When this agent starts taking calls, the latest outcomes show here.",
   },
   phone: {
-    eyebrow: "Call history",
     title: "No calls yet",
-    description: "Recaps after live calls.",
     actions: [
       { label: "Configure a number", to: "/settings", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
   phoneNoMatch: {
-    eyebrow: "Call history",
     title: "No matching calls",
-    description: "Try a different search term or switch the direction filter to All.",
   },
   sms: {
-    eyebrow: "SMS",
     title: "No SMS yet",
-    description: "Texts land here.",
     actions: [
       { label: "Configure SMS sender", to: "/settings?tab=carrier", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
   email: {
-    eyebrow: "Email",
     title: "No threads yet",
-    description: "Connect inbox.",
     actions: [
       { label: "Connect email", to: "/actions", primary: true },
       { label: "Open Agents", to: "/agents" },
     ],
   },
   inboxDetail: {
-    eyebrow: "Conversation",
     title: "Select a thread",
-    description: "Pick a conversation from the list to monitor or reply.",
   },
   pipeline: {
-    eyebrow: "Pipeline",
     title: "No leads in the pipeline",
-    description: "Track. Upload. Capture.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Open Wire", to: "/actions" },
     ],
   },
   training: {
-    eyebrow: "Training",
     title: "No agents to train yet",
-    description: "Create agent first.",
     actions: [{ label: "Open Agents", to: "/agents", primary: true }],
   },
   integrations: {
-    eyebrow: "Email carriers",
     title: "No carriers linked",
-    description: "Connect. Triage.",
   },
   audit: {
-    eyebrow: "Audit",
     title: "Audit trail is quiet",
-    description: "Actions logged on deploy.",
     actions: [
       { label: "Deploy an agent", to: "/agents", primary: true },
       { label: "Open Recaps", to: "/overview" },
     ],
   },
   auditNoMatch: {
-    eyebrow: "Audit",
     title: "No matches",
-    description: "Try a different search term or widen the time range filter.",
   },
   intel: {
-    eyebrow: "Action queue",
     title: "All clear",
-    description: "No approvals waiting.",
     actions: [
       { label: "Open Recaps", to: "/overview", primary: true },
       { label: "Open Studio", to: "/studio" },
     ],
   },
   sentiment: {
-    eyebrow: "Agent analytics",
     title: "No conversations yet",
-    description: "Run a test call to populate sentiment and unit economics.",
     actions: [{ label: "Call test line", to: "tel:+16306425661", primary: true }],
   },
   campaigns: {
-    eyebrow: "Campaigns",
     title: "No campaigns yet",
-    description: "Group. Track. Dial.",
     actions: [
       { label: "Create campaign", to: "/phone?tab=outbound", primary: true },
       { label: "Import leads", to: "/pipeline" },
     ],
   },
   outboundQueue: {
-    eyebrow: "Outbound queue",
     title: "Queue is idle",
-    description: "Upload CSV. Dial.",
   },
   campaignLeads: {
-    eyebrow: "Campaign leads",
     title: "No leads in campaign",
-    description:
-      "Upload a CSV from Dispatch (Bulk mode) and assign this campaign – leads land here.",
   },
   callbacks: {
-    eyebrow: "Callbacks",
     title: "No scheduled callbacks",
-    description:
-      "When agents schedule callbacks during a call, those contacts appear here and are auto-dialed.",
   },
   cadences: {
-    eyebrow: "Sequences",
     title: "No sequences yet",
-    description: "Call. SMS. Email. Auto.",
   },
   appointmentsUpcoming: {
-    eyebrow: "Appointments",
     title: "No active commitments",
-    description: "Book or auto.",
   },
   appointmentsHistory: {
-    eyebrow: "History",
     title: "No completed appointments yet",
-    description: "Follow-ups land here.",
   },
   contactNotFound: {
-    eyebrow: "Contact",
     title: "Contact not found",
-    description: "This number may have been merged, removed, or never synced to your agent.",
     actions: [{ label: "Back to pipeline", to: "/pipeline", primary: true }],
   },
   contactTimeline: {
-    eyebrow: "Timeline",
     title: "No interactions yet",
-    description: "After agent engagement.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "View call history", to: "/phone" },
@@ -251,9 +197,7 @@ export const OPS_TRAINING_PANEL = {
   facts: "No facts. Add below.",
   pronunciation: "No rules. Add row.",
   knowledge: {
-    eyebrow: "Training documents",
     title: "No entries yet",
-    description: "Upload PDF or add FAQ.",
   },
 } as const;
 
@@ -269,35 +213,25 @@ export const OPS_TRIAGE_ACCENTS = {
 /** Triage panel empty states – Recaps `?tab=triage` widget columns */
 export const OPS_TRIAGE_EMPTY = {
   hotLeads: {
-    eyebrow: "Hot leads",
     title: "No hot leads yet",
-    description: "High-intent callers surface here after outbound dials or inbound conversations.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Monitor floor", to: "/overview?tab=floor" },
     ],
   },
   compliance: {
-    eyebrow: "Compliance",
     title: "All clear",
-    description: "No DNC or policy flags need review right now.",
   },
   openTasks: {
-    eyebrow: "Open tasks",
     title: "Inbox zero",
-    description: "No Account Holder approvals waiting in the queue.",
     actions: [{ label: "View action queue", to: "/overview?tab=intel" }],
   },
   knowledgeGaps: {
-    eyebrow: "Training gaps",
     title: "Coverage looks solid",
-    description: "Repeated stump questions will appear here so you can teach agents fast.",
     actions: [{ label: "Open training", to: "/studio" }],
   },
   escalations: {
-    eyebrow: "Escalations",
     title: "No escalations",
-    description: "Supervisor handoffs and urgent calls will land here.",
     actions: [{ label: "Active calls", to: "/overview?tab=floor" }],
   },
 } as const;
@@ -355,7 +289,6 @@ export const OPS_TRAINING_ASSISTS = [
 ] as const;
 
 export const OPS_TRAINING_ASSISTS_COPY = {
-  eyebrow: "Training assists",
   hint: "Runs in Studio chat",
 } as const;
 
@@ -393,7 +326,6 @@ export const OPS_STUDIO_ASSISTS = [
 ] as const;
 
 export const OPS_STUDIO_ASSISTS_COPY = {
-  eyebrow: "Studio co-pilot",
   hint: "Opens Studio scoped to this agent",
 } as const;
 
@@ -410,7 +342,6 @@ export function directorPromptHref(prompt: string): string {
 /** In-app help route – quick paths + page chrome */
 export const OPS_HELP = {
   title: "Help and demos",
-  eyebrow: "Support",
   subtitle: "Team lines, demos, and shortcuts back into Wireline.",
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
@@ -642,18 +573,11 @@ export const OPS_INSIGHTS_GROUPS = [
 /** Compliance & settings empty states */
 export const OPS_SUPPORT_EMPTY = {
   dnc: {
-    eyebrow: "Do-Not-Call",
     title: "No numbers blocked",
-    description:
-      "Add numbers manually or import a CSV to prevent them from being dialed by any agent.",
   },
   dncNoMatch: {
-    eyebrow: "Do-Not-Call",
     title: "No matches",
-    description: "Try a different search term or clear the filter.",
   },
-  auditCompliance:
-    "Audit events are retained for compliance review. Export CSV for external archival or regulator requests.",
 } as const;
 
 /** Audit severity legend – mirrors DNC compliance chip vocabulary */
@@ -664,88 +588,66 @@ export const OPS_AUDIT_SEVERITY = {
   critical: { label: "Critical", hint: "Immediate attention" },
 } as const;
 
-/** Insights tab empty states – data-driven panels with route CTAs */
+/** Insights tab empty states — title + CTA only; no coaching copy. */
 export const OPS_INSIGHTS_EMPTY = {
   funnel: {
-    eyebrow: "Conversion",
-    title: "No funnel data yet",
-    description: "Your funnel populates as agents handle calls – try a test call or outbound dial.",
+    title: "No funnel data",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Recaps", to: "/overview" },
+      { label: "Overview", to: "/overview" },
     ],
   },
   leaderboard: {
-    eyebrow: "Leaderboard",
-    title: "No ranked agents yet",
-    description: "Agents appear here once they run calls in the selected window.",
+    title: "No ranked agents",
     actions: [
       { label: "Deploy agent", to: "/agents", primary: true },
-      { label: "View call history", to: "/phone" },
+      { label: "Call logs", to: "/phone" },
     ],
   },
   latency: {
-    eyebrow: "Voice latency",
-    title: "No latency samples yet",
-    description: "Run live calls to populate TTFT, tool timing, and voice health metrics.",
+    title: "No latency samples",
     actions: [
-      { label: "Recaps", to: "/overview", primary: true },
-      { label: "Call history", to: "/phone" },
+      { label: "Overview", to: "/overview", primary: true },
+      { label: "Call logs", to: "/phone" },
     ],
   },
   reliability: {
-    eyebrow: "Voice reliability",
-    title: "No reliability samples yet",
-    description:
-      "Run production calls to populate latency, hangups, tool-call success, escalations, webhook health, and COGS/min.",
+    title: "No reliability samples",
     actions: [
-      { label: "Recaps", to: "/overview", primary: true },
-      { label: "Call history", to: "/phone" },
+      { label: "Overview", to: "/overview", primary: true },
+      { label: "Call logs", to: "/phone" },
     ],
   },
   spend: {
-    eyebrow: "AI spend",
-    title: "No AI usage in this window",
-    description:
-      "Try a longer date range, or run Studio recipes and live calls to accumulate usage.",
+    title: "No AI usage",
     actions: [
-      { label: "Open Studio", to: "/studio", primary: true },
-      { label: "Recaps", to: "/overview" },
+      { label: "Studio", to: "/studio", primary: true },
+      { label: "Overview", to: "/overview" },
     ],
   },
   attribution: {
-    eyebrow: "Campaign attribution",
-    title: "No tagged calls yet",
-    description:
-      "Tag phone numbers with a campaign label in Settings – Carrier. Every call to that number gets the tag and shows up here.",
+    title: "No tagged calls",
     actions: [
-      { label: "Open Settings – Carrier", to: "/settings?tab=carrier", primary: true },
-      { label: "Start outbound", to: "/phone?tab=outbound" },
+      { label: "Carrier settings", to: "/settings?tab=carrier", primary: true },
+      { label: "Outbound", to: "/phone?tab=outbound" },
     ],
   },
   quality: {
-    eyebrow: "Call quality",
-    title: "No QA scores yet",
-    description:
-      "Score an individual call in Call Logs, or batch-evaluate up to 20 unscored calls at once.",
+    title: "No QA scores",
     actions: [
-      { label: "View call history", to: "/phone" },
-      { label: "Recaps", to: "/overview" },
+      { label: "Call logs", to: "/phone" },
+      { label: "Overview", to: "/overview" },
     ],
   },
   topics: {
-    eyebrow: "Topics",
-    title: "Not enough call data",
-    description: "Topic clusters need analyzed conversations. Run calls, then refresh this tab.",
+    title: "Not enough calls",
     actions: [
-      { label: "View call history", to: "/phone", primary: true },
-      { label: "Open training", to: "/studio" },
+      { label: "Call logs", to: "/phone", primary: true },
+      { label: "Studio", to: "/studio" },
     ],
   },
   failureModesOk: {
-    eyebrow: "Failure modes",
     title: "No failure clusters",
-    description: "When agents stumble, patterns cluster here with recommended fixes.",
-    actions: [{ label: "Monitor floor", to: "/overview", primary: true }],
+    actions: [{ label: "Overview", to: "/overview", primary: true }],
   },
 } as const;

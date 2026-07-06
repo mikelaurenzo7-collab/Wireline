@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Gauge, Activity, AlertTriangle } from "lucide-react";
 import {
@@ -7,24 +6,12 @@ import {
   VAPI_TOOL_TIMEOUT_MS,
 } from "../../lib/vapi-tool-results";
 import { cn } from "../../lib/utils";
+import type { AuditSummary, VoiceLatencyInsightsResponse } from "../../types/api-insights";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 
-interface VoiceTrend {
-  date: string;
-  avgTtftMs: number | null;
-  p95TtftMs: number | null;
-  errorRate: number;
-}
-
-interface VoiceLatencyData {
-  days: number;
-  trends: VoiceTrend[];
-  generated_at: string;
-}
-
 export default function VoiceLatencyView({ days }: { days: number }) {
-  const [actionData, setActionData] = useState<any>(null);
-  const [voiceData, setVoiceData] = useState<VoiceLatencyData | null>(null);
+  const [actionData, setActionData] = useState<AuditSummary | null>(null);
+  const [voiceData, setVoiceData] = useState<VoiceLatencyInsightsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -36,8 +23,10 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
     // Fetch both action latency (existing) and voice observability (new)
     Promise.all([
-      fetchInsight(`/api/audit/summary?days=${days}`).catch(() => null),
-      fetchInsight<VoiceLatencyData>(`/api/insights/latency?days=${days}`).catch(() => null),
+      fetchInsight<AuditSummary>(`/api/audit/summary?days=${days}`).catch(() => null),
+      fetchInsight<VoiceLatencyInsightsResponse>(`/api/insights/latency?days=${days}`).catch(
+        () => null,
+      ),
     ])
       .then(([actionD, voiceD]) => {
         if (!active) return;
@@ -61,7 +50,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
   const latency = actionData?.latency ?? { p50_ms: 0, p95_ms: 0, sample_count: 0 };
   const slowest = [...(actionData?.by_action ?? [])]
-    .sort((a: any, b: any) => b.avg_latency_ms - a.avg_latency_ms)
+    .sort((a, b) => b.avg_latency_ms - a.avg_latency_ms)
     .slice(0, 8);
 
   // Compute voice observability summary from trends
@@ -101,14 +90,12 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 icon: Gauge,
                 label: "TTFT p50",
                 value: latestTrend?.avgTtftMs ? `${latestTrend.avgTtftMs}ms` : "—",
-                sub: "median time-to-first-token",
                 healthy: ttftHealthy,
               },
               {
                 icon: Gauge,
                 label: "TTFT p95",
                 value: latestTrend?.p95TtftMs ? `${latestTrend.p95TtftMs}ms` : "—",
-                sub: "tail latency",
                 healthy: ttftHealthy,
               },
               {
@@ -116,7 +103,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 label: "Pipeline errors",
                 value:
                   latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "—",
-                sub: "calls with STT, TTS, or pipeline failures",
                 healthy: errorRateHealthy,
               },
             ].map((tile) => (
@@ -143,7 +129,6 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                 >
                   {tile.value}
                 </p>
-                <p className={cn("wl-director-meta", "mt-1")}>{tile.sub}</p>
               </div>
             ))}
           </div>
@@ -174,10 +159,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           {!ttftHealthy && (
             <div className="flex items-center gap-2 mt-4 p-3 rounded-md bg-amber-50 border border-amber-200">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <p className="text-xs text-amber-800">
-                TTFT p95 exceeds 1.2s alert threshold. Voice pipeline may be degraded — check
-                provider status.
-              </p>
+              <p className="text-xs text-amber-800">TTFT p95 &gt; 1.2s</p>
             </div>
           )}
         </div>
@@ -186,16 +168,11 @@ export default function VoiceLatencyView({ days }: { days: number }) {
       {/* AI Action Latency Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: "p50 latency", value: `${latency.p50_ms}ms`, sub: "median AI + tool RTT" },
-          {
-            label: "p95 latency",
-            value: `${latency.p95_ms}ms`,
-            sub: "tail — watch for regressions",
-          },
+          { label: "p50 latency", value: `${latency.p50_ms}ms` },
+          { label: "p95 latency", value: `${latency.p95_ms}ms` },
           {
             label: "Avg latency",
             value: `${actionData?.totals?.avg_latency ?? 0}ms`,
-            sub: `${latency.sample_count} samples`,
           },
         ].map((tile) => (
           <div
@@ -206,7 +183,9 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             <p className="metric-value font-display italic text-3xl text-foreground">
               {tile.value}
             </p>
-            <p className={cn("wl-director-meta", "mt-2")}>{tile.sub}</p>
+            {tile.label === "Avg latency" && (
+              <p className="wl-insight-label mt-2 tabular-nums">{latency.sample_count} samples</p>
+            )}
           </div>
         ))}
       </div>
@@ -217,7 +196,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             Live-call guards (Wireline defaults)
           </p>
           <ul className="space-y-3">
-            {guards.map((g: any) => (
+            {guards.map((g) => (
               <li key={g.label} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-foreground/80">{g.label}</span>
                 <span
@@ -231,19 +210,15 @@ export default function VoiceLatencyView({ days }: { days: number }) {
               </li>
             ))}
           </ul>
-          <p className={cn("wl-director-meta", "mt-4 leading-relaxed text-pretty")}>
-            These limits keep voice tool fan-out and assistant payloads bounded so callers hear
-            answers faster — the same caps described on the Compare page vs DIY voice stacks.
-          </p>
         </div>
 
         <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">Slowest actions</p>
           <div className="space-y-2">
             {slowest.length === 0 ? (
-              <p className="text-sm text-muted">No slow actions recorded.</p>
+              <p className="text-sm text-muted">—</p>
             ) : (
-              slowest.map((a: any) => (
+              slowest.map((a) => (
                 <div
                   key={a.action}
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"

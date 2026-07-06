@@ -6,7 +6,7 @@ import { LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";
-import { ShadButton } from "./shadcn/ShadButton";
+import { Button } from "../atoms";
 
 import { SignalOrbFrame } from "./SignalOrbFrame";
 
@@ -59,7 +59,7 @@ export function EmptyState({
   className,
   withHalo = true,
   withConstellation,
-  eyebrow = "No data yet",
+  eyebrow,
   accent,
   framed = false,
   fill = false,
@@ -128,7 +128,7 @@ export function EmptyState({
             if (action.to) {
               const internal = action.to.startsWith("/") && !action.to.startsWith("//");
               return (
-                <ShadButton
+                <Button
                   key={index}
                   asChild
                   variant={isPrimary ? "default" : "outline"}
@@ -152,12 +152,12 @@ export function EmptyState({
                   ) : (
                     <a href={action.to}>{action.label}</a>
                   )}
-                </ShadButton>
+                </Button>
               );
             }
 
             return (
-              <ShadButton
+              <Button
                 key={index}
                 onClick={action.onClick}
                 variant={isPrimary ? "default" : "outline"}
@@ -175,7 +175,7 @@ export function EmptyState({
                 )}
               >
                 {action.label}
-              </ShadButton>
+              </Button>
             );
           })}
         </div>

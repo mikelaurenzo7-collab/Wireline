@@ -3,7 +3,7 @@ import { WL_BRAND } from "../../lib/wireline-design-system";
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { BarChart3, TrendingUp, Loader2, Star, Play } from "lucide-react";
-import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Button } from "../atoms";
 import {
   AreaChart,
   Area,
@@ -21,12 +21,13 @@ import {
 import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
+import type { InsightsQaStatsResponse } from "../../types/api-insights";
 import { fetchInsight, InsightSkeleton, ErrCard, qaColor, InsightEmpty } from "./shared";
 
 const QA_BRAND = WL_BRAND.accentHex;
 
 export default function QualityView({ days }: { days: number }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<InsightsQaStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [scoring, setScoring] = useState(false);
@@ -35,7 +36,7 @@ export default function QualityView({ days }: { days: number }) {
   const fetchStats = useCallback(() => {
     setLoading(true);
     setErr(null);
-    fetchInsight(`/api/qa/stats?days=${days}`)
+    fetchInsight<InsightsQaStatsResponse>(`/api/qa/stats?days=${days}`)
       .then((d) => {
         setData(d);
         setErr(null);
@@ -120,14 +121,14 @@ export default function QualityView({ days }: { days: number }) {
     { dimension: "Closing", score: +(((dims.closing ?? 0) / 20) * 100).toFixed(0) },
   ];
 
-  const distribution: any[] = data.distribution || [];
-  const maxDist = Math.max(1, ...distribution.map((b: any) => b.count));
+  const distribution = data.distribution || [];
+  const maxDist = Math.max(1, ...distribution.map((b) => b.count));
 
   return (
     <div className="space-y-4 pb-6">
       {/* Action bar */}
       <div className="flex items-center justify-end">
-        <ShadButton
+        <Button
           type="button"
           disableAnimations
           variant="outline"
@@ -138,7 +139,7 @@ export default function QualityView({ days }: { days: number }) {
         >
           {scoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
           {scoring ? "Scoring…" : "Score All Unscored"}
-        </ShadButton>
+        </Button>
       </div>
 
       {/* Hero stats */}
@@ -168,7 +169,7 @@ export default function QualityView({ days }: { days: number }) {
             <BarChart3 className="w-3 h-3" /> Score Distribution
           </h4>
           <div className="space-y-2.5">
-            {distribution.map((bucket: any) => (
+            {distribution.map((bucket) => (
               <div key={bucket.label} className="flex items-center gap-3">
                 <span className="wl-micro-meta--muted w-28 shrink-0">{bucket.label}</span>
                 <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
@@ -280,34 +281,16 @@ export default function QualityView({ days }: { days: number }) {
           </h4>
         </div>
         <div className="divide-y divide-border">
-          {[
-            {
-              key: "greeting",
-              label: "Opening & Greeting",
-              desc: "Professional, warm, identified company/purpose clearly",
-            },
-            {
-              key: "discovery",
-              label: "Problem Discovery",
-              desc: "Open-ended questions, understood customer's situation",
-            },
-            {
-              key: "solution",
-              label: "Solution Presentation",
-              desc: "Clear, relevant, addressed actual customer needs",
-            },
-            {
-              key: "objection",
-              label: "Objection Handling",
-              desc: "Handled pushback calmly, didn't oversell",
-            },
-            {
-              key: "closing",
-              label: "Closing & Next Steps",
-              desc: "Strong close, set clear next steps or outcome",
-            },
-          ].map(({ key, label, desc }) => {
-            const avg = (dims[key] ?? 0) as number;
+          {(
+            [
+              { key: "greeting" as const, label: "Opening & Greeting" },
+              { key: "discovery" as const, label: "Problem Discovery" },
+              { key: "solution" as const, label: "Solution Presentation" },
+              { key: "objection" as const, label: "Objection Handling" },
+              { key: "closing" as const, label: "Closing & Next Steps" },
+            ] as const
+          ).map(({ key, label }) => {
+            const avg = dims[key] ?? 0;
             const pct = Math.round((avg / 20) * 100);
             return (
               <div key={key} className="px-5 py-3.5 flex items-center gap-4">
@@ -315,7 +298,6 @@ export default function QualityView({ days }: { days: number }) {
                   <p className="text-[var(--wireline-typography-overline-size)] text-foreground font-medium">
                     {label}
                   </p>
-                  <p className="wl-micro-meta--muted mt-0.5">{desc}</p>
                 </div>
                 <div className="w-28 flex items-center gap-2 shrink-0">
                   <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">

@@ -25,7 +25,6 @@ import { EmptyState } from "./ui/EmptyState";
 import {
   OPS_CHANNEL_EMPTY,
   OPS_CHANNEL_TOOLBAR,
-  OPS_SUPPORT_EMPTY,
   OPS_AUDIT_SEVERITY,
 } from "../lib/wireline-ops-design";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
@@ -495,14 +494,6 @@ export default function AuditLog() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5 p-3 rounded-md bg-brand/5 border border-brand/15">
-            <AlertTriangle className="w-4 h-4 text-brand shrink-0" aria-hidden />
-            <p className="wl-label text-brand/80 leading-snug">
-              {OPS_SUPPORT_EMPTY.auditCompliance}
-            </p>
-          </div>
-
-          {/* Severity legend */}
           <div className="flex flex-wrap gap-2" role="group" aria-label="Severity legend">
             {SEVERITY_OPTIONS.map((severity) => {
               const meta = OPS_AUDIT_SEVERITY[severity];
@@ -588,12 +579,11 @@ export default function AuditLog() {
                   label={OPS_CHANNEL_TOOLBAR.audit.loading}
                   className="min-h-[280px]"
                 />
-              ) : loadErr ? (
-                <EmptyState
-                  icon={Shield}
-                  eyebrow="Audit log unavailable"
-                  title="Couldn't load audit events"
-                  description={loadErr}
+                ) : loadErr ? (
+                  <EmptyState
+                    icon={Shield}
+                    title="Couldn't load audit events"
+                    description={loadErr}
                   actions={[{ label: "Retry", onClick: fetchAudit, primary: true }]}
                   density="compact"
                   withHalo={false}
@@ -603,9 +593,7 @@ export default function AuditLog() {
                 searchQuery.trim() ? (
                   <EmptyState
                     icon={Shield}
-                    eyebrow={OPS_CHANNEL_EMPTY.auditNoMatch.eyebrow}
                     title={OPS_CHANNEL_EMPTY.auditNoMatch.title}
-                    description={OPS_CHANNEL_EMPTY.auditNoMatch.description}
                     density="compact"
                     withHalo={false}
                     actions={[
@@ -615,9 +603,7 @@ export default function AuditLog() {
                 ) : (
                   <EmptyState
                     icon={Shield}
-                    eyebrow={OPS_CHANNEL_EMPTY.audit.eyebrow}
                     title={OPS_CHANNEL_EMPTY.audit.title}
-                    description={OPS_CHANNEL_EMPTY.audit.description}
                     actions={[...OPS_CHANNEL_EMPTY.audit.actions]}
                     density="compact"
                     withHalo={false}

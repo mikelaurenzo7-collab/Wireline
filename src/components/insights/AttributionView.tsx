@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
 import { cn } from "../../lib/utils";
+import type { InsightsAttributionResponse, InsightsAttributionRow } from "../../types/api-insights";
 import { fetchInsight, InsightSkeleton, ErrCard, Stat, InsightEmpty } from "./shared";
 
 export default function AttributionView({ days }: { days: number }) {
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<InsightsAttributionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -14,7 +14,7 @@ export default function AttributionView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    fetchInsight<{ attribution?: unknown[] }>(`/api/insights/campaign-attribution?days=${days}`)
+    fetchInsight<InsightsAttributionResponse>(`/api/insights/campaign-attribution?days=${days}`)
       .then((d) => {
         if (active) setRows(d.attribution || []);
       })
@@ -41,7 +41,6 @@ export default function AttributionView({ days }: { days: number }) {
 
   return (
     <div className="p-1 space-y-3">
-      {/* Screen Reader Twin-View for Attribution Table */}
       <div className="sr-only">
         <h2>Campaign Attribution Details</h2>
         <dl>
@@ -132,13 +131,6 @@ export default function AttributionView({ days }: { days: number }) {
           </tbody>
         </table>
       </div>
-      <p className="text-caption leading-relaxed px-1">
-        Set the campaign label per phone number under{" "}
-        <a href="/admin" className="text-brand hover:underline">
-          Admin → Carrier
-        </a>
-        . Calls inherit the label automatically.
-      </p>
     </div>
   );
 }

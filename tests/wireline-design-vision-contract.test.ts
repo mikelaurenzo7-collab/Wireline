@@ -78,13 +78,10 @@ describe("Wireline Letterpress design vision", () => {
     expect(read("ios/Wireline/Theme/WirelineTheme.swift")).toContain("static let wire");
   });
 
-  it("centralizes wired eyebrows and operate page intros", () => {
-    expect(read("src/components/ui/WiredEyebrow.tsx")).toContain("WL_APP_CLASSES.wiredEyebrow");
+  it("centralizes workspace page intros and presence hooks", () => {
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
-    expect(read("src/pages/SettingsPage.tsx")).toContain("WiredEyebrow");
-    expect(read("src/components/WebhooksManager.tsx")).toContain("WiredEyebrow");
     expect(read("src/hooks/useLivePresence.ts")).toContain("usePresenceSignals");
   });
 
