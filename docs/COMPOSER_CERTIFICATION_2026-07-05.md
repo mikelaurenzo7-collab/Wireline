@@ -8,12 +8,12 @@
 
 Code review fixes after initial certification merge:
 
-| Finding | Severity | Fix |
-|---------|----------|-----|
-| Voice PATCH wiped `phone_voice_*` when updating presenter without phone fields | P0 | Partial PATCH — only touch phone columns when explicit or defaulting new presenter |
-| Training gallery replaced presenter with vapi when picking phone voice | P1 | `VoiceGallery` dual-path: phone section updates `phoneVoiceId` while keeping `presenter` |
-| Vapi factory fell back to presenter `voiceId` on PSTN | P1 | PSTN uses `phoneVoiceId` or rotated default only |
-| Consent FTUX swallowed save errors | P2 | `CustomPresenceConsentPanel` surfaces error state |
+| Finding                                                                        | Severity | Fix                                                                                      |
+| ------------------------------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------- |
+| Voice PATCH wiped `phone_voice_*` when updating presenter without phone fields | P0       | Partial PATCH — only touch phone columns when explicit or defaulting new presenter       |
+| Training gallery replaced presenter with vapi when picking phone voice         | P1       | `VoiceGallery` dual-path: phone section updates `phoneVoiceId` while keeping `presenter` |
+| Vapi factory fell back to presenter `voiceId` on PSTN                          | P1       | PSTN uses `phoneVoiceId` or rotated default only                                         |
+| Consent FTUX swallowed save errors                                             | P2       | `CustomPresenceConsentPanel` surfaces error state                                        |
 
 Added [`tests/dual-voice-routing-contract.test.ts`](../tests/dual-voice-routing-contract.test.ts) and expanded `verify:contracts`.
 
@@ -23,23 +23,23 @@ Composer 2.5 certification closes the runtime-policy migration, enforces the ful
 
 ## Verification ladder
 
-| Step | Command | Result |
-|------|---------|--------|
-| Lint (client) | `npm run lint` | ✅ pass |
-| Lint (server) | `npm run lint:server` | ✅ pass |
-| Design contract | `npm run design:check` | ✅ pass |
-| Stripe catalog | `npm run stripe:catalog:check` | ✅ pass (9 setup / 8 recurring) |
-| AuthZ matrix | `npm run authz:check` | ✅ 0 violations (189 scanned) |
-| Server bootstrap | `npm run server:bootstrap:check` | ✅ pass |
-| CSP drift | `npm run csp:check` | ✅ pass |
-| Runtime policy | `npm run runtime:policy:check` | ✅ pass (no `claude-*.ts` in `src/lib`) |
-| API error shape | `npm run api-error:check` | ✅ 0 legacy responses |
-| Unit + contract tests | `npm run test:run` | ✅ **224** tests |
-| Product contracts | `npm run verify:contracts` | ✅ 15 tests |
-| Production build | `npm run build` | ✅ pass |
-| Server smoke | `npm run smoke:server` | ✅ bundle imports |
-| Browser extension | `node apps/browser-extension/scripts/build.mjs --check` | ✅ pass |
-| Playwright E2E | `CI=1 npm run test:e2e` | ✅ 35 passed, 12 skipped (design-gold), 1 flaky signup (passes on retry) |
+| Step                  | Command                                                 | Result                                                                   |
+| --------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Lint (client)         | `npm run lint`                                          | ✅ pass                                                                  |
+| Lint (server)         | `npm run lint:server`                                   | ✅ pass                                                                  |
+| Design contract       | `npm run design:check`                                  | ✅ pass                                                                  |
+| Stripe catalog        | `npm run stripe:catalog:check`                          | ✅ pass (9 setup / 8 recurring)                                          |
+| AuthZ matrix          | `npm run authz:check`                                   | ✅ 0 violations (189 scanned)                                            |
+| Server bootstrap      | `npm run server:bootstrap:check`                        | ✅ pass                                                                  |
+| CSP drift             | `npm run csp:check`                                     | ✅ pass                                                                  |
+| Runtime policy        | `npm run runtime:policy:check`                          | ✅ pass (no `claude-*.ts` in `src/lib`)                                  |
+| API error shape       | `npm run api-error:check`                               | ✅ 0 legacy responses                                                    |
+| Unit + contract tests | `npm run test:run`                                      | ✅ **224** tests                                                         |
+| Product contracts     | `npm run verify:contracts`                              | ✅ 15 tests                                                              |
+| Production build      | `npm run build`                                         | ✅ pass                                                                  |
+| Server smoke          | `npm run smoke:server`                                  | ✅ bundle imports                                                        |
+| Browser extension     | `node apps/browser-extension/scripts/build.mjs --check` | ✅ pass                                                                  |
+| Playwright E2E        | `CI=1 npm run test:e2e`                                 | ✅ 35 passed, 12 skipped (design-gold), 1 flaky signup (passes on retry) |
 
 `verify:full` composes lint → policy → api-error → test:run → build → smoke and is now enforced in [`.github/workflows/verify-full.yml`](../.github/workflows/verify-full.yml).
 
@@ -81,21 +81,22 @@ Composer 2.5 certification closes the runtime-policy migration, enforces the ful
 
 ## Live ops proof
 
-| Check | Result | Notes |
-|-------|--------|-------|
-| Production `/api/health` | ✅ HTTP 200 | `https://trywireline.com/api/health` |
-| Local `verify:full` | ✅ green | See table above |
-| Supabase security advisors | ⚠️ review | Leaked-password protection — see advisor output below |
+| Check                         | Result      | Notes                                                      |
+| ----------------------------- | ----------- | ---------------------------------------------------------- |
+| Production `/api/health`      | ✅ HTTP 200 | `https://trywireline.com/api/health`                       |
+| Local `verify:full`           | ✅ green    | See table above                                            |
+| Supabase security advisors    | ⚠️ review   | Leaked-password protection — see advisor output below      |
 | Live Stripe micro-transaction | ⏳ operator | Requires owner credentials; catalog contract green locally |
-| Vercel READY post-push | ⏳ pending | Confirm after `git push origin main` |
-| Sentry DSN | ⏳ operator | Document in Vercel env if not set |
+| Vercel READY post-push        | ⏳ pending  | Confirm after `git push origin main`                       |
+| Sentry DSN                    | ⏳ operator | Document in Vercel env if not set                          |
 
 ### Supabase security advisor (2026-07-05)
 
 Run `get_advisors(security)` on 2026-07-05:
 
-- **WARN** `auth_leaked_password_protection` — Leaked password protection disabled.  
-  Remediation: [Password strength and leaked password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
+- **WARN** `auth_leaked_password_protection` — Supabase Auth leaked-password protection is disabled.
+  Scope note: Wireline does not use Supabase Auth for password verification, so this advisor does not protect the active `wireline_users.password_hash` flow. The active remediation is Wireline-owned breached-password screening in the custom auth service.
+  Reference: [Password strength and leaked password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
 
 ## Merge criteria checklist
 

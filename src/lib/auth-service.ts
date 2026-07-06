@@ -5,6 +5,7 @@ import * as schema from "../db/schema";
 import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
+import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
 
 /** Lazy so importing auth-service does not crash the whole API when env is misconfigured. */
 let cachedJwtSecret: string | null = null;
@@ -23,6 +24,19 @@ export class AuthConfigurationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "AuthConfigurationError";
+  }
+}
+
+async function requirePasswordSafety(
+  password: string,
+  context: PasswordBreachCheckContext,
+): Promise<void> {
+  const result = await assertPasswordIsSafe(password, { context });
+  if (!result.checked && result.error) {
+    log.warn("Auth: password breach check unavailable in permissive mode", {
+      context,
+      error: result.error,
+    });
   }
 }
 
@@ -197,6 +211,7 @@ export const authService = {
       );
     }
 
+    await requirePasswordSafety(password, "signup");
     const passwordHash = hashPassword(password);
 
     try {
@@ -360,6 +375,7 @@ export const authService = {
       .limit(1);
     if (!row) return null;
 
+    await requirePasswordSafety(newPassword, "reset");
     const newHash = hashPassword(newPassword);
     // Wrap password update + token mark-used in a single transaction so
     // we can never leave a "password rotated but token still consumable"

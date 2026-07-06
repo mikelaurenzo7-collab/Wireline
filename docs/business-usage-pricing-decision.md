@@ -11,13 +11,13 @@ Wireline sells operating capacity, not template access.
 
 ## Target commercial structure
 
-| Offer | Commercial role | Billing expectation |
-| --- | --- | --- |
-| Personal | Solo or founder use | No required subscription; live work funded through Conversation Balance top-ups |
-| Team | Shared SMB coverage | Recurring capacity tier plus Conversation Balance |
-| Business | Revenue, support, and front desk teams | Recurring capacity tier plus pooled Conversation Balance |
-| Enterprise | Governed rollout, SSO, policy, audit, BYO telephony | Annual committed usage and contract terms |
-| Conversation Balance | One-time funding | Web checkout only; customer-controlled top-ups |
+| Offer                | Commercial role                                     | Billing expectation                                                             |
+| -------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Personal             | Solo or founder use                                 | No required subscription; live work funded through Conversation Balance top-ups |
+| Team                 | Shared SMB coverage                                 | Recurring capacity tier plus Conversation Balance                               |
+| Business             | Revenue, support, and front desk teams              | Recurring capacity tier plus pooled Conversation Balance                        |
+| Enterprise           | Governed rollout, SSO, policy, audit, BYO telephony | Annual committed usage and contract terms                                       |
+| Conversation Balance | One-time funding                                    | Web checkout only; customer-controlled top-ups                                  |
 
 ## Live Stripe audit snapshot
 
@@ -47,7 +47,7 @@ Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
    - Annual recurring: `$278`
    - Extra agent recurring: `$9`
    - Metered voice overage: `$0.16/min`, backed by Stripe Billing Meter `voice_minutes_overage`
-   Metadata:
+     Metadata:
    - `wireline_plan_id=team`
    - `wireline_billing_model=capacity_plus_conversation_balance`
 3. Create product `Wireline Business`
@@ -56,7 +56,7 @@ Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
    - Annual recurring: `$566`
    - Extra agent recurring: `$12`
    - Metered voice overage: `$0.14/min`, backed by Stripe Billing Meter `voice_minutes_overage`
-   Metadata:
+     Metadata:
    - `wireline_plan_id=business`
    - `wireline_billing_model=capacity_plus_conversation_balance`
 4. Updated product `Wireline Enterprise`
@@ -68,7 +68,7 @@ Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
    - One-time top-up: `$10`
    - One-time top-up: `$25`
    - One-time top-up: `$50`
-   Reason: fixed top-up prices support catalog clarity while the app can still use dynamic Checkout `price_data` for controlled amounts.
+     Reason: fixed top-up prices support catalog clarity while the app can still use dynamic Checkout `price_data` for controlled amounts.
 
 ## Current env mapping
 
@@ -124,18 +124,18 @@ Wireline's commercial story is intentionally narrow and repeatable:
 
 These messages must stay aligned across:
 
-| Surface | Canonical copy anchor |
-| --- | --- |
-| `/pricing` | "Create free. Train deeply. Fund live work when it matters." |
-| Billing settings | "Start free. Fund live work." |
-| Conversation Balance API | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts` |
-| Stripe catalog | Product names: Conversation Balance, Wireline Personal/Team/Business/Enterprise |
-| ChatGPT MCP widgets | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts` |
-| iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json` |
+| Surface                   | Canonical copy anchor                                                           |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `/pricing`                | "Create free. Train deeply. Fund live work when it matters."                    |
+| Billing settings          | "Start free. Fund live work."                                                   |
+| Conversation Balance API  | `CONVERSATION_BALANCE_COPY` in `src/lib/conversation-balance.ts`                |
+| Stripe catalog            | Product names: Conversation Balance, Wireline Personal/Team/Business/Enterprise |
+| ChatGPT MCP widgets       | Wireline Letterpress tokens via `src/lib/wireline-mcp-widget-styles.ts`         |
+| iOS / Android / extension | Generated `WirelineDesignTokens` from `design-tokens/wireline.tokens.json`      |
 
 ## Still required before live rollout
 
 1. Re-run production checkout, webhook, portal, and billing-status verification after the next Vercel deployment reaches READY.
 2. Confirm metered overage event emission uses `voice_minutes_overage` with `stripe_customer_id` and `value` payload keys before enabling overage burn in production.
 3. Keep Enterprise contact-sales until contract, committed-usage operations, and implementation controls are ready.
-4. Enable Supabase leaked-password protection in the Auth dashboard before public launch.
+4. Enforce custom-auth breached-password screening before public launch.

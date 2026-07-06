@@ -3,7 +3,7 @@ import { Shield, FileText, Trash2, ArrowLeft, Video } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 
-const LAST_UPDATED = "May 9, 2026";
+const LAST_UPDATED = "July 6, 2026";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared layout wrapper for legal pages
@@ -93,7 +93,7 @@ export function PrivacyPolicy() {
     <LegalLayout title="Privacy Policy" icon={Shield}>
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, OpenAI, Google Gemini, Stripe, and Vercel. Last updated May 9, 2026."
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, OpenAI, Google Gemini, Stripe, Vercel, and breached-password screening. Last updated July 6, 2026."
         path="/privacy"
       />
 
@@ -108,8 +108,8 @@ export function PrivacyPolicy() {
 
       <Section title="2. Data We Collect">
         <p>
-          <strong>Account data</strong> — Email address, authentication tokens, and account
-          preferences provided during sign-up and use of the platform.
+          <strong>Account data</strong> — Email address, password hashes, authentication tokens, and
+          account preferences provided during sign-up and use of the platform.
         </p>
         <p>
           <strong>Agent configuration</strong> — Names, personas, directives, knowledge base
@@ -138,8 +138,9 @@ export function PrivacyPolicy() {
         <p>
           We use collected data to: provide and operate the Wireline platform; process AI requests
           via OpenAI's API with Google Gemini as a managed fallback; route and log voice calls via
-          our voice network; send scheduled email briefs via your linked Gmail/Outlook account; and
-          bill you via Stripe.
+          our voice network; send scheduled email briefs via your linked Gmail/Outlook account;
+          screen new and reset passwords against known-compromised password data using a partial
+          hash prefix; and bill you via Stripe.
         </p>
         <p>
           We do <strong>not</strong> sell or share your personal information with third parties for
@@ -168,6 +169,10 @@ export function PrivacyPolicy() {
           </li>
           <li>
             <strong>Vercel</strong> (vercel.com) — Platform hosting and edge delivery
+          </li>
+          <li>
+            <strong>Have I Been Pwned Pwned Passwords</strong> (haveibeenpwned.com) — Breached
+            password screening using a k-anonymous partial password-hash prefix
           </li>
         </ul>
       </Section>

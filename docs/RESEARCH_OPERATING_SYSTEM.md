@@ -27,33 +27,33 @@ Wireline should be studied like a regulated communications product, a conversion
 
 ### P0 — launch confidence
 
-| Question | Why it matters | Required evidence | Decision unlocked |
-| --- | --- | --- | --- |
-| Can a new user create, train, test, and wire one useful agent without founder intervention? | Activation is the product. | 10 observed onboarding sessions; time-to-trained-agent; drop-off points; rage clicks; failed validation events. | Simplify onboarding, templates, and first-run training. |
-| Does the agent behave correctly in real calls under messy caller behavior? | Voice trust determines retention. | 100-call dogfood set across personal, solo business, front desk, sales, and support scenarios. | Launch readiness for public traffic. |
-| Are phone provisioning, call routing, SMS, transcripts, and follow-up reliable enough for paid use? | The line cannot feel experimental once live. | Synthetic probes, provider error taxonomy, end-to-end traces, retry/fallback results. | Production launch and SLA posture. |
-| Is the public story understood in under five seconds on mobile? | Mobile browser is the first impression. | Five-second tests, first-click tests, mobile scroll maps, CTA comprehension. | Hero/landing iteration and ad readiness. |
-| Are static metadata, runtime metadata, social previews, and installable-app metadata aligned? | Crawlers and share surfaces see static output first. | Static metadata contracts and Vercel HTML fetch after deploy. | SEO/social confidence. |
-| Do tests actually guard the product promises that matter? | Visual polish can regress silently. | CI runs product voice, metadata, authz, CSP, build, server smoke, extension checks, and e2e where practical. | Safe iteration velocity. |
+| Question                                                                                            | Why it matters                                       | Required evidence                                                                                               | Decision unlocked                                       |
+| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Can a new user create, train, test, and wire one useful agent without founder intervention?         | Activation is the product.                           | 10 observed onboarding sessions; time-to-trained-agent; drop-off points; rage clicks; failed validation events. | Simplify onboarding, templates, and first-run training. |
+| Does the agent behave correctly in real calls under messy caller behavior?                          | Voice trust determines retention.                    | 100-call dogfood set across personal, solo business, front desk, sales, and support scenarios.                  | Launch readiness for public traffic.                    |
+| Are phone provisioning, call routing, SMS, transcripts, and follow-up reliable enough for paid use? | The line cannot feel experimental once live.         | Synthetic probes, provider error taxonomy, end-to-end traces, retry/fallback results.                           | Production launch and SLA posture.                      |
+| Is the public story understood in under five seconds on mobile?                                     | Mobile browser is the first impression.              | Five-second tests, first-click tests, mobile scroll maps, CTA comprehension.                                    | Hero/landing iteration and ad readiness.                |
+| Are static metadata, runtime metadata, social previews, and installable-app metadata aligned?       | Crawlers and share surfaces see static output first. | Static metadata contracts and Vercel HTML fetch after deploy.                                                   | SEO/social confidence.                                  |
+| Do tests actually guard the product promises that matter?                                           | Visual polish can regress silently.                  | CI runs product voice, metadata, authz, CSP, build, server smoke, extension checks, and e2e where practical.    | Safe iteration velocity.                                |
 
 ### P1 — monetization and retention
 
-| Question | Why it matters | Required evidence | Decision unlocked |
-| --- | --- | --- | --- |
-| Which first agent is most likely to activate each segment? | One generic template weakens conversion. | Template selection, completion, test-call success, live wiring rate by segment. | Segment-specific onboarding and templates. |
-| What is the right paid packaging for solo operators vs teams? | Solo business agents sit between Personal and Team. | Willingness-to-pay interviews; checkout experiments; usage-margin analysis. | Pricing and plan page changes. |
-| What is the minimum viable analytics loop for the customer? | Customers need proof the agent works. | Interviews; dashboard usage; desired weekly report formats. | Agent ROI summary, weekly recap, and expansion nudges. |
-| Which integrations create durable retention? | Integrations become switching costs. | CRM/calendar/email usage, failure rates, support load, retention lift. | Integration roadmap. |
-| What usage events predict conversion and churn? | Growth needs leading indicators. | Cohort analysis on setup events, call tests, phone wiring, first successful handoff, balance top-up. | Lifecycle email, in-app prompts, and sales handoff. |
+| Question                                                      | Why it matters                                      | Required evidence                                                                                    | Decision unlocked                                      |
+| ------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Which first agent is most likely to activate each segment?    | One generic template weakens conversion.            | Template selection, completion, test-call success, live wiring rate by segment.                      | Segment-specific onboarding and templates.             |
+| What is the right paid packaging for solo operators vs teams? | Solo business agents sit between Personal and Team. | Willingness-to-pay interviews; checkout experiments; usage-margin analysis.                          | Pricing and plan page changes.                         |
+| What is the minimum viable analytics loop for the customer?   | Customers need proof the agent works.               | Interviews; dashboard usage; desired weekly report formats.                                          | Agent ROI summary, weekly recap, and expansion nudges. |
+| Which integrations create durable retention?                  | Integrations become switching costs.                | CRM/calendar/email usage, failure rates, support load, retention lift.                               | Integration roadmap.                                   |
+| What usage events predict conversion and churn?               | Growth needs leading indicators.                    | Cohort analysis on setup events, call tests, phone wiring, first successful handoff, balance top-up. | Lifecycle email, in-app prompts, and sales handoff.    |
 
 ### P2 — defensibility and scale
 
-| Question | Why it matters | Required evidence | Decision unlocked |
-| --- | --- | --- | --- |
-| What can Wireline learn from every call that competitors cannot easily copy? | Moat comes from operational data and workflow memory. | Agent memory model, safe feedback loops, evaluation rubrics, replayable call datasets. | Quality flywheel design. |
-| Which verticals deserve first-class trust packs? | Regulated and high-value buyers need proof. | Buyer interviews, compliance requirements, objection logs. | Legal, medical, insurance, real-estate trust packs. |
-| Should voice synthesis, voice marketplace, or client-specific voices become a product surface? | Differentiation may be voice identity, but risk is high. | Consent/legal review, customer demand, provider quality benchmarks, fraud prevention design. | Voice roadmap. |
-| Where should browser, mobile, and ChatGPT surfaces diverge? | Each surface must earn its existence. | Usage by surface; task-fit research; support tickets; OS/store constraints. | Surface-specific roadmap. |
+| Question                                                                                       | Why it matters                                           | Required evidence                                                                            | Decision unlocked                                   |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| What can Wireline learn from every call that competitors cannot easily copy?                   | Moat comes from operational data and workflow memory.    | Agent memory model, safe feedback loops, evaluation rubrics, replayable call datasets.       | Quality flywheel design.                            |
+| Which verticals deserve first-class trust packs?                                               | Regulated and high-value buyers need proof.              | Buyer interviews, compliance requirements, objection logs.                                   | Legal, medical, insurance, real-estate trust packs. |
+| Should voice synthesis, voice marketplace, or client-specific voices become a product surface? | Differentiation may be voice identity, but risk is high. | Consent/legal review, customer demand, provider quality benchmarks, fraud prevention design. | Voice roadmap.                                      |
+| Where should browser, mobile, and ChatGPT surfaces diverge?                                    | Each surface must earn its existence.                    | Usage by surface; task-fit research; support tickets; OS/store constraints.                  | Surface-specific roadmap.                           |
 
 ---
 
@@ -283,7 +283,7 @@ Trust is a sales feature. Security work must be visible, provable, and operation
 Deliverables:
 
 - Launch security checklist.
-- Supabase Auth leaked-password protection enabled.
+- Custom-auth breached-password screening enforced for sign-up and password reset.
 - Data retention policy for calls, transcripts, recordings, summaries, training uploads, and audit logs.
 - Consent and call-recording disclosure policy by jurisdiction.
 - Vendor data-flow map.
@@ -332,7 +332,7 @@ P0:
 3. Add activation event taxonomy and instrument the first funnel: landing view, audience select, CTA click, signup intent capture, agent draft created, training asset added, test call started/completed, wire started/completed.
 4. Patch remaining landing audience copy so solo business is first-class across preview cards and notes.
 5. Create synthetic call probe runbook and map the expected trace from call -> transcript -> summary -> follow-up -> billing ledger.
-6. Enable Supabase leaked-password protection before public launch.
+6. Enforce custom-auth breached-password screening before public launch.
 
 P1:
 
@@ -381,13 +381,13 @@ P1:
 
 Use this before adding roadmap work.
 
-| Score | Definition |
-| --- | --- |
-| Severity | 5 = blocks launch/trust/revenue; 1 = polish only. |
-| Impact | 5 = materially improves activation, retention, trust, or revenue. |
-| Confidence | 5 = strong evidence; 1 = intuition. |
-| Effort | 5 = large/cross-functional; 1 = small patch. |
-| Risk | 5 = could break trust/security/reliability; 1 = low-risk. |
+| Score      | Definition                                                        |
+| ---------- | ----------------------------------------------------------------- |
+| Severity   | 5 = blocks launch/trust/revenue; 1 = polish only.                 |
+| Impact     | 5 = materially improves activation, retention, trust, or revenue. |
+| Confidence | 5 = strong evidence; 1 = intuition.                               |
+| Effort     | 5 = large/cross-functional; 1 = small patch.                      |
+| Risk       | 5 = could break trust/security/reliability; 1 = low-risk.         |
 
 Priority formula:
 
@@ -405,7 +405,7 @@ Any item with Severity 5 can override the formula.
 4. Primary CI still needs stronger coverage for the new product contracts and e2e accessibility smoke.
 5. The public landing component still has a few business-mode strings that over-index on call centers and under-index on solo business.
 6. Pricing direction is coherent but still requires post-deploy checkout, webhook, portal, and billing-status verification before live rollout.
-7. Supabase leaked-password protection remains a launch blocker until enabled in the Auth dashboard.
+7. Custom-auth breached-password screening remains a launch blocker until enforced in Wireline's auth service.
 8. SLA language promises synthetic call probes; the implementation and reporting loop must be verified before using that as a public trust claim.
 
 ---

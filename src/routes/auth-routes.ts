@@ -39,6 +39,7 @@ import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { ensureDefaultAccount } from "../lib/account-service";
+import { PasswordRejectedError } from "../lib/breached-passwords";
 const router = Router();
 
 function sendAuthSuccess(
@@ -54,6 +55,13 @@ function sendAuthSuccess(
 ) {
   setSessionCookie(res, token);
   return res.json(authSuccessBody(user));
+}
+
+function sendPasswordRejected(res: Response, error: PasswordRejectedError) {
+  return res.status(error.httpStatus).json({
+    error: error.message,
+    code: error.code,
+  });
 }
 
 /**
@@ -190,6 +198,9 @@ router.post(
 
       return sendAuthSuccess(res, result.user, result.token);
     } catch (error: any) {
+      if (error instanceof PasswordRejectedError) {
+        return sendPasswordRejected(res, error);
+      }
       if (error instanceof AuthConfigurationError) {
         log.error("Auth: Sign up unavailable — JWT secret missing", { error });
         return res.status(503).json({
@@ -542,6 +553,9 @@ router.post(
       }
       return sendAuthSuccess(res, result.user, result.token);
     } catch (error) {
+      if (error instanceof PasswordRejectedError) {
+        return sendPasswordRejected(res, error);
+      }
       if (error instanceof AppError) throw error;
       log.error("Auth: reset-password complete failed", { error });
       throw AppError.fromHttpStatus(500, "Internal server error");
