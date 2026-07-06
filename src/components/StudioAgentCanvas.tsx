@@ -109,7 +109,7 @@ function CardShell({
       type="button"
       onClick={onActivate}
       style={{ animationDelay: `${delay}ms` }}
-      className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_rgba(43,85,72,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
+      className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_var(--wireline-color-glow-primarySoft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
     >
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <span className={cn(WL_APP_CLASSES.wiredEyebrow, "wl-eyebrow")}>{label}</span>

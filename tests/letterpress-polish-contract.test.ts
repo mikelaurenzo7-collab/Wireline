@@ -89,7 +89,7 @@ describe("Wireline Letterpress polish layer", () => {
     }
   });
 
-  it("uses copper wire as the eyebrow rule and forest as the press highlight", () => {
+  it("uses platinum wire as the eyebrow rule and tokenized press highlight", () => {
     const polish = read("src/styles/letterpress-polish.css");
     expect(polish).toMatch(
       /\.wl-eyebrow::before[\s\S]*var\(--wireline-color-action-secondary-default\)/,

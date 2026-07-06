@@ -50,7 +50,8 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
         className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-60"
         aria-hidden="true"
         style={{
-          background: "radial-gradient(ellipse at 60% 30%, rgba(43,85,72,.07), transparent 70%)",
+          background:
+            "radial-gradient(ellipse at 60% 30%, var(--wireline-color-glow-primarySoft), transparent 70%)",
           filter: "blur(40px)",
         }}
       />
@@ -193,7 +194,7 @@ const PERSONAL_CONFIGS = [
   },
   {
     icon: "◫",
-    name: "Operator",
+    name: "Concierge",
     body: "Turns a side hustle into a front desk: quotes, intake, follow-up, and handoff.",
     plan: "Team · Drafting board",
   },
@@ -496,7 +497,7 @@ export default function PrecisionLanding() {
               {configs.map(({ icon, name, body, plan }) => (
                 <div
                   key={name}
-                  className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_rgba(43,85,72,.06)]"
+                  className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_var(--wireline-color-glow-primarySoft)]"
                 >
                   <div
                     className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[var(--wireline-color-action-primary-container)] text-[18px] text-primary"
@@ -639,7 +640,7 @@ export default function PrecisionLanding() {
                 aria-hidden="true"
                 style={{
                   background:
-                    "radial-gradient(ellipse at 50% 0%, rgba(43,85,72,.2), transparent 60%)",
+                    "radial-gradient(ellipse at 50% 0%, var(--wireline-color-glow-primary), transparent 60%)",
                 }}
               />
               <div className="relative">

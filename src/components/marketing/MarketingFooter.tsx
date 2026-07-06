@@ -11,6 +11,7 @@ const PRODUCT_LINKS = [
 
 const RESOURCE_LINKS = [
   { to: "/showcase", label: "Demos" },
+  { to: "/developers", label: "Developers" },
   { to: "/security", label: "Security" },
   { to: "/support", label: "Support" },
   { to: "/status", label: "Status" },

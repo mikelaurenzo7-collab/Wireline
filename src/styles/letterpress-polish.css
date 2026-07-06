@@ -5,9 +5,9 @@
  * without adding a parallel palette. Use these instead of bespoke inline
  * styles when you need:
  *   - letterpress embossed/inset depth (no glass, no glow noise)
- *   - a refined focus ring with optional copper wire halo
+ *   - a refined focus ring with optional platinum wire halo
  *   - spring / wireline motion curves
- *   - forest/copper glow utilities
+ *   - aurora violet / platinum wire glow utilities
  *   - a consistent "paper card" surface
  *   - a refined empty state and metric tile
  *
@@ -57,7 +57,7 @@
 
 /* ----------------------------------------------------------------------------
  * 2. Focus rings — visible, on-brand, and never lost. The default ring uses
- *    the forest patina. The wire variant pulls in a copper halo for moments
+ *    the aurora violet action. The wire variant pulls in a platinum halo for moments
  *    when the user is acting on a wire/integration surface.
  * --------------------------------------------------------------------------*/
 .wl-focus-ring:focus-visible {
@@ -83,7 +83,7 @@
 }
 
 /* ----------------------------------------------------------------------------
- * 3. Glow — restrained forest or copper radiance. Use sparingly and only
+ * 3. Glow — restrained violet or platinum radiance. Use sparingly and only
  *    on the active affordance, never on a static surface.
  * --------------------------------------------------------------------------*/
 .wl-glow-primary {

@@ -38,6 +38,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
+const Developers = lazy(() => import("./pages/Developers"));
 
 function RouteLoading() {
   return (
@@ -77,7 +78,7 @@ function AppRouter() {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/developers" element={<Navigate to="/features" replace />} />
+        <Route path="/developers" element={<Developers />} />
         <Route path="/signin/*" element={<AuthPortalRoute />} />
         <Route path="/signup/*" element={<AuthPortalRoute />} />
         <Route path="/get-started" element={<AuthPortalRoute />} />
