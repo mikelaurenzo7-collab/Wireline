@@ -79,7 +79,14 @@ async function fetchSessionUser(): Promise<User | null> {
   }
 }
 
+const STALE_BROWSER_TOKEN_KEYS = ["wireline_token"];
+
+function clearStaleBrowserTokens(): void {
+  for (const key of STALE_BROWSER_TOKEN_KEYS) localStorage.removeItem(key);
+}
+
 async function migrateLegacyLocalStorage(): Promise<void> {
+  clearStaleBrowserTokens();
   const stored = localStorage.getItem(LEGACY_STORAGE_KEY);
   if (!stored) return;
   try {
@@ -100,6 +107,7 @@ async function migrateLegacyLocalStorage(): Promise<void> {
     /* ignore — session hydrate will fail cleanly */
   } finally {
     localStorage.removeItem(LEGACY_STORAGE_KEY);
+    clearStaleBrowserTokens();
   }
 }
 

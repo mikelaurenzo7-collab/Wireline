@@ -69,7 +69,8 @@ router.put(
       if (!validation.ok) {
         throw AppError.badRequest((validation as { ok: false; error: string }).error);
       }
-      const { dimension, value, enabled } = validation.value;
+      const { dimension, enabled } = validation.value;
+      const value = BigInt(validation.value.value);
 
       await drizzle
         .insert(schema.quotaLimits)

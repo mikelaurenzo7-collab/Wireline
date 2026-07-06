@@ -55,6 +55,10 @@ Do **not** extract business behavior into a client package. `packages/contracts`
 5. Wireline Command is a user-initiated browser command surface. It must never become a hidden scraper, CRM mirror, or independent background agent.
 6. The ChatGPT App stays account-bound and draft-only until a separate, reviewed product decision expands its action surface.
 
+## Mobile API adapter discipline
+
+Native clients authenticate with Bearer tokens and should use the complete `/api/mobile/*` adapter surface for mobile product behavior. Agent creation, setup reads/writes, tool toggles, calls, wallet, devices, and handoff now have mobile-shaped endpoints. New native capabilities must be added under `/api/mobile/*` first, reusing shared backend services instead of duplicating business logic.
+
 ## CI and release responsibilities
 
 | Pipeline | Required check |

@@ -22,7 +22,7 @@ enum MobileAssistantCreation {
         guard let token = KeychainStore.loadToken() else {
             throw WirelineAPI.APIError.notAuthenticated
         }
-        var request = URLRequest(url: WirelineConfig.baseURL.appendingPathComponent("/api/agents"))
+        var request = URLRequest(url: WirelineConfig.baseURL.appendingPathComponent("/api/mobile/agents"))
         request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -32,6 +32,17 @@ The baseline package intentionally has:
 
 The extension reads the active page only after a user action. It captures a constrained title, URL, meta description, and explicit selection; it opens Studio with that context inside the URL fragment so the browser does not send it as part of the initial HTTP request. Studio immediately removes the fragment and presents the material as reference-only text for the user to review.
 
+## Explicit context workflows
+
+Wireline Command should be a competitive advantage because every workflow is explicit and reviewable. The approved product workflows are:
+
+1. **Prepare call from this page** — send the active page title/URL/selection only after the user clicks the command, then ask for call confirmation in Studio before any live call.
+2. **Extract facts into Training** — turn selected page context into proposed knowledge or directives that the Account Holder can review.
+3. **Draft follow-up** — use the current page or selection to draft a text/email/call recap without sending it automatically.
+4. **Send to Studio** — hand the context to the selected agent workroom for review, simulation, or next action.
+
+Non-negotiables: no broad host permissions, no silent page harvesting, no browser token storage, and no background CRM mirror.
+
 ## Build
 
 From the repository root:

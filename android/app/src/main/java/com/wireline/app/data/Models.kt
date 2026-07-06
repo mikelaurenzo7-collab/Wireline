@@ -101,14 +101,3 @@ data class OutboundCallResponse(
     val callId: String?,
 )
 
-data class MobileAgentSetup(
-    val knowledge: List<SetupEntry>,
-    val directives: List<SetupEntry>,
-    val enabledTools: List<String>,
-)
-
-data class SetupEntry(
-    val id: String,
-    val content: String,
-    val type: String,
-)

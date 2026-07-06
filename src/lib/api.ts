@@ -324,12 +324,7 @@ export async function authFetch(
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   const mergedSignal = signal ? combineSignals(signal, controller.signal) : controller.signal;
   try {
-    const stored =
-      typeof window !== "undefined" ? window.localStorage.getItem("wireline_token") : null;
     const mergedHeaders = new Headers(headers || {});
-    if (stored && !mergedHeaders.has("Authorization")) {
-      mergedHeaders.set("Authorization", `Bearer ${stored}`);
-    }
     const response = await fetch(input, {
       ...rest,
       headers: mergedHeaders,

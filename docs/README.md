@@ -38,6 +38,11 @@ Wireline's durable documentation follows the active product model. The customer-
 | [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md) | Cleanup policy, deletion rules, source-control boundaries, and health standards. |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Runtime architecture, route/data boundaries, provider posture, and security invariants. |
 | [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md) | Current codebase/repo health-pass findings, actions, and next priorities. |
+| [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md) | **Active** — source-of-truth triage for excluded/unmounted surfaces and their rebuild/delete targets. |
+| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | **Active** — whole-product showcase matrix across web, API, native, browser, ChatGPT, voice, video, integrations, trust, and margin. |
+| [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion. |
+| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | **Active** — customer-facing trust, compliance, and proof posture without overclaiming. |
+| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md) | **Active** — launch readiness scorecard and margin cockpit operating plan. |
 | [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md) | **Active** — takeover pass: design system beautification, polish layer, contracts, and verified upgrades. |
 | [COMPOSER_CERTIFICATION_2026-07-05.md](./COMPOSER_CERTIFICATION_2026-07-05.md) | **Active** — Composer 2.5 certification ladder, dual-voice PSTN, funnel events, and ops proof. |
 | [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | **Active** — brand voice, marketing/GTM, onboarding, pricing, voice/avatar product, and ops execution plan tied to the Aurora rebrand. |
@@ -71,8 +76,8 @@ Wireline's durable documentation follows the active product model. The customer-
 ## Verification
 
 - `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, and event taxonomy contracts.
-- `npm run verify` - design check, Stripe catalog contract, build, and bundled-server smoke.
-- `npm run verify:full` - lint, server lint, design/authz/CSP checks, tests, build, and smoke.
+- `npm run verify` - design check, source-control hygiene, route registry, docs index, design-token parity, Stripe catalog contract, build, and bundled-server smoke.
+- `npm run verify:full` - lint, server lint, design/source-control/route/docs/token/authz/CSP checks, tests, build, and smoke.
 - `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
 - `node apps/browser-extension/scripts/build.mjs --check` - browser extension contract and packaging smoke.
 - `GET /api/health` - deployment health probe.

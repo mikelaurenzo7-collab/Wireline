@@ -21,8 +21,8 @@
     "lint:eslint": "eslint --max-warnings 0 .",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
-    "verify": "npm run design:check && npm run stripe:catalog:check && npm run build && npm run smoke:server",
-    "verify:full": "npm run lint && npm run lint:server && npm run design:check && npm run stripe:catalog:check && npm run authz:check && npm run server:bootstrap:check && npm run tsconfig:excludes:check && npm run source-control:check && npm run csp:check && npm run runtime:policy:check && npm run api-error:check && npm run test:run && npm run build && npm run smoke:server",
+    "verify": "npm run design:check && npm run source-control:check && npm run route-registry:check && npm run docs:check && npm run openapi:check && npm run design:tokens:check && npm run stripe:catalog:check && npm run build && npm run smoke:server",
+    "verify:full": "npm run lint && npm run lint:server && npm run design:check && npm run source-control:check && npm run route-registry:check && npm run docs:check && npm run openapi:check && npm run design:tokens:check && npm run stripe:catalog:check && npm run authz:check && npm run server:bootstrap:check && npm run tsconfig:excludes:check && npm run csp:check && npm run runtime:policy:check && npm run api-error:check && npm run test:run && npm run build && npm run smoke:server",
     "verify:contracts": "vitest run --pool vmThreads tests/product-voice-contract.test.ts tests/marketing-metadata-contract.test.ts tests/static-metadata-contract.test.ts tests/product-events-contract.test.ts tests/structured-runtime-policy-contract.test.ts tests/dual-voice-routing-contract.test.ts",
     "test": "vitest --pool vmThreads --exclude 'tests/e2e/**'",
     "test:run": "vitest run --pool vmThreads --exclude 'tests/e2e/**'",
@@ -67,7 +67,11 @@
     "tenant-insert:check": "node scripts/check-user-id-inserts.mjs",
     "server:bootstrap:check": "node scripts/check-server-bootstrap.mjs",
     "tsconfig:excludes:check": "node scripts/check-tsconfig-exclude-hygiene.mjs",
-    "source-control:check": "node scripts/check-source-control-hygiene.mjs"
+    "source-control:check": "node scripts/check-source-control-hygiene.mjs",
+    "route-registry:check": "node scripts/check-route-registry.mjs",
+    "docs:check": "node scripts/check-docs-index.mjs",
+    "design:tokens:check": "node scripts/check-design-token-parity.mjs",
+    "openapi:check": "node scripts/check-openapi-implementation.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
