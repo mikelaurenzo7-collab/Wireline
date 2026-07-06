@@ -339,6 +339,7 @@ export interface AgentPerformance {
 
 /* ── Insights ────────────────────────────────────────────────────── */
 
+/** @deprecated Use InsightsFunnelResponse from api-insights.ts */
 export interface FunnelData {
   totalCalls: number;
   connected: number;
@@ -478,3 +479,14 @@ export type {
   ClientPlan,
   WorkspaceUsageResponse,
 } from "./api-billing";
+
+export type {
+  InsightsFailureMode,
+  InsightsFailureModesResponse,
+  InsightsFunnelResponse,
+  InsightsFunnelStage,
+  InsightsLeaderboardAgentRow,
+  InsightsLeaderboardResponse,
+  InsightsTopicCluster,
+  InsightsTopicsResponse,
+} from "./api-insights";

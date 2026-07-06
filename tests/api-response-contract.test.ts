@@ -34,4 +34,14 @@ describe("API response contract", () => {
     expect(usageMeter).toContain("WorkspaceUsageResponse");
     expect(usageMeter).not.toMatch(/interface UsageSnapshot/);
   });
+
+  it("types insights funnel and leaderboard views against shared contracts", () => {
+    const funnel = read("src/components/insights/FunnelView.tsx");
+    expect(funnel).toContain("InsightsFunnelResponse");
+    expect(funnel).not.toMatch(/useState<any>/);
+
+    const leaderboard = read("src/components/insights/LeaderboardView.tsx");
+    expect(leaderboard).toContain("InsightsLeaderboardResponse");
+    expect(read("src/types/api-insights.ts")).toContain("InsightsFunnelResponse");
+  });
 });

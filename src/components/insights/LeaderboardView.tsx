@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { AGENT_ROLES } from "../fleet/helpers";
+import type { InsightsLeaderboardAgentRow, InsightsLeaderboardResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, Stat } from "./shared";
 
 function RolePill({ role }: { role?: string }) {
@@ -27,7 +28,7 @@ function RolePill({ role }: { role?: string }) {
 }
 
 export default function LeaderboardView({ days }: { days: number }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<InsightsLeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -36,7 +37,7 @@ export default function LeaderboardView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    fetchInsight(`/api/insights/leaderboard?days=${days}`)
+    fetchInsight<InsightsLeaderboardResponse>(`/api/insights/leaderboard?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -85,11 +86,11 @@ export default function LeaderboardView({ days }: { days: number }) {
     },
   ];
 
-  const agentRows = Array.isArray(data?.agents) ? data.agents : [];
+  const agentRows: InsightsLeaderboardAgentRow[] = Array.isArray(data?.agents) ? data.agents : [];
 
   return (
     <div className="space-y-3">
-      {agentRows.map((a: any, i: number) => {
+      {agentRows.map((a, i) => {
         const rs = RANK_STYLES[i] ?? {
           ring: "border-white/8",
           glow: "transparent",

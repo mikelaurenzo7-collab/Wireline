@@ -1,13 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
+import type { InsightsFunnelResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { cn } from "../../lib/utils";
 
 export default function FunnelView({ days }: { days: number }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<InsightsFunnelResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -16,7 +16,7 @@ export default function FunnelView({ days }: { days: number }) {
     let active = true;
     setLoading(true);
     setErr(null);
-    fetchInsight(`/api/insights/funnel?days=${days}`)
+    fetchInsight<InsightsFunnelResponse>(`/api/insights/funnel?days=${days}`)
       .then((d) => {
         if (active) setData(d);
       })
@@ -36,9 +36,9 @@ export default function FunnelView({ days }: { days: number }) {
   if (!data) return null;
 
   const stages = data.stages || [];
-  const max = Math.max(1, ...stages.map((s: any) => s.count));
+  const max = Math.max(1, ...stages.map((s) => s.count));
 
-  if (stages.length === 0 || stages.every((s: any) => s.count === 0)) {
+  if (stages.length === 0 || stages.every((s) => s.count === 0)) {
     return <InsightEmpty configKey="funnel" icon={TrendingUp} />;
   }
 
@@ -48,7 +48,7 @@ export default function FunnelView({ days }: { days: number }) {
         <p className="wl-insight-label text-brand/70">Conversion · {data.window_days}d</p>
         <h3 className="font-display italic text-2xl text-foreground leading-tight">Funnel</h3>
       </div>
-      {stages.map((s: any, i: number) => {
+      {stages.map((s, i) => {
         const pct = (s.count / max) * 100;
         const prev = i > 0 ? stages[i - 1].count : null;
         const drop = prev !== null && prev > 0 ? Math.round(((prev - s.count) / prev) * 100) : null;
