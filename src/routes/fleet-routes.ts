@@ -12,10 +12,9 @@ import { validateBody, updateFollowUpTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
-import { compileActivityFeed } from "../lib/Assistants-activity";
+import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { executeAction } from "../lib/action-engine";
-import { claudeErr } from "../lib/claude-response-helpers";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -602,7 +601,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
     });
   } catch (e: any) {
     log.error("Triage fetch failed", { error: e instanceof Error ? e.message : String(e) });
-    claudeErr(res, e);
+    throw AppError.fromHttpStatus(500, "Failed to fetch triage inbox");
   }
 });
 
