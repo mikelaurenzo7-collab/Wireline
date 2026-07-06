@@ -8,6 +8,12 @@ import { log } from "./server-context";
 // wireline_audit_log.user_id is a Postgres uuid column — anything else in
 // that slot fails the whole insert and drops the event.
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Mirrors the client-facing email validation in support-routes.ts — only
+// identifiers that actually look like an address get promoted to actor_email.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// metadata is unbounded jsonb; cap what a misbehaving caller can force us to
+// persist when we capture a bad identifier verbatim.
+const INVALID_ID_CAPTURE_LIMIT = 256;
 
 export class AuditLogger {
   private failureCount = 0;
@@ -44,15 +50,27 @@ export class AuditLogger {
     // userId slot (an email was seen live on a security.rate_limit_exceeded
     // event) previously failed the ENTIRE insert with `invalid input syntax
     // for type uuid` — silently losing a critical security event. Keep the
-    // row and preserve the identifier where it actually fits.
-    let userId = data.userId;
+    // row and preserve the identifier where it actually fits. Empty and
+    // whitespace-only values are treated as absent — "" is just as fatal to
+    // the uuid column as an email.
+    let userId = data.userId?.trim() || undefined;
     let actorEmail = data.actorEmail;
     let metadata = data.metadata;
     if (userId && !UUID_PATTERN.test(userId)) {
-      if (!actorEmail && userId.includes("@")) {
+      if (!actorEmail && EMAIL_PATTERN.test(userId)) {
         actorEmail = userId;
       } else {
-        metadata = { ...metadata, invalid_user_id: userId };
+        const captured = userId.slice(0, INVALID_ID_CAPTURE_LIMIT);
+        // Never clobber a caller-supplied invalid_user_id — that context may
+        // be exactly what an operator needs to trace the earlier bad call.
+        metadata =
+          metadata && "invalid_user_id" in metadata
+            ? {
+                ...metadata,
+                invalid_user_id_prior: metadata.invalid_user_id,
+                invalid_user_id: captured,
+              }
+            : { ...metadata, invalid_user_id: captured };
       }
       log.warn("[AuditLogger] Non-uuid userId demoted to preserve audit row", {
         eventType: data.eventType,
