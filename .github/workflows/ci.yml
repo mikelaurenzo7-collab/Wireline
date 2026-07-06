@@ -29,6 +29,9 @@ jobs:
       - name: Professional Heritage contract
         run: npm run active-surface:check
 
+      - name: tsconfig exclude hygiene
+        run: npm run tsconfig:excludes:check
+
       - name: Type check
         run: npm run lint
 
