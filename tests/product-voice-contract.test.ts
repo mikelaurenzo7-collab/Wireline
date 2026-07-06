@@ -8,14 +8,12 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings in one shared module", () => {
     expect(MARKETING_VOICE.headline).toBe("Wire your agent.");
-    expect(MARKETING_VOICE.subline).toContain("personal assistants");
-    expect(MARKETING_VOICE.subline).toContain("solo business agents");
-    expect(MARKETING_VOICE.subline).toContain("call centers");
-    expect(MARKETING_VOICE.subline).toContain("sales teams");
+    expect(MARKETING_VOICE.subline).toContain("owner-operated service businesses");
+    expect(MARKETING_VOICE.subline).toContain("answers, routes, books, qualifies");
     expect(MARKETING_VOICE.proof).toEqual([
-      "Personal assistants",
-      "Solo business agents",
-      "Teams & call centers",
+      "Answers the line",
+      "Books and qualifies",
+      "Texts every outcome",
     ]);
   });
 
@@ -56,7 +54,9 @@ describe("product voice cohesion", () => {
     const docs = read("docs/README.md");
     expect(docs).toContain("Public pages explain. Authenticated pages execute.");
     expect(docs).toContain("Use labels, tabs, icons, state, and clear next actions");
-    expect(docs).toContain("Call Logs and Analytics may explain history, coaching, exports, and insights");
+    expect(docs).toContain(
+      "Call Logs and Analytics may explain history, coaching, exports, and insights",
+    );
   });
 
   it("preserves Call Logs as the allowed explanatory analytics surface", () => {

@@ -1,10 +1,20 @@
 package com.wireline.app.auth
 
 import android.content.Context
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import java.util.UUID
 
 class AuthTokenStore(context: Context) {
-    private val prefs = context.applicationContext.getSharedPreferences("wireline_auth", Context.MODE_PRIVATE)
+    private val prefs = EncryptedSharedPreferences.create(
+        context.applicationContext,
+        "wireline_auth",
+        MasterKey.Builder(context.applicationContext)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build(),
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+    )
 
     fun token(): String? = prefs.getString(KEY_TOKEN, null)
 

@@ -1,8 +1,10 @@
-import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { eq, and, gte, inArray, sql } from "drizzle-orm";
+import { drizzle } from "./server-context";
 import { getQueueStats, type QueueStats } from "./job-queue";
 import type { WebhookEvent } from "./webhook-helpers";
+
+type DrizzleDB = typeof drizzle;
 
 export type SloHealth = "ok" | "warn" | "critical";
 
@@ -147,8 +149,112 @@ export function getSloWebhookEvents(
   return payloads;
 }
 
+export async function getPlatformWebhookStats(
+  db: DrizzleDB,
+  windowHours: number = DEFAULT_WINDOW_H,
+): Promise<{
+  attempts_in_window: number;
+  success_in_window: number;
+  terminal_failure_in_window: number;
+  success_rate: number | null;
+}> {
+  const since = new Date(Date.now() - windowHours * 3_600_000);
+  const [successRes, failRes, attemptsRes] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.webhookDeliveries)
+      .where(
+        and(
+          eq(schema.webhookDeliveries.status, "success"),
+          gte(schema.webhookDeliveries.createdAt, since),
+        ),
+      ),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.webhookDeliveries)
+      .where(
+        and(
+          inArray(schema.webhookDeliveries.status, ["failed", "dead"]),
+          gte(schema.webhookDeliveries.createdAt, since),
+        ),
+      ),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.webhookDeliveries)
+      .where(gte(schema.webhookDeliveries.createdAt, since)),
+  ]);
+  const success_in_window = Number(successRes[0].count);
+  const terminal_failure_in_window = Number(failRes[0].count);
+  const attempts_in_window = Number(attemptsRes[0].count);
+  const completed = success_in_window + terminal_failure_in_window;
+  return {
+    attempts_in_window,
+    success_in_window,
+    terminal_failure_in_window,
+    success_rate: completed > 0 ? success_in_window / completed : null,
+  };
+}
+
+export async function getPlatformSloSnapshot(
+  db: DrizzleDB,
+  windowHours: number = DEFAULT_WINDOW_H,
+): Promise<AccountHolderSloSnapshot> {
+  const now = new Date();
+  const evaluated_at = now.toISOString();
+  const queue = await getQueueStats(db);
+  const webhooks = await getPlatformWebhookStats(db, windowHours);
+  const health = evaluateAccountHolderSloHealth({
+    pendingJobs: queue.pending,
+    deadEnrichmentWindow: queue.dead,
+    webhookAttemptsWindow: webhooks.attempts_in_window,
+    webhookSuccessRate: webhooks.success_rate,
+    auditErrorsWindow: 0,
+  });
+  return {
+    window_hours: windowHours,
+    evaluated_at,
+    jobs: {
+      queue,
+      oldest_pending_age_seconds: null,
+      enrichment: {
+        pending: 0,
+        running: 0,
+        failed: 0,
+        dead: queue.dead,
+        done_in_window: queue.done_last_hour,
+      },
+    },
+    webhooks: {
+      ...webhooks,
+      pending_retry_now: 0,
+    },
+    ai_reliability: {
+      claude_calls_in_window: 0,
+      error_severity_events_in_window: 0,
+      critical_events_in_window: 0,
+    },
+    dimensions: {
+      jobs_queue: health.jobs_queue,
+      enrichment_failures: health.enrichment_failures,
+      webhooks: health.webhooks,
+      ai_errors: health.ai_errors,
+    },
+    fired_events: getSloWebhookEvents(
+      {
+        jobs_queue: health.jobs_queue,
+        enrichment_failures: health.enrichment_failures,
+        webhooks: health.webhooks,
+        ai_errors: health.ai_errors,
+      },
+      windowHours,
+      evaluated_at,
+    ),
+    notes: [...health.notes, "Platform-wide snapshot (all tenants)."],
+  };
+}
+
 export async function getAccountHolderSloSnapshot(
-  drizzle: VercelPgDatabase<typeof schema>,
+  db: DrizzleDB,
   userId: string,
   windowHours: number = DEFAULT_WINDOW_H,
 ): Promise<AccountHolderSloSnapshot> {
@@ -156,9 +262,9 @@ export async function getAccountHolderSloSnapshot(
   const since = new Date(now.getTime() - windowHours * 3_600_000);
   const evaluated_at = now.toISOString();
 
-  const queue = await getQueueStats(drizzle, userId);
+  const queue = await getQueueStats(db, userId);
 
-  const [oldestPending] = await drizzle
+  const [oldestPending] = await db
     .select({ runAt: schema.jobs.runAt, createdAt: schema.jobs.createdAt })
     .from(schema.jobs)
     .where(and(eq(schema.jobs.userId, userId), eq(schema.jobs.status, "pending")))
@@ -184,7 +290,7 @@ export async function getAccountHolderSloSnapshot(
     errSevRes,
     critSevRes,
   ] = await Promise.all([
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.jobs)
       .where(
@@ -194,7 +300,7 @@ export async function getAccountHolderSloSnapshot(
           eq(schema.jobs.status, "pending"),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.jobs)
       .where(
@@ -204,7 +310,7 @@ export async function getAccountHolderSloSnapshot(
           eq(schema.jobs.status, "running"),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.jobs)
       .where(
@@ -214,7 +320,7 @@ export async function getAccountHolderSloSnapshot(
           eq(schema.jobs.status, "failed"),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.jobs)
       .where(
@@ -224,7 +330,7 @@ export async function getAccountHolderSloSnapshot(
           eq(schema.jobs.status, "dead"),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.jobs)
       .where(
@@ -236,7 +342,7 @@ export async function getAccountHolderSloSnapshot(
         ),
       ),
 
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.webhookDeliveries)
       .where(
@@ -246,7 +352,7 @@ export async function getAccountHolderSloSnapshot(
           gte(schema.webhookDeliveries.createdAt, since),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.webhookDeliveries)
       .where(
@@ -256,7 +362,7 @@ export async function getAccountHolderSloSnapshot(
           gte(schema.webhookDeliveries.createdAt, since),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.webhookDeliveries)
       .where(
@@ -265,7 +371,7 @@ export async function getAccountHolderSloSnapshot(
           gte(schema.webhookDeliveries.createdAt, since),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.webhookDeliveries)
       .where(
@@ -275,7 +381,7 @@ export async function getAccountHolderSloSnapshot(
         ),
       ),
 
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.auditLog)
       .where(
@@ -286,7 +392,7 @@ export async function getAccountHolderSloSnapshot(
           gte(schema.auditLog.createdAt, since),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.auditLog)
       .where(
@@ -296,7 +402,7 @@ export async function getAccountHolderSloSnapshot(
           gte(schema.auditLog.createdAt, since),
         ),
       ),
-    drizzle
+    db
       .select({ count: sql`count(*)` })
       .from(schema.auditLog)
       .where(

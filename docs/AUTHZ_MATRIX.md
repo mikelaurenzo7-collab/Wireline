@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 258
-**Protected:** 215
+**Routes scanned:** 269
+**Protected:** 226
 **Public (allowlisted):** 43
 **Violations:** 0
 
@@ -32,10 +32,9 @@
 | `POST /api/daily-brief/schedule` | Vercel cron; Bearer CRON_SECRET (timing-safe) |
 | `POST /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `GET /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
-| `GET /api/health` | Liveness/readiness probes; rate-limited, no PII |
-| `GET /api/health/launch-readiness` | Liveness/readiness probes; rate-limited, no PII |
-| `GET /api/health/public` | Liveness/readiness probes; rate-limited, no PII |
-| `GET /api/health/ready` | Liveness/readiness probes; rate-limited, no PII |
+| `GET /api/health` | Public liveness probe; DB ping only, rate-limited |
+| `GET /api/health/public` | Public component status; rate-limited, no tenant data |
+| `GET /api/health/slos` | Monitor token OR authenticated platform admin; enforced in handler |
 | `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
 | `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
@@ -44,13 +43,14 @@
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
 | `POST /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
+| `GET /api/quotas/plans` | Public plan limits comparison table |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
 | `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/voice-fallback` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/voicemail-complete` | Twilio signature validation + rate limit |
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
-| `GET /health/voice-status` | Liveness/readiness probes; rate-limited, no PII |
+| `GET /health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 | `POST /voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
 | `GET /api/voices/:id/preview` | Premade voice previews only; cloned/tenant voices are on the authed route |
 | `GET /api/voices/curated/preview` | Public Wireline Live / Phone timbre samples; ElevenLabs-backed, no tenant data |
@@ -78,6 +78,7 @@
 | agent-routes-v2.ts | POST | `/api/agents` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents/:id/import` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agents/openrouter-models` | inline | — | — | Protected |
+| agent-routes-v2.ts | GET | `/api/agents/roles` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agents/voice-models` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/train/extract` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/apply-change` | inline | — | — | Protected |
@@ -195,12 +196,14 @@
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health` | — | — | yes | Public (allowlisted) |
-| health-routes.ts | GET | `/api/health/actions` | inline | — | yes | Protected |
-| health-routes.ts | GET | `/api/health/internal` | inline | — | yes | Protected |
-| health-routes.ts | GET | `/api/health/launch-readiness` | — | — | yes | Public (allowlisted) |
-| health-routes.ts | GET | `/api/health/models` | inline | — | yes | Protected |
+| health-routes.ts | GET | `/api/health/actions` | inline | — | — | Protected |
+| health-routes.ts | GET | `/api/health/integrations` | inline | — | — | Protected |
+| health-routes.ts | GET | `/api/health/internal` | inline | — | — | Protected |
+| health-routes.ts | GET | `/api/health/launch-readiness` | inline | — | — | Protected |
+| health-routes.ts | GET | `/api/health/models` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health/public` | — | — | yes | Public (allowlisted) |
-| health-routes.ts | GET | `/api/health/ready` | — | — | yes | Public (allowlisted) |
+| health-routes.ts | GET | `/api/health/ready` | inline | — | — | Protected |
+| health-routes.ts | GET | `/api/health/slos` | — | — | yes | Public (allowlisted) |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/connect` | inline | — | — | Protected |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/disconnect` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/daily-brief` | inline | — | — | Protected |
@@ -230,8 +233,13 @@
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | GET | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/leads` | — | — | yes | Public (allowlisted) |
+| mobile-routes.ts | POST | `/api/mobile/agents` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/agents` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/agents/:id` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/agents/:id/config` | inline | — | — | Protected |
+| mobile-routes.ts | POST | `/api/mobile/agents/:id/config/manual` | inline | — | — | Protected |
+| mobile-routes.ts | POST | `/api/mobile/agents/:id/tools` | inline | — | — | Protected |
+| mobile-routes.ts | GET | `/api/mobile/agents/roles` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/calls/:callId/detail` | inline | — | — | Protected |
 | mobile-routes.ts | POST | `/api/mobile/calls/:callId/handoff` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/calls/active` | inline | — | — | Protected |
@@ -260,6 +268,9 @@
 | qa-routes-v2.ts | POST | `/api/qa/score-batch` | inline | — | — | Protected |
 | qa-routes-v2.ts | POST | `/api/qa/score/:callId` | inline | — | — | Protected |
 | qa-routes-v2.ts | GET | `/api/qa/stats` | inline | — | — | Protected |
+| quota-routes.ts | GET | `/api/quotas` | inline | — | — | Protected |
+| quota-routes.ts | PUT | `/api/quotas/override` | inline | yes | — | Protected |
+| quota-routes.ts | GET | `/api/quotas/plans` | — | — | yes | Public (allowlisted) |
 | settings-routes.ts | POST | `/api/account/cancel-deletion` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/export` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/purge-old-data` | inline | — | — | Protected |

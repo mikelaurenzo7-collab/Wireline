@@ -33,7 +33,10 @@ final class AuthService: ObservableObject {
     }
 
     func signOut() {
-        Task { await CallManager.shared.unregisterDevice() }
+        Task {
+            await CallManager.shared.unregisterDevice()
+            await WirelineAPI.shared.signOutSession()
+        }
         KeychainStore.clear()
         isSignedIn = false
     }

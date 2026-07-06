@@ -88,11 +88,17 @@ actor WirelineAPI {
     /// Place an outbound call through one of the user's agents.
     /// `context` is the free-text instruction ("running 5 minutes late").
     @discardableResult
-    func placeCall(agentId: String, to number: String, context: String?) async throws -> String? {
+    func placeCall(
+        agentId: String,
+        to number: String,
+        context: String?,
+        hasExpressWrittenConsent: Bool = false
+    ) async throws -> String? {
         struct Body: Encodable {
             let agentId: String
             let customerNumber: String
             let context: String?
+            let hasExpressWrittenConsent: Bool
         }
         struct Result: Decodable {
             let success: Bool
@@ -100,9 +106,22 @@ actor WirelineAPI {
         }
         let data = try await postRaw(
             "/api/mobile/calls/outbound",
-            body: Body(agentId: agentId, customerNumber: number, context: context)
+            body: Body(
+                agentId: agentId,
+                customerNumber: number,
+                context: context,
+                hasExpressWrittenConsent: hasExpressWrittenConsent
+            )
         )
         return (try? JSONDecoder().decode(Result.self, from: data))?.callId
+    }
+
+    func signOutSession() async {
+        guard let token = KeychainStore.loadToken() else { return }
+        var req = URLRequest(url: baseURL.appendingPathComponent("/api/auth/signout"))
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        _ = try? await URLSession.shared.data(for: req)
     }
 
     // MARK: - Plumbing

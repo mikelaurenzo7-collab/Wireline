@@ -407,13 +407,30 @@ const BillingStatus: JsonSchema = {
 
 const SloSnapshot: JsonSchema = {
   type: "object",
-  description: "SLO health snapshot. `banner_status` is the worst-case across dimensions.",
+  description:
+    "Evidence-backed SLO snapshot. `status` is ok, degraded, or insufficient_data — never an unconditional SLA claim.",
   properties: {
+    status: { type: "string", enum: ["ok", "degraded", "insufficient_data"] },
     banner_status: { type: "string", enum: ["healthy", "degraded", "critical"] },
     window_hours: { type: "integer" },
     dimensions: {
       type: "object",
-      additionalProperties: { type: "string", enum: ["healthy", "degraded", "critical"] },
+      additionalProperties: {
+        type: "string",
+        enum: ["ok", "warn", "critical", "healthy", "degraded"],
+      },
+    },
+    targets: {
+      type: "object",
+      additionalProperties: {
+        type: "object",
+        properties: {
+          configured: { type: "boolean" },
+          status: { type: "string", enum: ["ok", "degraded", "insufficient_data"] },
+          target_label: { type: "string" },
+          evidence: { type: "object", additionalProperties: true },
+        },
+      },
     },
   },
   additionalProperties: true,
@@ -559,9 +576,9 @@ const PATHS: Record<string, PathItem> = {
   },
   "/api/health/integrations": {
     get: {
-      summary: "Authenticated integrations health report",
+      summary: "Platform-admin integrations health report",
       description:
-        "Per-integration configured/missing/fallback status with the env-var presence map. Powers the AdminSettings → Platform Health panel.",
+        "Platform admin only. Per-integration configured/missing/fallback status with the env-var presence map. Powers the Founder → Platform Health panel.",
       operationId: "getIntegrationsReport",
       tags: ["Health"],
       security: auth.bearer,
@@ -571,13 +588,16 @@ const PATHS: Record<string, PathItem> = {
           content: { "application/json": { schema: ref("IntegrationsReport") } },
         },
         "401": COMMON_ERROR_RESPONSES["401"],
+        "403": COMMON_ERROR_RESPONSES["403"],
         "429": COMMON_ERROR_RESPONSES["429"],
       },
     },
   },
   "/api/health/slos": {
     get: {
-      summary: "SLO snapshot for the calling tenant",
+      summary: "Evidence-backed operational SLO snapshot",
+      description:
+        "Monitor token (`x-monitor-token` or Bearer) returns platform-wide measured targets. Platform admins receive the tenant-scoped operator snapshot used by the founder console.",
       operationId: "getSloSnapshot",
       tags: ["Health"],
       security: auth.bearer,
@@ -678,11 +698,11 @@ const PATHS: Record<string, PathItem> = {
   },
   "/api/agents/roles": {
     get: {
-      summary: "Public catalog of agent roles",
-      description: "Static catalog of role definitions used when provisioning an agent. Public.",
+      summary: "Authenticated catalog of agent roles",
+      description: "Role definitions used when provisioning an agent.",
       operationId: "listAgentRoles",
       tags: ["Agents"],
-      security: auth.none,
+      security: auth.bearer,
       responses: {
         "200": {
           description: "Role catalog.",
@@ -690,6 +710,7 @@ const PATHS: Record<string, PathItem> = {
             "application/json": { schema: { type: "object", additionalProperties: true } },
           },
         },
+        "401": COMMON_ERROR_RESPONSES["401"],
       },
     },
   },

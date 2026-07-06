@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.wireline.app.data.ActiveCall
 import com.wireline.app.data.Agent
+import com.wireline.app.data.AgentRole
 import com.wireline.app.data.MobileMe
 import com.wireline.app.data.RecentCall
 import com.wireline.app.data.WalletResponse
@@ -20,6 +21,7 @@ data class WirelineUiState(
     val error: String? = null,
     val me: MobileMe? = null,
     val agents: List<Agent> = emptyList(),
+    val agentRoles: List<AgentRole> = emptyList(),
     val activeCalls: List<ActiveCall> = emptyList(),
     val recentCalls: List<RecentCall> = emptyList(),
     val wallet: WalletResponse? = null,
@@ -32,7 +34,10 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
         private set
 
     init {
-        if (state.isSignedIn) refresh()
+        if (state.isSignedIn) {
+            refresh()
+            viewModelScope.launch { runCatching { api.refreshPushRegistration() } }
+        }
     }
 
     fun signIn(email: String, pass: String) = viewModelScope.launch {
@@ -41,6 +46,7 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
             .onSuccess {
                 state = state.copy(isSignedIn = true, isWorking = false)
                 refresh()
+                runCatching { api.refreshPushRegistration() }
             }
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }
@@ -78,9 +84,10 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }
 
-    fun placeCall(agentId: String, customerNumber: String, context: String) = viewModelScope.launch {
+    fun placeCall(agentId: String, customerNumber: String, context: String, hasExpressWrittenConsent: Boolean) =
+        viewModelScope.launch {
         state = state.copy(isWorking = true, error = null)
-        runCatching { api.placeCall(agentId, customerNumber, context) }
+        runCatching { api.placeCall(agentId, customerNumber, context, hasExpressWrittenConsent) }
             .onSuccess {
                 state = state.copy(isWorking = false)
                 refresh()
@@ -102,9 +109,11 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
         state = state.copy(isWorking = true, error = null)
         runCatching {
             val me = api.me()
+            val roles = runCatching { api.agentRoles().roles }.getOrDefault(emptyList())
             state = state.copy(
                 me = me,
                 agents = api.agents().agents,
+                agentRoles = roles,
                 activeCalls = api.activeCalls().calls,
                 recentCalls = api.recentCalls().calls,
                 wallet = api.wallet(),

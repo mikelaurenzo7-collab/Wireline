@@ -30,6 +30,16 @@ async function activeTab() {
   return tab;
 }
 
+function safeCaptureUrl(raw: unknown): string {
+  if (typeof raw !== "string" || !raw.trim()) return "";
+  try {
+    const url = new URL(raw);
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return "";
+  }
+}
+
 async function capturePageContext(tab, suppliedSelection = "", suppliedLink = "") {
   let pageDetails = { selection: "", description: "" };
 
@@ -52,7 +62,7 @@ async function capturePageContext(tab, suppliedSelection = "", suppliedLink = ""
     source: "browser-extension",
     capturedAt: new Date().toISOString(),
     title: truncate(tab.title || "Untitled page", 180),
-    url: typeof tab.url === "string" ? tab.url : "",
+    url: safeCaptureUrl(tab.url),
     description: truncate(pageDetails.description, MAX_DESCRIPTION_LENGTH),
     selection: truncate(suppliedSelection || pageDetails.selection, MAX_SELECTION_LENGTH),
     link: typeof suppliedLink === "string" ? suppliedLink : "",

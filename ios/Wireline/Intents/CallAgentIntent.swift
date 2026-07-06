@@ -41,7 +41,8 @@ struct CallAgentIntent: AppIntent {
             try await WirelineAPI.shared.placeCall(
                 agentId: agent.id,
                 to: phoneNumber,
-                context: context.isEmpty ? nil : context
+                context: context.isEmpty ? nil : context,
+                hasExpressWrittenConsent: true
             )
             return .result(dialog: "\(agent.name) is calling \(phoneNumber) now.")
         } catch let WirelineAPI.APIError.http(status, _) where status == 401 || status == 403 {

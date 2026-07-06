@@ -50,6 +50,19 @@ function persistedBusinessVariables(profile: AgentCustomizationProfile): Record<
   };
 }
 
+async function assertAgentIsDraftOnly(agentId: string, userId: string): Promise<void> {
+  const [line] = await drizzle
+    .select({ id: schema.phoneNumbers.id })
+    .from(schema.phoneNumbers)
+    .where(and(eq(schema.phoneNumbers.agentId, agentId), eq(schema.phoneNumbers.userId, userId)))
+    .limit(1);
+  if (line) {
+    throw AppError.forbidden(
+      "This agent is live on the phone network. Open it in Wireline Studio to make changes.",
+    );
+  }
+}
+
 function profileFromStoredAgent(agent: {
   name: string;
   role: string | null;
@@ -177,6 +190,7 @@ export async function getAgentDraft(
   agentId: string,
 ): Promise<{ view: AgentDraftView; runtimeInstructions: string }> {
   return tenantStore.run(principal.userId, async () => {
+    await assertAgentIsDraftOnly(agentId, principal.userId);
     const [agent] = await drizzle
       .select({
         id: schema.agents.id,
@@ -203,6 +217,7 @@ export async function updateAgentDraft(
   input: AgentCustomizationInput,
 ): Promise<AgentDraftView> {
   return tenantStore.run(principal.userId, async () => {
+    await assertAgentIsDraftOnly(agentId, principal.userId);
     const existing = await getAgentDraft(principal, agentId);
     const current = existing.view;
     const merged = normalizeAgentCustomization(

@@ -50,10 +50,22 @@ class WirelineApi(context: Context) {
 
     suspend fun me(): MobileMe = get("/api/mobile/me")
     suspend fun agents(): AgentList = get("/api/mobile/agents")
+    suspend fun agentRoles(): AgentRoleList = get("/api/mobile/agents/roles")
     suspend fun agentSetup(agentId: String): MobileAgentSetup = get("/api/mobile/agents/${escape(agentId)}/config")
     suspend fun activeCalls(): ActiveCallList = get("/api/mobile/calls/active")
     suspend fun recentCalls(limit: Int = 20): RecentCallsResponse = get("/api/mobile/calls/recent?limit=$limit")
     suspend fun wallet(): WalletResponse = get("/api/mobile/wallet")
+
+    suspend fun refreshPushRegistration() {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val token = com.google.android.gms.tasks.Tasks.await(
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token,
+                )
+                registerDevice(token)
+            }
+        }
+    }
 
     /** Creates an owned agent through the same production contract as the web console. */
     suspend fun createAssistant(
@@ -66,7 +78,6 @@ class WirelineApi(context: Context) {
             JSONObject()
                 .put("name", name)
                 .put("role", role)
-                .put("deferPhoneProvision", true)
                 .put("is_business_agent", isBusinessAgent),
         )
     }
@@ -98,8 +109,16 @@ class WirelineApi(context: Context) {
         postRaw("/api/mobile/calls/$callId/handoff", body)
     }
 
-    suspend fun placeCall(agentId: String, customerNumber: String, context: String?): String? {
-        val body = JSONObject().put("agentId", agentId).put("customerNumber", customerNumber)
+    suspend fun placeCall(
+        agentId: String,
+        customerNumber: String,
+        context: String?,
+        hasExpressWrittenConsent: Boolean,
+    ): String? {
+        val body = JSONObject()
+            .put("agentId", agentId)
+            .put("customerNumber", customerNumber)
+            .put("hasExpressWrittenConsent", hasExpressWrittenConsent)
         if (!context.isNullOrBlank()) body.put("context", context)
         val response: OutboundCallResponse = post("/api/mobile/calls/outbound", body)
         return response.callId

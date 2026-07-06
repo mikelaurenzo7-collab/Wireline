@@ -23,6 +23,8 @@ const AUTH_MIDDLEWARE = [
   "authenticateEventStream",
   "requirePermission",
   "requireRole",
+  "requirePlatformAdmin",
+  "requireMonitorToken",
   "requireInternalJwtSecret",
 ];
 
@@ -66,8 +68,20 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "CAN-SPAM one-click unsubscribe; token-scoped + rate-limited",
   },
   {
-    pattern: /^\/(?:api\/)?health(\/|$)/,
-    reason: "Liveness/readiness probes; rate-limited, no PII",
+    pattern: /^\/api\/health\/?$/,
+    reason: "Public liveness probe; DB ping only, rate-limited",
+  },
+  {
+    pattern: /^\/api\/health\/public$/,
+    reason: "Public component status; rate-limited, no tenant data",
+  },
+  {
+    pattern: /^\/api\/health\/slos$/,
+    reason: "Monitor token OR authenticated platform admin; enforced in handler",
+  },
+  {
+    pattern: /^\/(?:api\/)?health\/voice-status$/,
+    reason: "Public demo-line voice probe; aggregated metrics only, rate-limited",
   },
   { pattern: /^\/api\/public\//, reason: "Aggregated, no-PII marketing counters; rate-limited" },
   {
@@ -76,7 +90,6 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   },
   { pattern: /^\/(?:api\/)?billing\/plans$/, reason: "Public plan/price comparison table" },
   { pattern: /^\/(?:api\/quotas\/)?plans$/, reason: "Public plan limits comparison table" },
-  { pattern: /^\/api\/agents\/roles$/, reason: "Static role reference enum; no tenant data" },
   {
     pattern: /^\/(?:api\/)?openapi\.json$/,
     reason: "Public OpenAPI spec; rate-limited + CDN cached",

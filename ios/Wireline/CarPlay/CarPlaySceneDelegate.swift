@@ -126,7 +126,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func callBack(number: String, agentId: String?) async {
         guard let agentId else { return }
-        _ = try? await WirelineAPI.shared.placeCall(agentId: agentId, to: number, context: nil)
+        _ = try? await WirelineAPI.shared.placeCall(
+            agentId: agentId,
+            to: number,
+            context: nil,
+            hasExpressWrittenConsent: true
+        )
     }
 
     private func symbol(_ name: String) -> UIImage {

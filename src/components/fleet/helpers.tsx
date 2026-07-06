@@ -221,6 +221,13 @@ export const AGENT_ROLES = [
     tw: ROLE_TW.brandSoft,
   },
   {
+    value: "personal_assistant",
+    label: "Personal Assistant",
+    description: "Protects principal time and handles personal logistics",
+    color: "brandDeep",
+    tw: ROLE_TW.brandDeep,
+  },
+  {
     value: "marketing",
     label: "Marketing",
     description: "Nurtures prospects and runs campaigns",

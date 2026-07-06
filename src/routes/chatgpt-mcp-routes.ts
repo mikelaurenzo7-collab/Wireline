@@ -26,6 +26,7 @@ import {
   validateDynamicClientRegistration,
 } from "../lib/mcp-client-registry";
 import { pickRotatedVoiceId } from "../data/voice-roster";
+import { resolveAgentRoleArchetype } from "../lib/agent-role-definitions";
 import { rateLimit } from "../lib/rate-limit";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-context";
 import { getSessionTokenFromRequest } from "../lib/session-cookie";
@@ -37,12 +38,6 @@ const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const AUTHORIZATION_CODE_TTL_MS = 5 * 60 * 1000;
 const CLIENT_METADATA_CACHE_TTL_MS = 5 * 60 * 1000;
-const roleArchetypes: Record<string, string> = {
-  sales: "Sales Representative",
-  scheduler: "Personal Assistant",
-  receptionist: "Receptionist",
-  customer_service: "Customer Support",
-};
 
 type McpPrincipal = {
   userId: string;
@@ -564,7 +559,7 @@ async function saveDemo(principal: McpPrincipal, demoToken: unknown) {
       name: spec.agentName,
       role: spec.role,
       channel: "voice",
-      archetype: roleArchetypes[spec.role] || "Assistant",
+      archetype: resolveAgentRoleArchetype(spec.role),
       voiceId: pickRotatedVoiceId(existing),
       voiceProvider: "openai",
       enabledTools: getDefaultAgentTools(),
@@ -981,23 +976,19 @@ router.post("/mcp", async (req, res) => {
 // session-termination requests with 405 rather than an opaque 404.
 router.get("/mcp", (_req, res) => {
   res.setHeader("Allow", "POST");
-  res
-    .status(405)
-    .json({
-      code: "MCP_METHOD_NOT_ALLOWED",
-      error: "method_not_allowed",
-      detail: "Send MCP requests as POST /mcp.",
-    });
+  res.status(405).json({
+    code: "MCP_METHOD_NOT_ALLOWED",
+    error: "method_not_allowed",
+    detail: "Send MCP requests as POST /mcp.",
+  });
 });
 router.delete("/mcp", (_req, res) => {
   res.setHeader("Allow", "POST");
-  res
-    .status(405)
-    .json({
-      code: "MCP_METHOD_NOT_ALLOWED",
-      error: "method_not_allowed",
-      detail: "Sessions are stateless.",
-    });
+  res.status(405).json({
+    code: "MCP_METHOD_NOT_ALLOWED",
+    error: "method_not_allowed",
+    detail: "Sessions are stateless.",
+  });
 });
 
 export default router;

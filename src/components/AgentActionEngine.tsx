@@ -5,6 +5,7 @@ import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { AGENT_TOOL_CATALOG, type AgentToolName, getRoleToolSet } from "../lib/agent-capabilities";
+import { resolveTenantToolIntegrationStatus } from "../lib/tenant-tool-integration-status";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface AgentActionEngineProps {
@@ -14,7 +15,14 @@ interface AgentActionEngineProps {
 export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
   const { error: toastError, success: toastSuccess } = useToast();
   const [enabledTools, setEnabledTools] = useState<AgentToolName[]>([]);
-  const [globalIntegrations, setGlobalIntegrations] = useState<any[]>([]);
+  const [globalIntegrations, setGlobalIntegrations] = useState<
+    Record<string, { connected?: boolean }>
+  >({});
+  const [calendarHealth, setCalendarHealth] = useState({
+    reconnect_google_calendar: false,
+    reconnect_microsoft_calendar: false,
+  });
+  const [emailProviders, setEmailProviders] = useState<string[]>([]);
   const [, setAgentRole] = useState<string>("customer_service");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -25,16 +33,33 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [agentRes, intRes] = await Promise.all([
-          authFetch(`/api/agents`), // To find this specific agent's config
-          authFetch(`/api/health/integrations`),
+        const [agentRes, oauthRes, healthRes, emailRes] = await Promise.all([
+          authFetch(`/api/agents`),
+          authFetch(`/api/oauth/crm/status`),
+          authFetch(`/api/oauth/integration-health`),
+          authFetch(`/api/emails/accounts`),
         ]);
 
         if (!active) return;
 
-        if (intRes.ok) {
-          const intData = await intRes.json();
-          setGlobalIntegrations(intData.integrations || []);
+        if (oauthRes.ok) {
+          const oauthData = await oauthRes.json();
+          setGlobalIntegrations(oauthData);
+        }
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          setCalendarHealth({
+            reconnect_google_calendar: !!healthData.reconnect_google_calendar,
+            reconnect_microsoft_calendar: !!healthData.reconnect_microsoft_calendar,
+          });
+        }
+        if (emailRes.ok) {
+          const emailData = await emailRes.json();
+          setEmailProviders(
+            (emailData.accounts || [])
+              .map((a: { provider?: string }) => a.provider)
+              .filter(Boolean),
+          );
         }
 
         if (agentRes.ok) {
@@ -94,9 +119,13 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
   };
 
   const getIntegrationStatus = (integrationName?: string) => {
-    if (!integrationName) return "configured"; // Core tools require no integration
-    const int = globalIntegrations.find((i) => i.id === integrationName);
-    return int?.status || "missing";
+    const status = resolveTenantToolIntegrationStatus(integrationName as never, {
+      oauthStatus: globalIntegrations,
+      calendarReconnectGoogle: calendarHealth.reconnect_google_calendar,
+      calendarReconnectMicrosoft: calendarHealth.reconnect_microsoft_calendar,
+      emailProviders,
+    });
+    return status;
   };
 
   if (isLoading) {

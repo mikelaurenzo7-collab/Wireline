@@ -45,17 +45,15 @@ import {
 } from "../lib/agent-capabilities";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import type { AuthenticatedRequest } from "../types/auth";
+import {
+  AGENT_CREATE_DEFAULT_ROLE_ID,
+  canonicalizeAgentRoleForCreate,
+  listAgentRolesForApi,
+  resolveAgentRoleArchetype,
+  validateAgentRoleForCreate,
+} from "../lib/agent-role-definitions";
 
 const router = Router();
-
-const roleArchetypes: Record<string, string> = {
-  sales: "Sales Representative",
-  scheduler: "Personal Assistant",
-  appointment_scheduler: "Appointment Scheduler",
-  receptionist: "Receptionist",
-  customer_service: "Customer Support",
-  custom: "Custom Assistant",
-};
 
 function cleanText(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -173,6 +171,16 @@ router.get(
   },
 );
 
+// ── GET /api/mobile/agents/roles — shared role catalog ─────────────────────
+router.get(
+  "/api/mobile/agents/roles",
+  authenticateUser,
+  mobileRateLimiter,
+  (_req: AuthenticatedRequest, res: Response) => {
+    res.json({ roles: listAgentRolesForApi() });
+  },
+);
+
 // ── POST /api/mobile/agents — native-safe agent creation adapter ──────────
 const mobileCreateAgentSchema = z.object({
   name: z.string().min(1).max(120),
@@ -188,7 +196,12 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const name = cleanText(req.body?.name, 120);
-      const role = cleanText(req.body?.role, 80) || "scheduler";
+      const rawRole = cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
+      const roleError = validateAgentRoleForCreate(rawRole);
+      if (roleError) {
+        return res.status(400).json({ code: "UNKNOWN_AGENT_ROLE", error: roleError });
+      }
+      const role = canonicalizeAgentRoleForCreate(rawRole);
       const isBusinessAgent = req.body?.is_business_agent === true;
       const [{ count }] = await drizzle
         .select({ count: sql<number>`count(*)` })
@@ -230,7 +243,7 @@ router.post(
         name,
         role,
         channel: "voice",
-        archetype: roleArchetypes[role] || "Assistant",
+        archetype: resolveAgentRoleArchetype(role),
         voiceId,
         voiceProvider: "11labs",
         enabledTools,
@@ -242,7 +255,7 @@ router.post(
         id,
         name,
         role,
-        archetype: roleArchetypes[role] || "Assistant",
+        archetype: resolveAgentRoleArchetype(role),
         channels: ["voice"],
         voiceId,
         isBusinessAgent,

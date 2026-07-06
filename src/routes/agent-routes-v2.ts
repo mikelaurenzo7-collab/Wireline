@@ -33,16 +33,15 @@ import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { resolveAgentEntitlement } from "../lib/agent-entitlements";
 import { runStructured } from "../lib/ai-structured";
+import {
+  AGENT_CREATE_DEFAULT_ROLE_ID,
+  canonicalizeAgentRoleForCreate,
+  listAgentRolesForApi,
+  resolveAgentRoleArchetype,
+  validateAgentRoleForCreate,
+} from "../lib/agent-role-definitions";
 
 const router = Router();
-const roleArchetypes: Record<string, string> = {
-  sales: "Sales Representative",
-  scheduler: "Personal Assistant",
-  appointment_scheduler: "Appointment Scheduler",
-  receptionist: "Receptionist",
-  customer_service: "Customer Support",
-  custom: "Custom Assistant",
-};
 
 type ExtractedConfig = {
   directives: Array<{ content: string; priority?: number }>;
@@ -247,9 +246,7 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
 });
 
 router.get("/api/agents/roles", authenticateUser, (_req: AuthenticatedRequest, res: Response) => {
-  res.json({
-    roles: Object.entries(roleArchetypes).map(([id, label]) => ({ id, label })),
-  });
+  res.json({ roles: listAgentRolesForApi() });
 });
 
 router.post(
@@ -258,7 +255,10 @@ router.post(
   agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const name = cleanText(req.body?.name, 100);
-    const role = cleanText(req.body?.role, 80) || "scheduler";
+    const rawRole = cleanText(req.body?.role, 80) || AGENT_CREATE_DEFAULT_ROLE_ID;
+    const roleError = validateAgentRoleForCreate(rawRole);
+    if (roleError) throw new AppError(400, "UNKNOWN_AGENT_ROLE", roleError);
+    const role = canonicalizeAgentRoleForCreate(rawRole);
     const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
     const [{ count }] = await drizzle
@@ -304,7 +304,7 @@ router.post(
       name,
       role,
       channel: "voice",
-      archetype: roleArchetypes[role] || "Assistant",
+      archetype: resolveAgentRoleArchetype(role),
       voiceId: pickRotatedVoiceId(existing),
       voiceProvider: "11labs",
       enabledTools,

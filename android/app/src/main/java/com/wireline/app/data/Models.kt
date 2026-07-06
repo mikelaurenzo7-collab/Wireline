@@ -44,6 +44,10 @@ data class MobileSettings(
 
 data class AgentList(val agents: List<Agent>)
 
+data class AgentRole(val id: String, val label: String, val archetype: String)
+
+data class AgentRoleList(val roles: List<AgentRole>)
+
 data class Agent(
     val id: String,
     val name: String,

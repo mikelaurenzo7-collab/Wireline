@@ -222,6 +222,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
 private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel, onNavigateToSettings: () -> Unit) {
     var number by rememberSaveable { mutableStateOf("") }
     var context by rememberSaveable { mutableStateOf("") }
+    var consentConfirmed by rememberSaveable { mutableStateOf(false) }
     var selectedAgentId by rememberSaveable { mutableStateOf("") }
     var showAsk by rememberSaveable { mutableStateOf(false) }
     val agent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
@@ -249,7 +250,15 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                 AgentChips(state.agents, agent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("Phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
                 OutlinedTextField(value = context, onValueChange = { context = it }, label = { Text("What should Wireline handle?") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm))
-                Button(onClick = { agent?.let { model.placeCall(it.id, number, context) } }, enabled = agent != null && number.isNotBlank() && !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Place call") }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Checkbox(checked = consentConfirmed, onCheckedChange = { consentConfirmed = it })
+                    Text("I have consent to call this number for this purpose.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
+                }
+                Button(
+                    onClick = { agent?.let { model.placeCall(it.id, number, context, consentConfirmed) } },
+                    enabled = agent != null && number.isNotBlank() && consentConfirmed && !state.isWorking,
+                    shape = RoundedCornerShape(Brand.RadiusSm),
+                ) { Text("Place call") }
             }
         }
         item { ErrorText(state.error) }
@@ -293,7 +302,8 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
     var name by rememberSaveable { mutableStateOf("") }
     var role by rememberSaveable { mutableStateOf("scheduler") }
     var isBusinessAgent by rememberSaveable { mutableStateOf(false) }
-    val choices = listOf("scheduler" to "Personal agent", "customer_service" to "Support desk", "receptionist" to "Front desk", "custom" to "Operations")
+    val choices = state.agentRoles.takeIf { it.isNotEmpty() }?.map { it.id to it.label }
+        ?: listOf("scheduler" to "Personal agent", "customer_service" to "Support desk", "receptionist" to "Front desk", "custom" to "Operations")
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Agent type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {

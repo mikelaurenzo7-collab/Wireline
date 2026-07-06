@@ -8,7 +8,9 @@ import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integration
 import { evaluateLaunchReadiness } from "../lib/launch-readiness";
 import { validateEnv } from "../lib/env-validator";
 import { authenticateUser } from "../middleware/auth";
-import { requirePlatformAdmin } from "../middleware/platform-admin";
+import { isPlatformAdmin, requirePlatformAdmin } from "../middleware/platform-admin";
+import { getPlatformSloSnapshot } from "../lib/operator-slos";
+import { evaluatePlatformOperationalSlos } from "../lib/platform-operational-slos";
 import {
   OPENAI_STRUCTURED_PRIMARY_MODEL,
   GEMINI_STRUCTURED_FALLBACK_MODEL,
@@ -167,18 +169,100 @@ router.get(
 router.get("/actions", healthRateLimiter, authenticateUser, requirePlatformAdmin, (_req, res) =>
   res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
 );
-router.get("/integrations", healthRateLimiter, authenticateUser, (_req, res) =>
-  res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
+router.get(
+  "/integrations",
+  healthRateLimiter,
+  authenticateUser,
+  requirePlatformAdmin,
+  (_req, res) =>
+    res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
 );
-router.get("/slos", healthRateLimiter, requireMonitorToken, (_req, res) =>
-  res.json({
-    status: "ok",
-    targets: {
-      availability: "99.5%",
-      incident_response: "P0/P1 post-incident report within 72 hours",
-    },
-    timestamp: new Date().toISOString(),
-  }),
+router.get(
+  "/slos",
+  healthRateLimiter,
+  (req: Request, res: Response, next: NextFunction) => {
+    if (monitorTokenOk(req)) return next();
+    return authenticateUser(req, res, next);
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    const windowHours = Math.min(
+      168,
+      Math.max(1, Number.parseInt(String(req.query.window_hours ?? "24"), 10) || 24),
+    );
+    const evaluated_at = new Date().toISOString();
+
+    if (monitorTokenOk(req)) {
+      const db = await probeDatabase();
+      const platformSnapshot = await getPlatformSloSnapshot(drizzle, windowHours);
+      const platform = evaluatePlatformOperationalSlos({
+        dbOk: db.ok,
+        dbLatencyMs: db.latency_ms,
+        pendingJobs: platformSnapshot.jobs.queue.pending,
+        webhookSuccessRate: platformSnapshot.webhooks.success_rate,
+        webhookAttempts: platformSnapshot.webhooks.attempts_in_window,
+        windowHours,
+      });
+      const dimensionValues = Object.values(platformSnapshot.dimensions);
+      const banner_status = dimensionValues.includes("critical")
+        ? "critical"
+        : dimensionValues.includes("warn")
+          ? "degraded"
+          : "healthy";
+      return res.json({
+        ...platformSnapshot,
+        ...platform,
+        banner_status,
+        timestamp: evaluated_at,
+      });
+    }
+
+    const authed = req as AuthenticatedRequest;
+    if (!authed.user?.id) {
+      return res.status(401).json({ ok: false, code: "MONITOR_TOKEN_REQUIRED" });
+    }
+    let allowed = false;
+    try {
+      allowed = await isPlatformAdmin(authed.user);
+    } catch {
+      return res.status(500).json({ error: "Authorization check failed", code: "INTERNAL_ERROR" });
+    }
+    if (!allowed) {
+      return res.status(403).json({ error: "Platform admin access required", code: "FORBIDDEN" });
+    }
+
+    const snapshot = await getPlatformSloSnapshot(drizzle, windowHours);
+    const dimensionValues = Object.values(snapshot.dimensions);
+    const banner_status = dimensionValues.includes("critical")
+      ? "critical"
+      : dimensionValues.includes("warn")
+        ? "degraded"
+        : "healthy";
+    return res.json({
+      ...snapshot,
+      banner_status,
+      status:
+        banner_status === "critical"
+          ? "degraded"
+          : banner_status === "degraded"
+            ? "degraded"
+            : "ok",
+      targets: {
+        availability: {
+          configured: true,
+          status: snapshot.dimensions.jobs_queue === "critical" ? "degraded" : "ok",
+          evidence: { jobs_queue: snapshot.dimensions.jobs_queue },
+        },
+        incident_response: {
+          configured: !!(process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET),
+          status:
+            process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET
+              ? "ok"
+              : "insufficient_data",
+        },
+      },
+      timestamp: evaluated_at,
+    });
+  },
 );
 router.get("/public", healthRateLimiter, async (_req, res) => {
   const [voice, reasoning] = await Promise.all([

@@ -10,6 +10,7 @@ struct OutboundCallView: View {
     @State private var selectedAgentId: String = ""
     @State private var number = ""
     @State private var context = ""
+    @State private var consentConfirmed = false
     @State private var isPlacing = false
     @State private var errorMessage: String?
 
@@ -26,6 +27,8 @@ struct OutboundCallView: View {
                         .keyboardType(.phonePad)
                     TextField("Instruction (optional)", text: $context, axis: .vertical)
                         .lineLimit(2...4)
+                    Toggle("I have consent to call this number for this purpose.", isOn: $consentConfirmed)
+                        .font(.footnote)
                 }
                 if let errorMessage {
                     Text(errorMessage).font(.footnote).foregroundStyle(Brand.destructive)
@@ -37,7 +40,7 @@ struct OutboundCallView: View {
                         if isPlacing { ProgressView().tint(.white) } else { Text("Place call") }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(isPlacing || selectedAgentId.isEmpty || number.isEmpty)
+                    .disabled(isPlacing || selectedAgentId.isEmpty || number.isEmpty || !consentConfirmed)
                     .listRowInsets(EdgeInsets())
                 }
             }
@@ -57,7 +60,8 @@ struct OutboundCallView: View {
             _ = try await WirelineAPI.shared.placeCall(
                 agentId: selectedAgentId,
                 to: number,
-                context: context.isEmpty ? nil : context
+                context: context.isEmpty ? nil : context,
+                hasExpressWrittenConsent: consentConfirmed
             )
             dismiss()
         } catch {

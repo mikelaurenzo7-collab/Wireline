@@ -3,15 +3,21 @@ import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync, writeFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const tsxCli = path.join(root, "node_modules", "tsx", "dist", "cli.mjs");
+const specImport = pathToFileURL(path.resolve(root, "src/lib/openapi-spec.ts")).href;
 const tmp = path.join(os.tmpdir(), `wireline-openapi-${process.pid}.mjs`);
 writeFileSync(
   tmp,
-  `import { listSpecOperations } from ${JSON.stringify(path.resolve("src/lib/openapi-spec.ts"))};\nconsole.log(JSON.stringify(listSpecOperations()));\n`,
+  `import { listSpecOperations } from ${JSON.stringify(specImport)};\nconsole.log(JSON.stringify(listSpecOperations()));\n`,
 );
 let operations;
 try {
-  operations = JSON.parse(execFileSync("npx", ["tsx", tmp], { encoding: "utf8" }));
+  operations = JSON.parse(
+    execFileSync(process.execPath, [tsxCli, tmp], { encoding: "utf8", cwd: root }),
+  );
 } finally {
   rmSync(tmp, { force: true });
 }
@@ -27,8 +33,11 @@ function walk(dir) {
   return files;
 }
 
-const routeText = walk("src/routes")
-  .concat(["server.ts", "src/server/register-api-routes.ts"])
+const routeText = walk(path.join(root, "src/routes"))
+  .concat([
+    path.join(root, "server.ts"),
+    path.join(root, "src/server/register-api-routes.ts"),
+  ])
   .map((file) => readFileSync(file, "utf8"))
   .join("\n");
 

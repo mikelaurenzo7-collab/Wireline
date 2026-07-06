@@ -30,10 +30,9 @@ export default function AgentStudioHomeClaude() {
   }, [loading, params]);
 
   useEffect(() => {
-    if (!browserBrief) return;
-    setShowCreate(true);
+    if (!browserContext) return;
     clearBrowserCommandHash();
-  }, [browserBrief]);
+  }, [browserContext]);
 
   useEffect(() => {
     const warning = consumeCreateWarning();

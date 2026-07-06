@@ -69,9 +69,12 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       });
       return res.json({ received: true, duplicate: true });
     }
-    log.warn("Stripe idempotency claim failed — proceeding without idempotency guard", {
+    log.warn("Stripe idempotency claim failed — refusing to process event", {
       error: getErrorMessage(err),
+      eventId: idempotencyKey,
+      eventType: event.type,
     });
+    throw AppError.fromHttpStatus(503, "Webhook idempotency store unavailable. Retry later.");
   }
 
   try {

@@ -45,6 +45,7 @@ fun AskWirelineScreen(
     // Outbound state
     var expandOutbound by remember { mutableStateOf(false) }
     var outboundNumber by remember { mutableStateOf("") }
+    var outboundConsent by remember { mutableStateOf(false) }
     var outboundContext by remember { mutableStateOf("") }
     var selectedAgentId by remember { mutableStateOf("") }
     val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
@@ -330,17 +331,33 @@ Icon(
                                         )
                                     )
 
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Checkbox(
+                                            checked = outboundConsent,
+                                            onCheckedChange = { outboundConsent = it },
+                                        )
+                                        Text(
+                                            "I have consent to call this number for this purpose.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Brand.Text2,
+                                        )
+                                    }
+
                                     Button(
                                         onClick = {
                                             selectedAgent?.let {
-                                                model.placeCall(it.id, outboundNumber, outboundContext)
+                                                model.placeCall(it.id, outboundNumber, outboundContext, outboundConsent)
                                                 answerText = "Outbound call placed with agent ${it.name} to $outboundNumber."
                                                 outboundNumber = ""
                                                 outboundContext = ""
+                                                outboundConsent = false
                                                 expandOutbound = false
                                             }
                                         },
-                                        enabled = selectedAgent != null && outboundNumber.isNotBlank() && !state.isWorking,
+                                        enabled = selectedAgent != null && outboundNumber.isNotBlank() && outboundConsent && !state.isWorking,
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
                                         shape = RoundedCornerShape(Brand.RadiusMd)

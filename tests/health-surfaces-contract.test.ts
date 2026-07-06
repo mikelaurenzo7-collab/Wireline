@@ -1,0 +1,44 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
+
+const root = process.cwd();
+const read = (path: string) => readFileSync(resolve(root, path), "utf8");
+
+describe("health surfaces contract", () => {
+  it("requires platform admin for integrations health", () => {
+    const source = read("src/routes/health-routes.ts");
+    expect(source).toMatch(/\/integrations"[\s\S]*requirePlatformAdmin/);
+  });
+
+  it("does not publish unconditional SLO availability claims", () => {
+    const source = read("src/routes/health-routes.ts");
+    expect(source).not.toContain("99.5%");
+    expect(source).not.toContain("P0/P1 post-incident report within 72 hours");
+    expect(source).toContain("evaluatePlatformOperationalSlos");
+  });
+
+  it("returns evidence-backed platform SLO statuses", () => {
+    const ok = evaluatePlatformOperationalSlos({ dbOk: true, dbLatencyMs: 12 });
+    expect(["ok", "degraded", "insufficient_data"]).toContain(ok.status);
+    expect(ok.targets.availability.status).toBe("ok");
+    expect(ok.targets.availability.evidence).toMatchObject({ db_ok: true });
+
+    const degraded = evaluatePlatformOperationalSlos({ dbOk: false, dbLatencyMs: 4000 });
+    expect(degraded.targets.availability.status).toBe("degraded");
+  });
+
+  it("uses platform-wide snapshot for admin and monitor SLO routes", () => {
+    const source = read("src/routes/health-routes.ts");
+    expect(source).toContain("getPlatformSloSnapshot");
+    expect(source).not.toMatch(/getTenantSloSnapshot/);
+  });
+
+  it("keeps tenant tool status off the platform integrations health route", () => {
+    const actionEngine = read("src/components/AgentActionEngine.tsx");
+    expect(actionEngine).not.toContain("/api/health/integrations");
+    expect(actionEngine).toContain("/api/oauth/crm/status");
+  });
+});
