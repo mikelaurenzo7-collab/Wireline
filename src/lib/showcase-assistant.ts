@@ -17,7 +17,7 @@ import {
   VAPI_SHOWCASE_MODEL,
   VAPI_SHOWCASE_PROVIDER,
   resolveVapiVoiceModelSelection,
-} from "./claude-brain";
+} from "./ai-models";
 import { sanitizePhone } from "./vapi-helpers";
 import { resolveVapiSpeechPipeline, type VapiTranscriberMode } from "./voice-agent-profile";
 

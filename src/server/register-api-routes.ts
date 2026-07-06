@@ -51,6 +51,9 @@ import learningRouter from "../routes/learning-routes";
 import openapiRouter from "../routes/openapi-routes";
 import supervisorRouter from "../routes/supervisor-routes";
 import voiceObservabilityRouter from "../routes/voice-observability-routes";
+import insightsRouter from "../routes/insights-routes";
+import pipelineRouter from "../routes/pipeline-routes";
+import dailyBriefRouter from "../routes/daily-brief-routes";
 
 /**
  * Canonical API route order.
@@ -131,5 +134,10 @@ export function registerApiRoutes(app: Express): void {
   app.use(learningRouter);
   app.use(openapiRouter);
   app.use(supervisorRouter);
+  // Insights data plane: funnel, heatmap, leaderboard, topics, failure-modes, daily-brief.
+  app.use(insightsRouter);
+  app.use(dailyBriefRouter);
+  // Pipeline kanban + campaign attribution for Insights Attribution tab.
+  app.use(pipelineRouter);
   app.use(voiceObservabilityRouter);
 }

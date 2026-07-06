@@ -463,11 +463,6 @@ export default function OverviewPage() {
                   density="compact"
                   icon={<Phone aria-hidden="true" />}
                   title="No calls yet"
-                  description={
-                    hasAgents
-                      ? "Your line is live — inbound and outbound calls will land here."
-                      : "Create an agent to start taking calls."
-                  }
                   action={
                     !hasAgents ? (
                       <Button asChild size="sm">

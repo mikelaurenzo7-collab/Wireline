@@ -28,15 +28,9 @@ export default function FailureModesView() {
   if (loading && !data) return <InsightSkeleton />;
   if (err) return <ErrCard error={err} onRetry={() => load()} />;
   if (!data) return null;
-  if (data.message)
-    return (
-      <InsightEmpty
-        configKey="failureModesOk"
-        icon={Sparkles}
-        titleOverride={data.message}
-        success
-      />
-    );
+  if (data.message) {
+    return <InsightEmpty configKey="failureModesOk" icon={Sparkles} success />;
+  }
 
   const modes = data.modes || [];
   if (modes.length === 0) {

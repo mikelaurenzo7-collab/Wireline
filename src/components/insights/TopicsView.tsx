@@ -27,11 +27,8 @@ export default function TopicsView() {
   if (loading && !data) return <InsightSkeleton />;
   if (err) return <ErrCard error={err} onRetry={() => load()} />;
   if (!data) return null;
-  if (data.message)
-    return <InsightEmpty configKey="topics" icon={RefreshCw} titleOverride={data.message} />;
-
   const topics = data.topics || [];
-  if (topics.length === 0) {
+  if (data.message || topics.length === 0) {
     return <InsightEmpty configKey="topics" icon={RefreshCw} />;
   }
 

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { and, eq, ilike, inArray, not, or } from "drizzle-orm";
 
-import * as claudeBrain from "../../lib/claude-brain";
+import { superviseClientCommunication } from "../../lib/ai-supervisor";
 import * as schema from "../../db/schema";
 import { auditLogger } from "../../lib/server-context";
 import { normalizeDncPhone } from "../../lib/compliance";
@@ -132,7 +132,7 @@ export async function handleCoreToolCall(
   if (fn === "send_email") {
     try {
       const { to_email, subject, body } = args || {};
-      const reviewed = await claudeBrain.superviseClientCommunication({
+      const reviewed = await superviseClientCommunication({
         channel: "email",
         agentName: webhookAgentId,
         source: "voice_tool",
@@ -239,7 +239,7 @@ export async function handleCoreToolCall(
         };
       }
 
-      const reviewed = await claudeBrain.superviseClientCommunication({
+      const reviewed = await superviseClientCommunication({
         channel: "sms",
         agentName: webhookAgentId,
         source: "voice_tool",

@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 243
-**Protected:** 201
-**Public (allowlisted):** 42
+**Routes scanned:** 258
+**Protected:** 215
+**Public (allowlisted):** 43
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -29,6 +29,7 @@
 | `GET /api/auth/verify-email/:token` | Signup/login/refresh (public by definition) |
 | `GET /api/billing/plans` | Public plan/price comparison table |
 | `POST /api/stripe-webhook` | Stripe signature verification + idempotency |
+| `POST /api/daily-brief/schedule` | Vercel cron; Bearer CRON_SECRET (timing-safe) |
 | `POST /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `GET /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `GET /api/health` | Liveness/readiness probes; rate-limited, no PII |
@@ -156,6 +157,10 @@
 | compliance-routes.ts | GET | `/tcpa/consent-check` | inline | — | — | Protected |
 | conversation-balance-routes.ts | GET | `/api/conversation-balance` | inline | — | — | Protected |
 | conversation-balance-routes.ts | POST | `/api/conversation-balance/checkout` | inline | — | — | Protected |
+| daily-brief-routes.ts | POST | `/api/daily-brief/schedule` | — | — | yes | Public (allowlisted) |
+| daily-brief-routes.ts | POST | `/api/daily-brief/send-now` | inline | — | — | Protected |
+| daily-brief-routes.ts | GET | `/api/daily-brief/settings` | inline | — | — | Protected |
+| daily-brief-routes.ts | PUT | `/api/daily-brief/settings` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/appointments` | inline | — | — | Protected |
 | dashboard-routes.ts | POST | `/api/appointments` | inline | — | — | Protected |
 | dashboard-routes.ts | PATCH | `/api/appointments/:id` | inline | — | — | Protected |
@@ -198,6 +203,12 @@
 | health-routes.ts | GET | `/api/health/ready` | — | — | yes | Public (allowlisted) |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/connect` | inline | — | — | Protected |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/disconnect` | inline | — | — | Protected |
+| insights-routes.ts | GET | `/api/insights/daily-brief` | inline | — | — | Protected |
+| insights-routes.ts | GET | `/api/insights/failure-modes` | inline | — | — | Protected |
+| insights-routes.ts | GET | `/api/insights/funnel` | inline | — | — | Protected |
+| insights-routes.ts | GET | `/api/insights/heatmap` | inline | — | — | Protected |
+| insights-routes.ts | GET | `/api/insights/leaderboard` | inline | — | — | Protected |
+| insights-routes.ts | GET | `/api/insights/topics` | inline | — | — | Protected |
 | intake-routes.ts | GET | `/api/intake/keys` | inline | — | — | Protected |
 | intake-routes.ts | POST | `/api/intake/keys` | inline | — | — | Protected |
 | intake-routes.ts | PATCH | `/api/intake/keys/:id` | inline | — | — | Protected |
@@ -239,11 +250,16 @@
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
+| pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
+| pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |
+| pipeline-routes.ts | PATCH | `/api/pipeline/lead/:id` | inline | — | — | Protected |
 | pronunciation-routes.ts | GET | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | POST | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | PATCH | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |
 | pronunciation-routes.ts | DELETE | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |
+| qa-routes-v2.ts | POST | `/api/qa/score-batch` | inline | — | — | Protected |
 | qa-routes-v2.ts | POST | `/api/qa/score/:callId` | inline | — | — | Protected |
+| qa-routes-v2.ts | GET | `/api/qa/stats` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/cancel-deletion` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/export` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/purge-old-data` | inline | — | — | Protected |
@@ -282,10 +298,10 @@
 | video-presenter-routes.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
 | video-presenter-routes.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
 | video-presenter-routes.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
+| voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
+| voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
+| voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | yes | — | Protected |
 | voice-observability-routes.ts | GET | `/health/voice-status` | — | — | yes | Public (allowlisted) |
-| voice-observability-routes.ts | GET | `/insights/latency` | inline | — | — | Protected |
-| voice-observability-routes.ts | GET | `/insights/latency/recent` | inline | — | — | Protected |
-| voice-observability-routes.ts | GET | `/insights/voice-reliability` | inline | yes | — | Protected |
 | voice-observability-routes.ts | POST | `/voice/metrics` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |

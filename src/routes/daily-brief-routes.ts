@@ -73,6 +73,7 @@ router.put(
       await drizzle
         .insert(schema.settings)
         .values({
+          id: req.user.id,
           userId: req.user.id,
           dailyBriefEnabled: enabled,
           dailyBriefSendAt: send_at,

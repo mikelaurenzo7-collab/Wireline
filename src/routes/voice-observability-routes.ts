@@ -117,7 +117,7 @@ router.get("/health/voice-status", async (_req: Request, res: Response) => {
 
 // GET /api/insights/voice-reliability — consolidated voice operating metrics (auth)
 router.get(
-  "/insights/voice-reliability",
+  "/api/insights/voice-reliability",
   authenticateUser,
   requirePermission("insights.read"),
   insightsRateLimit,
@@ -143,7 +143,7 @@ router.get(
 
 // GET /api/insights/latency — tenant latency trends (auth)
 router.get(
-  "/insights/latency",
+  "/api/insights/latency",
   authenticateUser,
   insightsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -168,7 +168,7 @@ router.get(
 
 // GET /api/insights/latency/recent — last N calls with metrics (for detail drill-down)
 router.get(
-  "/insights/latency/recent",
+  "/api/insights/latency/recent",
   authenticateUser,
   insightsRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {

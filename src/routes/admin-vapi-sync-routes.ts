@@ -36,7 +36,7 @@ import {
   type ContactAgent,
 } from "../data/contact-agents";
 import { sanitizePhone } from "../lib/vapi-helpers";
-import { VAPI_OPENAI_FALLBACK_MODEL } from "../lib/claude-brain";
+import { VAPI_OPENAI_FALLBACK_MODEL } from "../lib/ai-models";
 import {
   buildShowcaseAssistantPayload,
   buildShowcaseSystemPrompt,

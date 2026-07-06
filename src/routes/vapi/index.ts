@@ -3,7 +3,7 @@ import express from "express";
 import { AppError } from "../../lib/api-error";
 import { and, eq } from "drizzle-orm";
 
-import * as claudeBrain from "../../lib/claude-brain";
+import { VAPI_OPENAI_FALLBACK_MODEL } from "../../lib/ai-models";
 import * as schema from "../../db/schema";
 import { enqueue } from "../../lib/job-queue";
 import { claimLeadEnrichmentSlot } from "../../lib/enrichment-debounce";
@@ -186,7 +186,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
           firstMessage: "The automated service for this line is suspended.",
           model: {
             provider: "openai",
-            model: claudeBrain.VAPI_OPENAI_FALLBACK_MODEL,
+            model: VAPI_OPENAI_FALLBACK_MODEL,
             systemPrompt: "Explain suspension and end call.",
           },
         },
@@ -210,7 +210,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
           firstMessage: "I am having trouble connecting. Please try again.",
           model: {
             provider: "openai",
-            model: claudeBrain.VAPI_OPENAI_FALLBACK_MODEL,
+            model: VAPI_OPENAI_FALLBACK_MODEL,
             systemPrompt: "Apologize and hang up.",
           },
         },

@@ -40,6 +40,12 @@ assert(position("app.use(emailOutcomeRouter);") < position("app.use(emailRouter)
 assert(position("app.use(emailSyncRouter);") < position("app.use(emailRouter);"), "email sync routes must precede the aggregate email router");
 assert(position('app.use("/api", billingRouter);') < position("app.use(emailRouter);"), "billing routes must retain their historical precedence");
 assert(position("app.use(metaWebhookRouter);") < position("app.use(marketingRuntimeRouter);"), "Meta webhook routes must precede marketing runtime routes");
+assert(routes.includes("app.use(insightsRouter);"), "insights routes must be registered");
+assert(routes.includes("app.use(pipelineRouter);"), "pipeline routes must be registered");
+assert(
+  read("src/routes/voice-observability-routes.ts").includes('"/api/insights/voice-reliability"'),
+  "voice observability must expose /api/insights paths",
+);
 
 if (!process.exitCode) {
   console.log("server bootstrap and route precedence invariants passed");

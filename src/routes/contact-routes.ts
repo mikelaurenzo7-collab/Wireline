@@ -6,7 +6,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { normalizePhoneTail, buildContactProfile } from "../lib/contact-profile";
 import { phoneTailEquals } from "../lib/phone-tail-sql";
-import { claudeErr } from "../lib/claude-response-helpers";
+import { aiErr } from "../lib/ai-response-helpers";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -141,7 +141,7 @@ router.get(
       log.error("Contact profile fetch failed", {
         error: e instanceof Error ? e.message : String(e),
       });
-      claudeErr(res, e);
+      aiErr(res, e);
     }
   },
 );

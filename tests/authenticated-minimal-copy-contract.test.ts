@@ -54,6 +54,13 @@ describe("authenticated minimal copy contract", () => {
     expect(read("src/components/insights/VoiceLatencyView.tsx")).toContain(
       "VoiceLatencyInsightsResponse",
     );
+    expect(read("src/components/insights/HeatmapView.tsx")).toContain("heatmap");
+    expect(read("src/server/register-api-routes.ts")).toContain("app.use(insightsRouter)");
+    expect(read("src/server/register-api-routes.ts")).toContain("app.use(pipelineRouter)");
+    expect(read("src/routes/voice-observability-routes.ts")).toContain(
+      '"/api/insights/latency"',
+    );
+    expect(read("src/routes/qa-routes-v2.ts")).toContain('router.get("/stats"');
   });
 
   it("keeps channel empty states title-only", () => {

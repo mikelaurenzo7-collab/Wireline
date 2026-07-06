@@ -1,7 +1,8 @@
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
+import { BarChart3 } from "lucide-react";
 import type { InsightsHeatmapCell, InsightsHeatmapResponse } from "../../types/api-insights";
-import { fetchInsight, InsightSkeleton, ErrCard, Empty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { cn } from "../../lib/utils";
 
 export default function HeatmapView({ days }: { days: number }) {
@@ -36,7 +37,7 @@ export default function HeatmapView({ days }: { days: number }) {
   const grid = data.grid || [];
   const hasActivity = grid.some((g) => g.count > 0);
   if (!hasActivity) {
-    return <Empty label="No call activity" />;
+    return <InsightEmpty configKey="heatmap" icon={BarChart3} />;
   }
   const max = Math.max(1, ...grid.map((g) => g.count));
   const weekdays = ["S", "M", "T", "W", "T", "F", "S"];
@@ -88,9 +89,8 @@ export default function HeatmapView({ days }: { days: number }) {
                   return (
                     <td key={h} className="px-0.5 py-0.5">
                       <div
-                        className="aspect-square rounded-md transition-all hover:scale-110 cursor-pointer wl-heatmap-cell"
-                        data-heat-active={cell && cell.count > 0 ? "true" : "false"}
-                        data-heat-opacity={opacity}
+                        className="aspect-square rounded-md transition-all hover:scale-110 cursor-pointer bg-brand"
+                        style={{ opacity: cell && cell.count > 0 ? opacity : 0.05 }}
                         title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
                       />
                     </td>
@@ -105,7 +105,7 @@ export default function HeatmapView({ days }: { days: number }) {
         <span>Less</span>
         <div className="flex gap-1">
           {[0.1, 0.3, 0.55, 0.8, 1].map((o, i) => (
-            <div key={i} className="w-4 h-4 rounded wl-heatmap-legend-cell" data-heat-opacity={o} />
+            <div key={i} className="w-4 h-4 rounded bg-brand" style={{ opacity: o }} />
           ))}
         </div>
         <span>More</span>

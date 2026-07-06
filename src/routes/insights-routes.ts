@@ -6,8 +6,8 @@ import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, gte, lt, or, sql, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import * as claudeBrain from "../lib/claude-brain";
-import { claudeErr } from "../lib/claude-response-helpers";
+import * as insightsAi from "../lib/insights-ai";
+import { aiErr } from "../lib/ai-response-helpers";
 import { cachedInsight, setCachedInsight } from "../lib/insights-cache";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -105,7 +105,7 @@ router.get(
       });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      claudeErr(res, e);
+      aiErr(res, e);
     }
   },
 );
@@ -154,7 +154,7 @@ router.get(
       res.json({ window_days: days, grid });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      claudeErr(res, e);
+      aiErr(res, e);
     }
   },
 );
@@ -294,7 +294,7 @@ router.get(
       res.json({ window_days: days, agents: rows });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      claudeErr(res, e);
+      aiErr(res, e);
     }
   },
 );
@@ -312,10 +312,10 @@ router.get(
         const cached = cachedInsight(cacheKey);
         if (cached) return res.json({ ...cached, cached: true });
       }
-      if (!claudeBrain.isClaudeAvailable()) {
+      if (!insightsAi.isInsightsAiAvailable()) {
         return res
           .status(503)
-          .json({ error: "Claude required for topic clustering.", code: "CLAUDE_OFFLINE" });
+          .json({ error: "AI runtime required for topic clustering.", code: "AI_RUNTIME_OFFLINE" });
       }
       const rows = await drizzle
         .select({ summary: schema.callLogs.summary, intentLabel: schema.callLogs.intentLabel })
@@ -331,7 +331,7 @@ router.get(
           message: "Not enough data yet — run more calls.",
         });
       }
-      const result = await claudeBrain.clusterTopics({
+      const result = await insightsAi.clusterTopics({
         summaries: rows.map((r: any) => ({
           summary: r.summary || "",
           intent_label: r.intentLabel,
@@ -342,7 +342,7 @@ router.get(
       res.json({ ...result, cached: false });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      claudeErr(res, e);
+      aiErr(res, e);
     }
   },
 );
@@ -360,10 +360,10 @@ router.get(
         const cached = cachedInsight(cacheKey);
         if (cached) return res.json({ ...cached, cached: true });
       }
-      if (!claudeBrain.isClaudeAvailable()) {
+      if (!insightsAi.isInsightsAiAvailable()) {
         return res
           .status(503)
-          .json({ error: "Claude required for failure analysis.", code: "CLAUDE_OFFLINE" });
+          .json({ error: "AI runtime required for failure analysis.", code: "AI_RUNTIME_OFFLINE" });
       }
 
       const rows = await drizzle
@@ -393,7 +393,7 @@ router.get(
           message: "Not enough failed calls yet — system is performing well.",
         });
       }
-      const result = await claudeBrain.clusterFailureModes({
+      const result = await insightsAi.clusterFailureModes({
         failedCalls: rows.map((r) => ({
           summary: r.summary,
           transcript: r.transcript,
@@ -405,7 +405,7 @@ router.get(
       res.json({ ...result, cached: false });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      claudeErr(res, e);
+      aiErr(res, e);
     }
   },
 );
@@ -425,7 +425,7 @@ router.get(
       const err = e as { code?: string; message?: string };
       if (err?.code === "CLAUDE_OFFLINE")
         return res.status(503).json({ error: err.message, code: err.code });
-      claudeErr(res, e);
+      aiErr(res, e);
     }
   },
 );

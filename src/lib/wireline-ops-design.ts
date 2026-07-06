@@ -239,13 +239,10 @@ export const OPS_TRIAGE_EMPTY = {
 /** Triage page-level copy – toolbar + all-clear banner */
 export const OPS_TRIAGE_COPY = {
   allClearStat: "All clear",
-  allClearBannerTitle: "Nothing needs attention",
-  allClearBannerBody:
-    "Tasks, compliance flags, and escalations will surface here as your agents run. Hot leads are worked autonomously by your agents.",
-  allClearBannerCta: "Monitor Active calls",
+  allClearBannerTitle: "All clear",
+  allClearBannerCta: "Active calls",
   /** Slim hot-lead signal strip – replaces the old full-height Hot Leads panel. */
   hotStripLabel: (n: number) => `${n} hot lead${n === 1 ? "" : "s"}`,
-  hotStripHint: "Agents are following up autonomously",
   hotStripCta: "Brief agent",
   hotStripPrompt: (n: number) =>
     `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now – who they are, why they're hot, and what the agent is doing to close them.`,
@@ -636,6 +633,13 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No QA scores",
     actions: [
       { label: "Call logs", to: "/phone" },
+      { label: "Overview", to: "/overview" },
+    ],
+  },
+  heatmap: {
+    title: "No call activity",
+    actions: [
+      { label: "Call logs", to: "/phone", primary: true },
       { label: "Overview", to: "/overview" },
     ],
   },

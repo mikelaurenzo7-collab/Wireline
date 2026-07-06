@@ -338,9 +338,7 @@ export default function IntakeKeysManager() {
           </div>
         )}
         {!loading && keys.length === 0 && (
-          <div className="text-xs text-foreground/70 italic">
-            No keys yet. Create one to start accepting inbound leads.
-          </div>
+          <p className="text-sm text-muted">No keys</p>
         )}
         {keys.map((k) => {
           const agent = agents.find((a) => a.id === k.default_agent_id);

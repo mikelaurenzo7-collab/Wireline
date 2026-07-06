@@ -147,7 +147,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                     <div
                       key={t.date}
                       className={cn("flex-1 rounded-t", isAlert ? "bg-amber-400" : "bg-brand/60")}
-                      data-pct={`${height}%`}
+                      style={{ height: `${height}%` }}
                       title={`${t.date}: avg ${t.avgTtftMs ?? "—"}ms, p95 ${t.p95TtftMs ?? "—"}ms`}
                     />
                   );

@@ -35,7 +35,7 @@ import {
   VAPI_TENANT_DEFAULT_PROVIDER,
   resolveVapiVoiceModelSelection,
   clampVoiceTemperature,
-} from "./claude-brain";
+} from "./ai-models";
 import { getWirelinePersona } from "./wireline-agent-personas";
 import type { WirelinePersonaId } from "./wireline-agent-escalation";
 

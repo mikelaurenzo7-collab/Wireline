@@ -9,7 +9,7 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, lt, desc } from "drizzle-orm";
-import * as claudeBrain from "./claude-brain";
+import * as insightsAi from "./insights-ai";
 import { google } from "googleapis";
 import { buildOAuthClient } from "./oauth-helpers";
 import { decryptSecret } from "./secret-vault";
@@ -23,9 +23,9 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
     const cached = cachedInsight(cacheKey);
     if (cached) return { payload: cached, cached: true };
   }
-  if (!claudeBrain.isClaudeAvailable()) {
-    const err: any = new Error("Claude required for the daily brief.");
-    err.code = "CLAUDE_OFFLINE";
+  if (!insightsAi.isInsightsAiAvailable()) {
+    const err: any = new Error("AI runtime required for the daily brief.");
+    err.code = "AI_RUNTIME_OFFLINE";
     throw err;
   }
 
@@ -148,7 +148,7 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
   const scorePct = wAvgScore > 0 ? ((yAvgScore - wAvgScore) / wAvgScore) * 100 : 0;
   const costPct = wAvgCostPerDay > 0 ? ((yCost - wAvgCostPerDay) / wAvgCostPerDay) * 100 : 0;
 
-  const result = await claudeBrain.dailyBrief({
+  const result = await insightsAi.composeDailyBrief({
     yesterdayStats: {
       total_calls: yTotal,
       total_minutes: yMinutes,
@@ -216,7 +216,7 @@ export function renderDailyBriefEmail(
     body { margin:0; padding:0; background-color:#0a0a0a; color:#f4f4f5; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
     .wrap { max-width:600px; margin:0 auto; padding:40px 20px; }
     .brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
-    .brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, ${BRAND.colors.primary}, ${BRAND.colors.primaryMid}); display: inline-block; vertical-align: middle; }
+    .brand-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, ${BRAND.colors.primary}, ${BRAND.colors.primaryVariant}); display: inline-block; vertical-align: middle; }
     .brand-name { font-size: 20px; font-weight: 700; font-style: italic; letter-spacing: -0.02em; color: #fff; vertical-align: middle; display: inline-block; margin-left: 12px; }
     .card { background:#121214; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:32px; margin-bottom:24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
     .card-hero { background: linear-gradient(180deg, #18181b 0%, #121214 100%); position: relative; overflow: hidden; }
@@ -236,7 +236,7 @@ export function renderDailyBriefEmail(
     li.warn { border-left-color:#fbbf24; }
     li.action { border-left-color:#38bdf8; }
     .footer { text-align:center; color:#71717a; font-size:12px; padding:32px 0; line-height: 1.6; }
-    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:${BRAND.colors.primary}; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid ${BRAND.colors.primaryMid}; }
+    .btn { display:inline-block; padding:12px 24px; border-radius:99px; background:${BRAND.colors.primary}; color:#ffffff !important; text-decoration:none; font-weight:600; font-size:13px; letter-spacing:0.1em; text-transform: uppercase; border: 1px solid ${BRAND.colors.primaryVariant}; }
   `;
 
   const stat = (label: string, value: string, delta?: number | null) => `
