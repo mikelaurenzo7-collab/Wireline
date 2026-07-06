@@ -5,6 +5,10 @@ import * as schema from "../db/schema";
 import type { AuditEventType, AuditSeverity } from "../types/audit";
 import { log } from "./server-context";
 
+// wireline_audit_log.user_id is a Postgres uuid column — anything else in
+// that slot fails the whole insert and drops the event.
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export class AuditLogger {
   private failureCount = 0;
 
@@ -36,15 +40,35 @@ export class AuditLogger {
       return { success: false, error: "Missing required fields" };
     }
 
+    // An audit trail must degrade, never drop. A non-uuid identifier in the
+    // userId slot (an email was seen live on a security.rate_limit_exceeded
+    // event) previously failed the ENTIRE insert with `invalid input syntax
+    // for type uuid` — silently losing a critical security event. Keep the
+    // row and preserve the identifier where it actually fits.
+    let userId = data.userId;
+    let actorEmail = data.actorEmail;
+    let metadata = data.metadata;
+    if (userId && !UUID_PATTERN.test(userId)) {
+      if (!actorEmail && userId.includes("@")) {
+        actorEmail = userId;
+      } else {
+        metadata = { ...metadata, invalid_user_id: userId };
+      }
+      log.warn("[AuditLogger] Non-uuid userId demoted to preserve audit row", {
+        eventType: data.eventType,
+      });
+      userId = undefined;
+    }
+
     const record = {
       eventType: data.eventType,
-      userId: data.userId,
+      userId,
       action: data.action,
       severity: data.severity || "info",
-      actorEmail: data.actorEmail,
+      actorEmail,
       resourceType: data.resourceType,
       resourceId: data.resourceId,
-      metadata: data.metadata,
+      metadata,
       ipAddress: data.ip,
       userAgent: data.userAgent,
       provider: data.provider,
