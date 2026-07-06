@@ -17,6 +17,7 @@ import billingRouter from "../routes/billing-routes";
 import subscriptionCheckoutGuardRouter from "../routes/subscription-checkout-guard-routes";
 import conversationBalanceRouter from "../routes/conversation-balance-routes";
 import spendControlRouter from "../routes/spend-control-routes";
+import auditRouter from "../routes/audit-routes";
 import emailOutcomeRouter from "../routes/email-outcome-routes";
 import emailSyncRouter from "../routes/email-sync-routes";
 import accountRouter from "../routes/account-routes";
@@ -77,6 +78,12 @@ export function registerApiRoutes(app: Express): void {
   app.use(carrierRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);
+  // Audit/AI-spend ledger: /api/audit/summary(/events/stats/export), plus a
+  // legacy /api/spend/budget GET that's intentionally shadowed by
+  // spendControlRouter's real handler above (registration order matters --
+  // this router must stay mounted after spendControlRouter). Powers the
+  // AdminSettings AI Usage panel and Insights' AISpendView/VoiceLatencyView.
+  app.use(auditRouter);
   app.use(conversationBalanceRouter);
   app.use(emailOutcomeRouter);
   app.use(emailSyncRouter);
