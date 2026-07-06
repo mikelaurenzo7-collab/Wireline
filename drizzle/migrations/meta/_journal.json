@@ -50,6 +50,13 @@
       "when": 1782165000000,
       "tag": "0067_harden_auxiliary_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783306500000,
+      "tag": "0083_reassert_openai_voice_defaults",
+      "breakpoints": true
     }
   ]
 }

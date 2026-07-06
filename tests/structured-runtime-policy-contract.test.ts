@@ -29,6 +29,12 @@ describe("structured runtime policy", () => {
     const prodEnvCheck = read("scripts/check-prod-env.mjs");
     const legalPage = read("src/components/LegalPage.tsx");
     const integrationLogos = read("src/components/layout/IntegrationLogos.tsx");
+    const migrationJournal = read("drizzle/migrations/meta/_journal.json");
+    const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
+      .filter((name) => name.endsWith(".sql"))
+      .sort()
+      .map((name) => read(`drizzle/migrations/${name}`))
+      .join("\n");
 
     expect(models).toContain("STRUCTURED_RUNTIME_MODELS");
     expect(models).toContain("STRUCTURED_DIRECTOR_DEEP_MODEL");
@@ -52,6 +58,8 @@ describe("structured runtime policy", () => {
     expect(voiceBackfill).toContain("TARGET_PROVIDER = VAPI_TENANT_DEFAULT_PROVIDER");
     expect(voiceBackfill).toContain("TARGET_MODEL = VAPI_TENANT_DEFAULT_MODEL");
     expect(voiceBackfill).not.toContain('TARGET_PROVIDER = "anthropic"');
+    expect(provisioning).toContain('"claude-haiku-4-5"');
+    expect(voiceBackfill).toContain("'claude-haiku-4-5'");
     expect(prodEnvCheck).not.toContain("ANTHROPIC_API_KEY");
     expect(prodEnvCheck).toContain("Direct OpenAI fallback and OpenAI Realtime sessions");
     expect(legalPage).toContain("<strong>OpenAI</strong>");
@@ -60,6 +68,10 @@ describe("structured runtime policy", () => {
     expect(legalPage).not.toContain("<strong>Anthropic</strong>");
     expect(integrationLogos).toContain("ALL_LOGOS.openai");
     expect(integrationLogos).not.toContain("ALL_LOGOS.anthropic");
+    expect(migrationCorpus).toContain("voice_llm_provider SET DEFAULT 'openai'");
+    expect(migrationCorpus).toContain("voice_llm_model SET DEFAULT 'gpt-4o'");
+    expect(migrationCorpus).toContain("claude-haiku-4-5");
+    expect(migrationJournal).toContain("0083_reassert_openai_voice_defaults");
   });
 
   it("routes planners through structured-runtime-models instead of legacy Claude shims", () => {

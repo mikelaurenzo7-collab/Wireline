@@ -17,7 +17,12 @@ const voiceBackfill = read("src/routes/admin-migrate/voice-llm-backfill.ts");
 const prodEnvCheck = read("scripts/check-prod-env.mjs");
 const legalPage = read("src/components/LegalPage.tsx");
 const integrationLogos = read("src/components/layout/IntegrationLogos.tsx");
-const migration = read("drizzle/migrations/0060_openai_runtime_defaults.sql");
+const migrationJournal = read("drizzle/migrations/meta/_journal.json");
+const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
+  .filter((name) => name.endsWith(".sql"))
+  .sort()
+  .map((name) => read(`drizzle/migrations/${name}`))
+  .join("\n");
 
 if (packageJson.includes('"@anthropic-ai/sdk"')) fail("Anthropic SDK remains in the install manifest");
 if (client.includes("@anthropic-ai/sdk") || client.includes("api.anthropic.com")) fail("managed runtime references Anthropic");
@@ -34,6 +39,7 @@ if (carrierPanel.includes("Claude Sonnet") || carrierPanel.includes("Anthropic v
 if (!provisioning.includes("VAPI_TENANT_DEFAULT_PROVIDER") || !provisioning.includes("VAPI_TENANT_DEFAULT_MODEL")) fail("admin provisioning backfill does not write managed OpenAI voice defaults");
 if (provisioning.includes('voiceLlmProvider: "anthropic"') || provisioning.includes('voiceLlmModel: "claude-sonnet-4-6"')) fail("admin provisioning backfill still writes Claude defaults");
 if (voiceBackfill.includes('TARGET_PROVIDER = "anthropic"') || voiceBackfill.includes('TARGET_MODEL = "claude-sonnet-4-6"')) fail("voice LLM backfill still targets Claude defaults");
+if (!provisioning.includes('"claude-haiku-4-5"') || !voiceBackfill.includes("'claude-haiku-4-5'")) fail("legacy Claude Haiku managed default is not covered by voice backfills");
 if (prodEnvCheck.includes("ANTHROPIC_API_KEY")) fail("production env check still asks for Anthropic");
 if (!prodEnvCheck.includes("Direct OpenAI fallback and OpenAI Realtime sessions")) fail("production env check does not name the OpenAI runtime dependency");
 if (legalPage.includes("Anthropic's Claude API") || legalPage.includes("<strong>Anthropic</strong>")) fail("public privacy page still names Anthropic as active inference infrastructure");
@@ -46,7 +52,10 @@ if (!models.includes('return { provider: "openrouter", model, userSelected: true
 if (!/item\(\s*["']deepgram-flux["']/.test(registry)) fail("Deepgram Flux is not registered as production voice transcription");
 if (!/item\(\s*["']elevenlabs["']/.test(registry)) fail("ElevenLabs is not registered as production voice synthesis");
 if (!/item\(\s*["']openai-realtime["']/.test(registry)) fail("OpenAI Realtime optional web/mobile mode is not registered");
-if (!migration.includes("voice_llm_provider SET DEFAULT 'openai'")) fail("tenant migration does not default managed voice to OpenAI");
+if (!migrationCorpus.includes("voice_llm_provider SET DEFAULT 'openai'")) fail("tenant migration does not default managed voice to OpenAI");
+if (!migrationCorpus.includes("voice_llm_model SET DEFAULT 'gpt-4o'")) fail("tenant migration does not default managed voice model to GPT-4o");
+if (!migrationCorpus.includes("claude-haiku-4-5")) fail("tenant migration does not cover the legacy Claude Haiku managed default");
+if (!migrationJournal.includes("0083_reassert_openai_voice_defaults")) fail("OpenAI voice-default catch-up migration is not journaled for production deploys");
 const legacyFiles = ["claude-brain.ts", "claude-client.ts", "claude-models.ts", "claude-structured.ts", "claude-audit.ts", "claude-tools.ts", "claude-recipes.ts", "claude-response-helpers.ts", "claude-supervisor-tools.ts"];
 const remaining = legacyFiles.filter((file) => existsSync(resolve(root, "src/lib", file)));
 if (remaining.length) fail(`legacy Claude modules remain: ${remaining.join(", ")}`);

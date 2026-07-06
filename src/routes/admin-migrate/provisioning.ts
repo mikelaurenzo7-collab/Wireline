@@ -564,6 +564,10 @@ router.post(
             ),
             and(
               eq(schema.settings.voiceLlmProvider, "anthropic"),
+              eq(schema.settings.voiceLlmModel, "claude-haiku-4-5"),
+            ),
+            and(
+              eq(schema.settings.voiceLlmProvider, "anthropic"),
               eq(schema.settings.voiceLlmModel, "claude-sonnet-4-6"),
             ),
           ),
@@ -599,6 +603,10 @@ router.post(
             and(
               eq(schema.settings.voiceLlmProvider, "google"),
               eq(schema.settings.voiceLlmModel, "gemini-3.5-flash"),
+            ),
+            and(
+              eq(schema.settings.voiceLlmProvider, "anthropic"),
+              eq(schema.settings.voiceLlmModel, "claude-haiku-4-5"),
             ),
             and(
               eq(schema.settings.voiceLlmProvider, "anthropic"),

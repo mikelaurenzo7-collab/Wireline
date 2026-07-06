@@ -16,6 +16,7 @@ const router = Router();
 // legacy Gemini or Claude voice paths. This endpoint flips them.
 const LEGACY_PAIRS = [
   { provider: "google", model: "gemini-3.5-flash" },
+  { provider: "anthropic", model: "claude-haiku-4-5" },
   { provider: "anthropic", model: "claude-sonnet-4-6" },
 ] as const;
 const TARGET_PROVIDER = VAPI_TENANT_DEFAULT_PROVIDER;
@@ -25,9 +26,9 @@ const TARGET_MODEL = VAPI_TENANT_DEFAULT_MODEL;
  * One-shot tenant backfill: flip legacy voice-LLM settings rows to the
  * OpenAI-native managed default.
  *
- * This catches both the old Gemini voice path and the intermediate Claude
- * voice path. It performs the wholesale migration as a gated, dry-run-first,
- * audited operation.
+ * This catches the old Gemini voice path and both retired Claude managed
+ * voice paths. It performs the wholesale migration as a gated,
+ * dry-run-first, audited operation.
  *
  * Safety:
  *   - Gated by authorizeMigration (OWNER_EMAIL or X-Migration-Token).
@@ -56,6 +57,7 @@ router.post(
         SELECT COUNT(*)::int AS n
         FROM wireline_settings
         WHERE (voice_llm_provider = 'google' AND voice_llm_model = 'gemini-3.5-flash')
+           OR (voice_llm_provider = 'anthropic' AND voice_llm_model = 'claude-haiku-4-5')
            OR (voice_llm_provider = 'anthropic' AND voice_llm_model = 'claude-sonnet-4-6');
       `);
       const candidates: number = Number(countRes?.rows?.[0]?.n ?? countRes?.[0]?.n ?? 0) || 0;
@@ -84,6 +86,7 @@ router.post(
             voice_llm_model = ${TARGET_MODEL},
             updated_at = now()
         WHERE (voice_llm_provider = 'google' AND voice_llm_model = 'gemini-3.5-flash')
+           OR (voice_llm_provider = 'anthropic' AND voice_llm_model = 'claude-haiku-4-5')
            OR (voice_llm_provider = 'anthropic' AND voice_llm_model = 'claude-sonnet-4-6');
       `);
       const updated: number = Number(updateRes?.rowCount ?? updateRes?.count ?? candidates) || 0;
