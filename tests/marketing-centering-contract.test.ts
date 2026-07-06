@@ -36,6 +36,14 @@ describe("marketing centering contract", () => {
     expect(solutionsPage).toContain("BrowserCallWidget");
   });
 
+  it("ships structured data on the blog for SEO", () => {
+    const blog = read("src/pages/Blog.tsx");
+    expect(blog).toContain("structuredData");
+    expect(blog).toContain("FAQPage");
+    expect(blog).toContain("BreadcrumbList");
+    expect(blog).toContain('structuredData={structuredData}');
+  });
+
   it("keeps primary public marketing surfaces centered", () => {
     for (const path of [
       "src/pages/Features.tsx",

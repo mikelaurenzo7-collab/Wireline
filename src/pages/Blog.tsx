@@ -1,6 +1,10 @@
 import { Check, MessageSquare, PhoneCall, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
+import { Button } from "../components/atoms";
+
+const SITE_URL = "https://trywireline.com";
 
 const NOTES = [
   {
@@ -20,13 +24,49 @@ const NOTES = [
   },
 ] as const;
 
+function noteSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Wireline", item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "Wireline Notes", item: `${SITE_URL}/blog` },
+      ],
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: NOTES.map(({ title, copy }) => ({
+        "@type": "Question",
+        name: title.replace(/\.$/, ""),
+        acceptedAnswer: { "@type": "Answer", text: copy },
+      })),
+    },
+    {
+      "@type": "CollectionPage",
+      name: "Wireline Notes",
+      description:
+        "Practical guides for AI call agents — appointments, support queues, handoff boundaries, and getting time back.",
+      url: `${SITE_URL}/blog`,
+    },
+  ],
+};
+
 export default function Blog() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="Wireline Notes"
-        description="Practical notes for handing routine phone work to an AI call agent."
+        title="Wireline Notes | AI call agent guides for small business phone coverage"
+        description="Practical guides for AI voice agents: appointment booking, support queues, handoff boundaries, and getting routine phone work off your plate."
         path="/blog"
+        structuredData={structuredData}
       />
 
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
@@ -37,7 +77,8 @@ export default function Blog() {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
             Wireline is keeping this library small until each guide earns its place. Start with the
-            basics that make an agent useful from day one.
+            basics that make an agent useful from day one — clear jobs, firm boundaries, and useful
+            handoffs.
           </p>
         </div>
       </section>
@@ -45,9 +86,13 @@ export default function Blog() {
       <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {NOTES.map(({ icon: Icon, title, copy }) => (
-            <article className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10" key={title}>
+            <article
+              id={noteSlug(title)}
+              className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10"
+              key={title}
+            >
               <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted text-primary">
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
               </span>
               <h2 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
                 {title}
@@ -64,7 +109,8 @@ export default function Blog() {
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
             <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--wireline-color-text-secondary)]">
-              <ShieldCheck className="h-4 w-4" />A private draft is a good place to begin.
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              A private draft is a good place to begin.
             </div>
             <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
               Teach an agent the call you keep putting off.
@@ -72,6 +118,14 @@ export default function Blog() {
             <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[var(--wireline-color-text-secondary)]">
               Name it, describe the task in plain language, and refine the rules as you go.
             </p>
+            <div className="wl-marketing-actions mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Button asChild variant="primary" size="lg">
+                <Link to="/signup">Start free</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/features">See how it works</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>

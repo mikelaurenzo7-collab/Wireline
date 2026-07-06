@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- video presenter entitlement and checkout errors remain loosely typed. */
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -29,31 +29,12 @@ import type { LiveVideoAddonState } from "../lib/video-presenter/types";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 import { Chip } from "./atoms";
 
-type BillingPlanId = "team" | "business" | "enterprise";
-
-interface Plan {
-  id: BillingPlanId;
-  name: string;
-  price_usd_monthly: number;
-  max_agents: number;
-  voice_minutes_monthly?: number;
-  overage_per_min_usd?: number;
-  features: string[];
-  configured: boolean;
-  public?: boolean;
-}
-
-interface SubscriptionState {
-  plan: string | null;
-  plan_name: string | null;
-  max_agents: number | null;
-  status: string | null;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-  has_customer: boolean;
-  has_subscription: boolean;
-  updated_at: string | null;
-}
+import type {
+  BillingPlansResponse,
+  BillingStatusResponse,
+  BillingSubscriptionState,
+  ClientPlan,
+} from "../types/api";
 
 const PLAN_ICONS: Record<string, any> = {
   team: Building2,
@@ -76,8 +57,8 @@ const CHECKOUT_VALUES: Record<string, number> = {
 };
 
 export default function StripeBillingCard() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [sub, setSub] = useState<SubscriptionState | null>(null);
+  const [plans, setPlans] = useState<ClientPlan[]>([]);
+  const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
   const [agentCount, setAgentCount] = useState<number>(0);
   const [stripeConfigured, setStripeConfigured] = useState(false);
   const [signupPlanInterest, setSignupPlanInterest] = useState<string | null>(null);
@@ -93,8 +74,8 @@ export default function StripeBillingCard() {
     setError(null);
     try {
       const [statusRes, plansRes, entitlementRes] = await Promise.all([
-        authFetch("/api/billing/status").then((r) => r.json()),
-        authFetch("/api/billing/plans").then((r) => r.json()),
+        authFetch("/api/billing/status").then((r) => r.json() as Promise<BillingStatusResponse>),
+        authFetch("/api/billing/plans").then((r) => r.json() as Promise<BillingPlansResponse>),
         authFetch("/api/video-presenter/entitlement").then((r) => (r.ok ? r.json() : null)),
       ]);
       setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
@@ -441,7 +422,7 @@ function PlanPicker({
   busy,
   onSelectPlan,
 }: {
-  plans: Plan[];
+  plans: ClientPlan[];
   signupPlanInterest: string | null;
   busy: string | null;
   onSelectPlan: (planId: string) => void;
@@ -516,7 +497,7 @@ function PlanPicker({
                   </div>
                 </div>
                 <ul className="space-y-2 flex-1">
-                  {plan.features.map((f, i) => (
+                  {plan.features.map((f: string, i: number) => (
                     <li key={i} className="flex items-start gap-2 text-caption">
                       <Check
                         className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text"
@@ -567,7 +548,7 @@ function ActiveSubCard({
   busy,
   onPortal,
 }: {
-  sub: SubscriptionState;
+  sub: BillingSubscriptionState;
   agentCount: number;
   busy: boolean;
   onPortal: () => void;

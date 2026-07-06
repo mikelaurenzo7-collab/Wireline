@@ -15,6 +15,7 @@ import {
   resolveWirelineGrokVoice,
   resolveWirelineVoiceProfile,
 } from "./grok-voice-config";
+import { buildGrokStrengthsPromptSection } from "../grok-features";
 
 const XAI_CLIENT_SECRETS_URL = "https://api.x.ai/v1/realtime/client_secrets";
 const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
@@ -185,6 +186,7 @@ function buildInstructions(
     compliance ? `\nGUARDRAILS:\n${compliance}` : "",
     listBlock("OPERATING RULES", directives, 24),
     listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+    `\n${buildGrokStrengthsPromptSection()}`,
   ]
     .filter(Boolean)
     .join("\n");

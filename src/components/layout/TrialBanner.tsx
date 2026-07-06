@@ -3,7 +3,8 @@ import { motion } from "motion/react";
 import { AlertTriangle } from "lucide-react";
 import { authFetch, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../../lib/api";
 import { safeDate } from "../../lib/safe-date";
-import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Button } from "../atoms";
+import type { BillingStatusResponse } from "../../types/api";
 import { cn } from "../../lib/utils";
 
 interface TrialState {
@@ -18,7 +19,7 @@ export default function TrialBanner() {
   useEffect(() => {
     authFetch("/api/billing/status")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: BillingStatusResponse) => {
         // Primary source: settings-driven trial block (new tenants who
         // signed up post-trial-gate land here, no Stripe sub yet).
         if (d.trial?.status === "trialing") {
@@ -117,7 +118,7 @@ export default function TrialBanner() {
         <AlertTriangle className="wl-banner__icon" aria-hidden />
         <span>{message}</span>
       </div>
-      <ShadButton
+      <Button
         type="button"
         disableAnimations
         variant="outline"
@@ -126,7 +127,7 @@ export default function TrialBanner() {
         className="touch-press hover:scale-[1.02] shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none"
       >
         Upgrade now
-      </ShadButton>
+      </Button>
     </motion.div>
   );
 }

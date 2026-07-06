@@ -19,7 +19,8 @@ import { Mail, Loader2, Check, AlertTriangle } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
-import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Button } from "../atoms";
+import type { BillingStatusResponse } from "../../types/api";
 
 type SendOutcome = "idle" | "pending" | "sent" | "no-transport" | "error";
 
@@ -31,7 +32,7 @@ export default function EmailVerifyBanner() {
   useEffect(() => {
     authFetch("/api/billing/status")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+      .then((d: BillingStatusResponse | null) => {
         if (d && typeof d.email_verified === "boolean") {
           setVerified(d.email_verified);
         }
@@ -142,7 +143,7 @@ export default function EmailVerifyBanner() {
           )}
         </span>
       </div>
-      <ShadButton
+      <Button
         type="button"
         variant={outcome === "sent" ? "secondary" : "default"}
         size="sm"
@@ -155,7 +156,7 @@ export default function EmailVerifyBanner() {
         )}
       >
         {buttonLabel}
-      </ShadButton>
+      </Button>
     </motion.div>
   );
 }

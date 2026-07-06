@@ -17,6 +17,7 @@ import {
   VAPI_TENANT_DEFAULT_PROVIDER,
 } from "./ai-models";
 import { pickRotatedVoiceId } from "../data/voice-roster";
+import { buildGrokStrengthsPromptSection, isGrokModelId } from "./grok-features";
 
 export interface AssistantRequestPayload {
   message: { type: string; call?: any };
@@ -129,6 +130,9 @@ export async function buildVapiAssistant({
   ]
     .filter(Boolean)
     .join("\n");
+  const finalSystemPrompt = isGrokModelId(modelSelection.model)
+    ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
+    : systemPrompt;
   const pronunciationDictionaryLocators = pronunciationDictionaries
     .filter((item) => item.dictionaryId && item.versionId)
     .map((item) => ({
@@ -148,7 +152,7 @@ export async function buildVapiAssistant({
         "google/gemini-1.5-pro",
         ...(modelSelection.fallbackModels || []),
       ],
-      systemPrompt,
+      systemPrompt: finalSystemPrompt,
       temperature: clampVoiceTemperature(configured.llmTemperature, 0.3),
     },
     voice: {

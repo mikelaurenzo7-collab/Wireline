@@ -20,14 +20,24 @@ export const GROK_MODEL_OPTIONS = {
 
 export const GROK_AGENT_STRENGTHS = {
   realtimeSearch:
-    "Grok can pull live web/X context in voice sessions for accurate, current answers.",
+    "Pull live web and social context in voice sessions for accurate, current answers.",
   personalityTuning:
-    "Distinct profiles (bright/warm/clear/etc) leverage Grok's helpful, maximally truthful style.",
+    "Distinct profiles (bright/warm/clear/etc) leverage a helpful, maximally truthful style.",
   advancedReasoning:
-    "High-effort Grok paths for complex agent tasks like planning or objection handling.",
+    "High-effort reasoning paths for complex tasks like planning or objection handling.",
   creativeCustomization:
-    "Enables agents with unique 'voice + mind' combinations for standout user experiences.",
+    "Enables agents with unique voice and mind combinations for standout caller experiences.",
 } as const;
 
-// TODO (agent-excellence): Wire these strengths into agent profiles, system prompts, and self-improvement
-// loops (e.g. via ai-runtime or director). Keep all UI neutral. Catalog logic stays in ai-models.ts.
+export function isGrokModelId(model: string | null | undefined): boolean {
+  return typeof model === "string" && /grok/i.test(model);
+}
+
+/** Runtime-only prompt section — never surface vendor names in customer UI. */
+export function buildGrokStrengthsPromptSection(): string {
+  return [
+    "## Model capabilities",
+    ...Object.values(GROK_AGENT_STRENGTHS).map((line) => `- ${line}`),
+    "- Stay maximally truthful; say when live context is unavailable instead of guessing.",
+  ].join("\n");
+}

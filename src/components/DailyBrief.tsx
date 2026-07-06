@@ -23,7 +23,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { Input } from "./ui/shadcn/Input";
-import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Button } from "./atoms";
 import { WL_STAT_CLASSES } from "../lib/wireline-ops-design";
 
 interface BriefData {
@@ -203,7 +203,7 @@ export default function DailyBrief() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ShadButton
+            <Button
               onClick={() => setShowSchedule((s) => !s)}
               variant="outline"
               className={cn(
@@ -214,8 +214,8 @@ export default function DailyBrief() {
               )}
             >
               <Mail className="w-3 h-3" aria-hidden /> Email Schedule
-            </ShadButton>
-            <ShadButton
+            </Button>
+            <Button
               onClick={() => load(true)}
               disabled={loading}
               variant="outline"
@@ -227,7 +227,7 @@ export default function DailyBrief() {
                 <RefreshCw className="w-3 h-3" />
               )}
               {data.cached ? "Refresh" : "Cached"}
-            </ShadButton>
+            </Button>
           </div>
         </div>
 
@@ -469,7 +469,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2 wl-label text-brand">
           <Mail className="w-3 h-3" /> Email this brief on a schedule
         </div>
-        <ShadButton
+        <Button
           type="button"
           variant="ghost"
           size="icon"
@@ -479,7 +479,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
           className="w-9 h-9 rounded-full"
         >
           <XIcon className="w-4 h-4" />
-        </ShadButton>
+        </Button>
       </div>
 
       {loading ? (
@@ -499,7 +499,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          <ShadButton
+          <Button
             type="button"
             variant="ghost"
             disableAnimations
@@ -536,7 +536,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 .
               </div>
             </div>
-          </ShadButton>
+          </Button>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="space-y-1.5">
@@ -583,7 +583,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
           )}
 
           <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
-            <ShadButton
+            <Button
               onClick={sendNow}
               disabled={sending || !gmailConnected || !recipient}
               variant="outline"
@@ -595,7 +595,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 <Send className="w-3.5 h-3.5" />
               )}
               Send preview now
-            </ShadButton>
+            </Button>
             <div className="flex items-center gap-3">
               {feedback && (
                 <span
@@ -607,7 +607,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                   {feedback.text}
                 </span>
               )}
-              <ShadButton
+              <Button
                 onClick={save}
                 disabled={saving}
                 variant="default"
@@ -619,7 +619,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                   <Check className="w-3.5 h-3.5" />
                 )}
                 Save
-              </ShadButton>
+              </Button>
             </div>
           </div>
         </>

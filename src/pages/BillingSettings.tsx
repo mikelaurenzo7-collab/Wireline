@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Badge, Skeleton } from "../components/atoms";
-import { ShadButton } from "../components/ui/shadcn/ShadButton";
+import { Badge, Button, Skeleton } from "../components/atoms";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -166,7 +165,7 @@ export default function BillingSettings() {
                 </p>
               ) : null}
               {hasSubscription ? (
-                <ShadButton
+                <Button
                   type="button"
                   disableAnimations
                   variant="outline"
@@ -180,7 +179,7 @@ export default function BillingSettings() {
                     <ExternalLink className="size-4" aria-hidden="true" />
                   )}
                   Manage subscription
-                </ShadButton>
+                </Button>
               ) : null}
             </>
           )}
@@ -205,7 +204,7 @@ export default function BillingSettings() {
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => (
-                    <ShadButton
+                    <Button
                       key={amount}
                       type="button"
                       disableAnimations
@@ -221,7 +220,7 @@ export default function BillingSettings() {
                         <Plus className="size-3.5" aria-hidden="true" />
                       )}
                       ${amount}
-                    </ShadButton>
+                    </Button>
                   ))}
                 </div>
               </>

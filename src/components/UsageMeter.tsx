@@ -4,27 +4,8 @@ import { Activity, AlertTriangle, Loader2, TrendingUp, Wallet } from "lucide-rea
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { Progress } from "./ui/shadcn/Progress";
-import { ShadButton } from "./ui/shadcn/ShadButton";
-
-interface UsageSnapshot {
-  plan_id: string | null;
-  plan_name?: string | null;
-  voice_minutes_used: number;
-  voice_minutes_included: number;
-  voice_minutes_remaining: number;
-  voice_usage_pct?: number;
-  ai_spend_usd?: number;
-  ai_spend_limit_usd?: number;
-  ai_spend_pct?: number;
-  usage_pct?: number;
-  overage_minutes: number;
-  overage_per_min_usd: number;
-  overage_cost_usd: number;
-  period_key: string;
-  reset_at: string;
-  stripe_metered: boolean;
-  credit_balance_usd?: number;
-}
+import { Button } from "./atoms";
+import type { WorkspaceUsageResponse } from "../types/api";
 
 const REFRESH_MS = 60_000;
 
@@ -36,7 +17,7 @@ export default function UsageMeter({
   /** When provided, approaching/over states surface a one-click upgrade CTA. */
   onUpgrade?: () => void;
 }) {
-  const [snap, setSnap] = useState<UsageSnapshot | null>(null);
+  const [snap, setSnap] = useState<WorkspaceUsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,7 +26,7 @@ export default function UsageMeter({
       try {
         const res = await authFetch("/api/billing/usage");
         if (!res.ok) return;
-        const data = (await res.json()) as UsageSnapshot;
+        const data = (await res.json()) as WorkspaceUsageResponse;
         if (alive) setSnap(data);
       } finally {
         if (alive) setLoading(false);
@@ -185,7 +166,7 @@ export default function UsageMeter({
       {/* Primary path when usage runs hot: upgrade for more included minutes
           (cheaper than recurring overage/top-ups). Credits stay the safety net. */}
       {(isWarn || isOver) && onUpgrade && (
-        <ShadButton
+        <Button
           type="button"
           variant="ghost"
           disableAnimations
@@ -194,7 +175,7 @@ export default function UsageMeter({
         >
           <TrendingUp className="w-3.5 h-3.5" />
           Upgrade for more included minutes
-        </ShadButton>
+        </Button>
       )}
 
       {/* Prepaid credits — relevant when the Account Holder holds a balance or is in

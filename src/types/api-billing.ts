@@ -1,0 +1,99 @@
+/**
+ * Client API shapes for /api/billing/* — keep in sync with billing-routes.ts
+ * and workspace-usage-snapshot.ts response bodies.
+ */
+
+export type BillingTrialStatus = "trialing" | "trial_expired" | (string & {});
+
+export interface BillingTrialBlock {
+  status: BillingTrialStatus;
+  days_left: number | null;
+  ends_at: string | null;
+  outbound_used: number;
+  outbound_cap: number;
+  agents_cap: number;
+  agents_used: number;
+}
+
+export interface BillingSubscriptionState {
+  plan: string | null;
+  plan_id: string | null;
+  plan_name: string | null;
+  max_agents: number | null;
+  status: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  has_customer: boolean;
+  customer_state?: string | null;
+  has_subscription: boolean;
+  updated_at: string | null;
+}
+
+export interface BillingSignupIntent {
+  plan_id: string | null;
+  wedge: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+}
+
+/** GET /api/billing/status */
+export interface BillingStatusResponse {
+  stripe_configured: boolean;
+  agent_count: number;
+  phone_lines_used: number;
+  phone_lines_included: number;
+  email_verified: boolean;
+  subscription: BillingSubscriptionState | null;
+  trial: BillingTrialBlock | null;
+  signup_intent: BillingSignupIntent | null;
+}
+
+/** GET /api/billing/plans — plansForClient() payload */
+export interface ClientPlan {
+  id: string;
+  name: string;
+  price_usd_monthly: number;
+  price_usd_annual: number;
+  max_agents: number;
+  included_phone_numbers: number;
+  extra_agent_price_usd: number | null;
+  features: string[];
+  configured: boolean;
+  annual_configured: boolean;
+  contact_sales: boolean;
+  public: boolean;
+  pricing_model: "capacity_plus_conversation_balance";
+}
+
+export interface BillingPlansResponse {
+  plans: ClientPlan[];
+  stripe_configured: boolean;
+}
+
+/** GET /api/billing/usage — mirrors WorkspaceUsageSnapshot */
+export interface WorkspaceUsageResponse {
+  plan_id: string | null;
+  plan_name: string | null;
+  voice_minutes_used: number;
+  voice_minutes_included: number;
+  voice_minutes_remaining: number;
+  voice_usage_pct: number;
+  overage_minutes: number;
+  overage_per_min_usd: number;
+  overage_cost_usd: number;
+  period_key: string;
+  reset_at: string;
+  stripe_metered: boolean;
+  credit_balance_usd: number;
+  ai_spend_usd: number;
+  ai_spend_limit_usd: number;
+  ai_spend_pct: number;
+  ai_spend_hard_cap?: boolean;
+  claude_tokens_used_today?: number;
+  claude_tokens_daily_limit?: number;
+  claude_tokens_pct?: number;
+  openrouter_allowed?: boolean;
+  usage_pct: number;
+  voice_minutes_cap?: number;
+}

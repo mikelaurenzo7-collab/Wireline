@@ -96,6 +96,20 @@ assertExcludes(
   /ShadButton|components\/ui\/shadcn/,
   "must not import compatibility buttons directly.",
 );
+for (const path of [
+  "src/components/layout/TrialBanner.tsx",
+  "src/components/layout/EmailVerifyBanner.tsx",
+  "src/components/UsageMeter.tsx",
+  "src/components/DailyBrief.tsx",
+  "src/pages/BillingSettings.tsx",
+]) {
+  assertIncludes(
+    path,
+    /from "\.\.\/components\/atoms"|from "\.\/atoms"|from "\.\.\/\.\.\/components\/atoms"/,
+    "must use the canonical Button atom.",
+  );
+  assertExcludes(path, /ShadButton/, "must not import ShadButton compatibility wrapper.");
+}
 assertExcludes(
   "src/components/ui/shadcn/index.ts",
   /This is the \*\*canonical\*\* UI layer/,
