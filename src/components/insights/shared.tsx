@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Shared helpers for the Insights domain folder.
  *
@@ -128,6 +127,7 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
       withHalo={false}
       icon={Icon}
       title={green ? "All clear" : "No data"}
+      description={label}
       accent={green ? WL_BRAND.accent : undefined}
     />
   );
@@ -163,7 +163,15 @@ export function ErrCard({ error, onRetry }: { error: string; onRetry?: () => voi
 
 /* ── Stat tile ──────────────────────────────────────────────────── */
 
-export function Stat({ label, value, accent }: { label: string; value: any; accent?: string }) {
+export function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: React.ReactNode;
+  accent?: string;
+}) {
   return (
     <div>
       <div className={WL_OPS_CLASSES.insightLabel}>{label}</div>
