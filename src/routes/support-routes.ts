@@ -63,7 +63,25 @@ const router = Router();
 
 const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@trywireline.com";
 
-const ISSUE_TYPES = new Set(["billing", "tech", "feature", "agent", "account", "other"]);
+// TWO public forms post here with different category vocabularies.
+// Both sets must stay accepted — dropping either silently 400s every
+// submission from that page (the /contact set was missing in production,
+// which broke the "Talk to Wireline" sales channel with
+// "Pick a valid issue type." on every submit).
+const ISSUE_TYPES = new Set([
+  // /support — src/components/SupportPage.tsx
+  "billing",
+  "tech",
+  "feature",
+  "agent",
+  "account",
+  "other",
+  // /contact — src/components/ContactPage.tsx
+  "personal",
+  "sales",
+  "partnership",
+  "general",
+]);
 
 // 5 tickets per 15 minutes per IP. Plenty for legitimate use,
 // kills spam. Tracked in-memory; multi-region deploys may permit

@@ -1,5 +1,5 @@
 /* Account entry surface — two-panel auth.
- * Left: deep console brand panel with a copper paper wash. Right: clean form. */
+ * Left: deep console brand panel with a silver paper wash. Right: clean form. */
 .wl-stitch-auth-shell {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -17,13 +17,27 @@
   justify-content: space-between;
   gap: 2.5rem;
   padding: clamp(2.5rem, 4vw, 3.5rem);
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  /* Deep console brand panel — dark in BOTH themes so the silver wash and
+     violet mark carry the brand. Pin the semantic tokens locally (Aurora dark
+     values from tokens.generated.css) so every descendant — headline, grid
+     cells, badge, wash — resolves against a dark canvas even when the page
+     renders in light mode. Dark mode is byte-identical: these are its own
+     generated values. */
+  --wireline-color-canvas-default: #0A0A0E;
+  --wireline-color-surface-default: #141319;
+  --wireline-color-text-primary: #F5F4F8;
+  --wireline-color-text-secondary: #B6B1C6;
+  --wireline-color-text-tertiary: #8B87A0;
+  --wireline-color-border-default: #262430;
+  --wireline-color-action-primary-default: #A78BFA;
+  --wireline-color-action-secondary-default: #C7CCD6;
+  background: color-mix(in srgb, #0A0A0E 62%, #000);
   color: var(--wireline-color-text-primary);
   border-right: 1px solid var(--wireline-color-border-default);
   animation: fadeIn 0.5s ease-out both;
 }
 
-/* Copper paper wash — tucked in the brand panel corner so it never bleeds
+/* Silver paper wash — tucked in the brand panel corner so it never bleeds
    across the center seam into the form column. */
 .wl-auth-brand-glow {
   position: absolute;
@@ -177,8 +191,8 @@
   border-radius: var(--radius-md);
 }
 
-/* Workspace selector buttons keep a copper halo on focus so the choice is
-   legible against the warm brand panel wash. */
+/* Workspace selector buttons keep a silver halo on focus so the choice is
+   legible against the dark brand panel wash. */
 .wl-stitch-auth-card button[type="button"]:focus-visible {
   outline-color: var(--wireline-color-focus-wire);
   box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-wire);
@@ -213,7 +227,7 @@
   }
 }
 
-/* MarketingChrome auth wrapper — same cream canvas as the native portal. */
+/* MarketingChrome auth wrapper — same canvas as the native portal. */
 .auth-portal-canvas {
   background: var(--wireline-color-canvas-default);
 }
