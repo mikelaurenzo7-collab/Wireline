@@ -22,7 +22,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "verify": "npm run design:check && npm run stripe:catalog:check && npm run build && npm run smoke:server",
-    "verify:full": "npm run lint && npm run lint:server && npm run design:check && npm run stripe:catalog:check && npm run authz:check && npm run server:bootstrap:check && npm run csp:check && npm run runtime:policy:check && npm run api-error:check && npm run test:run && npm run build && npm run smoke:server",
+    "verify:full": "npm run lint && npm run lint:server && npm run design:check && npm run stripe:catalog:check && npm run authz:check && npm run server:bootstrap:check && npm run tsconfig:excludes:check && npm run csp:check && npm run runtime:policy:check && npm run api-error:check && npm run test:run && npm run build && npm run smoke:server",
     "verify:contracts": "vitest run --pool vmThreads tests/product-voice-contract.test.ts tests/marketing-metadata-contract.test.ts tests/static-metadata-contract.test.ts tests/product-events-contract.test.ts tests/structured-runtime-policy-contract.test.ts tests/dual-voice-routing-contract.test.ts",
     "test": "vitest --pool vmThreads --exclude 'tests/e2e/**'",
     "test:run": "vitest run --pool vmThreads --exclude 'tests/e2e/**'",
@@ -65,7 +65,8 @@
     "dogfood:marketing": "node scripts/dogfood-marketing.mjs",
     "analyze": "VISUALIZE=1 vite build",
     "tenant-insert:check": "node scripts/check-user-id-inserts.mjs",
-    "server:bootstrap:check": "node scripts/check-server-bootstrap.mjs"
+    "server:bootstrap:check": "node scripts/check-server-bootstrap.mjs",
+    "tsconfig:excludes:check": "node scripts/check-tsconfig-exclude-hygiene.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
