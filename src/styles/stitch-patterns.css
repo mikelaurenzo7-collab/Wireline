@@ -59,12 +59,24 @@
    utilities (`bg-primary`, `text-primary-foreground`) sit in @layer utilities
    and lose to the unlayered surface background above — the marketing CTA
    cards were rendering white-on-white. */
-/* On the dark canvas a full patina fill reads as an alert, not an accent.
-   The brand CTA card is a deep console with a patina-leaning border and
+/* On the dark canvas a full violet fill reads as an alert, not an accent.
+   The brand CTA card is a deep console with a violet-leaning border and
    light text — emphatic but calm, consistent with the closing-CTA console. */
 .wl-stitch-card-brand {
+  /* Deep console CTA card — dark in BOTH themes. Pin the semantic tokens
+     locally (Aurora dark values from tokens.generated.css) so the violet
+     border, light text, and any nested controls resolve against a dark canvas
+     even when the page renders in light mode. Dark mode is byte-identical:
+     these are its own generated values. */
+  --wireline-color-canvas-default: #0A0A0E;
+  --wireline-color-surface-default: #141319;
+  --wireline-color-text-primary: #F5F4F8;
+  --wireline-color-text-secondary: #B6B1C6;
+  --wireline-color-text-tertiary: #8B87A0;
+  --wireline-color-border-default: #262430;
+  --wireline-color-action-primary-default: #A78BFA;
   border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 42%, var(--wireline-color-border-default));
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  background: color-mix(in srgb, #0A0A0E 62%, #000);
   color: var(--wireline-color-text-primary);
 }
 

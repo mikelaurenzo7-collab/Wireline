@@ -42,7 +42,7 @@
 }
 
 /* .marketing-hero background lives in wireline-signature.css — the ledger
-   ruling and copper counter-glow are part of the Wire signature. */
+   ruling and the counter-glow are part of the Wire signature. */
 
 .marketing-hero__content {
   max-width: none;
@@ -148,12 +148,25 @@
   gap: 2rem;
 }
 
-/* Emphasis marketing panels — landing CTA bands, featured pricing. On the
-   dark canvas these read as a recessed "console": a deeper warm-black than
-   the page, a hairline border, and light text — so the copper wire cap and
-   the green glow carry the emphasis instead of a jarring light inversion. */
+/* Emphasis marketing panels — landing CTA bands, featured pricing. These read
+   as a recessed "console": a deeper black than the page, a hairline border,
+   and light text — so the silver wire and the violet glow carry the emphasis
+   instead of a jarring light inversion. */
 .marketing-ink-panel {
-  background: color-mix(in srgb, var(--wireline-color-canvas-default) 62%, #000);
+  /* Ink panels are a dark, recessed console in BOTH themes. Pin the semantic
+     tokens locally (Aurora dark values from tokens.generated.css) so every
+     descendant — text, buttons, and the soft/muted variants below — resolves
+     against a dark canvas even when the page renders in light mode. Dark mode
+     is byte-identical: these are its own generated values. */
+  --wireline-color-canvas-default: #0A0A0E;
+  --wireline-color-surface-default: #141319;
+  --wireline-color-text-primary: #F5F4F8;
+  --wireline-color-text-secondary: #B6B1C6;
+  --wireline-color-text-tertiary: #8B87A0;
+  --wireline-color-border-default: #262430;
+  --wireline-color-action-primary-default: #A78BFA;
+  --border: #262430;
+  background: color-mix(in srgb, #0A0A0E 62%, #000);
   color: var(--wireline-color-text-primary);
   border: 1px solid var(--wireline-color-border-default);
 }
