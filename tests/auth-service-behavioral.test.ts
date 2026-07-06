@@ -78,6 +78,11 @@ describe("verifyPassword", () => {
 });
 
 describe("generateToken", () => {
+  beforeEach(() => {
+    process.env.INTERNAL_JWT_SECRET = "wireline-test-internal-jwt-secret-minimum-32-chars";
+    delete process.env.SUPABASE_JWT_SECRET;
+  });
+
   it("generates a three-part JWT", () => {
     const token = generateToken({ id: "user-123", email: "test@example.com" });
     const parts = token.split(".");

@@ -16,12 +16,12 @@
 // ────────────────────────────────────────────────────────────────────────
 
 export interface CallLogRow {
-  id: string | number;
+  id: string | number | bigint;
   customerNumber?: string | null;
   leadScore?: number | null;
   intentLabel?: string | null;
   summary?: string | null;
-  createdAt: Date | string;
+  createdAt: Date | string | null;
 }
 
 export interface FollowUpTaskRow {
@@ -29,13 +29,13 @@ export interface FollowUpTaskRow {
   description?: string | null;
   status?: string | null;
   priority?: string | null;
-  createdAt: Date | string;
+  createdAt: Date | string | null;
 }
 
 export interface AgentLessonRow {
-  id: string | number;
+  id: string | number | bigint;
   lesson?: string | null;
-  createdAt: Date | string;
+  createdAt: Date | string | null;
 }
 
 export interface EmailThreadRow {
@@ -43,7 +43,7 @@ export interface EmailThreadRow {
   customerEmail?: string | null;
   leadScore?: number | null;
   intentLabel?: string | null;
-  createdAt: Date | string;
+  createdAt: Date | string | null;
 }
 
 export type ActivityImportance = "critical" | "high" | "medium" | "low";

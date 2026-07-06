@@ -300,6 +300,7 @@ export async function getVoiceReliabilityTrends(opts: {
   };
 
   for (const row of callRows) {
+    if (!row.createdAt) continue;
     const dateKey = row.createdAt.toISOString().slice(0, 10);
     const b = bucketFor(dateKey);
     if (row.ttftMs != null) b.ttfts.push(row.ttftMs);
@@ -312,6 +313,7 @@ export async function getVoiceReliabilityTrends(opts: {
   }
 
   for (const row of webhookRows) {
+    if (!row.createdAt) continue;
     const dateKey = row.createdAt.toISOString().slice(0, 10);
     const b = bucketFor(dateKey);
     b.webhookTotal++;

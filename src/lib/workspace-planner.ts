@@ -31,7 +31,6 @@ import {
   type AgentToolName,
 } from "./agent-capabilities";
 import { DIRECTOR_INTEGRATION_TOOLS } from "./director-integration-tools";
-import type { DirectorIntegrationJob } from "./director-fleet-plan";
 
 /** Personality vibes the chat may set — mirrors the Vapi factory. */
 export const WORKSPACE_VIBE_OPTIONS = ["warm", "playful", "authoritative"] as const;
@@ -214,12 +213,22 @@ export interface ProposedAction {
   step?: number;
 }
 
+export interface ProposedIntegrationJob {
+  tool: AgentToolName;
+  label: string;
+  summary: string;
+  agentId?: string;
+  query?: string;
+  /** 1-based workflow step when multiple approvals ship in one turn. */
+  step?: number;
+}
+
 export interface WorkspacePlan {
   reply: string;
   changes: ProposedChange[];
   toolToggles: ProposedToolToggle[];
   actions: ProposedAction[];
-  integrationJobs: DirectorIntegrationJob[];
+  integrationJobs: ProposedIntegrationJob[];
   /** Managed runtime adaptive reasoning (when deep thinking is enabled). */
   reasoning?: string;
   /** Approximate thinking duration in ms (for UI badge). */
@@ -566,7 +575,7 @@ export function normalizePlan(
     }
   }
 
-  const integrationJobs: DirectorIntegrationJob[] = [];
+  const integrationJobs: ProposedIntegrationJob[] = [];
   const seenJobKeys = new Set<string>();
   if (Array.isArray(raw.integration_jobs)) {
     for (const j of raw.integration_jobs) {

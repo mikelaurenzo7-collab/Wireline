@@ -229,7 +229,7 @@ describe("Wireline Letterpress polish layer", () => {
     const empty = read("src/components/atoms/EmptyState.tsx");
     const skeleton = read("src/components/atoms/Skeleton.tsx");
 
-    // Button ships a new "wire" copper variant on top of the existing palette.
+    // Button ships a new "wire" silver variant on top of the existing palette.
     // Accept both single-line (`wire: "..."`) and multi-line (`wire:\n  "..."`)
     // cva declarations so prettier reformatting cannot drift the contract.
     expect(button).toMatch(/wire:\s*"/);
@@ -255,13 +255,13 @@ describe("Wireline Letterpress polish layer", () => {
 
   it("registers the new tokens in the generated artifact", () => {
     const tokens = read("src/styles/tokens.generated.css");
-    expect(tokens).toContain("--wireline-color-action-primary-hover: #6CB89A");
-    expect(tokens).toContain("--wireline-color-action-secondary-hover: #E19452");
-    expect(tokens).toContain("--wireline-color-canvas-deeper: #0F0D0A");
-    expect(tokens).toContain("--wireline-color-canvas-warmer: #1A1612");
-    expect(tokens).toContain("--wireline-color-surface-recessed: #0E0C09");
-    expect(tokens).toContain("--wireline-color-border-soft: #26221C");
-    expect(tokens).toContain("--wireline-color-focus-wire: #D4823F");
+    expect(tokens).toContain("--wireline-color-action-primary-hover: #C4B5FD");
+    expect(tokens).toContain("--wireline-color-action-secondary-hover: #DEE1E8");
+    expect(tokens).toContain("--wireline-color-canvas-deeper: #050508");
+    expect(tokens).toContain("--wireline-color-canvas-warmer: #101018");
+    expect(tokens).toContain("--wireline-color-surface-recessed: #08070B");
+    expect(tokens).toContain("--wireline-color-border-soft: #1C1A22");
+    expect(tokens).toContain("--wireline-color-focus-wire: #C7CCD6");
     expect(tokens).toContain("--wireline-color-glow-primary:");
     expect(tokens).toContain("--wireline-color-glow-wire:");
     expect(tokens).toContain("--wireline-color-pressHighlight:");

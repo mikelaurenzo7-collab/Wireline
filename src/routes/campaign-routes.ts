@@ -274,7 +274,9 @@ router.get(
             leadScore: schema.callLogs.leadScore,
           })
           .from(schema.callLogs)
-          .where(and(eq(schema.callLogs.userId, userId), inArray(schema.callLogs.id, callIds)));
+          .where(
+            and(eq(schema.callLogs.userId, userId), inArray(schema.callLogs.vapiCallId, callIds)),
+          );
 
         call_stats = computeCallStats(
           callRows.map((c) => ({

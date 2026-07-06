@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 189  
-**Protected:** 150  
-**Public (allowlisted):** 39  
+**Routes scanned:** 243
+**Protected:** 201
+**Public (allowlisted):** 42
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -42,12 +42,15 @@
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
 | `POST /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
+| `GET /openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
 | `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/voice-fallback` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/voicemail-complete` | Twilio signature validation + rate limit |
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
+| `GET /health/voice-status` | Liveness/readiness probes; rate-limited, no PII |
+| `POST /voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
 | `GET /api/voices/:id/preview` | Premade voice previews only; cloned/tenant voices are on the authed route |
 | `GET /api/voices/curated/preview` | Public Wireline Live / Phone timbre samples; ElevenLabs-backed, no tenant data |
 | `GET /api/voices/presenter/:id/preview` | Public HeyGen presenter voice preview redirect; no tenant data |
@@ -62,6 +65,7 @@
 | account-routes.ts | POST | `/api/accounts` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/primary` | inline | — | — | Protected |
+| activation-routes.ts | GET | `/api/activation/status` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agent-config/:id` | inline | — | — | Protected |
 | agent-routes-v2.ts | DELETE | `/api/agent-config/:id/:type/:rowId` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agent-config/:id/assets` | inline | — | — | Protected |
@@ -84,6 +88,9 @@
 | agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/overview` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/run-action` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
+| audit-routes.ts | GET | `/api/audit/events` | inline | — | — | Protected |
+| audit-routes.ts | GET | `/api/audit/recent` | inline | — | — | Protected |
+| audit-routes.ts | GET | `/api/audit/summary` | inline | — | — | Protected |
 | auth-oauth-routes.ts | GET | `/api/auth/google/callback` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/google/url` | — | — | yes | Public (allowlisted) |
 | auth-oauth-routes.ts | GET | `/api/auth/microsoft/callback` | — | — | yes | Public (allowlisted) |
@@ -114,9 +121,25 @@
 | billing-routes.ts | GET | `/api/billing/status` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/usage` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/stripe-webhook` | — | — | yes | Public (allowlisted) |
+| cadence-routes.ts | GET | `/api/cadences` | inline | — | — | Protected |
+| cadence-routes.ts | POST | `/api/cadences` | inline | — | — | Protected |
+| cadence-routes.ts | PATCH | `/api/cadences/:id` | inline | — | — | Protected |
+| cadence-routes.ts | DELETE | `/api/cadences/:id` | inline | — | — | Protected |
+| cadence-routes.ts | POST | `/api/cadences/:id/enroll` | inline | — | — | Protected |
+| cadence-routes.ts | GET | `/api/cadences/runs` | inline | — | — | Protected |
+| cadence-routes.ts | POST | `/api/cadences/runs/:id/pause` | inline | — | — | Protected |
 | calendar-routes.ts | GET | `/api/calendar/accounts` | inline | — | — | Protected |
 | calendar-routes.ts | GET | `/api/calendar/events` | inline | — | — | Protected |
 | calendar-routes.ts | POST | `/api/calendar/sync` | inline | — | — | Protected |
+| campaign-routes.ts | GET | `/api/campaigns` | inline | — | — | Protected |
+| campaign-routes.ts | POST | `/api/campaigns` | inline | — | — | Protected |
+| campaign-routes.ts | PATCH | `/api/campaigns/:id` | inline | — | — | Protected |
+| campaign-routes.ts | DELETE | `/api/campaigns/:id` | inline | — | — | Protected |
+| campaign-routes.ts | GET | `/api/campaigns/:id/analytics` | inline | — | — | Protected |
+| campaign-routes.ts | POST | `/api/campaigns/:id/launch` | inline | — | — | Protected |
+| campaign-routes.ts | GET | `/api/campaigns/:id/leads` | inline | — | — | Protected |
+| campaign-routes.ts | POST | `/api/campaigns/:id/retry-failed` | inline | — | — | Protected |
+| campaign-routes.ts | POST | `/api/campaigns/:id/stop` | inline | — | — | Protected |
 | carrier-routes.ts | GET | `/api/carrier/numbers` | inline | — | — | Protected |
 | carrier-routes.ts | GET | `/api/phone-numbers` | inline | — | — | Protected |
 | carrier-routes.ts | POST | `/api/phone-numbers` | inline | — | — | Protected |
@@ -127,6 +150,10 @@
 | carrier-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
 | carrier-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
 | carrier-routes.ts | POST | `/api/phone-numbers/search` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/dnc` | inline | — | — | Protected |
+| compliance-routes.ts | POST | `/dnc` | inline | — | — | Protected |
+| compliance-routes.ts | DELETE | `/dnc/:id` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/tcpa/consent-check` | inline | — | — | Protected |
 | conversation-balance-routes.ts | GET | `/api/conversation-balance` | inline | — | — | Protected |
 | conversation-balance-routes.ts | POST | `/api/conversation-balance/checkout` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/appointments` | inline | — | — | Protected |
@@ -150,6 +177,15 @@
 | email-sync-routes.ts | POST | `/api/emails/sync` | inline | — | — | Protected |
 | email-unsubscribe-routes.ts | POST | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
 | email-unsubscribe-routes.ts | GET | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
+| fleet-routes.ts | GET | `/api/Assistants/activity` | inline | — | — | Protected |
+| fleet-routes.ts | GET | `/api/Assistants/presence` | inline | — | — | Protected |
+| fleet-routes.ts | GET | `/api/Assistants/presence/stream` | inline | — | — | Protected |
+| fleet-routes.ts | POST | `/api/Assistants/seed` | inline | — | — | Protected |
+| fleet-routes.ts | GET | `/api/Assistants/tasks` | inline | — | — | Protected |
+| fleet-routes.ts | POST | `/api/Assistants/tasks` | inline | — | — | Protected |
+| fleet-routes.ts | PATCH | `/api/Assistants/tasks/:id` | inline | — | — | Protected |
+| fleet-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
+| fleet-routes.ts | GET | `/api/triage` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
@@ -172,6 +208,12 @@
 | job-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | job-routes.ts | POST | `/api/jobs/prospect` | inline | — | — | Protected |
 | job-routes.ts | GET | `/api/jobs/stats` | inline | — | — | Protected |
+| knowledge-routes.ts | GET | `/api/knowledge` | inline | — | — | Protected |
+| knowledge-routes.ts | POST | `/api/knowledge` | inline | — | — | Protected |
+| knowledge-routes.ts | PATCH | `/api/knowledge/:id` | inline | — | — | Protected |
+| knowledge-routes.ts | DELETE | `/api/knowledge/:id` | inline | — | — | Protected |
+| learning-routes.ts | GET | `/api/agents/:id/learning-digest` | inline | — | — | Protected |
+| learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | GET | `/api/public/stats` | — | — | yes | Public (allowlisted) |
 | meta-webhook-routes.ts | POST | `/api/webhooks/meta/deletion` | — | — | yes | Public (allowlisted) |
@@ -191,10 +233,17 @@
 | mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
+| openapi-routes.ts | GET | `/openapi.json` | — | — | yes | Public (allowlisted) |
+| outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
+| outbound-routes.ts | GET | `/api/outbound` | inline | — | — | Protected |
+| outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
+| outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
+| outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | pronunciation-routes.ts | GET | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | POST | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | PATCH | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |
 | pronunciation-routes.ts | DELETE | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |
+| qa-routes-v2.ts | POST | `/api/qa/score/:callId` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/cancel-deletion` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/export` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/purge-old-data` | inline | — | — | Protected |
@@ -212,6 +261,9 @@
 | spend-control-routes.ts | PUT | `/api/spend/budget` | inline | — | — | Protected |
 | spend-control-routes.ts | GET | `/api/spend/status` | inline | — | — | Protected |
 | subscription-checkout-guard-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
+| supervisor-routes.ts | POST | `/api/supervisor/subscribe` | inline | — | — | Protected |
+| supervisor-routes.ts | DELETE | `/api/supervisor/subscribe/:id` | inline | — | — | Protected |
+| supervisor-routes.ts | GET | `/api/supervisor/subscriptions` | inline | — | — | Protected |
 | support-routes.ts | POST | `/api/support/ticket` | — | — | yes | Public (allowlisted) |
 | team-routes.ts | GET | `/api/team` | inline | yes | — | Protected |
 | team-routes.ts | DELETE | `/api/team/:id` | inline | yes | — | Protected |
@@ -230,6 +282,11 @@
 | video-presenter-routes.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
 | video-presenter-routes.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
 | video-presenter-routes.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
+| voice-observability-routes.ts | GET | `/health/voice-status` | — | — | yes | Public (allowlisted) |
+| voice-observability-routes.ts | GET | `/insights/latency` | inline | — | — | Protected |
+| voice-observability-routes.ts | GET | `/insights/latency/recent` | inline | — | — | Protected |
+| voice-observability-routes.ts | GET | `/insights/voice-reliability` | inline | yes | — | Protected |
+| voice-observability-routes.ts | POST | `/voice/metrics` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |
 | voices-routes.ts | GET | `/api/voices/:id/preview` | — | — | yes | Public (allowlisted) |

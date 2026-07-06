@@ -29,19 +29,13 @@ describe("structured runtime policy", () => {
   });
 
   it("routes planners through structured-runtime-models instead of legacy Claude shims", () => {
-    for (const path of [
-      "src/lib/director-planner.ts",
-      "src/lib/workspace-planner.ts",
-      "src/routes/agent-workspace-routes.ts",
-    ]) {
+    for (const path of ["src/lib/workspace-planner.ts", "src/routes/agent-workspace-routes.ts"]) {
       const source = read(path);
       expect(source).toContain("structured-runtime-models");
       expect(source).not.toContain("./claude-models");
     }
-    const directorTurn = read("src/lib/director-turn.ts");
-    expect(directorTurn).not.toContain("./claude-models");
-    expect(directorTurn).toContain('tier: "standard"');
-    expect(directorTurn).toContain('tier: "deep"');
+    expect(existsSync(resolve(root, "src/lib/director-planner.ts"))).toBe(false);
+    expect(existsSync(resolve(root, "src/lib/director-turn.ts"))).toBe(false);
   });
 
   it("keeps legacy Claude modules out of src/lib", () => {

@@ -77,7 +77,7 @@ export async function getLearningDigest(userId: string, agentId: string): Promis
   const logs: CallLogRow[] = callRows.map((r) => ({
     id: String(r.id),
     durationSeconds: r.durationSeconds,
-    createdAt: r.createdAt,
+    createdAt: r.createdAt ?? undefined,
   }));
 
   const midpoint = Math.floor(logs.length / 2);
