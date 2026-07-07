@@ -24,6 +24,7 @@ const AUTH_MIDDLEWARE = [
   "requirePermission",
   "requireRole",
   "requirePlatformAdmin",
+  "requireFounderCockpit",
   "requireMonitorToken",
   "requireInternalJwtSecret",
 ];
@@ -113,6 +114,8 @@ interface RouteEntry {
   hasInlineAuth: boolean;
   hasRouterAuth: boolean;
   hasRequirePermission: boolean;
+  hasRequireFounderCockpit: boolean;
+  hasRequirePlatformAdmin: boolean;
   allowReason: string | null;
   line: number;
 }
@@ -182,6 +185,8 @@ function scanFile(filePath: string, mountBase: string): RouteEntry[] {
       hasInlineAuth: AUTH_MIDDLEWARE.some((middleware) => middlewareChain.includes(middleware)),
       hasRouterAuth: routerAuth,
       hasRequirePermission: middlewareChain.includes("requirePermission"),
+      hasRequireFounderCockpit: middlewareChain.includes("requireFounderCockpit"),
+      hasRequirePlatformAdmin: middlewareChain.includes("requirePlatformAdmin"),
       allowReason: allowlistReason(fullPath),
       line: lineOf(content, match.index),
     });
@@ -194,6 +199,14 @@ function resolveRouteFile(file: string): string {
   const direct = path.join(ROUTES_DIR, `${file}.ts`);
   if (fs.existsSync(direct)) return direct;
   return path.join(ROUTES_DIR, file, "index.ts");
+}
+
+function formatRbac(entry: RouteEntry): string {
+  const tags: string[] = [];
+  if (entry.hasRequireFounderCockpit) tags.push("founder_cockpit");
+  if (entry.hasRequirePlatformAdmin) tags.push("platform_admin");
+  if (entry.hasRequirePermission) tags.push("permission");
+  return tags.length ? tags.join("+") : "—";
 }
 
 function main() {
@@ -235,8 +248,10 @@ function main() {
         ? "Public (allowlisted)"
         : "MISSING AUTH";
     const auth = entry.hasInlineAuth ? "inline" : entry.hasRouterAuth ? "router" : "—";
-    markdown += `| ${entry.file} | ${entry.method} | \`${entry.fullPath}\` | ${auth} | ${entry.hasRequirePermission ? "yes" : "—"} | ${entry.allowReason ? "yes" : "—"} | ${status} |\n`;
+    markdown += `| ${entry.file} | ${entry.method} | \`${entry.fullPath}\` | ${auth} | ${formatRbac(entry)} | ${entry.allowReason ? "yes" : "—"} | ${status} |\n`;
   }
+
+  const previousMarkdown = fs.existsSync(OUTPUT_FILE) ? fs.readFileSync(OUTPUT_FILE, "utf8") : null;
 
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, markdown, "utf8");
@@ -254,6 +269,13 @@ function main() {
         `   ${violation.file}:${violation.line}  ${violation.method} ${violation.fullPath}`,
       );
     }
+    process.exit(1);
+  }
+
+  if (previousMarkdown !== null && previousMarkdown !== markdown) {
+    console.error(
+      "\nAUTHZ_MATRIX.md is stale — regenerated docs/AUTHZ_MATRIX.md. Commit the updated matrix.",
+    );
     process.exit(1);
   }
 

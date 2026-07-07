@@ -52,6 +52,7 @@ export default function OAuthComplete() {
           email: data.email,
           full_name: data.name || undefined,
           is_owner: data.is_owner === "1",
+          founder_cockpit: data.founder_cockpit === true,
         };
         if (!user?.id || !user?.email) {
           setError("Sign-in response was incomplete. Please try again.");

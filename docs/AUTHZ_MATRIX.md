@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 274
-**Protected:** 231
+**Routes scanned:** 276
+**Protected:** 233
 **Public (allowlisted):** 43
 **Violations:** 0
 
@@ -67,9 +67,9 @@
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/primary` | inline | — | — | Protected |
 | activation-routes.ts | GET | `/api/activation/status` | inline | — | — | Protected |
-| admin-seed-demo-routes.ts | DELETE | `/api/admin/demo-data` | inline | — | — | Protected |
-| admin-seed-demo-routes.ts | POST | `/api/admin/seed-demo-account` | inline | — | — | Protected |
-| admin-seed-demo-routes.ts | POST | `/api/admin/seed-founder-Assistants` | inline | — | — | Protected |
+| admin-seed-demo-routes.ts | DELETE | `/api/admin/demo-data` | inline | platform_admin | — | Protected |
+| admin-seed-demo-routes.ts | POST | `/api/admin/seed-demo-account` | inline | platform_admin | — | Protected |
+| admin-seed-demo-routes.ts | POST | `/api/admin/seed-founder-Assistants` | inline | platform_admin | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agent-config/:id` | inline | — | — | Protected |
 | agent-routes-v2.ts | DELETE | `/api/agent-config/:id/:type/:rowId` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agent-config/:id/assets` | inline | — | — | Protected |
@@ -115,7 +115,7 @@
 | auth-routes.ts | POST | `/api/auth/signup` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | POST | `/api/auth/signup-intent` | inline | — | yes | Protected |
 | auth-routes.ts | GET | `/api/auth/verify-email/:token` | — | — | yes | Public (allowlisted) |
-| billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | — | — | Protected |
+| billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | platform_admin | — | Protected |
 | billing-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/credit-checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
@@ -197,12 +197,14 @@
 | fleet-routes.ts | PATCH | `/api/Assistants/tasks/:id` | inline | — | — | Protected |
 | fleet-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/triage` | inline | — | — | Protected |
+| founder-cockpit-routes.ts | GET | `/api/founder/cockpit` | inline | founder_cockpit | — | Protected |
+| founder-cockpit-routes.ts | GET | `/api/founder/launch-readiness` | inline | founder_cockpit | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health` | — | — | yes | Public (allowlisted) |
-| health-routes.ts | GET | `/api/health/actions` | inline | — | — | Protected |
-| health-routes.ts | GET | `/api/health/integrations` | inline | — | — | Protected |
+| health-routes.ts | GET | `/api/health/actions` | inline | platform_admin | — | Protected |
+| health-routes.ts | GET | `/api/health/integrations` | inline | platform_admin | — | Protected |
 | health-routes.ts | GET | `/api/health/internal` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health/launch-readiness` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health/models` | inline | — | — | Protected |
@@ -274,7 +276,7 @@
 | qa-routes-v2.ts | POST | `/api/qa/score/:callId` | inline | — | — | Protected |
 | qa-routes-v2.ts | GET | `/api/qa/stats` | inline | — | — | Protected |
 | quota-routes.ts | GET | `/api/quotas` | inline | — | — | Protected |
-| quota-routes.ts | PUT | `/api/quotas/override` | inline | yes | — | Protected |
+| quota-routes.ts | PUT | `/api/quotas/override` | inline | permission | — | Protected |
 | quota-routes.ts | GET | `/api/quotas/plans` | — | — | yes | Public (allowlisted) |
 | settings-routes.ts | POST | `/api/account/cancel-deletion` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/export` | inline | — | — | Protected |
@@ -297,9 +299,9 @@
 | supervisor-routes.ts | DELETE | `/api/supervisor/subscribe/:id` | inline | — | — | Protected |
 | supervisor-routes.ts | GET | `/api/supervisor/subscriptions` | inline | — | — | Protected |
 | support-routes.ts | POST | `/api/support/ticket` | — | — | yes | Public (allowlisted) |
-| team-routes.ts | GET | `/api/team` | inline | yes | — | Protected |
-| team-routes.ts | DELETE | `/api/team/:id` | inline | yes | — | Protected |
-| team-routes.ts | POST | `/api/team/invite` | inline | yes | — | Protected |
+| team-routes.ts | GET | `/api/team` | inline | permission | — | Protected |
+| team-routes.ts | DELETE | `/api/team/:id` | inline | permission | — | Protected |
+| team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
@@ -316,7 +318,7 @@
 | video-presenter-routes.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
-| voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | yes | — | Protected |
+| voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
 | voice-observability-routes.ts | GET | `/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | POST | `/voice/metrics` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
@@ -326,11 +328,11 @@
 | voices-routes.ts | GET | `/api/voices/curated/preview` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices/presenter/:id/preview` | — | — | yes | Public (allowlisted) |
 | webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
-| webhook-routes.ts | POST | `/api/webhooks` | inline | yes | — | Protected |
-| webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | yes | — | Protected |
-| webhook-routes.ts | DELETE | `/api/webhooks/:id` | inline | yes | — | Protected |
+| webhook-routes.ts | POST | `/api/webhooks` | inline | permission | — | Protected |
+| webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | permission | — | Protected |
+| webhook-routes.ts | DELETE | `/api/webhooks/:id` | inline | permission | — | Protected |
 | webhook-routes.ts | GET | `/api/webhooks/:id/deliveries` | inline | — | — | Protected |
-| webhook-routes.ts | POST | `/api/webhooks/:id/test` | inline | yes | — | Protected |
+| webhook-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | webhook-routes.ts | DELETE | `/api/webhooks/deliveries/:id` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks/deliveries/:id/retry` | inline | — | — | Protected |
 | webhooks-elevenlabs-routes.ts | POST | `/api/webhooks/elevenlabs` | — | — | yes | Public (allowlisted) |

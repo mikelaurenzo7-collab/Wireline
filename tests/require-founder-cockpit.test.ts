@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { NextFunction, Request, Response } from "express";
+import { AppError } from "../src/lib/api-error";
 import { requireFounderCockpit } from "../src/middleware/require-founder-cockpit";
 import { resetFounderCockpitAccessCacheForTests } from "../src/lib/founder-cockpit-access";
 import { resetOwnerEmailCacheForTests } from "../src/lib/platform-owner-emails";
@@ -39,11 +40,17 @@ describe("requireFounderCockpit", () => {
   it("rejects tenant customers even when authenticated", () => {
     const next = runMiddleware({ id: "u2", email: "customer@example.com" });
     expect(next).toHaveBeenCalledTimes(1);
-    expect(next.mock.calls[0][0]?.statusCode ?? next.mock.calls[0][0]?.httpStatus).toBeTruthy();
+    const err = next.mock.calls[0][0] as AppError;
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.statusCode).toBe(403);
+    expect(err.message).toContain("Founder cockpit");
   });
 
   it("rejects unauthenticated requests", () => {
     const next = runMiddleware(undefined);
     expect(next).toHaveBeenCalledTimes(1);
+    const err = next.mock.calls[0][0] as AppError;
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.statusCode).toBe(401);
   });
 });

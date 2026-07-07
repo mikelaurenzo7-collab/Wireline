@@ -16,6 +16,8 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("isMarketingCallPurpose(callPurpose)");
       expect(source).toContain("outboundConsentMetadata({");
       expect(source).toContain("isDncBlocked(req.user.id, customerNumber)");
+      expect(source).toContain("isFederalDncListed(customerNumber)");
+      expect(source).toContain("is_federal_dnc: isFederalDnc");
       expect(source).toContain("tcpaBlocked: true");
     }
   });
@@ -46,6 +48,8 @@ describe("outbound compliance contract", () => {
     expect(campaignDialer).toContain("is_marketing_call: true");
     expect(campaignDialer).toContain("metadata.has_express_written_consent === true");
     expect(campaignDialer).toContain('call_purpose: "marketing_or_sales"');
+    expect(campaignDialer).toContain("isFederalDncListed(lead.customerNumber!");
+    expect(campaignDialer).toContain("is_federal_dnc: isFederalDnc");
     expect(campaignDialer).toContain('source: "campaign"');
   });
 

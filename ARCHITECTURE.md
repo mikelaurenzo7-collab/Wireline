@@ -64,6 +64,11 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 ## Runtime services
 
 - **Auth and authorization:** session middleware plus user-scoped ownership checks.
+- **Platform operations (founder-only):** `/founder` surfaces acquisition, activation,
+  margin, and launch-readiness metrics. APIs live at `/api/founder/*` and require
+  `requireFounderCockpit` (allowlist via `OWNER_EMAIL` / `FOUNDER_COCKPIT_*` env vars).
+  This is stricter than tenant admin (`is_admin`) and must never appear in customer
+  tenant Admin settings.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`.
 - **Billing:** Stripe-backed entitlements, plan catalog, Conversation Balance, checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice:**
@@ -87,6 +92,8 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - Provider credentials are environment variables or server-side secrets.
 - Billing, webhooks, account deletion, provider callbacks, and connected-tool writes are server-owned workflows.
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
+- Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent
+  gates before PSTN spend (`src/lib/federal-dnc-service.ts`, `src/lib/tcpa-consent.ts`).
 - CSP policy checks, authorization checks, product-doc checks, and functional tests remain in the full verification path.
 - Supabase leaked-password protection must be enabled before public launch if it remains disabled in project settings.
 
