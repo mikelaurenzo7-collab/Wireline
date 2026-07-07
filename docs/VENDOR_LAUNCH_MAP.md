@@ -6,7 +6,7 @@ Status: **Active**. Single launch-ready inventory for Wireline surfaces, vendors
 | --- | --- | --- | --- |
 | Supabase Postgres | Tenant data plane | **live** | Drizzle + RLS; custom auth with HIBP screening |
 | Vercel | Web hosting + serverless API | **live** | Production deploy path; monitor via deployment checks |
-| Stripe | Plans, Conversation Balance, add-ons | **live** | Catalog contract in `scripts/setup-stripe-catalog.mjs`; legacy products retired in reconciler — confirm before deactivating live objects |
+| Stripe | Plans, Conversation Balance, add-ons | **live** | Legacy retired SKUs deactivated 2026-07-07 (`retired_anchor` defaults only); audit clean |
 | OpenAI | Managed reasoning + voice runtime | **live** | Primary structured + Vapi voice model |
 | Google Gemini | AI fallback + grounded search | **live** | Automatic failure fallback |
 | OpenRouter | Per-agent custom models | **beta** | Opt-in breadth; pass-through metering |
@@ -21,8 +21,8 @@ Status: **Active**. Single launch-ready inventory for Wireline surfaces, vendors
 | Upstash Redis | Rate limits + spend controls | **live** | Required in production |
 | DocuSign | E-sign actions | **beta** | Envelope flows; finish template UX before expansion |
 | Have I Been Pwned | Breached-password screening | **live** | Custom auth path; Supabase Auth leaked-password advisor N/A |
-| ChatGPT App (MCP) | Account-bound drafting + simulation | **beta** | OAuth MCP; cannot bypass Wireline auth |
-| Browser extension | Page-context handoff to Studio | **live** | Explicit user action only |
+| ChatGPT App (MCP) | Account-bound drafting + simulation | **beta** | OAuth MCP + Cursor dynamic registration; cannot bypass Wireline auth |
+| Browser extension | Page-context handoff to Studio | **live** | Signed `/studio/handoff` bridge; republish extension `0.1.1` to stores |
 | iOS native | Command center + calls | **beta** | `/api/mobile/*` adapter |
 | Android native | Command center + calls | **beta** | `/api/mobile/*` adapter; AGP 9.0.1 / Compose 2.3.20 |
 | X / X Ads | Social engagement + ads stats | **beta** | Approval queues before deeper automation |
@@ -40,7 +40,9 @@ Status: **Active**. Single launch-ready inventory for Wireline surfaces, vendors
 
 ## Stripe legacy cleanup
 
-Before deactivating any Stripe product or price:
+**Completed 2026-07-07:** retired default prices deactivated; post-audit **0 findings**. Anchors remain active by Stripe design.
+
+Before any future catalog writes:
 
 1. Run `node scripts/audit-stripe-catalog-live.mjs` (read-only).
 2. Confirm **zero** active subscriptions, payment links, and open checkout sessions reference legacy objects.

@@ -12,6 +12,7 @@ struct LiveCallView: View {
     @State private var elapsed: TimeInterval = 0
     @State private var state: TransferState = .idle
     @State private var showingSettings = false
+    @State private var didAutoHandoff = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -39,6 +40,13 @@ struct LiveCallView: View {
             }
         }
         .task { await refreshCall() }
+        .task {
+            guard router.liveCallAutoHandoff, !didAutoHandoff else { return }
+            didAutoHandoff = true
+            router.liveCallAutoHandoff = false
+            await refreshCall()
+            await transfer(retryOnConflict: true)
+        }
         .onReceive(ticker) { _ in elapsed += 1 }
         .sheet(isPresented: $showingSettings) {
             NavigationStack { SettingsView() }
@@ -243,7 +251,7 @@ struct LiveCallView: View {
         }
     }
 
-    private func transfer() async {
+    private func transfer(retryOnConflict: Bool = false) async {
         state = .working
         let target = callId ?? call?.callId ?? ""
         guard !target.isEmpty else {
@@ -260,6 +268,12 @@ struct LiveCallView: View {
             state = .failed("Set a callback number in Settings first.")
             showingSettings = true
         } catch let WirelineAPI.APIError.http(status, _) where status == 409 {
+            if retryOnConflict {
+                try? await Task.sleep(for: .seconds(1.5))
+                await refreshCall()
+                await transfer(retryOnConflict: false)
+                return
+            }
             state = .failed("Transfer is not ready yet. Wait a moment and try again.")
         } catch {
             state = .failed("Transfer failed. Try again.")

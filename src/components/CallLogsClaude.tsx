@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 
 import { cn } from "../lib/utils";
 import { usePresenceSignals } from "../hooks/usePresenceSignals";
-import { Download } from "lucide-react";
+import { Download, Phone } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import AgentFace from "./AgentFace";
@@ -10,6 +10,8 @@ import LiveFloorPresence from "./LiveFloorPresence";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
+import OutboundDialDialog from "./OutboundDialDialog";
+import { Button } from "./atoms";
 
 /**
  * CallLogsClaude — Operate surface in the Claude Design ground truth.
@@ -120,6 +122,7 @@ export default function CallLogsClaude() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showOutboundDial, setShowOutboundDial] = useState(false);
   const [params, setParams] = (function useTabState() {
     const url = new URL(typeof window !== "undefined" ? window.location.href : "http://x/");
     const get = url.searchParams.get("tab") as TabId | null;
@@ -196,8 +199,18 @@ export default function CallLogsClaude() {
 
   return (
     <div className={cn(WL_APP_CLASSES.operateSurface, "flex h-full min-h-0 flex-col")}>
-      <div className="border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-3">
+      <div className="border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-3 flex items-center justify-between gap-3">
         <WiredEyebrow>Call ops</WiredEyebrow>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          onClick={() => setShowOutboundDial(true)}
+        >
+          <Phone className="h-3.5 w-3.5" aria-hidden />
+          Outbound call
+        </Button>
       </div>
       <section
         aria-label="Call ops metrics"
@@ -288,6 +301,7 @@ export default function CallLogsClaude() {
         ) : null}
         {!error && activeTab === "analytics" ? <AnalyticsTab /> : null}
       </div>
+      <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
     </div>
   );
 }

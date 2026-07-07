@@ -11,6 +11,7 @@ import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
 import { stashCreateWarning, stashPostCreateWizard } from "../lib/wireline-create-flow";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
+import { emitProductEvent } from "../lib/product-event-client";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
@@ -214,6 +215,11 @@ export default function CreateAgentDialog({
 
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
+      emitProductEvent({
+        event: "agent_created",
+        agentId: body.id,
+        metadata: { role, posture: activePosture, phone_provisioned: phoneProvisioned },
+      });
       if (postCreateWarning) stashCreateWarning(postCreateWarning);
       stashPostCreateWizard({
         agentId: body.id,

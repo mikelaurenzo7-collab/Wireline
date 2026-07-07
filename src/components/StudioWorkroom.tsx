@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import AgentFace from "./AgentFace";
+import OutboundDialDialog from "./OutboundDialDialog";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
@@ -160,6 +161,7 @@ const StudioWorkroom = forwardRef<
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [showOutboundDial, setShowOutboundDial] = useState(false);
   const [outcomes, setOutcomes] = useState<unknown[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -354,13 +356,24 @@ const StudioWorkroom = forwardRef<
                 Talk to build. Ask me anything about {agentName}&apos;s setup.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onBack}
-              className="shrink-0 rounded-lg px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              {backLabel} →
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowOutboundDial(true)}
+              >
+                <Phone className="h-3.5 w-3.5" aria-hidden />
+                <span className="hidden sm:inline">Outbound</span>
+              </Button>
+              <button
+                type="button"
+                onClick={onBack}
+                className="shrink-0 rounded-lg px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                {backLabel} →
+              </button>
+            </div>
           </div>
         </header>
       ) : (
@@ -548,6 +561,11 @@ const StudioWorkroom = forwardRef<
           Cmd + Enter to send
         </div>
       </div>
+      <OutboundDialDialog
+        open={showOutboundDial}
+        onClose={() => setShowOutboundDial(false)}
+        initialAgentId={agentId}
+      />
     </main>
   );
 });

@@ -20,6 +20,7 @@ import {
   OUTBOUND_CONSENT_LEARN_MORE,
   OUTBOUND_CONSENT_LEGAL_PATH,
 } from "../lib/outbound-consent-copy";
+import { emitProductEvent } from "../lib/product-event-client";
 
 type OutboundDialDialogProps = {
   open: boolean;
@@ -94,6 +95,11 @@ export default function OutboundDialDialog({
         type: "success",
         title: "Call started",
         message: "Your agent is dialing now.",
+      });
+      emitProductEvent({
+        event: "outbound_call_started",
+        agentId,
+        metadata: { channel: "outbound_dial" },
       });
       onClose();
     } catch {

@@ -10,19 +10,23 @@ final class WirelineRouter: ObservableObject {
     @Published var showAsk = false
     @Published var showLiveCall = false
     @Published var liveCallId: String?
+    /// When true, LiveCallView attempts handoff immediately (CallKit answer path).
+    @Published var liveCallAutoHandoff = false
 
     var route: Route = .workspace {
         didSet { if route == .ask { showAsk = true } }
     }
 
-    func presentLiveCall(callId: String?) {
+    func presentLiveCall(callId: String?, autoHandoff: Bool = false) {
         liveCallId = callId
+        liveCallAutoHandoff = autoHandoff
         showLiveCall = true
     }
 
     func dismissLiveCall() {
         showLiveCall = false
         liveCallId = nil
+        liveCallAutoHandoff = false
     }
 
     /// Handles deep links from the active-call Live Activity / Dynamic Island.

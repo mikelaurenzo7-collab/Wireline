@@ -19,16 +19,13 @@ Files:
 - `src/routes/daily-brief-routes.ts`
 - `src/lib/daily-brief.ts`
 
-Status: **do not mount as-is**.
+Status: **mounted** (July 2026 forward pass).
 
-Why:
+Notes:
 
-- These routes are not registered by `src/server/register-api-routes.ts`.
-- `src/routes/insights-routes.ts` and `src/lib/daily-brief.ts` still import the retired `claude-brain` / `claude-response-helpers` modules.
-- `src/components/DailyBrief.tsx` still fetches `/api/insights/daily-brief`, but the component is not currently imported by the app surface discovered in this pass.
-- `src/lib/openapi-spec.ts` still documents Daily Brief, funnel, and leaderboard as stable partner-facing Insight endpoints. That is stale until the backend is rebuilt or the docs are pruned.
-
-Recommended decision: either rebuild Daily Brief / Insights on `src/lib/ai-brains.ts`, or delete the routes/component and remove the stale OpenAPI claims. Do not partially mount them.
+- Routes register in `src/server/register-api-routes.ts`.
+- Daily brief uses `src/lib/insights-ai.ts` (not retired `claude-brain`).
+- Removed from `tsconfig.json` exclude list.
 
 ### 2. Admin Vapi showcase sync
 
@@ -49,18 +46,11 @@ Recommended decision: fix the import, add a narrow server typecheck or route smo
 
 Files:
 
-- `src/routes/drive-routes.ts`
-- `src/services/google-drive-sync.ts`
+- ~~`src/routes/drive-routes.ts`~~ (deleted)
+- ~~`src/services/google-drive-sync.ts`~~ (deleted)
+- `src/services/google-drive-sync-v2.ts` (used by workspace knowledge routes)
 
-Status: **product decision required**.
-
-Why:
-
-- The route is unmounted.
-- The service is conceptually useful: it ingests recent Google Docs / text files into agent lessons/directives.
-- It uses a direct Gemini SDK path and existing Google OAuth tokens, so it should be reviewed against the current managed-runtime and OAuth-scope policy before it is mounted.
-
-Recommended decision: either rebuild it as a first-class Knowledge ingestion feature with tests and visible UI entry points, or delete it until the feature is intentionally scheduled.
+Status: **deferred product feature** — legacy v1 ingest removed; v2 service retained for future first-class Knowledge UI.
 
 ### 4. Legacy Vapi v1 folder and helpers
 

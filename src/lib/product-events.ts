@@ -21,6 +21,7 @@ export const PRODUCT_EVENT_NAMES = [
   "phone_number_provision_started",
   "phone_number_provision_completed",
   "agent_launch_completed",
+  "outbound_call_started",
   "first_call_completed",
   "live_call_completed",
   "upgrade_to_paid",

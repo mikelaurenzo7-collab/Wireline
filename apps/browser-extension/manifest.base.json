@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Wireline Command",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Command Wireline from the page you are already viewing. Send context to agents for calls, texts, follow-up, and tasks.",
   "action": {
     "default_title": "Open Wireline Command",

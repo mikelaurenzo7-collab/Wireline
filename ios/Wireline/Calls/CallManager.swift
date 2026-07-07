@@ -138,8 +138,11 @@ extension CallManager: CXProviderDelegate {
                     caller: pending.caller,
                     assistantName: pending.assistantName
                 )
+                // CallKit answer means the operator is taking the live call on their phone.
+                WirelineRouter.shared.presentLiveCall(callId: pending.callId, autoHandoff: true)
+            } else {
+                WirelineRouter.shared.presentLiveCall(callId: nil)
             }
-            WirelineRouter.shared.presentLiveCall(callId: pending?.callId)
         }
     }
 

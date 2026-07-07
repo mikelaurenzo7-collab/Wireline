@@ -19,6 +19,7 @@ import {
   type PostCreateWizardStep,
 } from "../../lib/wireline-create-flow";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
+import { emitProductEvent } from "../../lib/product-event-client";
 
 type WizardStep = PostCreateWizardStep | "complete";
 
@@ -61,10 +62,22 @@ export default function PostCreateActivationWizard({
   const stepOrder: WizardStep[] = ["train", "channels", "wire", "test", "complete"];
   const stepIndex = stepOrder.indexOf(step);
 
-  const setStep = useCallback((next: WizardStep) => {
-    setStepState(next);
-    if (isWizardStep(next)) stashPostCreateWizardStep(next);
-  }, []);
+  const setStep = useCallback(
+    (next: WizardStep) => {
+      setStepState((current) => {
+        if (isWizardStep(current) && current !== next) {
+          emitProductEvent({
+            event: "post_create_wizard_step_completed",
+            agentId: payload.agentId,
+            metadata: { step: current },
+          });
+        }
+        return next;
+      });
+      if (isWizardStep(next)) stashPostCreateWizardStep(next);
+    },
+    [payload.agentId],
+  );
 
   const refreshPhone = useCallback(async () => {
     setLoadingPhone(true);

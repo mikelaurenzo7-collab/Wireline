@@ -26,16 +26,11 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/**/__tests__/**",
-    "src/routes/insights-routes.ts",
-    "src/routes/daily-brief-routes.ts",
     "src/routes/admin-vapi-sync-routes.ts",
-    "src/routes/drive-routes.ts",
     "src/routes/vapi/**",
     "src/lib/agent-tool-dispatch.ts",
     "src/lib/showcase-assistant.ts",
     "src/lib/vapi-assistant-factory.ts",
-    "src/lib/daily-brief.ts",
-    "src/services/google-drive-sync.ts",
     "scripts/sync-wireline-showcase.mts"
   ]
 }

@@ -19,8 +19,18 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(oauthRouteSource).toContain("client_id_metadata_document_supported: true");
     expect(oauthRouteSource).toContain('code_challenge_method: "S256"');
     expect(oauthRouteSource).toContain("assertMcpDraftWriteRateLimit");
+    expect(oauthRouteSource).toContain("assertMcpTokenEndpointRateLimit");
     expect(oauthRouteSource).toContain("revokeMcpAccessTokensForClient");
     expect(oauthRouteSource).toContain("backfillMcpOAuthResourceBindings");
+    expect(oauthRouteSource).toContain("client_id_metadata_document_supported: true");
+  });
+
+  it("allows Cursor and Claude dynamic OAuth registration callbacks", () => {
+    const registry = read("src/lib/mcp-client-registry.ts");
+    expect(registry).toContain("isCursorRedirectUri");
+    expect(registry).toContain("cursor://anysphere.cursor-mcp/oauth/callback");
+    expect(registry).toContain("https://www.cursor.com/agents/mcp/oauth/callback");
+    expect(registry).toContain("isAnthropicRedirectUri");
   });
 
   it("requires OAuth for every production agent operation", () => {
