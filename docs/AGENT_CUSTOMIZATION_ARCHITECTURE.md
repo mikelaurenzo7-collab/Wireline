@@ -41,7 +41,7 @@ The current persistence schema already supports the profile through `wireline_ag
 
 A user can say:
 
-> "Ava is a calm HVAC receptionist. She can gather ZIP code and urgency, offer an estimate callback, never quote prices, escalates active leaks when a handoff is configured, and only speaks after business hours."
+> "Ava is a calm front-desk and sales support agent. She can qualify new callers, answer approved FAQs, capture urgency and preferred follow-up time, never quote prices, escalate urgent requests when a handoff is configured, and only speak after business hours."
 
 All clients may collect and edit that request. Only the domain compiler turns it into runtime instructions. This prevents the following failure mode:
 

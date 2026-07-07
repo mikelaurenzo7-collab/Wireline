@@ -15,7 +15,7 @@
 
 ## What the app does inside ChatGPT
 
-Wireline requires a connected account. A user can use normal language to create or refine a receptionist, scheduler, sales, or customer-service agent in their private workspace. The agent profile can include its business identity, goal, tone, rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft and continue full configuration in Wireline.
+Wireline requires a connected account. A user can use normal language to create or refine a phone agent for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft and continue full configuration in Wireline.
 
 ## Why ChatGPT is essential
 
@@ -55,7 +55,7 @@ The app turns a conversational business need into a structured, customizable age
 ### Account-bound creation path
 
 1. Add `https://trywireline.com/mcp` in ChatGPT Developer Mode or review environment.
-2. Run: **"Use Wireline to create an after-hours receptionist for my HVAC company. It should ask for ZIP code and urgency, never quote prices, and offer an estimate callback."**
+2. Run: **"Use Wireline to create a sales and support phone agent for my business. It should qualify new callers, answer approved FAQs, route urgent issues, and never promise pricing or availability."**
 3. Confirm ChatGPT requests a Wireline account connection.
 4. Sign in to the supplied reviewer account in Wireline and approve the requested permissions.
 5. Repeat the request and review the proposed profile summary.
@@ -82,11 +82,11 @@ The app turns a conversational business need into a structured, customizable age
 
 ### Direct
 
-1. "Use Wireline to create an after-hours receptionist for my HVAC company."
+1. "Use Wireline to create a sales and support phone agent for my business."
 2. "Create a Wireline agent that qualifies new dental patients and captures a preferred appointment time."
 3. "Make me a Wireline sales agent for a property-management company. It should qualify fit but never promise pricing."
 4. "Create a law-firm intake agent that takes a message and never gives legal advice."
-5. "Update my Wireline agent so it escalates active leaks only when a human handoff is configured."
+5. "Update my Wireline agent so it escalates urgent requests only when a human handoff is configured."
 
 ### Indirect
 

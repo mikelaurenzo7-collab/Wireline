@@ -4,7 +4,7 @@
 
 ## North star
 
-Wireline wins as the **voice AI business operating system** for owner-operated service businesses. Current phase: **Horizon 0 — sell today** (prove activation and first paid conversion before distribution scale).
+Wireline wins as the **voice AI business operating system** for people, teams, and businesses that need phone agents to answer, qualify, route, book, follow up, and record outcomes. Current phase: **Horizon 0 — sell today** (prove activation and first paid conversion before distribution scale).
 
 ---
 
@@ -52,9 +52,9 @@ Wireline wins as the **voice AI business operating system** for owner-operated s
 - [x] Federal DNC hook, AuthZ governance
 - [ ] Activation E2E on production
 
-### Horizon 1 — Wedge excellence (weeks 4–10)
+### Horizon 1 — Use-case excellence (weeks 4–10)
 
-Federal DNC vendor live, outbound analytics UI, learning loop GA, home-services GTM.
+Federal DNC vendor live, outbound analytics UI, learning loop GA, and broad GTM across personal call delegation, sales, support, scheduling, call-center coverage, and optional vertical proof pages.
 
 ### Horizon 2 — Distribution (weeks 10–18)
 

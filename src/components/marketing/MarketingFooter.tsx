@@ -3,7 +3,7 @@ import { cn } from "../../lib/utils";
 import WirelineMark from "../brand/WirelineMark";
 
 const PRODUCT_LINKS = [
-  { to: "/for/home-services", label: "Home services" },
+  { to: "/for/personal", label: "Personal" },
   { to: "/solutions/sales", label: "Business" },
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },

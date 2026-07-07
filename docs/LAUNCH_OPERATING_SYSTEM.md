@@ -24,11 +24,11 @@ The category is not "an AI chatbot," "a model picker," or "a telephony API." The
 
 ### Business
 
-**Customer:** an owner or operations lead at a service business that misses calls, loses leads, or cannot maintain reliable front-office coverage.
+**Customer:** any owner, operator, sales leader, support leader, agency, practice, restaurant, call center, or team that needs a phone agent to handle live conversations without losing context.
 
 **Promise:** "Every inbound conversation gets a professional next step."
 
-**Launch wedge:** local service businesses first: home services, clinics, med spas, legal intake, property management, restoration, and hospitality.
+**Launch posture:** sell the broad phone-agent platform first. Vertical pages and templates sharpen proof for specific buyers, but the product must never imply Wireline only accepts one industry or business type.
 
 **Activation event:** the team connects its calendar or inbox, configures routing and escalation, then handles a real inbound call with a recorded outcome.
 
@@ -148,6 +148,6 @@ No production release passes without:
 1. Keep Personal and Business as the only prominently marketed entry points.
 2. Dogfood the founder path end to end: create agent, train, connect Google, simulate, review.
 3. Apply and verify production database grants and migrations before onboarding more customers.
-4. Create the first two business vertical pages: home services and appointment-driven services.
+4. Keep public entry points broad, then use vertical pages as optional proof routes for high-intent buyers.
 5. Record three short demo calls showing a real before and after outcome.
 6. Add a weekly operating review: activation funnel, completed interactions, errors, cost, and top objections.

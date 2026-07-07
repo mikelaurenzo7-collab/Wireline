@@ -37,6 +37,45 @@ describe("product voice cohesion", () => {
     expect(landing).not.toContain("Start booking them");
   });
 
+  it("keeps public entry paths broad instead of defaulting to home services", () => {
+    const app = read("src/App.tsx");
+    const precisionHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
+    const publicHeader = read("src/components/marketing/PublicSiteHeader.tsx");
+    const footer = read("src/components/marketing/MarketingFooter.tsx");
+
+    expect(app).toContain('path="/for/*" element={<Navigate to="/for/personal" replace />}');
+    expect(precisionHeader).toContain('to: "/for/personal"');
+    expect(publicHeader).toContain('to: "/for/personal", label: "Use cases"');
+    expect(footer).toContain('to: "/for/personal", label: "Personal"');
+    expect(publicHeader).not.toContain('label: "Home services"');
+    expect(footer).not.toContain('label: "Home services"');
+  });
+
+  it("keeps authenticated setup examples broad across support and call coverage", () => {
+    const blueprint = read("src/components/PhoneAgentBlueprint.tsx");
+    const wireForm = read("src/components/recipes/forms/AgentWireForm.tsx");
+    const documentForm = read("src/components/recipes/forms/KnowledgeFromDocumentForm.tsx");
+    const urlForm = read("src/components/recipes/forms/KnowledgeFromUrlForm.tsx");
+    const chatgptSubmission = read("docs/CHATGPT_APP_SUBMISSION.md");
+    const customizationArchitecture = read("docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md");
+
+    expect(blueprint).toContain('label: "Support desk"');
+    expect(blueprint).toContain('label: "Call center / overflow"');
+    expect(blueprint).toContain('aria-label="Use case"');
+    expect(wireForm).toContain("qualifies sales calls");
+    expect(wireForm).toContain("Use case or industry");
+    expect(documentForm).toContain("Sales and support agent");
+    expect(urlForm).toContain("answers FAQs, routes requests");
+    expect(chatgptSubmission).toContain("personal call delegation, sales, support, scheduling");
+    expect(chatgptSubmission).toContain("sales and support phone agent");
+    expect(customizationArchitecture).toContain("front-desk and sales support agent");
+    expect(wireForm).not.toContain("Acme HVAC");
+    expect(wireForm).not.toContain('placeholder="Home services"');
+    expect(documentForm).not.toContain("HVAC service company");
+    expect(urlForm).not.toContain("HVAC service company");
+    expect(customizationArchitecture).not.toContain("calm HVAC receptionist");
+  });
+
   it("keeps authenticated page map intentional", () => {
     const routes = read("src/routes/AppRoutes.tsx");
     expect(routes).toContain('path="/overview"');

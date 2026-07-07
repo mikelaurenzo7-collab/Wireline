@@ -229,7 +229,7 @@ export function KnowledgeFromUrlForm({
         <TextInput
           value={agentContext}
           onChange={setAgentContext}
-          placeholder="Front-desk receptionist for HVAC service company."
+          placeholder="Sales/support agent that answers FAQs, routes requests, and books follow-ups."
         />
       </Field>
       <RunButton

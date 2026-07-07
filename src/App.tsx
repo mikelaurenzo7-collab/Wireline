@@ -66,7 +66,7 @@ function AppRouter() {
         <Route path="/for/insurance" element={<VerticalLanding slug="insurance" />} />
         <Route path="/for/restaurants" element={<VerticalLanding slug="restaurants" />} />
         <Route path="/for/sales" element={<VerticalLanding slug="sales" />} />
-        <Route path="/for/*" element={<Navigate to="/for/home-services" replace />} />
+        <Route path="/for/*" element={<Navigate to="/for/personal" replace />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/*" element={<Navigate to="/blog" replace />} />

@@ -16,11 +16,12 @@ const routes = [
 test.describe("accessibility smoke gate", () => {
   for (const route of routes) {
     test(`${route} has no automated WCAG A/AA violations`, async ({ page }) => {
-      await page.goto(route);
+      await page.goto(route, { waitUntil: "commit" });
       await expect(page.locator("body")).toBeVisible();
 
       await page.addStyleTag({
-        content: "*,*::before,*::after{transition-duration:0.001ms!important;animation-duration:0.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}",
+        content:
+          "*,*::before,*::after{transition-duration:0.001ms!important;animation-duration:0.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}",
       });
 
       const title = await page.title();
@@ -34,9 +35,7 @@ test.describe("accessibility smoke gate", () => {
         results.violations,
         results.violations
           .map((violation) => {
-            const nodes = violation.nodes
-              .map((node) => `  - ${node.target.join(", ")}`)
-              .join("\n");
+            const nodes = violation.nodes.map((node) => `  - ${node.target.join(", ")}`).join("\n");
             return `${violation.id}: ${violation.help}\n${nodes}`;
           })
           .join("\n\n"),

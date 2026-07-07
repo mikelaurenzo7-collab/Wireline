@@ -8,7 +8,7 @@ import SkipToContentLink from "../layout/SkipToContentLink";
 export type PublicNavActive = "signin" | "signup" | "home";
 
 const NAV_LINKS = [
-  { to: "/for/home-services", label: "Home services" },
+  { to: "/for/personal", label: "Use cases" },
   { to: "/features", label: "How it works" },
   { to: "/pricing", label: "Pricing" },
   { to: "/showcase", label: "Demos" },

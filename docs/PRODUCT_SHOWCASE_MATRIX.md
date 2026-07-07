@@ -2,9 +2,9 @@
 
 Status: **Active canonical showcase**. This document keeps every meaningful Wireline capability visible while separating launch-critical product from deliberate expansion surfaces.
 
-## Commercial wedge
+## Commercial posture
 
-Wireline's first commercial wedge is owner-operated service businesses that need an agent to answer, route, book, qualify, text outcomes, and escalate. The whole product still matters, but every surface should reinforce one clear loop before it branches outward: **Create -> Train -> Wire -> Run**.
+Wireline's commercial posture is broad phone-agent coverage: people, teams, and businesses can create agents that answer, route, book, qualify, text outcomes, follow up, and escalate. Vertical pages and templates are proof routes, not admission gates. Every surface should reinforce one clear loop before it branches outward: **Create -> Train -> Wire -> Run**.
 
 ## Showcase pillars
 
@@ -32,7 +32,7 @@ Wireline's first commercial wedge is owner-operated service businesses that need
 | iOS / Android | Urgent control surface. | Calls, handoff, notifications, approvals, recent summaries, wallet. | Become a full admin clone before core urgent loops are flawless. |
 | Browser extension | Explicit context capture. | Prepare call, extract facts, draft follow-up, send context to Studio. | Harvest pages silently or store auth tokens. |
 | ChatGPT App | Private assistant for configuration and simulation. | Drafts, improvements, simulations, account-bound tools. | Claim external actions happened unless Wireline actually performed them. |
-| Marketing site | Explain and convert. | Service-business wedge, trust proof, ROI, all product pillars. | Fabricate proof or imply inactive features are generally available. |
+| Marketing site | Explain and convert. | Broad personal and business entry points, trust proof, ROI, use-case/vertical proof, all product pillars. | Fabricate proof, imply inactive features are generally available, or make one industry look like the only buyer. |
 
 ## Feature status discipline
 

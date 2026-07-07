@@ -19,9 +19,9 @@ Exit criteria:
 - Normal verification catches local artifacts, route-order drift, docs-index drift, and token drift.
 - Product claims distinguish live, beta, planned, and historical features.
 
-## Phase 1 — Wedge launch
+## Phase 1 — Broad launch
 
-Launch around owner-operated service businesses that need phone agents to answer, route, book, qualify, text outcomes, and escalate.
+Launch around the broad phone-agent promise: personal agents, sales agents, support agents, scheduling agents, call-center coverage, and vertical templates all feed the same Create -> Train -> Wire -> Run loop.
 
 Must be excellent:
 - First agent creation.

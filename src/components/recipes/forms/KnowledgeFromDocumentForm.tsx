@@ -186,7 +186,7 @@ export function KnowledgeFromDocumentForm({
             <TextInput
               value={agentContext}
               onChange={setAgentContext}
-              placeholder="Front-desk agent for HVAC service company."
+              placeholder="Sales and support agent for onboarding, scheduling, and follow-up."
             />
           </Field>
           <RunButton

@@ -5,7 +5,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // The local production server does cold lazy-route work; serial workers avoid
+  // first-wave navigation timeouts that do not reproduce once the app is warm.
+  workers: 1,
   updateSnapshots: process.env.UPDATE_SNAPSHOTS === "1" ? "all" : "none",
   use: {
     baseURL: "http://127.0.0.1:3000",

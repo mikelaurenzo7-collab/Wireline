@@ -12,6 +12,8 @@ export type PhoneAgentFlowStep = {
 
 type BlueprintKind =
   | "personal"
+  | "support"
+  | "call-center"
   | "home-services"
   | "medical"
   | "legal"
@@ -58,6 +60,39 @@ const blueprints: Array<{
       handoff: "Escalate private, urgent, financial, or sensitive matters to the account owner.",
       boundaries:
         "Never share private information, make financial commitments, or impersonate the account owner.",
+    },
+  },
+  {
+    value: "support",
+    label: "Support desk",
+    detail: "FAQs, account help, escalation, and follow-up.",
+    defaults: {
+      purpose:
+        "Answer support calls, verify context, resolve approved questions, and route anything account-specific or urgent.",
+      caller: "Customers, account contacts, partners, and people asking for help.",
+      outcome:
+        "Understand the issue, answer from approved knowledge when possible, create a clear next step, and send a concise recap.",
+      handoff:
+        "Escalate billing disputes, security-sensitive requests, angry callers, outages, and anything outside approved policy.",
+      boundaries:
+        "Never expose private account data, invent policy, promise refunds, or claim a fix that has not been confirmed.",
+    },
+  },
+  {
+    value: "call-center",
+    label: "Call center / overflow",
+    detail: "Queue coverage, triage, routing, and recaps.",
+    defaults: {
+      purpose:
+        "Cover live call volume, classify caller intent, route to the right owner, and preserve a clean transcript and outcome.",
+      caller:
+        "Customers, prospects, vendors, partners, and internal stakeholders who reach the shared line.",
+      outcome:
+        "Identify the caller, classify urgency and reason, resolve approved requests, route complex work, and log the outcome.",
+      handoff:
+        "Escalate VIPs, urgent operational issues, compliance-sensitive requests, and callers who need a human decision.",
+      boundaries:
+        "Never let a caller believe they reached a human queue when no human is available; never promise unapproved timelines or outcomes.",
     },
   },
   {
@@ -369,7 +404,7 @@ export default function PhoneAgentBlueprint({
               </button>
             </div>
 
-            <div className="studio-blueprint-templates" aria-label="Business type">
+            <div className="studio-blueprint-templates" aria-label="Use case">
               {blueprints.map((blueprint) => (
                 <button
                   className={draft.kind === blueprint.value ? "is-selected" : ""}

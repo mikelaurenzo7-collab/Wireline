@@ -71,15 +71,19 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: 
           value={goal}
           onChange={setGoal}
           rows={3}
-          placeholder="A friendly front-desk agent that books HVAC service appointments and answers basic pricing questions."
+          placeholder="A polished phone agent that qualifies sales calls, answers support questions, and routes urgent requests."
         />
       </Field>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Company Name">
-          <TextInput value={companyName} onChange={setCompanyName} placeholder="Acme HVAC" />
+          <TextInput value={companyName} onChange={setCompanyName} placeholder="Acme Cloud" />
         </Field>
-        <Field label="Industry">
-          <TextInput value={industry} onChange={setIndustry} placeholder="Home services" />
+        <Field label="Use case or industry">
+          <TextInput
+            value={industry}
+            onChange={setIndustry}
+            placeholder="Sales, support, scheduling, healthcare..."
+          />
         </Field>
         <Field label="Website (optional)">
           <TextInput value={websiteUrl} onChange={setWebsiteUrl} placeholder="https://acme.co" />
