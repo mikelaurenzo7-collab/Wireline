@@ -10,7 +10,7 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   "/api/intake/lead",
   "/api/intake/leads",
   "/api/health",
-  "/api/public-stats",
+  "/api/public/stats",
   // Native Wireline apps send Authorization: Bearer and usually omit
   // Origin/Referer. A dedicated bearer gate below rejects cookie-only mobile
   // requests before this same-origin exemption is applied.

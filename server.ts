@@ -19,6 +19,7 @@ import { startMemoryCleanup } from "./src/lib/rate-limit";
 import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
+import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
 import gatewayCatalogRouter from "./src/lib/gateway-catalog";
 
 const SHUTDOWN_GRACE_MS = 30_000;
@@ -74,10 +75,16 @@ const origins = (process.env.CORS_ORIGINS || "")
   .filter(Boolean);
 if (IS_PROD && !origins.length && process.env.APP_URL) origins.push(process.env.APP_URL);
 
+if (IS_PROD && origins.length === 0) {
+  log.error("CORS misconfigured: set CORS_ORIGINS and/or APP_URL in production");
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || !origins.length || origins.includes(origin)) return callback(null, true);
+      if (!origin) return callback(null, true);
+      if (IS_PROD && origins.length === 0) return callback(null, false);
+      if (!origins.length || origins.includes(origin)) return callback(null, true);
       return callback(null, false);
     },
     credentials: true,
@@ -190,6 +197,7 @@ if (process.env.VERCEL !== "1") {
   void startServer().then(() => {
     const port = Number(process.env.PORT) || 3000;
     server = app.listen(port, () => log.info("Wireline server started", { port }));
+    initSupervisorWebSocketServer(server);
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));
   });

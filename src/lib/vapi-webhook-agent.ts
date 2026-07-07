@@ -7,7 +7,7 @@
  * Account Holders can omit `?agentId=` on serverUrl when routing is inferred from this id.
  */
 
-import { drizzle, log } from "./server-context";
+import { drizzle, log, IS_PROD } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -110,6 +110,17 @@ export async function resolveVapiWebhookAgent(opts: {
   }
 
   if (!resolvedAgentId && queryRaw) {
+    if (IS_PROD && !phoneNumberId) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error:
+            "Production Vapi webhooks must route via a provisioned Wireline phone number. " +
+            "Register the dialed line under Admin → Wireline Phone Numbers.",
+        },
+      };
+    }
     resolvedAgentId = queryRaw;
     enforceTenantUserId = null;
   }

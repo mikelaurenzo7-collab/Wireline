@@ -1,7 +1,7 @@
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Stripe events and subscription payloads are vendor-defined JSON. */
 import express, { Request, Response } from "express";
-import { log, auditLogger, drizzle } from "../lib/server-context";
+import { drizzle, log, tenantStore, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -108,33 +108,35 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           const userId = session.metadata.wireline_user_id;
           const creditUsd = Number(session.metadata.credit_usd);
           if (userId && Number.isFinite(creditUsd) && creditUsd > 0) {
-            await addCredit(userId, creditUsd, "web_topup", {
-              type: "stripe_session",
-              id: session.id,
-              entryKind: "top_up",
-              source: "stripe",
-              provider: "stripe",
-              providerEventId: event.id,
-              providerObjectId: session.id,
-              customerReason: "Conversation Balance top-up",
-              metadata: {
-                checkout_session_id: session.id,
-                payment_intent:
-                  typeof session.payment_intent === "string"
-                    ? session.payment_intent
-                    : session.payment_intent?.id,
-              },
+            await tenantStore.run(userId, async () => {
+              await addCredit(userId, creditUsd, "web_topup", {
+                type: "stripe_session",
+                id: session.id,
+                entryKind: "top_up",
+                source: "stripe",
+                provider: "stripe",
+                providerEventId: event.id,
+                providerObjectId: session.id,
+                customerReason: "Conversation Balance top-up",
+                metadata: {
+                  checkout_session_id: session.id,
+                  payment_intent:
+                    typeof session.payment_intent === "string"
+                      ? session.payment_intent
+                      : session.payment_intent?.id,
+                },
+              });
+              // Reconcile pricing/activation: a credit top-up activates a pending account!
+              await drizzle
+                .update(schema.settings)
+                .set({ subscriptionStatus: "active", updatedAt: new Date() })
+                .where(
+                  and(
+                    eq(schema.settings.userId, userId),
+                    eq(schema.settings.subscriptionStatus, "pending_activation"),
+                  ),
+                );
             });
-            // Reconcile pricing/activation: a credit top-up activates a pending account!
-            await drizzle
-              .update(schema.settings)
-              .set({ subscriptionStatus: "active", updatedAt: new Date() })
-              .where(
-                and(
-                  eq(schema.settings.userId, userId),
-                  eq(schema.settings.subscriptionStatus, "pending_activation"),
-                ),
-              );
           } else {
             log.warn("credit_topup session missing user id or amount", {
               sessionId: session.id,
@@ -159,16 +161,18 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           const userId = pi.metadata.wireline_user_id;
           const refundedUsd = (charge.amount_refunded ?? 0) / 100;
           if (userId && refundedUsd > 0) {
-            await reverseCredit(userId, refundedUsd, "web_topup_refund", {
-              type: "stripe_refund",
-              id: charge.id,
-              entryKind: "refund",
-              source: "stripe",
-              provider: "stripe",
-              providerEventId: event.id,
-              providerObjectId: charge.id,
-              customerReason: "Conversation Balance refund",
-              metadata: { payment_intent_id: piId },
+            await tenantStore.run(userId, async () => {
+              await reverseCredit(userId, refundedUsd, "web_topup_refund", {
+                type: "stripe_refund",
+                id: charge.id,
+                entryKind: "refund",
+                source: "stripe",
+                provider: "stripe",
+                providerEventId: event.id,
+                providerObjectId: charge.id,
+                customerReason: "Conversation Balance refund",
+                metadata: { payment_intent_id: piId },
+              });
             });
           }
         }
@@ -189,16 +193,18 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           const userId = pi.metadata.wireline_user_id;
           const disputedUsd = (dispute.amount ?? 0) / 100;
           if (userId && disputedUsd > 0) {
-            await reverseCredit(userId, disputedUsd, "web_topup_dispute", {
-              type: "stripe_dispute",
-              id: dispute.id,
-              entryKind: "reversal",
-              source: "stripe",
-              provider: "stripe",
-              providerEventId: event.id,
-              providerObjectId: dispute.id,
-              customerReason: "Conversation Balance dispute reversal",
-              metadata: { payment_intent_id: piId },
+            await tenantStore.run(userId, async () => {
+              await reverseCredit(userId, disputedUsd, "web_topup_dispute", {
+                type: "stripe_dispute",
+                id: dispute.id,
+                entryKind: "reversal",
+                source: "stripe",
+                provider: "stripe",
+                providerEventId: event.id,
+                providerObjectId: dispute.id,
+                customerReason: "Conversation Balance dispute reversal",
+                metadata: { payment_intent_id: piId },
+              });
             });
           }
         }

@@ -261,57 +261,65 @@ router.post(
     const role = canonicalizeAgentRoleForCreate(rawRole);
     const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
-    const [{ count }] = await drizzle
-      .select({ count: sql`count(*)` })
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, req.user.id));
-    const existing = Number(count || 0);
-
-    const isOwner = isOwnerEmail(req.user.email);
-    const [row] = await drizzle
-      .select({
-        planId: schema.subscriptions.plan,
-        subscriptionStatus: schema.settings.subscriptionStatus,
-        maxAgents: schema.settings.maxAgents,
-        extraAgents: schema.settings.extraAgents,
-      })
-      .from(schema.settings)
-      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-      .where(eq(schema.settings.userId, req.user.id))
-      .limit(1);
-
-    const entitlement = resolveAgentEntitlement({
-      isOwner,
-      subscriptionStatus: row?.subscriptionStatus,
-      planId: row?.planId,
-      maxAgents: row?.maxAgents,
-      extraAgents: row?.extraAgents,
-    });
-
-    if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
-      throw AppError.fromHttpStatus(
-        402,
-        `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
-      );
-    }
 
     const id = `agent-${randomUUID()}`;
     const enabledTools = getDefaultAgentTools();
     const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
-    await drizzle.insert(schema.agents).values({
-      id,
-      userId: req.user.id,
-      name,
-      role,
-      channel: "voice",
-      archetype: resolveAgentRoleArchetype(role),
-      voiceId: pickRotatedVoiceId(existing),
-      voiceProvider: "11labs",
-      enabledTools,
-      firstMessage: `Hi, this is ${name}. How can I help?`,
-      isBusinessAgent,
-      ...videoPresenter,
+
+    await drizzle.transaction(async (tx) => {
+      // Serialize capacity checks per tenant so concurrent creates cannot exceed plan caps.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+
+      const [{ count }] = await tx
+        .select({ count: sql`count(*)` })
+        .from(schema.agents)
+        .where(eq(schema.agents.userId, req.user.id));
+      const existing = Number(count || 0);
+
+      const isOwner = isOwnerEmail(req.user.email);
+      const [row] = await tx
+        .select({
+          planId: schema.subscriptions.plan,
+          subscriptionStatus: schema.settings.subscriptionStatus,
+          maxAgents: schema.settings.maxAgents,
+          extraAgents: schema.settings.extraAgents,
+        })
+        .from(schema.settings)
+        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+        .where(eq(schema.settings.userId, req.user.id))
+        .limit(1);
+
+      const entitlement = resolveAgentEntitlement({
+        isOwner,
+        subscriptionStatus: row?.subscriptionStatus,
+        planId: row?.planId,
+        maxAgents: row?.maxAgents,
+        extraAgents: row?.extraAgents,
+      });
+
+      if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
+        throw AppError.fromHttpStatus(
+          402,
+          `Agent capacity limit reached. Your plan allows up to ${entitlement.effectiveCap} agents.`,
+        );
+      }
+
+      await tx.insert(schema.agents).values({
+        id,
+        userId: req.user.id,
+        name,
+        role,
+        channel: "voice",
+        archetype: resolveAgentRoleArchetype(role),
+        voiceId: pickRotatedVoiceId(existing),
+        voiceProvider: "11labs",
+        enabledTools,
+        firstMessage: `Hi, this is ${name}. How can I help?`,
+        isBusinessAgent,
+        ...videoPresenter,
+      });
     });
+
     res.status(201).json({
       id,
       name,

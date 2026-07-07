@@ -985,6 +985,7 @@ export const smsMessages = pgTable(
   },
   () => ({
     threadCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_messages_thread_created ON wireline_sms_messages (thread_id, created_at)`,
+    twilioSidUniqueIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_sms_messages_user_twilio_sid ON wireline_sms_messages (user_id, twilio_sid) WHERE twilio_sid IS NOT NULL`,
   }),
 );
 

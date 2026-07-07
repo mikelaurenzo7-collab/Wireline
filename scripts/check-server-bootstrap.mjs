@@ -47,6 +47,11 @@ assert(
   "voice observability must expose /api/insights paths",
 );
 
+assert(
+  server.includes("initSupervisorWebSocketServer(server)"),
+  "canonical server must start the supervisor WebSocket upgrade handler after listen",
+);
+
 if (!process.exitCode) {
   console.log("server bootstrap and route precedence invariants passed");
 }

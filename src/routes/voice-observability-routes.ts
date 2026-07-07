@@ -9,7 +9,7 @@ import express, { Request, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { z } from "zod";
 import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
-import { drizzle, log, requirePermission } from "../lib/server-context";
+import { drizzle, log, tenantStore, requirePermission } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -67,7 +67,9 @@ router.post("/voice/metrics", async (req: Request, res: Response) => {
       throw AppError.fromHttpStatus(404, "Call not found");
     }
 
-    await recordVoiceMetrics(row.userId, parsed.data);
+    await tenantStore.run(row.userId, async () => {
+      await recordVoiceMetrics(row.userId, parsed.data);
+    });
     res.json({ recorded: true });
   } catch (err) {
     if (err instanceof AppError) throw err;

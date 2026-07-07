@@ -23,7 +23,7 @@
 
 import { Router, Request, Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { sanitizePhone } from "../lib/vapi-helpers";
@@ -151,149 +151,167 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
 
   const fromNormalized = sanitizePhone(from);
 
-  // ─── OPT-OUT FLOW ──────────────────────────────────────────────
-  if (OPT_OUT_KEYWORDS.has(trimmed)) {
-    try {
-      // Add to DNC (idempotent — onConflictDoNothing on user_id+phone)
-      await drizzle
-        .insert(schema.dncList)
-        .values({
-          userId: tenantUserId,
-          phone: fromNormalized,
-          phoneRaw: from,
-          reason: "opt-out",
-          source: "sms_opt_out",
-        })
-        .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
+  return tenantStore.run(tenantUserId, async () => {
+    // ─── OPT-OUT FLOW ──────────────────────────────────────────────
+    if (OPT_OUT_KEYWORDS.has(trimmed)) {
+      try {
+        // Add to DNC (idempotent — onConflictDoNothing on user_id+phone)
+        await drizzle
+          .insert(schema.dncList)
+          .values({
+            userId: tenantUserId,
+            phone: fromNormalized,
+            phoneRaw: from,
+            reason: "opt-out",
+            source: "sms_opt_out",
+          })
+          .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
 
-      // Audit trail in consent log
-      await drizzle.insert(schema.consentLog).values({
-        userId: tenantUserId,
-        customerNumber: fromNormalized,
-        event: "sms_opt_out",
-        rule: "stop_keyword",
-        ruleVersion: "v1",
-        state: "opted_out",
-      });
-
-      log.info("SMS opt-out processed", { tenant: tenantUserId, from: fromNormalized });
-    } catch (e: any) {
-      log.error("SMS opt-out write failed", { error: e?.message });
-    }
-
-    return res
-      .status(200)
-      .send(
-        twimlReply(
-          "You have been unsubscribed. You will not receive any more messages from this number. Reply START to opt back in.",
-        ),
-      );
-  }
-
-  // ─── OPT-IN FLOW (resubscribe) ─────────────────────────────────
-  if (OPT_IN_KEYWORDS.has(trimmed)) {
-    try {
-      await drizzle
-        .delete(schema.dncList)
-        .where(
-          and(eq(schema.dncList.userId, tenantUserId), eq(schema.dncList.phone, fromNormalized)),
-        );
-
-      await drizzle.insert(schema.consentLog).values({
-        userId: tenantUserId,
-        customerNumber: fromNormalized,
-        event: "sms_opt_in",
-        rule: "start_keyword",
-        ruleVersion: "v1",
-        state: "opted_in",
-      });
-
-      log.info("SMS opt-in processed", { tenant: tenantUserId, from: fromNormalized });
-    } catch (e: any) {
-      log.error("SMS opt-in write failed", { error: e?.message });
-    }
-
-    return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
-  }
-
-  // ─── CSAT REPLY DETECTION ─────────────────────────────────────
-  // If the inbound body is a bare digit 1–5, treat it as a CSAT
-  // response to the most recent post-call satisfaction SMS we sent.
-  // processCsatReply finds the caller's latest call log and writes
-  // the score. Best-effort — never blocks or throws. We still fall
-  // through to thread storage below so the Account Holder can see the
-  // reply in /inbox.
-  if (/^\s*[1-5]\s*$/.test(body)) {
-    try {
-      const { processCsatReply } = await import("../lib/csat-service");
-      await processCsatReply({
-        userId: tenantUserId,
-        customerNumber: fromNormalized,
-        score: parseInt(trimmed, 10),
-      });
-    } catch (e: any) {
-      log.warn("CSAT reply processing failed", { error: e?.message });
-    }
-    // Don't auto-reply — the CSAT SMS already told them what to do.
-    // Fall through to persist the message in the SMS thread below.
-  }
-
-  // ─── TWO-WAY THREAD STORAGE ────────────────────────────────────
-  // Persist the inbound message into the SMS inbox so account holders can
-  // see + reply from /inbox. Idempotent thread upsert keyed by
-  // (user_id, customer_number). If the sms tables haven't been
-  // migrated yet, the catch just logs and we still return 200 to
-  // Twilio so the network doesn't retry.
-  try {
-    const [existingThread] = await drizzle
-      .select({ id: schema.smsThreads.id, unreadCount: schema.smsThreads.unreadCount })
-      .from(schema.smsThreads)
-      .where(
-        and(
-          eq(schema.smsThreads.userId, tenantUserId),
-          eq(schema.smsThreads.customerNumber, fromNormalized),
-        ),
-      )
-      .limit(1);
-
-    let threadId: string;
-    if (existingThread) {
-      threadId = existingThread.id as unknown as string;
-      await drizzle
-        .update(schema.smsThreads)
-        .set({
-          lastMessageAt: new Date(),
-          unreadCount: (existingThread.unreadCount ?? 0) + 1,
-          status: "open",
-        })
-        .where(eq(schema.smsThreads.id, existingThread.id));
-    } else {
-      const [created] = await drizzle
-        .insert(schema.smsThreads)
-        .values({
+        // Audit trail in consent log
+        await drizzle.insert(schema.consentLog).values({
           userId: tenantUserId,
           customerNumber: fromNormalized,
-          unreadCount: 1,
-        })
-        .returning({ id: schema.smsThreads.id });
-      threadId = (created?.id as unknown as string) || "";
+          event: "sms_opt_out",
+          rule: "stop_keyword",
+          ruleVersion: "v1",
+          state: "opted_out",
+        });
+
+        log.info("SMS opt-out processed", { tenant: tenantUserId, from: fromNormalized });
+      } catch (e: any) {
+        log.error("SMS opt-out write failed", { error: e?.message });
+      }
+
+      return res
+        .status(200)
+        .send(
+          twimlReply(
+            "You have been unsubscribed. You will not receive any more messages from this number. Reply START to opt back in.",
+          ),
+        );
     }
 
-    if (threadId) {
-      await drizzle.insert(schema.smsMessages).values({
-        userId: tenantUserId,
-        threadId,
-        direction: "in",
-        body,
-        twilioSid: messageSid || null,
-      });
-    }
-  } catch (e: any) {
-    log.warn("SMS thread persist skipped (migration may be pending)", { error: e?.message });
-  }
+    // ─── OPT-IN FLOW (resubscribe) ─────────────────────────────────
+    if (OPT_IN_KEYWORDS.has(trimmed)) {
+      try {
+        await drizzle
+          .delete(schema.dncList)
+          .where(
+            and(eq(schema.dncList.userId, tenantUserId), eq(schema.dncList.phone, fromNormalized)),
+          );
 
-  // No auto-reply for non-keyword messages — Account Holder answers via /inbox.
-  return res.status(200).send(twimlEmpty());
+        await drizzle.insert(schema.consentLog).values({
+          userId: tenantUserId,
+          customerNumber: fromNormalized,
+          event: "sms_opt_in",
+          rule: "start_keyword",
+          ruleVersion: "v1",
+          state: "opted_in",
+        });
+
+        log.info("SMS opt-in processed", { tenant: tenantUserId, from: fromNormalized });
+      } catch (e: any) {
+        log.error("SMS opt-in write failed", { error: e?.message });
+      }
+
+      return res.status(200).send(twimlReply("You have been resubscribed. Welcome back."));
+    }
+
+    // ─── CSAT REPLY DETECTION ─────────────────────────────────────
+    // If the inbound body is a bare digit 1–5, treat it as a CSAT
+    // response to the most recent post-call satisfaction SMS we sent.
+    // processCsatReply finds the caller's latest call log and writes
+    // the score. Best-effort — never blocks or throws. We still fall
+    // through to thread storage below so the Account Holder can see the
+    // reply in /inbox.
+    if (/^\s*[1-5]\s*$/.test(body)) {
+      try {
+        const { processCsatReply } = await import("../lib/csat-service");
+        await processCsatReply({
+          userId: tenantUserId,
+          customerNumber: fromNormalized,
+          score: parseInt(trimmed, 10),
+        });
+      } catch (e: any) {
+        log.warn("CSAT reply processing failed", { error: e?.message });
+      }
+      // Don't auto-reply — the CSAT SMS already told them what to do.
+      // Fall through to persist the message in the SMS thread below.
+    }
+
+    // ─── TWO-WAY THREAD STORAGE ────────────────────────────────────
+    // Persist the inbound message into the SMS inbox so account holders can
+    // see + reply from /inbox. Idempotent thread upsert keyed by
+    // (user_id, customer_number). If the sms tables haven't been
+    // migrated yet, the catch just logs and we still return 200 to
+    // Twilio so the network doesn't retry.
+    try {
+      if (messageSid) {
+        const [duplicate] = await drizzle
+          .select({ id: schema.smsMessages.id })
+          .from(schema.smsMessages)
+          .where(
+            and(
+              eq(schema.smsMessages.userId, tenantUserId),
+              eq(schema.smsMessages.twilioSid, messageSid),
+            ),
+          )
+          .limit(1);
+        if (duplicate) {
+          return res.status(200).send(twimlEmpty());
+        }
+      }
+
+      const [existingThread] = await drizzle
+        .select({ id: schema.smsThreads.id, unreadCount: schema.smsThreads.unreadCount })
+        .from(schema.smsThreads)
+        .where(
+          and(
+            eq(schema.smsThreads.userId, tenantUserId),
+            eq(schema.smsThreads.customerNumber, fromNormalized),
+          ),
+        )
+        .limit(1);
+
+      let threadId: string;
+      if (existingThread) {
+        threadId = existingThread.id as unknown as string;
+        await drizzle
+          .update(schema.smsThreads)
+          .set({
+            lastMessageAt: new Date(),
+            unreadCount: (existingThread.unreadCount ?? 0) + 1,
+            status: "open",
+          })
+          .where(eq(schema.smsThreads.id, existingThread.id));
+      } else {
+        const [created] = await drizzle
+          .insert(schema.smsThreads)
+          .values({
+            userId: tenantUserId,
+            customerNumber: fromNormalized,
+            unreadCount: 1,
+          })
+          .returning({ id: schema.smsThreads.id });
+        threadId = (created?.id as unknown as string) || "";
+      }
+
+      if (threadId) {
+        await drizzle.insert(schema.smsMessages).values({
+          userId: tenantUserId,
+          threadId,
+          direction: "in",
+          body,
+          twilioSid: messageSid || null,
+        });
+      }
+    } catch (e: any) {
+      log.warn("SMS thread persist skipped (migration may be pending)", { error: e?.message });
+    }
+
+    // No auto-reply for non-keyword messages — Account Holder answers via /inbox.
+    return res.status(200).send(twimlEmpty());
+  });
 });
 
 /**

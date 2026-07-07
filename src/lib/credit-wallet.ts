@@ -124,54 +124,47 @@ async function appendLedger(
   });
 }
 
+export interface CreditMutationResult {
+  balance: number;
+  applied: number;
+}
+
 /**
  * Add credit (a web Stripe top-up or a manual grant). Idempotent per `ref`.
- * Returns the new balance.
+ * Throws on persistence failure so webhook handlers can retry.
  */
 export async function addCredit(
   userId: string,
   amountUsd: number,
   reason: string,
   ref?: LedgerRef,
-): Promise<number> {
+): Promise<CreditMutationResult> {
   const amount = cents(amountUsd);
-  if (!(amount > 0)) return getCreditBalanceUsd(userId);
-  try {
-    const { balance } = await appendLedger(userId, amount, reason, ref);
-    return balance;
-  } catch (err) {
-    log.error("addCredit failed", {
-      userId,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return getCreditBalanceUsd(userId);
+  if (!(amount > 0)) {
+    const balance = await getCreditBalanceUsd(userId);
+    return { balance, applied: 0 };
   }
+  const { applied, balance } = await appendLedger(userId, amount, reason, ref);
+  return { balance, applied };
 }
 
 /**
  * Reverse a prior credit — e.g. a refunded or disputed web top-up. Idempotent
- * per `ref`. The resulting balance may go negative (the Account Holder spent credit
- * that's now been clawed back); that simply means future overage isn't covered
- * until they top up again. Returns the new balance.
+ * per `ref`. Throws on persistence failure.
  */
 export async function reverseCredit(
   userId: string,
   amountUsd: number,
   reason: string,
   ref?: LedgerRef,
-): Promise<number> {
+): Promise<CreditMutationResult> {
   const amount = cents(amountUsd);
-  if (!(amount > 0)) return getCreditBalanceUsd(userId);
-  try {
-    const { balance } = await appendLedger(userId, -amount, reason, ref);
-    return balance;
-  } catch (err) {
-    log.error("reverseCredit failed", {
-      userId,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return getCreditBalanceUsd(userId);
+  if (!(amount > 0)) {
+    const balance = await getCreditBalanceUsd(userId);
+    return { balance, applied: 0 };
   }
+  const { applied, balance } = await appendLedger(userId, -amount, reason, ref);
+  return { balance, applied: Math.abs(applied) };
 }
 
 /**

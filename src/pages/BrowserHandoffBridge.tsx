@@ -79,7 +79,7 @@ export default function BrowserHandoffBridge() {
 
   if (!loading && !user) {
     const returnTo = encodeURIComponent(`${location.pathname}${location.hash}`);
-    return <Navigate to={`/signin?next=${returnTo}`} replace />;
+    return <Navigate to={`/signin?redirect=${returnTo}`} replace />;
   }
 
   if (error) {
