@@ -3,19 +3,24 @@ import { AppError } from "./api-error";
 import {
   clientDisplayName,
   isAnthropicRedirectUri,
+  isCursorRedirectUri,
   isDynamicClientId,
+  mcpDraftSourceForClient,
   newDynamicClientId,
   oauthErrorCode,
   validateDynamicClientRegistration,
 } from "./mcp-client-registry";
 
 describe("mcp dynamic client registration", () => {
-  it("accepts only Anthropic connector callbacks", () => {
+  it("accepts Anthropic and Cursor connector callbacks", () => {
     expect(isAnthropicRedirectUri("https://claude.ai/api/mcp/auth_callback")).toBe(true);
     expect(isAnthropicRedirectUri("https://claude.com/api/mcp/auth_callback")).toBe(true);
     expect(
       isAnthropicRedirectUri("https://claude.ai/api/organizations/org-1/mcp/auth_callback"),
     ).toBe(true);
+    expect(isCursorRedirectUri("cursor://anysphere.cursor-mcp/oauth/callback")).toBe(true);
+    expect(isCursorRedirectUri("https://www.cursor.com/agents/mcp/oauth/callback")).toBe(true);
+    expect(isCursorRedirectUri("http://localhost:8787/callback")).toBe(true);
 
     expect(isAnthropicRedirectUri("http://claude.ai/api/mcp/auth_callback")).toBe(false);
     expect(isAnthropicRedirectUri("https://claude.ai.evil.com/api/mcp/auth_callback")).toBe(false);
@@ -24,6 +29,7 @@ describe("mcp dynamic client registration", () => {
     expect(isAnthropicRedirectUri("https://claude.ai:8443/api/mcp/auth_callback")).toBe(false);
     expect(isAnthropicRedirectUri("https://claude.ai/other/path")).toBe(false);
     expect(isAnthropicRedirectUri(42)).toBe(false);
+    expect(isCursorRedirectUri("https://evil.cursor.com/agents/mcp/oauth/callback")).toBe(false);
   });
 
   it("registers a bounded public client from a Claude registration document", () => {
@@ -92,7 +98,19 @@ describe("mcp dynamic client registration", () => {
   it("names the consent screen after the connecting surface", () => {
     expect(clientDisplayName("https://claude.ai/api/mcp/auth_callback")).toBe("Claude");
     expect(clientDisplayName("https://claude.com/api/mcp/auth_callback")).toBe("Claude");
+    expect(clientDisplayName("cursor://anysphere.cursor-mcp/oauth/callback")).toBe("Cursor");
     expect(clientDisplayName("https://chatgpt.com/connector/oauth/callback")).toBe("ChatGPT");
     expect(clientDisplayName("not-a-url")).toBe("your MCP client");
+  });
+
+  it("maps draft source from client and redirect metadata", () => {
+    const dynamicId = newDynamicClientId();
+    expect(mcpDraftSourceForClient(dynamicId, "https://claude.ai/api/mcp/auth_callback")).toBe(
+      "claude_mcp",
+    );
+    expect(mcpDraftSourceForClient(dynamicId, "cursor://anysphere.cursor-mcp/oauth/callback")).toBe(
+      "cursor_mcp",
+    );
+    expect(mcpDraftSourceForClient("https://chatgpt.com/oauth/x/client.json")).toBe("chatgpt_mcp");
   });
 });

@@ -4,6 +4,7 @@ import TransitionSurface from "../components/TransitionSurface";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHomeClaude"));
+const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const OverviewPage = lazy(() => import("../pages/OverviewPage"));
@@ -45,6 +46,7 @@ export default function AppRoutes() {
         <Route path="/" element={<Navigate to="/overview" replace />} />
 
         <Route path="/overview" element={<OverviewPage />} />
+        <Route path="/studio/handoff" element={<BrowserHandoffBridge />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
         <Route path="/agents" element={<Navigate to="/overview" replace />} />

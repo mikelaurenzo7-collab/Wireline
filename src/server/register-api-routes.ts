@@ -55,6 +55,7 @@ import insightsRouter from "../routes/insights-routes";
 import pipelineRouter from "../routes/pipeline-routes";
 import dailyBriefRouter from "../routes/daily-brief-routes";
 import quotaRouter from "../routes/quota-routes";
+import browserHandoffRouter from "../routes/browser-handoff-routes";
 
 /**
  * Canonical API route order.
@@ -72,6 +73,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(oauthRouter);
   app.use(agentRouter);
   app.use(agentWorkspaceRouter);
+  app.use(browserHandoffRouter);
   app.use("/api/qa", qaRouter);
   app.use(vapiRouter);
   app.use(voicesRouter);

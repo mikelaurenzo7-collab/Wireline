@@ -18,6 +18,9 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(oauthRouteSource).toContain('"/.well-known/oauth-authorization-server"');
     expect(oauthRouteSource).toContain("client_id_metadata_document_supported: true");
     expect(oauthRouteSource).toContain('code_challenge_method: "S256"');
+    expect(oauthRouteSource).toContain("assertMcpDraftWriteRateLimit");
+    expect(oauthRouteSource).toContain("revokeMcpAccessTokensForClient");
+    expect(oauthRouteSource).toContain("backfillMcpOAuthResourceBindings");
   });
 
   it("requires OAuth for every production agent operation", () => {
@@ -25,12 +28,16 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(accountRouteSource).toContain('name: "get_agent_draft"');
     expect(accountRouteSource).toContain('name: "update_agent_draft"');
     expect(accountRouteSource).toContain('name: "start_private_voice_simulation"');
-    expect(accountRouteSource).toContain('securitySchemes: [{ type: "oauth2", scopes: ["agents.write"] }]');
-    expect(accountRouteSource).toContain('securitySchemes: [{ type: "oauth2", scopes: ["demo.voice"] }]');
+    expect(accountRouteSource).toContain(
+      'securitySchemes: [{ type: "oauth2", scopes: ["agents.write"] }]',
+    );
+    expect(accountRouteSource).toContain(
+      'securitySchemes: [{ type: "oauth2", scopes: ["demo.voice"] }]',
+    );
   });
 
   it("keeps private voice simulation tool-free and rate-limited", () => {
-    expect(accountRouteSource).toContain("toolChoice: \"none\"");
+    expect(accountRouteSource).toContain('toolChoice: "none"');
     expect(accountRouteSource).toContain("tools: []");
     expect(accountRouteSource).toContain("chatgpt-private-simulation");
   });

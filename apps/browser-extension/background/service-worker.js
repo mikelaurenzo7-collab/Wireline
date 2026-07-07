@@ -1,6 +1,6 @@
 const api = globalThis.browser ?? globalThis.chrome;
 
-const STUDIO_URL = "https://trywireline.com/studio?create=1";
+const STUDIO_HANDOFF_URL = "https://trywireline.com/studio/handoff";
 const ROUTES = new Map([
   ["studio", "https://trywireline.com/studio"],
   ["agents", "https://trywireline.com/agents"],
@@ -30,7 +30,7 @@ async function activeTab() {
   return tab;
 }
 
-function safeCaptureUrl(raw: unknown): string {
+function safeCaptureUrl(raw) {
   if (typeof raw !== "string" || !raw.trim()) return "";
   try {
     const url = new URL(raw);
@@ -71,7 +71,7 @@ async function capturePageContext(tab, suppliedSelection = "", suppliedLink = ""
 
 function openStudio(context, request = "") {
   const fragment = encodeBase64Url({ ...context, request: truncate(request, 800) });
-  return api.tabs.create({ url: `${STUDIO_URL}#browser-context=${fragment}` });
+  return api.tabs.create({ url: `${STUDIO_HANDOFF_URL}#browser-context=${fragment}` });
 }
 
 function requestForAction(action, context = {}) {

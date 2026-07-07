@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from "express";
-import { createHmac, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { type AgentCustomizationInput, assertDraftConfirmation } from "../lib/agent-customization";
@@ -19,9 +19,13 @@ import {
   CHATGPT_ACCOUNT_WIDGET_URI,
   buildAccountBoundWidgetHtml,
 } from "../lib/chatgpt-mcp-account";
-import { isDynamicClientId } from "../lib/mcp-client-registry";
-import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
-import { rateLimit } from "../lib/rate-limit";
+import { mcpDraftSourceForClient } from "../lib/mcp-client-registry";
+import {
+  assertMcpDraftWriteRateLimit,
+  hashMcpOAuthToken,
+  isMcpResourceBound,
+  mcpIssuer,
+} from "../lib/mcp-oauth-security";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 
@@ -29,7 +33,7 @@ const router = express.Router();
 
 type McpPrincipal = AgentDraftPrincipal & {
   scopes: McpScope[];
-  draftSource: "chatgpt_mcp" | "claude_mcp";
+  draftSource: "chatgpt_mcp" | "claude_mcp" | "cursor_mcp";
 };
 
 class McpAuthorizationError extends Error {
@@ -39,21 +43,11 @@ class McpAuthorizationError extends Error {
 }
 
 function issuer(req: Request): string {
-  return (
-    process.env.APP_URL?.trim().replace(/\/+$/, "") ||
-    `https://${req.get("host") || "trywireline.com"}`
-  );
-}
-
-function tokenPepper(): string {
-  const value = process.env.MCP_OAUTH_TOKEN_PEPPER?.trim();
-  if (!value || value.length < 32)
-    throw AppError.serviceUnavailable("Wireline account linking is not configured.");
-  return value;
+  return mcpIssuer(req);
 }
 
 function tokenHash(value: string): string {
-  return createHmac("sha256", tokenPepper()).update(value, "utf8").digest("hex");
+  return hashMcpOAuthToken(value);
 }
 
 function text(value: unknown, max = 2048): string {
@@ -85,16 +79,14 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
   };
   const record = result.rows?.[0];
   if (!record || new Date(record.expires_at).getTime() <= Date.now()) return null;
-  if (record.resource && record.resource !== `${issuer(req)}/mcp`) return null;
+  if (!isMcpResourceBound(record.resource, req)) return null;
   const scopes = parseScopes(record.scope);
   return scopes.length
     ? {
         userId: record.user_id,
         email: record.email,
         scopes,
-        // Dynamically registered clients are Claude connectors; ChatGPT uses
-        // CIMD client ids. Recorded so drafts carry an honest origin.
-        draftSource: isDynamicClientId(record.client_id || "") ? "claude_mcp" : "chatgpt_mcp",
+        draftSource: mcpDraftSourceForClient(record.client_id || ""),
       }
     : null;
 }
@@ -444,6 +436,7 @@ router.post("/mcp", async (req, res) => {
     if (name === "create_agent_draft") {
       assertDraftConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
+      await assertMcpDraftWriteRateLimit(authed.userId);
       const view = await createAgentDraft(authed, inputFromArgs(args), authed.draftSource);
       const structured = toStructuredDraft(
         view as Awaited<ReturnType<typeof getAgentDraft>>["view"],
@@ -474,6 +467,7 @@ router.post("/mcp", async (req, res) => {
     if (name === "update_agent_draft") {
       assertDraftConfirmation(args.confirmed);
       const authed = requireScope(principal, "agents.write");
+      await assertMcpDraftWriteRateLimit(authed.userId);
       const view = await updateAgentDraft(authed, text(args.agent_id, 256), inputFromArgs(args));
       const structured = toStructuredDraft(
         view as Awaited<ReturnType<typeof getAgentDraft>>["view"],

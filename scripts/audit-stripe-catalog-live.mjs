@@ -214,6 +214,7 @@ async function main() {
   for (const price of activePrices) {
     const productName = productNames.get(productIdOf(price));
     if (productName && RETIRED_PRODUCT_NAMES.has(productName)) {
+      if (price.metadata?.wireline_catalog_state === "retired_anchor") continue;
       const isProductDefault = products.find((product) => product.id === productIdOf(price))?.default_price === price.id;
       addFinding(findings, isProductDefault ? "warning" : "error", `Active price remains under retired product: ${productName}`, {
         product_id: productIdOf(price),

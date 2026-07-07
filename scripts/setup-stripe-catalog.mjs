@@ -428,6 +428,30 @@ async function listLiveSubscriptionProductIds(stripe) {
   return { subscriptions, productIds };
 }
 
+async function ensureArchivalDefaultPrice(stripe, product) {
+  const existing = (
+    await collect(stripe.prices.list({ product: product.id, active: true, limit: 100 }))
+  ).find((price) => price.metadata?.wireline_catalog_state === "retired_anchor");
+  if (existing) {
+    if (product.default_price !== existing.id) {
+      await stripe.products.update(product.id, { default_price: existing.id });
+    }
+    return existing.id;
+  }
+  const anchor = await stripe.prices.create({
+    product: product.id,
+    currency: "usd",
+    unit_amount: 0,
+    nickname: "Retired catalog anchor",
+    metadata: {
+      wireline_catalog_state: "retired_anchor",
+      wireline_not_for_sale: "true",
+    },
+  });
+  await stripe.products.update(product.id, { default_price: anchor.id });
+  return anchor.id;
+}
+
 async function archiveRetiredProducts(stripe, productsByName, blockers) {
   const archived = [];
   const warnings = [];
@@ -450,9 +474,14 @@ async function archiveRetiredProducts(stripe, productsByName, blockers) {
     );
     for (const price of activePrices) {
       if (product.default_price === price.id) {
-        warnings.push(
-          `${name}: kept default price ${price.id} active because Stripe blocks default-price archival`,
-        );
+        const anchorId = await ensureArchivalDefaultPrice(stripe, product);
+        if (price.id !== anchorId) {
+          try {
+            await stripe.prices.update(price.id, { active: false });
+          } catch (error) {
+            warnings.push(`${name}: could not archive default price ${price.id}: ${error.message}`);
+          }
+        }
         continue;
       }
       try {

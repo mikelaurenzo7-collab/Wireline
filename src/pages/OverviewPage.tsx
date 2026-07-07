@@ -6,6 +6,7 @@ import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import AgentFace from "../components/AgentFace";
+import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -215,6 +216,7 @@ function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
 export default function OverviewPage() {
   const { user } = useAuth();
   const { agents, loading, degraded } = useAgents();
+  const [showOutboundDial, setShowOutboundDial] = useState(false);
 
   const [callsCount, setCallsCount] = useState<number>(0);
   const [callsDetail, setCallsDetail] = useState<string>("Waiting for first call");
@@ -324,12 +326,23 @@ export default function OverviewPage() {
                 {dayGreeting()}, {firstName(user?.full_name, user?.email)}.
               </h1>
             </div>
-            <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
-              <Link to="/studio?create=1">
-                <Sparkles aria-hidden="true" size={15} />
-                New agent
-              </Link>
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
+                <Link to="/studio?create=1">
+                  <Sparkles aria-hidden="true" size={15} />
+                  New agent
+                </Link>
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="shrink-0 justify-center sm:min-w-[154px]"
+                onClick={() => setShowOutboundDial(true)}
+              >
+                <Phone aria-hidden="true" size={15} />
+                New call
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -476,6 +489,7 @@ export default function OverviewPage() {
           </article>
         </section>
       </WorkspacePageFrame>
+      <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
     </WorkspaceShell>
   );
 }

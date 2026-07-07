@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from "express";
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { getDefaultAgentTools } from "../lib/agent-capabilities";
@@ -21,12 +21,23 @@ import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import {
   clientDisplayName,
   isDynamicClientId,
+  mcpDraftSourceForClient,
   newDynamicClientId,
   oauthErrorCode,
   validateDynamicClientRegistration,
 } from "../lib/mcp-client-registry";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { resolveAgentRoleArchetype } from "../lib/agent-role-definitions";
+import {
+  assertMcpDraftWriteRateLimit,
+  assertMcpTokenEndpointRateLimit,
+  backfillMcpOAuthResourceBindings,
+  hashMcpOAuthToken,
+  isMcpResourceBound,
+  mcpIssuer,
+  mcpResourceUrl,
+  revokeMcpAccessTokensForClient,
+} from "../lib/mcp-oauth-security";
 import { rateLimit } from "../lib/rate-limit";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-context";
 import { getSessionTokenFromRequest } from "../lib/session-cookie";
@@ -43,7 +54,7 @@ type McpPrincipal = {
   userId: string;
   email: string;
   scopes: McpScope[];
-  draftSource: "chatgpt_app" | "claude_app";
+  draftSource: "chatgpt_app" | "claude_app" | "cursor_app";
 };
 type AuthorizationRequest = {
   clientId: string;
@@ -60,14 +71,11 @@ const clientMetadataCache = new Map<string, { value: ClientMetadata; expiresAt: 
 const dynamicClientCache = new Map<string, { value: ClientMetadata; expiresAt: number }>();
 
 function issuer(req?: Request): string {
-  const configured = process.env.APP_URL?.trim().replace(/\/+$/, "");
-  if (configured) return configured;
-  const host = req?.get("host");
-  return host ? `https://${host}` : "https://trywireline.com";
+  return mcpIssuer(req);
 }
 
 function mcpResource(req?: Request): string {
-  return `${issuer(req)}/mcp`;
+  return mcpResourceUrl(req);
 }
 
 function commaSet(value: string | undefined): Set<string> {
@@ -79,15 +87,8 @@ function commaSet(value: string | undefined): Set<string> {
   );
 }
 
-function tokenPepper(): string {
-  const pepper = process.env.MCP_OAUTH_TOKEN_PEPPER?.trim();
-  if (!pepper || pepper.length < 32)
-    throw AppError.fromHttpStatus(503, "Wireline account linking is not configured.");
-  return pepper;
-}
-
 function tokenHash(value: string): string {
-  return createHmac("sha256", tokenPepper()).update(value, "utf8").digest("hex");
+  return hashMcpOAuthToken(value);
 }
 
 function publicId(): string {
@@ -324,6 +325,11 @@ async function ensureMcpSchema(): Promise<void> {
           END LOOP;
         END $$;
       `);
+      const resource = mcpResourceUrl();
+      const backfilled = await backfillMcpOAuthResourceBindings(resource);
+      if (backfilled > 0) {
+        log.info("MCP OAuth resource backfill applied", { rows: backfilled, resource });
+      }
     })().catch((error) => {
       schemaReady = null;
       throw error;
@@ -348,6 +354,7 @@ async function issueTokens(input: {
   resource: string;
 }) {
   await ensureMcpSchema();
+  await revokeMcpAccessTokensForClient(input.userId, input.clientId);
   const accessToken = `wlmcp_${publicId()}`;
   const refreshToken = `wlmcp_r_${publicId()}`;
   const accessExpiresAt = new Date(Date.now() + ACCESS_TOKEN_TTL_MS);
@@ -390,16 +397,22 @@ async function mcpPrincipal(req: Request): Promise<McpPrincipal | null> {
   if (
     !row ||
     new Date(row.expires_at).getTime() <= Date.now() ||
-    (row.resource && row.resource !== mcpResource(req))
+    !isMcpResourceBound(row.resource, req)
   )
     return null;
   const scopes = parseScopes(row.scope);
+  const draftSource = mcpDraftSourceForClient(row.client_id || "");
   return scopes.length
     ? {
         userId: row.user_id,
         email: row.email,
         scopes,
-        draftSource: isDynamicClientId(row.client_id || "") ? "claude_app" : "chatgpt_app",
+        draftSource:
+          draftSource === "cursor_mcp"
+            ? "cursor_app"
+            : draftSource === "claude_mcp"
+              ? "claude_app"
+              : "chatgpt_app",
       }
     : null;
 }
@@ -696,6 +709,7 @@ router.post(
 
 router.post("/mcp/oauth/token", express.urlencoded({ extended: false }), async (req, res, next) => {
   try {
+    await assertMcpTokenEndpointRateLimit(req.ip || "anon");
     await ensureMcpSchema();
     const grantType = text(req.body?.grant_type, 64);
     const clientId = text(req.body?.client_id, 2048);
@@ -907,6 +921,7 @@ router.post("/mcp", async (req, res) => {
           "Confirm that you want to save this Wireline agent draft before continuing.",
         );
       const authed = requireScope(principal, "agents.write");
+      await assertMcpDraftWriteRateLimit(authed.userId);
       const saved = await saveDemo(authed, args.demo_token);
       return jsonRpc(res, id, {
         content: [

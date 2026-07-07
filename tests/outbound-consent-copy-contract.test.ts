@@ -15,10 +15,14 @@ describe("outbound consent copy contract", () => {
     expect(OUTBOUND_CONSENT_LEGAL_PATH).toBe("/trust/legal");
   });
 
-  it("aligns Android and iOS outbound consent labels", () => {
+  it("aligns Android, iOS, and web outbound consent labels", () => {
     const android = read("android/app/src/main/java/com/wireline/app/ui/OutboundConsentCopy.kt");
     const ios = read("ios/Wireline/OutboundConsentCopy.swift");
+    const web = read("src/components/OutboundDialDialog.tsx");
     expect(android).toContain(OUTBOUND_CONSENT_LABEL);
     expect(ios).toContain(OUTBOUND_CONSENT_LABEL);
+    expect(web).toContain('from "../lib/outbound-consent-copy"');
+    expect(web).toContain("OUTBOUND_CONSENT_LABEL");
+    expect(web).toContain("OUTBOUND_CONSENT_LEGAL_PATH");
   });
 });

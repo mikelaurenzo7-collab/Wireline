@@ -37,6 +37,7 @@
     "runtime:policy:check": "node scripts/check-openai-runtime-policy.mjs",
     "stripe:setup": "node scripts/setup-stripe-catalog.mjs",
     "stripe:audit-live": "node scripts/run-stripe-audit-from-vercel.mjs",
+    "stripe:deactivate-retired-defaults": "node scripts/run-stripe-deactivate-retired-defaults.mjs",
     "stripe:catalog:check": "node scripts/check-stripe-catalog-contract.mjs",
     "stripe:sync-vercel": "node scripts/sync-stripe-env-to-vercel.mjs",
     "vapi:sync-vercel": "node scripts/sync-vapi-env-to-vercel.mjs",

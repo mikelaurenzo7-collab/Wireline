@@ -36,13 +36,14 @@ Status: **Executed** — verified findings implemented; deferred items documente
 | Android role picker loading state | **Done** |
 | iOS role catalog from `/api/mobile/agents/roles` | **Done** |
 | Browser handoff fragment TTL (10 min) | **Done** |
+| Signed browser handoff tokens | **Done** — `/studio/handoff` bridge + HMAC exchange/redeem |
+| Web outbound dial UI with TCPA consent | **Done** — `OutboundDialDialog` on Overview |
 
 ## Deferred (documented, not in this pass)
 
 | Issue | Reason |
 | --- | --- |
-| Signed browser handoff tokens | Requires server handoff endpoint + extension release |
-| Auth rate-limit fail-open without Redis | Infra/config — enable Upstash in prod |
+| Auth rate-limit fail-open without Redis | **Mitigated** — Upstash enabled on all Vercel targets |
 | MCP token resource backfill + refresh revocation | OAuth migration window |
 | iOS CallKit answer vs handoff semantics | Native UX pass |
 | Android Gradle version catalog / cleartext traffic audit | Native release track |
@@ -52,7 +53,7 @@ Status: **Executed** — verified findings implemented; deferred items documente
 
 | Check | Result |
 | --- | --- |
-| `npm run verify:full` | **Passed** (320 tests) |
+| `npm run verify:full` | **Passed** (323 tests) |
 | Vercel env health (`check-vercel-env-health.mjs`) | **CORE READY** — Upstash on all targets |
 | Production `/api/health` | **200** `ok: true` |
 | Production `/api/health/public` | **200** operational |

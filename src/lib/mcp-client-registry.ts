@@ -5,15 +5,17 @@ import { AppError } from "./api-error";
  * Dynamic OAuth client registration (RFC 7591) for the Wireline MCP server.
  *
  * ChatGPT identifies itself with a Client ID Metadata Document hosted on
- * chatgpt.com, so it never registers. Claude connectors register dynamically,
- * which means this endpoint decides who may enter the OAuth flow. Registration
- * is therefore closed to Anthropic-operated callback URIs: every accepted
- * client is a public client (PKCE only, no secret) whose redirect targets
- * live on claude.ai or claude.com.
+ * chatgpt.com, so it never registers. Claude and Cursor connectors register
+ * dynamically; registration is closed to provider-operated callback URIs.
  */
 
 export const MCP_DYNAMIC_CLIENT_ID_PREFIX = "wlmcp_client_";
 const ANTHROPIC_REDIRECT_HOSTS = new Set(["claude.ai", "claude.com"]);
+const CURSOR_REDIRECTS = new Set([
+  "cursor://anysphere.cursor-mcp/oauth/callback",
+  "https://www.cursor.com/agents/mcp/oauth/callback",
+  "http://localhost:8787/callback",
+]);
 const MAX_REDIRECT_URIS = 8;
 
 export interface DynamicClientRegistrationInput {
@@ -34,6 +36,14 @@ export function isAnthropicRedirectUri(value: unknown): boolean {
   } catch {
     return false;
   }
+}
+
+export function isCursorRedirectUri(value: unknown): boolean {
+  return typeof value === "string" && CURSOR_REDIRECTS.has(value);
+}
+
+export function isTrustedDynamicRedirectUri(value: unknown): boolean {
+  return isAnthropicRedirectUri(value) || isCursorRedirectUri(value);
 }
 
 export function newDynamicClientId(): string {
@@ -71,9 +81,9 @@ export function validateDynamicClientRegistration(
   }
   const normalized: string[] = [];
   for (const uri of redirectUris) {
-    if (!isAnthropicRedirectUri(uri)) {
+    if (!isTrustedDynamicRedirectUri(uri)) {
       throw registrationError(
-        "Wireline only registers Claude connector callbacks on claude.ai or claude.com.",
+        "Wireline only registers Claude or Cursor connector callbacks on their official redirect URIs.",
         "invalid_redirect_uri",
       );
     }
@@ -107,11 +117,13 @@ export function validateDynamicClientRegistration(
     typeof body.client_name === "string"
       ? body.client_name.replace(/\s+/g, " ").trim().slice(0, 120)
       : "";
-  return { clientName: clientName || "Claude", redirectUris: normalized };
+  const defaultName = normalized.some(isCursorRedirectUri) ? "Cursor" : "Claude";
+  return { clientName: clientName || defaultName, redirectUris: normalized };
 }
 
 /** Human name for the consent screen, derived from the OAuth callback host. */
 export function clientDisplayName(redirectUri: string): string {
+  if (isCursorRedirectUri(redirectUri)) return "Cursor";
   try {
     const host = new URL(redirectUri).hostname;
     if (ANTHROPIC_REDIRECT_HOSTS.has(host)) return "Claude";
@@ -120,4 +132,15 @@ export function clientDisplayName(redirectUri: string): string {
     // fall through to the generic label
   }
   return "your MCP client";
+}
+
+export function mcpDraftSourceForClient(
+  clientId: string,
+  redirectUri?: string,
+): "chatgpt_mcp" | "claude_mcp" | "cursor_mcp" {
+  if (redirectUri && isCursorRedirectUri(redirectUri)) return "cursor_mcp";
+  if (isDynamicClientId(clientId)) {
+    return redirectUri && isCursorRedirectUri(redirectUri) ? "cursor_mcp" : "claude_mcp";
+  }
+  return "chatgpt_mcp";
 }

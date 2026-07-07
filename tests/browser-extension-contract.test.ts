@@ -41,6 +41,7 @@ describe("Wireline Command extension contract", () => {
 
   it("does not persist credentials or silently send browser context to an API", () => {
     expect(serviceWorker).toContain("#browser-context=");
+    expect(serviceWorker).toContain("/studio/handoff");
     expect(serviceWorker).not.toContain("chrome.storage");
     expect(serviceWorker).not.toContain("browser.storage");
     expect(serviceWorker).not.toContain("fetch(");
@@ -52,9 +53,10 @@ describe("Wireline Command extension contract", () => {
     );
     expect(contextSource).toContain("window.history.replaceState");
     expect(contextSource).toContain("BROWSER_COMMAND_CONTEXT_MAX_AGE_MS");
-    expect(contextSource).toContain("isFreshCapture");
+    expect(contextSource).toContain("isFreshBrowserCapture");
     expect(studioSource).toContain("browserCommandBrief");
     expect(studioSource).toContain("clearBrowserCommandHash");
+    expect(studioSource).toContain("/api/browser/handoff/redeem");
   });
 
   it("keeps fast jumps to agents, wire, usage, and studio", () => {

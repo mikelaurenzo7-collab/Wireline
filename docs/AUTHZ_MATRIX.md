@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 269
-**Protected:** 226
+**Routes scanned:** 271
+**Protected:** 228
 **Public (allowlisted):** 43
 **Violations:** 0
 
@@ -123,6 +123,8 @@
 | billing-routes.ts | GET | `/api/billing/status` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/usage` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/stripe-webhook` | — | — | yes | Public (allowlisted) |
+| browser-handoff-routes.ts | POST | `/api/browser/handoff/exchange` | inline | — | — | Protected |
+| browser-handoff-routes.ts | GET | `/api/browser/handoff/redeem` | inline | — | — | Protected |
 | cadence-routes.ts | GET | `/api/cadences` | inline | — | — | Protected |
 | cadence-routes.ts | POST | `/api/cadences` | inline | — | — | Protected |
 | cadence-routes.ts | PATCH | `/api/cadences/:id` | inline | — | — | Protected |
