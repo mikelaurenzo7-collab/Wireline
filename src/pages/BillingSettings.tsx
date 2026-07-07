@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Loader2, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Badge, Button, Skeleton } from "../components/atoms";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -218,6 +219,11 @@ export default function BillingSettings() {
             ) : (
               <>
                 <p className="wl-display-3 mt-auto pt-4">{formatUsd(balanceUsd)}</p>
+                {balanceUsd !== null && balanceUsd <= 0 ? (
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Add balance before your first live call — usage draws down as conversations run.
+                  </p>
+                ) : null}
                 <div className="mt-5 h-2 rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary transition-all"
@@ -265,7 +271,18 @@ export default function BillingSettings() {
                 </p>
               </>
             ) : (
-              <p className="wl-display-3 mt-auto pt-4">—</p>
+              <>
+                <p className="mt-auto pt-4 text-sm leading-6 text-muted-foreground">
+                  No subscription invoice on Personal — Conversation Balance funds live work as you
+                  go.
+                </p>
+                <Link
+                  to="/pricing"
+                  className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  Compare paid plans
+                </Link>
+              </>
             )}
           </article>
         </section>
@@ -299,9 +316,16 @@ export default function BillingSettings() {
               </div>
             </div>
           ) : (
-            <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-              —
-            </p>
+            <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center">
+              <p className="text-sm font-medium text-foreground">No invoices yet</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Personal runs on Conversation Balance. Team and Business add a monthly subscription
+                with invoices here.
+              </p>
+              <Button asChild variant="outline" size="sm" className="mt-4">
+                <Link to="/pricing">View plans</Link>
+              </Button>
+            </div>
           )}
         </section>
       </WorkspacePageFrame>

@@ -24,7 +24,7 @@ const READINESS_COPY: Record<
     Icon: FlaskConical,
   },
   planned: {
-    label: "Finish",
+    label: "In setup",
     className:
       "border-[var(--wireline-color-status-warning)]/35 bg-[var(--wireline-color-status-warning)]/10 text-[var(--wireline-color-status-warning)]",
     Icon: Layers3,

@@ -155,8 +155,8 @@ export const OPS_CHANNEL_EMPTY = {
   campaigns: {
     title: "No campaigns yet",
     actions: [
-      { label: "Create campaign", to: "/phone?tab=outbound", primary: true },
-      { label: "Open dispatch", to: "/phone?tab=outbound" },
+      { label: "Create campaign", to: "/phone?tab=outbound&view=campaigns", primary: true },
+      { label: "Open dispatch", to: "/phone?tab=outbound&view=dispatch" },
     ],
   },
   outboundQueue: {
@@ -167,9 +167,14 @@ export const OPS_CHANNEL_EMPTY = {
   },
   callbacks: {
     title: "No scheduled callbacks",
+    actions: [
+      { label: "Open dispatch", to: "/phone?tab=outbound&view=dispatch", primary: true },
+      { label: "View call history", to: "/phone" },
+    ],
   },
   cadences: {
     title: "No sequences yet",
+    actions: [{ label: "New sequence", to: "/phone?tab=outbound&view=sequences", primary: true }],
   },
   appointmentsUpcoming: {
     title: "No active commitments",

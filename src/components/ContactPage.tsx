@@ -123,7 +123,10 @@ export function ContactPage() {
               Personal questions, business coverage, partnerships, and support.
             </p>
           </a>
-          <Link to="/pricing" className="wl-stitch-card wl-stitch-card-brand p-5">
+          <Link
+            to="/pricing"
+            className="wl-stitch-card wl-stitch-card-brand wl-stitch-card-hover p-5"
+          >
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
@@ -153,7 +156,7 @@ export function ContactPage() {
                     type="button"
                     key={item.value}
                     onClick={() => setInquiryType(item.value)}
-                    className={`min-h-11 rounded border px-3 text-sm font-semibold ${inquiryType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                    className={`min-h-11 rounded border px-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 focus-visible:outline-offset-2 ${inquiryType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
                   >
                     {item.label}
                   </button>

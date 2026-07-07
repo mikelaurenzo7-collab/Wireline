@@ -19,6 +19,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { formatAgentRoleLabel } from "../lib/product-copy";
+import { workspaceSidebarLabel } from "../lib/user-display";
 import AgentFace from "./AgentFace";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 
@@ -135,7 +136,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { user } = useAuth();
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
-  const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace";
+  const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   // Account posture, not billing tier — the actual plan lives in Settings → Billing.
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
   // Inside Studio with an active agent: swap the user card for a

@@ -210,7 +210,7 @@ export default function CallLogsClaude() {
           onClick={() => setShowOutboundDial(true)}
         >
           <Phone className="h-3.5 w-3.5" aria-hidden />
-          Outbound call
+          Place outbound call
         </Button>
       </div>
       <section
@@ -668,7 +668,9 @@ function EmptyState({ title, body, action }: { title: string; body: string; acti
         <div className="font-[var(--wireline-font-family-display)] text-[22px] tracking-[-0.01em] text-[var(--wireline-color-text-primary)]">
           {title}
         </div>
-        <p className="mt-2 text-[13px] text-[var(--wireline-color-text-secondary)]">{body}</p>
+        <p className="mt-2 text-[13px] leading-6 text-[var(--wireline-color-text-secondary)]">
+          {body}
+        </p>
         {action}
       </div>
     </div>

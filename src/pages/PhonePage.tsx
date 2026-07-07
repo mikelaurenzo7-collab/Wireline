@@ -1,7 +1,9 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
+import { CalendarDays } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 import CallLogsClaude from "../components/CallLogsClaude";
 import OutboundHub from "../components/outbound/OutboundHub";
+import { EmptyState, Button } from "../components/atoms";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import {
   OUTBOUND_VIEW_TABS,
@@ -77,9 +79,18 @@ export default function PhonePage() {
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
           )}
           {primaryTab === "appointments" && (
-            <div className="p-6 text-sm text-muted-foreground">
-              Appointments booked by your agents sync through calendar integrations. Connect Google
-              Workspace or Microsoft 365 from Connections to enable booking tools on live calls.
+            <div className="grid flex-1 place-items-center px-6 py-10">
+              <EmptyState
+                className="studio-card w-full max-w-lg px-6 py-10 text-center"
+                icon={<CalendarDays className="size-5" aria-hidden />}
+                title="Appointments sync through calendar connections"
+                description="Connect Google Workspace or Microsoft 365 from Connections to let agents book on live calls."
+                action={
+                  <Button asChild>
+                    <Link to="/connections">Open Connections</Link>
+                  </Button>
+                }
+              />
             </div>
           )}
         </div>

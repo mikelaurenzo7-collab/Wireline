@@ -338,9 +338,9 @@ export default function IntakeKeysManager() {
           </div>
         )}
         {!loading && keys.length === 0 && (
-          <div className="rounded-md border border-dashed border-border bg-muted/5 px-4 py-3">
+          <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
             <p className="text-sm font-medium text-foreground">No intake keys yet</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted">
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Create a key when a website form, partner, or internal tool should send leads into
               Wireline. Auto-dial stays off until an agent is explicitly assigned.
             </p>

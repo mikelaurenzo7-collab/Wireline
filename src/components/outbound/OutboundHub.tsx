@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { KeyRound, Phone, ShieldCheck } from "lucide-react";
 import OutboundDialDialog from "../OutboundDialDialog";
 import Cadences from "../Cadences";
 import CampaignsPanel from "./CampaignsPanel";
@@ -7,7 +8,6 @@ import IntakeKeysManager from "../IntakeKeysManager";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 import { OUTBOUND_VIEW_TABS } from "../../lib/page-sub-tabs";
 import { Button } from "../atoms";
-import { KeyRound, Phone, ShieldCheck } from "lucide-react";
 
 type OutboundView = (typeof OUTBOUND_VIEW_TABS)[number]["id"];
 
@@ -40,21 +40,15 @@ export default function OutboundHub({
         {activeView === "dispatch" && (
           <div className="flex h-full min-h-0 flex-col overflow-auto">
             <div className="border-b border-border px-6 py-5">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div className="max-w-2xl">
-                  <p className="wl-label mb-2 text-brand">Outbound dispatch</p>
-                  <h2 className="font-display text-2xl italic leading-tight text-foreground">
-                    Start compliant outbound without leaving Phone.
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Place a one-off call, accept leads from forms, or move into campaigns when the
-                    list is ready. Consent checks stay in the path.
-                  </p>
-                </div>
-                <Button type="button" size="sm" onClick={() => setShowDial(true)}>
-                  <Phone className="h-3.5 w-3.5" aria-hidden />
-                  Dial now
-                </Button>
+              <div className="max-w-2xl">
+                <p className="wl-label mb-2 text-brand">Outbound dispatch</p>
+                <h2 className="font-display text-2xl italic leading-tight text-foreground">
+                  Start compliant outbound without leaving Phone.
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Place a one-off call, accept leads from forms, or move into campaigns when the
+                  list is ready. Consent checks stay in the path.
+                </p>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 {[
@@ -90,7 +84,9 @@ export default function OutboundHub({
                 })}
               </div>
             </div>
-            <IntakeKeysManager />
+            <div className="px-4 py-4 sm:px-6">
+              <IntakeKeysManager />
+            </div>
           </div>
         )}
         {activeView === "campaigns" && <CampaignsPanel />}

@@ -13,6 +13,7 @@ import WidgetBoundary from "../components/WidgetBoundary";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel } from "../lib/product-copy";
+import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import type { CallLog } from "../types/api";
 
@@ -41,24 +42,6 @@ function dayGreeting(date = new Date()) {
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
-}
-
-function firstName(name?: string | null, email?: string | null) {
-  // Prefer the real full_name first token. Falls through to the email local
-  // part with username noise stripped — trailing digits ("mike97" -> "Mike"),
-  // dot/underscore segments ("mike.laurenzo" -> "Mike"), and a length guard
-  // so a 14-char username doesn't dominate the greeting. Anything that still
-  // looks unfriendly degrades to "there" so we never greet a username.
-  const fromName = name?.trim().split(/\s+/)[0];
-  if (fromName) return fromName.replace(/^./, (letter) => letter.toUpperCase());
-  const local = email?.split("@")[0]?.trim();
-  if (!local) return "there";
-  const cleaned = local
-    .split(/[._-]/)[0]
-    .replace(/\d+$/, "")
-    .replace(/[^A-Za-z]/g, "");
-  if (!cleaned || cleaned.length < 2 || cleaned.length > 14) return "there";
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
 }
 
 function agentReadiness(agent: WorkspaceAgentSummary) {
@@ -325,7 +308,7 @@ export default function OverviewPage() {
           <div className="mt-3 flex flex-col items-center gap-5">
             <div className="max-w-prose">
               <h1 className="wl-display-2 text-balance">
-                {dayGreeting()}, {firstName(user?.full_name, user?.email)}.
+                {dayGreeting()}, {workspaceFirstName(user?.full_name, user?.email)}.
               </h1>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">

@@ -60,9 +60,9 @@ const STATE_META: Record<
   },
   degraded: {
     label: "Degraded",
-    tone: "text-brand/80",
-    pill: "bg-brand/8 text-brand/90 border-brand/20",
-    bgGradient: "from-brand/6 via-brand/3 to-transparent",
+    tone: "text-[var(--wireline-color-status-warning)]",
+    pill: "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border-[var(--wireline-color-feedback-warning-border)]",
+    bgGradient: "from-amber-500/8 via-amber-500/4 to-transparent",
     icon: AlertTriangle,
   },
   outage: {

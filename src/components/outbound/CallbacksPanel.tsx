@@ -3,6 +3,7 @@ import { CalendarClock } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
+import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 
 type Callback = {
   id: string;
@@ -55,8 +56,9 @@ export default function CallbacksPanel() {
     return (
       <EmptyState
         icon={CalendarClock}
-        title="No scheduled callbacks"
+        title={OPS_CHANNEL_EMPTY.callbacks.title}
         description="Callbacks appear when agents or callers schedule follow-up dials."
+        actions={[...OPS_CHANNEL_EMPTY.callbacks.actions]}
         fill
       />
     );

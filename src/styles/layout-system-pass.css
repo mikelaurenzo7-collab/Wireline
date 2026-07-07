@@ -70,6 +70,11 @@
   color: #fff;
 }
 
+.wl-rail-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 55%, transparent);
+  outline-offset: 2px;
+}
+
 .wl-stitch-sidebar-link {
   min-height: 2.625rem;
   font-size: 0.8125rem;

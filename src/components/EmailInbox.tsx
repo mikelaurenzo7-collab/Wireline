@@ -295,6 +295,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             className="studio-card w-full px-6 py-10 text-center sm:px-8"
             icon={<Mail className="size-5" />}
             title="No email yet"
+            description="Connect Gmail, Outlook, or another inbox from Connections — threads land here after the first sync."
             action={
               <div className="flex flex-wrap justify-center gap-3">
                 <Button asChild>

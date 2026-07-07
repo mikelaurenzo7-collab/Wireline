@@ -1,10 +1,10 @@
 import {
   ArrowUpRight,
-  Car,
   MessageSquareText,
   MonitorDown,
   Smartphone,
   Sparkles,
+  TabletSmartphone,
 } from "lucide-react";
 
 import { Badge, Button } from "../components/atoms";
@@ -29,7 +29,7 @@ const clientSurfaces = [
     href: "mailto:support@trywireline.com?subject=Wireline%20for%20iPhone%20early%20access",
   },
   {
-    icon: Car,
+    icon: TabletSmartphone,
     title: "Android",
     status: "Early access",
     statusVariant: "info" as const,
@@ -84,9 +84,7 @@ export default function ClientAppsPage() {
               >
                 <a
                   href={href}
-                  {...(href.startsWith("https://")
-                    ? { target: "_blank", rel: "noreferrer" }
-                    : {})}
+                  {...(href.startsWith("https://") ? { target: "_blank", rel: "noreferrer" } : {})}
                 >
                   {action} <ArrowUpRight size={14} />
                 </a>
