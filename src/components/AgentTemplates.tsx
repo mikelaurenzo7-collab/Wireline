@@ -314,6 +314,22 @@ const CATEGORIES = [
   "Personal & Lifestyle",
 ] as const;
 
+const TEMPLATE_TOTAL = AGENT_TEMPLATES.length;
+
+function searchableTemplateText(template: Template) {
+  return [
+    template.name,
+    template.description,
+    template.category,
+    template.role,
+    template.channel,
+    template.badge ?? "",
+    template.firstMessage,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
 // Recommended default voice gender per template. The account holder can override
 // in the deploy modal. This is just a smart starting point for the use case.
 const DEFAULT_GENDER_BY_TEMPLATE: Record<string, "female" | "male"> = {
@@ -343,18 +359,17 @@ function TemplateCard({
   deploying,
   deployedCount,
 }: {
-  key?: any;
   template: Template;
   onDeploy: (t: Template) => void;
   deploying: boolean;
   deployedCount: number;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const Icon = template.icon;
   const alreadyDeployed = deployedCount > 0;
 
   return (
-    <motion.div
+    <motion.article
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -362,29 +377,30 @@ function TemplateCard({
       whileHover={{ y: -2 }}
       className={cn(
         "relative studio-card rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
-        hovered ? "border-primary/20 shadow-md shadow-primary/8" : "shadow-sm",
+        previewOpen ? "border-primary/20 shadow-md shadow-primary/8" : "shadow-sm",
       )}
       data-accent={template.accent}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      aria-label={`${template.name} template`}
+      onMouseEnter={() => setPreviewOpen(true)}
+      onMouseLeave={() => setPreviewOpen(false)}
+      onFocus={() => setPreviewOpen(true)}
+      onBlur={() => setPreviewOpen(false)}
     >
-      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none hidden hidden md:block" />
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none hidden md:block" />
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-[var(--wireline-color-feedback-success-surface)]">
-            <Icon className="w-5 h-5 text-[var(--wireline-color-action-primary-default)]" />
+            <Icon aria-hidden="true" className="w-5 h-5 text-[var(--wireline-color-action-primary-default)]" />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
             {alreadyDeployed && (
               <span
-                className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success border wl-text-success"
-                title={
-                  deployedCount === 1 ? "Already in your agents" : `${deployedCount} in your agents`
-                }
+                className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success wl-text-success"
+                title={deployedCount === 1 ? "Already in your agents" : `${deployedCount} in your agents`}
               >
-                <Check className="w-2.5 h-2.5" />
+                <Check aria-hidden="true" className="w-2.5 h-2.5" />
                 {deployedCount === 1 ? "Deployed" : `Deployed ×${deployedCount}`}
               </span>
             )}
@@ -392,7 +408,7 @@ function TemplateCard({
               className={cn(
                 "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
-                  ? "bg-muted border border-border text-foreground/70"
+                  ? "bg-muted border-border text-foreground/70"
                   : "bg-primary/10 border-primary/30 text-primary",
                 alreadyDeployed && "hidden sm:inline-flex",
               )}
@@ -415,14 +431,17 @@ function TemplateCard({
         </div>
 
         <AnimatePresence>
-          {hovered && (
+          {previewOpen && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
               className="rounded-md p-3 border text-[var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 leading-relaxed italic relative bg-[var(--wireline-color-surface-subtle)]"
             >
-              <MessageCircle className="absolute -top-2 -left-1.5 w-4 h-4 text-[var(--wireline-color-action-primary-default)]" />
+              <MessageCircle
+                aria-hidden="true"
+                className="absolute -top-2 -left-1.5 w-4 h-4 text-[var(--wireline-color-action-primary-default)]"
+              />
               <span className="pl-2">&ldquo;{template.firstMessage}&rdquo;</span>
             </motion.div>
           )}
@@ -437,12 +456,13 @@ function TemplateCard({
           onClick={() => onDeploy(template)}
           disabled={deploying}
           className="w-full !py-2 !text-[var(--wireline-typography-overline-size)] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
+          aria-label={`${alreadyDeployed ? "Deploy another" : "Deploy"} ${template.name} agent`}
         >
-          {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+          {deploying ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : null}
           {alreadyDeployed ? "Deploy another" : "Deploy agent"}
         </ShadButton>
       </div>
-    </motion.div>
+    </motion.article>
   );
 }
 
@@ -455,7 +475,7 @@ function CustomAgentCard() {
       className="studio-card rounded-md border border-primary/25 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
     >
       <div className="w-12 h-12 rounded-md border border-border bg-card flex items-center justify-center">
-        <Sparkles className="w-5 h-5 text-primary" />
+        <Sparkles aria-hidden="true" className="w-5 h-5 text-primary" />
       </div>
       <div className="space-y-1">
         <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
@@ -512,16 +532,15 @@ export default function AgentTemplates() {
     return counts;
   }, [deployedNames]);
 
-  const q = search.toLowerCase();
+  const q = search.trim().toLowerCase();
   const visible = AGENT_TEMPLATES.filter((t) => {
     const matchesCategory = activeCategory === "All" || t.category === activeCategory;
-    const matchesSearch =
-      !q ||
-      t.name.toLowerCase().includes(q) ||
-      t.description.toLowerCase().includes(q) ||
-      t.category.toLowerCase().includes(q);
+    const matchesSearch = !q || searchableTemplateText(t).includes(q);
     return matchesCategory && matchesSearch;
   });
+  const resultLabel = initialLoading
+    ? "Loading templates"
+    : `${visible.length} of ${TEMPLATE_TOTAL} templates`;
 
   const handleOpenDeploy = (template: Template) => {
     if (deploying) return;
@@ -573,40 +592,52 @@ export default function AgentTemplates() {
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="px-4 py-3 border-b border-border flex flex-col gap-3 shrink-0">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none" />
+          <Search
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none"
+          />
           <Input
             type="search"
             aria-label="Search templates"
-            placeholder="Search templates…"
+            placeholder="Search templates, roles, channels…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-primary/50 text-foreground placeholder:text-muted/70"
           />
         </div>
 
-        <div className="flex gap-1.5 flex-wrap">
-          {CATEGORIES.map((cat) => (
-            <ShadButton
-              key={cat}
-              type="button"
-              disableAnimations
-              variant={activeCategory === cat ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setActiveCategory(cat)}
-              className={cn(
-                "rounded-full wl-label",
-                activeCategory === cat
-                  ? "bg-primary/15 border-primary/40 text-primary"
-                  : "text-muted hover:text-foreground hover:border-primary/25",
-              )}
-            >
-              {cat}
-            </ShadButton>
-          ))}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex gap-1.5 flex-wrap" role="group" aria-label="Template category filter">
+            {CATEGORIES.map((cat) => {
+              const selected = activeCategory === cat;
+              return (
+                <ShadButton
+                  key={cat}
+                  type="button"
+                  disableAnimations
+                  variant={selected ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveCategory(cat)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "rounded-full wl-label",
+                    selected
+                      ? "bg-primary/15 border-primary/40 text-primary"
+                      : "text-muted hover:text-foreground hover:border-primary/25",
+                  )}
+                >
+                  {cat}
+                </ShadButton>
+              );
+            })}
+          </div>
+          <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
+            {resultLabel}
+          </span>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 scroll-viewport px-4 py-4">
+      <div className="flex-1 min-h-0 scroll-viewport px-4 py-4" aria-live="polite">
         {initialLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -632,9 +663,21 @@ export default function AgentTemplates() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="py-20 text-center text-[var(--wireline-color-text-tertiary)] font-[var(--wireline-font-family-display)] text-lg"
+                  className="py-16 text-center text-[var(--wireline-color-text-tertiary)] font-[var(--wireline-font-family-display)] text-lg"
                 >
-                  No templates match your search
+                  <p>No templates match{q ? ` “${search.trim()}”` : ""}</p>
+                  {search ? (
+                    <ShadButton
+                      type="button"
+                      disableAnimations
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSearch("")}
+                      className="mt-3 rounded-full wl-label"
+                    >
+                      Clear search
+                    </ShadButton>
+                  ) : null}
                 </motion.div>
               )}
             </AnimatePresence>
