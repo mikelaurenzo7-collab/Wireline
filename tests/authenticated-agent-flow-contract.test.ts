@@ -94,6 +94,17 @@ describe("authenticated agent flow", () => {
     expect(templates).not.toContain("hidden hidden");
   });
 
+  it("keeps post-create wizard connections language clear", () => {
+    const copy = read("src/lib/wireline-onboarding-copy.ts");
+
+    expect(copy).toContain("Connect where the work lands");
+    expect(copy).toContain("Open Connections");
+    expect(copy).toContain("Wireline phone line");
+    expect(copy).toContain("Continue to live line");
+    expect(copy).not.toContain("Wire hub");
+    expect(copy).not.toContain("Open Wire");
+  });
+
   it("launches post-create Train → Channels → Wire → Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
