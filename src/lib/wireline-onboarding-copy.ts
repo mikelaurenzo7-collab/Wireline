@@ -9,13 +9,13 @@ export const ONBOARDING_WELCOME = {
   title: "Get to your first",
   titleAccent: "real call",
   subtitle:
-    "Wireline wins when a customer reaches your agent on a live line. Fast Setup gets you provisioned — then we help you land that first useful conversation.",
+    "Wireline wins when the right person reaches your agent on a live line. Fast Setup gets you provisioned — then we help you land that first useful conversation.",
   bullets: [
     { label: "Agent", detail: "Name, role, and starting brief generated from your description" },
     { label: "Training", detail: "Optional website scrape plus sources, documents, and policies" },
     {
       label: "Activate",
-      detail: "Provision a US line, dial in, and complete one real conversation",
+      detail: "Provision a US line, dial in, and complete one useful conversation",
     },
   ],
   ctaPrimary: "Start Fast Setup",
@@ -106,7 +106,7 @@ export const ACTIVATION_PENDING_COPY = {
   title: "Make your first",
   titleAccent: "real call",
   subtitle: (agentName: string) =>
-    `${agentName} is provisioned. Dial your line from your phone — activation counts when a customer-quality conversation completes.`,
+    `${agentName} is provisioned. Dial your line from your phone — activation counts when a real, high-intent conversation completes.`,
   phoneLabel: "Your live number",
   dialCta: "Call now to activate",
   browserTestTitle: "Browser test (optional)",
@@ -124,13 +124,13 @@ export const ACTIVATION_COMPLETE_COPY = {
   title: "First live call",
   titleAccent: "complete",
   subtitle: (agentName: string) =>
-    `${agentName} just handled a real customer conversation. You're officially live.`,
+    `${agentName} just handled a live conversation. You're officially live.`,
   nextLabel: "What to do next",
 } as const;
 
 export const ACTIVATION_NUDGE_COPY = {
   eyebrow: "Activation",
-  body: "Dial your line for a real conversation — that's when Wireline counts you as live.",
+  body: "Dial your line for a useful conversation — that's when Wireline counts you as live.",
   cta: "Call to activate",
 } as const;
 
@@ -149,15 +149,15 @@ export const POST_CREATE_WIZARD_COPY = {
     },
     channels: {
       label: "Channels",
-      title: "Connect where customers reach you",
+      title: "Connect where the work lands",
       detail:
-        "Phone is the default lane. Open Wire when you need CRM, SMS, email, or other tools connected.",
-      phoneTitle: "Business phone line",
+        "Phone is the default lane. Add CRM, SMS, email, or routing only when the agent needs the extra handoff.",
+      phoneTitle: "Wireline phone line",
       phoneDetail: "Provision a US number on the next step — callers reach this agent directly.",
-      connectionsTitle: "Wire hub",
-      connectionsDetail: "Salesforce, SMS threads, email inbox, and routing live under Wire.",
-      connectionsCta: "Open Wire",
-      continue: "Continue to phone line",
+      connectionsTitle: "Connections",
+      connectionsDetail: "CRM, SMS threads, email inboxes, and routing rules live under Connections.",
+      connectionsCta: "Open Connections",
+      continue: "Continue to live line",
     },
     wire: {
       label: "Wire",
