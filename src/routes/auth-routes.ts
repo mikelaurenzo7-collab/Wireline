@@ -7,6 +7,7 @@ import {
   generateToken,
   isOwnerEmail,
 } from "../lib/auth-service";
+import { canAccessFounderCockpit } from "../lib/founder-cockpit-access";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -49,6 +50,7 @@ function sendAuthSuccess(
     email: string;
     full_name?: string | null;
     is_owner?: boolean;
+    founder_cockpit?: boolean;
     account_type?: "personal" | "business";
   },
   token: string,
@@ -374,6 +376,7 @@ router.get(
         email: row?.email ?? req.user.email,
         full_name: row?.fullName ?? undefined,
         is_owner: isOwnerEmail(req.user.email),
+        founder_cockpit: canAccessFounderCockpit(req.user),
         account_type,
       },
     });
@@ -409,6 +412,7 @@ router.post(
           id: payload.sub,
           email: payload.email,
           is_owner: isOwnerEmail(payload.email),
+          founder_cockpit: canAccessFounderCockpit({ id: payload.sub, email: payload.email }),
         },
       });
     } catch {

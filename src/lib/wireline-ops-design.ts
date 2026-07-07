@@ -462,7 +462,6 @@ export const OPS_ADMIN = {
     subscription: "Billing",
     team: "Team access",
     flywheel: "Growth engine",
-    cockpit: "Operating cockpit",
     system: "System health",
     activity: "Audit activity",
   },

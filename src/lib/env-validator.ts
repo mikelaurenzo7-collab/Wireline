@@ -257,6 +257,32 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: (value) => !value || isCommaSeparatedEmails(value),
   },
   {
+    name: "FOUNDER_COCKPIT_EMAILS",
+    group: "operational",
+    required: false,
+    description: "Comma-separated emails allowed to access /founder (in addition to OWNER_EMAIL)",
+    validate: (value) => !value || isCommaSeparatedEmails(value),
+  },
+  {
+    name: "FOUNDER_COCKPIT_USER_IDS",
+    group: "operational",
+    required: false,
+    description: "Comma-separated user IDs allowed to access /founder",
+  },
+  {
+    name: "FEDERAL_DNC_API_URL",
+    group: "operational",
+    required: false,
+    description: "Federal DNC vendor lookup endpoint (outbound scrub)",
+    validate: (value) => !value || isUrl(value),
+  },
+  {
+    name: "FEDERAL_DNC_API_KEY",
+    group: "operational",
+    required: false,
+    description: "Federal DNC vendor API key",
+  },
+  {
     name: "OWNER_PHONE",
     group: "operational",
     required: false,

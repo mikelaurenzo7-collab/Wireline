@@ -70,6 +70,7 @@ export type AuthUserPayload = {
   email: string;
   full_name?: string | null;
   is_owner?: boolean;
+  founder_cockpit?: boolean;
   account_type?: "personal" | "business";
 };
 

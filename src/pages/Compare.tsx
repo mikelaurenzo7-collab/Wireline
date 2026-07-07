@@ -60,7 +60,7 @@ const DIFFERENCES = [
   {
     icon: Sparkles,
     title: "It improves with every call.",
-    copy: "Learning loop captures patterns and refines responses over time.",
+    copy: "Post-call review in Studio captures lessons today — the automated learning loop is in beta.",
   },
 ] as const;
 

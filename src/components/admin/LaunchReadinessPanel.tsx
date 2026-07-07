@@ -31,7 +31,7 @@ export default function LaunchReadinessPanel() {
 
   useEffect(() => {
     let cancelled = false;
-    authFetch("/api/admin/launch-readiness")
+    authFetch("/api/founder/launch-readiness")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled) setReport(data);

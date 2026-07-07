@@ -6,6 +6,13 @@ import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
+import { canAccessFounderCockpit } from "./founder-cockpit-access";
+export {
+  getOwnerEmails,
+  resetOwnerEmailCacheForTests,
+  isOwnerEmail,
+} from "./platform-owner-emails";
+import { isOwnerEmail } from "./platform-owner-emails";
 
 /** Lazy so importing auth-service does not crash the whole API when env is misconfigured. */
 let cachedJwtSecret: string | null = null;
@@ -62,36 +69,11 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   return timingSafeEqual(hashBuf, key);
 }
 
-let cachedOwnerEmails: Set<string> | null = null;
-
-/** Resolve platform owner emails from OWNER_EMAIL + optional OWNER_EMAILS (comma-separated). */
-export function getOwnerEmails(): Set<string> {
-  if (cachedOwnerEmails) return cachedOwnerEmails;
-  const emails = new Set<string>();
-  const primary = (process.env.OWNER_EMAIL || "").trim().toLowerCase();
-  if (primary) emails.add(primary);
-  for (const entry of (process.env.OWNER_EMAILS || "").split(",")) {
-    const normalized = entry.trim().toLowerCase();
-    if (normalized) emails.add(normalized);
-  }
-  cachedOwnerEmails = emails;
-  return emails;
-}
-
-/** Test helper — re-read OWNER_EMAIL / OWNER_EMAILS after env changes. */
-export function resetOwnerEmailCacheForTests(): void {
-  cachedOwnerEmails = null;
-}
-
-/**
- * True when the email matches the platform owner (OWNER_EMAIL env).
- * Case-insensitive + trimmed. Drives owner-only surfaces like the
- * Founder's Dashboard.
- */
-export function isOwnerEmail(email: string | null | undefined): boolean {
-  const normalized = email?.trim().toLowerCase();
-  if (!normalized) return false;
-  return getOwnerEmails().has(normalized);
+function authUserFlags(user: { id: string; email: string }) {
+  return {
+    is_owner: isOwnerEmail(user.email),
+    founder_cockpit: canAccessFounderCockpit(user),
+  };
 }
 
 /**
@@ -183,7 +165,7 @@ export const authService = {
         id: user.id,
         email: user.email,
         full_name: user.fullName,
-        is_owner: isOwnerEmail(user.email),
+        ...authUserFlags(user),
         account_type,
       },
       token: generateToken({ id: user.id, email: user.email }),
@@ -245,7 +227,7 @@ export const authService = {
             id: user.id,
             email: user.email,
             full_name: user.fullName,
-            is_owner: isOwnerEmail(user.email),
+            ...authUserFlags(user),
             account_type,
           },
           token: generateToken({ id: user.id, email: user.email }),
@@ -416,7 +398,7 @@ export const authService = {
         id: user.id,
         email: user.email,
         full_name: user.fullName,
-        is_owner: isOwnerEmail(user.email),
+        ...authUserFlags(user),
         account_type,
       },
       token: generateToken({ id: user.id, email: user.email }),

@@ -29,9 +29,7 @@ import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
-import { isOwnerOnlyAdminTab, isWirelineAccountHolder } from "../lib/admin-access";
-import FounderOperatingCockpit from "./FounderOperatingCockpit";
-import FounderAccountHolderConsole from "./admin/FounderOperatorConsole";
+import { isOwnerOnlyAdminTab } from "../lib/admin-access";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -97,7 +95,6 @@ export default function AdminSettings() {
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
   type AdminTab =
-    | "cockpit"
     | "accounts"
     | "branding"
     | "carrier"
@@ -105,7 +102,7 @@ export default function AdminSettings() {
     | "team"
     | "flywheel"
     | "activity";
-  const BASE_TABS: AdminTab[] = [
+  const VALID_TABS: AdminTab[] = [
     "accounts",
     "branding",
     "carrier",
@@ -114,8 +111,6 @@ export default function AdminSettings() {
     "flywheel",
     "activity",
   ];
-  const isOwner = isWirelineAccountHolder(user);
-  const VALID_TABS: AdminTab[] = isOwner ? ["cockpit", ...BASE_TABS] : BASE_TABS;
   // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
   // the correct tab instead of bouncing to the default.
@@ -138,19 +133,16 @@ export default function AdminSettings() {
     if (qsRaw === "dnc" || qsRaw === "audit") {
       return "activity";
     }
-    // Legacy system tab → operating cockpit for platform account holders.
-    if (qsRaw === "system") return isOwner ? "cockpit" : "accounts";
-    if (qsRaw === "cockpit" && !isOwner) {
-      queueMicrotask(() => navigate("/admin?tab=accounts", { replace: true }));
-      return "accounts";
-    }
-    if (isOwnerOnlyAdminTab(qsRaw ?? "") && !isOwner) {
-      queueMicrotask(() => navigate("/admin?tab=accounts", { replace: true }));
+    // Founder cockpit lives at /founder — never in tenant Admin.
+    if (isOwnerOnlyAdminTab(qsRaw ?? "")) {
+      queueMicrotask(() =>
+        navigate(user?.founder_cockpit ? "/founder" : "/overview", { replace: true }),
+      );
       return "accounts";
     }
     if (qsRaw === "growth") return "flywheel";
     const qs = qsRaw as AdminTab;
-    return VALID_TABS.includes(qs) ? qs : isOwner ? "cockpit" : "accounts";
+    return VALID_TABS.includes(qs) ? qs : "accounts";
   })();
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
@@ -394,19 +386,6 @@ export default function AdminSettings() {
                 />
               ) : (
                 <>
-                  {activeTab === "cockpit" && isOwner && (
-                    <motion.div
-                      key="cockpit"
-                      role="tabpanel"
-                      id="admin-panel-cockpit"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="h-full space-y-2"
-                    >
-                      <FounderOperatingCockpit />
-                      <FounderAccountHolderConsole />
-                    </motion.div>
-                  )}
                   {activeTab === "accounts" && (
                     <motion.div
                       key="accounts"

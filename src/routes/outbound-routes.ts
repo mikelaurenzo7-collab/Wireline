@@ -11,6 +11,7 @@ import { OutboundBulkSchema } from "../lib/form-validators";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
+import { isFederalDncListed } from "../lib/federal-dnc-service";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
@@ -169,9 +170,11 @@ router.post(
       }
 
       // TCPA pre-call consent gate.
+      const isFederalDnc = await isFederalDncListed(customerNumber);
       const tcpaDecision = evaluateOutboundConsent({
         phone: customerNumber,
         is_internal_dnc: false, // already checked above
+        is_federal_dnc: isFederalDnc,
         is_marketing_call: isMarketingCallPurpose(callPurpose),
         has_express_written_consent: expressConsent,
       });

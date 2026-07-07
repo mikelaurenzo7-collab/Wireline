@@ -102,7 +102,7 @@ export default function FounderOperatingCockpit() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await authFetch("/api/admin/operating-cockpit");
+        const res = await authFetch("/api/founder/cockpit");
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Failed to load cockpit");
         if (!cancelled) setData(json);
@@ -216,7 +216,7 @@ export default function FounderOperatingCockpit() {
           tone={data.retained.activated_not_paying > 0 ? "rose" : "muted"}
         />
         <ShadButton type="button" variant="outline" size="sm" disableAnimations asChild>
-          <Link to="/admin?tab=cockpit">Launch checklist</Link>
+          <Link to="/founder">Launch checklist</Link>
         </ShadButton>
       </div>
     </section>

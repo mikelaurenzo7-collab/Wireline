@@ -239,7 +239,7 @@ export default function WorkspaceSidebar({
             {!isCollapsed && <span>Help & Support</span>}
           </Link>
 
-          {user?.is_owner && (
+          {user?.founder_cockpit && (
             <Link
               to="/founder"
               className={cn(

@@ -10,8 +10,10 @@ export interface User {
   email: string;
   full_name?: string;
   role?: string;
-  /** True only for the platform owner (email matches OWNER_EMAIL). Gates the Founder's Dashboard. */
+  /** True when email matches OWNER_EMAIL / OWNER_EMAILS (platform owner perks). */
   is_owner?: boolean;
+  /** True only for founder-approved cockpit operators — stricter than is_owner. */
+  founder_cockpit?: boolean;
 }
 
 export interface Session {

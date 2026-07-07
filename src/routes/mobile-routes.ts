@@ -32,6 +32,7 @@ import { ensureDefaultAccount } from "../lib/account-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
+import { isFederalDncListed } from "../lib/federal-dnc-service";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
@@ -631,9 +632,11 @@ router.post(
         });
       }
 
+      const isFederalDnc = await isFederalDncListed(customerNumber);
       const tcpaDecision = evaluateOutboundConsent({
         phone: customerNumber,
         is_internal_dnc: false,
+        is_federal_dnc: isFederalDnc,
         is_marketing_call: isMarketingCallPurpose(callPurpose),
         has_express_written_consent: expressConsent,
       });

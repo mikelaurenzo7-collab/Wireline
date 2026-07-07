@@ -249,8 +249,8 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                         <LifeBuoy className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
                         Help &amp; support
                       </Link>
-                      {/* Founder Dashboard — only visible to the platform founder */}
-                      {user?.is_owner && (
+                      {/* Founder cockpit — approved operators only */}
+                      {user?.founder_cockpit && (
                         <Link
                           to="/founder"
                           onClick={() => setUserMenuOpen(false)}
@@ -302,7 +302,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               )
             }
           />
-          {user?.is_owner && (
+          {user?.founder_cockpit && (
             <FooterItem
               to="/founder"
               icon={Crown}

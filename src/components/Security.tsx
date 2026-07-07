@@ -157,7 +157,7 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Outbound calls require consent checks before dial — marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Federal DNC registry scrub is on the outbound roadmap; until live, we document the gap honestly in sales conversations.",
+      "Federal DNC registry scrub is wired into outbound dial paths when FEDERAL_DNC_API_URL and FEDERAL_DNC_API_KEY are configured; until then, only tenant lists apply and we document the gap in sales conversations.",
     ],
   },
   {

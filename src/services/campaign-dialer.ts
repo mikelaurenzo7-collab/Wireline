@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { eq, and, sql, lt, inArray } from "drizzle-orm";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
+import { isFederalDncListed } from "../lib/federal-dnc-service";
 import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
@@ -128,9 +129,11 @@ export class CampaignDialerService {
       // 2. TCPA consent gate. Campaigns are automated outbound marketing by default,
       // so they require the same explicit consent attestation as manual dials.
       const metadata = (lead.metadata || {}) as Record<string, unknown>;
+      const isFederalDnc = await isFederalDncListed(lead.customerNumber!);
       const tcpaDecision = evaluateOutboundConsent({
         phone: lead.customerNumber!,
         is_internal_dnc: false,
+        is_federal_dnc: isFederalDnc,
         is_marketing_call: true,
         has_express_written_consent: metadata.has_express_written_consent === true,
       });
