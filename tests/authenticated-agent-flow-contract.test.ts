@@ -70,6 +70,17 @@ describe("authenticated agent flow", () => {
     expect(studioHome).not.toContain("mode=workroom");
   });
 
+  it("keeps Fast Start broad enough for sales, support, personal, and call coverage", () => {
+    const createDialog = read("src/components/CreateAgentDialog.tsx");
+
+    expect(createDialog).toContain("Revenue Desk");
+    expect(createDialog).toContain("Support Desk");
+    expect(createDialog).toContain("Sales, support, scheduling, overflow");
+    expect(createDialog).toContain("Qualify inbound demand, answer support questions");
+    expect(createDialog).toContain("Provision Wireline number");
+    expect(createDialog).not.toContain("Handle pharmacy calls");
+  });
+
   it("launches post-create Train → Channels → Wire → Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
