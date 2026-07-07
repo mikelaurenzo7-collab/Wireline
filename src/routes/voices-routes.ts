@@ -84,10 +84,12 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       ownClones = rows;
     } catch (e: any) {
       // 42P01 = undefined_table in Postgres. Surface a clear log line
-      // so the Account Holder knows to run /api/admin/migrate-cloned-voices
-      // but don't break the catalog response.
+      // so the Account Holder knows to apply the checked cloned-voices
+      // migration, but don't break the catalog response.
       if (e?.code === "42P01" || /does not exist/i.test(e?.message || "")) {
-        log.warn("wireline_cloned_voices table missing — run migrate-cloned-voices");
+        log.warn(
+          "wireline_cloned_voices table missing - apply the checked cloned-voices migration",
+        );
       } else {
         throw e;
       }

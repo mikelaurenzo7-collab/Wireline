@@ -49,10 +49,12 @@ describe("mobile TCPA consent contract", () => {
     expect(view).toContain("agentRoles");
   });
 
-  it("server mobile outbound schema accepts consent flag", () => {
+  it("server mobile outbound schema requires explicit purpose and accepts consent flag", () => {
     const mobile = read("src/routes/mobile-routes.ts");
     expect(mobile).toContain("hasExpressWrittenConsent");
-    expect(mobile).toContain("callPurpose");
+    expect(mobile).toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES)");
+    expect(mobile).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
+    expect(mobile).not.toContain('default("marketing_or_sales")');
     expect(mobile).toContain("isMarketingCallPurpose");
     expect(mobile).toContain("outboundConsentMetadata");
     expect(mobile).toContain("evaluateOutboundConsent");

@@ -24,7 +24,7 @@ Wireline's durable documentation follows the active product model. The customer-
 - Studio is the workroom; Overview is the calm command center.
 - Avoid authenticated page descriptions unless the user is reviewing history, coaching, analytics, exports, or past actions.
 - Use labels, tabs, icons, state, and clear next actions instead of prose paragraphs.
-- Call Logs and Analytics may explain history, coaching, exports, and insights.
+- Phone / Call History and Analytics may explain history, coaching, exports, and insights.
 - User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `presenter`, and `live video add-on`.
 - Customer-facing video-presenter surfaces must not mention vendor names such as HeyGen or LiveAvatar.
 - Wireline Command is the browser surface name; do not restore retired extension names.
@@ -45,6 +45,8 @@ Wireline's durable documentation follows the active product model. The customer-
 | [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md) | **Active** — launch readiness scorecard and margin cockpit operating plan. |
 | [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md) | **Active** — takeover pass: design system beautification, polish layer, contracts, and verified upgrades. |
 | [COMPOSER_CERTIFICATION_2026-07-05.md](./COMPOSER_CERTIFICATION_2026-07-05.md) | **Active** — Composer 2.5 certification ladder, dual-voice PSTN, funnel events, and ops proof. |
+| [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) | **Active** - Supabase security/performance advisor posture, custom-auth HIBP control, and unused-index evidence gate. |
+| [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md) | **Active** - dry-run-first demo tenant reset, reseed, and screenshot QA procedure. |
 | [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | **Active** — brand voice, marketing/GTM, onboarding, pricing, voice/avatar product, and ops execution plan tied to the Aurora rebrand. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App contract and release verification. |

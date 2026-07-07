@@ -73,11 +73,9 @@ router.get(
       ).length;
 
       const counts = {
-        "/call-logs": triageCount,
-        "/ops": triageCount,
+        "/overview": triageCount,
         "/inbox": emailCount,
-        "/outbound": outboundCount,
-        "/live": distressedCount,
+        "/phone": triageCount + outboundCount + distressedCount,
       };
       setCachedNavCounts(userId, counts);
       res.json(counts);

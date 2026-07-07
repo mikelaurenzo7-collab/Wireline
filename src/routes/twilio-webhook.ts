@@ -401,7 +401,8 @@ router.post(
  *   1. `node scripts/generate-jingle.mjs` writes the MP3 to
  *      /public/sounds/wireline-jingle.mp3 (served at
  *      /sounds/wireline-jingle.mp3 by Vite's static handler).
- *      Or POST /api/admin/generate-jingle if you can't run it locally.
+ *      Regenerate locally with scripts/generate-jingle.mjs; do not rely
+ *      on an ephemeral production filesystem for this static asset.
  *   2. SINGING_VAPI_SIP_URI env var holds the Vapi SIP endpoint for
  *      the showcase assistant (Vapi Dashboard → Phone Numbers → SIP
  *      URI). Format: sip:<assistant-id>@sip.vapi.ai

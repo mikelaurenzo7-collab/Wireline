@@ -32,15 +32,11 @@
  * jingle). One-time spend — commit the MP3 afterwards so prod
  * deploys serve it from the static asset path.
  *
- * If you can't run this locally, the equivalent admin endpoint on
- * prod is:
- *   curl -X POST https://trywireline.com/api/admin/generate-jingle \
- *     -H "X-Migration-Token: $MIGRATION_TOKEN" \
- *     -H "Content-Type: application/json" \
- *     -d '{}'
- * which writes the same file on the running Vercel instance — but
- * remember Vercel's filesystem is ephemeral, so for a permanent
- * fix you still need to commit the file via this script.
+ * Do not regenerate this through a production admin route.
+ * Vercel's filesystem is ephemeral; run this script locally,
+ * review the MP3, then commit the static asset so every deployment
+ * serves the same file.
+ *
  */
 import { writeFile, mkdir, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

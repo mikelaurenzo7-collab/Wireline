@@ -387,7 +387,7 @@
   }
 }
 
-/* Call Logs (Claude Design) — live indicator pulse + thin waveform bars. */
+/* Phone history (Claude Design) — live indicator pulse + thin waveform bars. */
 @keyframes wlPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(1.2); }

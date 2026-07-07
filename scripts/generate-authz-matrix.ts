@@ -40,16 +40,6 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   { pattern: /^\/api\/vapi-webhook$/, reason: "Vapi signature validation + agent-scoped routing" },
   { pattern: /^\/api\/escalate$/, reason: "Vapi X-Vapi-Secret (timing-safe) + rate limit" },
   {
-    pattern: /^\/api\/admin\/sync-vapi-knowledge$/,
-    reason: "Owner email OR X-Migration-Token (timing-safe), enforced in handler",
-  },
-  {
-    pattern:
-      /^\/api\/admin\/(operating-cockpit|tenant-economics|launch-readiness|economics-at-risk-count|trust-pack\/soc2)$/,
-    reason:
-      "Owner email OR X-Migration-Token (timing-safe), enforced in handler via authorizeMigration",
-  },
-  {
     pattern: /^\/api\/integrations\/certified$/,
     reason: "Public certified-integration status; rate-limited, no tenant data",
   },

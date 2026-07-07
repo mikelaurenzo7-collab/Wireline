@@ -34,6 +34,8 @@ describe("product voice cohesion", () => {
     expect(routes).toContain('path="/knowledge"');
     expect(routes).toContain('path="/connections"');
     expect(routes).toContain('path="/call-logs"');
+    expect(routes).toContain('path="/logs"');
+    expect(routes).toContain('to="/phone?tab=logs"');
     expect(routes).toContain('path="/phone"');
     expect(routes).toContain("AuthNotFound");
     expect(routes).toContain('path="/inbox"');
@@ -60,11 +62,11 @@ describe("product voice cohesion", () => {
     expect(docs).toContain("Public pages explain. Authenticated pages execute.");
     expect(docs).toContain("Use labels, tabs, icons, state, and clear next actions");
     expect(docs).toContain(
-      "Call Logs and Analytics may explain history, coaching, exports, and insights",
+      "Phone / Call History and Analytics may explain history, coaching, exports, and insights",
     );
   });
 
-  it("preserves Call Logs as the allowed explanatory analytics surface", () => {
+  it("preserves call history as the allowed explanatory analytics surface", () => {
     const calls = read("src/components/CallLogsClaude.tsx");
     expect(calls).toContain("Analytics");
     expect(calls).toContain("coaching_note");

@@ -472,8 +472,8 @@ export async function generateSoundEffect(args: {
  *
  * Pricing roughly $0.02/sec at the time of writing; an 8s jingle
  * ≈ $0.16. Pre-bake once + serve from /public/sounds so we never
- * pay per call. The admin endpoint /api/admin/generate-jingle wraps
- * this for owner-gated regeneration on the live deploy.
+ * pay per call. Regenerate locally with scripts/generate-jingle.mjs
+ * and commit the reviewed MP3.
  */
 export async function composeMusic(args: {
   prompt: string;

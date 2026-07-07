@@ -66,6 +66,7 @@ export default function AppRoutes() {
         <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/connections/*" element={<ConnectionsPage />} />
         <Route path="/call-logs" element={<Navigate to="/phone?tab=logs" replace />} />
+        <Route path="/logs" element={<Navigate to="/phone?tab=logs" replace />} />
         <Route path="/phone" element={<PhonePage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />

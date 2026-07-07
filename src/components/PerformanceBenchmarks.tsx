@@ -224,7 +224,7 @@ export default function PerformanceBenchmarks() {
         <TrendingUp className="w-8 h-8 text-foreground/55" />
         <p className="wl-micro-meta">No call data in the last 30 days</p>
         <Link
-          to="/outbound"
+          to="/phone?tab=outbound"
           className="px-3 py-1.5 rounded-full wl-panel border border-brand/30 text-brand wl-label hover:bg-brand/10 transition-all"
         >
           Start Outbound Campaign →

@@ -39,7 +39,7 @@ function json(body, status = 200) {
 
 function mockApi(pathname) {
   const now = "2026-05-22T12:00:00.000Z";
-  if (pathname === "/api/nav-counts") return json({ "/triage": 6, "/logs": 24 });
+  if (pathname === "/api/nav-counts") return json({ "/phone": 24, "/overview": 6 });
   if (pathname === "/api/user-preferences") {
     return json({ persona: "operator", onboarding_completed: true, tour_completed: true });
   }
@@ -120,7 +120,7 @@ function mockApi(pathname) {
       counts: { hot_leads: 2, pending_tasks: 1, knowledge_gaps: 0, escalations: 0, compliance: 0 },
     });
   }
-  if (pathname === "/api/call-logs" || pathname.startsWith("/api/logs")) {
+  if (pathname === "/api/call-logs") {
     return json({
       logs: Array.from({ length: 8 }, (_, i) => ({
         id: String(1000 + i),
@@ -160,13 +160,14 @@ const pages = [
   { id: "auth-hero", route: "/", auth: false },
   { id: "compare", route: "/compare", auth: false },
   { id: "pricing", route: "/pricing", auth: false },
-  { id: "command-center", route: "/", auth: true },
-  { id: "triage", route: "/triage", auth: true },
-  { id: "integrations", route: "/integrations", auth: true },
-  { id: "agents", route: "/agents", auth: true },
-  { id: "logs", route: "/logs", auth: true },
+  { id: "overview", route: "/overview", auth: true },
+  { id: "studio", route: "/studio", auth: true },
+  { id: "connections", route: "/connections", auth: true },
+  { id: "phone-logs", route: "/phone?tab=logs", auth: true },
+  { id: "phone-outbound", route: "/phone?tab=outbound", auth: true },
   { id: "insights", route: "/insights", auth: true },
-  { id: "outbound", route: "/outbound", auth: true },
+  { id: "apps", route: "/apps", auth: true },
+  { id: "billing", route: "/settings/billing", auth: true },
 ];
 
 async function fetchSession() {
@@ -194,7 +195,7 @@ async function loginViaUi(browser) {
   await page.fill('input[type="email"]', demoEmail);
   await page.fill('input[type="password"]', demoPassword);
   await page.locator('form button[type="submit"]').click();
-  await page.waitForURL(/\/(triage|agents|logs)?/i, { timeout: 45_000 }).catch(() => {});
+  await page.waitForURL(/\/(overview|studio|phone|connections|apps)?/i, { timeout: 45_000 }).catch(() => {});
   await page.waitForTimeout(2000);
   const session = await page.evaluate(() => {
     try {
@@ -266,9 +267,9 @@ async function captureScreenshots(browser, session, manifest) {
     const page = await ctx.newPage();
 
     for (const p of pages) {
-      if (!p.auth && layoutName !== "desktop" && p.id === "command-center") continue;
+      if (!p.auth && layoutName !== "desktop" && p.id === "overview") continue;
       if (p.auth && p.id === "auth-hero") continue;
-      const route = p.auth && p.id === "command-center" ? "/" : p.route;
+      const route = p.route;
       console.log(`[screenshot ${layoutName}] ${p.id}`);
       await page.goto(new URL(route, baseURL).toString(), {
         waitUntil: "domcontentloaded",
@@ -301,10 +302,11 @@ async function captureZoomCrops(browser, session, manifest) {
   const page = await ctx.newPage();
 
   const shots = [
-    { id: "triage-hot-lead", route: "/triage", selector: "main, [class*='triage'], .glass" },
-    { id: "integrations-stack", route: "/integrations", selector: "text=Connected stack" },
-    { id: "agents-fleet", route: "/agents", selector: "main" },
-    { id: "logs-archive", route: "/logs", selector: "main" },
+    { id: "overview-command", route: "/overview", selector: "main" },
+    { id: "studio-create", route: "/studio?create=1", selector: "main" },
+    { id: "connections-stack", route: "/connections", selector: "main" },
+    { id: "phone-history", route: "/phone?tab=logs", selector: "main" },
+    { id: "phone-outbound", route: "/phone?tab=outbound", selector: "main" },
     { id: "compare-matrix", route: "/compare", selector: "table" },
   ];
 
@@ -332,7 +334,7 @@ async function recordReel(browser, session, manifest) {
       id: "reel-operator-console",
       viewport: layouts.reel,
       steps: async (page) => {
-        for (const route of ["/triage", "/integrations", "/agents", "/logs"]) {
+        for (const route of ["/overview", "/studio", "/phone?tab=logs", "/connections", "/apps"]) {
           await page.goto(new URL(route, baseURL).toString());
           await settle(page);
           await page.waitForTimeout(2200);
@@ -357,13 +359,13 @@ async function recordReel(browser, session, manifest) {
       },
     },
     {
-      id: "reel-auth-to-triage",
+      id: "reel-auth-to-phone",
       viewport: layouts.desktop,
       steps: async (page) => {
         await page.goto(new URL("/", baseURL).toString());
         await settle(page);
         await page.waitForTimeout(2000);
-        await page.goto(new URL("/triage", baseURL).toString());
+        await page.goto(new URL("/phone?tab=logs", baseURL).toString());
         await settle(page);
         await page.mouse.wheel(0, 280);
         await page.waitForTimeout(2500);
@@ -415,7 +417,7 @@ Generated from **${demoEmail}** on ${baseURL} — ${new Date().toISOString().sli
 
 ## 15s reel hook (vertical)
 
-"Your receptionist is a dashboard now. Watch triage, integrations, and live agents — all in Wireline."
+"Your receptionist is a phone hub now. Watch call history, integrations, and live agents — all in Wireline."
 
 ## 30s reel (pan compare table)
 
@@ -424,7 +426,7 @@ Generated from **${demoEmail}** on ${baseURL} — ${new Date().toISOString().sli
 ## Instagram carousel (5 slides)
 
 1. Auth hero — "AI agents for every channel"
-2. Triage zoom — "Hot leads surface automatically"
+2. Phone zoom — "Hot leads surface automatically"
 3. Integrations — "10+ connectors, one hub"
 4. Compare — "Why Wireline vs voice-only APIs"
 5. CTA — trywireline.com + demo line

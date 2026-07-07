@@ -188,30 +188,47 @@ async function pickFirstAgentId(userId: string): Promise<string | null> {
   return rows[0]?.id ?? null;
 }
 
-const TABLE_MAP: Record<string, typeof callLogs> = {
-  wireline_call_logs: callLogs,
-  wireline_outbound_leads: outboundLeads,
-  wireline_appointments: appointments,
-  wireline_knowledge: knowledge,
-  wireline_dnc_list: dncList,
-};
-
 async function countRows(
   tableName: string,
   userId: string,
   tx: DemoSeedDb = drizzle,
 ): Promise<number> {
-  const table = TABLE_MAP[tableName];
-  if (!table) throw new Error(`Unknown table: ${tableName}`);
-  const filters = [eq(table.userId, userId)];
-  if (tableName !== "wireline_knowledge") {
-    filters.push(eq((table as typeof callLogs).demo, true));
+  if (tableName === "wireline_call_logs") {
+    const [row] = await tx
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(callLogs)
+      .where(and(eq(callLogs.userId, userId), eq(callLogs.demo, true)));
+    return Number(row?.c ?? 0);
   }
-  const [row] = await tx
-    .select({ c: sql<number>`COUNT(*)::int` })
-    .from(table)
-    .where(and(...filters));
-  return Number(row?.c ?? 0);
+  if (tableName === "wireline_outbound_leads") {
+    const [row] = await tx
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(outboundLeads)
+      .where(and(eq(outboundLeads.userId, userId), eq(outboundLeads.demo, true)));
+    return Number(row?.c ?? 0);
+  }
+  if (tableName === "wireline_appointments") {
+    const [row] = await tx
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(appointments)
+      .where(and(eq(appointments.userId, userId), eq(appointments.demo, true)));
+    return Number(row?.c ?? 0);
+  }
+  if (tableName === "wireline_knowledge") {
+    const [row] = await tx
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(knowledge)
+      .where(eq(knowledge.userId, userId));
+    return Number(row?.c ?? 0);
+  }
+  if (tableName === "wireline_dnc_list") {
+    const [row] = await tx
+      .select({ c: sql<number>`COUNT(*)::int` })
+      .from(dncList)
+      .where(and(eq(dncList.userId, userId), eq(dncList.demo, true)));
+    return Number(row?.c ?? 0);
+  }
+  throw new Error(`Unknown table: ${tableName}`);
 }
 
 /** Keep one demo lead per customer phone (legacy seeds overshot TARGET.leads). */

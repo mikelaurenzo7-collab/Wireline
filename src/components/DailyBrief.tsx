@@ -116,7 +116,7 @@ export default function DailyBrief() {
                   : hasCalls
                     ? latest
                       ? callTitle(latest)
-                      : "Recent activity is available in call logs."
+                      : "Recent activity is available in call history."
                     : "Create or activate an agent, then calls will roll into this pulse."}
               </p>
             </div>
@@ -124,7 +124,7 @@ export default function DailyBrief() {
         </div>
 
         <Link
-          to="/call-logs"
+          to="/phone?tab=logs"
           className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-2 rounded-[var(--wireline-radius-pill)] border border-border bg-background/50 px-4 text-sm font-semibold text-foreground wl-focus-ring-halo hover:border-primary/40"
         >
           Open calls
@@ -140,7 +140,11 @@ export default function DailyBrief() {
       ) : hasCalls ? (
         <div className="mt-5 grid gap-2">
           {logs.slice(0, 3).map((call) => (
-            <Link key={call.id} to="/call-logs" className="wl-data-row wl-data-row--divided group">
+            <Link
+              key={call.id}
+              to="/phone?tab=logs"
+              className="wl-data-row wl-data-row--divided group"
+            >
               <span className="wl-data-row__leading" aria-hidden="true">
                 <span className="grid size-7 place-items-center rounded-full bg-primary/10 text-primary">
                   <Phone size={13} />

@@ -331,7 +331,8 @@ CREATE POLICY tenant_isolation ON wireline_call_logs
 | Failed auth attempts | 90 days | Auto-purge |
 
 **Evidence:**
-- `src/routes/admin-purge-accounts-routes.ts`
+- `src/routes/settings-routes.ts`
+- `src/routes/job-routes.ts`
 - Supabase cron jobs (configured in dashboard)
 
 ---
@@ -401,7 +402,8 @@ await drizzle
 - Audit log retention for compliance
 
 **Evidence:**
-- `src/routes/admin-purge-accounts-routes.ts`
+- `src/routes/account-routes.ts`
+- `src/lib/account-deletion.ts`
 - `wireline_deletion_queue` table schema
 
 #### 6.1.2 Data Export

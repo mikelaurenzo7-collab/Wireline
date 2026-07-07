@@ -40,10 +40,10 @@ export const CONSOLE_MAP = {
       path: "/overview",
     },
     {
-      id: "call-logs",
-      label: "Call logs",
+      id: "phone",
+      label: "Phone",
       detail: "Live callers, recaps, and follow-up in motion",
-      path: "/call-logs",
+      path: "/phone?tab=logs",
     },
     {
       id: "studio",
@@ -94,9 +94,9 @@ export const YOURE_LIVE_COPY = {
   testCallTitle: "Run a browser test call",
   testCallDetail: "Hear your agent without dialing — tune tone and script in Studio.",
   testCallAction: "Open Studio",
-  opsTitle: "Watch call logs",
+  opsTitle: "Watch Phone",
   opsDetail: "See active callers, approve actions, and monitor live work.",
-  opsAction: "Open call logs",
+  opsAction: "Open Phone",
 } as const;
 
 /** Shown after Fast Start — agent exists but activation (first useful call) pending. */

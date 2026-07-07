@@ -598,21 +598,21 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No ranked agents",
     actions: [
       { label: "Deploy agent", to: "/agents", primary: true },
-      { label: "Call logs", to: "/phone" },
+      { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
   latency: {
     title: "No latency samples",
     actions: [
       { label: "Overview", to: "/overview", primary: true },
-      { label: "Call logs", to: "/phone" },
+      { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
   reliability: {
     title: "No reliability samples",
     actions: [
       { label: "Overview", to: "/overview", primary: true },
-      { label: "Call logs", to: "/phone" },
+      { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
   spend: {
@@ -632,21 +632,21 @@ export const OPS_INSIGHTS_EMPTY = {
   quality: {
     title: "No QA scores",
     actions: [
-      { label: "Call logs", to: "/phone" },
+      { label: "Call history", to: "/phone?tab=logs" },
       { label: "Overview", to: "/overview" },
     ],
   },
   heatmap: {
     title: "No call activity",
     actions: [
-      { label: "Call logs", to: "/phone", primary: true },
+      { label: "Call history", to: "/phone?tab=logs", primary: true },
       { label: "Overview", to: "/overview" },
     ],
   },
   topics: {
     title: "Not enough calls",
     actions: [
-      { label: "Call logs", to: "/phone", primary: true },
+      { label: "Call history", to: "/phone?tab=logs", primary: true },
       { label: "Studio", to: "/studio" },
     ],
   },

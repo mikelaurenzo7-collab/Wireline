@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 271
-**Protected:** 228
+**Routes scanned:** 274
+**Protected:** 231
 **Public (allowlisted):** 43
 **Violations:** 0
 
@@ -67,6 +67,9 @@
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/primary` | inline | — | — | Protected |
 | activation-routes.ts | GET | `/api/activation/status` | inline | — | — | Protected |
+| admin-seed-demo-routes.ts | DELETE | `/api/admin/demo-data` | inline | — | — | Protected |
+| admin-seed-demo-routes.ts | POST | `/api/admin/seed-demo-account` | inline | — | — | Protected |
+| admin-seed-demo-routes.ts | POST | `/api/admin/seed-founder-Assistants` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agent-config/:id` | inline | — | — | Protected |
 | agent-routes-v2.ts | DELETE | `/api/agent-config/:id/:type/:rowId` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agent-config/:id/assets` | inline | — | — | Protected |

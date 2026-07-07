@@ -99,7 +99,7 @@ export interface DashboardStats {
   week_delta: WeekDelta;
 }
 
-/* ── Hot leads (from /api/dashboard/stats and /api/triage) ──────── */
+/* ── Hot leads (from /api/dashboard/stats and internal triage data) ─ */
 
 export interface HotLead {
   id: string;
@@ -207,11 +207,9 @@ export interface TriageData {
 /* ── Nav badge counts ────────────────────────────────────────────── */
 
 export interface NavCounts {
-  "/call-logs": number;
-  "/ops": number;
+  "/overview": number;
+  "/phone": number;
   "/inbox": number;
-  "/outbound": number;
-  "/live": number;
 }
 
 /* ── Knowledge base ──────────────────────────────────────────────── */

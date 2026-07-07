@@ -9,7 +9,7 @@ Status: **Executed** — verified findings implemented; July 2026 forward pass c
 | 1 | High | Web/API | Platform admin `/api/health/slos` returned tenant snapshot | **Done** — `getPlatformSloSnapshot` |
 | 2 | High | Web/API | Monitor-token SLO path omitted job/webhook measurements | **Done** — platform aggregate |
 | 3 | High | Web/API | Stripe webhook idempotency fails open on DB errors | **Done** — fail closed (503) |
-| 4 | High | Browser | Forgeable `#browser-context=` auto-opens create dialog | **Done** — signed `/studio/handoff` bridge |
+| 4 | High | Browser | Forgeable `#browser-context=` auto-opens create dialog | **Done** - opaque one-time `/studio/handoff` bridge |
 | 5 | High | ChatGPT MCP | Live agents mutable via draft tools | **Done** — phone-line guard |
 | 6 | High | Native | Outbound dial blocked by TCPA (`hasExpressWrittenConsent` never sent) | **Done** — Android/iOS UI + API |
 | 7 | High | Android | FCM device registration never runs post sign-in | **Done** — `refreshPushRegistration` |
@@ -23,8 +23,8 @@ Status: **Executed** — verified findings implemented; July 2026 forward pass c
 | --- | --- |
 | Stripe live retired default price deactivation (5 legacy SKUs) | **Done** — `npm run stripe:deactivate-retired-defaults`; post-audit **0 findings** |
 | MCP OAuth hardening (resource binding, refresh rotation, rate limits, Cursor callbacks) | **Done** |
-| Signed browser handoff (`/studio/handoff` → exchange/redeem) | **Done** |
-| Web outbound dial + TCPA on Overview, Studio, Call Logs | **Done** |
+| Opaque one-time browser handoff (`/studio/handoff` exchange/redeem) | **Done** |
+| Web outbound dial + TCPA on Overview, Studio, Phone | **Done** |
 | Post-create wizard persistence across refresh | **Done** — sessionStorage step keys |
 | Activation instrumentation (`agent-created`, `first-call-made` GTM aliases) | **Done** — `product-event-client.ts`; `ActivationNudge` mounted in workspace shell |
 | iOS CallKit answer → handoff semantics | **Done** — auto-handoff on CallKit answer |

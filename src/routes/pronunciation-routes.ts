@@ -123,7 +123,7 @@ router.get(
       // an empty list so the admin UI keeps loading instead of erroring.
       if (e?.code === "42P01" || /does not exist/i.test(e?.message || "")) {
         log.warn(
-          "wireline_pronunciation_dictionaries table missing — run /api/admin/migrate-pronunciation-dicts",
+          "wireline_pronunciation_dictionaries table missing - apply the checked pronunciation dictionary migration",
         );
         return res.json({ dictionaries: [], configured: elevenLabsConfigured() });
       }

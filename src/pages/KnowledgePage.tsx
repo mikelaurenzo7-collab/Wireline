@@ -83,7 +83,7 @@ function SimulatorTab({
             </Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link to="/call-logs">Open call logs</Link>
+            <Link to="/phone?tab=logs">Open call history</Link>
           </Button>
         </div>
       </section>

@@ -17,7 +17,7 @@
  * The SMS sender is PLATFORM_SMS_FROM (env var). If not configured,
  * the SMS step is skipped silently — the Assistants-task insert still
  * lands so nothing falls through the cracks. Account Holders see all
- * pending escalations in /triage regardless of SMS state.
+ * pending escalations in Phone / Call History regardless of SMS state.
  *
  * Public endpoint (no auth) — Vapi calls it from its servers with
  * a webhook secret in the X-Vapi-Secret header. We verify against
@@ -106,7 +106,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
     summary: summary.slice(0, 80),
   });
 
-  // 1. Persist as a Assistants task — surfaces in /triage automatically
+  // 1. Persist as a Assistants task — surfaces in Phone / Call History automatically
   if (tenantUserId) {
     try {
       await drizzle.insert(schema.followUpTasks).values({
@@ -126,7 +126,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
 
   // 1b. Slack handoff — post to the configured channel for the originating
   //     agent (or the tenant's default channel) so the human team gets a
-  //     real-time ping with a deep link to /triage. Best-effort; never
+  //     real-time ping with a deep link to Phone. Best-effort; never
   //     breaks the call.
   let slackPosted = false;
   if (tenantUserId) {
@@ -148,7 +148,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
           `*Agent:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
           `*Caller:* ${callerName} (${callerPhone})${callerEmail ? ` · ${callerEmail}` : ""}`,
           `*Summary:* ${summary}`,
-          `<https://trywireline.com/phone|Open call logs →>`,
+          `<https://trywireline.com/phone?tab=logs|Open call history →>`,
         ].join("\n");
         slackPosted = await slackPostMessage(tenantUserId, channelId, text);
       }

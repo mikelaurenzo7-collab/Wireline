@@ -12,13 +12,6 @@ export function isOutboundCallPurpose(value: unknown): value is OutboundCallPurp
   return typeof value === "string" && (OUTBOUND_CALL_PURPOSES as readonly string[]).includes(value);
 }
 
-export function normalizeOutboundCallPurpose(
-  value: unknown,
-  fallback: OutboundCallPurpose = "marketing_or_sales",
-): OutboundCallPurpose {
-  return isOutboundCallPurpose(value) ? value : fallback;
-}
-
 export function isMarketingCallPurpose(callPurpose: OutboundCallPurpose): boolean {
   return callPurpose === "marketing_or_sales";
 }

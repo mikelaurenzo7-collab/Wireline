@@ -139,7 +139,7 @@ const dialSchema = z.object({
     ),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
-  callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional().default("marketing_or_sales"),
+  callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
 });
 

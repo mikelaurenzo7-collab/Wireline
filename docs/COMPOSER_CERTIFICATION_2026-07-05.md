@@ -96,6 +96,7 @@ Run `get_advisors(security)` on 2026-07-05:
 
 - **WARN** `auth_leaked_password_protection` — Supabase Auth leaked-password protection is disabled.
   Scope note: Wireline does not use Supabase Auth for password verification, so this advisor does not protect the active `wireline_users.password_hash` flow. The active remediation is Wireline-owned breached-password screening in the custom auth service.
+  Current posture: see [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) for the custom-auth/HIBP control and unused-index evidence gate.
   Reference: [Password strength and leaked password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
 
 ## Merge criteria checklist

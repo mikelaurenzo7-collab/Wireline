@@ -296,6 +296,55 @@ const IntakeLeadsBulkRequest: JsonSchema = {
   },
 };
 
+const OutboundCallPurpose: JsonSchema = {
+  type: "string",
+  enum: ["service_or_requested", "marketing_or_sales", "callback"],
+  description:
+    "`marketing_or_sales` requires express written consent. `service_or_requested` and `callback` must not fake marketing consent.",
+};
+
+const OutboundDialRequest: JsonSchema = {
+  type: "object",
+  required: ["agentId", "customerNumber", "callPurpose"],
+  properties: {
+    agentId: { type: "string", description: "Tenant-owned agent id that should place the call." },
+    customerNumber: {
+      type: "string",
+      description: "E.164 phone number, for example +15551234567.",
+    },
+    customerName: { type: "string" },
+    context: {
+      type: "string",
+      description: "Free-form context shown to the agent before dialing.",
+    },
+    callPurpose: OutboundCallPurpose,
+    hasExpressWrittenConsent: {
+      type: "boolean",
+      default: false,
+      description:
+        "Only honored for `marketing_or_sales`; ignored for callbacks and requested calls.",
+    },
+  },
+  additionalProperties: false,
+  example: {
+    agentId: "agt_123",
+    customerNumber: "+15551234567",
+    customerName: "Jane Doe",
+    context: "Requested a callback about Business pricing.",
+    callPurpose: "callback",
+    hasExpressWrittenConsent: false,
+  },
+};
+
+const OutboundDialResponse: JsonSchema = {
+  type: "object",
+  required: ["success", "callId"],
+  properties: {
+    success: { type: "boolean" },
+    callId: { type: "string" },
+  },
+};
+
 const DailyBrief: JsonSchema = {
   type: "object",
   description: "Claude-authored daily brief comparing yesterday vs the 7-day baseline.",
@@ -495,6 +544,9 @@ const COMPONENT_SCHEMAS: Record<string, JsonSchema> = {
   IntakeLeadRequest,
   IntakeLeadResponse,
   IntakeLeadsBulkRequest,
+  OutboundCallPurpose,
+  OutboundDialRequest,
+  OutboundDialResponse,
   DailyBrief,
   QuotaUsage,
   BillingStatus,
@@ -743,6 +795,57 @@ const PATHS: Record<string, PathItem> = {
     },
   },
 
+  // ── Outbound ──────────────────────────────────────────────────────
+  "/api/outbound/dial": {
+    post: {
+      summary: "Place a tenant-scoped outbound call",
+      description:
+        "Authenticated manual dial. `callPurpose` is required so requested service calls, callbacks, and marketing/sales calls keep distinct consent semantics. Marketing/sales calls require express written consent and all calls pass DNC/TCPA gates before dispatch.",
+      operationId: "postOutboundDial",
+      tags: ["Outbound"],
+      security: auth.bearer,
+      requestBody: {
+        required: true,
+        content: { "application/json": { schema: ref("OutboundDialRequest") } },
+      },
+      responses: {
+        "200": {
+          description: "Call dispatched.",
+          content: { "application/json": { schema: ref("OutboundDialResponse") } },
+        },
+        "400": COMMON_ERROR_RESPONSES["400"],
+        "401": COMMON_ERROR_RESPONSES["401"],
+        "402": errorResponse("Trial, quota, spend, or billing gate blocked outbound dialing."),
+        "403": errorResponse("DNC or TCPA consent gate blocked the call."),
+        "429": COMMON_ERROR_RESPONSES["429"],
+      },
+    },
+  },
+  "/api/mobile/calls/outbound": {
+    post: {
+      summary: "Place an outbound call from a native client",
+      description:
+        "Native equivalent of `/api/outbound/dial`. The mobile client must send an explicit `callPurpose`; Siri and CarPlay callbacks use non-marketing purposes and cannot assert marketing consent.",
+      operationId: "postMobileOutboundCall",
+      tags: ["Outbound"],
+      security: auth.bearer,
+      requestBody: {
+        required: true,
+        content: { "application/json": { schema: ref("OutboundDialRequest") } },
+      },
+      responses: {
+        "200": {
+          description: "Call dispatched.",
+          content: { "application/json": { schema: ref("OutboundDialResponse") } },
+        },
+        "400": COMMON_ERROR_RESPONSES["400"],
+        "401": COMMON_ERROR_RESPONSES["401"],
+        "402": errorResponse("Trial, quota, spend, or billing gate blocked outbound dialing."),
+        "403": errorResponse("DNC or TCPA consent gate blocked the call."),
+        "429": COMMON_ERROR_RESPONSES["429"],
+      },
+    },
+  },
   // ── Settings ──────────────────────────────────────────────────────
   "/api/settings": {
     get: {
@@ -1064,6 +1167,10 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
         description: "Configured voice + email agents owned by the calling tenant.",
       },
       { name: "Calls", description: "Enriched call logs." },
+      {
+        name: "Outbound",
+        description: "Tenant-scoped outbound dialing with DNC/TCPA consent gates.",
+      },
       {
         name: "Settings",
         description: "Tenant-level settings (retention, business profile, ...).",

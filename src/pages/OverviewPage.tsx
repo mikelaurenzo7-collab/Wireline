@@ -430,7 +430,10 @@ export default function OverviewPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                 Recent calls
               </p>
-              <Link to="/call-logs" className="text-xs font-semibold text-primary hover:underline">
+              <Link
+                to="/phone?tab=logs"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
                 View all →
               </Link>
             </div>
@@ -451,7 +454,7 @@ export default function OverviewPage() {
                 recentCalls.map((call) => (
                   <Link
                     key={call.id}
-                    to="/call-logs"
+                    to="/phone?tab=logs"
                     className="wl-data-row wl-data-row--divided group"
                   >
                     <span className="wl-data-row__leading" aria-hidden="true">

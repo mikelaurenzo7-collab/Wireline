@@ -56,6 +56,7 @@ import pipelineRouter from "../routes/pipeline-routes";
 import dailyBriefRouter from "../routes/daily-brief-routes";
 import quotaRouter from "../routes/quota-routes";
 import browserHandoffRouter from "../routes/browser-handoff-routes";
+import adminSeedDemoRouter from "../routes/admin-seed-demo-routes";
 
 /**
  * Canonical API route order.
@@ -97,10 +98,10 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api", billingRouter);
   app.use(emailRouter);
   // Dashboard data plane: /api/dashboard/*, /api/calls, /api/appointments,
-  // /api/nav-counts, /api/export/:type.csv -- Overview and Call Logs read these.
+  // /api/nav-counts, /api/export/:type.csv -- Overview and Phone read these.
   app.use(dashboardRouter);
   // Assistants data plane: /api/Assistants/presence(/stream), /tasks,
-  // /activity, /seed, plus /api/triage. Powers Call Logs' Live Floor tab
+  // /activity, /seed, plus /api/triage. Powers Phone's live-call data
   // (usePresenceSignals) and is documented in the public OpenAPI spec --
   // must stay registered or both go silently 404.
   app.use(fleetRouter);
@@ -143,5 +144,6 @@ export function registerApiRoutes(app: Express): void {
   // Pipeline kanban + campaign attribution for Insights Attribution tab.
   app.use(pipelineRouter);
   app.use("/api/quotas", quotaRouter);
+  app.use(adminSeedDemoRouter);
   app.use(voiceObservabilityRouter);
 }

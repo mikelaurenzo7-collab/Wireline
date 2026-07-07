@@ -1222,8 +1222,8 @@ mustInclude(
 mustInclude(
   "src/pages/KnowledgePage.tsx",
   trainingPage,
-  /function SimulatorTab[\s\S]*?\/studio\?agent=[\s\S]*?\/call-logs/,
-  "Training Simulator tab must hand off to Studio test calls and Call Logs",
+  /function SimulatorTab[\s\S]*?\/studio\?agent=[\s\S]*?\/phone\?tab=logs/,
+  "Training Simulator tab must hand off to Studio test calls and Phone Call History",
 );
 mustExclude(
   "src/pages/KnowledgePage.tsx",

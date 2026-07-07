@@ -180,8 +180,8 @@ export function PrivacyPolicy() {
       <Section title="5. Data Retention">
         <p>
           Call logs and transcripts are retained for as long as your account is active. You may
-          delete individual call records at any time from the Call Logs view. Upon account deletion,
-          all associated personal data is permanently erased within 30 days.
+          delete individual call records at any time from Phone / Call History. Upon account
+          deletion, all associated personal data is permanently erased within 30 days.
         </p>
       </Section>
 
@@ -629,9 +629,10 @@ export function ZoomDocs() {
           </li>
         </ol>
         <p>
-          You can review every meeting booked by your AI agents on the <strong>Call Logs</strong>{" "}
-          page in Wireline. Each call that booked a meeting links to the corresponding Zoom meeting
-          record so you can review the conversation that led to the booking.
+          You can review every meeting booked by your AI agents in{" "}
+          <strong>Phone / Call History</strong> in Wireline. Each call that booked a meeting links
+          to the corresponding Zoom meeting record so you can review the conversation that led to
+          the booking.
         </p>
       </Section>
 

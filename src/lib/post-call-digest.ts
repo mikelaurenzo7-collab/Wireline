@@ -325,7 +325,7 @@ function renderDigestEmail(d: {
     `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${next}</p>`,
     `<p style="margin:0 0 16px;font-size:12px;color:#666;">${d.crmLogged ? "✅ Logged to your CRM." : "ℹ︎ No CRM connected — connect HubSpot or Salesforce in /integrations to auto-log."}</p>`,
-    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/logs" style="color:${BRAND.colors.primary};text-decoration:none;">in Wireline →</a></p>`,
+    `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/phone?tab=logs" style="color:${BRAND.colors.primary};text-decoration:none;">in Wireline →</a></p>`,
     `</div>`,
   ].join("");
 }
@@ -345,6 +345,6 @@ function nextActionFromOutcome(tag: string): string {
     case "info":
       return "Training gap captured — review and add it from your agent's Training tab in Studio.";
     default:
-      return "Review the full transcript at /logs and label the outcome if you want this in funnel reporting.";
+      return "Review the full transcript in Phone > Call History and label the outcome if you want this in funnel reporting.";
   }
 }
