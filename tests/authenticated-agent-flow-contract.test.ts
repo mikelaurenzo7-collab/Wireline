@@ -81,6 +81,19 @@ describe("authenticated agent flow", () => {
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 
+  it("keeps template gallery searchable and accessible", () => {
+    const templates = read("src/components/AgentTemplates.tsx");
+
+    expect(templates).toContain("searchableTemplateText");
+    expect(templates).toContain("template.firstMessage");
+    expect(templates).toContain("Search templates, roles, channels…");
+    expect(templates).toContain('role="group" aria-label="Template category filter"');
+    expect(templates).toContain("aria-pressed={selected}");
+    expect(templates).toContain("Clear search");
+    expect(templates).toContain('aria-label={`${alreadyDeployed ? "Deploy another" : "Deploy"} ${template.name} agent`}');
+    expect(templates).not.toContain("hidden hidden");
+  });
+
   it("launches post-create Train → Channels → Wire → Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
