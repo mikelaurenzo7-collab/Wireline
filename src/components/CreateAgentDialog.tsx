@@ -16,11 +16,36 @@ import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 
 const ROLE_TEMPLATES = [
-  { value: "scheduler", label: "Scheduler", prompt: "Book appointments" },
-  { value: "receptionist", label: "Receptionist", prompt: "Answer my unknowns" },
-  { value: "customer_service", label: "Support", prompt: "Handle pharmacy calls" },
-  { value: "sales", label: "Sales", prompt: "Qualify leads" },
-  { value: "custom", label: "Custom", prompt: "Something else" },
+  {
+    value: "scheduler",
+    label: "Scheduler",
+    personalPrompt: "Book, confirm, and reschedule my appointments.",
+    businessPrompt: "Book meetings, confirm appointments, and text every update.",
+  },
+  {
+    value: "receptionist",
+    label: "Receptionist",
+    personalPrompt: "Screen unknown callers, take messages, and only interrupt me when needed.",
+    businessPrompt: "Answer the line, capture caller intent, and route each handoff cleanly.",
+  },
+  {
+    value: "customer_service",
+    label: "Support",
+    personalPrompt: "Wait on hold, ask for updates, and send me the resolution.",
+    businessPrompt: "Answer support questions, verify context, and escalate urgent work.",
+  },
+  {
+    value: "sales",
+    label: "Sales",
+    personalPrompt: "Qualify side-hustle inquiries, capture details, and text me the next step.",
+    businessPrompt: "Qualify inbound demand, capture buying context, and route hot opportunities.",
+  },
+  {
+    value: "custom",
+    label: "Custom",
+    personalPrompt: "Handle a custom personal workflow and text me what happened.",
+    businessPrompt: "Handle a custom business workflow and log every outcome.",
+  },
 ] as const;
 
 const PERSONALITY_OPTIONS = ["Clear", "Warm", "Direct", "Polished"] as const;
@@ -31,15 +56,21 @@ type Posture = "personal" | "business";
 
 function defaultAgentName(posture: Posture, role: Role) {
   if (posture === "personal") return "Sarah";
-  if (role === "sales") return "Liam";
+  if (role === "sales") return "Revenue Desk";
   if (role === "customer_service") return "Support Desk";
+  if (role === "scheduler") return "Scheduling Desk";
+  if (role === "custom") return "Wireline Agent";
   return "Front Desk";
 }
 
 function defaultBrief(posture: Posture) {
   return posture === "business"
-    ? "Answer calls, book consultations, log outcomes, and hand off urgent callers."
+    ? "Qualify inbound demand, answer support questions, route urgent calls, and text every outcome."
     : "Answer unknown callers, book appointments, take messages, and text me what happened.";
+}
+
+function defaultRole(posture: Posture): Role {
+  return posture === "business" ? "sales" : "scheduler";
 }
 
 export default function CreateAgentDialog({
@@ -58,7 +89,7 @@ export default function CreateAgentDialog({
   const { refresh } = useAgents();
   const [posture, setPosture] = useState<Posture>(business ? "business" : "personal");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<Role>(business ? "receptionist" : "scheduler");
+  const [role, setRole] = useState<Role>(defaultRole(business ? "business" : "personal"));
   const [voice, setVoice] = useState<VoicePickerValue>({ mode: "auto" });
   const [matchedPresenterVoice, setMatchedPresenterVoice] = useState<{
     voiceId: string;
@@ -77,7 +108,7 @@ export default function CreateAgentDialog({
     if (!open) return;
     const nextPosture = business ? "business" : "personal";
     setPosture(nextPosture);
-    setRole(nextPosture === "business" ? "receptionist" : "scheduler");
+    setRole(defaultRole(nextPosture));
     setName("");
     setVoice({ mode: "auto" });
     setMatchedPresenterVoice(null);
@@ -240,6 +271,10 @@ export default function CreateAgentDialog({
   if (!open) return null;
 
   const previewName = name.trim() || defaultAgentName(activePosture, role);
+  const briefPlaceholder =
+    activePosture === "business"
+      ? "e.g. Qualify inbound demos, answer support questions, and route urgent calls"
+      : "e.g. Answer my unknown callers and book my haircut appointments";
 
   return (
     <div
@@ -305,7 +340,7 @@ export default function CreateAgentDialog({
             {(
               [
                 ["personal", "Personal", "Unknown callers, errands, appointments"],
-                ["business", "Business", "Front desk, leads, support, scheduling"],
+                ["business", "Business", "Sales, support, scheduling, overflow"],
               ] as const
             ).map(([value, label, detail]) => {
               const selected = activePosture === value;
@@ -315,7 +350,7 @@ export default function CreateAgentDialog({
                   type="button"
                   onClick={() => {
                     setPosture(value);
-                    setRole(value === "business" ? "receptionist" : "scheduler");
+                    setRole(defaultRole(value));
                     setBrief(defaultBrief(value));
                   }}
                   className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]" : "border-border bg-card hover:border-primary/30"}`}
@@ -343,26 +378,30 @@ export default function CreateAgentDialog({
               ref={briefRef}
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
-              placeholder="e.g. Answer my unknown callers and book my haircut appointments"
+              placeholder={briefPlaceholder}
               className="min-h-[112px] text-[15px]"
               resize="none"
             />
           </label>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {ROLE_TEMPLATES.slice(0, 4).map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => {
-                  setRole(item.value);
-                  setBrief(item.prompt);
-                }}
-                className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? "border-primary bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
-              >
-                {item.prompt}
-              </button>
-            ))}
+          <div className="mt-4 flex flex-wrap gap-2" aria-label="Quick briefs">
+            {ROLE_TEMPLATES.slice(0, 4).map((item) => {
+              const prompt = activePosture === "business" ? item.businessPrompt : item.personalPrompt;
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => {
+                    setRole(item.value);
+                    setBrief(prompt);
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? "border-primary bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+                  aria-pressed={role === item.value}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
 
           <label className="mt-6 grid gap-1.5">
@@ -404,6 +443,7 @@ export default function CreateAgentDialog({
                     type="button"
                     onClick={() => setPersonality(item)}
                     className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${personality === item ? "border-primary bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+                    aria-pressed={personality === item}
                   >
                     {item}
                   </button>
@@ -411,7 +451,7 @@ export default function CreateAgentDialog({
               </div>
             </div>
             <label
-              className={`flex min-h-[44px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}
+              className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}
             >
               <input
                 type="checkbox"
@@ -420,7 +460,14 @@ export default function CreateAgentDialog({
                 onChange={(event) => setProvisionNumber(event.target.checked)}
               />
               <Phone size={15} aria-hidden="true" className="text-primary" />
-              <span className="text-xs font-semibold text-foreground">Provision number</span>
+              <span className="min-w-0">
+                <span className="block text-xs font-semibold text-foreground">
+                  Provision Wireline number
+                </span>
+                <span className="block text-[10px] font-normal leading-4 text-muted-foreground">
+                  Dedicated line after create
+                </span>
+              </span>
               <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
                 {provisionNumber ? "Now" : "Later"}
               </span>
