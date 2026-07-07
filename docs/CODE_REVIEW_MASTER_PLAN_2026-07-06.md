@@ -26,7 +26,7 @@ Status: **Executed** — verified findings implemented; July 2026 forward pass c
 | Signed browser handoff (`/studio/handoff` → exchange/redeem) | **Done** |
 | Web outbound dial + TCPA on Overview, Studio, Call Logs | **Done** |
 | Post-create wizard persistence across refresh | **Done** — sessionStorage step keys |
-| Activation instrumentation (`agent-created`, `first-call-made` GTM aliases) | **Done** — `product-event-client.ts` |
+| Activation instrumentation (`agent-created`, `first-call-made` GTM aliases) | **Done** — `product-event-client.ts`; `ActivationNudge` mounted in workspace shell |
 | iOS CallKit answer → handoff semantics | **Done** — auto-handoff on CallKit answer |
 | Extension handoff bridge + policy `--check` | **Done** — manifest `0.1.1` (store republish pending) |
 | Legacy Google Drive ingest (`drive-routes`, `google-drive-sync`) | **Deleted** — v2 path via `google-drive-sync-v2` retained |

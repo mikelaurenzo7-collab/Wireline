@@ -75,4 +75,19 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(submissionPacket).toContain("No outbound or inbound calling from the ChatGPT app.");
     expect(submissionPacket).toContain("OAuth authorization code flow with PKCE `S256`.");
   });
+
+  it("does not expose MCP tools that provision numbers, dial, or launch agents", () => {
+    const forbidden = [
+      "provision_phone",
+      "place_call",
+      "outbound_dial",
+      "launch_agent",
+      "attach_phone",
+    ];
+    for (const name of forbidden) {
+      expect(accountRouteSource).not.toContain(`name: "${name}"`);
+    }
+    expect(accountRouteSource).toContain('name: "create_agent_draft"');
+    expect(accountRouteSource).toContain("unlaunched Wireline agent draft");
+  });
 });

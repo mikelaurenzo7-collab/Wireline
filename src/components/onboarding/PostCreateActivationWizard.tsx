@@ -19,7 +19,7 @@ import {
   type PostCreateWizardStep,
 } from "../../lib/wireline-create-flow";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
-import { emitProductEvent } from "../../lib/product-event-client";
+import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 
 type WizardStep = PostCreateWizardStep | "complete";
 
@@ -125,6 +125,14 @@ export default function PostCreateActivationWizard({
       if (!response.ok || body?.ok === false) {
         throw new Error(body?.error || body?.message || "Could not provision a number.");
       }
+      emitProductEventOnce({
+        event: "phone_number_provision_completed",
+        agentId: payload.agentId,
+      });
+      emitProductEventOnce({
+        event: "wire_started",
+        agentId: payload.agentId,
+      });
       await refreshPhone();
       setStep("test");
     } catch (reason) {
@@ -145,6 +153,17 @@ export default function PostCreateActivationWizard({
   }
 
   const hasLine = Boolean(phoneNumber);
+
+  const markWireFunnelEvents = useCallback(() => {
+    emitProductEventOnce({ event: "wire_started", agentId: payload.agentId });
+    if (phoneNumber) {
+      emitProductEventOnce({
+        event: "phone_number_provision_completed",
+        agentId: payload.agentId,
+      });
+    }
+  }, [payload.agentId, phoneNumber]);
+
   const completeCopy = useMemo(() => {
     if (hasLine && phoneNumber) {
       return {
@@ -343,7 +362,14 @@ export default function PostCreateActivationWizard({
 
               <div className="flex flex-wrap gap-2">
                 {hasLine ? (
-                  <Button type="button" size="sm" onClick={() => setStep("test")}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      markWireFunnelEvents();
+                      setStep("test");
+                    }}
+                  >
                     Continue to test
                   </Button>
                 ) : (

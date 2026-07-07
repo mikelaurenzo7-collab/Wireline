@@ -15,6 +15,8 @@ const GTM_EVENT_ALIASES: Partial<Record<ProductEventName, string>> = {
   upgrade_to_paid: "upgrade-to-paid",
 };
 
+const PRODUCT_EVENT_ONCE_PREFIX = "wireline:product-event-once:";
+
 export function emitProductEvent(
   input: Omit<Parameters<typeof makeProductEvent>[0], "surface"> & {
     surface?: ProductEventSurface;
@@ -40,4 +42,22 @@ export function emitProductEvent(
       wireline_occurred_at: event.occurredAt,
     });
   }
+}
+
+/** Fire a product event at most once per browser profile (activation milestones). */
+export function emitProductEventOnce(
+  input: Omit<Parameters<typeof emitProductEvent>[0], "surface"> & {
+    surface?: ProductEventSurface;
+  },
+): boolean {
+  if (typeof window === "undefined") return false;
+  const key = `${PRODUCT_EVENT_ONCE_PREFIX}${input.event}`;
+  try {
+    if (localStorage.getItem(key) === "1") return false;
+    localStorage.setItem(key, "1");
+  } catch {
+    /* private mode — still attempt emit */
+  }
+  emitProductEvent(input);
+  return true;
 }

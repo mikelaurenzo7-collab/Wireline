@@ -12,10 +12,19 @@ import {
   isFreshSignupSession,
 } from "../lib/post-signup-onboarding";
 import { ACTIVATION_NUDGE_COPY } from "../lib/wireline-onboarding-copy";
+import { emitProductEventOnce } from "../lib/product-event-client";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
 
 const DISMISS_KEY = "wireline_activation_nudge_dismissed";
+
+function isRecentActivation(activatedAt: string | null | undefined): boolean {
+  if (!activatedAt) return false;
+  const ts = new Date(activatedAt).getTime();
+  if (Number.isNaN(ts)) return false;
+  // Only attribute conversions for activations in the last 48h — avoids backfill noise.
+  return Date.now() - ts < 48 * 60 * 60 * 1000;
+}
 
 function formatTel(number: string): string {
   const digits = number.replace(/\D/g, "");
@@ -35,10 +44,11 @@ export default function ActivationNudge({ className }: { className?: string }) {
 
   useEffect(() => {
     let cancelled = false;
+    let stopped = false;
     let interval: ReturnType<typeof setInterval> | undefined;
 
     const refresh = async () => {
-      if (isPostSignupFlowActive() || isFreshSignupSession()) return;
+      if (cancelled || stopped || isPostSignupFlowActive() || isFreshSignupSession()) return;
 
       const [activation, progress] = await Promise.all([
         fetchActivationStatusFull(),
@@ -47,7 +57,18 @@ export default function ActivationNudge({ className }: { className?: string }) {
 
       if (cancelled) return;
       if (activation?.activated || isActivationCelebrated()) {
+        if (activation?.activated && isRecentActivation(activation.activatedAt)) {
+          emitProductEventOnce({
+            event: "first_call_completed",
+            metadata: {
+              channel: activation.activationChannel ?? "unknown",
+              call_id: activation.firstActivationCallId ?? null,
+            },
+          });
+        }
         setVisible(false);
+        stopped = true;
+        if (interval) clearInterval(interval);
         return;
       }
       if (!progress || progress.agents === 0) {

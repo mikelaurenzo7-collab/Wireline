@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
+import ActivationNudge from "./ActivationNudge";
 import SkipToContentLink from "./layout/SkipToContentLink";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
@@ -388,6 +389,7 @@ export default function WorkspaceShell({
               <div className="absolute bottom-0 left-0 right-0 border-b border-border/50" />
             </div>
           ) : null}
+          <ActivationNudge className="mx-3 sm:mx-6" />
           <div
             className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}
           >
