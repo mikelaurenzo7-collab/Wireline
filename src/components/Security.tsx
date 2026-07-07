@@ -190,6 +190,13 @@ const TRUST_PACK_SECTIONS = [
   },
 ];
 
+const SECURITY_SUMMARY = [
+  ["Runtime", "Encrypted transport, webhook verification, fallback voice path, and public probes."],
+  ["Data", "Tenant-scoped access, encrypted transcripts, opt-in recordings, deletion workflow."],
+  ["Compliance", "TCPA/DNC controls, HIPAA guardrails, SOC 2 roadmap stated without fake badges."],
+  ["Billing", "Stripe card handling, prepaid Conversation Balance, and spend controls."],
+] as const;
+
 export default function Security() {
   const location = useLocation();
   const isTrustHub = location.pathname === "/trust";
@@ -237,6 +244,15 @@ export default function Security() {
             </p>
             <p className="mt-4 text-eyebrow !text-[0.625rem]">Last updated · July 7, 2026</p>
           </motion.div>
+
+          <section className="mb-10 grid gap-3 sm:grid-cols-2" aria-label="Security summary">
+            {SECURITY_SUMMARY.map(([label, detail]) => (
+              <div key={label} className="rounded-md border border-border bg-background/45 p-4">
+                <p className="text-sm font-semibold text-foreground">{label}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+              </div>
+            ))}
+          </section>
 
           <div className="space-y-7">
             {(isTrustHub ? [...TRUST_PACK_SECTIONS, ...SECTIONS] : SECTIONS).map(

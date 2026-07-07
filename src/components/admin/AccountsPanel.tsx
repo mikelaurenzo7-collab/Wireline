@@ -23,7 +23,7 @@ function AccountCard({
     <button
       onClick={onSwitch}
       className={cn(
-        "relative flex items-start gap-4 rounded-xl p-5 border text-left transition-all w-full",
+        "relative flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-xl border p-4 text-left transition-all sm:gap-4 sm:p-5",
         isActive
           ? "border-primary bg-primary/[0.03] shadow-sm"
           : "border-border bg-card hover:border-primary/30 hover:bg-primary/[0.01]",
@@ -38,8 +38,8 @@ function AccountCard({
         <Icon className="h-5 w-5" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-foreground">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="min-w-0 break-words text-sm font-semibold text-foreground">
             {account.label ?? (account.type === "personal" ? "Personal" : "Business")}
           </span>
           {account.isPrimary && (
@@ -53,7 +53,7 @@ function AccountCard({
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 break-words text-xs text-muted-foreground">
           {account.type === "personal"
             ? "A personal agent for everyday calls, scheduling, and follow-up."
             : "Shared agents with recaps, analytics, and connected accounts."}
@@ -109,7 +109,7 @@ export function AccountsPanel() {
       {(canAddPersonal || canAddBusiness) && (
         <div>
           <p className="text-xs text-muted-foreground mb-3">One personal, one business.</p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {canAddPersonal && (
               <button
                 onClick={() => handleAdd("personal")}

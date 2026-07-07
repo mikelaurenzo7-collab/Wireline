@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Building2,
   Check,
+  CircleDollarSign,
   PhoneCall,
   ShieldCheck,
   Users,
@@ -111,6 +112,29 @@ const COMMERCIAL_RULES = [
   ["Scale", "Team and Business add agents, lines, approvals, routing, and reliability."],
 ] as const;
 
+const BUYER_ASSURANCES = [
+  {
+    icon: Check,
+    label: "Build first",
+    detail: "Create and train before a live line or paid plan is required.",
+  },
+  {
+    icon: CircleDollarSign,
+    label: "Predict spend",
+    detail: "Conversation Balance and published rates keep live work budgetable.",
+  },
+  {
+    icon: PhoneCall,
+    label: "Go live deliberately",
+    detail: "Provision numbers only when the agent is ready for real conversations.",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Operational controls",
+    detail: "Plans add approvals, roles, analytics, compliance, and support posture.",
+  },
+] as const;
+
 const COMPETITOR_POSITIONING = [
   {
     platform: "Wireline",
@@ -205,6 +229,18 @@ export default function Pricing() {
               Personal is balance-led. Team and Business sell operating capacity: agents, numbers,
               routing, approvals, integrations, support, and reliability.
             </p>
+            <div className="mx-auto mt-8 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {BUYER_ASSURANCES.map(({ icon: Icon, label, detail }) => (
+                <div
+                  key={label}
+                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-card/70 p-4 text-left"
+                >
+                  <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+                  <p className="mt-3 text-sm font-semibold text-foreground">{label}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+                </div>
+              ))}
+            </div>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/signup"

@@ -47,6 +47,21 @@ const COMPONENT_META: Record<
   },
 };
 
+const STATUS_DISCLOSURES = [
+  [
+    "What this proves",
+    "Public probes for voice runtime, fallback coverage, and reasoning availability.",
+  ],
+  [
+    "What stays private",
+    "No tenant data, prompts, transcripts, phone numbers, or provider secrets are exposed.",
+  ],
+  [
+    "How to escalate",
+    "If a live line is affected, contact support so we can inspect tenant-specific telemetry.",
+  ],
+] as const;
+
 const STATE_META: Record<
   ComponentState | OverallState,
   { label: string; tone: string; pill: string; bgGradient: string; icon: typeof CheckCircle2 }
@@ -220,6 +235,19 @@ export default function Status() {
                     </p>
                   ) : null}
                 </div>
+              </div>
+              <div className="mt-6 grid gap-2 sm:grid-cols-3">
+                {STATUS_DISCLOSURES.map(([label, detail]) => (
+                  <div
+                    key={label}
+                    className="rounded-[var(--wireline-radius-md)] border border-border bg-background/45 p-3"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>

@@ -114,7 +114,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                   data-testid="header-cta"
                   className="marketing-btn-primary hidden min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold md:inline-flex"
                 >
-                  Start at $9
+                  Start free
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </>
@@ -192,7 +192,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     className="marketing-btn-primary flex min-h-11 text-[var(--wireline-typography-body-size)] font-semibold"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Start at $9
+                    Start free
                   </Link>
                 </div>
               ) : null}

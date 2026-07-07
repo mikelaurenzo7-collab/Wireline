@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Clock3,
   Loader2,
   Mail,
   Phone,
@@ -20,6 +21,12 @@ const INQUIRY_TYPES = [
   { value: "sales", label: "Business" },
   { value: "partnership", label: "Partnership" },
   { value: "general", label: "General" },
+] as const;
+
+const CONTACT_PROMISES = [
+  ["Fit call", "We route sales and rollout questions to the right operating path."],
+  ["Live issue", "Urgent call coverage problems should use the phone line first."],
+  ["Clear next step", "If Wireline is not the right fit, we will say so directly."],
 ] as const;
 
 export function ContactPage() {
@@ -103,6 +110,14 @@ export function ContactPage() {
             Tell us whether you are handing off a personal call, exploring customer coverage for a
             team, or need help with an existing setup. We will point you to the right next step.
           </p>
+          <div className="mt-6 grid gap-2 sm:grid-cols-3">
+            {CONTACT_PROMISES.map(([label, detail]) => (
+              <div key={label} className="rounded border border-border bg-card/70 p-3">
+                <p className="text-sm font-semibold text-foreground">{label}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
@@ -130,15 +145,19 @@ export function ContactPage() {
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
-              Create and train for free. Team starts at $29/mo; Business starts at $59/mo.
+              Create and train for free. Team starts at $29/mo; Business at $59/mo.
             </p>
           </Link>
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a note</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Choose the topic and share only the context that will help us respond well.
+          <p className="mt-2 flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+            <Clock3 className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span>
+              Choose the topic and share the call type, team size, current phone setup, and timeline
+              if you know them. We respond within one business day.
+            </span>
           </p>
           {submitted ? (
             <div className="py-10 text-center">

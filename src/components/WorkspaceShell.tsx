@@ -28,7 +28,7 @@ type NavItem = { href: string; label: string; icon: typeof Bot };
 const WORKSPACE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
   { href: "/knowledge", label: "Training", icon: GraduationCap },
-  { href: "/connections", label: "Connections", icon: Workflow },
+  { href: "/connections", label: "Wire", icon: Workflow },
 ];
 
 const OPERATE_NAV: NavItem[] = [
@@ -44,7 +44,7 @@ const MOBILE_NAV: NavItem[] = [
   { href: "/studio", label: "Studio", icon: Bot },
   { href: "/knowledge", label: "Training", icon: GraduationCap },
   { href: "/phone", label: "Phone", icon: Phone },
-  { href: "/connections", label: "Connections", icon: Workflow },
+  { href: "/connections", label: "Wire", icon: Workflow },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -124,10 +124,10 @@ function MobileRailLink({ item, pathname }: { item: NavItem; pathname: string })
       aria-current={active ? "page" : undefined}
       data-wireline-nav-href={item.href}
       data-wireline-nav-active={active ? "true" : undefined}
-      className={`grid min-h-[44px] flex-1 place-items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-semibold transition-colors ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"}`}
+      className={`grid min-h-[44px] min-w-0 flex-1 place-items-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[10px] font-semibold transition-colors sm:px-1 ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"}`}
     >
       <Icon size={17} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
-      <span className="leading-none">{item.label}</span>
+      <span className="hidden max-w-full truncate leading-none sm:block">{item.label}</span>
     </Link>
   );
 }

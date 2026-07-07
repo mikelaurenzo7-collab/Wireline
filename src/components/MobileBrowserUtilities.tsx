@@ -29,7 +29,7 @@ export default function MobileBrowserUtilities() {
   return (
     <details
       key={location.pathname}
-      className="fixed bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.5rem)] right-4 z-[70] lg:hidden"
+      className="fixed bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.5rem)] right-4 z-[70] hidden sm:block lg:hidden"
     >
       <summary
         aria-label="Open workspace controls"

@@ -138,6 +138,9 @@ export default function KnowledgePage() {
               tabs={trainingTabs}
               activeId={activeTab}
               onSelect={(id) => setActiveTab(id as TrainingTabId)}
+              density="compact"
+              align="start"
+              wrap
               className="mb-0 flex-1 border-b-0 pb-0"
             />
             {populated ? (

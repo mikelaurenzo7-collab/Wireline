@@ -21,6 +21,7 @@ describe("agent navigation contract", () => {
   const appsPage = read("src/pages/ClientAppsPage.tsx");
   const pricingPage = read("src/pages/Pricing.tsx");
   const connectionsPage = read("src/pages/ConnectionsPage.tsx");
+  const trainingPage = read("src/pages/KnowledgePage.tsx");
   const settingsPage = read("src/pages/SettingsPage.tsx");
   const billingPage = read("src/pages/BillingSettings.tsx");
   const teamPage = read("src/pages/TeamSettings.tsx");
@@ -91,6 +92,20 @@ describe("agent navigation contract", () => {
     expect(pricingPage).toMatch(/Conversation Balance/);
     expect(pricingPage).toMatch(/Balance pays for live work\. Plans add the business layer\./);
     expect(pricingPage).not.toMatch(/Starter|Try 7 days free/);
+  });
+
+  it("keeps Wire as the customer-facing wiring surface while preserving routes", () => {
+    expect(workspaceShell).toMatch(/href: "\/connections", label: "Wire"/);
+    expect(connectionsPage).toMatch(/WorkspacePageIntro title="Wire"/);
+    expect(read("src/constants/navigation.ts")).toMatch(
+      /label: "Wire"[\s\S]*path: "\/connections"/,
+    );
+    expect(read("src/lib/wireline-onboarding-copy.ts")).toMatch(/Open Wire/);
+  });
+
+  it("keeps Training tabs compact and resilient across narrow workspaces", () => {
+    expect(trainingPage).toMatch(/WorkspaceTabStrip/);
+    expect(trainingPage).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
   });
 
   it("migrates secondary workspace pages to the new quiet screenshot system", () => {

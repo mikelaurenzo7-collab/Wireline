@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import { isValidElement } from "react";
+import type { ElementType, ReactNode } from "react";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { motion, useReducedMotion } from "motion/react";
 import { Link } from "react-router-dom";
-import { LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";
@@ -18,7 +18,7 @@ interface Action {
 }
 
 export interface EmptyStateProps {
-  icon?: LucideIcon | ReactNode;
+  icon?: ElementType<{ className?: string; strokeWidth?: number }> | ReactNode;
   title: string;
   description?: ReactNode;
   actions?: Action[];
@@ -72,8 +72,21 @@ export function EmptyState({
   const reduceMotion = useReducedMotion();
   const compact = density === "compact";
   const showConstellation = withConstellation ?? framed;
-  const LucideIconComponent = typeof IconOrNode === "function" ? IconOrNode : null;
-  const iconNode = IconOrNode && typeof IconOrNode !== "function" ? IconOrNode : null;
+  let IconComponent: ElementType<{ className?: string; strokeWidth?: number }> | null = null;
+  let iconNode: ReactNode = null;
+
+  if (IconOrNode) {
+    if (isValidElement(IconOrNode)) {
+      iconNode = IconOrNode;
+    } else if (
+      typeof IconOrNode === "function" ||
+      (typeof IconOrNode === "object" && ("render" in IconOrNode || "type" in IconOrNode))
+    ) {
+      IconComponent = IconOrNode as ElementType<{ className?: string; strokeWidth?: number }>;
+    } else {
+      iconNode = IconOrNode;
+    }
+  }
   const resolvedActions = actions.length > 0 ? actions : [];
 
   const body = (
@@ -90,7 +103,7 @@ export function EmptyState({
     >
       {IconOrNode ? (
         <div className={compact ? "mb-4" : "mb-5"}>
-          {LucideIconComponent ? (
+          {IconComponent ? (
             <SignalOrbFrame
               size={compact ? "sm" : "md"}
               withConstellation={showConstellation}
@@ -103,10 +116,7 @@ export function EmptyState({
                 size={compact ? "sm" : "md"}
                 accent={accent}
               >
-                <LucideIconComponent
-                  className={compact ? "w-5 h-5" : "w-6 h-6"}
-                  strokeWidth={1.75}
-                />
+                <IconComponent className={compact ? "w-5 h-5" : "w-6 h-6"} strokeWidth={1.75} />
               </Medallion>
             </SignalOrbFrame>
           ) : (

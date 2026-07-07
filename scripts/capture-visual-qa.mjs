@@ -2,12 +2,16 @@ import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:5000").replace(
+  /\/$/,
+  "",
+);
 const outputRoot = path.resolve(process.env.WIRELINE_VISUAL_OUTPUT_DIR || "artifacts/visual-qa");
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const outputDir = path.join(outputRoot, timestamp);
 const email = process.env.WIRELINE_VISUAL_EMAIL?.trim();
 const password = process.env.WIRELINE_VISUAL_PASSWORD;
+const routeTimeoutMs = Number(process.env.WIRELINE_VISUAL_ROUTE_TIMEOUT_MS || 90_000);
 
 const marketingRoutes = [
   "/",
@@ -29,7 +33,6 @@ const marketingRoutes = [
 
 const authenticatedRoutes = [
   "/overview",
-  "/agents",
   "/studio",
   "/studio?create=1",
   "/knowledge",
@@ -57,9 +60,28 @@ const viewports = [
   { name: "desktop-1440", width: 1440, height: 1100, isMobile: false, hasTouch: false },
 ];
 
+function parseList(value) {
+  return new Set(
+    (value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+}
+
+const viewportFilter = parseList(process.env.WIRELINE_VISUAL_VIEWPORTS);
+const activeViewports = viewportFilter.size
+  ? viewports.filter((viewport) => viewportFilter.has(viewport.name))
+  : viewports;
+
 function fileName(route) {
   if (route === "/") return "home";
-  return route.replace(/^\//, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "home";
+  return (
+    route
+      .replace(/^\//, "")
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "") || "home"
+  );
 }
 
 function describeControl(element) {
@@ -85,7 +107,12 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
       .filter((element) => {
         const style = window.getComputedStyle(element);
         const rect = element.getBoundingClientRect();
-        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+        return (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
       })
       .map((element) => {
         const rect = element.getBoundingClientRect();
@@ -110,7 +137,12 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
   });
 
   if (findings.pageOverflow) {
-    issues.push({ viewport: viewportName, route, kind: "overflow", detail: "Document exceeds viewport width." });
+    issues.push({
+      viewport: viewportName,
+      route,
+      kind: "overflow",
+      detail: "Document exceeds viewport width.",
+    });
   }
   for (const control of findings.controls) {
     issues.push({
@@ -122,23 +154,115 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
   }
 }
 
+async function gotoWithRetry(page, route, attempts = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await page.goto(`${baseUrl}${route}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 45_000,
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) await page.waitForTimeout(1_000 * attempt);
+    }
+  }
+  throw lastError;
+}
+
 async function captureRoute(page, viewportName, route, issues) {
-  const response = await page.goto(`${baseUrl}${route}`, { waitUntil: "domcontentloaded", timeout: 45_000 });
+  let response;
+  try {
+    response = await gotoWithRetry(page, route);
+  } catch (error) {
+    issues.push({
+      viewport: viewportName,
+      route,
+      kind: "navigation",
+      detail: error instanceof Error ? error.message : "Navigation failed",
+    });
+    return;
+  }
   await settle(page);
   const status = response?.status() ?? null;
   const finalUrl = page.url();
-  if (status && status >= 400) issues.push({ viewport: viewportName, route, kind: "http", detail: String(status) });
+  if (status && status >= 400)
+    issues.push({ viewport: viewportName, route, kind: "http", detail: String(status) });
   if (!finalUrl.startsWith(`${baseUrl}${route.split("?")[0]}`)) {
     issues.push({ viewport: viewportName, route, kind: "redirect", detail: finalUrl });
   }
   await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
-  await page.screenshot({ path: file, fullPage: true, animations: "disabled" });
+  await page.screenshot({ path: file, fullPage: true, animations: "disabled", timeout: 30_000 });
+}
+
+function attachPageDiagnostics(page, viewportName, issues) {
+  page.setDefaultTimeout(30_000);
+  page.setDefaultNavigationTimeout(45_000);
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      issues.push({
+        viewport: viewportName,
+        route: page.url(),
+        kind: "console",
+        detail: message.text(),
+      });
+    }
+  });
+  page.on("requestfailed", (request) => {
+    const failure = request.failure();
+    if (failure?.errorText) {
+      issues.push({
+        viewport: viewportName,
+        route: page.url(),
+        kind: "request",
+        detail: `${request.url()} - ${failure.errorText}`,
+      });
+    }
+  });
+}
+
+async function withTimeout(work, timeoutMs, message) {
+  let timeout;
+  try {
+    return await Promise.race([
+      work,
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function captureRouteInFreshPage(context, viewportName, route, issues) {
+  const page = await context.newPage();
+  attachPageDiagnostics(page, viewportName, issues);
+  try {
+    await withTimeout(
+      captureRoute(page, viewportName, route, issues),
+      routeTimeoutMs,
+      `Capture timed out after ${routeTimeoutMs}ms`,
+    );
+  } catch (error) {
+    issues.push({
+      viewport: viewportName,
+      route,
+      kind: "capture",
+      detail: error instanceof Error ? error.message : "Capture failed",
+    });
+  } finally {
+    await page.close({ runBeforeUnload: false }).catch(() => {});
+  }
 }
 
 async function signIn(page, viewportName, issues) {
   if (!email || !password) return false;
-  await page.goto(`${baseUrl}/signin?redirect=%2Foverview`, { waitUntil: "domcontentloaded", timeout: 45_000 });
+  await page.goto(`${baseUrl}/signin?redirect=%2Foverview`, {
+    waitUntil: "domcontentloaded",
+    timeout: 45_000,
+  });
   await settle(page);
   try {
     await page.locator("#auth-email").fill(email);
@@ -148,7 +272,12 @@ async function signIn(page, viewportName, issues) {
     await settle(page);
     return true;
   } catch (error) {
-    issues.push({ viewport: viewportName, route: "/signin", kind: "auth", detail: error instanceof Error ? error.message : "Sign-in failed" });
+    issues.push({
+      viewport: viewportName,
+      route: "/signin",
+      kind: "auth",
+      detail: error instanceof Error ? error.message : "Sign-in failed",
+    });
     return false;
   }
 }
@@ -156,28 +285,39 @@ async function signIn(page, viewportName, issues) {
 await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const issues = [];
+let authenticatedStorageState = null;
 
 try {
-  for (const viewport of viewports) {
+  if (email && password) {
+    const authContext = await browser.newContext({
+      viewport: { width: 1280, height: 900 },
+      isMobile: false,
+      hasTouch: false,
+      deviceScaleFactor: 1,
+    });
+    const authPage = await authContext.newPage();
+    attachPageDiagnostics(authPage, "auth-seed", issues);
+    const signedIn = await signIn(authPage, "auth-seed", issues);
+    if (signedIn) authenticatedStorageState = await authContext.storageState();
+    await authPage.close({ runBeforeUnload: false }).catch(() => {});
+    await authContext.close();
+  }
+
+  for (const viewport of activeViewports) {
     const context = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
       isMobile: viewport.isMobile,
       hasTouch: viewport.hasTouch,
       deviceScaleFactor: 1,
-    });
-    const page = await context.newPage();
-    page.on("console", (message) => {
-      if (message.type() === "error") issues.push({ viewport: viewport.name, route: page.url(), kind: "console", detail: message.text() });
-    });
-    page.on("requestfailed", (request) => {
-      const failure = request.failure();
-      if (failure?.errorText) issues.push({ viewport: viewport.name, route: page.url(), kind: "request", detail: `${request.url()} - ${failure.errorText}` });
+      storageState: authenticatedStorageState ?? undefined,
     });
 
-    for (const route of marketingRoutes) await captureRoute(page, viewport.name, route, issues);
+    for (const route of marketingRoutes)
+      await captureRouteInFreshPage(context, viewport.name, route, issues);
 
-    if (await signIn(page, viewport.name, issues)) {
-      for (const route of authenticatedRoutes) await captureRoute(page, viewport.name, route, issues);
+    if (authenticatedStorageState) {
+      for (const route of authenticatedRoutes)
+        await captureRouteInFreshPage(context, viewport.name, route, issues);
     }
 
     await context.close();
@@ -189,8 +329,8 @@ try {
 const manifest = {
   baseUrl,
   outputDir,
-  authenticatedCapture: Boolean(email && password),
-  viewports: viewports.map(({ name, width, height }) => ({ name, width, height })),
+  authenticatedCapture: Boolean(authenticatedStorageState),
+  viewports: activeViewports.map(({ name, width, height }) => ({ name, width, height })),
   marketingRoutes,
   authenticatedRoutes,
   issues,

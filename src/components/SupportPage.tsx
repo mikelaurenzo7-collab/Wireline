@@ -10,6 +10,7 @@ import {
   Loader2,
   CheckCircle2,
   ArrowLeft,
+  AlertTriangle,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
@@ -23,6 +24,12 @@ const ISSUE_TYPES = [
   { value: "agent", label: "Call quality" },
   { value: "account", label: "Account access" },
   { value: "other", label: "Something else" },
+] as const;
+
+const SUPPORT_ROUTING = [
+  ["Service interruption", "Call directly when a live line or active call needs attention."],
+  ["Account and billing", "Use the ticket form so invoices, access, and refunds stay traceable."],
+  ["Agent quality", "Send agent name, call time, expected behavior, and what happened."],
 ] as const;
 
 export function SupportPage() {
@@ -85,6 +92,20 @@ export function SupportPage() {
             We aim for a first response within one business day. For a service interruption or a
             live call that needs attention, call us directly.
           </p>
+          <div className="mt-6 grid gap-2 sm:grid-cols-3">
+            {SUPPORT_ROUTING.map(([label, detail], index) => (
+              <div key={label} className="rounded border border-border bg-card/70 p-3">
+                {index === 0 ? (
+                  <AlertTriangle
+                    className="mb-2 h-4 w-4 text-[var(--wireline-color-status-warning)]"
+                    aria-hidden="true"
+                  />
+                ) : null}
+                <p className="text-sm font-semibold text-foreground">{label}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">

@@ -367,6 +367,9 @@ export default function AdminSettings() {
           ariaLabel="Admin sections"
           activeId={activeTab}
           onSelect={(id) => navigate(`/admin?tab=${id}`)}
+          density="compact"
+          wrap
+          className="mb-3 border-b border-border/70 pb-3"
           tabs={VALID_TABS.map((tab) => ({
             id: tab,
             label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,

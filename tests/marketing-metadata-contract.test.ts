@@ -36,7 +36,7 @@ describe("marketing metadata contract", () => {
 
     expect(pricing).toContain("Build and train one agent for free");
     expect(contact).toContain(
-      "Create and train for free. Team starts at $29/mo; Business starts at $59/mo.",
+      "Create and train for free. Team starts at $29/mo; Business at $59/mo.",
     );
     expect(contact).toContain('searchParams.get("intent") ?? searchParams.get("topic")');
     expect(contact).toContain("Preferred callback");

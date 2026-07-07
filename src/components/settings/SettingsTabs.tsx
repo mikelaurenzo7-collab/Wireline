@@ -7,7 +7,7 @@ const settingsTabs = [
   { id: "billing", href: "/settings/billing", label: "Billing" },
   { id: "phone", href: "/settings/phone", label: "Phone" },
   { id: "team", href: "/settings/team", label: "Team" },
-  { id: "customization", href: "/settings/customization", label: "Customization" },
+  { id: "customization", href: "/settings/customization", label: "Branding" },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -24,7 +24,9 @@ export default function SettingsTabs() {
       ariaLabel="Settings sections"
       tabs={settingsTabs}
       activeId={activeTab}
-      className="mb-7"
+      density="compact"
+      wrap
+      className="mb-7 border-b border-border/70 pb-3"
     />
   );
 }

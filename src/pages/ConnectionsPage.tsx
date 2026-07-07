@@ -7,7 +7,7 @@ export default function ConnectionsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
-        <WorkspacePageIntro title="Connections" />
+        <WorkspacePageIntro title="Wire" />
         <IntegrationOperatingMap />
         <CrmConnectionCard />
       </WorkspacePageFrame>

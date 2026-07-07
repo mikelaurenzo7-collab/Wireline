@@ -12,10 +12,12 @@ function LegalLayout({
   title,
   icon: Icon,
   children,
+  summary,
 }: {
   title: string;
   icon: typeof Shield;
   children: React.ReactNode;
+  summary?: readonly string[];
 }) {
   return (
     <MarketingChrome stickyCta={false}>
@@ -34,6 +36,16 @@ function LegalLayout({
           <h1 className="marketing-hero-title text-2xl sm:text-3xl">{title}</h1>
         </div>
         <p className="text-eyebrow !text-[0.625rem] mb-10">Last updated: {LAST_UPDATED}</p>
+
+        {summary?.length ? (
+          <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label={`${title} summary`}>
+            {summary.map((item) => (
+              <div key={item} className="rounded-md border border-border bg-background/45 p-4">
+                <p className="text-sm leading-6 text-foreground">{item}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">
           {children}
@@ -90,7 +102,15 @@ function Section({
 // ─────────────────────────────────────────────────────────────────────────────
 export function PrivacyPolicy() {
   return (
-    <LegalLayout title="Privacy Policy" icon={Shield}>
+    <LegalLayout
+      title="Privacy Policy"
+      icon={Shield}
+      summary={[
+        "We do not sell or share personal information for advertising.",
+        "Agent configurations and call transcripts are not used to train third-party AI models.",
+        "Account deletion and privacy requests have a documented path.",
+      ]}
+    >
       <PageMeta
         title="Privacy Policy"
         description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, OpenAI, Google Gemini, Stripe, Vercel, and breached-password screening. Last updated July 6, 2026."
@@ -295,7 +315,15 @@ export function PrivacyPolicy() {
 // ─────────────────────────────────────────────────────────────────────────────
 export function TermsOfService() {
   return (
-    <LegalLayout title="Terms of Service" icon={FileText}>
+    <LegalLayout
+      title="Terms of Service"
+      icon={FileText}
+      summary={[
+        "Customers own their agent configurations, knowledge, recordings, and data.",
+        "Outbound calling compliance remains a shared operating responsibility.",
+        "The first paid invoice carries a 30-day money-back guarantee.",
+      ]}
+    >
       <PageMeta
         title="Terms of Service"
         description="Wireline's terms of service — acceptable use, billing, telemarketing compliance (TCPA), limitation of liability, and governing law (Delaware). Last updated May 9, 2026."

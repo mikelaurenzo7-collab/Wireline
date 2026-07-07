@@ -121,7 +121,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No leads in the pipeline",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Open Connections", to: "/connections" },
+      { label: "Open Wire", to: "/connections" },
     ],
   },
   training: {
@@ -351,7 +351,7 @@ export const OPS_HELP = {
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
     { label: "Agents", to: "/agents", hint: "Open the agent roster" },
-    { label: "Connections", to: "/connections", hint: "Numbers, email, and integrations" },
+    { label: "Wire", to: "/connections", hint: "Numbers, email, and integrations" },
     { label: "Studio", to: "/studio", hint: "Training, voice, and run controls" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },
   ],

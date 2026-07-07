@@ -151,14 +151,14 @@ export default function VoicePickerField({
       <button
         type="button"
         onClick={() => onChange({ mode: "auto" })}
-        className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+        className={`w-full min-w-0 overflow-hidden rounded-xl border px-4 py-3 text-left transition-colors ${
           value.mode === "auto"
             ? "border-primary/35 bg-primary/5"
             : "border-border bg-card hover:border-primary/25"
         }`}
       >
-        <p className="text-sm font-semibold text-foreground">Auto voice</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
+        <p className="break-words text-sm font-semibold text-foreground">Auto voice</p>
+        <p className="mt-0.5 break-words text-xs text-muted-foreground">
           Wireline picks a polished default from your connected providers.
         </p>
       </button>
