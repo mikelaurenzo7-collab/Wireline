@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { cn } from "../lib/utils";
 import { usePresenceSignals } from "../hooks/usePresenceSignals";
@@ -292,6 +293,7 @@ export default function CallLogsClaude() {
               }
               loading={loading}
               hasLive={live.length > 0 || presenceSignals.length > 0}
+              onOutboundCall={() => setShowOutboundDial(true)}
             />
           </>
         ) : null}
@@ -310,14 +312,31 @@ function FloorTab({
   calls,
   loading,
   hasLive,
+  onOutboundCall,
 }: {
   calls: Call[];
   loading: boolean;
   hasLive: boolean;
+  onOutboundCall: () => void;
 }) {
   if (loading) return <RowSkeleton />;
   if (!calls.length) {
-    return <EmptyState title="Floor is quiet." body="Live calls appear here." />;
+    return (
+      <EmptyState
+        title="No call history yet."
+        body="Live and outbound conversations will appear here with summaries, outcomes, follow-ups, and exports."
+        action={
+          <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
+            <Button asChild size="sm">
+              <Link to="/studio?create=1">Create first agent</Link>
+            </Button>
+            <Button type="button" variant="secondary" size="sm" onClick={onOutboundCall}>
+              Place outbound call
+            </Button>
+          </div>
+        }
+      />
+    );
   }
   return (
     <>
@@ -642,7 +661,7 @@ function AnalyticsContent() {
   );
 }
 
-function EmptyState({ title, body }: { title: string; body: string }) {
+function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
   return (
     <div className="grid place-items-center py-16 text-center">
       <div className="max-w-md">
@@ -650,6 +669,7 @@ function EmptyState({ title, body }: { title: string; body: string }) {
           {title}
         </div>
         <p className="mt-2 text-[13px] text-[var(--wireline-color-text-secondary)]">{body}</p>
+        {action}
       </div>
     </div>
   );

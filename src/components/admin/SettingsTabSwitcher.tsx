@@ -30,7 +30,7 @@ const TAB_GROUPS: { tabs: TabDef[] }[] = [
   { tabs: [{ id: "branding", label: "Branding", path: "/admin?tab=branding" }] },
   { tabs: [{ id: "carrier", label: "Carrier", path: "/admin?tab=carrier" }] },
   { tabs: [{ id: "flywheel", label: "Growth", path: "/admin?tab=flywheel" }] },
-  { tabs: [{ id: "integrations", label: "Integrations", path: "/actions" }] },
+  { tabs: [{ id: "integrations", label: "Integrations", path: "/connections" }] },
   { tabs: [{ id: "activity", label: "Activity", path: "/admin?tab=activity" }] },
   {
     tabs: [
@@ -56,7 +56,7 @@ export default function SettingsTabSwitcher({
 
   const getActiveTab = (): AdminTab => {
     const pathname = location.pathname;
-    if (pathname === "/actions") return "integrations";
+    if (pathname === "/connections" || pathname === "/actions") return "integrations";
     if (pathname === "/dnc") return "dnc";
     if (pathname === "/audit") return "audit";
     const searchParams = new URLSearchParams(location.search);

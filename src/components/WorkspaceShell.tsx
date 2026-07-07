@@ -1,9 +1,9 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  BookOpen,
   Bot,
   BarChart3,
+  GraduationCap,
   Home,
   Inbox,
   LayoutGrid,
@@ -26,7 +26,7 @@ type NavItem = { href: string; label: string; icon: typeof Bot };
 
 const WORKSPACE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
-  { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { href: "/knowledge", label: "Training", icon: GraduationCap },
   { href: "/connections", label: "Connections", icon: Workflow },
 ];
 
@@ -41,7 +41,7 @@ const OPERATE_NAV: NavItem[] = [
 const MOBILE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
   { href: "/studio", label: "Studio", icon: Bot },
-  { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { href: "/knowledge", label: "Training", icon: GraduationCap },
   { href: "/phone", label: "Phone", icon: Phone },
   { href: "/connections", label: "Connections", icon: Workflow },
   { href: "/inbox", label: "Inbox", icon: Inbox },

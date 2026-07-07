@@ -2,18 +2,18 @@
 
 /* Route-level repairs for the dense operational surfaces. */
 
-[data-wireline-route="/actions"] .wl-workspace-content-inner > .flex.h-full,
-[data-wireline-route="/actions"] .wl-workspace-content-inner > .grid.h-full {
+[data-wireline-route="/connections"] .wl-workspace-content-inner > .flex.h-full,
+[data-wireline-route="/connections"] .wl-workspace-content-inner > .grid.h-full {
   height: auto;
   min-height: 0;
 }
 
-[data-wireline-route="/actions"] .wl-scroll {
+[data-wireline-route="/connections"] .wl-scroll {
   overflow: visible;
 }
 
-[data-wireline-route="/actions"] .wl-workspace-content-inner > .flex > .lg\:grid > aside,
-[data-wireline-route="/actions"] .wl-workspace-content-inner > .flex > .lg\:grid > div:last-child {
+[data-wireline-route="/connections"] .wl-workspace-content-inner > .flex > .lg\:grid > aside,
+[data-wireline-route="/connections"] .wl-workspace-content-inner > .flex > .lg\:grid > div:last-child {
   align-self: start;
 }
 

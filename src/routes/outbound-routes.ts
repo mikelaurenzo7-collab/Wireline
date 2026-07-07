@@ -19,7 +19,6 @@ import {
 } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { SentryEvents } from "../lib/sentry-events";
-import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { validate } from "../middleware/input-validation";
 import { z } from "zod";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -64,41 +63,35 @@ router.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, 
 
 // Returns upcoming scheduled callbacks for the Account Holder dashboard.
 // Sorted by soonest first, capped at 50 for display purposes.
-// Rate-limited to 30 req/min per user to prevent scraping.
-router.get(
-  "/api/callbacks",
-  claudeRateLimiter,
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const data = await drizzle
-        .select({
-          id: schema.outboundLeads.id,
-          customer_name: schema.outboundLeads.customerName,
-          customer_number: schema.outboundLeads.customerNumber,
-          callback_scheduled_at: schema.outboundLeads.callbackScheduledAt,
-          last_contact_summary: schema.outboundLeads.lastContactSummary,
-          agent_id: schema.outboundLeads.agentId,
-          attempts: schema.outboundLeads.attempts,
-        })
-        .from(schema.outboundLeads)
-        .where(
-          and(
-            eq(schema.outboundLeads.userId, req.user.id),
-            eq(schema.outboundLeads.status, "Callback-Scheduled"),
-            isNotNull(schema.outboundLeads.callbackScheduledAt),
-          ),
-        )
-        .orderBy(schema.outboundLeads.callbackScheduledAt)
-        .limit(50);
+// Kept as an authenticated dashboard read so missing AI/runtime limiter
+// infrastructure cannot blank the Phone callbacks tab.
+router.get("/api/callbacks", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = await drizzle
+      .select({
+        id: schema.outboundLeads.id,
+        customer_number: schema.outboundLeads.customerNumber,
+        scheduled_at: schema.outboundLeads.callbackScheduledAt,
+        notes: schema.outboundLeads.lastContactSummary,
+        status: schema.outboundLeads.status,
+      })
+      .from(schema.outboundLeads)
+      .where(
+        and(
+          eq(schema.outboundLeads.userId, req.user.id),
+          eq(schema.outboundLeads.status, "Callback-Scheduled"),
+          isNotNull(schema.outboundLeads.callbackScheduledAt),
+        ),
+      )
+      .orderBy(schema.outboundLeads.callbackScheduledAt)
+      .limit(50);
 
-      res.json({ callbacks: data || [] });
-    } catch (e: any) {
-      log.error("GET /api/callbacks failed", { error: getErrorMessage(e) });
-      throw AppError.fromHttpStatus(500, "Failed to load callbacks.");
-    }
-  },
-);
+    res.json({ callbacks: data || [] });
+  } catch (e: any) {
+    log.error("GET /api/callbacks failed", { error: getErrorMessage(e) });
+    throw AppError.fromHttpStatus(500, "Failed to load callbacks.");
+  }
+});
 
 router.delete(
   "/api/outbound/:id",

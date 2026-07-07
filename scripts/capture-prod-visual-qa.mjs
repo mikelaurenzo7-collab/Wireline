@@ -55,8 +55,8 @@ const authenticatedRoutes = [
   "/phone?tab=outbound",
   "/phone?tab=campaigns",
   "/phone?tab=callbacks",
-  "/actions",
   "/connections",
+  "/connections/salesforce",
   "/apps",
   "/inbox",
   "/settings",
@@ -551,7 +551,7 @@ try {
     }
     await signupContext.close();
   } else if (qaFocus === "connections-actions") {
-    console.log("Running connections and actions focused QA...");
+    console.log("Running connections focused QA...");
     const signupContext = await browser.newContext({
       viewport: { width: desktop.width, height: desktop.height },
       deviceScaleFactor: 1,
@@ -562,32 +562,23 @@ try {
     if (await signUp(signupPage, desktop.name, issues)) {
       await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
 
-      // Navigate to /actions
-      await signupPage.goto(`${baseUrl}/actions`, { waitUntil: "domcontentloaded" });
+      // Navigate to /connections
+      await signupPage.goto(`${baseUrl}/connections`, { waitUntil: "domcontentloaded" });
       await settle(signupPage);
 
-      // Toggle first tool row if available and enabled
-      const toolRow = signupPage.locator(".wl-stitch-tool-row").first();
-      const isVisible = await toolRow.isVisible().catch(() => false);
-      const isEnabled = isVisible && (await toolRow.isEnabled().catch(() => false));
-      if (isEnabled) {
-        await toolRow.click();
-        await signupPage.waitForTimeout(1500);
-        console.log("Toggled an integration tool in Actions workspace successfully.");
-      } else {
-        console.log(
-          `[QA Note] First tool row is visible: ${isVisible}, enabled: ${isEnabled}. Skipping toggle click.`,
-        );
+      const connectedStack = signupPage.getByText("Connected stack").first();
+      const connectionsReady = await connectedStack.isVisible().catch(() => false);
+      if (!connectionsReady) {
         issues.push({
           viewport: desktop.name,
-          route: "/actions",
+          route: "/connections",
           mode: "authenticated",
           kind: "flow",
-          detail: `Tool row under Actions was not clickable (visible=${isVisible}, enabled=${isEnabled}).`,
+          detail: "Connections hub did not render the connected-stack card.",
         });
       }
 
-      const prefix = path.join(outputDir, `${desktop.name}-flow-connections-actions`);
+      const prefix = path.join(outputDir, `${desktop.name}-flow-connections`);
       await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
       await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
     }

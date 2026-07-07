@@ -7,7 +7,7 @@ import IntakeKeysManager from "../IntakeKeysManager";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 import { OUTBOUND_VIEW_TABS } from "../../lib/page-sub-tabs";
 import { Button } from "../atoms";
-import { Phone } from "lucide-react";
+import { KeyRound, Phone, ShieldCheck } from "lucide-react";
 
 type OutboundView = (typeof OUTBOUND_VIEW_TABS)[number]["id"];
 
@@ -39,9 +39,56 @@ export default function OutboundHub({
       <div className="flex-1 min-h-0 overflow-hidden">
         {activeView === "dispatch" && (
           <div className="flex h-full min-h-0 flex-col overflow-auto">
-            <div className="border-b border-border px-6 py-4 text-sm text-muted-foreground max-w-2xl">
-              Place a one-off outbound call with TCPA consent checks, or connect lead intake for
-              automated campaign dialing.
+            <div className="border-b border-border px-6 py-5">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="wl-label mb-2 text-brand">Outbound dispatch</p>
+                  <h2 className="font-display text-2xl italic leading-tight text-foreground">
+                    Start compliant outbound without leaving Phone.
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Place a one-off call, accept leads from forms, or move into campaigns when the
+                    list is ready. Consent checks stay in the path.
+                  </p>
+                </div>
+                <Button type="button" size="sm" onClick={() => setShowDial(true)}>
+                  <Phone className="h-3.5 w-3.5" aria-hidden />
+                  Dial now
+                </Button>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {[
+                  {
+                    icon: Phone,
+                    title: "One-off calls",
+                    body: "Dial a requested callback or service follow-up with purpose logged.",
+                  },
+                  {
+                    icon: KeyRound,
+                    title: "Lead intake",
+                    body: "Issue scoped API keys for forms and partner lead sources.",
+                  },
+                  {
+                    icon: ShieldCheck,
+                    title: "Consent guardrails",
+                    body: "Marketing calls require express consent; service calls stay separate.",
+                  },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.title}
+                      className="rounded-md border border-border bg-card/60 p-4"
+                    >
+                      <Icon className="mb-3 h-4 w-4 text-brand" aria-hidden />
+                      <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+                      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                        {item.body}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <IntakeKeysManager />
           </div>

@@ -17,6 +17,10 @@ const PHONE_TABS = [
 
 export default function PhonePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const legacyOutboundView = OUTBOUND_VIEW_TABS.some((tab) => tab.id === tabParam)
+    ? tabParam
+    : null;
   const primaryTab = resolveAppPageSubTabId(
     {
       pathname: "/phone",
@@ -25,11 +29,11 @@ export default function PhonePage() {
       ariaLabel: "Phone sections",
       layoutIdPrefix: "phone-section",
     },
-    searchParams.get("tab"),
+    legacyOutboundView ? "outbound" : tabParam,
   );
   const outboundView = resolveAppPageSecondaryTabId(
     { tabs: OUTBOUND_VIEW_TABS, defaultView: "dispatch" },
-    searchParams.get("view"),
+    searchParams.get("view") || legacyOutboundView,
   ) as (typeof OUTBOUND_VIEW_TABS)[number]["id"];
 
   function setPrimaryTab(id: string) {

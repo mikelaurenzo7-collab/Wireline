@@ -25,16 +25,27 @@ function EmptyTraining() {
     <div className="grid min-h-[520px] flex-1 place-items-center py-8">
       <EmptyState
         density="default"
-        className="studio-card w-full max-w-[512px] px-8 py-12 text-center sm:px-10"
+        className="studio-card w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
-        title="No agents yet"
+        title="Training starts with an agent"
         action={
-          <Button asChild>
-            <Link to="/studio?create=1">
-              <WandSparkles aria-hidden="true" size={16} />
-              Create agent
-            </Link>
-          </Button>
+          <div className="space-y-4">
+            <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
+              Create the agent first, then add sources, tune the voice, rehearse flows, and run a
+              live simulator from this workspace.
+            </p>
+            <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row">
+              <Button asChild>
+                <Link to="/studio?create=1">
+                  <WandSparkles aria-hidden="true" size={16} />
+                  Create agent
+                </Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link to="/templates">Browse templates</Link>
+              </Button>
+            </div>
+          </div>
         }
       />
     </div>

@@ -232,7 +232,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                         Settings
                       </Link>
                       <Link
-                        to="/actions"
+                        to="/connections"
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-[var(--wireline-typography-caption-size)] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
@@ -297,7 +297,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             dataTour="settings"
             active={
               location.pathname === "/admin" ||
-              ["/actions", "/dnc", "/audit", "/admin"].some(
+              ["/dnc", "/audit", "/admin"].some(
                 (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
               )
             }
@@ -436,7 +436,7 @@ function LivePulse({ count }: { count: number }) {
             "flex items-center justify-center h-7 px-2 rounded-md",
             live ? "bg-primary/10 wl-ambient-glow" : "bg-white/[0.03]",
           )}
-          title={live ? `${count} live call${count === 1 ? "" : "s"}` : "Floor is quiet"}
+          title={live ? `${count} live call${count === 1 ? "" : "s"}` : "No live calls"}
         >
           <span className="relative inline-flex w-2.5 h-2.5 shrink-0 items-center justify-center">
             {live && <span className="absolute inset-0 rounded-full animate-ping bg-primary/55" />}

@@ -238,6 +238,50 @@
   gap: 1rem;
 }
 
+@keyframes wl-wave-bar {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes wl-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wireline-wave-bar {
+  animation: wl-wave-bar 1.2s ease-in-out infinite;
+  animation-delay: var(--wl-wave-delay, 0s);
+}
+
+.wireline-hero-motion {
+  animation: wl-fade-up 0.7s ease-out both;
+}
+
+.wireline-hero-motion--delay {
+  animation-delay: 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wireline-hero-motion,
+  .wireline-wave-bar {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 @media (min-width: 768px) {
   .marketing-channel-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

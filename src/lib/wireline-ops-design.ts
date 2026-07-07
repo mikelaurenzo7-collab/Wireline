@@ -44,7 +44,7 @@ export const OPS_PULSE_METRICS = {
 } as const;
 
 export const OPS_COPY = {
-  floorQuiet: "Floor is quiet – active conversations appear here.",
+  floorQuiet: "No live calls - active conversations appear here.",
   floorLoading: "Loading Active calls",
   floorTitle: (n: number) => (n === 0 ? "Active calls" : `${n} live caller${n === 1 ? "" : "s"}`),
   intelHub: "Action queue",
@@ -110,7 +110,7 @@ export const OPS_CHANNEL_EMPTY = {
   email: {
     title: "No threads yet",
     actions: [
-      { label: "Connect email", to: "/actions", primary: true },
+      { label: "Connect email", to: "/connections", primary: true },
       { label: "Open Agents", to: "/agents" },
     ],
   },
@@ -121,7 +121,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No leads in the pipeline",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Open Wire", to: "/actions" },
+      { label: "Open Connections", to: "/connections" },
     ],
   },
   training: {
@@ -156,7 +156,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No campaigns yet",
     actions: [
       { label: "Create campaign", to: "/phone?tab=outbound", primary: true },
-      { label: "Import leads", to: "/pipeline" },
+      { label: "Open dispatch", to: "/phone?tab=outbound" },
     ],
   },
   outboundQueue: {
@@ -344,7 +344,7 @@ export const OPS_HELP = {
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
     { label: "Agents", to: "/agents", hint: "Open the agent roster" },
-    { label: "Wire", to: "/actions", hint: "Numbers, email, and integrations" },
+    { label: "Connections", to: "/connections", hint: "Numbers, email, and integrations" },
     { label: "Studio", to: "/studio", hint: "Training, voice, and run controls" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },
   ],

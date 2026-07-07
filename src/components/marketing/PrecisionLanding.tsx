@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState, type CSSProperties, type KeyboardEvent } from "react";
 import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
@@ -89,11 +89,12 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
               <div
                 key={i}
                 className="wireline-wave-bar w-[3px] rounded-sm bg-[var(--wireline-color-status-success)]"
-                style={{
-                  height: `${h}%`,
-                  animation: `waveBar 1.2s ease-in-out infinite`,
-                  animationDelay: `${i * 0.1}s`,
-                }}
+                style={
+                  {
+                    height: `${h}%`,
+                    "--wl-wave-delay": `${i * 0.1}s`,
+                  } as CSSProperties
+                }
               />
             ))}
           </div>
@@ -322,15 +323,6 @@ export default function PrecisionLanding() {
     <div className="wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
 
-      <style>{`
-        @keyframes waveBar { 0%,100% { transform: scaleY(.3) } 50% { transform: scaleY(1) } }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
-        @media (prefers-reduced-motion: reduce) {
-          .wireline-hero-motion,
-          .wireline-wave-bar { animation: none !important; transform: none !important; }
-        }
-      `}</style>
-
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
         {/* ── HERO ──────────────────────────────────────────────── */}
         <section
@@ -339,7 +331,7 @@ export default function PrecisionLanding() {
         >
           <div className="wl-public-rail grid items-center gap-10 lg:grid-cols-[1.12fr_.88fr] lg:gap-12">
             {/* Left copy */}
-            <div className="wireline-hero-motion" style={{ animation: "fadeUp .7s ease-out both" }}>
+            <div className="wireline-hero-motion">
               <div
                 className="mb-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-[var(--wireline-elevation-xs)]"
                 role="tablist"
@@ -441,10 +433,7 @@ export default function PrecisionLanding() {
             </div>
 
             {/* Right: live call card */}
-            <div
-              className="wireline-hero-motion"
-              style={{ animation: "fadeUp .7s ease-out .15s both" }}
-            >
+            <div className="wireline-hero-motion wireline-hero-motion--delay">
               {audiences.map(({ key, label }) => (
                 <div
                   key={key}

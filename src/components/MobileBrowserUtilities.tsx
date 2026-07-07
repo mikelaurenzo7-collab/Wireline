@@ -4,7 +4,7 @@ import { Cable, CreditCard, MonitorDown, Settings, UsersRound } from "lucide-rea
 const mobileUtilityLinks = [
   { href: "/settings", label: "Settings", detail: "Account", icon: Settings },
   { href: "/settings/billing", label: "Billing", detail: "Usage + balance", icon: CreditCard },
-  { href: "/actions", label: "Integrations", detail: "Connected tools", icon: Cable },
+  { href: "/connections", label: "Integrations", detail: "Connected tools", icon: Cable },
   { href: "/settings/apps", label: "Apps", detail: "Surfaces", icon: MonitorDown },
   { href: "/settings/team", label: "Team", detail: "Access", icon: UsersRound },
 ] as const;

@@ -145,9 +145,9 @@ export default function IntakeKeysManager() {
             <Inbox className="w-5 h-5" />
           </div>
           <div>
-          <h4 className="font-display italic text-2xl text-foreground leading-tight">
-            Intake API
-          </h4>
+            <h4 className="font-display italic text-2xl text-foreground leading-tight">
+              Lead intake keys
+            </h4>
           </div>
         </div>
         <ShadButton
@@ -338,7 +338,13 @@ export default function IntakeKeysManager() {
           </div>
         )}
         {!loading && keys.length === 0 && (
-          <p className="text-sm text-muted">No keys</p>
+          <div className="rounded-md border border-dashed border-border bg-muted/5 px-4 py-3">
+            <p className="text-sm font-medium text-foreground">No intake keys yet</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Create a key when a website form, partner, or internal tool should send leads into
+              Wireline. Auto-dial stays off until an agent is explicitly assigned.
+            </p>
+          </div>
         )}
         {keys.map((k) => {
           const agent = agents.find((a) => a.id === k.default_agent_id);
@@ -458,13 +464,16 @@ export default function IntakeKeysManager() {
       </div>
 
       {/* Quick-start example */}
-      <div
+      <details
         className={cn(
           WL_APP_CLASSES.settingsRow,
-          "text-[var(--wireline-typography-overline-size)] text-muted font-mono leading-relaxed overflow-x-auto space-y-3 bg-muted/5",
+          "text-[var(--wireline-typography-overline-size)] text-muted leading-relaxed overflow-x-auto bg-muted/5",
         )}
       >
-        <div>
+        <summary className="cursor-pointer list-none font-sans text-xs font-semibold text-foreground marker:hidden [&::-webkit-details-marker]:hidden">
+          Developer quick start
+        </summary>
+        <div className="mt-3 font-mono">
           <div className="wl-label text-brand-2 mb-2">Quick start · curl</div>
           <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
   -H "Content-Type: application/json" \\
@@ -472,7 +481,7 @@ export default function IntakeKeysManager() {
   -H "Idempotency-Key: form-submission-12345" \\
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'`}</pre>
         </div>
-        <div className="wl-micro-meta opacity-90 leading-relaxed font-sans space-y-1.5">
+        <div className="mt-3 wl-micro-meta opacity-90 leading-relaxed font-sans space-y-1.5">
           <div>
             <span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span>{" "}
             — optional, any string ≤ 255 chars. Same key + same Account Holder returns the original{" "}
@@ -495,7 +504,7 @@ export default function IntakeKeysManager() {
             <code className="text-foreground/80">status: "Dialing"</code> on success.
           </div>
         </div>
-      </div>
+      </details>
     </div>
   );
 }
