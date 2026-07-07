@@ -1,46 +1,13 @@
-/**
- * RoiCalculator.tsx
- * ----------------------------------------------------------------------
- * The moment-of-truth component on the Wireline landing.
- *
- * Skeptical SMB prospects ("Will this actually pay for itself?") move
- * from interested to convinced exactly when they see their OWN numbers
- * yielding a clear ROI. This calculator gives them that moment.
- *
- * Inputs (three sliders, all keyboardable):
- *   1. Missed calls / week         — default 12 (industry avg for SMBs)
- *   2. Avg revenue per booked job  — default $180 (home-services-ish)
- *   3. Receptionist hours / week   — default 0   (most SMBs have none)
- *
- * Assumptions baked in (each with a note when hovered, no hidden math):
- *   - Wireline picks up 100% of calls; conservatively 82% of MISSED calls
- *     become recoverable revenue (some callers truly didn't need help).
- *   - $22/hr median US admin-assistant wage (BLS 2025 mean).
- *   - 52 weeks/year.
- *   - Wireline Business tier ($59/mo) used as the baseline for payback math.
- *     Personal can start lower through Conversation Balance; Enterprise is
- *     scoped around rollout and committed usage.
- *
- * Honest output:
- *   - Annual revenue recovered
- *   - Annual labor cost saved
- *   - Net annual savings AFTER Wireline Business tier ($708)
- *   - Payback days (when net first crosses zero)
- *   - A single line of plain-English summary for skim readers
- *
- * Mobile-first: stacks vertically under md; side-by-side at md+; the
- * sliders never overlap the output card at any viewport ≥ 360px wide.
- */
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Calculator, TrendingUp, Clock } from "lucide-react";
+import { Calculator, Clock, TrendingUp } from "lucide-react";
 import { Slider } from "../ui/shadcn/Slider";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const WIRELINE_BUSINESS_MONTHLY_USD = 59;
 const WIRELINE_BUSINESS_ANNUAL_USD = WIRELINE_BUSINESS_MONTHLY_USD * 12;
-const RECEPTIONIST_HOURLY_USD = 22; // US median, BLS 2025
+const RECEPTIONIST_HOURLY_USD = 22;
 const MISSED_CALL_RECOVERY_PCT = 0.82;
 
 interface Sliders {
@@ -55,10 +22,12 @@ const DEFAULTS: Sliders = {
   receptionistHours: 0,
 };
 
-// Industry presets — quick "I'm a {x}" jumps that pre-fill plausible
-// numbers. Real businesses recognise their own profile and trust the
-// rest of the page more after seeing themselves represented.
 const PRESETS: { id: string; label: string; sliders: Sliders }[] = [
+  {
+    id: "personal",
+    label: "Personal",
+    sliders: { missedPerWeek: 6, avgValue: 80, receptionistHours: 0 },
+  },
   {
     id: "homeservices",
     label: "Home Services",
@@ -75,14 +44,19 @@ const PRESETS: { id: string; label: string; sliders: Sliders }[] = [
     sliders: { missedPerWeek: 8, avgValue: 1200, receptionistHours: 20 },
   },
   {
-    id: "realestate",
-    label: "Real Estate",
-    sliders: { missedPerWeek: 14, avgValue: 2400, receptionistHours: 0 },
+    id: "sales",
+    label: "Sales Team",
+    sliders: { missedPerWeek: 20, avgValue: 900, receptionistHours: 10 },
   },
   {
-    id: "restaurant",
-    label: "Restaurant",
-    sliders: { missedPerWeek: 26, avgValue: 75, receptionistHours: 0 },
+    id: "support",
+    label: "Support Queue",
+    sliders: { missedPerWeek: 34, avgValue: 70, receptionistHours: 25 },
+  },
+  {
+    id: "agency",
+    label: "Agency / Studio",
+    sliders: { missedPerWeek: 10, avgValue: 1500, receptionistHours: 6 },
   },
 ];
 
@@ -115,7 +89,6 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
     const laborSaved = sliders.receptionistHours * RECEPTIONIST_HOURLY_USD * 52;
     const totalRecovered = revenueRecovered + laborSaved;
     const netAnnual = totalRecovered - WIRELINE_BUSINESS_ANNUAL_USD;
-    // Payback days = (cost / total_recovered) * 365, floored at 0
     const paybackDays =
       totalRecovered > 0
         ? Math.max(1, Math.round((WIRELINE_BUSINESS_ANNUAL_USD / totalRecovered) * 365))
@@ -153,7 +126,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               {results.paybackDays}d payback
             </div>
           </div>
-          <p className="mt-2 text-caption">Default: 12 missed calls/week at $180/job.</p>
+          <p className="mt-2 text-caption">Default: 12 missed calls/week at $180/call.</p>
           <Link
             to="/pricing"
             className="mt-2 inline-flex min-h-9 items-center text-caption font-semibold text-primary hover:underline"
@@ -187,11 +160,10 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           </h2>
         </div>
         <p className="font-display italic text-[var(--wireline-typography-h3-size)] sm:text-2xl leading-tight text-foreground mb-4">
-          See what Wireline pays back on day one.
+          See what Wireline pays back across personal, sales, support, and service workflows.
         </p>
 
-        {/* Industry preset row */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="flex flex-wrap gap-1.5 mb-4" aria-label="ROI presets">
           <span className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] text-muted/70 mr-1 leading-none self-center">
             Pick yours →
           </span>
@@ -204,6 +176,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 disableAnimations
                 variant={active ? "default" : "outline"}
                 size="sm"
+                aria-pressed={active}
                 onClick={() => applyPreset(p.id)}
                 className={
                   "text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full " +
@@ -218,13 +191,11 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           })}
         </div>
 
-        {/* Sliders + Output grid */}
         <div className="grid md:grid-cols-2 gap-5 md:gap-6">
-          {/* Sliders column */}
           <div className="space-y-4">
             <SliderRow
               icon={<TrendingUp className="w-3.5 h-3.5" />}
-              label="Missed calls / week"
+              label="Missed conversations / week"
               suffix={`${sliders.missedPerWeek}`}
               min={0}
               max={60}
@@ -234,7 +205,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
             />
             <SliderRow
               icon={<Calculator className="w-3.5 h-3.5" />}
-              label="Average revenue / job"
+              label="Average value / resolved call"
               suffix={fmtUsd(sliders.avgValue)}
               min={20}
               max={5000}
@@ -244,7 +215,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
             />
             <SliderRow
               icon={<Clock className="w-3.5 h-3.5" />}
-              label="Receptionist hours / week"
+              label="Coverage hours / week"
               suffix={`${sliders.receptionistHours}h`}
               min={0}
               max={60}
@@ -254,8 +225,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
             />
           </div>
 
-          {/* Output column */}
-          <div className="rounded-md border border-primary/15 bg-card p-4 flex flex-col">
+          <div className="rounded-md border border-primary/15 bg-card p-4 flex flex-col" aria-live="polite">
             <div className="grid grid-cols-2 gap-3 mb-3">
               <Stat
                 label="Revenue recovered"
@@ -293,23 +263,21 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                     : "—"}
                 </p>
               </div>
-              <a
-                href="/signup"
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-brand text-paper text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] font-semibold hover:bg-brand-deep hover:-translate-y-px transition-all shadow-[var(--wireline-elevation-md)]"
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-brand text-paper text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] font-semibold hover:bg-brand-deep hover:-translate-y-px transition-all shadow-[var(--wireline-elevation-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 data-testid="roi-cta-start"
               >
                 Start free
-              </a>
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Honest footer */}
         <p className="mt-3 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
-          Assumes Wireline recovers 82% of missed calls (the rest were wrong-numbers or
-          window-shoppers). Labor saved uses $22/hr (US BLS 2025 admin-assistant median). Wireline
-          Business tier billed at $59/mo. Create and train for free; live work uses Conversation
-          Balance.
+          Assumes Wireline recovers 82% of missed conversations. Coverage math uses $22/hr
+          for comparable admin time. Wireline Business tier billed at $59/mo. Create and train
+          for free; live work uses Conversation Balance.
         </p>
       </div>
     </motion.section>
@@ -353,6 +321,7 @@ function SliderRow({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         aria-label={label}
+        aria-valuetext={suffix}
         className="w-full accent-brand"
       />
     </div>
