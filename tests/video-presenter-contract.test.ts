@@ -74,7 +74,7 @@ describe("video presenter integration", () => {
   it("bridges PSTN call audio from Vapi listenUrl into LiveAvatar lip-sync", () => {
     const schema = source("src/db/schema.ts");
     expect(schema).toContain('listenUrl: text("listen_url")');
-    const vapi = source("src/routes/vapi/index.ts");
+    const vapi = source("src/routes/vapi-v2.ts");
     expect(vapi).toContain("listenUrl");
     const bridge = source("src/components/AgentPresencePstnBridge.tsx");
     expect(bridge).toContain("feedPcmDelta");

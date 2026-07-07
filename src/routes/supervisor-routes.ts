@@ -1,13 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 /**
- * Live-call supervisor endpoints — v1 captures the subscription intent
- * (listen / whisper / barge) so supervisors can bookmark live calls for
- * post-call review and the audit trail. V2 wires real-time WebRTC audio.
- *
- * Why ship the stub now: most-asked-for enterprise demo feature. Having
- * the button work + capturing intent in the audit log closes the
- * "can supervisors monitor live calls?" question on a sales call, and the
- * audio wiring lands later without changing the UX.
+ * Live-call supervisor endpoints — v1 captures subscription intent
+ * (listen / whisper / barge) for audit and sales demos. Real-time audio
+ * is not wired yet; PSTN listen URLs flow through supervisor WebSocket.
  *
  * SECURITY: only allow subscriptions to calls that EXIST in this tenant's
  * call_logs. The prior version permitted speculative subscriptions for

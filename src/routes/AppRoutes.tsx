@@ -1,7 +1,8 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import TransitionSurface from "../components/TransitionSurface";
+import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
+import NotFound from "../components/layout/NotFound";
 
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHomeClaude"));
 const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
@@ -12,7 +13,7 @@ const TemplatesPage = lazy(() => import("../pages/TemplatesPage"));
 const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
 const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
 const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
-const CallLogsPage = lazy(() => import("../pages/CallLogsPage"));
+const PhonePage = lazy(() => import("../pages/PhonePage"));
 const InsightsPage = lazy(() => import("../pages/InsightsPage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
@@ -21,12 +22,20 @@ const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
-const loading = <TransitionSurface eyebrow="Workspace" title="Loading" busyLabel="Loading route" />;
+const loading = <RouteFallback />;
 
 /** Preserve ?tab= when retiring /ops links in emails and Slack. */
 function LegacyOpsRedirect() {
   const location = useLocation();
-  return <Navigate to={`/call-logs${location.search}`} replace />;
+  return <Navigate to={`/phone${location.search}`} replace />;
+}
+
+function AuthNotFound() {
+  return (
+    <WorkspaceShell>
+      <NotFound />
+    </WorkspaceShell>
+  );
 }
 
 /** Admin panels predate the workspace rail — give them the shared shell so
@@ -56,7 +65,8 @@ export default function AppRoutes() {
         <Route path="/connections" element={<ConnectionsPage />} />
         <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/connections/*" element={<ConnectionsPage />} />
-        <Route path="/call-logs" element={<CallLogsPage />} />
+        <Route path="/call-logs" element={<Navigate to="/phone?tab=logs" replace />} />
+        <Route path="/phone" element={<PhonePage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/apps" element={<ClientAppsPage />} />
@@ -87,7 +97,7 @@ export default function AppRoutes() {
         <Route path="/nexus" element={<Navigate to="/connections" replace />} />
         <Route path="/wires" element={<Navigate to="/connections" replace />} />
 
-        <Route path="*" element={<Navigate to="/overview" replace />} />
+        <Route path="*" element={<AuthNotFound />} />
       </Routes>
     </Suspense>
   );

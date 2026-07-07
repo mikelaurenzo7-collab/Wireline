@@ -8,7 +8,7 @@ import {
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 
 // Webhook auth secret. Production rejects webhooks when this is unset
-// (see routes/vapi/index.ts); dev accepts all when unset. We never ship a
+// (see src/routes/vapi-v2.ts); dev accepts all when unset. We never ship a
 // guessable fallback secret in the bundle — an empty string in dev simply
 // means "no shared secret configured" and matches the route's dev-accept path.
 export const VAPI_WEBHOOK_SECRET = process.env.VAPI_WEBHOOK_SECRET || "";

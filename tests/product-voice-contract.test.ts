@@ -34,10 +34,13 @@ describe("product voice cohesion", () => {
     expect(routes).toContain('path="/knowledge"');
     expect(routes).toContain('path="/connections"');
     expect(routes).toContain('path="/call-logs"');
+    expect(routes).toContain('path="/phone"');
+    expect(routes).toContain("AuthNotFound");
     expect(routes).toContain('path="/inbox"');
     expect(routes).toContain('path="/apps"');
     expect(routes).toContain('path="/settings"');
     expect(routes).toContain('path="/admin"');
+    expect(routes).toContain("RouteFallback");
     expect(routes).toContain('path="/actions/salesforce"');
     expect(routes).toContain('to="/connections/salesforce"');
     expect(routes).not.toContain('path="/dashboard"');
@@ -48,6 +51,8 @@ describe("product voice cohesion", () => {
     expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("CreateAgentDialog");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Workspace metrics");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Recent calls");
+    expect(read("src/components/outbound/OutboundHub.tsx")).toContain("CampaignsPanel");
+    expect(read("src/components/outbound/OutboundHub.tsx")).toContain("IntakeKeysManager");
   });
 
   it("keeps authenticated surfaces action-first, not explanatory", () => {

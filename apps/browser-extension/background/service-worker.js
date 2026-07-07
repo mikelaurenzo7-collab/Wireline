@@ -3,9 +3,9 @@ const api = globalThis.browser ?? globalThis.chrome;
 const STUDIO_HANDOFF_URL = "https://trywireline.com/studio/handoff";
 const ROUTES = new Map([
   ["studio", "https://trywireline.com/studio"],
-  ["agents", "https://trywireline.com/agents"],
-  ["training", "https://trywireline.com/training"],
-  ["wire", "https://trywireline.com/actions"],
+  ["agents", "https://trywireline.com/overview"],
+  ["training", "https://trywireline.com/knowledge"],
+  ["wire", "https://trywireline.com/connections"],
   ["billing", "https://trywireline.com/settings/billing"],
   ["settings", "https://trywireline.com/settings"],
 ]);

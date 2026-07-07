@@ -501,7 +501,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create sales agent", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call outbound sales demo", href: "tel:+14692571581" },
     trustLine:
-      "Integrates with Salesforce, HubSpot, Pipedrive, Apollo. Outbound list management + CRM activity logging out of the box.",
+      "Integrates with Salesforce, HubSpot, and Apollo. Outbound list management + CRM activity logging out of the box.",
     faqs: [
       {
         q: "Won't prospects know it's AI?",
@@ -513,7 +513,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What about CRM logging?",
-        a: "Every call gets logged to your CRM in real time: contact, outcome (qualified / not qualified / no-answer / call-back), full transcript, recording link, BANT scores, next-step booked. Works with Salesforce, HubSpot, Pipedrive, Apollo. Custom CRMs via webhook.",
+        a: "Every call gets logged to your CRM in real time: contact, outcome (qualified / not qualified / no-answer / call-back), full transcript, recording link, BANT scores, next-step booked. Works with Salesforce and HubSpot today; Apollo for enrichment. Custom CRMs via webhook.",
       },
       {
         q: "How is this different from Apollo / Outreach AI features?",

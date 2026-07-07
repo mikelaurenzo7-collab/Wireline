@@ -1,33 +1,174 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Production Vapi webhook — full PSTN runtime (assistant, tools, presence, billing).
+ * Ported from legacy vapi/index.ts with vapi-assistant-factory-v2 for tenant agents.
+ */
 import express from "express";
-import { eq } from "drizzle-orm";
-import { drizzle, log } from "../lib/server-context";
+import { and, eq } from "drizzle-orm";
+
+import { VAPI_OPENAI_FALLBACK_MODEL } from "../lib/ai-models";
 import * as schema from "../db/schema";
-import { evaluateVapiWebhookAuth } from "../lib/vapi-webhook-auth";
-import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
+import { enqueue } from "../lib/job-queue";
+import { claimLeadEnrichmentSlot } from "../lib/enrichment-debounce";
+import { drizzle, log } from "../lib/server-context";
+import { getErrorMessage } from "../lib/server-utils";
+import {
+  buildShowcaseAssistantPayload,
+  findShowcaseAgentByPayload,
+} from "../lib/showcase-assistant";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory-v2";
 import { normalizeVapiToolCalls } from "../lib/vapi-tool-call-utils";
-import { dispatchScopedToolCall } from "../lib/agent-tool-dispatch-v2";
+import { SENTIMENT_ANGRY_SIGNALS, SENTIMENT_POSITIVE_SIGNALS } from "../lib/vapi-helpers";
+import { evaluateVapiWebhookAuth } from "../lib/vapi-webhook-auth";
+import { handleEndOfCallReport } from "../lib/vapi-handlers";
+import { shouldQueueWebhook } from "../lib/vapi-webhook-queue";
+import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
+import { touchNavCounts } from "../lib/nav-counts-invalidate";
+import { notifyInboundCall } from "../lib/mobile-push";
+import { clearVapiAssistantSpeaking, setVapiAssistantSpeaking } from "../lib/vapi-listen-gate";
+import {
+  isToolCallFailureResult,
+  recordInboundWebhookHealth,
+  recordToolCallBatch,
+} from "../lib/call-reliability-capture";
+import { dispatchAgentToolCall } from "../lib/agent-tool-dispatch";
 import { sseBroadcaster } from "../services/sse-broadcaster";
 
+import { extractShowcaseCallContext, handleShowcaseToolCalls } from "./vapi/showcase-handlers";
+import type { ToolCallContext, ToolCallResult } from "./vapi/types";
+
 const router = express.Router();
+let _warnedAboutVapiSecret = false;
+
 const callId = (payload: any, message: any) => payload?.call?.id || message?.call?.id || "";
 const callerNumber = (payload: any, message: any) =>
   payload?.call?.customer?.number || message?.call?.customer?.number || "";
 
+async function dispatchToolCall(
+  fn: string,
+  args: any,
+  context: ToolCallContext,
+): Promise<ToolCallResult> {
+  return dispatchAgentToolCall(fn, args, context);
+}
+
+function evaluateHandoffTriggers(transcriptText: string, confidence: number) {
+  const triggerWords = ["urgent", "cancel", "human", "supervisor", "escalate"];
+  const hasTriggerWord = triggerWords.some((word) => transcriptText.includes(word));
+  const lowConfidence = confidence < 0.75;
+  return {
+    hasTriggerWord,
+    lowConfidence,
+    reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
+  };
+}
+
 router.post("/api/vapi-webhook", async (req, res) => {
   const auth = evaluateVapiWebhookAuth(req);
-  if (!auth.ok) return res.status(auth.status).json({ code: "ERROR", error: auth.error });
+  if (!auth.ok) {
+    if (auth.status === 503) {
+      log.error("VAPI_WEBHOOK_SECRET unset in production — rejecting webhook");
+    }
+    const messageType =
+      ((req.body as Record<string, unknown>)?.message as { type?: string } | undefined)?.type ??
+      "unknown";
+    void recordInboundWebhookHealth({
+      provider: "vapi",
+      eventType: messageType,
+      outcome: "rejected",
+    });
+    return res.status(auth.status).json({ code: "ERROR", error: auth.error });
+  }
+  if (!process.env.VAPI_WEBHOOK_SECRET && !_warnedAboutVapiSecret) {
+    log.warn("VAPI_WEBHOOK_SECRET unset — accepting all webhook requests (dev only)");
+    _warnedAboutVapiSecret = true;
+  }
+
   const payload = (req.body || {}) as Record<string, any>;
   const message = payload.message || {};
-  const routed = await resolveVapiWebhookAgent({
-    payload,
-    queryAgentId: typeof req.query.agentId === "string" ? req.query.agentId : undefined,
-  });
+  const showcaseRoute = findShowcaseAgentByPayload(payload);
+
+  if (showcaseRoute && message?.type === "assistant-request") {
+    return res.json({
+      assistant: buildShowcaseAssistantPayload(showcaseRoute.agent, showcaseRoute.kind, {
+        serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
+      }),
+    });
+  }
+
+  if (showcaseRoute && message?.type === "tool-calls") {
+    const results = await handleShowcaseToolCalls({
+      payload,
+      message,
+      showcaseAgentName: showcaseRoute.agent.name,
+      showcaseKind: showcaseRoute.kind,
+    });
+    return res.json({ results });
+  }
+
+  if (
+    showcaseRoute &&
+    [
+      "status-update",
+      "conversation-update",
+      "language-change-detected",
+      "end-of-call-report",
+    ].includes(message?.type)
+  ) {
+    if (message.type === "end-of-call-report") {
+      const callContext = extractShowcaseCallContext(payload, message);
+      const {
+        recordDemoCallEvent,
+        classifyDemoIntent,
+        sendDemoRecapEmail,
+        markDemoRecapSent,
+        extractEmailFromText,
+      } = await import("../lib/demo-funnel");
+      const summary =
+        message.analysis?.summary || message.call?.analysis?.summary || "Demo conversation";
+      const eventId = await recordDemoCallEvent({
+        dialedNumber: callContext.dialedNumber || showcaseRoute.agent.tel,
+        showcaseAgent: showcaseRoute.agent.name,
+        callerNumber: callContext.callerNumber,
+        source: "showcase_webhook",
+        intentVertical: classifyDemoIntent(summary, showcaseRoute.agent.name),
+        vapiCallId: callContext.callId,
+      });
+      if (eventId) {
+        const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+        const signupUrl = `${appUrl}/signup?demo=${encodeURIComponent(showcaseRoute.agent.name.toLowerCase())}`;
+        const prospectEmail = extractEmailFromText(String(summary));
+        if (prospectEmail) {
+          const sent = await sendDemoRecapEmail({
+            to: prospectEmail,
+            agentName: showcaseRoute.agent.name,
+            summary: String(summary).slice(0, 500),
+            signupUrl,
+          });
+          if (sent) await markDemoRecapSent(eventId);
+        }
+      }
+    }
+    return res.json({ received: true });
+  }
+
+  const queryAgentId = typeof req.query.agentId === "string" ? req.query.agentId : undefined;
+  const routed = await resolveVapiWebhookAgent({ payload, queryAgentId });
   if (!routed.ok) return res.status(routed.status).json(routed.body);
-  const agent = { id: routed.webhookAgentId, user_id: routed.agentUserId };
-  const [settings] = await drizzle
+
+  const webhookAgentId = routed.webhookAgentId;
+  const agent = { id: webhookAgentId, user_id: routed.agentUserId };
+
+  const [agentVoiceRow] = await drizzle
+    .select({ name: schema.agents.name })
+    .from(schema.agents)
+    .where(eq(schema.agents.id, webhookAgentId))
+    .limit(1);
+  const agentVoiceName = agentVoiceRow?.name ?? undefined;
+
+  const [userSettings] = await drizzle
     .select({
+      subscriptionStatus: schema.settings.subscriptionStatus,
       aiTier: schema.settings.aiTier,
       voiceLlmProvider: schema.settings.voiceLlmProvider,
       voiceLlmModel: schema.settings.voiceLlmModel,
@@ -38,14 +179,36 @@ router.post("/api/vapi-webhook", async (req, res) => {
     .where(eq(schema.settings.userId, agent.user_id))
     .limit(1);
 
-  if (message.type === "assistant-request") {
+  const subscriptionStatus = userSettings?.subscriptionStatus || "active";
+
+  if (subscriptionStatus !== "active") {
+    if (message?.type === "assistant-request") {
+      return res.json({
+        assistant: {
+          firstMessage: "The automated service for this line is suspended.",
+          model: {
+            provider: "openai",
+            model: VAPI_OPENAI_FALLBACK_MODEL,
+            systemPrompt: "Explain suspension and end call.",
+          },
+        },
+      });
+    }
+    return res.status(403).json({ code: "ERROR", error: "Access Denied" });
+  }
+
+  if (message?.type === "assistant-request") {
     try {
       return res.json({
-        assistant: await buildVapiAssistant({ message, agent, userSettings: settings || {} }),
+        assistant: await buildVapiAssistant({
+          message,
+          agent,
+          userSettings: userSettings || {},
+        }),
       });
     } catch (error) {
       log.error("Vapi assistant configuration failed", {
-        agentId: agent.id,
+        agentId: webhookAgentId,
         error: error instanceof Error ? error.message : String(error),
       });
       return res.json({
@@ -53,7 +216,7 @@ router.post("/api/vapi-webhook", async (req, res) => {
           firstMessage: "I am having trouble connecting. Please try again.",
           model: {
             provider: "openai",
-            model: "gpt-4o",
+            model: VAPI_OPENAI_FALLBACK_MODEL,
             systemPrompt: "Apologize briefly and end the call.",
           },
         },
@@ -61,29 +224,90 @@ router.post("/api/vapi-webhook", async (req, res) => {
     }
   }
 
-  // Real-time Handoff Logic Engine
-  if (message.type === "transcript" || message.type === "conversation-update") {
-    const transcriptText = (message.transcript || "").toLowerCase();
-    const confidence = message.confidence ?? 1.0; // Fallback to 1.0 if not provided
+  if (message?.type === "tool-calls") {
+    const { finalizeVapiToolBatch, runVapiToolCallsWithConcurrency, withVapiToolTimeout } =
+      await import("../lib/vapi-tool-results");
+    const toolCalls = normalizeVapiToolCalls(message).map((tc) => ({
+      id: tc.id,
+      function: { name: tc.name, arguments: tc.arguments },
+    }));
+    const toolCallRows = await runVapiToolCallsWithConcurrency(toolCalls, (toolCall) =>
+      withVapiToolTimeout(
+        (async () =>
+          dispatchToolCall(toolCall.function?.name || "", toolCall.function?.arguments || {}, {
+            toolCallId: toolCall.id,
+            payload,
+            message,
+            agent,
+            webhookAgentId,
+            agentVoiceName,
+            drizzle,
+            log,
+          }))().catch((err) => ({
+          toolCallId: toolCall.id,
+          result:
+            (err as Error)?.message === "VAPI_TOOL_TIMEOUT"
+              ? "That is taking longer than expected. Apologize briefly and offer to follow up by email or text."
+              : "Something went wrong running that action. Continue the conversation and try another approach.",
+        })),
+      ),
+    );
+    const results = finalizeVapiToolBatch(toolCalls, toolCallRows);
+    const id = callId(payload, message);
+    if (id && agent?.user_id && toolCalls.length > 0) {
+      const failed = results.filter((row) => isToolCallFailureResult(row.result)).length;
+      void recordToolCallBatch({
+        vapiCallId: id,
+        userId: agent.user_id,
+        total: toolCalls.length,
+        failed,
+      });
+    }
+    void recordInboundWebhookHealth({
+      userId: agent?.user_id,
+      provider: "vapi",
+      eventType: "tool-calls",
+      outcome: "success",
+    });
+    return res.json({ results });
+  }
 
-    const triggerWords = ["urgent", "cancel", "human", "supervisor", "escalate"];
-    const hasTriggerWord = triggerWords.some((word) => transcriptText.includes(word));
-    const lowConfidence = confidence < 0.75;
+  if (message?.type === "speech-update") {
+    const id = callId(payload, message);
+    const role = String(message.role || "");
+    const status = String(message.status || "");
+    if (id && role === "assistant") {
+      if (/start/i.test(status)) setVapiAssistantSpeaking(id, true);
+      else if (/stop|end/i.test(status)) setVapiAssistantSpeaking(id, false);
+    } else if (id && role === "user" && /start/i.test(status)) {
+      setVapiAssistantSpeaking(id, false);
+    }
+    if (id && /ended|completed/i.test(status || "")) {
+      clearVapiAssistantSpeaking(id);
+    }
+    return res.json({ ok: true });
+  }
 
+  if (message?.type === "transcript") {
+    const transcriptText = String(message.transcript || "").toLowerCase();
+    const confidence = message.confidence ?? 1.0;
+    const { hasTriggerWord, lowConfidence, reason } = evaluateHandoffTriggers(
+      transcriptText,
+      confidence,
+    );
     if (hasTriggerWord || lowConfidence) {
       log.warn("Handoff Logic Engine Triggered", {
         agentId: agent.id,
         callId: callId(payload, message),
-        reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
+        reason,
         transcript: transcriptText,
       });
-
       sseBroadcaster.broadcast(
         "handoff_requested",
         {
           agentId: agent.id,
           callId: callId(payload, message),
-          reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
+          reason,
           transcript: transcriptText,
         },
         agent.user_id,
@@ -92,60 +316,188 @@ router.post("/api/vapi-webhook", async (req, res) => {
     return res.json({ received: true });
   }
 
-  if (message.type === "tool-calls") {
-    const calls = normalizeVapiToolCalls(message);
-    const results = await Promise.all(
-      calls.map(async (toolCall) => {
-        try {
-          return await dispatchScopedToolCall(toolCall.name, toolCall.arguments || {}, {
-            toolCallId: toolCall.id,
-            userId: agent.user_id,
-            agentId: agent.id,
-            callerNumber: callerNumber(payload, message),
-            drizzle,
+  if (message?.type === "status-update") {
+    const id = callId(payload, message);
+    const status = message.status || payload.call?.status;
+    const customerNumber = callerNumber(payload, message);
+    const monitor = payload.call?.monitor;
+    const controlUrl = monitor?.controlUrl;
+    const listenUrl = monitor?.listenUrl;
+    if (id) {
+      if (["in-progress", "ringing", "queued"].includes(status || "")) {
+        await drizzle
+          .insert(schema.signalPresence)
+          .values({
+            id,
+            userId: agent?.user_id,
+            agentId: webhookAgentId,
+            customerNumber: customerNumber || "Unknown",
+            status,
+            controlUrl: controlUrl || null,
+            listenUrl: listenUrl || null,
+            startedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: schema.signalPresence.id,
+            set: {
+              status,
+              ...(controlUrl ? { controlUrl } : {}),
+              ...(listenUrl ? { listenUrl } : {}),
+            },
           });
-        } catch (error) {
-          log.warn("Vapi action failed", {
-            agentId: agent.id,
-            tool: toolCall.name,
-            error: error instanceof Error ? error.message : String(error),
+        if (agent?.user_id) touchNavCounts(agent.user_id);
+
+        const callType = payload.call?.type;
+        const isInbound = callType ? callType.toLowerCase().includes("inbound") : false;
+        if (isInbound && ["ringing", "queued"].includes(status || "") && agent?.user_id) {
+          void notifyInboundCall(agent.user_id, {
+            callId: id,
+            fromNumber: customerNumber || "Unknown",
+            agentName: agentVoiceName ?? null,
+            agentId: webhookAgentId ?? null,
           });
-          return {
-            toolCallId: toolCall.id,
-            result:
-              "That action could not be completed right now. I can route this to a human teammate.",
-          };
         }
-      }),
-    );
-    return res.json({ results });
+
+        if (status === "in-progress" && customerNumber && agent?.user_id) {
+          await drizzle
+            .update(schema.outboundLeads)
+            .set({ status: "Connected", callId: id })
+            .where(
+              and(
+                eq(schema.outboundLeads.customerNumber, customerNumber),
+                eq(schema.outboundLeads.userId, agent.user_id),
+                eq(schema.outboundLeads.status, "Dialing"),
+              ),
+            )
+            .catch((e) =>
+              log.warn("Failed to update lead status to Connected", { error: getErrorMessage(e) }),
+            );
+        }
+
+        if (customerNumber && agent?.user_id) {
+          const shouldEnrich = await claimLeadEnrichmentSlot(agent.user_id, customerNumber);
+          if (shouldEnrich) {
+            await enqueue(drizzle, {
+              userId: agent.user_id,
+              type: "proactive_lead_enrichment",
+              payload: { userId: agent.user_id, customerNumber },
+            }).catch((e) => log.warn("Enrichment queue failed", { error: getErrorMessage(e) }));
+          }
+        }
+      } else if (status === "ended" || status === "completed") {
+        await drizzle.delete(schema.signalPresence).where(eq(schema.signalPresence.id, id));
+        if (agent?.user_id) touchNavCounts(agent.user_id);
+      }
+    }
+    return res.json({ received: true });
   }
 
-  if (message.type === "end-of-call-report") {
+  if (message?.type === "conversation-update") {
     const id = callId(payload, message);
     if (id) {
+      const turns: any[] = message.conversation || message.messages || [];
+      const userTurns = turns.filter((t: { role: string }) => t.role === "user").slice(-2);
+      const combined = userTurns
+        .map((t: { content?: string; message?: string }) =>
+          (t.content || t.message || "").toLowerCase(),
+        )
+        .join(" ");
+
+      const negativeHits = SENTIMENT_ANGRY_SIGNALS.filter((w) => combined.includes(w)).length;
+      const positiveHits = SENTIMENT_POSITIVE_SIGNALS.filter((w) => combined.includes(w)).length;
+
+      let liveSentimentLabel = "Live · Active";
+      if (negativeHits >= 2) liveSentimentLabel = "⚠ Frustrated";
+      else if (positiveHits >= 2) liveSentimentLabel = "✓ Positive";
+
       await drizzle
-        .insert(schema.callLogs)
-        .values({
-          userId: agent.user_id,
-          agentId: agent.id,
-          vapiCallId: id,
-          direction: message.call?.type?.toLowerCase().includes("outbound")
-            ? "outbound"
-            : "inbound",
-          customerNumber: callerNumber(payload, message) || null,
-          durationSeconds: Number(
-            message.call?.durationSeconds || payload.call?.durationSeconds || 0,
-          ),
-          summary: message.analysis?.summary || payload.call?.analysis?.summary || null,
-          transcript: message.transcript || message.call?.transcript || null,
-          sentiment: message.analysis?.sentiment || "neutral",
-        })
-        .onConflictDoNothing();
+        .update(schema.signalPresence)
+        .set({ label: liveSentimentLabel })
+        .where(eq(schema.signalPresence.id, id));
+      if (agent.user_id) touchNavCounts(agent.user_id);
+
+      const confidence = message.confidence ?? 1.0;
+      const { hasTriggerWord, lowConfidence, reason } = evaluateHandoffTriggers(
+        combined,
+        confidence,
+      );
+      if (hasTriggerWord || lowConfidence) {
+        sseBroadcaster.broadcast(
+          "handoff_requested",
+          { agentId: agent.id, callId: id, reason, transcript: combined },
+          agent.user_id,
+        );
+      }
+
+      if (negativeHits >= 1 && shouldQueueWebhook("conversation-update")) {
+        try {
+          await enqueue(drizzle, {
+            userId: agent.user_id,
+            type: "vapi_webhook",
+            payload: {
+              webhookType: "conversation-update",
+              payload: req.body,
+              agentId: webhookAgentId,
+              userId: agent.user_id,
+              webhookAgentId,
+            } as Record<string, unknown>,
+          });
+        } catch (e) {
+          log.warn("Failed to queue conversation-update", { error: getErrorMessage(e) });
+        }
+      }
     }
-    return res.json({ success: true, received: true });
+    return res.json({ received: true });
+  }
+
+  if (message?.type === "end-of-call-report") {
+    try {
+      await enqueue(drizzle, {
+        userId: agent.user_id,
+        type: "vapi_webhook",
+        payload: {
+          webhookType: "end-of-call-report",
+          payload: req.body,
+          agentId: webhookAgentId,
+          userId: agent.user_id,
+          webhookAgentId,
+        } as Record<string, unknown>,
+      });
+      log.info("Queued end-of-call-report for async processing", {
+        agentId: webhookAgentId,
+        callId: message.call?.id,
+      });
+      return res.json({ success: true, queued: true });
+    } catch (e) {
+      log.error("Failed to queue end-of-call-report", { error: getErrorMessage(e) });
+      try {
+        await handleEndOfCallReport({ message, agent });
+        return res.json({ success: true });
+      } catch (e2) {
+        log.error("Failed to process call completion (sync fallback)", {
+          error: getErrorMessage(e2),
+        });
+        void recordInboundWebhookHealth({
+          userId: agent?.user_id,
+          provider: "vapi",
+          eventType: "end-of-call-report",
+          outcome: "error",
+        });
+        return res.json({ success: false });
+      }
+    }
+  }
+
+  if (message?.type) {
+    void recordInboundWebhookHealth({
+      userId: agent?.user_id,
+      provider: "vapi",
+      eventType: message.type,
+      outcome: "success",
+    });
   }
 
   return res.json({ received: true });
 });
+
 export default router;

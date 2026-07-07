@@ -148,7 +148,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
           `*Agent:* ${agentName}${sourceNumber ? ` on ${sourceNumber}` : ""}`,
           `*Caller:* ${callerName} (${callerPhone})${callerEmail ? ` · ${callerEmail}` : ""}`,
           `*Summary:* ${summary}`,
-          `<https://trywireline.com/call-logs|Open call logs →>`,
+          `<https://trywireline.com/phone|Open call logs →>`,
         ].join("\n");
         slackPosted = await slackPostMessage(tenantUserId, channelId, text);
       }

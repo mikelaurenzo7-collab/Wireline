@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Mic2, Palette, SlidersHorizontal, Target } from "lucide-react";
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";
+import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 
@@ -19,7 +20,7 @@ const customizationLayers = [
     title: "Voice identity",
     detail: "Choice. Pace. Personality.",
     action: "Train",
-    href: "/training",
+    href: "/knowledge",
     icon: Mic2,
   },
   {
@@ -49,6 +50,7 @@ export default function CustomizationSettings() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame>
+        <SettingsTabs />
         <AppearanceSettings />
 
         <section className="mt-6">

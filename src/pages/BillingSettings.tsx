@@ -57,24 +57,38 @@ export default function BillingSettings() {
   const [portalBusy, setPortalBusy] = useState(false);
   const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
+      setLoadError(null);
       try {
         const [statusRes, balanceRes] = await Promise.all([
           authFetch("/api/billing/status"),
           authFetch("/api/conversation-balance"),
         ]);
         if (cancelled) return;
+        if (!statusRes.ok && !balanceRes.ok) {
+          setLoadError("Couldn't load billing details. Refresh or try again in a moment.");
+          return;
+        }
         if (statusRes.ok) {
           const data = await statusRes.json();
           setSubscription(data.subscription ?? null);
+        } else {
+          setLoadError("Subscription status is temporarily unavailable.");
         }
         if (balanceRes.ok) {
           const data = await balanceRes.json();
           setBalanceUsd(data.balance_usd ?? 0);
+        } else if (statusRes.ok) {
+          setLoadError("Conversation Balance is temporarily unavailable.");
+        }
+      } catch {
+        if (!cancelled) {
+          setLoadError("Couldn't load billing details. Check your connection and try again.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -136,6 +150,15 @@ export default function BillingSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame narrow>
         <SettingsTabs />
+
+        {loadError && (
+          <div
+            className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            role="alert"
+          >
+            {loadError}
+          </div>
+        )}
 
         <section className="rounded-[16px] border border-primary/20 bg-primary p-6 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
           <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary-foreground/70">

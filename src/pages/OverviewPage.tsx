@@ -8,6 +8,8 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import RouteFallback from "../components/layout/RouteFallback";
+import WidgetBoundary from "../components/WidgetBoundary";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel } from "../lib/product-copy";
@@ -19,7 +21,7 @@ const DailyBriefPanel = lazy(() => import("../components/DailyBrief"));
 const QUICK_ACTIONS = [
   { href: "/studio", icon: Sparkles, title: "Open Studio" },
   { href: "/templates", icon: Bot, title: "Browse templates" },
-  { href: "/call-logs", icon: Phone, title: "Review calls" },
+  { href: "/phone", icon: Phone, title: "Review calls" },
   { href: "/insights", icon: BarChart3, title: "Open insights" },
   { href: "/connections", icon: Cable, title: "Add connection" },
 ] as const;
@@ -397,9 +399,11 @@ export default function OverviewPage() {
           </div>
         </section>
 
-        <Suspense fallback={null}>
-          <DailyBriefPanel />
-        </Suspense>
+        <WidgetBoundary label="Daily brief">
+          <Suspense fallback={<RouteFallback />}>
+            <DailyBriefPanel />
+          </Suspense>
+        </WidgetBoundary>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_1fr]" aria-label="Agents and recent calls">
           <article className="studio-card p-5 sm:p-6">

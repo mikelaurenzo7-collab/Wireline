@@ -56,20 +56,12 @@ Status: **deferred product feature** — legacy v1 ingest removed; v2 service re
 
 Files:
 
-- `src/routes/vapi/**`
-- `src/lib/agent-tool-dispatch.ts`
-- `src/lib/showcase-assistant.ts`
-- `src/lib/vapi-assistant-factory.ts`
+- `src/routes/vapi/index.ts` — **deleted** (July 2026); behavior ported to `src/routes/vapi-v2.ts`
+- `src/routes/vapi/tool-handlers-*.ts`, `showcase-handlers.ts` — **active** (used by vapi-v2)
+- `src/lib/agent-tool-dispatch.ts`, `src/lib/showcase-assistant.ts` — **active** (removed from tsconfig exclude)
+- `src/lib/vapi-assistant-factory.ts` — **excluded** (superseded by `vapi-assistant-factory-v2.ts`)
 
-Status: **do not mount as-is**.
-
-Why:
-
-- Production currently registers `src/routes/vapi-v2.ts`.
-- The legacy v1 route still imports retired runtime names and overlaps the live Vapi webhook path.
-- Some v1 behavior appears richer than v2 around showcase/demo paths, queued webhook handling, presence, and detailed tool-call reliability capture. That does not make v1 safe to mount; it means any missing behavior should be ported deliberately into v2, covered, and then the v1 folder should be deleted.
-
-Recommended decision: diff v1 against v2, port only proven live behavior into v2, then delete the legacy folder and helpers.
+Status: **v2 is production-complete** for billing, tools, showcase, presence, and async end-of-call.
 
 ### 5. Showcase sync script
 

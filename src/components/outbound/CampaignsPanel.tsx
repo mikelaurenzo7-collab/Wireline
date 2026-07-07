@@ -1,0 +1,313 @@
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, Megaphone, Pause, Play, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
+import { authFetch } from "../../lib/api";
+import { logFetchError } from "../../lib/utils";
+import { useToast } from "../../contexts/ToastContext";
+import { EmptyState } from "../ui/EmptyState";
+import ClientRouteLoading from "../layout/ClientRouteLoading";
+import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
+import { Input } from "../ui/shadcn/Input";
+import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
+import { cn } from "../../lib/utils";
+
+type Campaign = {
+  id: string;
+  name: string;
+  goal: string | null;
+  status: string;
+  agent_id: string | null;
+  leads_count: number;
+  dialed_count: number;
+  connected_count: number;
+  call_window_start?: string;
+  call_window_end?: string;
+  max_attempts?: number;
+};
+
+type Agent = { id: string; name: string };
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  running: "Running",
+  paused: "Paused",
+  completed: "Completed",
+  stopped: "Stopped",
+};
+
+export default function CampaignsPanel() {
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [goal, setGoal] = useState("");
+  const [agentId, setAgentId] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [campRes, agentRes] = await Promise.all([
+        authFetch("/api/campaigns"),
+        authFetch("/api/agents"),
+      ]);
+      if (!campRes.ok) throw new Error("Failed to load campaigns");
+      const campBody = await campRes.json();
+      setCampaigns(Array.isArray(campBody.campaigns) ? campBody.campaigns : []);
+      if (agentRes.ok) {
+        const agentBody = await agentRes.json();
+        const list = Array.isArray(agentBody.agents) ? agentBody.agents : [];
+        setAgents(list.map((a: { id: string; name: string }) => ({ id: a.id, name: a.name })));
+      }
+    } catch (e) {
+      logFetchError("CampaignsPanel.load", e);
+      setError("Couldn't load campaigns. Try again in a moment.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function createCampaign() {
+    if (!name.trim()) return;
+    setCreating(true);
+    try {
+      const res = await authFetch("/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          goal: goal.trim() || undefined,
+          agent_id: agentId || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to create campaign");
+      }
+      toast.success("Campaign created");
+      setShowCreate(false);
+      setName("");
+      setGoal("");
+      setAgentId("");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create campaign");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function launchCampaign(id: string) {
+    setBusyId(id);
+    try {
+      const res = await authFetch(`/api/campaigns/${id}/launch`, { method: "POST" });
+      if (!res.ok) throw new Error("Launch failed");
+      toast.success("Campaign launched");
+      await load();
+    } catch {
+      toast.error("Couldn't launch campaign");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function stopCampaign(id: string) {
+    setBusyId(id);
+    try {
+      const res = await authFetch(`/api/campaigns/${id}/stop`, { method: "POST" });
+      if (!res.ok) throw new Error("Stop failed");
+      toast.success("Campaign stopped");
+      await load();
+    } catch {
+      toast.error("Couldn't stop campaign");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function deleteCampaign(id: string) {
+    if (!confirm("Delete this campaign and its lead list?")) return;
+    setBusyId(id);
+    try {
+      const res = await authFetch(`/api/campaigns/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      toast.success("Campaign deleted");
+      await load();
+    } catch {
+      toast.error("Couldn't delete campaign");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <ClientRouteLoading icon={<Megaphone className="h-5 w-5" />} label="Loading campaigns" />
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className={cn(OPS_CHANNEL_TOOLBAR, "flex items-center justify-between gap-3")}>
+        <p className="text-sm text-muted-foreground">
+          Batch outbound dialing with TCPA guards and call-window enforcement.
+        </p>
+        <div className="flex items-center gap-2 shrink-0">
+          <ShadButton type="button" variant="outline" size="sm" onClick={() => void load()}>
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+          </ShadButton>
+          <ShadButton type="button" size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="h-3.5 w-3.5" aria-hidden />
+            New campaign
+          </ShadButton>
+        </div>
+      </div>
+
+      {error && (
+        <div
+          className="mx-4 mt-4 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
+
+      {showCreate && (
+        <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">New campaign</h3>
+            <button type="button" onClick={() => setShowCreate(false)} aria-label="Close">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <Input
+            placeholder="Campaign name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            placeholder="Goal (optional)"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+          />
+          <Select
+            value={agentId || "__none__"}
+            onValueChange={(v) => setAgentId(v === "__none__" ? "" : v)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Assign agent" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">No agent assigned</SelectItem>
+              {agents.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ShadButton
+            type="button"
+            disabled={creating || !name.trim()}
+            onClick={() => void createCampaign()}
+          >
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create draft"}
+          </ShadButton>
+        </div>
+      )}
+
+      <div className="flex-1 min-h-0 overflow-auto p-4">
+        {campaigns.length === 0 && !error ? (
+          <EmptyState
+            icon={Megaphone}
+            title={OPS_CHANNEL_EMPTY.campaigns.title}
+            actions={[
+              { label: "Create campaign", onClick: () => setShowCreate(true), primary: true },
+              ...OPS_CHANNEL_EMPTY.campaigns.actions.filter((a) => a.label !== "Create campaign"),
+            ]}
+            fill
+          />
+        ) : (
+          <ul className="space-y-3">
+            {campaigns.map((c) => (
+              <li
+                key={c.id}
+                className="rounded-md border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-medium truncate">{c.name}</h3>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
+                      {STATUS_LABEL[c.status] || c.status}
+                    </span>
+                  </div>
+                  {c.goal && (
+                    <p className="text-sm text-muted-foreground mt-1 truncate">{c.goal}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {c.leads_count} leads · {c.dialed_count} dialed · {c.connected_count} connected
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {c.status === "draft" || c.status === "paused" ? (
+                    <ShadButton
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={busyId === c.id}
+                      onClick={() => void launchCampaign(c.id)}
+                    >
+                      {busyId === c.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Play className="h-3.5 w-3.5" />
+                      )}
+                      Launch
+                    </ShadButton>
+                  ) : c.status === "running" ? (
+                    <ShadButton
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === c.id}
+                      onClick={() => void stopCampaign(c.id)}
+                    >
+                      <Pause className="h-3.5 w-3.5" />
+                      Pause
+                    </ShadButton>
+                  ) : null}
+                  <ShadButton
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    title="Upload leads via API or intake keys"
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                  </ShadButton>
+                  <ShadButton
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={busyId === c.id}
+                    onClick={() => void deleteCampaign(c.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </ShadButton>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -65,49 +65,70 @@ export function oauthRateLimiter(req: any, res: any, next: any) {
     .catch(next);
 }
 
+function authRateLimitOptions(bucket: string, windowMs: number, max: number) {
+  return {
+    bucket,
+    windowMs,
+    max,
+    failClosedOnError: process.env.NODE_ENV === "production",
+  };
+}
+
 export async function signinRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
   const email = (req.body?.email || "").toString().toLowerCase().trim();
   const ip = req.ip || "anon";
   const key = email ? `signin:${email}:${ip}` : `signin:anon:${ip}`;
-  const result = await rateLimit(key, {
-    bucket: "signin",
-    windowMs: SIGNIN_RATE_WINDOW_MS,
-    max: SIGNIN_RATE_MAX,
-  });
-  if (!result.allowed) {
-    auditRateLimitExceeded({
-      resource: "auth_signin",
-      ip: req.ip,
-      metadata: email ? { email } : undefined,
-    });
-    res.setHeader("Retry-After", Math.ceil(SIGNIN_RATE_WINDOW_MS / 1000));
-    return res.status(429).json({
-      error: "Too many sign-in attempts. Wait 15 minutes and try again.",
-      code: "SIGNIN_RATE_LIMIT",
+  try {
+    const result = await rateLimit(
+      key,
+      authRateLimitOptions("signin", SIGNIN_RATE_WINDOW_MS, SIGNIN_RATE_MAX),
+    );
+    if (!result.allowed) {
+      auditRateLimitExceeded({
+        resource: "auth_signin",
+        ip: req.ip,
+        metadata: email ? { email } : undefined,
+      });
+      res.setHeader("Retry-After", Math.ceil(SIGNIN_RATE_WINDOW_MS / 1000));
+      return res.status(429).json({
+        error: "Too many sign-in attempts. Wait 15 minutes and try again.",
+        code: "SIGNIN_RATE_LIMIT",
+      });
+    }
+    next();
+  } catch {
+    return res.status(503).json({
+      error: "Sign-in is temporarily unavailable. Try again shortly.",
+      code: "RATE_LIMIT_UNAVAILABLE",
     });
   }
-  next();
 }
 
 export async function signupRateLimiter(req: any, res: any, next: any) {
   if (isTestEnv()) return next();
   const ip = req.ip || "anon";
   const key = `signup:${ip}`;
-  const result = await rateLimit(key, {
-    bucket: "signup",
-    windowMs: SIGNUP_RATE_WINDOW_MS,
-    max: SIGNUP_RATE_MAX,
-  });
-  if (!result.allowed) {
-    auditRateLimitExceeded({ resource: "auth_signup", ip: req.ip });
-    res.setHeader("Retry-After", Math.ceil(SIGNUP_RATE_WINDOW_MS / 1000));
-    return res.status(429).json({
-      error: "Too many signup attempts. Wait 15 minutes and try again.",
-      code: "SIGNUP_RATE_LIMIT",
+  try {
+    const result = await rateLimit(
+      key,
+      authRateLimitOptions("signup", SIGNUP_RATE_WINDOW_MS, SIGNUP_RATE_MAX),
+    );
+    if (!result.allowed) {
+      auditRateLimitExceeded({ resource: "auth_signup", ip: req.ip });
+      res.setHeader("Retry-After", Math.ceil(SIGNUP_RATE_WINDOW_MS / 1000));
+      return res.status(429).json({
+        error: "Too many signup attempts. Wait 15 minutes and try again.",
+        code: "SIGNUP_RATE_LIMIT",
+      });
+    }
+    next();
+  } catch {
+    return res.status(503).json({
+      error: "Signup is temporarily unavailable. Try again shortly.",
+      code: "RATE_LIMIT_UNAVAILABLE",
     });
   }
-  next();
 }
 
 export async function forgotPasswordRateLimiter(req: any, res: any, next: any) {

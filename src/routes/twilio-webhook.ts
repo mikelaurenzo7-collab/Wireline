@@ -302,77 +302,85 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
  * We play an emergency degraded-mode message and offer voicemail or forward
  * to the business's human fallback number.
  */
-router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Response) => {
-  if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", { path: req.path });
-    return res.status(403).send(twimlEmpty());
-  }
+router.post(
+  "/api/twilio-webhook/voice-fallback",
+  twilioRateLimiter,
+  async (req: Request, res: Response) => {
+    if (!verifyTwilioSignature(req)) {
+      log.warn("Twilio webhook signature verification failed", { path: req.path });
+      return res.status(403).send(twimlEmpty());
+    }
 
-  const to = (req.body?.To as string | undefined) || "";
-  const from = (req.body?.From as string | undefined) || "";
-  log.error("VAPI FAILOVER TRIGGERED", { to, from });
+    const to = (req.body?.To as string | undefined) || "";
+    const from = (req.body?.From as string | undefined) || "";
+    log.error("VAPI FAILOVER TRIGGERED", { to, from });
 
-  res.setHeader("Content-Type", "text/xml");
+    res.setHeader("Content-Type", "text/xml");
 
-  const tenantUserId = await lookupTenant(to);
+    const tenantUserId = await lookupTenant(to);
 
-  // If we can't find the tenant or they don't have a human fallback number,
-  // we just take a voicemail.
-  let fallbackNumber = null;
-  if (tenantUserId) {
-    const [settings] = await drizzle
-      .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, tenantUserId))
-      .limit(1);
-    fallbackNumber = settings?.humanFallbackNumber;
-  }
+    // If we can't find the tenant or they don't have a human fallback number,
+    // we just take a voicemail.
+    let fallbackNumber = null;
+    if (tenantUserId) {
+      const [settings] = await drizzle
+        .select({ humanFallbackNumber: schema.settings.twilioManagerAlertNumber })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, tenantUserId))
+        .limit(1);
+      fallbackNumber = settings?.humanFallbackNumber;
+    }
 
-  // Generate TwiML for a professional offline experience
-  let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-  twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
+    // Generate TwiML for a professional offline experience
+    let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
+    twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a Wireline agent line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
 
-  // Absolute URL to the brand transfer chime — Twilio's <Play> needs a
-  // full URL because it fetches the media file itself. Falls back to the
-  // canonical prod host when APP_URL isn't set (e.g. on a fresh deploy
-  // before env was populated). If the asset doesn't exist on this
-  // deploy (i.e. owner hasn't curled generate-brand-sounds yet), Twilio
-  // will skip it gracefully and continue to the next verb — no caller
-  // disruption.
-  const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-  const transferChimeUrl = `${appBaseUrl}/sounds/wireline-transfer-chime.mp3`;
+    // Absolute URL to the brand transfer chime — Twilio's <Play> needs a
+    // full URL because it fetches the media file itself. Falls back to the
+    // canonical prod host when APP_URL isn't set (e.g. on a fresh deploy
+    // before env was populated). If the asset doesn't exist on this
+    // deploy (i.e. owner hasn't curled generate-brand-sounds yet), Twilio
+    // will skip it gracefully and continue to the next verb — no caller
+    // disruption.
+    const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+    const transferChimeUrl = `${appBaseUrl}/sounds/wireline-transfer-chime.mp3`;
 
-  if (fallbackNumber) {
-    twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
-    // Brand transfer chime — only plays on the failover path (Vapi
-    // down). Vapi's own transfer flow can't inject MP3s; see
-    // vapi-assistant-factory.ts for the spoken-message workaround used
-    // during normal-runtime transfers.
-    twiml += `  <Play>${transferChimeUrl}</Play>\n`;
-    twiml += `  <Dial>${fallbackNumber}</Dial>\n`;
-  } else {
-    twiml += `  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n`;
-    twiml += `  <Record \n    maxLength="120" \n    action="/api/twilio-webhook/voicemail-complete" \n    transcribe="true"\n  />\n`;
-  }
+    if (fallbackNumber) {
+      twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
+      // Brand transfer chime — only plays on the failover path (Vapi
+      // down). Vapi's own transfer flow can't inject MP3s; see
+      // vapi-assistant-factory.ts for the spoken-message workaround used
+      // during normal-runtime transfers.
+      twiml += `  <Play>${transferChimeUrl}</Play>\n`;
+      twiml += `  <Dial>${fallbackNumber}</Dial>\n`;
+    } else {
+      twiml += `  <Say voice="Polly.Matthew-Neural">Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n`;
+      twiml += `  <Record \n    maxLength="120" \n    action="/api/twilio-webhook/voicemail-complete" \n    transcribe="true"\n  />\n`;
+    }
 
-  twiml += `</Response>`;
+    twiml += `</Response>`;
 
-  return res.status(200).send(twiml);
-});
+    return res.status(200).send(twiml);
+  },
+);
 
-router.post("/api/twilio-webhook/voicemail-complete", (req: Request, res: Response) => {
-  if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", { path: req.path });
+router.post(
+  "/api/twilio-webhook/voicemail-complete",
+  twilioRateLimiter,
+  (req: Request, res: Response) => {
+    if (!verifyTwilioSignature(req)) {
+      log.warn("Twilio webhook signature verification failed", { path: req.path });
+      return res
+        .status(403)
+        .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
+    }
+    log.info("Voicemail recorded during Vapi failover", { url: req.body?.RecordingUrl });
+    res.setHeader("Content-Type", "text/xml");
     return res
-      .status(403)
+      .status(200)
       .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
-  }
-  log.info("Voicemail recorded during Vapi failover", { url: req.body?.RecordingUrl });
-  res.setHeader("Content-Type", "text/xml");
-  return res
-    .status(200)
-    .send(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`);
-});
+  },
+);
 
 /**
  * SINGING RECEPTIONIST PRE-ROLL (Fun Demo)
@@ -404,39 +412,43 @@ router.post("/api/twilio-webhook/voicemail-complete", (req: Request, res: Respon
  * to a graceful spoken message instead of leaving the caller in
  * silence — Twilio numbers are real money + real customers.
  */
-router.post("/api/twilio-webhook/singing-receptionist", (req: Request, res: Response) => {
-  if (!verifyTwilioSignature(req)) {
-    log.warn("Twilio webhook signature verification failed", { path: req.path });
-    return res.status(403).send(twimlEmpty());
-  }
-  const from = (req.body?.From as string | undefined) || "";
-  log.info("Singing receptionist demo line hit", { from: from.slice(0, 16) });
+router.post(
+  "/api/twilio-webhook/singing-receptionist",
+  twilioRateLimiter,
+  (req: Request, res: Response) => {
+    if (!verifyTwilioSignature(req)) {
+      log.warn("Twilio webhook signature verification failed", { path: req.path });
+      return res.status(403).send(twimlEmpty());
+    }
+    const from = (req.body?.From as string | undefined) || "";
+    log.info("Singing receptionist demo line hit", { from: from.slice(0, 16) });
 
-  res.setHeader("Content-Type", "text/xml");
+    res.setHeader("Content-Type", "text/xml");
 
-  // Absolute URL for Twilio <Play> — Twilio's media fetcher needs a
-  // public origin. Falls back to the prod host when APP_URL isn't set.
-  const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-  const jingleUrl = `${appBaseUrl}/sounds/wireline-jingle.mp3`;
-  const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
+    // Absolute URL for Twilio <Play> — Twilio's media fetcher needs a
+    // public origin. Falls back to the prod host when APP_URL isn't set.
+    const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+    const jingleUrl = `${appBaseUrl}/sounds/wireline-jingle.mp3`;
+    const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
 
-  let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-  twiml += `  <Play>${jingleUrl}</Play>\n`;
-  if (sipUri) {
-    // Bridge to Vapi via SIP. answerOnBridge defers Twilio's billing
-    // start until Vapi actually answers, so the caller isn't billed for
-    // the jingle-only window if Vapi's down. Caller hears:
-    //   jingle → Mira's "Haha sorry about that!" → conversation.
-    twiml += `  <Dial answerOnBridge="true"><Sip>${sipUri}</Sip></Dial>\n`;
-  } else {
-    // Dev / unconfigured fallback. Lets a curl smoke-test the route
-    // return clean TwiML even before Vapi is wired up.
-    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
-    twiml += `  <Hangup/>\n`;
-  }
-  twiml += `</Response>`;
+    let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
+    twiml += `  <Play>${jingleUrl}</Play>\n`;
+    if (sipUri) {
+      // Bridge to Vapi via SIP. answerOnBridge defers Twilio's billing
+      // start until Vapi actually answers, so the caller isn't billed for
+      // the jingle-only window if Vapi's down. Caller hears:
+      //   jingle → Mira's "Haha sorry about that!" → conversation.
+      twiml += `  <Dial answerOnBridge="true"><Sip>${sipUri}</Sip></Dial>\n`;
+    } else {
+      // Dev / unconfigured fallback. Lets a curl smoke-test the route
+      // return clean TwiML even before Vapi is wired up.
+      twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at Wireline sometimes. To finish setting up this demo, configure the SINGING_VAPI_SIP_URI environment variable. Goodbye.</Say>\n`;
+      twiml += `  <Hangup/>\n`;
+    }
+    twiml += `</Response>`;
 
-  return res.status(200).send(twiml);
-});
+    return res.status(200).send(twiml);
+  },
+);
 
 export default router;
