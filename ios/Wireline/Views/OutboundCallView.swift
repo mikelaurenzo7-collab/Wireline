@@ -11,9 +11,14 @@ struct OutboundCallView: View {
     @State private var selectedAgentId: String = ""
     @State private var number = ""
     @State private var context = ""
+    @State private var callPurpose = "service_or_requested"
     @State private var consentConfirmed = false
     @State private var isPlacing = false
     @State private var errorMessage: String?
+
+    private var requiresMarketingConsent: Bool {
+        callPurpose == "marketing_or_sales"
+    }
 
     var body: some View {
         NavigationStack {
@@ -28,17 +33,26 @@ struct OutboundCallView: View {
                         .keyboardType(.phonePad)
                     TextField("Instruction (optional)", text: $context, axis: .vertical)
                         .lineLimit(2...4)
-                    Toggle(isOn: $consentConfirmed) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(OutboundConsentCopy.label)
-                                .font(.footnote)
-                            Text(OutboundConsentCopy.help)
+                    Picker("Call type", selection: $callPurpose) {
+                        Text("Service").tag("service_or_requested")
+                        Text("Callback").tag("callback")
+                        Text("Marketing").tag("marketing_or_sales")
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: callPurpose) { _ in consentConfirmed = false }
+                    if requiresMarketingConsent {
+                        Toggle(isOn: $consentConfirmed) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(OutboundConsentCopy.label)
+                                    .font(.footnote)
+                                Text(OutboundConsentCopy.help)
+                                    .font(.caption)
+                                    .foregroundStyle(Brand.text2)
+                                Button(OutboundConsentCopy.learnMore) {
+                                    openURL(OutboundConsentCopy.legalURL)
+                                }
                                 .font(.caption)
-                                .foregroundStyle(Brand.text2)
-                            Button(OutboundConsentCopy.learnMore) {
-                                openURL(OutboundConsentCopy.legalURL)
                             }
-                            .font(.caption)
                         }
                     }
                 }
@@ -52,7 +66,12 @@ struct OutboundCallView: View {
                         if isPlacing { ProgressView().tint(.white) } else { Text("Place call") }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(isPlacing || selectedAgentId.isEmpty || number.isEmpty || !consentConfirmed)
+                    .disabled(
+                        isPlacing ||
+                            selectedAgentId.isEmpty ||
+                            number.isEmpty ||
+                            (requiresMarketingConsent && !consentConfirmed)
+                    )
                     .listRowInsets(EdgeInsets())
                 }
             }
@@ -73,7 +92,8 @@ struct OutboundCallView: View {
                 agentId: selectedAgentId,
                 to: number,
                 context: context.isEmpty ? nil : context,
-                hasExpressWrittenConsent: consentConfirmed
+                callPurpose: callPurpose,
+                hasExpressWrittenConsent: requiresMarketingConsent && consentConfirmed
             )
             dismiss()
         } catch {

@@ -224,10 +224,12 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
     var number by rememberSaveable { mutableStateOf("") }
     var context by rememberSaveable { mutableStateOf("") }
     var consentConfirmed by rememberSaveable { mutableStateOf(false) }
+    var callPurpose by rememberSaveable { mutableStateOf("service_or_requested") }
     var selectedAgentId by rememberSaveable { mutableStateOf("") }
     var showAsk by rememberSaveable { mutableStateOf(false) }
     val agent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
     val followUps = state.recentCalls.count { it.outcomeTag == "followup" }
+    val requiresMarketingConsent = callPurpose == "marketing_or_sales"
 
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { AskWirelineHeroCard(onClick = { showAsk = true }) }
@@ -251,13 +253,21 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                 AgentChips(state.agents, agent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("Phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
                 OutlinedTextField(value = context, onValueChange = { context = it }, label = { Text("What should Wireline handle?") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm))
-                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Checkbox(checked = consentConfirmed, onCheckedChange = { consentConfirmed = it })
-                    OutboundConsentFields()
+                Text("Call type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                    FilterChip(selected = callPurpose == "service_or_requested", onClick = { callPurpose = "service_or_requested"; consentConfirmed = false }, label = { Text("Service") })
+                    FilterChip(selected = callPurpose == "callback", onClick = { callPurpose = "callback"; consentConfirmed = false }, label = { Text("Callback") })
+                    FilterChip(selected = callPurpose == "marketing_or_sales", onClick = { callPurpose = "marketing_or_sales"; consentConfirmed = false }, label = { Text("Marketing") })
+                }
+                if (requiresMarketingConsent) {
+                    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Checkbox(checked = consentConfirmed, onCheckedChange = { consentConfirmed = it })
+                        OutboundConsentFields()
+                    }
                 }
                 Button(
-                    onClick = { agent?.let { model.placeCall(it.id, number, context, consentConfirmed) } },
-                    enabled = agent != null && number.isNotBlank() && consentConfirmed && !state.isWorking,
+                    onClick = { agent?.let { model.placeCall(it.id, number, context, callPurpose, requiresMarketingConsent && consentConfirmed) } },
+                    enabled = agent != null && number.isNotBlank() && (!requiresMarketingConsent || consentConfirmed) && !state.isWorking,
                     shape = RoundedCornerShape(Brand.RadiusSm),
                 ) { Text("Place call") }
             }

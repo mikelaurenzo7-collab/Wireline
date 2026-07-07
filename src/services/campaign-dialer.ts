@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import { eq, and, sql, lt, inArray } from "drizzle-orm";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
+import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
 import { CAMPAIGN_STATUS, LEAD_PROCESSABLE_STATUSES, LEAD_STATUS } from "../lib/outbound-status";
@@ -181,7 +182,13 @@ export class CampaignDialerService {
             callId: result.callId,
             event: "outbound_call_placed",
             state: "initiated",
-            metadata: { leadId: lead.id, campaignId: campaign.id },
+            metadata: {
+              leadId: lead.id,
+              campaignId: campaign.id,
+              call_purpose: "marketing_or_sales",
+              consent_version: OUTBOUND_CONSENT_VERSION,
+              source: "campaign",
+            },
           }),
         ]);
       } else {

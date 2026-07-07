@@ -59,7 +59,7 @@ const OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "o
 function twimlReply(body: string): string {
   // Minimal TwiML — escape XML special chars in the body.
   const escaped = body
-    .replace(/&/g, "&")
+    .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
@@ -349,7 +349,7 @@ router.post(
       twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
       // Brand transfer chime — only plays on the failover path (Vapi
       // down). Vapi's own transfer flow can't inject MP3s; see
-      // vapi-assistant-factory.ts for the spoken-message workaround used
+      // vapi-assistant-factory-v2.ts for the spoken-message workaround used
       // during normal-runtime transfers.
       twiml += `  <Play>${transferChimeUrl}</Play>\n`;
       twiml += `  <Dial>${fallbackNumber}</Dial>\n`;

@@ -46,7 +46,7 @@ const SHORTCUTS = [
     ],
   },
   {
-    category: "Call Logs",
+    category: "Phone",
     items: [
       { keys: [CMD_KEY, "F"], description: "Focus search" },
       { keys: [CMD_KEY, "E"], description: "Export to CSV" },

@@ -39,15 +39,15 @@ export default function AgentStudioHomeClaude() {
     clearBrowserCommandHash();
   }, [browserContext]);
 
-  const handoffToken = params.get("handoff");
+  const handoffId = params.get("handoff_id");
 
   useEffect(() => {
-    if (!handoffToken || loading) return;
+    if (!handoffId || loading) return;
 
     let cancelled = false;
     void (async () => {
       const response = await authFetch(
-        `/api/browser/handoff/redeem?token=${encodeURIComponent(handoffToken)}`,
+        `/api/browser/handoff/redeem?handoff_id=${encodeURIComponent(handoffId)}`,
       );
       const body = (await response.json()) as {
         context?: BrowserCommandContext;
@@ -71,7 +71,7 @@ export default function AgentStudioHomeClaude() {
       setParams(
         (current) => {
           const next = new URLSearchParams(current);
-          next.delete("handoff");
+          next.delete("handoff_id");
           return next;
         },
         { replace: true },
@@ -81,7 +81,7 @@ export default function AgentStudioHomeClaude() {
     return () => {
       cancelled = true;
     };
-  }, [loading, handoffToken, setParams, toast]);
+  }, [loading, handoffId, setParams, toast]);
 
   useEffect(() => {
     const warning = consumeCreateWarning();

@@ -97,12 +97,14 @@ actor WirelineAPI {
         agentId: String,
         to number: String,
         context: String?,
+        callPurpose: String = "service_or_requested",
         hasExpressWrittenConsent: Bool = false
     ) async throws -> String? {
         struct Body: Encodable {
             let agentId: String
             let customerNumber: String
             let context: String?
+            let callPurpose: String
             let hasExpressWrittenConsent: Bool
         }
         struct Result: Decodable {
@@ -115,6 +117,7 @@ actor WirelineAPI {
                 agentId: agentId,
                 customerNumber: number,
                 context: context,
+                callPurpose: callPurpose,
                 hasExpressWrittenConsent: hasExpressWrittenConsent
             )
         )

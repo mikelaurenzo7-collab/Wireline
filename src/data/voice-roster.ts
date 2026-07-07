@@ -19,7 +19,7 @@
  */
 
 type VoiceRosterEntry = {
-  /** ElevenLabs voice id — used in vapi-assistant-factory.ts voice payload. */
+  /** ElevenLabs voice id — used in vapi-assistant-factory-v2.ts voice payload. */
   voiceId: string;
   /** Human label surfaced in AssistantSettings + analytics, not the API. */
   label: string;

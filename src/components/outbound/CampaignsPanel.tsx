@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Megaphone, Pause, Play, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
+import { Loader2, Megaphone, Pause, Play, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { logFetchError } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
@@ -285,14 +285,6 @@ export default function CampaignsPanel() {
                       Pause
                     </ShadButton>
                   ) : null}
-                  <ShadButton
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    title="Upload leads via API or intake keys"
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                  </ShadButton>
                   <ShadButton
                     type="button"
                     size="sm"

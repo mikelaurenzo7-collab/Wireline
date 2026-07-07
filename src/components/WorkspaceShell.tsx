@@ -31,7 +31,7 @@ const WORKSPACE_NAV: NavItem[] = [
 ];
 
 const OPERATE_NAV: NavItem[] = [
-  { href: "/phone", label: "Call Logs", icon: Phone },
+  { href: "/phone", label: "Phone", icon: Phone },
   { href: "/insights", label: "Insights", icon: BarChart3 },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/apps", label: "Apps", icon: LayoutGrid },
@@ -42,7 +42,7 @@ const MOBILE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
   { href: "/studio", label: "Studio", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
-  { href: "/phone", label: "Call Logs", icon: Phone },
+  { href: "/phone", label: "Phone", icon: Phone },
   { href: "/connections", label: "Connections", icon: Workflow },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },

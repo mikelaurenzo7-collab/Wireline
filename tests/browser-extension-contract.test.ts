@@ -57,6 +57,8 @@ describe("Wireline Command extension contract", () => {
     expect(studioSource).toContain("browserCommandBrief");
     expect(studioSource).toContain("clearBrowserCommandHash");
     expect(studioSource).toContain("/api/browser/handoff/redeem");
+    expect(studioSource).toContain("handoff_id");
+    expect(studioSource).not.toContain("handoff=");
   });
 
   it("keeps fast jumps to agents, wire, usage, and studio", () => {

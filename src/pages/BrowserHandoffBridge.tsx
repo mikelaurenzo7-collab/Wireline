@@ -11,7 +11,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 /**
  * Authenticated bridge: extension opens `/studio/handoff#browser-context=…`,
- * this page exchanges the fragment for a signed token and redirects to Studio.
+ * this page exchanges the fragment for a one-time handoff id and redirects to Studio.
  */
 export default function BrowserHandoffBridge() {
   const { user, loading } = useAuth();
@@ -59,8 +59,12 @@ export default function BrowserHandoffBridge() {
         }),
       });
 
-      const body = (await response.json()) as { studio_url?: string; error?: string };
-      if (!response.ok || !body.studio_url) {
+      const body = (await response.json()) as {
+        handoff_id?: string;
+        studio_url?: string;
+        error?: string;
+      };
+      if (!response.ok || !body.studio_url || !body.handoff_id) {
         setError(body.error || "Could not secure this handoff. Try again from Wireline Command.");
         return;
       }

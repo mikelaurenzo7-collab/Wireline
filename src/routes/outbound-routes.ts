@@ -11,6 +11,12 @@ import { OutboundBulkSchema } from "../lib/form-validators";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
+import {
+  OUTBOUND_CALL_PURPOSES,
+  isMarketingCallPurpose,
+  normalizedExpressConsent,
+  outboundConsentMetadata,
+} from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { SentryEvents } from "../lib/sentry-events";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
@@ -133,6 +139,7 @@ const dialSchema = z.object({
     ),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
+  callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional().default("marketing_or_sales"),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
 });
 
@@ -148,7 +155,15 @@ router.post(
   validate({ body: dialSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { agentId, customerName, customerNumber, context, hasExpressWrittenConsent } = req.body;
+      const {
+        agentId,
+        customerName,
+        customerNumber,
+        context,
+        callPurpose,
+        hasExpressWrittenConsent,
+      } = req.body;
+      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
 
       // DNC compliance check — block calls to numbers on the Do Not Call list.
       if (await isDncBlocked(req.user.id, customerNumber)) {
@@ -164,8 +179,8 @@ router.post(
       const tcpaDecision = evaluateOutboundConsent({
         phone: customerNumber,
         is_internal_dnc: false, // already checked above
-        is_marketing_call: true,
-        has_express_written_consent: !!hasExpressWrittenConsent,
+        is_marketing_call: isMarketingCallPurpose(callPurpose),
+        has_express_written_consent: expressConsent,
       });
       if (!tcpaDecision.allowed) {
         log.warn("Outbound dial blocked by TCPA consent gate", {
@@ -202,7 +217,11 @@ router.post(
         callId: result.callId,
         status: "Dialing",
         attempts: 1,
-        metadata: { has_express_written_consent: !!hasExpressWrittenConsent },
+        metadata: outboundConsentMetadata({
+          callPurpose,
+          hasExpressWrittenConsent,
+          source: "web",
+        }),
       });
 
       SentryEvents.outboundDialStarted({
@@ -300,7 +319,11 @@ router.post(
         campaignId: campaign_id || null,
         metadata: {
           ...((lead.metadata as Record<string, unknown>) || {}),
-          has_express_written_consent: !!has_express_written_consent,
+          ...outboundConsentMetadata({
+            callPurpose: "marketing_or_sales",
+            hasExpressWrittenConsent: !!has_express_written_consent,
+            source: "bulk",
+          }),
         },
       }));
 

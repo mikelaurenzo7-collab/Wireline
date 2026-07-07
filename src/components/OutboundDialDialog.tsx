@@ -20,6 +20,7 @@ import {
   OUTBOUND_CONSENT_LEARN_MORE,
   OUTBOUND_CONSENT_LEGAL_PATH,
 } from "../lib/outbound-consent-copy";
+import type { OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { emitProductEvent } from "../lib/product-event-client";
 
 type OutboundDialDialogProps = {
@@ -52,6 +53,7 @@ export default function OutboundDialDialog({
   const [agentId, setAgentId] = useState(initialAgentId);
   const [number, setNumber] = useState(initialNumber);
   const [context, setContext] = useState(initialContext);
+  const [callPurpose, setCallPurpose] = useState<OutboundCallPurpose>("service_or_requested");
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
 
@@ -60,11 +62,16 @@ export default function OutboundDialDialog({
     setAgentId(initialAgentId || voiceAgents[0]?.id || "");
     setNumber(initialNumber);
     setContext(initialContext);
+    setCallPurpose("service_or_requested");
     setConsentConfirmed(false);
   }, [open, initialAgentId, initialNumber, initialContext, voiceAgents]);
 
   const canPlace =
-    !placing && !!agentId && number.trim().length > 0 && consentConfirmed && voiceAgents.length > 0;
+    !placing &&
+    !!agentId &&
+    number.trim().length > 0 &&
+    (callPurpose !== "marketing_or_sales" || consentConfirmed) &&
+    voiceAgents.length > 0;
 
   const placeCall = async () => {
     if (!canPlace) return;
@@ -78,7 +85,8 @@ export default function OutboundDialDialog({
           customerNumber: number.trim(),
           customerName: "",
           context: context.trim() || undefined,
-          hasExpressWrittenConsent: true,
+          callPurpose,
+          hasExpressWrittenConsent: callPurpose === "marketing_or_sales" && consentConfirmed,
         }),
       });
       const body = (await response.json()) as { error?: string; code?: string };
@@ -122,7 +130,7 @@ export default function OutboundDialDialog({
             New outbound call
           </DialogTitle>
           <DialogDescription>
-            Pick an agent with a live line, enter a number, and confirm consent before dialing.
+            Pick an agent with a live line, enter a number, and classify the call before dialing.
           </DialogDescription>
         </DialogHeader>
 
@@ -180,24 +188,44 @@ export default function OutboundDialDialog({
               />
             </label>
 
-            <label className="flex items-start gap-3 rounded-md border border-input/80 bg-muted/30 p-3">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={consentConfirmed}
-                onChange={(event) => setConsentConfirmed(event.target.checked)}
-              />
-              <span className="space-y-1 text-sm">
-                <span className="block text-foreground">{OUTBOUND_CONSENT_LABEL}</span>
-                <span className="block text-muted-foreground text-xs">{OUTBOUND_CONSENT_HELP}</span>
-                <Link
-                  to={OUTBOUND_CONSENT_LEGAL_PATH}
-                  className="text-xs text-brand underline-offset-2 hover:underline"
-                >
-                  {OUTBOUND_CONSENT_LEARN_MORE}
-                </Link>
-              </span>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-medium text-foreground">Call type</span>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={callPurpose}
+                onChange={(event) => {
+                  setCallPurpose(event.target.value as OutboundCallPurpose);
+                  setConsentConfirmed(false);
+                }}
+              >
+                <option value="service_or_requested">Service or requested call</option>
+                <option value="callback">Callback</option>
+                <option value="marketing_or_sales">Marketing or sales</option>
+              </select>
             </label>
+
+            {callPurpose === "marketing_or_sales" ? (
+              <label className="flex items-start gap-3 rounded-md border border-input/80 bg-muted/30 p-3">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={consentConfirmed}
+                  onChange={(event) => setConsentConfirmed(event.target.checked)}
+                />
+                <span className="space-y-1 text-sm">
+                  <span className="block text-foreground">{OUTBOUND_CONSENT_LABEL}</span>
+                  <span className="block text-muted-foreground text-xs">
+                    {OUTBOUND_CONSENT_HELP}
+                  </span>
+                  <Link
+                    to={OUTBOUND_CONSENT_LEGAL_PATH}
+                    className="text-xs text-brand underline-offset-2 hover:underline"
+                  >
+                    {OUTBOUND_CONSENT_LEARN_MORE}
+                  </Link>
+                </span>
+              </label>
+            ) : null}
           </div>
         )}
 

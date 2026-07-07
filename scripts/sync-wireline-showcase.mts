@@ -17,7 +17,7 @@ import {
   SHOWCASE_WEBHOOK_URL,
 } from "../src/lib/showcase-assistant.ts";
 import { sanitizePhone } from "../src/lib/vapi-helpers.ts";
-import { VAPI_OPENAI_FALLBACK_MODEL } from "../src/lib/claude-brain.ts";
+import { VAPI_OPENAI_FALLBACK_MODEL } from "../src/lib/ai-models.ts";
 
 const VAPI_BASE = "https://api.vapi.ai";
 const PATCH_DELAY_MS = 600;

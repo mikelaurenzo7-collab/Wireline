@@ -32,6 +32,12 @@ import { ensureDefaultAccount } from "../lib/account-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
+import {
+  OUTBOUND_CALL_PURPOSES,
+  isMarketingCallPurpose,
+  normalizedExpressConsent,
+  outboundConsentMetadata,
+} from "../lib/outbound-call-purpose";
 import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
@@ -594,6 +600,7 @@ const mobileDialSchema = z.object({
     ),
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
+  callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional().default("marketing_or_sales"),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
 });
 
@@ -605,7 +612,15 @@ router.post(
   validate({ body: mobileDialSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { agentId, customerName, customerNumber, context, hasExpressWrittenConsent } = req.body;
+      const {
+        agentId,
+        customerName,
+        customerNumber,
+        context,
+        callPurpose,
+        hasExpressWrittenConsent,
+      } = req.body;
+      const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
 
       if (await isDncBlocked(req.user.id, customerNumber)) {
         log.warn("Mobile outbound dial blocked by DNC list", { customerNumber });
@@ -619,8 +634,8 @@ router.post(
       const tcpaDecision = evaluateOutboundConsent({
         phone: customerNumber,
         is_internal_dnc: false,
-        is_marketing_call: true,
-        has_express_written_consent: !!hasExpressWrittenConsent,
+        is_marketing_call: isMarketingCallPurpose(callPurpose),
+        has_express_written_consent: expressConsent,
       });
       if (!tcpaDecision.allowed) {
         log.warn("Mobile outbound dial blocked by TCPA consent gate", {
@@ -655,7 +670,11 @@ router.post(
         callId: result.callId,
         status: "Dialing",
         attempts: 1,
-        metadata: { has_express_written_consent: !!hasExpressWrittenConsent, source: "mobile" },
+        metadata: outboundConsentMetadata({
+          callPurpose,
+          hasExpressWrittenConsent,
+          source: "mobile",
+        }),
       });
 
       res.json({ success: true, callId: result.callId });

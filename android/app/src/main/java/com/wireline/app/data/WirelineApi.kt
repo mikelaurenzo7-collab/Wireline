@@ -113,11 +113,13 @@ class WirelineApi(context: Context) {
         agentId: String,
         customerNumber: String,
         context: String?,
+        callPurpose: String,
         hasExpressWrittenConsent: Boolean,
     ): String? {
         val body = JSONObject()
             .put("agentId", agentId)
             .put("customerNumber", customerNumber)
+            .put("callPurpose", callPurpose)
             .put("hasExpressWrittenConsent", hasExpressWrittenConsent)
         if (!context.isNullOrBlank()) body.put("context", context)
         val response: OutboundCallResponse = post("/api/mobile/calls/outbound", body)

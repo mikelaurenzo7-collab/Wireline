@@ -10,8 +10,12 @@ describe("mobile TCPA consent contract", () => {
     const studio = read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt");
     const ask = read("android/app/src/main/java/com/wireline/app/ui/ask/AskWirelineScreen.kt");
     expect(api).toContain("hasExpressWrittenConsent");
+    expect(api).toContain("callPurpose");
     expect(studio).toMatch(/consentConfirmed/);
+    expect(studio).toContain("marketing_or_sales");
+    expect(studio).toContain("service_or_requested");
     expect(ask).toMatch(/outboundConsent/);
+    expect(ask).toContain("callback");
   });
 
   it("requires hasExpressWrittenConsent on iOS outbound dial", () => {
@@ -19,8 +23,23 @@ describe("mobile TCPA consent contract", () => {
     const view = read("ios/Wireline/Views/OutboundCallView.swift");
     const copy = read("ios/Wireline/OutboundConsentCopy.swift");
     expect(api).toContain("hasExpressWrittenConsent");
+    expect(api).toContain("callPurpose");
     expect(view).toMatch(/consentConfirmed/);
+    expect(view).toContain("marketing_or_sales");
+    expect(view).toContain("service_or_requested");
     expect(copy).toContain("permission to call");
+  });
+
+  it("does not hardcode express written consent for Siri or CarPlay callbacks", () => {
+    const siri = read("ios/Wireline/Intents/CallAgentIntent.swift");
+    const carplay = read("ios/Wireline/CarPlay/CarPlaySceneDelegate.swift");
+
+    expect(siri).toContain('callPurpose: "service_or_requested"');
+    expect(siri).toContain("hasExpressWrittenConsent: false");
+    expect(siri).not.toContain("hasExpressWrittenConsent: true");
+    expect(carplay).toContain('callPurpose: "callback"');
+    expect(carplay).toContain("hasExpressWrittenConsent: false");
+    expect(carplay).not.toContain("hasExpressWrittenConsent: true");
   });
 
   it("loads agent roles from mobile API on iOS create sheet", () => {
@@ -33,6 +52,9 @@ describe("mobile TCPA consent contract", () => {
   it("server mobile outbound schema accepts consent flag", () => {
     const mobile = read("src/routes/mobile-routes.ts");
     expect(mobile).toContain("hasExpressWrittenConsent");
+    expect(mobile).toContain("callPurpose");
+    expect(mobile).toContain("isMarketingCallPurpose");
+    expect(mobile).toContain("outboundConsentMetadata");
     expect(mobile).toContain("evaluateOutboundConsent");
   });
 });

@@ -47,8 +47,10 @@ fun AskWirelineScreen(
     var outboundNumber by remember { mutableStateOf("") }
     var outboundConsent by remember { mutableStateOf(false) }
     var outboundContext by remember { mutableStateOf("") }
+    var outboundCallPurpose by remember { mutableStateOf("service_or_requested") }
     var selectedAgentId by remember { mutableStateOf("") }
     val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
+    val requiresMarketingConsent = outboundCallPurpose == "marketing_or_sales"
 
     // Functions mirroring iOS logic
     val onSummarizeLastCall: () -> Unit = {
@@ -331,29 +333,69 @@ Icon(
                                         )
                                     )
 
+                                    Text("Call type", style = MaterialTheme.typography.labelSmall, color = Brand.Text2)
                                     Row(
-                                        verticalAlignment = Alignment.Top,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Checkbox(
-                                            checked = outboundConsent,
-                                            onCheckedChange = { outboundConsent = it },
+                                        FilterChip(
+                                            selected = outboundCallPurpose == "service_or_requested",
+                                            onClick = {
+                                                outboundCallPurpose = "service_or_requested"
+                                                outboundConsent = false
+                                            },
+                                            label = { Text("Service") }
                                         )
-                                        OutboundConsentFields()
+                                        FilterChip(
+                                            selected = outboundCallPurpose == "callback",
+                                            onClick = {
+                                                outboundCallPurpose = "callback"
+                                                outboundConsent = false
+                                            },
+                                            label = { Text("Callback") }
+                                        )
+                                        FilterChip(
+                                            selected = outboundCallPurpose == "marketing_or_sales",
+                                            onClick = {
+                                                outboundCallPurpose = "marketing_or_sales"
+                                                outboundConsent = false
+                                            },
+                                            label = { Text("Marketing") }
+                                        )
+                                    }
+
+                                    if (requiresMarketingConsent) {
+                                        Row(
+                                            verticalAlignment = Alignment.Top,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            Checkbox(
+                                                checked = outboundConsent,
+                                                onCheckedChange = { outboundConsent = it },
+                                            )
+                                            OutboundConsentFields()
+                                        }
                                     }
 
                                     Button(
                                         onClick = {
                                             selectedAgent?.let {
-                                                model.placeCall(it.id, outboundNumber, outboundContext, outboundConsent)
+                                                model.placeCall(
+                                                    it.id,
+                                                    outboundNumber,
+                                                    outboundContext,
+                                                    outboundCallPurpose,
+                                                    requiresMarketingConsent && outboundConsent
+                                                )
                                                 answerText = "Outbound call placed with agent ${it.name} to $outboundNumber."
                                                 outboundNumber = ""
                                                 outboundContext = ""
                                                 outboundConsent = false
+                                                outboundCallPurpose = "service_or_requested"
                                                 expandOutbound = false
                                             }
                                         },
-                                        enabled = selectedAgent != null && outboundNumber.isNotBlank() && outboundConsent && !state.isWorking,
+                                        enabled = selectedAgent != null && outboundNumber.isNotBlank() && (!requiresMarketingConsent || outboundConsent) && !state.isWorking,
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
                                         shape = RoundedCornerShape(Brand.RadiusMd)

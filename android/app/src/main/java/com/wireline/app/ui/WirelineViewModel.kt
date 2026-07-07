@@ -84,10 +84,16 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }
 
-    fun placeCall(agentId: String, customerNumber: String, context: String, hasExpressWrittenConsent: Boolean) =
+    fun placeCall(
+        agentId: String,
+        customerNumber: String,
+        context: String,
+        callPurpose: String,
+        hasExpressWrittenConsent: Boolean
+    ) =
         viewModelScope.launch {
         state = state.copy(isWorking = true, error = null)
-        runCatching { api.placeCall(agentId, customerNumber, context, hasExpressWrittenConsent) }
+        runCatching { api.placeCall(agentId, customerNumber, context, callPurpose, hasExpressWrittenConsent) }
             .onSuccess {
                 state = state.copy(isWorking = false)
                 refresh()

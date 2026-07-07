@@ -130,7 +130,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             agentId: agentId,
             to: number,
             context: nil,
-            hasExpressWrittenConsent: true
+            callPurpose: "callback",
+            hasExpressWrittenConsent: false
         )
     }
 
