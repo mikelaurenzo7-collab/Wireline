@@ -27,6 +27,16 @@ describe("product voice cohesion", () => {
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 
+  it("keeps public landing examples broad enough for non-service-business buyers", () => {
+    const landing = read("src/components/marketing/PrecisionLanding.tsx");
+    expect(landing).toContain("Revenue Desk");
+    expect(landing).toContain("Support Queue");
+    expect(landing).toContain("Call Center");
+    expect(landing).toContain("sales, support, scheduling, or overflow");
+    expect(landing).not.toContain("service estimate");
+    expect(landing).not.toContain("Start booking them");
+  });
+
   it("keeps authenticated page map intentional", () => {
     const routes = read("src/routes/AppRoutes.tsx");
     expect(routes).toContain('path="/overview"');
