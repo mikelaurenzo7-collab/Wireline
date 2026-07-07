@@ -73,6 +73,13 @@ const viewportFilter = parseList(process.env.WIRELINE_VISUAL_VIEWPORTS);
 const activeViewports = viewportFilter.size
   ? viewports.filter((viewport) => viewportFilter.has(viewport.name))
   : viewports;
+const ignoredRequestHosts = new Set([
+  "analytics.google.com",
+  "region1.google-analytics.com",
+  "www.google-analytics.com",
+  "www.googletagmanager.com",
+  ...parseList(process.env.WIRELINE_VISUAL_IGNORED_REQUEST_HOSTS),
+]);
 
 function fileName(route) {
   if (route === "/") return "home";
@@ -90,6 +97,14 @@ function describeControl(element) {
     element.textContent?.replace(/\s+/g, " ").trim().slice(0, 80) ||
     element.tagName.toLowerCase()
   );
+}
+
+function isIgnoredRequestFailure(request) {
+  try {
+    return ignoredRequestHosts.has(new URL(request.url()).hostname);
+  } catch {
+    return false;
+  }
 }
 
 async function settle(page) {
@@ -211,6 +226,7 @@ function attachPageDiagnostics(page, viewportName, issues) {
   });
   page.on("requestfailed", (request) => {
     const failure = request.failure();
+    if (isIgnoredRequestFailure(request)) return;
     if (failure?.errorText) {
       issues.push({
         viewport: viewportName,
