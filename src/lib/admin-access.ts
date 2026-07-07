@@ -1,5 +1,5 @@
 /** Tabs and APIs reserved for Wireline platform account holders (founder / staff). */
-export const OWNER_ONLY_ADMIN_TABS = ["system"] as const;
+export const OWNER_ONLY_ADMIN_TABS = ["cockpit", "system"] as const;
 
 export type OwnerOnlyAdminTab = (typeof OWNER_ONLY_ADMIN_TABS)[number];
 

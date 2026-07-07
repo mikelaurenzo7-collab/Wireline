@@ -10,7 +10,7 @@
  * controls implemented" until BAA + audit are signed.
  */
 import { motion } from "motion/react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Lock,
@@ -123,13 +123,83 @@ const SECTIONS = [
   },
 ];
 
+const TRUST_PACK_SECTIONS = [
+  {
+    icon: ShieldCheck,
+    title: "Tenant isolation",
+    items: [
+      "Every read and write is scoped to the authenticated account via server-side tenant context — not client-side filters.",
+      "Provider credentials, OAuth tokens, and billing authority never ship to browsers or mobile clients.",
+      "Cross-tenant access attempts are rejected at the API boundary and logged for review.",
+    ],
+  },
+  {
+    icon: Globe2,
+    title: "Wireline Command (browser extension)",
+    items: [
+      "Page context is sent only when you explicitly click Send to Studio — no background harvesting.",
+      "No broad host permissions, no silent browsing collection, and no auth tokens stored in the extension.",
+      "The extension is a handoff surface into Studio, not an independent agent runtime.",
+    ],
+  },
+  {
+    icon: ServerCog,
+    title: "Native mobile clients",
+    items: [
+      "iOS and Android authenticate with short-lived Bearer sessions against the same Wireline API contract as web.",
+      "Calls, approvals, and notifications are control surfaces — prompts, billing, and compliance decisions stay server-owned.",
+      "Account deletion and sign-out are required App Store / Play policy paths on native settings.",
+    ],
+  },
+  {
+    icon: HeartPulse,
+    title: "Call compliance (TCPA / DNC)",
+    items: [
+      "Outbound calls require consent checks before dial — marketing calls respect do-not-call posture.",
+      "Tenant DNC lists are enforced before expensive PSTN actions.",
+      "Federal DNC registry scrub is on the outbound roadmap; until live, we document the gap honestly in sales conversations.",
+    ],
+  },
+  {
+    icon: CreditCard,
+    title: "Billing & spend controls",
+    items: [
+      "Conversation Balance is a prepaid ledger — live voice work cannot silently exceed funded balance on Personal.",
+      "Team and Business plans meter voice overage through Stripe with visible rates in billing settings.",
+      "Daily spend accumulators and economics-at-risk alerts help the platform owner catch margin leaks early.",
+    ],
+  },
+  {
+    icon: Eye,
+    title: "Account deletion & data rights",
+    items: [
+      "Self-serve account deletion cascades user-owned rows (agents, calls, knowledge, audit events) in one server workflow.",
+      "GDPR/CCPA erasure requests follow the same cascade — email security@trywireline.com for DPA copies.",
+      "Transcript and recording retention honor per-tenant settings; recording defaults to off.",
+    ],
+  },
+  {
+    icon: Database,
+    title: "Subprocessors & vendors",
+    items: [
+      "Production voice: approved telephony and voice orchestration partners (configured server-side only).",
+      "Payments: Stripe (PCI scope reduced — Wireline never stores card numbers).",
+      "Data plane: Supabase Postgres (US-East today). Email: Resend. Rate limits: Upstash Redis.",
+      "Customer-facing surfaces use Wireline-owned copy — vendor names stay in operator configuration, not buyer UI.",
+    ],
+  },
+];
+
 export default function Security() {
+  const location = useLocation();
+  const isTrustHub = location.pathname === "/trust";
+
   return (
     <>
       <PageMeta
-        title="Security & Compliance — Wireline"
-        description="How Wireline handles encryption, webhook signatures, HIPAA controls, PCI scope, GDPR rights, and responsible disclosure. Honest, in detail."
-        path="/security"
+        title={isTrustHub ? "Trust Center — Wireline" : "Security & Compliance — Wireline"}
+        description="How Wireline handles encryption, tenant isolation, browser privacy, call compliance, billing safety, and honest security proof."
+        path={isTrustHub ? "/trust" : "/security"}
       />
       <MarketingChrome stickyCta={false}>
         <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
@@ -153,7 +223,9 @@ export default function Security() {
               <div>
                 <p className="text-eyebrow">Security · Compliance · Honesty</p>
                 <h1 className="marketing-hero-title text-2xl sm:text-3xl">
-                  How we keep your calls — and your data — safe.
+                  {isTrustHub
+                    ? "Trust Center — how Wireline earns live calls."
+                    : "How we keep your calls — and your data — safe."}
                 </h1>
               </div>
             </div>
@@ -163,37 +235,39 @@ export default function Security() {
               the honest summary of what we ship today, where we still have work to do, and how to
               reach us if you find something we missed.
             </p>
-            <p className="mt-4 text-eyebrow !text-[0.625rem]">Last updated · May 27, 2026</p>
+            <p className="mt-4 text-eyebrow !text-[0.625rem]">Last updated · July 7, 2026</p>
           </motion.div>
 
           <div className="space-y-7">
-            {SECTIONS.map(({ icon: Icon, title, items }, idx) => (
-              <motion.section
-                key={title}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
-              >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <Icon className="w-4 h-4 text-brand" strokeWidth={1.8} />
-                  <h2 className="font-display italic text-lg text-foreground leading-tight">
-                    {title}
-                  </h2>
-                </div>
-                <ul className="space-y-1.5 marketing-body">
-                  {items.map((line, i) => (
-                    <li key={i} className="pl-5 relative">
-                      <span
-                        aria-hidden="true"
-                        className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-brand/55"
-                      />
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </motion.section>
-            ))}
+            {(isTrustHub ? [...TRUST_PACK_SECTIONS, ...SECTIONS] : SECTIONS).map(
+              ({ icon: Icon, title, items }, idx) => (
+                <motion.section
+                  key={title}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
+                >
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <Icon className="w-4 h-4 text-brand" strokeWidth={1.8} />
+                    <h2 className="font-display italic text-lg text-foreground leading-tight">
+                      {title}
+                    </h2>
+                  </div>
+                  <ul className="space-y-1.5 marketing-body">
+                    {items.map((line, i) => (
+                      <li key={i} className="pl-5 relative">
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-brand/55"
+                        />
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </motion.section>
+              ),
+            )}
           </div>
 
           <div className="mt-12 pt-6 border-t border-border">
@@ -238,6 +312,10 @@ export default function Security() {
               </a>
             </p>
             <p>
+              <Link to="/trust" className="text-brand hover:underline">
+                Trust Center (sales-ready overview)
+              </Link>
+              {" · "}
               <Link to="/status" className="text-brand hover:underline">
                 Live system status
               </Link>

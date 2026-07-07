@@ -71,6 +71,7 @@ function AppRouter() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/*" element={<Navigate to="/blog" replace />} />
         <Route path="/security" element={<Security />} />
+        <Route path="/trust" element={<Security />} />
         {/* Vertical trust packs — linked from /security for regulated buyers. */}
         <Route path="/trust/:vertical" element={<TrustPackPage />} />
         <Route path="/status" element={<Status />} />

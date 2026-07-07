@@ -81,7 +81,8 @@ export const AUTH_PORTAL_SHOWCASE = {
     {
       id: "live-ops",
       label: "Recaps floor",
-      detail: "Listen in, approve CRM writes, and monitor live work in real time.",
+      detail:
+        "Supervisor listen / whisper / barge is in beta — approve CRM writes and monitor calls from Phone today.",
     },
   ],
 } as const;

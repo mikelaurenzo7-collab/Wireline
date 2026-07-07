@@ -216,7 +216,7 @@ export default function FounderOperatingCockpit() {
           tone={data.retained.activated_not_paying > 0 ? "rose" : "muted"}
         />
         <ShadButton type="button" variant="outline" size="sm" disableAnimations asChild>
-          <Link to="/admin">Campaign checklist</Link>
+          <Link to="/admin?tab=cockpit">Launch checklist</Link>
         </ShadButton>
       </div>
     </section>

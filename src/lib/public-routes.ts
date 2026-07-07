@@ -16,6 +16,7 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/status",
   "/changelog",
   "/security",
+  "/trust",
   "/not-found",
   "/404",
 ]);

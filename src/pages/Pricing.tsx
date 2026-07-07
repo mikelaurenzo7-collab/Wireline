@@ -12,6 +12,10 @@ import MarketingFooter from "../components/marketing/MarketingFooter";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 import { STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
+import {
+  conversationBalanceMinuteEstimates,
+  publishedVoiceRates,
+} from "../lib/voice-pricing-display";
 
 const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
@@ -168,6 +172,9 @@ const FAQ = [
     "Yes. Dedicated numbers are included by plan, and extra agent or line capacity can be added as the account grows.",
   ],
 ] as const;
+
+const VOICE_RATES = publishedVoiceRates();
+const BALANCE_MINUTE_ESTIMATES = conversationBalanceMinuteEstimates();
 
 export default function Pricing() {
   return (
@@ -331,6 +338,60 @@ export default function Pricing() {
                 </article>
               );
             })}
+          </div>
+        </section>
+
+        <section
+          id="voice-rates"
+          className="border-y border-border bg-muted/30 px-5 py-12 sm:px-8 lg:px-10"
+        >
+          <div className="wl-public-rail mx-auto max-w-5xl">
+            <p className="wl-overline text-primary">Voice economics</p>
+            <h2
+              className="mt-3 max-w-2xl text-balance text-[clamp(1.75rem,3.5vw,2.75rem)] leading-[1.08] tracking-[-0.03em]"
+              style={{
+                fontFamily:
+                  "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
+                fontWeight: 400,
+              }}
+            >
+              Clear per-minute rates — no surprise math after the call.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+              Competitors often quote platform fees plus carrier plus model costs. Wireline
+              publishes one voice rate per funding path so you can budget before going live.
+            </p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {VOICE_RATES.map((row) => (
+                <div
+                  key={row.label}
+                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-card p-5"
+                >
+                  <p className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+                    ${row.rateUsd.toFixed(2)}
+                    <span className="text-base font-medium text-muted-foreground">/min</span>
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">{row.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{row.detail}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5">
+              <p className="text-sm font-semibold text-foreground">Conversation Balance examples</p>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {BALANCE_MINUTE_ESTIMATES.map(({ amountUsd, minutes }) => (
+                  <li
+                    key={amountUsd}
+                    className="flex items-center justify-between gap-3 text-sm text-muted-foreground"
+                  >
+                    <span>${amountUsd} top-up</span>
+                    <span className="font-medium tabular-nums text-foreground">
+                      ≈ {minutes.toLocaleString()} min
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
 

@@ -48,6 +48,7 @@ const SESSION_OPTIONAL_ROUTES = new Set([
   "/about",
   "/blog",
   "/security",
+  "/trust",
   "/status",
   "/support",
   "/contact",

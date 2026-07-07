@@ -9,6 +9,10 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
+import {
+  conversationBalanceMinuteEstimates,
+  publishedVoiceRates,
+} from "../lib/voice-pricing-display";
 
 type SubscriptionState = {
   plan: string | null;
@@ -114,6 +118,8 @@ export default function BillingSettings() {
   const invoiceTotal = `$${activePlan.monthly}.00`;
   const balanceFill =
     balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
+  const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
+  const personalVoiceRate = publishedVoiceRates()[0]?.rateUsd ?? 0.2;
 
   async function addBalance(amountUsd: number) {
     setTopUpBusy(amountUsd);
@@ -223,7 +229,12 @@ export default function BillingSettings() {
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     Add balance before your first live call — usage draws down as conversations run.
                   </p>
-                ) : null}
+                ) : (
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Voice draws at ${personalVoiceRate.toFixed(2)}/min from balance — top-ups below
+                    show approximate minutes.
+                  </p>
+                )}
                 <div className="mt-5 h-2 rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary transition-all"
@@ -231,25 +242,32 @@ export default function BillingSettings() {
                   />
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => (
-                    <Button
-                      key={amount}
-                      type="button"
-                      disableAnimations
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void addBalance(amount)}
-                      disabled={topUpBusy !== null}
-                      className="gap-1.5"
-                    >
-                      {topUpBusy === amount ? (
-                        <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Plus className="size-3.5" aria-hidden="true" />
-                      )}
-                      ${amount}
-                    </Button>
-                  ))}
+                  {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
+                    const minutes =
+                      balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ?? 0;
+                    return (
+                      <Button
+                        key={amount}
+                        type="button"
+                        disableAnimations
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void addBalance(amount)}
+                        disabled={topUpBusy !== null}
+                        className="gap-1.5"
+                        title={
+                          minutes > 0 ? `≈ ${minutes.toLocaleString()} voice minutes` : undefined
+                        }
+                      >
+                        {topUpBusy === amount ? (
+                          <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Plus className="size-3.5" aria-hidden="true" />
+                        )}
+                        ${amount}
+                      </Button>
+                    );
+                  })}
                 </div>
               </>
             )}

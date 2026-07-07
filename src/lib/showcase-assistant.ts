@@ -629,7 +629,7 @@ function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
     "WIRELINE KNOWLEDGE:",
     modeLead,
     `- ${WIRELINE_ONE_LINER}`,
-    "- Core capabilities: inbound support that answers 24/7, the outbound growth engine, two-way texting, email agents, and a live supervisor cockpit with CRM sync.",
+    "- Core capabilities: inbound support that answers 24/7, the outbound growth engine, two-way texting, email agents, and supervisor controls (listen/whisper/barge in beta) with CRM sync.",
     `- Growth engine (lead generation): ${WIRELINE_GROWTH_ENGINE}`,
     `- Pricing: ${buildCompactPricingSummary()}.`,
     `- Integrations: ${WIRELINE_INTEGRATIONS.slice(0, 6).join(", ")}, and more.`,
