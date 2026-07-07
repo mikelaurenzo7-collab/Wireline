@@ -8,6 +8,7 @@ import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../contexts/AuthContext";
+import { workspaceSidebarLabel } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 
 function DangerZone() {
@@ -88,7 +89,7 @@ export default function SettingsPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetState, setResetState] = useState<"idle" | "sending" | "sent">("idle");
-  const displayName = user?.full_name?.trim() || user?.email?.split("@")[0] || "Workspace owner";
+  const displayName = workspaceSidebarLabel(user?.full_name, user?.email, "Workspace owner");
   const email = user?.email || "";
 
   async function requestPasswordReset() {
@@ -147,7 +148,11 @@ export default function SettingsPage() {
                 disabled={resetState !== "idle"}
                 onClick={() => void requestPasswordReset()}
               >
-                {resetState === "sending" ? "Sending…" : resetState === "sent" ? "Sent" : "Reset password"}
+                {resetState === "sending"
+                  ? "Sending…"
+                  : resetState === "sent"
+                    ? "Sent"
+                    : "Reset password"}
               </Button>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">

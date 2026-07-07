@@ -283,7 +283,7 @@ export default function Cadences() {
           className="touch-press hover:scale-[1.05] rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
         >
           <Plus className="w-3.5 h-3.5" />
-          New sequence
+          Create sequence
         </ShadButton>
       </div>
 
@@ -291,6 +291,13 @@ export default function Cadences() {
         <EmptyState
           icon={Repeat}
           title={OPS_CHANNEL_EMPTY.cadences.title}
+          actions={[
+            {
+              label: "Create sequence",
+              onClick: () => setShowBuilder(true),
+              primary: true,
+            },
+          ]}
           density="compact"
           withHalo={false}
           className="py-6"

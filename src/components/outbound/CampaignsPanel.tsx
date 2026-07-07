@@ -184,7 +184,7 @@ export default function CampaignsPanel() {
       {showCreate && (
         <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">New campaign</h3>
+            <h3 className="text-sm font-medium">Create campaign</h3>
             <button type="button" onClick={() => setShowCreate(false)} aria-label="Close">
               <X className="h-4 w-4" />
             </button>

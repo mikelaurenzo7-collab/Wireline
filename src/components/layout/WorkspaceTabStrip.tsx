@@ -14,11 +14,14 @@ type WorkspaceTabStripProps = {
   onSelect?: (id: string) => void;
   ariaLabel: string;
   className?: string;
+  density?: "default" | "compact";
+  align?: "center" | "start";
 };
 
-function tabClassName(active: boolean) {
+function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
-    "inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
+    "inline-flex shrink-0 items-center justify-center rounded-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
+    density === "compact" ? "min-h-8 px-2.5 text-xs" : "min-h-[44px] px-4 text-sm",
     active
       ? "bg-primary text-primary-foreground shadow-[var(--wireline-elevation-sm)]"
       : "text-foreground hover:bg-muted",
@@ -32,12 +35,18 @@ export function WorkspaceTabStrip({
   onSelect,
   ariaLabel,
   className,
+  density = "default",
+  align = "center",
 }: WorkspaceTabStripProps) {
+  const compact = density === "compact";
+
   return (
     <nav
       aria-label={ariaLabel}
       className={cn(
-        "wl-workspace-tabs mb-4 flex min-h-[44px] w-full items-center justify-center gap-2 overflow-x-auto border-b border-border/70 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "wl-workspace-tabs flex w-full items-center overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        compact ? "min-h-8 gap-1" : "mb-4 min-h-[44px] gap-2 border-b border-border/70 pb-3",
+        align === "start" ? "justify-start" : "justify-center",
         className,
       )}
     >
@@ -49,7 +58,7 @@ export function WorkspaceTabStrip({
               key={tab.id}
               to={tab.href}
               aria-current={active ? "page" : undefined}
-              className={tabClassName(active)}
+              className={tabClassName(active, density)}
             >
               {tab.label}
             </Link>
@@ -61,7 +70,7 @@ export function WorkspaceTabStrip({
             type="button"
             aria-current={active ? "page" : undefined}
             onClick={() => onSelect?.(tab.id)}
-            className={tabClassName(active)}
+            className={tabClassName(active, density)}
           >
             {tab.label}
           </button>

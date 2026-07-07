@@ -6,8 +6,20 @@ describe("user-display", () => {
     expect(workspaceFirstName("Mike Laurenzo", "qa@mailinator.com")).toBe("Mike");
   });
 
+  it("capitalizes lowercase full_name tokens", () => {
+    expect(workspaceFirstName("mike laurenzo", "qa@mailinator.com")).toBe("Mike");
+    expect(workspaceSidebarLabel("mike laurenzo", "qa@mailinator.com")).toBe("Mike");
+  });
+
   it("cleans noisy QA mailbox locals for greetings", () => {
     expect(workspaceFirstName(null, "visual.qa.1783401139134@mailinator.com")).toBe("Visual");
+  });
+
+  it("sanitizes machine-like full_name tokens", () => {
+    expect(workspaceFirstName("visual.qa.1783401139134", "ignored@mailinator.com")).toBe("Visual");
+    expect(workspaceSidebarLabel("visual.qa.1783401139134", "ignored@mailinator.com")).toBe(
+      "Visual",
+    );
   });
 
   it("degrades unfriendly locals to there", () => {
@@ -19,6 +31,10 @@ describe("user-display", () => {
   });
 
   it("truncates very long display names in the rail", () => {
-    expect(workspaceSidebarLabel("abcdefghijklmnopqrstuvwxyz", null)).toBe("abcdefghijklmnopq…");
+    expect(workspaceSidebarLabel("abcdefghijklmnopqrstuvwxyz", null)).toBe("Abcdefghijklmnopq…");
+  });
+
+  it("uses a custom fallback when identity is unknown", () => {
+    expect(workspaceSidebarLabel(null, null, "Workspace owner")).toBe("Workspace owner");
   });
 });

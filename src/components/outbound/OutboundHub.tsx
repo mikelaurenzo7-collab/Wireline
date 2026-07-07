@@ -28,6 +28,9 @@ export default function OutboundHub({
           activeId={activeView}
           onSelect={(id) => onViewChange(id as OutboundView)}
           ariaLabel="Outbound sections"
+          density="compact"
+          align="start"
+          className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
         />
         {activeView === "dispatch" && (
           <Button type="button" variant="secondary" size="sm" onClick={() => setShowDial(true)}>

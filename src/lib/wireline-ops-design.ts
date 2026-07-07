@@ -174,7 +174,9 @@ export const OPS_CHANNEL_EMPTY = {
   },
   cadences: {
     title: "No sequences yet",
-    actions: [{ label: "New sequence", to: "/phone?tab=outbound&view=sequences", primary: true }],
+    actions: [
+      { label: "Create sequence", to: "/phone?tab=outbound&view=sequences", primary: true },
+    ],
   },
   appointmentsUpcoming: {
     title: "No active commitments",

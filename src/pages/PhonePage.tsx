@@ -71,6 +71,9 @@ export default function PhonePage() {
             activeId={primaryTab}
             onSelect={setPrimaryTab}
             ariaLabel="Phone sections"
+            density="compact"
+            align="start"
+            className="mb-0 border-b-0 pb-0"
           />
         </div>
         <div className="flex-1 min-h-0 overflow-hidden">

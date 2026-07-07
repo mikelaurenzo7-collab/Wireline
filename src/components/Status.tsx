@@ -62,7 +62,8 @@ const STATE_META: Record<
     label: "Degraded",
     tone: "text-[var(--wireline-color-status-warning)]",
     pill: "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border-[var(--wireline-color-feedback-warning-border)]",
-    bgGradient: "from-amber-500/8 via-amber-500/4 to-transparent",
+    bgGradient:
+      "from-[color-mix(in_srgb,var(--wireline-color-status-warning)_8%,transparent)] via-[color-mix(in_srgb,var(--wireline-color-status-warning)_4%,transparent)] to-transparent",
     icon: AlertTriangle,
   },
   outage: {
