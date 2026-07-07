@@ -25,17 +25,17 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
   };
 
   const business = {
-    initial: "S",
-    name: "Sarah — Front Desk",
-    role: "Call center agent",
-    caller: "Inbound · (630) 555-0198",
+    initial: "W",
+    name: "Wireline — Revenue Desk",
+    role: "Business agent",
+    caller: "Inbound · Acme Cloud",
     lines: [
-      { from: "caller", text: "I'd like to book a service estimate for next week." },
-      { from: "agent", text: "Happy to help. Friday at 11:30 works — should I lock it in?" },
-      { from: "caller", text: "Yes, Friday is perfect." },
-      { from: "agent", text: "Booked. I'll text a confirmation and route the note." },
+      { from: "caller", text: "Can I talk to someone about pricing and implementation?" },
+      { from: "agent", text: "Absolutely. Are you evaluating this for sales, support, or operations?" },
+      { from: "caller", text: "Sales first, then support if it works." },
+      { from: "agent", text: "Got it. I'll qualify the fit, route the notes, and book the right handoff." },
     ],
-    tags: ["Booked Fri 11:30", "SMS sent", "Calendar updated"],
+    tags: ["Qualified", "Routed to sales", "Recap sent"],
   };
 
   const data = variant === "personal" ? personal : business;
@@ -165,8 +165,8 @@ const HERO_AUDIENCE_COPY: Record<
   business: {
     cta: "Wire business agent",
     ctaPath: "/signup?plan=business",
-    demo: "Hear a front desk call",
-    note: "For call centers, sales teams, booking lines, support queues, and after-hours coverage.",
+    demo: "Hear a business call",
+    note: "For call centers, sales teams, front desks, support queues, agencies, and after-hours coverage.",
     stripLead: BUSINESS_MARKETING_VOICE.beforeStrip,
     stripWin: BUSINESS_MARKETING_VOICE.differentiator,
   },
@@ -204,21 +204,21 @@ const PERSONAL_CONFIGS = [
 const BUSINESS_CONFIGS = [
   {
     icon: "◉",
-    name: "Front Desk",
-    body: "Answers every call, books appointments, qualifies leads, and texts the outcome.",
-    plan: "Business · Always on",
+    name: "Revenue Desk",
+    body: "Qualifies inbound demand, captures buying context, and routes hot opportunities to the right owner.",
+    plan: "Business · Sales + CRM",
   },
   {
     icon: "◈",
-    name: "Sales Floor",
-    body: "Qualifies inbound demand, follows up fast, and hands hot opportunities to the right rep.",
-    plan: "Business · Outbound + CRM",
+    name: "Support Queue",
+    body: "Answers common questions, verifies context, and escalates account-specific or urgent work cleanly.",
+    plan: "Business · Support workflows",
   },
   {
     icon: "◫",
-    name: "Support Line",
-    body: "Handles common questions, books service calls, and escalates urgent issues cleanly.",
-    plan: "Business · Full workflows",
+    name: "Call Center",
+    body: "Covers overflow, after-hours volume, campaign calls, and multi-line routing without losing the thread.",
+    plan: "Business · Full coverage",
   },
 ];
 
@@ -232,7 +232,7 @@ const STEPS = [
   {
     num: "02",
     title: "Build",
-    body: "Name it, pick a voice, define the job, and start from a personal or business playbook.",
+    body: "Name it, pick a voice, define the workflow, and start from a personal or business playbook.",
   },
   {
     num: "03",
@@ -636,9 +636,9 @@ export default function PrecisionLanding() {
                 <h2 className="wl-display-2 mx-auto max-w-[18ch]">
                   {audience === "business" ? (
                     <>
-                      Stop missing calls.
+                      Stop missing demand.
                       <br />
-                      Start booking them.
+                      Start routing it.
                     </>
                   ) : (
                     <>
@@ -650,7 +650,7 @@ export default function PrecisionLanding() {
                 </h2>
                 <p className="mx-auto mt-4 max-w-[460px] text-[16px] marketing-ink-panel__soft">
                   {audience === "business"
-                    ? "Stand up a front desk in an afternoon. Fund live calls with Conversation Balance."
+                    ? "Stand up a trained business agent for sales, support, scheduling, or overflow. Fund live calls with Conversation Balance."
                     : "Create first. Train the call. Fund live work when the line is ready."}
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
