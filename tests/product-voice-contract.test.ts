@@ -8,7 +8,8 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings in one shared module", () => {
     expect(MARKETING_VOICE.headline).toBe("Wire your agent.");
-    expect(MARKETING_VOICE.subline).toContain("owner-operated service businesses");
+    expect(MARKETING_VOICE.subline).toContain("personal assistants");
+    expect(MARKETING_VOICE.subline).toContain("call centers and sales teams");
     expect(MARKETING_VOICE.subline).toContain("answers, routes, books, qualifies");
     expect(MARKETING_VOICE.proof).toEqual([
       "Answers the line",
@@ -26,7 +27,7 @@ describe("product voice cohesion", () => {
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 
-  it("keeps the authenticated page map intentional", () => {
+  it("keeps authenticated page map intentional", () => {
     const routes = read("src/routes/AppRoutes.tsx");
     expect(routes).toContain('path="/overview"');
     expect(routes).toContain('path="/studio"');
