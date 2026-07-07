@@ -61,7 +61,12 @@ router.get(
       res.json({ numbers });
     } catch (err: any) {
       log.error("GET /api/phone-numbers failed", { error: getErrorMessage(err) });
-      res.json({ numbers: [] });
+      res.status(503).json({
+        numbers: [],
+        degraded: true,
+        error: "Phone numbers are temporarily unavailable. Try again shortly.",
+        code: "PHONE_NUMBERS_DEGRADED",
+      });
     }
   },
 );

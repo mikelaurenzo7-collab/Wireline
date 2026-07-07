@@ -125,7 +125,7 @@ export async function handleShowcaseToolCalls(args: {
         toolCallId: toolCall.id,
         result:
           "This is a live Wireline demo, so I can't transfer you or set up a callback from our team. " +
-          "If you'd like to talk to the real Wireline team, I can email you a link to start a free trial.",
+          "If you'd like to talk to the real Wireline team, I can email you a link to sign up and add Conversation Balance when you are ready for live calls.",
       });
       continue;
     }

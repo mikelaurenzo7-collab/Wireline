@@ -343,7 +343,9 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const token = generateToken({ id: req.user.id, email: req.user.email });
     setSessionCookie(res, token);
-    return res.json({ ok: true });
+    const authHeader = req.get("authorization") || "";
+    const bearerRequested = authHeader.toLowerCase().startsWith("bearer ");
+    return res.json(bearerRequested ? { ok: true, token } : { ok: true });
   },
 );
 

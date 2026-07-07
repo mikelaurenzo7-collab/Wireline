@@ -5,6 +5,8 @@
  */
 import { getIntegrationsStatus } from "./integrations-registry";
 import { validateEnv } from "./env-validator";
+import { assertPlanMarginFloors } from "./tenant-economics";
+import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 
 export type ReadinessLevel = "ready" | "degraded" | "blocked";
 export type CapabilityReadiness = {
@@ -51,6 +53,13 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   ) {
     billingBlockers.push("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME");
   }
+  const marginCheck = assertPlanMarginFloors();
+  if (!marginCheck.ok) billingBlockers.push(...marginCheck.violations);
+
+  const complianceBlockers: string[] = [];
+  if (!isFederalDncVendorConfigured()) {
+    complianceBlockers.push("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
+  }
 
   const emailBlockers: string[] = [];
   if (byId.get("resend")?.status !== "configured") emailBlockers.push("RESEND_API_KEY");
@@ -90,10 +99,16 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
       level: levelFromBlockers(oauthBlockers),
       blockers: oauthBlockers,
     },
+    {
+      id: "compliance_ready",
+      label: "Outbound compliance",
+      level: levelFromBlockers(complianceBlockers),
+      blockers: complianceBlockers,
+    },
   ];
 
   // Voice is surfaced as an operational capability, not a core launch gate.
-  const launch_blockers = [...coreBlockers, ...billingBlockers];
+  const launch_blockers = [...coreBlockers, ...billingBlockers, ...complianceBlockers];
   const readyCount = capabilities.filter((capability) => capability.level === "ready").length;
 
   return {

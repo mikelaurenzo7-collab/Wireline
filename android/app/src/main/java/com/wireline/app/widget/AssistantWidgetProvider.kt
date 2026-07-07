@@ -1,6 +1,7 @@
 package com.wireline.app.widget
 
 import android.content.Context
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -31,13 +32,14 @@ class AssistantWidgetProvider : GlanceAppWidgetReceiver() {
 
 class AssistantStatusWidget : GlanceAppWidget() {
     override suspend fun provideContent(context: Context, id: GlanceId) {
+        val snapshot = WidgetSync.load(context)
         provideContent {
-            WidgetContent()
+            WidgetContent(snapshot)
         }
     }
 
     @androidx.compose.runtime.Composable
-    private fun WidgetContent() {
+    private fun WidgetContent(snapshot: WirelineWidgetSnapshot) {
         val intentAction = actionStartActivity<MainActivity>()
 
         Column(
@@ -60,13 +62,13 @@ class AssistantStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Coverage: ",
+                    text = "• Follow-ups: ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
-                    text = "100%",
+                    text = if (!snapshot.signedIn) "Sign in" else if (snapshot.needsAttention == 0) "All clear" else "${snapshot.needsAttention}",
                     style = TextStyle(
-                        color = ColorProvider(WidgetPalette.Success),
+                        color = ColorProvider(if (snapshot.needsAttention > 0) WidgetPalette.Accent else WidgetPalette.Success),
                         fontSize = WirelineDesignTokens.Metric.typographyCaptionSize.sp,
                         fontWeight = FontWeight.Bold,
                     ),
@@ -75,11 +77,15 @@ class AssistantStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Screened: ",
+                    text = "• Active: ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
-                    text = "All active calls",
+                    text = when {
+                        !snapshot.signedIn -> "—"
+                        snapshot.activeCallCount > 0 -> snapshot.activeCallLabel ?: "${snapshot.activeCallCount} call(s)"
+                        else -> "No active calls"
+                    },
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Text),
                         fontSize = WirelineDesignTokens.Metric.typographyCaptionSize.sp,

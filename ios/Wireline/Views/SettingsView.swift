@@ -3,10 +3,14 @@ import SwiftUI
 /// App settings. Currently the callback number used for "take this call"
 /// handoffs — iOS can't read the device's own number, so the user sets it.
 struct SettingsView: View {
+    @EnvironmentObject private var auth: AuthService
     @State private var handoffPhone = ""
+    @State private var deleteConfirmation = ""
     @State private var loaded = false
     @State private var isSaving = false
+    @State private var isDeleting = false
     @State private var savedNote: String?
+    @State private var deleteNote: String?
 
     var body: some View {
         Form {
@@ -32,6 +36,26 @@ struct SettingsView: View {
                     Text(savedNote).font(.footnote).foregroundStyle(Brand.signal)
                 }
             }
+
+            Section {
+                TextField("DELETE", text: $deleteConfirmation)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .accessibilityLabel("Type DELETE to confirm account deletion")
+                Button(role: .destructive) {
+                    Task { await deleteAccount() }
+                } label: {
+                    if isDeleting { ProgressView() } else { Text("Delete account") }
+                }
+                .disabled(deleteConfirmation != "DELETE" || isDeleting)
+                if let deleteNote {
+                    Text(deleteNote).font(.footnote).foregroundStyle(deleteNote == "Deletion queued." ? Brand.signal : Brand.destructive)
+                }
+            } header: {
+                Text("Delete account")
+            } footer: {
+                Text("Your account enters a 30-day grace period before permanent deletion. Type DELETE to confirm.")
+            }
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
@@ -55,6 +79,20 @@ struct SettingsView: View {
             savedNote = "Saved."
         } catch {
             savedNote = "Couldn't save — check the number format."
+        }
+    }
+
+    private func deleteAccount() async {
+        guard deleteConfirmation == "DELETE" else { return }
+        isDeleting = true
+        deleteNote = nil
+        defer { isDeleting = false }
+        do {
+            try await WirelineAPI.shared.deleteAccount()
+            deleteNote = "Deletion queued."
+            auth.signOut()
+        } catch {
+            deleteNote = "Couldn't queue deletion — try again."
         }
     }
 }

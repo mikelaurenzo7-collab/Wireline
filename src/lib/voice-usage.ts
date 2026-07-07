@@ -24,7 +24,7 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { planById } from "./plan-catalog";
 import { emitVoiceMinuteOverageEvent } from "./stripe-helpers";
-import { debitForOverage } from "./credit-wallet";
+import { debitForOverage, debitForVoiceUsage } from "./credit-wallet";
 
 const DIMENSION = "voice_minutes_monthly";
 
@@ -124,11 +124,21 @@ export async function trackVoiceMinutes(opts: {
     const newOverageMinutes = Math.max(0, newUsed - Math.max(included, previousUsed));
     if (newOverageMinutes <= 0) return;
 
-    // Prepaid credits absorb overage before Stripe metering. Debits only when
-    // the balance covers the full batch cost (no double-charge); users with no
-    // balance fall straight through to metering, exactly as before.
     const overageCostUsd = newOverageMinutes * (plan.overage_per_min_usd ?? 0);
     if (overageCostUsd > 0) {
+      if (isPayAsYouGo) {
+        // Personal path: every minute bills from Conversation Balance (partial debits allowed).
+        const debited = await debitForVoiceUsage(userId, overageCostUsd, vapiCallId).catch(() => 0);
+        if (debited > 0) return;
+        log.warn("pay-as-you-go voice minutes not debited — zero balance", {
+          userId,
+          minutes: newOverageMinutes,
+          costUsd: overageCostUsd,
+        });
+        return;
+      }
+
+      // Subscribed tenants: prepaid credits absorb overage before Stripe metering.
       const covered = await debitForOverage(userId, overageCostUsd, vapiCallId).catch(() => 0);
       if (covered > 0) return;
     }

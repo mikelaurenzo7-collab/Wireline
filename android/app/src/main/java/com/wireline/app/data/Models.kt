@@ -105,3 +105,22 @@ data class OutboundCallResponse(
     val callId: String?,
 )
 
+data class CallDetail(
+    val id: String,
+    val agentId: String?,
+    val direction: String?,
+    val customerNumber: String?,
+    val durationSeconds: Int?,
+    val summary: String?,
+    val transcript: String?,
+    val sentiment: String?,
+    val outcomeTag: String?,
+    val intentLabel: String?,
+    val recordingUrl: String?,
+    val createdAt: String?,
+)
+
+data class CallDetailResponse(
+    val call: CallDetail,
+)
+

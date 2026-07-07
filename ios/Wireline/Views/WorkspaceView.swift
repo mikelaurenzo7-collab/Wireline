@@ -56,6 +56,7 @@ struct WorkspaceView: View {
             }
             .sheet(isPresented: $showDialer) { OutboundCallView(agents: agents) }
             .sheet(isPresented: $showSettings) { NavigationStack { SettingsView() } }
+            .navigationDestination(isPresented: $router.showWallet) { WalletView() }
             .task { await load() }
             .refreshable { await load() }
         }

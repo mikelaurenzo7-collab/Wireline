@@ -461,6 +461,16 @@ function resourceMeta(req: Request) {
   };
 }
 
+function guestDemoToolsEnabled(): boolean {
+  return process.env.CHATGPT_MCP_GUEST_DEMO === "true";
+}
+
+const GUEST_DEMO_TOOL_NAMES = new Set([
+  "start_agent_demo",
+  "create_demo_voice_session",
+  "save_demo_to_wireline",
+]);
+
 function toolDefinitions() {
   const widgetMeta = {
     ui: { resourceUri: CHATGPT_MCP_RESOURCE_URI },
@@ -531,7 +541,7 @@ function toolDefinitions() {
       securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
       _meta: widgetMeta,
     },
-  ];
+  ].filter((tool) => guestDemoToolsEnabled() || !GUEST_DEMO_TOOL_NAMES.has(tool.name));
 }
 
 async function saveDemo(principal: McpPrincipal, demoToken: unknown) {
@@ -862,6 +872,14 @@ router.post("/mcp", async (req, res) => {
       params.arguments && typeof params.arguments === "object"
         ? (params.arguments as Record<string, unknown>)
         : {};
+    if (!guestDemoToolsEnabled() && GUEST_DEMO_TOOL_NAMES.has(name)) {
+      return jsonRpcError(
+        res,
+        id,
+        -32601,
+        "Guest demo tools are disabled. Connect your Wireline account to use account-bound tools.",
+      );
+    }
     if (name === "start_agent_demo") {
       const spec = createDemoSpec(args);
       const demoToken = encodeDemoToken(spec);

@@ -42,3 +42,21 @@ Wireline's first commercial wedge is owner-operated service businesses that need
 - **Historical** means useful context but not active source of truth.
 
 Every feature in this matrix should map to one of those states before paid acquisition scales.
+
+## Feature status (July 2026)
+
+| Feature | Status | Notes |
+| --- | --- | --- |
+| Create → Train → Wire → Run (web) | **Live** | Primary product loop on trywireline.com |
+| Conversation Balance + Stripe billing | **Live** | Pre-call wallet gate; pay-as-you-go debits balance |
+| Outbound hub + campaigns + cadences | **Live** | Federal DNC required for marketing in production |
+| Founder cockpit (`/founder`) | **Live** | Allowlist-only operator surface |
+| Trust Center (`/trust`) | **Live** | Honest SOC2 roadmap + compliance posture |
+| Wireline Command (browser extension) | **Beta** | Local install; store submission in progress |
+| iOS app | **Beta** | WidgetSync, token refresh, account deletion shipped; TestFlight pending |
+| Android app | **Beta** | Call detail, live call UI, widgets, cleartext fix shipped; Play pending |
+| ChatGPT App (account MCP) | **Beta** | Guest demo tools gated behind `CHATGPT_MCP_GUEST_DEMO` |
+| Live supervisor audio | **Planned** | Beta-labeled in product copy |
+| Learning loop (auto-retrain) | **Planned** | Post-call review exists; full loop roadmap |
+| Jobber / ServiceTitan connectors | **Planned** | Vertical FAQ must not imply live until shipped |
+| SSO / enterprise | **Planned** | Horizon 3 |

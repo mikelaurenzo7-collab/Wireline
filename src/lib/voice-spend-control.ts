@@ -5,6 +5,7 @@ import { enforceTrialOutboundCap } from "./trial-gate";
 import { enforce24hSpendCap, enforceSpendCap } from "./spend-guards";
 import { quotaRejectionHeaders } from "./tenant-quotas";
 import { quotaTracker } from "./server-context";
+import { assertVoiceWalletSolvent } from "./voice-wallet-guard";
 
 export class OutboundVoiceControlError extends Error {
   status: number;
@@ -103,6 +104,15 @@ async function assertMiddlewarePasses(
 export async function assertOutboundVoiceAllowed(
   input: AssertOutboundVoiceAllowedInput,
 ): Promise<void> {
+  try {
+    await assertVoiceWalletSolvent(input.userId);
+  } catch (err) {
+    const walletErr = err as Error & { status?: number; body?: Record<string, unknown> };
+    if (walletErr.status && walletErr.body) {
+      throw new OutboundVoiceControlError(walletErr.status, walletErr.body);
+    }
+    throw err;
+  }
   await assertMiddlewarePasses(enforceLaunchHardGate, input);
   await assertMiddlewarePasses(enforceTrialOutboundCap, input);
   await assertMiddlewarePasses(enforce24hSpendCap, input);

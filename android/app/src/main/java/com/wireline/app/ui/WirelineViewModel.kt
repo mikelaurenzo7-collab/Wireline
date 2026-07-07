@@ -9,10 +9,12 @@ import androidx.lifecycle.viewModelScope
 import com.wireline.app.data.ActiveCall
 import com.wireline.app.data.Agent
 import com.wireline.app.data.AgentRole
+import com.wireline.app.data.CallDetail
 import com.wireline.app.data.MobileMe
 import com.wireline.app.data.RecentCall
 import com.wireline.app.data.WalletResponse
 import com.wireline.app.data.WirelineApi
+import com.wireline.app.widget.WidgetSync
 import kotlinx.coroutines.launch
 
 data class WirelineUiState(
@@ -55,6 +57,7 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
         state = state.copy(isWorking = true)
         runCatching { api.signOut() }
         state = WirelineUiState()
+        runCatching { WidgetSync.refresh(getApplication(), api) }
     }
 
     fun saveHandoffPhone(phone: String) = viewModelScope.launch {
@@ -111,7 +114,16 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }
 
-    private fun refresh() = viewModelScope.launch {
+    suspend fun handoffCall(callId: String): Result<Unit> = runCatching {
+        api.handoffCall(callId)
+        refreshNow()
+    }
+
+    suspend fun loadCallDetail(id: String): CallDetail? = runCatching { api.callDetail(id) }.getOrNull()
+
+    private fun refresh() = viewModelScope.launch { refreshNow() }
+
+    private suspend fun refreshNow() {
         state = state.copy(isWorking = true, error = null)
         runCatching {
             val me = api.me()
@@ -126,10 +138,12 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
                 handoffPhone = me.settings?.handoffPhone ?: "",
                 isWorking = false
             )
+            WidgetSync.refresh(getApplication(), api)
         }.onFailure {
             if (it.message?.contains("Not signed in") == true || it.message?.contains("401") == true) {
                 api.signOut()
                 state = WirelineUiState()
+                runCatching { WidgetSync.refresh(getApplication(), api) }
             } else {
                 state = state.copy(isWorking = false, error = it.message)
             }

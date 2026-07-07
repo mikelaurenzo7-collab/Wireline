@@ -8,11 +8,11 @@ import SkipToContentLink from "../layout/SkipToContentLink";
 export type PublicNavActive = "signin" | "signup" | "home";
 
 const NAV_LINKS = [
-  { to: "/for/personal", label: "For you" },
+  { to: "/for/home-services", label: "Home services" },
   { to: "/features", label: "How it works" },
   { to: "/pricing", label: "Pricing" },
   { to: "/showcase", label: "Demos" },
-  { to: "/solutions/support", label: "For business" },
+  { to: "/trust", label: "Trust" },
 ] as const;
 
 const MOBILE_LINKS = [

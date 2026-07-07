@@ -95,7 +95,7 @@ const CATALOG = [
         key: "team_voice_overage",
         nickname: "Wireline Team - Voice Overage",
         envTarget: "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID",
-        unitAmount: 16,
+        unitAmount: 18,
         recurring: {
           interval: "month",
           usage_type: "metered",

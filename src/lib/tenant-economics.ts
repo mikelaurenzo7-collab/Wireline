@@ -99,7 +99,7 @@ export function assertPlanMarginFloors(): { ok: boolean; violations: string[] } 
   const floors: Record<string, number> = {
     personal: 35,
     team: 28,
-    business: 8,
+    business: 20,
   };
   const violations: string[] = [];
   for (const [id, floor] of Object.entries(floors)) {

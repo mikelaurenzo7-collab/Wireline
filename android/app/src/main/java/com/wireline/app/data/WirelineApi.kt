@@ -54,6 +54,7 @@ class WirelineApi(context: Context) {
     suspend fun agentSetup(agentId: String): MobileAgentSetup = get("/api/mobile/agents/${escape(agentId)}/config")
     suspend fun activeCalls(): ActiveCallList = get("/api/mobile/calls/active")
     suspend fun recentCalls(limit: Int = 20): RecentCallsResponse = get("/api/mobile/calls/recent?limit=$limit")
+    suspend fun callDetail(id: String): CallDetail = get<CallDetailResponse>("/api/mobile/calls/${escape(id)}/detail").call
     suspend fun wallet(): WalletResponse = get("/api/mobile/wallet")
 
     suspend fun refreshPushRegistration() {

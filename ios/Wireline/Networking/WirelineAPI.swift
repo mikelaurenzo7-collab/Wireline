@@ -7,6 +7,7 @@ actor WirelineAPI {
     static let shared = WirelineAPI()
 
     private var baseURL: URL { WirelineConfig.baseURL }
+    private var refreshInFlight: Task<String, Error>?
 
     enum APIError: Error {
         case notAuthenticated
@@ -132,6 +133,12 @@ actor WirelineAPI {
         _ = try? await URLSession.shared.data(for: req)
     }
 
+    /// Queue account deletion after the user types DELETE to confirm.
+    func deleteAccount() async throws {
+        struct Body: Encodable { let confirmation = "DELETE" }
+        _ = try await postRaw("/api/account/delete", body: Body())
+    }
+
     // MARK: - Plumbing
 
     private func makeRequest(path: String, method: String) throws -> URLRequest {
@@ -155,12 +162,51 @@ actor WirelineAPI {
         return try await send(req)
     }
 
-    private func send(_ req: URLRequest) async throws -> Data {
+    private func send(_ req: URLRequest, retriedAfterRefresh: Bool = false) async throws -> Data {
         let (data, response) = try await URLSession.shared.data(for: req)
         guard let http = response as? HTTPURLResponse else { return data }
+
+        if http.statusCode == 401, !retriedAfterRefresh {
+            do {
+                let newToken = try await rotateSessionToken()
+                var retry = req
+                retry.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+                return try await send(retry, retriedAfterRefresh: true)
+            } catch {
+                await notifySessionExpired()
+                throw APIError.notAuthenticated
+            }
+        }
+
         guard (200..<300).contains(http.statusCode) else {
             throw APIError.http(status: http.statusCode, body: String(decoding: data, as: UTF8.self))
         }
         return data
+    }
+
+    private func rotateSessionToken() async throws -> String {
+        if let refreshInFlight {
+            return try await refreshInFlight.value
+        }
+        let task = Task<String, Error> {
+            let token = try await AuthService.refreshSessionToken()
+            KeychainStore.saveToken(token)
+            return token
+        }
+        refreshInFlight = task
+        do {
+            let token = try await task.value
+            refreshInFlight = nil
+            return token
+        } catch {
+            refreshInFlight = nil
+            throw error
+        }
+    }
+
+    private func notifySessionExpired() async {
+        await MainActor.run {
+            NotificationCenter.default.post(name: .wirelineSessionExpired, object: nil)
+        }
     }
 }

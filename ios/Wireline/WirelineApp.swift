@@ -4,6 +4,7 @@ import UserNotifications
 @main
 struct WirelineApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var auth = AuthService()
     @StateObject private var router = WirelineRouter.shared
 
@@ -21,6 +22,27 @@ struct WirelineApp: App {
             .wirelineBrand()
             .onOpenURL { url in
                 router.open(url: url)
+            }
+            .task {
+                if auth.isSignedIn {
+                    await WidgetSync.refresh()
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active, auth.isSignedIn else { return }
+                Task { await WidgetSync.refresh() }
+            }
+            .onChange(of: auth.isSignedIn) { _, signedIn in
+                Task {
+                    if signedIn {
+                        await WidgetSync.refresh()
+                    } else {
+                        WidgetSync.saveSignedOut()
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .wirelineSessionExpired)) { _ in
+                auth.signOut()
             }
         }
     }

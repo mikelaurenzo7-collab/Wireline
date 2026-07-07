@@ -85,8 +85,8 @@ const FLOW_SNIPPETS: { id: string; label: string; category: string; text: string
   {
     id: "close-trial",
     category: "Closing",
-    label: "Free-trial offer",
-    text: "Offer the 14-day free trial: 'No card needed, full access — you can see whether it fits your team and walk away if it doesn't.' Send the signup link via SMS while still on the call. Confirm receipt.",
+    label: "Conversation Balance offer",
+    text: "Offer Conversation Balance: 'Create and train for free, then add balance when you are ready for live calls — you only pay for the minutes you use.' Send the signup link via SMS while still on the call. Confirm receipt.",
   },
   {
     id: "compliance-tcpa",

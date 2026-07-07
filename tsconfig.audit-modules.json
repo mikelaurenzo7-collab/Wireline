@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/lib/voice-wallet-guard.ts", "src/lib/federal-dnc-service.ts", "src/lib/launch-readiness.ts"]
+}

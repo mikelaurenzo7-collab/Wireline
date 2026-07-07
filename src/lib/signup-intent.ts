@@ -214,7 +214,7 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
   if (intent?.preferredPlanId) return intent.preferredPlanId;
   if (intent?.signupWedge) return SIGNUP_WEDGE_RECOMMENDATIONS[intent.signupWedge].defaultPlanId;
-  return "team";
+  return "personal";
 }
 
 export function getSignupWedgeRecommendation(

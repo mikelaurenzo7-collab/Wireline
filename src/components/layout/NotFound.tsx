@@ -105,7 +105,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               to="/pricing"
               icon={Compass}
               label="Pricing"
-              hint="4 plans, free trial"
+              hint="4 plans, Conversation Balance"
               accent={BRAND.colors.primary}
             />
           </>

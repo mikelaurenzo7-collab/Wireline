@@ -17,7 +17,7 @@ struct AskWirelineIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        WirelineRouter.shared.route = .ask
+        WirelineRouter.shared.showAsk = true
         return .result()
     }
 }
@@ -83,7 +83,7 @@ struct OpenWirelineIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        WirelineRouter.shared.route = .workspace
+        WirelineRouter.shared.selectedTab = .workspace
         return .result()
     }
 }

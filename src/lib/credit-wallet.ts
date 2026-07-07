@@ -219,3 +219,56 @@ export async function debitForOverage(
     return 0;
   }
 }
+
+/**
+ * Debit Conversation Balance for pay-as-you-go voice usage. Debits up to the
+ * available balance (partial coverage) so we never silently absorb COGS.
+ * Idempotent per call id.
+ */
+export async function debitForVoiceUsage(
+  userId: string,
+  costUsd: number,
+  vapiCallId: string,
+): Promise<number> {
+  const cost = cents(costUsd);
+  if (!(cost > 0)) return 0;
+  try {
+    return await drizzle.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+      const [sumRow] = await tx
+        .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
+        .from(schema.creditLedger)
+        .where(eq(schema.creditLedger.userId, userId));
+      const balance = Number(sumRow?.balance ?? 0);
+      if (balance <= 0) return 0;
+
+      const debitAmount = cents(Math.min(balance, cost));
+      const inserted = await tx
+        .insert(schema.creditLedger)
+        .values({
+          userId,
+          deltaUsd: String(-debitAmount),
+          balanceAfterUsd: String(cents(balance - debitAmount)),
+          entryKind: "burn",
+          reason: "voice_usage",
+          customerReason: "Voice minutes covered by Conversation Balance",
+          refType: "voice_usage",
+          refId: vapiCallId,
+          idempotencyKey: `voice_usage:${vapiCallId}`,
+          source: "vapi",
+          provider: "vapi",
+          providerObjectId: vapiCallId,
+          metadata: { burn_reason: "voice_usage", requested_usd: cost, debited_usd: debitAmount },
+        })
+        .onConflictDoNothing()
+        .returning({ id: schema.creditLedger.id });
+      return inserted.length === 0 ? 0 : debitAmount;
+    });
+  } catch (err) {
+    log.error("debitForVoiceUsage failed", {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return 0;
+  }
+}

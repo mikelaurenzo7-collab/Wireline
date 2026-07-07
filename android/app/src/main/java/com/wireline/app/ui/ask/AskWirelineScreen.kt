@@ -19,9 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.wireline.app.ui.OutboundConsentFields
 import com.wireline.app.ui.WirelineViewModel
 import com.wireline.app.ui.theme.Brand
 import com.wireline.app.ui.theme.WirelineTheme
@@ -511,25 +513,10 @@ private fun ActionRowCard(
                     .background(Brand.AccentSoft, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-Icon(
+            Icon(
                 imageVector = icon,
                 contentDescription = title,
                 tint = Brand.Accent,
-                modifier = Modifier.size(16.dp)
-            )
-            }
-            Spacer(Modifier.width(14.dp))
-            Text(
-                title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = Brand.Text
-            )
-            Spacer(Modifier.weight(1f))
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = title,
-                tint = Brand.Text3,
                 modifier = Modifier.size(16.dp)
             )
             }

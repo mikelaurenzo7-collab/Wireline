@@ -14,8 +14,8 @@ import WorkspaceShell from "../components/WorkspaceShell";
 const clientSurfaces = [
   {
     icon: MonitorDown,
-    title: "Browser Companion",
-    status: "Local install",
+    title: "Wireline Command",
+    status: "Browser extension",
     statusVariant: "success" as const,
     action: "Install guide",
     href: "mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide",

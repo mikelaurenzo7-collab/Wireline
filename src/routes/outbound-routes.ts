@@ -11,7 +11,7 @@ import { OutboundBulkSchema } from "../lib/form-validators";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
-import { isFederalDncListed } from "../lib/federal-dnc-service";
+import { isFederalDncListed, assertFederalDncForMarketing } from "../lib/federal-dnc-service";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
@@ -135,6 +135,8 @@ const dialSchema = z.object({
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
+  consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"]).optional(),
+  consentLeadId: z.string().max(200).optional(),
 });
 
 router.post(
@@ -156,8 +158,27 @@ router.post(
         context,
         callPurpose,
         hasExpressWrittenConsent,
+        consentSource,
+        consentLeadId,
       } = req.body;
       const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
+
+      if (isMarketingCallPurpose(callPurpose)) {
+        const federalGate = assertFederalDncForMarketing();
+        if (!federalGate.allowed) {
+          return res.status(503).json({
+            code: federalGate.code,
+            error: federalGate.message,
+          });
+        }
+        if (expressConsent && !consentSource && !consentLeadId) {
+          return res.status(400).json({
+            code: "CONSENT_ARTIFACT_REQUIRED",
+            error:
+              "Marketing calls with express written consent require consentSource or consentLeadId for auditability.",
+          });
+        }
+      }
 
       // DNC compliance check — block calls to numbers on the Do Not Call list.
       if (await isDncBlocked(req.user.id, customerNumber)) {
@@ -217,6 +238,8 @@ router.post(
           callPurpose,
           hasExpressWrittenConsent,
           source: "web",
+          consentSource,
+          consentLeadId,
         }),
       });
 

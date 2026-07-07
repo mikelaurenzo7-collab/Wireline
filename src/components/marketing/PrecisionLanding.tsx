@@ -286,7 +286,7 @@ const PLANS = [
 
 // ─── Main component ────────────────────────────────────────────────────────
 export default function PrecisionLanding() {
-  const [audience, setAudience] = useState<Audience>("personal");
+  const [audience, setAudience] = useState<Audience>("business");
   const configs = audience === "personal" ? PERSONAL_CONFIGS : BUSINESS_CONFIGS;
   const heroCopy = HERO_AUDIENCE_COPY[audience];
 

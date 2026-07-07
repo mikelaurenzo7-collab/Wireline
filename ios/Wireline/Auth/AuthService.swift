@@ -1,6 +1,11 @@
 import Foundation
 import SwiftUI
 
+extension Notification.Name {
+    /// Posted when the session JWT cannot be refreshed (expired or revoked).
+    static let wirelineSessionExpired = Notification.Name("wirelineSessionExpired")
+}
+
 /// Observable sign-in state for the app shell. On sign-in we POST to the
 /// existing `/api/auth/signin`, then pull the JWT out of the `wireline_session`
 /// cookie the backend returns and stash it in the Keychain — from then on every
@@ -27,6 +32,7 @@ final class AuthService: ObservableObject {
             self.accountType = accType
             isSignedIn = true
             await CallManager.shared.refreshDeviceRegistration()
+            await WidgetSync.refresh()
         } catch {
             errorMessage = (error as? AuthError)?.message ?? error.localizedDescription
         }
@@ -39,6 +45,35 @@ final class AuthService: ObservableObject {
         }
         KeychainStore.clear()
         isSignedIn = false
+        WidgetSync.saveSignedOut()
+    }
+
+    /// POST /api/auth/refresh and extract the rotated session JWT from Set-Cookie.
+    nonisolated static func refreshSessionToken() async throws -> String {
+        guard let token = KeychainStore.loadToken() else { throw AuthError.noSessionCookie }
+        var req = URLRequest(url: WirelineConfig.baseURL.appendingPathComponent("/api/auth/refresh"))
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (_, response) = try await URLSession.shared.data(for: req)
+        guard let http = response as? HTTPURLResponse else {
+            throw AuthError.server("No response from server.")
+        }
+        guard http.statusCode == 200 else {
+            if http.statusCode == 401 { throw AuthError.badCredentials }
+            throw AuthError.server("Session refresh failed (\(http.statusCode)).")
+        }
+
+        let headers = http.allHeaderFields as? [String: String] ?? [:]
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headers, for: WirelineConfig.baseURL)
+        if let session = cookies.first(where: { $0.name == WirelineConfig.sessionCookieName }) {
+            return session.value
+        }
+        if let session = HTTPCookieStorage.shared.cookies(for: WirelineConfig.baseURL)?
+            .first(where: { $0.name == WirelineConfig.sessionCookieName }) {
+            return session.value
+        }
+        throw AuthError.noSessionCookie
     }
 
     enum AuthError: Error {

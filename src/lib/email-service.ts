@@ -491,28 +491,28 @@ export async function sendTrialEndingSoonEmail(opts: {
   }
 
   const dayWord = opts.daysLeft === 1 ? "1 day" : `${opts.daysLeft} days`;
-  const subject = `Your Wireline trial ends in ${dayWord}`;
+  const subject = `Add Conversation Balance within ${dayWord}`;
   const text =
     [
       "Hi,",
       "",
-      `Your Wireline 14-day free trial ends in ${dayWord}.`,
+      `Your Wireline activation window closes in ${dayWord}.`,
       "",
-      "Upgrade now to keep your agents live — your phone number, call history, and agent configuration all carry over.",
+      "Add Conversation Balance now to keep your agents live — your phone number, call history, and agent configuration all carry over.",
       "",
       opts.checkoutUrl,
       "",
-      "If you decide not to upgrade, your agents will stop answering calls when the trial ends.",
+      "If you decide not to fund live work, your agents will stop answering calls when activation lapses.",
       "",
       "— Wireline",
     ].join("\n") + buildComplianceFooterText(opts.to);
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
-      <h2 style="margin: 0 0 16px; font-weight: 600;">Your trial ends in ${escapeHtml(dayWord)}</h2>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Your Wireline 14-day free trial ends in <strong>${escapeHtml(dayWord)}</strong>.</p>
-      <p style="margin: 0 0 24px; line-height: 1.55;">Upgrade now to keep your agents live — your phone number, call history, and agent configuration all carry over.</p>
+      <h2 style="margin: 0 0 16px; font-weight: 600;">Fund live work within ${escapeHtml(dayWord)}</h2>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Your Wireline activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">Add Conversation Balance now to keep your agents live — your phone number, call history, and agent configuration all carry over.</p>
       <p style="margin: 0 0 24px;"><a href="${opts.checkoutUrl}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
-      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to upgrade, your agents will stop answering calls when the trial ends.</p>
+      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your agents will stop answering calls when activation lapses.</p>
       ${buildComplianceFooterHtml(opts.to)}
     </div>
   `;

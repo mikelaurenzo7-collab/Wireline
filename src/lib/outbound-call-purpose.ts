@@ -27,11 +27,15 @@ export function outboundConsentMetadata(input: {
   callPurpose: OutboundCallPurpose;
   hasExpressWrittenConsent?: boolean;
   source: "web" | "mobile" | "campaign" | "bulk";
+  consentSource?: string;
+  consentLeadId?: string;
 }): Record<string, unknown> {
   return {
     call_purpose: input.callPurpose,
     consent_version: OUTBOUND_CONSENT_VERSION,
     has_express_written_consent: normalizedExpressConsent(input),
     source: input.source,
+    ...(input.consentSource ? { consent_source: input.consentSource } : {}),
+    ...(input.consentLeadId ? { consent_lead_id: input.consentLeadId } : {}),
   };
 }

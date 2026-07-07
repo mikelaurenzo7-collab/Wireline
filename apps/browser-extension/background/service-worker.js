@@ -7,7 +7,6 @@ const ROUTES = new Map([
   ["training", "https://trywireline.com/knowledge"],
   ["wire", "https://trywireline.com/connections"],
   ["billing", "https://trywireline.com/settings/billing"],
-  ["settings", "https://trywireline.com/settings"],
 ]);
 const MAX_SELECTION_LENGTH = 1600;
 const MAX_DESCRIPTION_LENGTH = 320;
@@ -186,11 +185,6 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === "wireline:open-route") {
       const url = ROUTES.get(message.route || "studio");
       if (!url) throw new Error("Unsupported Wireline route.");
-      await api.tabs.create({ url });
-      return { opened: true };
-    }
-    if (message?.type === "wireline:open-workspace") {
-      const url = ROUTES.get("studio");
       await api.tabs.create({ url });
       return { opened: true };
     }

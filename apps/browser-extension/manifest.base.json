@@ -3,6 +3,7 @@
   "name": "Wireline Command",
   "version": "0.1.1",
   "description": "Command Wireline from the page you are already viewing. Send context to agents for calls, texts, follow-up, and tasks.",
+  "homepage_url": "https://trywireline.com",
   "action": {
     "default_title": "Open Wireline Command",
     "default_icon": {

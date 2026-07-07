@@ -1,6 +1,7 @@
 package com.wireline.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,11 +11,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,12 +27,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -56,6 +62,11 @@ sealed class Screen(val route: String, val title: String) {
     object Recaps : Screen("recaps", "Calls")
     object Wallet : Screen("wallet", "Wallet")
     object Settings : Screen("settings", "Settings")
+
+    companion object {
+        const val CallDetailRoute = "call_detail/{callId}"
+        fun callDetail(callId: String) = "call_detail/$callId"
+    }
 }
 
 class NavigationActions(private val navController: NavHostController) {
@@ -81,7 +92,9 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     val navActions = remember(navController) { NavigationActions(navController) }
     var showAsk by rememberSaveable { mutableStateOf(false) }
     var showCreateAgent by rememberSaveable { mutableStateOf(false) }
+    val liveCallRequest by LiveCallNavigator.request.collectAsState()
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = Brand.Canvas,
         topBar = {
@@ -131,7 +144,7 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                 NavigationBarItem(
                     selected = currentRoute == Screen.Knowledge.route,
                     onClick = { navActions.navigateTo(Screen.Knowledge) },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Train") },
+                    icon = { Icon(Icons.Default.MenuBook, contentDescription = "Train") },
                     label = { Text("Train") },
                 )
                 NavigationBarItem(
@@ -154,7 +167,26 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             composable(Screen.Assistants.route) { AssistantsScreen(PaddingValues(0.dp), state.agents, onCreate = { showCreateAgent = true }) }
             composable(Screen.Knowledge.route) { KnowledgeScreen(PaddingValues(0.dp)) }
             composable(Screen.Actions.route) { ActionsScreen(PaddingValues(0.dp)) }
-            composable(Screen.Recaps.route) { RecapsScreen(PaddingValues(0.dp), state.activeCalls, state.recentCalls, model::takeCall) }
+            composable(Screen.Recaps.route) {
+                RecapsScreen(
+                    padding = PaddingValues(0.dp),
+                    activeCalls = state.activeCalls,
+                    recentCalls = state.recentCalls,
+                    onTakeCall = { callId -> LiveCallNavigator.present(callId, autoHandoff = true) },
+                    onViewLiveCall = { callId -> LiveCallNavigator.present(callId) },
+                    onOpenCallDetail = { callId -> navController.navigate(Screen.callDetail(callId)) },
+                )
+            }
+            composable(
+                route = Screen.CallDetailRoute,
+                arguments = listOf(navArgument("callId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val callId = backStackEntry.arguments?.getString("callId")
+                val call = state.recentCalls.firstOrNull { it.id == callId }
+                if (call != null) {
+                    CallDetailScreen(call = call, model = model, onBack = { navController.popBackStack() })
+                }
+            }
             composable(Screen.Wallet.route) { WalletScreen(PaddingValues(0.dp), state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty()) }
             composable(Screen.Settings.route) { SettingsScreen(PaddingValues(0.dp), state, model) }
         }
@@ -175,6 +207,22 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                 },
             )
         }
+    }
+
+    liveCallRequest?.let { request ->
+        Box(modifier = Modifier.fillMaxSize().zIndex(1f)) {
+            LiveCallScreen(
+            callId = request.callId,
+            autoHandoff = request.autoHandoff,
+            model = model,
+            onDismiss = { LiveCallNavigator.dismiss() },
+            onOpenSettings = {
+                LiveCallNavigator.dismiss()
+                navActions.navigateTo(Screen.Settings)
+            },
+        )
+        }
+    }
     }
 }
 
@@ -339,14 +387,51 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
 }
 
 @Composable
-private fun RecapsScreen(padding: PaddingValues, activeCalls: List<ActiveCall>, recentCalls: List<RecentCall>, onTakeCall: (String) -> Unit) {
+private fun RecapsScreen(
+    padding: PaddingValues,
+    activeCalls: List<ActiveCall>,
+    recentCalls: List<RecentCall>,
+    onTakeCall: (String) -> Unit,
+    onViewLiveCall: (String) -> Unit,
+    onOpenCallDetail: (String) -> Unit,
+) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Calls", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text) }
         item { Text("On a call", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3) }
         if (activeCalls.isEmpty()) item { Text("No calls in progress.", color = Brand.Text2) }
-        items(activeCalls, key = { it.callId }) { call -> SectionCard { Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(call.status?.replace("_", " ") ?: "In progress", color = Brand.Text2); Button(onClick = { onTakeCall(call.callId) }, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Take this call") } } }
+        items(activeCalls, key = { it.callId }) { call ->
+            SectionCard {
+                Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                Text(call.status?.replace("_", " ") ?: "In progress", color = Brand.Text2)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = { onTakeCall(call.callId) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(Brand.RadiusSm)) {
+                        Text("Take call")
+                    }
+                    Button(
+                        onClick = { onViewLiveCall(call.callId) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(Brand.RadiusSm),
+                        colors = ButtonDefaults.buttonColors(containerColor = Brand.Panel2, contentColor = Brand.Text),
+                    ) {
+                        Text("View")
+                    }
+                }
+            }
+        }
         item { Text("Recent recaps", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3) }
-        items(recentCalls, key = { it.id }) { call -> SectionCard { Text(call.customerNumber ?: "Unknown caller", fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(call.summary ?: "No summary yet.", color = Brand.Text2); call.outcomeTag?.let { AssistChip(onClick = {}, label = { Text(it) }) } } }
+        items(recentCalls, key = { it.id }) { call ->
+            SectionCard {
+                androidx.compose.foundation.layout.Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenCallDetail(call.id) },
+                ) {
+                    Text(call.customerNumber ?: "Unknown caller", fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                    Text(call.summary ?: "No summary yet.", color = Brand.Text2)
+                    call.outcomeTag?.let { AssistChip(onClick = {}, label = { Text(it) }) }
+                }
+            }
+        }
     }
 }
 

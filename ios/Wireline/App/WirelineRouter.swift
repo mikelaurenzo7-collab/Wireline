@@ -5,17 +5,21 @@ import SwiftUI
 final class WirelineRouter: ObservableObject {
     static let shared = WirelineRouter()
 
-    enum Route { case workspace, ask }
+    enum Tab: Hashable {
+        case workspace
+        case agents
+        case train
+        case wire
+        case calls
+    }
 
+    @Published var selectedTab: Tab = .workspace
     @Published var showAsk = false
+    @Published var showWallet = false
     @Published var showLiveCall = false
     @Published var liveCallId: String?
     /// When true, LiveCallView attempts handoff immediately (CallKit answer path).
     @Published var liveCallAutoHandoff = false
-
-    var route: Route = .workspace {
-        didSet { if route == .ask { showAsk = true } }
-    }
 
     func presentLiveCall(callId: String?, autoHandoff: Bool = false) {
         liveCallId = callId
@@ -29,7 +33,7 @@ final class WirelineRouter: ObservableObject {
         liveCallAutoHandoff = false
     }
 
-    /// Handles deep links from the active-call Live Activity / Dynamic Island.
+    /// Handles deep links from widgets, Live Activity, and Siri shortcuts.
     /// `wireline://call/<call-id>` opens the existing handoff-capable call view.
     /// Widgets use `wireline://ask`, `wireline://calls`, `wireline://wallet`,
     /// and `wireline://agents` to deep-link into the matching tab or surface.
@@ -41,11 +45,12 @@ final class WirelineRouter: ObservableObject {
             let callId = url.pathComponents.dropFirst().first
             presentLiveCall(callId: callId)
         case "calls":
-            route = .workspace
+            selectedTab = .calls
         case "wallet":
-            route = .workspace
+            selectedTab = .workspace
+            showWallet = true
         case "agents":
-            route = .workspace
+            selectedTab = .agents
         default:
             break
         }

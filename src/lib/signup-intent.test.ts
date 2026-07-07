@@ -13,8 +13,8 @@ describe("signup-intent", () => {
     expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("enterprise");
   });
 
-  it("defaults unqualified signup traffic to Team shared capacity", () => {
-    expect(recommendedPlanFromIntent(null)).toBe("team");
+  it("defaults unqualified signup traffic to Personal Conversation Balance", () => {
+    expect(recommendedPlanFromIntent(null)).toBe("personal");
   });
 
   it("drops unknown plan ids instead of preserving stale pricing walls", () => {

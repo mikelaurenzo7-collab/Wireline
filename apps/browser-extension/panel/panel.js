@@ -11,6 +11,7 @@ const refreshButton = document.querySelector("#refresh-context");
 const quickActions = [...document.querySelectorAll(".quick-action")];
 const agentsButton = document.querySelector("#open-agents");
 const wireButton = document.querySelector("#open-wire");
+const trainingButton = document.querySelector("#open-training");
 const billingButton = document.querySelector("#open-billing");
 const studioButton = document.querySelector("#open-studio");
 
@@ -44,6 +45,14 @@ function toHost(value) {
 
 function compact(value, length) {
   return value.length > length ? `${value.slice(0, length - 1)}...` : value;
+}
+
+function showEmptyContextState() {
+  title.textContent = "Wireline Command";
+  host.textContent = "Click Refresh to load this tab, or send a command below.";
+  selectionPreview.hidden = true;
+  status.textContent = "";
+  refreshButton.disabled = false;
 }
 
 async function loadContext() {
@@ -116,6 +125,9 @@ agentsButton.addEventListener("click", () =>
 wireButton.addEventListener("click", () =>
   void sendMessage({ type: "wireline:open-route", route: "wire" }),
 );
+trainingButton.addEventListener("click", () =>
+  void sendMessage({ type: "wireline:open-route", route: "training" }),
+);
 billingButton.addEventListener("click", () =>
   void sendMessage({ type: "wireline:open-route", route: "billing" }),
 );
@@ -123,4 +135,4 @@ studioButton.addEventListener("click", () =>
   void sendMessage({ type: "wireline:open-route", route: "studio" }),
 );
 
-void loadContext();
+showEmptyContextState();
