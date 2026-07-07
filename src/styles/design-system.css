@@ -1,8 +1,8 @@
 @import "./lib/typography.css";
 
-/* Wireline — Letterpress design system.
+/* Wireline — Letterpress design system (Aurora palette).
  * Instrument Serif for display. DM Sans for body. Space Mono for system labels.
- * Forest green is action. Warm paper is canvas. Space is product. */
+ * Electric violet is action. Obsidian canvas is calm. Silver is the wire accent. */
 
 :root {
   --wireline-page: var(--wireline-color-canvas-default);

@@ -1,12 +1,12 @@
+import type { ReactNode } from "react";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";
-import { Button } from "../atoms";
+import { Button } from "../atoms/Button";
 
 import { SignalOrbFrame } from "./SignalOrbFrame";
 
@@ -17,11 +17,13 @@ interface Action {
   primary?: boolean;
 }
 
-interface EmptyStateProps {
-  icon: LucideIcon;
+export interface EmptyStateProps {
+  icon?: LucideIcon | ReactNode;
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: Action[];
+  /** Single primary action slot (atoms API compatibility). */
+  action?: ReactNode;
   className?: string;
   /** Soft bloom behind the medallion */
   withHalo?: boolean;
@@ -52,10 +54,11 @@ interface EmptyStateProps {
  * EmptyState — canonical empty / idle / no-data pattern for authenticated surfaces.
  */
 export function EmptyState({
-  icon: Icon,
+  icon: IconOrNode,
   title,
   description,
   actions = [],
+  action,
   className,
   withHalo = true,
   withConstellation,
@@ -69,6 +72,9 @@ export function EmptyState({
   const reduceMotion = useReducedMotion();
   const compact = density === "compact";
   const showConstellation = withConstellation ?? framed;
+  const LucideIconComponent = typeof IconOrNode === "function" ? IconOrNode : null;
+  const iconNode = IconOrNode && typeof IconOrNode !== "function" ? IconOrNode : null;
+  const resolvedActions = actions.length > 0 ? actions : [];
 
   const body = (
     <motion.div
@@ -82,23 +88,32 @@ export function EmptyState({
         className,
       )}
     >
-      <div className={compact ? "mb-4" : "mb-5"}>
-        <SignalOrbFrame
-          size={compact ? "sm" : "md"}
-          withConstellation={showConstellation}
-          withBloom={withHalo}
-          refined
-        >
-          <Medallion
-            variant="instrument"
-            withHalo={false}
-            size={compact ? "sm" : "md"}
-            accent={accent}
-          >
-            <Icon className={compact ? "w-5 h-5" : "w-6 h-6"} strokeWidth={1.75} />
-          </Medallion>
-        </SignalOrbFrame>
-      </div>
+      {IconOrNode ? (
+        <div className={compact ? "mb-4" : "mb-5"}>
+          {LucideIconComponent ? (
+            <SignalOrbFrame
+              size={compact ? "sm" : "md"}
+              withConstellation={showConstellation}
+              withBloom={withHalo}
+              refined
+            >
+              <Medallion
+                variant="instrument"
+                withHalo={false}
+                size={compact ? "sm" : "md"}
+                accent={accent}
+              >
+                <LucideIconComponent
+                  className={compact ? "w-5 h-5" : "w-6 h-6"}
+                  strokeWidth={1.75}
+                />
+              </Medallion>
+            </SignalOrbFrame>
+          ) : (
+            <div className="wl-empty__icon">{iconNode}</div>
+          )}
+        </div>
+      ) : null}
 
       <SectionHeader
         tone="instrument"
@@ -111,22 +126,24 @@ export function EmptyState({
 
       {children ? <div className="mt-6 w-full max-w-lg">{children}</div> : null}
 
-      {actions.length > 0 && (
+      {action ? <div className={cn("mt-6", compact && "mt-4")}>{action}</div> : null}
+
+      {resolvedActions.length > 0 && (
         <div
           className={cn(
             "flex flex-col sm:flex-row flex-wrap justify-center items-stretch sm:items-center gap-2 w-full max-w-full",
             compact ? "mt-4" : "mt-6",
           )}
         >
-          {actions.map((action, index) => {
-            const isPrimary = !!action.primary;
+          {resolvedActions.map((actionItem, index) => {
+            const isPrimary = !!actionItem.primary;
 
             const primaryTextStyle = isPrimary
               ? { color: "var(--wireline-color-text-onAction)" }
               : undefined;
 
-            if (action.to) {
-              const internal = action.to.startsWith("/") && !action.to.startsWith("//");
+            if (actionItem.to) {
+              const internal = actionItem.to.startsWith("/") && !actionItem.to.startsWith("//");
               return (
                 <Button
                   key={index}
@@ -146,11 +163,11 @@ export function EmptyState({
                   )}
                 >
                   {internal ? (
-                    <Link to={action.to} className="text-center">
-                      {action.label}
+                    <Link to={actionItem.to} className="text-center">
+                      {actionItem.label}
                     </Link>
                   ) : (
-                    <a href={action.to}>{action.label}</a>
+                    <a href={actionItem.to}>{actionItem.label}</a>
                   )}
                 </Button>
               );
@@ -159,7 +176,7 @@ export function EmptyState({
             return (
               <Button
                 key={index}
-                onClick={action.onClick}
+                onClick={actionItem.onClick}
                 variant={isPrimary ? "default" : "outline"}
                 style={primaryTextStyle}
                 className={cn(
@@ -174,7 +191,7 @@ export function EmptyState({
                     "normal-case tracking-normal text-[var(--wireline-typography-overline-size)] font-medium",
                 )}
               >
-                {action.label}
+                {actionItem.label}
               </Button>
             );
           })}

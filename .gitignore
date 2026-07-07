@@ -126,3 +126,4 @@ scripts/.tmp-*
 
 # Visual QA screenshot dumps (local only)
 .qa-temp/
+.vercel

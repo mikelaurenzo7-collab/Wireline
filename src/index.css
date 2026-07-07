@@ -83,21 +83,9 @@
 @import "./styles/typography-prose.css";
 @import "./styles/components.css";
 @import "./styles/stitch-patterns.css";
-@import "./styles/layout-system-pass.css";
-@import "./styles/route-density-fixes.css";
-@import "./styles/cta-readability.css";
-@import "./styles/workspace-buttons.css";
-@import "./styles/phone-agent-blueprint.css";
-@import "./styles/precision-studio.css";
-@import "./styles/precision-auth.css";
-@import "./styles/clarity-system.css";
-@import "./styles/wireline-signature.css";
-@import "./styles/wireline-app-signature.css";
-@import "./styles/agent-face.css";
-@import "./styles/agent-presence.css";
-@import "./styles/video-receptionist.css";
-@import "./styles/studio-operations.css";
-@import "./styles/workspace-polish.css";
+@import "./styles/wireline-layout-passes.css";
+@import "./styles/wireline-product-surfaces.css";
+@import "./styles/wireline-marketing-surfaces.css";
 @import "./styles/letterpress-polish.css";
 @import "./styles/theme-light.css";
 

@@ -4,15 +4,18 @@ import {
   isFederalDncListed,
   isFederalDncVendorConfigured,
   lookupFederalDnc,
+  normalizeUsPhone10,
 } from "../src/lib/federal-dnc-service";
 
 describe("federal-dnc-service", () => {
   afterEach(() => {
     delete process.env.FEDERAL_DNC_API_KEY;
     delete process.env.FEDERAL_DNC_API_URL;
+    delete process.env.FEDERAL_DNC_PROVIDER;
     delete process.env.FEDERAL_DNC_ALLOW_UNCONFIGURED;
     delete process.env.NODE_ENV;
     delete process.env.VERCEL;
+    vi.unstubAllGlobals();
   });
 
   it("returns unconfigured when vendor env is missing", async () => {
@@ -31,7 +34,40 @@ describe("federal-dnc-service", () => {
     expect(result.source).toBe("error");
     expect(result.listed).toBe(true);
     expect(await isFederalDncListed("+15551234567")).toBe(true);
-    vi.unstubAllGlobals();
+  });
+
+  it("uses dncscrub GET scrub with loginId and parses ResultCode D", async () => {
+    process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
+    process.env.FEDERAL_DNC_API_KEY = "scrub-login-id";
+    process.env.FEDERAL_DNC_PROVIDER = "dncscrub";
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ Phone: "5551234567", ResultCode: "D" }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(normalizeUsPhone10("+1 (555) 123-4567")).toBe("5551234567");
+
+    const listed = await lookupFederalDnc("+15551234567");
+    expect(listed.source).toBe("vendor");
+    expect(listed.listed).toBe(true);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("phoneList=5551234567");
+    expect(url).toContain("version=5");
+    expect(url).toContain("output=json");
+    expect(init?.method).toBe("GET");
+    expect(init?.headers).toMatchObject({ loginId: "scrub-login-id" });
+    expect(init?.headers).not.toHaveProperty("Authorization");
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ Phone: "5551234567", ResultCode: "C" }],
+    });
+    const clear = await lookupFederalDnc("+15551234567");
+    expect(clear.listed).toBe(false);
   });
 
   it("blocks marketing outbound when vendor is not configured in production", () => {

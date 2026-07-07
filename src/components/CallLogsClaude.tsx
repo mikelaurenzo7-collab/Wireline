@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 
 import { cn } from "../lib/utils";
@@ -13,6 +13,8 @@ import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import OutboundDialDialog from "./OutboundDialDialog";
 import { Button } from "./atoms";
+import { CardRowSkeleton } from "./atoms/skeleton-presets";
+import { EmptyState } from "./ui/EmptyState";
 
 /**
  * CallLogsClaude — Operate surface in the Claude Design ground truth.
@@ -319,12 +321,14 @@ function FloorTab({
   hasLive: boolean;
   onOutboundCall: () => void;
 }) {
-  if (loading) return <RowSkeleton />;
+  if (loading) return <CardRowSkeleton />;
   if (!calls.length) {
     return (
       <EmptyState
         title="No call history yet."
-        body="Live and outbound conversations will appear here with summaries, outcomes, follow-ups, and exports."
+        description="Live and outbound conversations will appear here with summaries, outcomes, follow-ups, and exports."
+        density="compact"
+        withHalo={false}
         action={
           <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
             <Button asChild size="sm">
@@ -424,12 +428,14 @@ function FloorTab({
 }
 
 function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
-  if (loading) return <RowSkeleton />;
+  if (loading) return <CardRowSkeleton />;
   if (!items.length) {
     return (
       <EmptyState
         title="No follow-ups queued."
-        body="High-value and callback-tagged calls land here."
+        description="High-value and callback-tagged calls land here."
+        density="compact"
+        withHalo={false}
       />
     );
   }
@@ -482,12 +488,14 @@ function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
 }
 
 function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
-  if (loading) return <RowSkeleton />;
+  if (loading) return <CardRowSkeleton />;
   if (!items.length) {
     return (
       <EmptyState
         title="Nothing to triage."
-        body="Escalations and negative-sentiment calls surface here."
+        description="Escalations and negative-sentiment calls surface here."
+        density="compact"
+        withHalo={false}
       />
     );
   }
@@ -607,10 +615,15 @@ function AnalyticsContent() {
     { label: "Avg QA score", value: avgQaScore != null ? avgQaScore.toFixed(1) : "—" },
   ];
 
-  if (loading) return <RowSkeleton />;
+  if (loading) return <CardRowSkeleton />;
   if (!calls.length) {
     return (
-      <EmptyState title="No call history yet." body="Metrics will appear when calls are logged." />
+      <EmptyState
+        title="No call history yet."
+        description="Metrics will appear when calls are logged."
+        density="compact"
+        withHalo={false}
+      />
     );
   }
 
@@ -658,34 +671,5 @@ function AnalyticsContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
-  return (
-    <div className="grid place-items-center py-16 text-center">
-      <div className="max-w-md">
-        <div className="font-[var(--wireline-font-family-display)] text-[22px] tracking-[-0.01em] text-[var(--wireline-color-text-primary)]">
-          {title}
-        </div>
-        <p className="mt-2 text-[13px] leading-6 text-[var(--wireline-color-text-secondary)]">
-          {body}
-        </p>
-        {action}
-      </div>
-    </div>
-  );
-}
-
-function RowSkeleton() {
-  return (
-    <ul className="flex flex-col gap-2.5" aria-busy="true" aria-label="Loading calls">
-      {Array.from({ length: 4 }, (_, index) => (
-        <li
-          key={index}
-          className="h-[76px] animate-pulse rounded-[12px] bg-[var(--wireline-color-surface-subtle)]"
-        />
-      ))}
-    </ul>
   );
 }

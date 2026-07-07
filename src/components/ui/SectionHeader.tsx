@@ -5,7 +5,7 @@ import { cn } from "../../lib/utils";
 interface SectionHeaderProps {
   eyebrow?: string;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   className?: string;
   actions?: React.ReactNode;
   /** Renders a delicate hairline divider beneath the header. */

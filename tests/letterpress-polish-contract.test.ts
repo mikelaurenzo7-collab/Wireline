@@ -245,7 +245,7 @@ describe("Wireline Letterpress polish layer", () => {
     expect(card).toMatch(/wire:\s*"/);
     expect(card).toContain("wl-transition-press");
 
-    // EmptyState renders the new letterpress primitive.
+    // EmptyState atom re-exports canonical ui/EmptyState (wl-empty-state + wl-empty__*).
     expect(empty).toContain("wl-empty");
     expect(empty).toContain("wl-eyebrow");
 

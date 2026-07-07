@@ -277,6 +277,12 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: (value) => !value || isUrl(value),
   },
   {
+    name: "FEDERAL_DNC_PROVIDER",
+    group: "operational",
+    required: false,
+    description: "Federal DNC vendor id (e.g. dncscrub for Contact Center Compliance)",
+  },
+  {
     name: "FEDERAL_DNC_API_KEY",
     group: "operational",
     required: false,

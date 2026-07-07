@@ -12,6 +12,7 @@ export * from "./NativeSelect";
 export * from "./Paper";
 export * from "./Reveal";
 export * from "./Skeleton";
+export * from "./skeleton-presets";
 export { Switch, switchThumbVariants, switchVariants } from "./Switch";
 export * from "./Textarea";
 export * from "./Toast";

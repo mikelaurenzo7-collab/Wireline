@@ -10,7 +10,7 @@ type WiredEyebrowProps = {
   as?: ElementType;
 };
 
-/** Letterpress wired section kicker — copper strand + mono label. */
+/** Letterpress wired section kicker — silver strand + mono label. */
 export function WiredEyebrow({ children, className, style, as: Tag = "p" }: WiredEyebrowProps) {
   return (
     <Tag className={cn(WL_APP_CLASSES.wiredEyebrow, className)} style={style}>
