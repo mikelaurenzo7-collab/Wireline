@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { invalidateDashboard } from "./dashboard-cache";
 import * as claudeBrain from "./ai-brains";
 import { getErrorMessage } from "./server-utils";
@@ -132,7 +132,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
             callId: vapiCallId,
           });
         } else {
-          log.info("Duplicate end-of-call-report ignored (idempotent retry)", {
+          if (message.transcript?.trim()) {
+            await drizzle
+              .update(schema.callLogs)
+              .set({ transcript: message.transcript })
+              .where(
+                sql`${schema.callLogs.vapiCallId} = ${vapiCallId} AND (${schema.callLogs.transcript} IS NULL OR ${schema.callLogs.transcript} = '')`,
+              );
+          }
+          log.info("Duplicate end-of-call-report ignored after retry-safe transcript patch", {
             callId: vapiCallId,
           });
         }
@@ -142,8 +150,16 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     }
   }
 
+  if (!insertedFresh) {
+    // A duplicate Vapi retry is acknowledged only after the optional transcript
+    // backfill above. All downstream side effects (usage, customer webhooks,
+    // compliance ledger, enrichment, notifications) are intentionally skipped
+    // so retries cannot double-meter, double-alert, or duplicate audit rows.
+    return;
+  }
+
   // Fire-and-forget monthly voice-minute tracking + Stripe overage emission.
-  // Gated on a successful fresh insert so Vapi retries don't double-bill.
+  // Gated on a successful fresh insert/finalization so Vapi retries don't double-bill.
   if (insertedFresh) {
     void trackVoiceMinutes({
       userId,
