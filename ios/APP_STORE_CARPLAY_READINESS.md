@@ -13,12 +13,24 @@ CarPlay is only a safety-constrained calling surface.
 
 The App Store story is:
 
-1. Create an agent with a short role and starting brief.
-2. Train it on sources, behavior, voice, policy, and evaluation.
-3. Run calls, texts, follow-up, approvals, and handoff from native controls.
-4. Use CallKit and PushKit for native inbound-call presentation.
-5. Use App Intents and widgets for explicit user-initiated actions.
-6. Use CarPlay only for active call routing, recent callbacks, and agent line visibility.
+1. Sign in to an existing Wireline account and confirm account/plan state.
+2. View the user's agent roster with role/archetype metadata, and create only a
+   lightweight starter agent when account capacity allows.
+3. Monitor active calls, recent call recaps, wallet balance, and follow-up count.
+4. Take explicit handoff actions, including transferring an active agent call to
+   the account holder's saved callback number.
+5. Use CallKit, PushKit, widgets, and App Intents for native presentation and
+   explicit user-initiated actions.
+6. Place outbound calls only after the user chooses a compliant purpose and, for
+   marketing/promotional calls, confirms express written consent; backend DNC,
+   federal DNC, TCPA, and spend gates still make the final decision.
+7. Use CarPlay only for active call routing, recent callbacks, and agent line visibility.
+
+Native scope is intentionally companion-first until the web activation loop is
+consistently successful. Keep deep billing/top-ups, CRM setup, broad integration
+configuration, long-form training, analytics/admin controls, and complex agent
+policy authoring on the web. Native may show read-only account/wallet status and
+small operational edits such as the handoff callback number.
 
 ## Apple Constraints
 
@@ -63,6 +75,18 @@ Training, usage management, or non-driving tasks in the car.
 - [ ] Metadata avoids unsupported claims: no autonomous emergency calling, no
   guaranteed recording legality, and no background microphone claims beyond
   active calls.
+
+## Mobile Companion Capability Audit
+
+| Capability | Backend contract | iOS / widget support | Android support | Launch posture |
+| --- | --- | --- | --- | --- |
+| Authenticated account state | `GET /api/mobile/me` returns user, account, quota, extra-agent metadata, and settings. | `MobileMe` decodes the bootstrap payload; workspace/settings use it. | `WirelineViewModel.refreshNow()` loads `me` after token sign-in. | Supported; native is a signed-in companion, not an anonymous onboarding funnel. |
+| Agent list and role metadata | `GET /api/mobile/agents` and `/api/mobile/agents/roles`; `POST /api/mobile/agents` validates role and capacity. | `Agent`, `AgentRole`, and assistant library read the catalog. | `Agent`, `AgentRole`, and `createAssistant()` mirror the same contract. | Supported for roster + lightweight creation only; deep training stays web-first. |
+| Active/recent calls | `/calls/active`, `/calls/recent`, and `/calls/:id/detail` are scoped to the authenticated user. | Calls views and widgets read active/recent/detail data. | View model refreshes active/recent data and exposes call detail. | Supported as core companion behavior. |
+| Wallet/balance readout | `GET /api/mobile/wallet` is read-only. | Wallet screen and widgets show balance/ledger. | Wallet screen and widget snapshot show balance/ledger. | Read-only; Stripe top-ups and billing management stay on web. |
+| Handoff actions | `PUT /settings` saves `handoffPhone`; `POST /calls/:callId/handoff` transfers active calls. | Settings, Calls, Live Call, and CarPlay handoff call the API. | Settings, live-call screen, and view model call the API. | Supported for explicit user action only. |
+| Push/device registration | `POST /devices` upserts APNs/FCM tokens; `DELETE /devices/:id` unregisters. | `WirelineAPI.registerDevice` and `CallManager` register APNs/VoIP tokens. | `refreshPushRegistration()` registers FCM and sign-out unregisters. | Supported; required for native call wakeups. |
+| Safe outbound-call consent | `POST /calls/outbound` requires `callPurpose`, normalizes express consent, and applies DNC/TCPA/spend gates. | Outbound UI and intents pass purpose/consent; marketing requires confirmation. | Ask/Call UI passes purpose/consent; marketing requires confirmation. | Supported only for explicit user-initiated calls; no native bulk outreach or CRM campaigns. |
 
 ## CarPlay Information Architecture
 
