@@ -1,17 +1,17 @@
 /** Shared product voice for public marketing, workspace copy, and audience positioning. */
 
 export const MARKETING_VOICE = {
-  eyebrow: "voice agents · in beta",
+  eyebrow: "voice agents · private beta",
   headline: "Wire your agent.",
   subline:
-    "From personal assistants to call centers and sales teams: build a trained agent that answers, routes, books, qualifies, follows up, and texts the outcome.",
-  proof: ["Answers the line", "Books and qualifies", "Texts every outcome"],
+    "From personal assistants to call centers and sales teams: create, train, wire, and run a voice agent that answers, routes, books, qualifies, follows up, and texts the outcome.",
+  proof: ["Create", "Train", "Wire", "Run"],
   extensionLead: "Command your agent from any page. Wireline answers while you stay focused.",
   differentiator: "Wireline puts a trained agent on the line.",
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "business phone agents · in beta",
+  eyebrow: "business phone agents · private beta",
   proof: ["Answers every line", "Qualifies and routes", "Books or escalates"],
   differentiator: "Wireline keeps the line moving.",
   beforeStrip: "Missed calls turn real demand away.",
