@@ -91,21 +91,60 @@ type ApprovalTaskCardProps = {
   onResolved: () => void;
 };
 
+function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
+  const payload = (task.payload || task.customer_info || task.customerInfo || {}) as Record<
+    string,
+    unknown
+  >;
+  return { ...payload };
+}
+
 function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [editNotes, setEditNotes] = useState(task.description || "");
+  const [editBody, setEditBody] = useState(() => {
+    const payload = editablePayloadFields(task);
+    return typeof payload.body === "string"
+      ? payload.body
+      : typeof payload.description === "string"
+        ? payload.description
+        : "";
+  });
+  const [editSubject, setEditSubject] = useState(() => {
+    const payload = editablePayloadFields(task);
+    return typeof payload.subject === "string" ? payload.subject : "";
+  });
 
   async function approve() {
     setBusy(true);
     setError(null);
     try {
-      if (editing && editNotes.trim() !== (task.description || "")) {
+      if (editing) {
+        const basePayload = editablePayloadFields(task);
+        const nextPayload: Record<string, unknown> = { ...basePayload };
+        if (editSubject.trim()) nextPayload.subject = editSubject.trim();
+        if (editBody.trim()) {
+          if (
+            "body" in basePayload ||
+            taskType(task).includes("email") ||
+            taskType(task).includes("text")
+          ) {
+            nextPayload.body = editBody.trim();
+          } else if ("description" in basePayload) {
+            nextPayload.description = editBody.trim();
+          } else {
+            nextPayload.body = editBody.trim();
+          }
+        }
         const patch = await authFetch(`/api/Assistants/tasks/${task.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resolution_notes: editNotes.trim() }),
+          body: JSON.stringify({
+            description: editNotes.trim() || task.description,
+            payload: nextPayload,
+          }),
         });
         if (!patch.ok) throw new Error("Could not save edits before approval.");
       }
@@ -170,13 +209,28 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             {evidenceSnippet(task)}
           </p>
           {editing ? (
-            <textarea
-              className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              rows={3}
-              value={editNotes}
-              onChange={(event) => setEditNotes(event.target.value)}
-              placeholder="Edit proposed action notes before approval"
-            />
+            <div className="mt-3 grid gap-2">
+              <input
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                value={editSubject}
+                onChange={(event) => setEditSubject(event.target.value)}
+                placeholder="Subject (email / CRM)"
+              />
+              <textarea
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                rows={3}
+                value={editBody}
+                onChange={(event) => setEditBody(event.target.value)}
+                placeholder="Message / body that will execute on approve"
+              />
+              <textarea
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                rows={2}
+                value={editNotes}
+                onChange={(event) => setEditNotes(event.target.value)}
+                placeholder="Internal description for this approval card"
+              />
+            </div>
           ) : null}
           {error ? (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-destructive">

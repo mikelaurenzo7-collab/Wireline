@@ -182,11 +182,11 @@ export async function executeAction(
       case "create_internal_task":
         return await handleCreateInternalTask(userId, action, context);
       case "send_contract":
-        return await handleSendContract(userId, action, context);
+        return await queueSideEffectAction(userId, action, context, "send_contract", "docusign");
       case "prospect_leads":
-        return await handleProspectLeads(userId, action, context);
+        return await queueSideEffectAction(userId, action, context, "prospect_leads", "apollo");
       case "notify_slack":
-        return await handleNotifySlack(userId, action);
+        return await queueSideEffectAction(userId, action, context, "notify_slack", "slack");
       default:
         return { success: false, error: `Unsupported action type: ${action.type}` };
     }
@@ -313,8 +313,9 @@ async function queueCrmAction(
 async function executeCrmAction(userId: string, action: ActionItem): Promise<ActionResult> {
   const crm = new CRMService(userId);
   const payload = (action.payload || {}) as Record<string, unknown>;
+  const callLogShape = isCrmCallLogPayload(payload);
 
-  if (isCrmCallLogPayload(payload)) {
+  if (callLogShape) {
     const crmType = (payload.crm_type ?? payload.crmType) as "hubspot" | "salesforce";
     const logId = await crm.logCall({
       crmType,
@@ -350,6 +351,33 @@ async function handleCreateInternalTask(
   await touchNavCounts(userId);
   return { success: true };
 }
+async function queueSideEffectAction(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+  taskType: string,
+  targetChannel: string,
+): Promise<ActionResult> {
+  await drizzle.insert(schema.followUpTasks).values({
+    userId,
+    agentId: action.agentId,
+    taskType,
+    description:
+      action.reasoning ||
+      action.payload?.message ||
+      action.payload?.description ||
+      `${taskType.replace(/_/g, " ")} awaiting approval`,
+    priority: action.priority || "medium",
+    status: "pending",
+    sourceType: context.sourceType,
+    sourceId: context.sourceId,
+    targetChannel,
+    payload: action.payload,
+  });
+  await touchNavCounts(userId);
+  return { success: true, queued: true };
+}
+
 async function handleSendContract(
   userId: string,
   action: ActionItem,

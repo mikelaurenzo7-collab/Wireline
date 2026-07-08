@@ -419,11 +419,13 @@ export const pronunciationEntrySchema = z.object({
 // ============================================================================
 
 export const updateFollowUpTaskSchema = z.object({
-  status: z.enum(["open", "in_progress", "done", "cancelled"]).optional(),
+  status: z.enum(["pending", "open", "in_progress", "completed", "done", "cancelled"]).optional(),
   priority: z.enum(["low", "medium", "high", "critical"]).optional(),
   due_date: z.string().optional().nullable(),
   agent_id: z.string().optional().nullable(),
   resolution_notes: z.string().max(5000).optional(),
+  description: z.string().max(5000).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
 });
 
 // ============================================================================

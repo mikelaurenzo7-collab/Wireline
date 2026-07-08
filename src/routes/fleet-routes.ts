@@ -323,15 +323,17 @@ router.patch(
   validateBody(updateFollowUpTaskSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { status, priority, due_date, agent_id, resolution_notes } = req.body;
+      const { status, priority, due_date, agent_id, resolution_notes, description, payload } =
+        req.body;
       const updateData: any = {};
       if (status !== undefined) {
-        if (!FLEET_TASK_STATUSES.includes(status)) {
+        const normalizedStatus = status === "done" ? "completed" : status;
+        if (!FLEET_TASK_STATUSES.includes(normalizedStatus)) {
           return res
             .status(400)
             .json({ error: `status must be one of: ${FLEET_TASK_STATUSES.join(", ")}` });
         }
-        updateData.status = status;
+        updateData.status = normalizedStatus;
       }
       if (priority !== undefined) {
         if (!FLEET_TASK_PRIORITIES.includes(priority)) {
@@ -344,6 +346,10 @@ router.patch(
       if (due_date !== undefined) updateData.dueDate = new Date(due_date);
       if (agent_id !== undefined) updateData.agentId = agent_id;
       if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
+      if (description !== undefined) updateData.description = description;
+      if (payload !== undefined && payload && typeof payload === "object") {
+        updateData.payload = payload;
+      }
 
       await drizzle
         .update(schema.followUpTasks)

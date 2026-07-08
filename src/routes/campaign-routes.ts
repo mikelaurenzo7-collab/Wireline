@@ -334,6 +334,28 @@ router.post(
       if (campaign.status === CAMPAIGN_STATUS.RUNNING)
         throw AppError.fromHttpStatus(409, "Campaign is already running.");
 
+      const launchApprovalConfirmed =
+        req.body?.launch_approval_confirmed === true || req.body?.launchApprovalConfirmed === true;
+      if (!launchApprovalConfirmed) {
+        return res.status(400).json({
+          code: "LAUNCH_APPROVAL_REQUIRED",
+          error:
+            "Confirm the compliance checklist before launching. Set launch_approval_confirmed: true after review.",
+        });
+      }
+
+      // Promote imported Pending leads into Queued so create → import → launch works.
+      await drizzle
+        .update(schema.outboundLeads)
+        .set({ status: LEAD_STATUS.QUEUED })
+        .where(
+          and(
+            eq(schema.outboundLeads.campaignId, campaignId),
+            eq(schema.outboundLeads.userId, req.user.id),
+            eq(schema.outboundLeads.status, LEAD_STATUS.PENDING),
+          ),
+        );
+
       const queued = await drizzle
         .select({
           id: schema.outboundLeads.id,
@@ -354,16 +376,6 @@ router.post(
 
       if (!queued || queued.length === 0) {
         throw AppError.fromHttpStatus(400, "No queued leads in this campaign.");
-      }
-
-      const launchApprovalConfirmed =
-        req.body?.launch_approval_confirmed === true || req.body?.launchApprovalConfirmed === true;
-      if (!launchApprovalConfirmed) {
-        return res.status(400).json({
-          code: "LAUNCH_APPROVAL_REQUIRED",
-          error:
-            "Confirm the compliance checklist before launching. Set launch_approval_confirmed: true after review.",
-        });
       }
 
       const goalPlaybook = parsePlaybookFromGoal(campaign.goal);

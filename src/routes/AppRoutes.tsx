@@ -22,6 +22,7 @@ const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"));
+const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
 const loading = <RouteFallback />;
 

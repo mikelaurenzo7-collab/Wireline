@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, lt, inArray } from "drizzle-orm";
+import { eq, and, sql, lt, inArray, gte } from "drizzle-orm";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { isFederalDncListed, assertFederalDncForMarketing } from "../lib/federal-dnc-service";
@@ -118,6 +118,30 @@ export class CampaignDialerService {
    */
   private async dialLead(lead: any, campaign: any) {
     try {
+      // 0. 24h duplicate-dial guard — never place another campaign call to the
+      // same number within 24 hours (includes this lead's own lastCalledAt).
+      if (lead.customerNumber) {
+        const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const [recent] = await drizzle
+          .select({ id: schema.outboundLeads.id })
+          .from(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.userId, lead.userId!),
+              eq(schema.outboundLeads.customerNumber, lead.customerNumber),
+              gte(schema.outboundLeads.lastCalledAt, since),
+            ),
+          )
+          .limit(1);
+        if (recent) {
+          log.info("Skipping dial — number called within 24h", {
+            leadId: lead.id,
+            campaignId: campaign.id,
+          });
+          return;
+        }
+      }
+
       // 1. Check DNC
       if (lead.customerNumber && (await isDncBlocked(lead.userId!, lead.customerNumber))) {
         await drizzle

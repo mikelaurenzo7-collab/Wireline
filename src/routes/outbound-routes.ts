@@ -354,6 +354,8 @@ router.post(
         phoneNumber: lead.phone_number || lead.customer_number,
         context: lead.context,
         campaignId: campaign_id || null,
+        // Campaign-bound imports are launch-ready; standalone imports stay Pending.
+        status: campaign_id ? "Queued" : "Pending",
         metadata: {
           ...((lead.metadata as Record<string, unknown>) || {}),
           ...outboundConsentMetadata({

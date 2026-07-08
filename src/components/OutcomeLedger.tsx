@@ -4,6 +4,8 @@ import { ArrowRight, Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import {
+  deriveLifecycleStatus,
+  formatLifecycleLabel,
   formatOutcomeLabel,
   summarizeOutcomeRow,
   type OutcomeLedgerRow,
@@ -15,6 +17,14 @@ type OutcomeLedgerProps = {
   limit?: number;
   compact?: boolean;
   showViewAll?: boolean;
+};
+
+type TaskLite = {
+  source_id?: string | null;
+  sourceId?: string | null;
+  status?: string | null;
+  task_type?: string | null;
+  taskType?: string | null;
 };
 
 function normalizeCall(row: Record<string, unknown>): OutcomeLedgerRow {
@@ -30,6 +40,7 @@ function normalizeCall(row: Record<string, unknown>): OutcomeLedgerRow {
     lead_score: (row.lead_score ?? row.leadScore ?? null) as number | null,
     campaign_source: (row.campaign_source ?? row.campaignSource ?? null) as string | null,
     created_at: String(row.created_at ?? row.createdAt ?? ""),
+    owner_label: (row.agent_name ?? row.agentName ?? null) as string | null,
   };
 }
 
@@ -47,27 +58,69 @@ export default function OutcomeLedger({
     setLoading(true);
     setError(null);
     try {
-      const [callsRes, tasksRes] = await Promise.all([
+      const [callsRes, pendingRes, completedRes] = await Promise.all([
         authFetch(`/api/calls?limit=${limit}`),
         authFetch("/api/Assistants/tasks?status=pending"),
+        authFetch("/api/Assistants/tasks?status=completed"),
       ]);
       const callsBody = callsRes.ok ? await callsRes.json() : { calls: [] };
-      const tasksBody = tasksRes.ok ? await tasksRes.json() : { tasks: [] };
+      const pendingBody = pendingRes.ok ? await pendingRes.json() : { tasks: [] };
+      const completedBody = completedRes.ok ? await completedRes.json() : { tasks: [] };
       const calls = Array.isArray(callsBody?.calls) ? callsBody.calls : [];
-      const tasks = Array.isArray(tasksBody?.tasks) ? tasksBody.tasks : [];
-      const taskCountBySource = new Map<string, number>();
-      for (const task of tasks) {
+      const pendingTasks = (
+        Array.isArray(pendingBody?.tasks) ? pendingBody.tasks : []
+      ) as TaskLite[];
+      const completedTasks = (
+        Array.isArray(completedBody?.tasks) ? completedBody.tasks : []
+      ) as TaskLite[];
+
+      const pendingBySource = new Map<string, TaskLite[]>();
+      const completedBySource = new Map<string, TaskLite[]>();
+      for (const task of pendingTasks) {
         const sourceId = String(task.source_id || task.sourceId || "");
         if (!sourceId) continue;
-        taskCountBySource.set(sourceId, (taskCountBySource.get(sourceId) || 0) + 1);
+        const list = pendingBySource.get(sourceId) || [];
+        list.push(task);
+        pendingBySource.set(sourceId, list);
       }
+      for (const task of completedTasks) {
+        const sourceId = String(task.source_id || task.sourceId || "");
+        if (!sourceId) continue;
+        const list = completedBySource.get(sourceId) || [];
+        list.push(task);
+        completedBySource.set(sourceId, list);
+      }
+
       const normalized = calls
         .map((row: Record<string, unknown>) => normalizeCall(row))
         .filter((row: OutcomeLedgerRow) => !agentId || row.agent_id === agentId)
-        .map((row: OutcomeLedgerRow) => ({
-          ...row,
-          pending_task_count: taskCountBySource.get(row.id) || 0,
-        }));
+        .map((row: OutcomeLedgerRow) => {
+          const pending = pendingBySource.get(row.id) || [];
+          const completed = completedBySource.get(row.id) || [];
+          const lastAction = pending[0] || completed[0];
+          const pending_task_count = pending.length;
+          const completed_task_count = completed.length;
+          const last_action_type = (lastAction?.task_type || lastAction?.taskType || null) as
+            | string
+            | null;
+          const last_action_status = (lastAction?.status || null) as string | null;
+          const lifecycle_status = deriveLifecycleStatus({
+            outcomeTag: row.outcome_tag,
+            pendingTaskCount: pending_task_count,
+            completedTaskCount: completed_task_count,
+            lastActionStatus: last_action_status,
+          });
+          return {
+            ...row,
+            pending_task_count,
+            completed_task_count,
+            last_action_type,
+            last_action_status,
+            lifecycle_status,
+            compliance_state:
+              (row.outcome_tag || "").toLowerCase() === "dnc" ? "dnc_honored" : "clear",
+          };
+        });
       setRows(normalized);
     } catch {
       setError("Could not load outcome ledger.");
@@ -106,17 +159,30 @@ export default function OutcomeLedger({
       {rows.map((row) => (
         <article key={row.id} className="rounded-xl border border-border bg-card px-3 py-3 sm:px-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-              {formatOutcomeLabel(row.outcome_tag)}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                {formatOutcomeLabel(row.outcome_tag)}
+              </span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {formatLifecycleLabel(row.lifecycle_status)}
+              </span>
+            </div>
             <span className="text-[10px] text-muted-foreground">
               {row.direction} · {row.duration_seconds ?? 0}s
             </span>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-foreground">{summarizeOutcomeRow(row)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+            {row.owner_label ? <span>Owner: {row.owner_label}</span> : null}
             {row.campaign_source ? <span>Source: {row.campaign_source}</span> : null}
             {row.lead_score != null ? <span>Score: {row.lead_score}</span> : null}
+            {row.compliance_state ? <span>Compliance: {row.compliance_state}</span> : null}
+            {row.last_action_type ? (
+              <span>
+                Last action: {row.last_action_type.replace(/_/g, " ")}
+                {row.last_action_status ? ` (${row.last_action_status})` : ""}
+              </span>
+            ) : null}
             {(row.pending_task_count ?? 0) > 0 ? (
               <Link to="/approvals" className="font-semibold text-primary hover:underline">
                 {row.pending_task_count} pending action

@@ -6,14 +6,26 @@ import {
 } from "../src/lib/product-event-server";
 
 const logInfo = vi.fn();
+const logWarn = vi.fn();
+const insertValues = vi.fn().mockResolvedValue(undefined);
+const insert = vi.fn(() => ({ values: insertValues }));
 
 vi.mock("../src/lib/server-context", () => ({
-  log: { info: (...args: unknown[]) => logInfo(...args) },
+  log: {
+    info: (...args: unknown[]) => logInfo(...args),
+    warn: (...args: unknown[]) => logWarn(...args),
+  },
+  drizzle: {
+    insert: (...args: unknown[]) => insert(...args),
+  },
 }));
 
 describe("product event server emission", () => {
   beforeEach(() => {
     logInfo.mockClear();
+    logWarn.mockClear();
+    insert.mockClear();
+    insertValues.mockClear();
     _resetServerProductEventOnceForTests();
   });
 
@@ -29,8 +41,11 @@ describe("product event server emission", () => {
       expect.objectContaining({
         product_event: "tenant_activated",
         userId: "user-123",
+        metadata: expect.objectContaining({ call_log_id: "42" }),
+        payload: expect.objectContaining({ event: "tenant_activated" }),
       }),
     );
+    expect(insert).toHaveBeenCalled();
   });
 
   it("dedupes once-per-user activation milestones", () => {

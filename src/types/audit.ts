@@ -77,7 +77,10 @@ export type AuditEventType =
   | "data.import"
   | "data.account_deletion_requested"
   | "data.account_deletion_cancelled"
-  | "data.account_deleted";
+  | "data.account_deleted"
+
+  // Product analytics / activation funnel
+  | "product.event";
 
 /**
  * Severity levels for audit events.

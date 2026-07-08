@@ -7,6 +7,7 @@
  * Usage: npm run db:health
  */
 
+import "../src/lib/load-env";
 import { runDatabaseHealthCheck, printHealthReport } from "../src/lib/db-health-check";
 
 async function main() {

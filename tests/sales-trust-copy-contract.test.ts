@@ -6,6 +6,14 @@ import { TRUST_DISCLOSURE_FAQ } from "../src/lib/product-copy";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
+  {
+    pattern: /state-by-state hour windows respected automatically/i,
+    reason: "unimplemented state-hour automation claim",
+  },
+  {
+    pattern: /Never call the same number twice in 24h/i,
+    reason: "unimplemented 24h duplicate-dial claim",
+  },
   { pattern: /pass naturally as human/i, reason: "stealth AI / human-passing claim" },
   { pattern: /80%\+ of calls/i, reason: "unsourced human-passing statistic" },
   { pattern: /Disclosure is your call/i, reason: "blanket disclosure opt-out claim" },

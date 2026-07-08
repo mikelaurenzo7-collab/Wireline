@@ -107,7 +107,8 @@ export async function hasApprovedActivationAction(
         or(...approvalClauses),
       ),
     );
-  return Number(row?.count ?? 0) > 0;
+  const approved = Number(row?.count ?? 0) > 0;
+  return approved;
 }
 
 export async function getTenantActivationStatus(userId: string): Promise<TenantActivationStatus> {

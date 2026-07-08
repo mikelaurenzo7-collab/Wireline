@@ -117,12 +117,14 @@ export default function CampaignsPanel() {
   async function launchCampaign(id: string, campaignGoal?: string | null) {
     const playbook = parsePlaybookFromGoal(campaignGoal);
     const checklist = [
-      "Lead source and consent provenance are documented.",
-      "Calling windows and retry caps match your policy.",
-      "DNC suppression is active for this workspace.",
+      "I attest lead source and consent provenance are documented for this list.",
+      "Campaign call windows and retry caps match our policy (enforced at dial time).",
+      "I understand DNC / TCPA / federal DNC gates run on every dial attempt.",
     ];
     const confirmed = window.confirm(
-      `Launch compliance checklist:\n\n${checklist.map((line) => `• ${line}`).join("\n")}\n\n${
+      `Launch attestation (dialer still enforces DNC/TCPA/windows):\n\n${checklist
+        .map((line) => `• ${line}`)
+        .join("\n")}\n\n${
         playbook ? `Playbook: ${playbook}` : "No playbook tag on this campaign."
       }\n\nProceed with launch?`,
     );

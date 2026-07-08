@@ -1,8 +1,9 @@
 /**
- * Server-side product event emission — structured logs for analytics ingestion.
+ * Server-side product event emission — structured logs + durable audit trail.
  * Complements browser GTM events in product-event-client.ts.
  */
-import { log } from "./server-context";
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
 import {
   isProductEventName,
   makeProductEvent,
@@ -48,10 +49,43 @@ export function emitServerProductEvent(input: ServerProductEventInput): void {
     product_event: payload.event,
     product_event_version: PRODUCT_EVENT_VERSION,
     userId: input.userId,
+    agentId: input.agentId ?? null,
+    audience: payload.audience,
+    wedge: payload.wedge ?? null,
+    metadata: payload.metadata ?? {},
+    payload,
   });
+
+  // Durable persistence for analytics / activation funnels (best-effort).
+  void drizzle
+    .insert(schema.auditLog)
+    .values({
+      userId: input.userId,
+      action: payload.event,
+      eventType: "product.event",
+      severity: "info",
+      resourceType: "product_event",
+      resourceId: input.agentId ?? input.userId,
+      metadata: {
+        product_event_version: PRODUCT_EVENT_VERSION,
+        audience: payload.audience,
+        wedge: payload.wedge ?? null,
+        template_id: payload.templateId ?? null,
+        plan_id: payload.planId ?? null,
+        agent_id: input.agentId ?? null,
+        ...(payload.metadata || {}),
+        full_payload: payload,
+      },
+    })
+    .catch((err: unknown) => {
+      log.warn("product_event audit persist failed", {
+        event: payload.event,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
 }
 
-/** Emit at most once per user+event (activation milestones). */
+/** Emit at most once per user+event within this process (activation milestones). */
 export function emitServerProductEventOnce(input: ServerProductEventInput): boolean {
   const key = `${input.userId}:${input.event}:${input.agentId ?? ""}`;
   if (SERVER_EMIT_ONCE.has(key)) return false;

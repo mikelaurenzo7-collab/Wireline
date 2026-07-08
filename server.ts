@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./src/lib/load-env";
 import "express-async-errors";
 import express from "express";
 import type { Server } from "node:http";
