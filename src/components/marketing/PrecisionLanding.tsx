@@ -5,37 +5,36 @@ import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import TrustSignals from "./TrustSignals";
 import RoiCalculator from "./RoiCalculator";
-import { BUSINESS_MARKETING_VOICE, MARKETING_VOICE } from "../../lib/product-copy";
+import { BUSINESS_MARKETING_VOICE, MARKETING_VOICE, OUTBOUND_WEDGE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
-// ─── Live call card (hero illustration) ────────────────────────────────────
 function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
   const personal = {
     initial: "M",
-    name: "Mike's Agent",
-    role: "Personal assistant",
-    caller: "Unknown · (312) 555-0182",
+    name: "Mike's Negotiator",
+    role: "Outbound negotiation agent",
+    caller: "Outbound · Wireless provider",
     lines: [
-      { from: "caller", text: "Hi, is this Mike? I'm calling about your car warranty." },
-      { from: "agent", text: "Mike isn't available. Can I ask what this is regarding?" },
-      { from: "caller", text: "It's about an expiring warranty offer." },
-      { from: "agent", text: "Handled. I'll text Mike the summary now." },
+      { from: "agent", text: "Hi, I'm calling on behalf of Mike about his current plan and recent bill." },
+      { from: "caller", text: "I can take a look. What seems off?" },
+      { from: "agent", text: "The rate increased after promotion expiry. Can retention match the prior rate or apply a loyalty offer?" },
+      { from: "caller", text: "I can add a 12-month loyalty credit and remove the extra line fee." },
     ],
-    tags: ["Screened", "Message sent", "Caller logged"],
+    tags: ["Negotiated", "$28/mo saved", "Reference logged"],
   };
 
   const business = {
     initial: "W",
-    name: "Wireline — Revenue Desk",
-    role: "Business agent",
-    caller: "Inbound · Acme Cloud",
+    name: "Wireline — Outbound Desk",
+    role: "Outbound sales agent",
+    caller: "Outbound · Acme Cloud",
     lines: [
-      { from: "caller", text: "Can I talk to someone about pricing and implementation?" },
-      { from: "agent", text: "Absolutely. Are you evaluating this for sales, support, or operations?" },
-      { from: "caller", text: "Sales first, then support if it works." },
-      { from: "agent", text: "Got it. I'll qualify the fit, route the notes, and book the right handoff." },
+      { from: "agent", text: "Hi Jordan, this is Wireline. I saw your team is hiring SDRs and thought this might be timely." },
+      { from: "caller", text: "What is this about?" },
+      { from: "agent", text: "Outbound call agents that qualify lists, handle objections, book meetings, and log outcomes. Is outbound capacity a priority this quarter?" },
+      { from: "caller", text: "Yes. Send details and book something with our revenue ops lead." },
     ],
-    tags: ["Qualified", "Routed to sales", "Recap sent"],
+    tags: ["Qualified", "Meeting booked", "CRM updated"],
   };
 
   const data = variant === "personal" ? personal : business;
@@ -75,7 +74,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
               aria-hidden="true"
             />
             <span className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
-              Live
+              Dialing
             </span>
           </div>
         </div>
@@ -96,11 +95,11 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             ))}
           </div>
           <span className="ml-auto font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
-            Answering · transcribing
+            Calling · transcribing
           </span>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2" role="list" aria-label="Example call transcript">
+        <div className="mt-4 flex flex-col gap-2" role="list" aria-label="Example outbound call transcript">
           {data.lines.map((line, i) => (
             <div
               key={i}
@@ -129,12 +128,11 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
   );
 }
 
-// ─── Audience toggle ───────────────────────────────────────────────────────
 type Audience = "personal" | "business";
 
 const audiences: { key: Audience; label: string }[] = [
   { key: "personal", label: "Personal" },
-  { key: "business", label: "Business" },
+  { key: "business", label: "Outbound" },
 ];
 
 function getAudienceTabId(key: Audience) {
@@ -150,105 +148,102 @@ const HERO_AUDIENCE_COPY: Record<
   { cta: string; ctaPath: string; demo: string; note: string; stripLead: string; stripWin: string }
 > = {
   personal: {
-    cta: "Wire personal agent",
+    cta: "Wire negotiator",
     ctaPath: "/signup?plan=personal",
-    demo: "Hear a personal call",
-    note: "For unknown callers, appointments, errands, reminders, and side-hustle intake.",
-    stripLead: "Missed calls become missed context.",
-    stripWin: MARKETING_VOICE.differentiator,
+    demo: "Hear negotiation call",
+    note: "For bill negotiation, appointment booking, errands, follow-up, vendor calls, and personal admin.",
+    stripLead: "Personal admin still needs somebody to call.",
+    stripWin: "Wireline dials, waits, negotiates, confirms, and reports back.",
   },
   business: {
-    cta: "Wire business agent",
+    cta: "Wire outbound agent",
     ctaPath: "/signup?plan=business",
-    demo: "Hear a business call",
-    note: "For call centers, sales teams, front desks, support queues, agencies, and after-hours coverage.",
-    stripLead: BUSINESS_MARKETING_VOICE.beforeStrip,
+    demo: "Hear outbound call",
+    note: "For sales teams, marketing re-engagement, billing recovery, customer surveys, renewals, and appointment campaigns.",
+    stripLead: OUTBOUND_WEDGE.beforeStrip,
     stripWin: BUSINESS_MARKETING_VOICE.differentiator,
   },
 };
 
-const HERO_OUTCOMES = ["Answers live", "Routes handoff", "Texts recap"] as const;
+const HERO_OUTCOMES = ["Calls the list", "Handles objections", "Logs outcomes"] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
   (typeof STRIPE_PLANS)[number]
 >;
 
-// ─── What it does cards ────────────────────────────────────────────────────
 const PERSONAL_CONFIGS = [
   {
     icon: "◉",
-    name: "Gatekeeper",
-    body: "Screens unknowns, asks intent, patches through only when needed, and texts the recap.",
-    plan: "Personal · Day one",
+    name: "Bill Negotiator",
+    body: "Calls providers, escalates to retention, disputes charges, confirms new terms, and logs the reference number.",
+    plan: "Personal · Negotiation",
   },
   {
     icon: "◈",
-    name: "Scheduler",
-    body: "Books, reschedules, confirms, and waits on hold with the services you already call.",
-    plan: "Personal · Live outbound",
+    name: "Errand Caller",
+    body: "Books, confirms, reschedules, waits on hold, captures details, and reports the next step.",
+    plan: "Personal · Outbound admin",
   },
   {
     icon: "◫",
-    name: "Concierge",
-    body: "Turns a side hustle into a front desk: quotes, intake, follow-up, and handoff.",
-    plan: "Team · Drafting board",
+    name: "Follow-up Agent",
+    body: "Calls vendors, clinics, service desks, and offices until the answer is captured or the handoff is clear.",
+    plan: "Personal · Persistent follow-up",
   },
 ];
 
 const BUSINESS_CONFIGS = [
   {
     icon: "◉",
-    name: "Revenue Desk",
-    body: "Qualifies inbound demand, captures buying context, and routes hot opportunities to the right owner.",
-    plan: "Business · Sales + CRM",
+    name: "Sales SDR",
+    body: "Dials target accounts, opens cleanly, qualifies pain, handles objections, and books the meeting.",
+    plan: "Business · Sales outbound",
   },
   {
     icon: "◈",
-    name: "Support Queue",
-    body: "Answers common questions, verifies context, and escalates account-specific or urgent work cleanly.",
-    plan: "Business · Support workflows",
+    name: "Billing Recovery",
+    body: "Makes compliant reminder calls, offers approved payment paths, documents promises, and routes hardship cases.",
+    plan: "Business · Collections",
   },
   {
     icon: "◫",
-    name: "Call Center",
-    body: "Covers overflow, after-hours volume, campaign calls, and multi-line routing without losing the thread.",
-    plan: "Business · Full coverage",
+    name: "Re-engagement",
+    body: "Calls dormant customers, learns why they left, presents what changed, and books the right return path.",
+    plan: "Business · Marketing",
   },
 ];
 
-// ─── How it works steps ────────────────────────────────────────────────────
 const STEPS = [
   {
     num: "01",
-    title: "Create",
-    body: "Name the agent, pick the posture, and start from a personal or business playbook.",
+    title: "List",
+    body: "Upload or connect the people to call, with context, source, priority, and consent/compliance posture.",
   },
   {
     num: "02",
-    title: "Train",
-    body: "Feed the facts, scripts, policies, voice, limits, and handoff rules it must honor.",
+    title: "Script",
+    body: "Train the opener, objections, escalation rules, approved offers, compliance language, and success criteria.",
   },
   {
     num: "03",
-    title: "Wire",
-    body: "Attach the number, tools, routing, approvals, billing controls, and launch checks.",
+    title: "Dial",
+    body: "Wire the number, schedule the cadence, call live, wait through hold, and adapt to the conversation.",
   },
   {
     num: "04",
-    title: "Run",
-    body: "Review transcripts, coach weak spots, text outcomes, and keep the line improving.",
+    title: "Log",
+    body: "Write the outcome, update the CRM or workspace, send the recap, and queue the next attempt.",
   },
 ];
 
-// ─── Pricing ───────────────────────────────────────────────────────────────
 const PLANS = [
   {
     name: "Personal",
     sub: "For one person",
     price: "$0",
     period: "to create",
-    body: "Build and train one agent for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
+    body: "Build and train one agent for free. Live negotiation, errands, scheduling, and follow-up draw from prepaid Conversation Balance.",
     features: planCatalog.personal.features,
     cta: "Start with Personal",
     ctaPath: "/signup?plan=personal",
@@ -256,10 +251,10 @@ const PLANS = [
   },
   {
     name: "Team",
-    sub: "For a small team",
+    sub: "For one outbound lane",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: "Several agents, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
+    body: "Shared outbound capacity for a focused list: sales, reminders, reactivation, surveys, or collections.",
     features: planCatalog.team.features,
     cta: "Start Team",
     ctaPath: "/signup?plan=team",
@@ -268,10 +263,10 @@ const PLANS = [
   },
   {
     name: "Business",
-    sub: "Best operating tier",
+    sub: "For outbound operations",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: "The serious business tier: more agents, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
+    body: "Multiple agents, numbers, CRM sync, analytics, roles, approvals, and campaign oversight across outbound lanes.",
     features: planCatalog.business.features,
     cta: "Start Business",
     ctaPath: "/signup?plan=business",
@@ -279,7 +274,6 @@ const PLANS = [
   },
 ];
 
-// ─── Main component ────────────────────────────────────────────────────────
 export default function PrecisionLanding() {
   const [audience, setAudience] = useState<Audience>("business");
   const configs = audience === "personal" ? PERSONAL_CONFIGS : BUSINESS_CONFIGS;
@@ -355,21 +349,21 @@ export default function PrecisionLanding() {
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
                 <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
                 <span className="wl-eyebrow wl-eyebrow--no-rule text-muted-foreground">
-                  {audience === "business"
-                    ? BUSINESS_MARKETING_VOICE.eyebrow
-                    : MARKETING_VOICE.eyebrow}
+                  {audience === "business" ? OUTBOUND_WEDGE.eyebrow : MARKETING_VOICE.eyebrow}
                 </span>
               </div>
 
               <h1
                 id="wireline-hero-title"
-                aria-label={MARKETING_VOICE.headline}
+                aria-label={OUTBOUND_WEDGE.headline}
                 className="wl-display-1 max-w-[10ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.84] tracking-[-.07em] sm:max-w-[9ch] lg:max-w-[10ch]"
               >
-                WIRE YOUR <span className="text-primary">AGENT</span>
+                OUTBOUND <span className="text-primary">AGENTS</span>
               </h1>
 
-              <p className="wl-lead mt-6 max-w-[42rem]">{MARKETING_VOICE.subline}</p>
+              <p className="wl-lead mt-6 max-w-[42rem]">
+                {audience === "business" ? OUTBOUND_WEDGE.subline : MARKETING_VOICE.subline}
+              </p>
 
               <p
                 id="wireline-audience-note"
@@ -380,9 +374,9 @@ export default function PrecisionLanding() {
 
               <ol
                 className="mt-6 grid max-w-[32rem] grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-card"
-                aria-label="Wireline product loop"
+                aria-label="Wireline outbound loop"
               >
-                {MARKETING_VOICE.proof.map((item, index) => (
+                {OUTBOUND_WEDGE.loop.map((item, index) => (
                   <li
                     key={item}
                     className="border-r border-border px-2 py-3 text-center last:border-r-0"
@@ -451,7 +445,7 @@ export default function PrecisionLanding() {
               fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
             }}
           >
-            {heroCopy.stripLead} {" "}
+            {heroCopy.stripLead}{" "}
             <span className="text-[var(--wireline-color-text-primary)]">{heroCopy.stripWin}</span>
           </p>
         </div>
@@ -460,15 +454,15 @@ export default function PrecisionLanding() {
           <div className="wl-public-rail">
             <div className="mb-12">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">
-                Agent playbooks · {audience === "personal" ? "personal" : "business"}
+                Outbound playbooks · {audience === "personal" ? "personal" : "business"}
               </p>
               <h2 className="wl-display-2 mt-4">
-                {audience === "personal" ? "Configure it for real life." : "Built for real call volume."}
+                {audience === "personal" ? "Delegate the calls you avoid." : "Built for outbound volume."}
               </h2>
               <p className="mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
                 {audience === "personal"
-                  ? "One agent. Your rules. Personal errands, unknown callers, appointments, and side-hustle intake all run from the same playbook."
-                  : "From solo operators to multi-location teams, Wireline agents keep the phones moving while your team handles the work."}
+                  ? "The personal wedge is still outbound: negotiate bills, book appointments, chase answers, and report back with proof."
+                  : "The business wedge is outbound outcomes: qualify, collect, reactivate, survey, renew, schedule, and update the system of record."}
               </p>
             </div>
 
@@ -496,8 +490,8 @@ export default function PrecisionLanding() {
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">Create. Train. Wire. Run.</h2>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">How outbound runs</p>
+              <h2 className="wl-display-2 mt-4">List. Script. Dial. Log.</h2>
             </div>
 
             <div className="grid overflow-hidden rounded-[16px] border border-border sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -525,11 +519,11 @@ export default function PrecisionLanding() {
             <div className="mb-12 text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
               <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
-                Start wiring. Scale the line.
+                Start outbound. Scale the lane.
               </h2>
               <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
-                Create for free, fund live work with Conversation Balance, then move into Team or
-                Business capacity when Wireline becomes an operating lane.
+                Create for free, fund live calls with Conversation Balance, then move into Team or
+                Business capacity when outbound becomes an operating lane.
               </p>
             </div>
 
@@ -622,22 +616,22 @@ export default function PrecisionLanding() {
                 <h2 className="wl-display-2 mx-auto max-w-[18ch]">
                   {audience === "business" ? (
                     <>
-                      Stop missing demand.
+                      Stop staring at lists.
                       <br />
-                      Start routing it.
+                      Start completing calls.
                     </>
                   ) : (
                     <>
-                      Stop ignoring calls.
+                      Stop making the call.
                       <br />
-                      Start delegating them.
+                      Start getting the outcome.
                     </>
                   )}
                 </h2>
                 <p className="mx-auto mt-4 max-w-[460px] text-[16px] marketing-ink-panel__soft">
                   {audience === "business"
-                    ? "Stand up a trained business agent for sales, support, scheduling, or overflow. Fund live calls with Conversation Balance."
-                    : "Create first. Train the call. Fund live work when the line is ready."}
+                    ? "Stand up a trained outbound agent for sales, collections, reactivation, surveys, renewals, scheduling, or follow-up."
+                    : "Create first. Train the call. Fund live outbound work when the agent is ready."}
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
