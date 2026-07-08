@@ -15,9 +15,10 @@ import { buildOAuthClient } from "./oauth-helpers";
 import { decryptSecret } from "./secret-vault";
 import { cachedInsight, setCachedInsight } from "./insights-cache";
 import { BRAND } from "../constants/brand-colors";
+import { localDateKey } from "./date-display";
 
 export async function computeDailyBrief(userId: string, opts?: { force?: boolean }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey(new Date());
   const cacheKey = `brief:${userId}:${today}`;
   if (!opts?.force) {
     const cached = cachedInsight(cacheKey);
@@ -393,7 +394,7 @@ export async function sendDailyBriefEmail(userId: string, opts?: { force?: boole
 
   // Compute the brief (uses the per-day cache) — may throw CLAUDE_OFFLINE.
   const { payload } = await computeDailyBrief(userId, { force: opts?.force === true });
-  const dateLabel = new Date().toISOString().slice(0, 10);
+  const dateLabel = localDateKey(new Date());
   const { subject, html, text } = renderDailyBriefEmail(payload, {
     dateLabel,
     appUrl: process.env.APP_URL,

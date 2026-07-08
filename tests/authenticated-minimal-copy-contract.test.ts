@@ -9,11 +9,19 @@ const AUTHENTICATED_PAGE_INTROS = [
   "src/pages/ClientAppsPage.tsx",
   "src/pages/EmailPage.tsx",
   "src/pages/TemplatesPage.tsx",
-  "src/pages/ConnectionsPage.tsx",
   "src/pages/KnowledgePage.tsx",
 ] as const;
 
 describe("authenticated minimal copy contract", () => {
+  it("keeps Wire page chrome in the integration map instead of a duplicate page intro", () => {
+    const connectionsPage = read("src/pages/ConnectionsPage.tsx");
+    const map = read("src/components/integrations/IntegrationOperatingMap.tsx");
+    expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
+    expect(connectionsPage).not.toContain("WorkspacePageIntro");
+    expect(map).toMatch(/wl-eyebrow[\s\S]*Wire/);
+    expect(map).toMatch(/Integration map/);
+  });
+
   it("keeps workspace page intros title-only", () => {
     const intro = read("src/components/layout/WorkspacePageFrame.tsx");
     expect(intro).not.toContain("description?:");
@@ -57,9 +65,7 @@ describe("authenticated minimal copy contract", () => {
     expect(read("src/components/insights/HeatmapView.tsx")).toContain("heatmap");
     expect(read("src/server/register-api-routes.ts")).toContain("app.use(insightsRouter)");
     expect(read("src/server/register-api-routes.ts")).toContain("app.use(pipelineRouter)");
-    expect(read("src/routes/voice-observability-routes.ts")).toContain(
-      '"/api/insights/latency"',
-    );
+    expect(read("src/routes/voice-observability-routes.ts")).toContain('"/api/insights/latency"');
     expect(read("src/routes/qa-routes-v2.ts")).toContain('router.get("/stats"');
   });
 

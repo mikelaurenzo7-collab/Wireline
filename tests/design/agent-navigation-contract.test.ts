@@ -96,7 +96,13 @@ describe("agent navigation contract", () => {
 
   it("keeps Wire as the customer-facing wiring surface while preserving routes", () => {
     expect(workspaceShell).toMatch(/href: "\/connections", label: "Wire"/);
-    expect(connectionsPage).toMatch(/WorkspacePageIntro title="Wire"/);
+    expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
+    expect(read("src/components/integrations/IntegrationOperatingMap.tsx")).toMatch(
+      /wl-eyebrow[\s\S]*Wire/,
+    );
+    expect(read("src/components/integrations/IntegrationOperatingMap.tsx")).toMatch(
+      /Integration map/,
+    );
     expect(read("src/constants/navigation.ts")).toMatch(
       /label: "Wire"[\s\S]*path: "\/connections"/,
     );
