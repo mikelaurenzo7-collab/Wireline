@@ -15,6 +15,7 @@ import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators"
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { executeAction } from "../lib/action-engine";
+import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -410,6 +411,31 @@ router.post(
           .set({ status: "completed", resolutionNotes: "Approved and executed by Account Holder" })
           .where(eq(schema.followUpTasks.id, taskId));
         touchNavCounts(userId);
+
+        emitServerProductEventOnce({
+          event: "first_next_action_approved",
+          userId,
+          agentId: task.agentId ?? undefined,
+          metadata: {
+            task_id: taskId,
+            task_type: task.taskType,
+          },
+        });
+
+        const taskType = (task.taskType || "").toLowerCase();
+        if (
+          taskType.includes("calendar") ||
+          taskType.includes("book") ||
+          taskType.includes("meeting")
+        ) {
+          emitServerProductEventOnce({
+            event: "first_meeting_booked",
+            userId,
+            agentId: task.agentId ?? undefined,
+            metadata: { task_id: taskId },
+          });
+        }
+
         res.json({ success: true });
       } else {
         res.status(500).json({

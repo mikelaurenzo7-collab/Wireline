@@ -182,6 +182,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       void runPostCallDigest({
         userId,
         callLogId: insertedCallLogId,
+        agentId: webhookAgentId || null,
         dialedNumber: call?.phoneNumber?.number || call?.phoneNumber || null,
         customerNumber: call?.customer?.number || null,
         customerName: call?.customer?.name || null,

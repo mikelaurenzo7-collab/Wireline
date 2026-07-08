@@ -3,7 +3,7 @@ import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { tcpaRateLimit } from "../middleware/api-rate-limits";
 import {
@@ -19,6 +19,7 @@ import {
 import { normalizeDncPhone } from "../lib/compliance";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
+import { isFederalDncVendorConfigured } from "../lib/federal-dnc-service";
 
 const router = Router();
 
@@ -218,6 +219,102 @@ router.get(
       if (err instanceof AppError) throw err; // preserve the 400 missing-phone above
       log.error("GET /api/tcpa/consent-check failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Consent check failed");
+    }
+  },
+);
+
+// ==========================================
+// COMPLIANCE CENTER
+// ==========================================
+
+router.get(
+  "/api/compliance/center",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [dncCountRow, consentCountRow, recentConsent] = await Promise.all([
+        drizzle
+          .select({ count: sql<number>`count(*)::int` })
+          .from(schema.dncList)
+          .where(eq(schema.dncList.userId, req.user.id)),
+        drizzle
+          .select({ count: sql<number>`count(*)::int` })
+          .from(schema.consentLog)
+          .where(eq(schema.consentLog.userId, req.user.id)),
+        drizzle
+          .select({
+            id: schema.consentLog.id,
+            event: schema.consentLog.event,
+            customerNumber: schema.consentLog.customerNumber,
+            callId: schema.consentLog.callId,
+            state: schema.consentLog.state,
+            createdAt: schema.consentLog.createdAt,
+          })
+          .from(schema.consentLog)
+          .where(eq(schema.consentLog.userId, req.user.id))
+          .orderBy(desc(schema.consentLog.createdAt))
+          .limit(25),
+      ]);
+
+      res.json({
+        federal_dnc_configured: isFederalDncVendorConfigured(),
+        dnc_entry_count: Number(dncCountRow[0]?.count ?? 0),
+        consent_event_count: Number(consentCountRow[0]?.count ?? 0),
+        consent_rule_version: CONSENT_RULE_VERSION,
+        recent_consent_events: (recentConsent || []).map((row) => ({
+          id: row.id?.toString(),
+          event: row.event,
+          customer_number: row.customerNumber,
+          call_id: row.callId,
+          state: row.state,
+          created_at: row.createdAt,
+        })),
+        audit_export_path: "/api/account/export",
+        trust_pack_path: "/trust",
+      });
+    } catch (e: any) {
+      log.error("Compliance center summary failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to load compliance center.");
+    }
+  },
+);
+
+router.get(
+  "/api/compliance/consent-log",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const rows = await drizzle
+        .select({
+          id: schema.consentLog.id,
+          event: schema.consentLog.event,
+          customerNumber: schema.consentLog.customerNumber,
+          callId: schema.consentLog.callId,
+          rule: schema.consentLog.rule,
+          state: schema.consentLog.state,
+          metadata: schema.consentLog.metadata,
+          createdAt: schema.consentLog.createdAt,
+        })
+        .from(schema.consentLog)
+        .where(eq(schema.consentLog.userId, req.user.id))
+        .orderBy(desc(schema.consentLog.createdAt))
+        .limit(100);
+
+      res.json({
+        entries: (rows || []).map((row) => ({
+          id: row.id?.toString(),
+          event: row.event,
+          customer_number: row.customerNumber,
+          call_id: row.callId,
+          rule: row.rule,
+          state: row.state,
+          metadata: row.metadata,
+          created_at: row.createdAt,
+        })),
+      });
+    } catch (e: any) {
+      log.error("Consent log fetch failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to fetch consent log.");
     }
   },
 );

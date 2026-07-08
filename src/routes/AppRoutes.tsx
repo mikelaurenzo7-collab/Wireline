@@ -16,11 +16,12 @@ const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrat
 const PhonePage = lazy(() => import("../pages/PhonePage"));
 const InsightsPage = lazy(() => import("../pages/InsightsPage"));
 const EmailPage = lazy(() => import("../pages/EmailPage"));
+const ApprovalsPage = lazy(() => import("../pages/ApprovalsPage"));
 const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
-const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
+const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"));
 
 const loading = <RouteFallback />;
 
@@ -64,6 +65,7 @@ export default function AppRoutes() {
         <Route path="/phone" element={<PhonePage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
+        <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/apps" element={<ClientAppsPage />} />
 
         <Route path="/settings" element={<SettingsPage />} />
@@ -71,6 +73,7 @@ export default function AppRoutes() {
         <Route path="/settings/phone" element={<PhoneSettings />} />
         <Route path="/settings/team" element={<TeamSettings />} />
         <Route path="/settings/customization" element={<CustomizationSettings />} />
+        <Route path="/settings/compliance" element={<ComplianceCenterPage />} />
         <Route path="/settings/apps" element={<ClientAppsPage />} />
         <Route path="/settings/*" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminWorkspace />} />

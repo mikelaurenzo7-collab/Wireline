@@ -20,6 +20,7 @@ import {
 } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { SentryEvents } from "../lib/sentry-events";
+import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { validate } from "../middleware/input-validation";
 import { z } from "zod";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -248,6 +249,23 @@ router.post(
         agent_id: agentId,
       });
 
+      emitServerProductEventOnce({
+        event: "lead_source_added",
+        userId: req.user.id,
+        agentId,
+        audience: "sales",
+        metadata: { source: "manual_dial", call_purpose: callPurpose },
+      });
+      if (consentSource) {
+        emitServerProductEventOnce({
+          event: "consent_source_captured",
+          userId: req.user.id,
+          agentId,
+          audience: "sales",
+          metadata: { consent_source: consentSource, consent_lead_id: consentLeadId ?? null },
+        });
+      }
+
       res.json({ success: true, callId: result.callId });
     } catch (error: any) {
       log.error("Outbound call failed", { error: getErrorMessage(error) });
@@ -363,6 +381,27 @@ router.post(
           lead_count: insertedLeads.length,
           agent_id: agent?.id || "unknown",
         });
+
+        emitServerProductEventOnce({
+          event: "lead_source_added",
+          userId: req.user.id,
+          agentId: agent?.id,
+          audience: "sales",
+          metadata: {
+            source: "bulk_import",
+            lead_count: insertedLeads.length,
+            campaign_id: campaign_id ?? null,
+          },
+        });
+        if (has_express_written_consent) {
+          emitServerProductEventOnce({
+            event: "consent_source_captured",
+            userId: req.user.id,
+            agentId: agent?.id,
+            audience: "sales",
+            metadata: { consent_source: "lead_import", campaign_id: campaign_id ?? null },
+          });
+        }
       }
 
       res.json({ success: true, inserted: insertedLeads.length });

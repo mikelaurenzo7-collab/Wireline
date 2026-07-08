@@ -3,6 +3,7 @@ import { ArrowRight, BarChart3, Bot, Cable, Clock3, Phone, Sparkles } from "luci
 import { Link } from "react-router-dom";
 
 import ActivationChecklist from "../components/ActivationChecklist";
+import OutcomeLedger from "../components/OutcomeLedger";
 import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -385,6 +386,18 @@ export default function OverviewPage() {
         </section>
 
         <ActivationChecklist className="mb-2" />
+
+        <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Outcome ledger">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              Outcome ledger
+            </p>
+            <Link to="/approvals" className="text-xs font-semibold text-primary hover:underline">
+              Approvals →
+            </Link>
+          </div>
+          <OutcomeLedger limit={5} showViewAll />
+        </section>
 
         <WidgetBoundary label="Daily brief">
           <Suspense fallback={<RouteFallback />}>

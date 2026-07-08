@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
+  CheckSquare,
   Bot,
   BarChart3,
   GraduationCap,
@@ -33,6 +34,7 @@ const WORKSPACE_NAV: NavItem[] = [
 
 const OPERATE_NAV: NavItem[] = [
   { href: "/phone", label: "Phone", icon: Phone },
+  { href: "/approvals", label: "Approvals", icon: CheckSquare },
   { href: "/insights", label: "Insights", icon: BarChart3 },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/apps", label: "Apps", icon: LayoutGrid },
@@ -44,6 +46,7 @@ const MOBILE_NAV: NavItem[] = [
   { href: "/studio", label: "Studio", icon: Bot },
   { href: "/knowledge", label: "Training", shortLabel: "Train", icon: GraduationCap },
   { href: "/phone", label: "Phone", icon: Phone },
+  { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
   { href: "/connections", label: "Wire", icon: Workflow },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -127,7 +130,9 @@ function MobileRailLink({ item, pathname }: { item: NavItem; pathname: string })
       className={`grid min-h-[48px] min-w-0 flex-1 place-items-center gap-1 rounded-xl px-0.5 py-1.5 text-[9px] font-semibold leading-none transition-colors sm:px-1 sm:text-[10px] ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"}`}
     >
       <Icon size={16} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
-      <span className="block max-w-full truncate leading-none">{item.shortLabel ?? item.label}</span>
+      <span className="block max-w-full truncate leading-none">
+        {item.shortLabel ?? item.label}
+      </span>
     </Link>
   );
 }

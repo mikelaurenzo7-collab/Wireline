@@ -143,7 +143,9 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Train",
       title: "Review what your agent learned",
       detail:
-        "Your opening brief is already in Training. Add a site, document, or policy before you go live.",
+        "Sales is the recommended first wedge — speed-to-lead, quote follow-up, and governed warm follow-up. Your opening brief is already in Training. Add a site, document, or policy before you go live.",
+      salesHint:
+        "Recommended first path: train a sales agent for speed-to-lead and approved follow-up queues.",
       primary: "Open Training",
       secondary: "Looks good — continue",
     },

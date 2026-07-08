@@ -87,7 +87,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will customers know they're talking to an AI?",
-        a: 'Only if you choose to disclose. Wireline agents introduce themselves with your business name and the persona you configure. Most home services tenants run them as a named receptionist. For example "Sarah from Premier HVAC". Disclosure is your call. TCPA compliance is logged either way.',
+        a: 'Wireline agents are configured around your disclosure policy and jurisdiction rules. Most home services tenants run them as a named receptionist — for example "Sarah from Premier HVAC" — with your business name. When disclosure is required or enabled, it is logged automatically. TCPA compliance is logged either way.',
       },
       {
         q: "What happens if the agent doesn't know the answer?",
@@ -465,23 +465,23 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   sales: {
     slug: "sales",
-    metaTitle: "Wireline for Sales Teams — AI SDR for Outbound + Inbound Lead Qualification",
+    metaTitle: "Wireline for Sales Teams — Revenue Recovery Phone Agents",
     metaDescription:
-      "AI voice + email SDR for sales teams. Run outbound campaigns, qualify inbound leads, book meetings, and sync CRM activity.",
-    eyebrow: "For Sales + SDR Teams",
-    headline: "Your AI SDR works the list while your reps work the calls.",
+      "Compliance-first phone agents for sales teams. Speed-to-lead, quote follow-up, warm reactivation, and governed outbound queues with approved CRM actions.",
+    eyebrow: "For Sales Teams",
+    headline: "Your sales agent works the queue while your team works the deals.",
     subhead:
-      "An AI agent that calls 200 cold leads a day, qualifies the ones that pick up, and drops booked discovery calls straight into your reps' calendars — without the SDR-team payroll.",
+      "Calls new leads fast, qualifies cleanly, books meetings, and logs every outcome — from speed-to-lead and missed-call recovery to governed warm follow-up from approved lead lists.",
     pains: [
       {
         icon: Phone,
-        title: "Outbound calling at scale",
-        body: "Hand it a list of 1,000 prospects + your qualifier script. Agent dials, navigates gatekeepers, runs the BANT (budget/authority/need/timeline) qualifier, books the next-step meeting. Reps walk into qualified discovery calls.",
+        title: "Governed outbound follow-up",
+        body: "Work approved lead queues with consent provenance, calling windows, and retry caps. Agent dials, navigates gatekeepers, runs your qualifier script, books the next-step meeting, and logs every outcome for review.",
       },
       {
         icon: Clock,
         title: "Speed-to-lead under 60 seconds",
-        body: "Inbound demo request hits your form at 10:47pm. Agent calls at 10:47:30pm. Qualifies the lead, books the discovery call for your AE the next morning. Lead-to-conversation rate jumps 4-7x vs the next-day callback.",
+        body: "Inbound demo request hits your form at 10:47pm. Agent calls within seconds. Qualifies the lead, books the discovery call for your AE the next morning. Faster response beats next-day callbacks on high-intent leads.",
       },
       {
         icon: Calendar,
@@ -495,17 +495,17 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week — got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
-    statValue: "200 / day",
+    statValue: "< 60s",
     statLabel:
-      "Calls one AI agent can make in a 9-hour workday. Run 5 in parallel = 1,000 dials. No bathroom breaks, no Mondays.",
+      "Target speed-to-lead on inbound form and demo requests. Governed queues handle warm follow-up with consent, caps, and full audit trail.",
     primaryCta: { label: "Create sales agent", href: signupHrefForWedge("sales") },
     secondaryCta: { label: "Call outbound sales demo", href: "tel:+14692571581" },
     trustLine:
-      "Integrates with Salesforce, HubSpot, and Apollo. Outbound list management + CRM activity logging out of the box.",
+      "Connects to HubSpot and Salesforce. Approved actions sync to your connected CRM. Apollo enrichment available in beta.",
     faqs: [
       {
         q: "Won't prospects know it's AI?",
-        a: "Some will, some won't — the new generation of voice models pass naturally as human in 80%+ of calls. The bigger question: do prospects mind? Our data says no, as long as the conversation provides value. Agents are configured to gracefully confirm if asked directly.",
+        a: "Wireline agents are configured around your disclosure policy, consent rules, and call purpose. When disclosure is required or enabled, it is logged automatically. The goal is not to trick prospects — it is to reach them quickly, qualify clearly, and move real opportunities forward.",
       },
       {
         q: "How does it handle gatekeepers?",
@@ -513,7 +513,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What about CRM logging?",
-        a: "Every call gets logged to your CRM in real time: contact, outcome (qualified / not qualified / no-answer / call-back), full transcript, recording link, BANT scores, next-step booked. Works with Salesforce and HubSpot today; Apollo for enrichment. Custom CRMs via webhook.",
+        a: "Approved actions sync to your connected CRM: contact, outcome (qualified / not qualified / no-answer / call-back), transcript, recording link, and next-step booked. HubSpot and Salesforce are supported today; Apollo for enrichment is in beta. Custom CRMs via webhook.",
       },
       {
         q: "How is this different from Apollo / Outreach AI features?",

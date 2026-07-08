@@ -4,6 +4,7 @@ import {
   PRODUCT_EVENT_AUDIENCES,
   PRODUCT_EVENT_NAMES,
   PRODUCT_EVENT_SURFACES,
+  SALES_FUNNEL_EVENT_NAMES,
   isProductEventAudience,
   isProductEventName,
   isProductEventSurface,
@@ -33,6 +34,23 @@ describe("product event taxonomy", () => {
       "outcome_reviewed",
       "upgrade_to_paid",
     ]);
+  });
+
+  it("defines the sales wedge funnel spine", () => {
+    expect(SALES_FUNNEL_EVENT_NAMES).toEqual([
+      "sales_agent_created",
+      "lead_source_added",
+      "consent_source_captured",
+      "test_call_completed",
+      "number_wired",
+      "phone_channel_wired",
+      "first_sales_call_completed",
+      "first_next_action_approved",
+      "first_meeting_booked",
+    ]);
+    for (const name of SALES_FUNNEL_EVENT_NAMES) {
+      expect(PRODUCT_EVENT_NAMES).toContain(name);
+    }
   });
 
   it("covers the current audience and surface model", () => {

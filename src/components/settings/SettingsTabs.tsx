@@ -8,6 +8,7 @@ const settingsTabs = [
   { id: "phone", href: "/settings/phone", label: "Phone" },
   { id: "team", href: "/settings/team", label: "Team" },
   { id: "customization", href: "/settings/customization", label: "Branding" },
+  { id: "compliance", href: "/settings/compliance", label: "Compliance" },
 ] as const;
 
 function isActive(pathname: string, href: string) {

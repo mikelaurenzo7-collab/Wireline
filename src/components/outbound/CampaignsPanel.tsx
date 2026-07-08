@@ -10,6 +10,12 @@ import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { cn } from "../../lib/utils";
+import {
+  SALES_PLAYBOOKS,
+  playbookGoalTag,
+  parsePlaybookFromGoal,
+  type SalesPlaybookId,
+} from "../../lib/sales-playbooks";
 
 type Campaign = {
   id: string;
@@ -45,6 +51,7 @@ export default function CampaignsPanel() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
+  const [playbookId, setPlaybookId] = useState<SalesPlaybookId>("speed-to-lead");
   const [agentId, setAgentId] = useState("");
   const [creating, setCreating] = useState(false);
 
@@ -85,7 +92,7 @@ export default function CampaignsPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          goal: goal.trim() || undefined,
+          goal: playbookGoalTag(playbookId),
           agent_id: agentId || undefined,
         }),
       });
@@ -97,6 +104,7 @@ export default function CampaignsPanel() {
       setShowCreate(false);
       setName("");
       setGoal("");
+      setPlaybookId("speed-to-lead");
       setAgentId("");
       await load();
     } catch (e) {
@@ -106,15 +114,34 @@ export default function CampaignsPanel() {
     }
   }
 
-  async function launchCampaign(id: string) {
+  async function launchCampaign(id: string, campaignGoal?: string | null) {
+    const playbook = parsePlaybookFromGoal(campaignGoal);
+    const checklist = [
+      "Lead source and consent provenance are documented.",
+      "Calling windows and retry caps match your policy.",
+      "DNC suppression is active for this workspace.",
+    ];
+    const confirmed = window.confirm(
+      `Launch compliance checklist:\n\n${checklist.map((line) => `• ${line}`).join("\n")}\n\n${
+        playbook ? `Playbook: ${playbook}` : "No playbook tag on this campaign."
+      }\n\nProceed with launch?`,
+    );
+    if (!confirmed) return;
     setBusyId(id);
     try {
-      const res = await authFetch(`/api/campaigns/${id}/launch`, { method: "POST" });
-      if (!res.ok) throw new Error("Launch failed");
+      const res = await authFetch(`/api/campaigns/${id}/launch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ launch_approval_confirmed: true }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Launch failed");
+      }
       toast.success("Campaign launched");
       await load();
-    } catch {
-      toast.error("Couldn't launch campaign");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't launch campaign");
     } finally {
       setBusyId(null);
     }
@@ -194,8 +221,26 @@ export default function CampaignsPanel() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          <Select
+            value={playbookId}
+            onValueChange={(value) => setPlaybookId(value as SalesPlaybookId)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sales playbook" />
+            </SelectTrigger>
+            <SelectContent>
+              {SALES_PLAYBOOKS.map((playbook) => (
+                <SelectItem key={playbook.id} value={playbook.id}>
+                  {playbook.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {SALES_PLAYBOOKS.find((playbook) => playbook.id === playbookId)?.objective}
+          </p>
           <Input
-            placeholder="Goal (optional)"
+            placeholder="Notes (optional)"
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
           />
@@ -264,7 +309,7 @@ export default function CampaignsPanel() {
                       size="sm"
                       variant="secondary"
                       disabled={busyId === c.id}
-                      onClick={() => void launchCampaign(c.id)}
+                      onClick={() => void launchCampaign(c.id, c.goal)}
                     >
                       {busyId === c.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

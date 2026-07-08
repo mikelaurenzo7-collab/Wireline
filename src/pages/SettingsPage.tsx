@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -172,6 +172,22 @@ export default function SettingsPage() {
                 <ShieldCheck size={15} />
               </span>
               <span className="wl-data-row__main">
+                <span className="wl-data-row__title">Compliance Center</span>
+                <span className="wl-data-row__detail">
+                  DNC, consent ledger, federal scrub status, and audit export
+                </span>
+              </span>
+              <span className="wl-data-row__trailing">
+                <Button asChild variant="secondary" size="sm">
+                  <Link to="/settings/compliance">Open</Link>
+                </Button>
+              </span>
+            </div>
+            <div className="wl-data-row wl-data-row--framed">
+              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+                <ShieldCheck size={15} />
+              </span>
+              <span className="wl-data-row__main">
                 <span className="wl-data-row__title">Password</span>
                 <span className="wl-data-row__detail">
                   {resetState === "sent" ? "Reset email sent" : "Send a secure reset email"}
@@ -185,11 +201,7 @@ export default function SettingsPage() {
                   disabled={resetState !== "idle"}
                   onClick={() => void requestPasswordReset()}
                 >
-                  {resetState === "sending"
-                    ? "Sending…"
-                    : resetState === "sent"
-                      ? "Sent"
-                      : "Reset"}
+                  {resetState === "sending" ? "Sending…" : resetState === "sent" ? "Sent" : "Reset"}
                 </Button>
               </span>
             </div>

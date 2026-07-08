@@ -2,8 +2,10 @@
  * Tenant activation — north-star metric: time from signup to first live,
  * useful production conversation (not wizard completion or browser test).
  */
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, gte, isNull, or, sql } from "drizzle-orm";
+import { isSalesAgentRole } from "./sales-integration-policy";
 import { drizzle, log } from "./server-context";
+import { emitServerProductEventOnce } from "./product-event-server";
 import * as schema from "../db/schema";
 import { classifyCallOutcome, type CallOutcomeTag } from "./post-call-digest";
 
@@ -31,6 +33,7 @@ export type ActivationCallInput = {
   intentLabel?: string | null;
   endedReason?: string | null;
   outcomeTag?: string | null;
+  agentId?: string | null;
 };
 
 export type TenantActivationStatus = {
@@ -40,6 +43,8 @@ export type TenantActivationStatus = {
   activationChannel: ActivationChannel | null;
   firstActivationCallId: string | null;
   signupAt: string | null;
+  /** Phase B north-star: first useful call plus at least one approved next action. */
+  activationWithApprovedAction: boolean;
 };
 
 /** Phone traffic only — excludes Vapi web/simulator sessions. */
@@ -78,6 +83,33 @@ export function isUsefulProductionCall(input: ActivationCallInput): boolean {
   return transcriptLen >= ACTIVATION_MIN_TRANSCRIPT_CHARS && duration >= 45;
 }
 
+export async function hasApprovedActivationAction(
+  userId: string,
+  activatedAt: Date,
+  firstActivationCallId?: string | null,
+): Promise<boolean> {
+  const approvalClauses = [
+    sql`${schema.followUpTasks.resolutionNotes} ILIKE '%Approved%'`,
+    eq(schema.followUpTasks.sourceType, "call_log"),
+  ];
+  if (firstActivationCallId) {
+    approvalClauses.push(eq(schema.followUpTasks.sourceId, firstActivationCallId));
+  }
+
+  const [row] = await drizzle
+    .select({ count: sql<number>`count(*)::int` })
+    .from(schema.followUpTasks)
+    .where(
+      and(
+        eq(schema.followUpTasks.userId, userId),
+        eq(schema.followUpTasks.status, "completed"),
+        gte(schema.followUpTasks.createdAt, activatedAt),
+        or(...approvalClauses),
+      ),
+    );
+  return Number(row?.count ?? 0) > 0;
+}
+
 export async function getTenantActivationStatus(userId: string): Promise<TenantActivationStatus> {
   const [row] = await drizzle
     .select({
@@ -105,8 +137,18 @@ export async function getTenantActivationStatus(userId: string): Promise<TenantA
       activationChannel: null,
       firstActivationCallId: null,
       signupAt: user?.signupAt?.toISOString() ?? null,
+      activationWithApprovedAction: false,
     };
   }
+
+  const activationWithApprovedAction =
+    row.activatedAt != null
+      ? await hasApprovedActivationAction(
+          userId,
+          row.activatedAt,
+          row.firstActivationCallId?.toString() ?? null,
+        )
+      : false;
 
   return {
     activated: row.activatedAt != null,
@@ -115,6 +157,7 @@ export async function getTenantActivationStatus(userId: string): Promise<TenantA
     activationChannel: (row.activationChannel as ActivationChannel | null) ?? null,
     firstActivationCallId: row.firstActivationCallId?.toString() ?? null,
     signupAt: row.signupAt?.toISOString() ?? null,
+    activationWithApprovedAction,
   };
 }
 
@@ -174,6 +217,39 @@ export async function maybeRecordTenantActivation(args: {
       timeToActivationSeconds,
       channel,
     });
+
+    emitServerProductEventOnce({
+      event: "tenant_activated",
+      userId: args.userId,
+      metadata: {
+        call_log_id: args.callLogId.toString(),
+        time_to_activation_seconds: timeToActivationSeconds,
+        activation_channel: channel,
+      },
+    });
+
+    let emitSalesCallEvent = false;
+    if (args.call.agentId) {
+      const [agent] = await drizzle
+        .select({ role: schema.agents.role })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, args.call.agentId), eq(schema.agents.userId, args.userId)))
+        .limit(1);
+      emitSalesCallEvent = isSalesAgentRole(agent?.role);
+    }
+
+    if (emitSalesCallEvent) {
+      emitServerProductEventOnce({
+        event: "first_sales_call_completed",
+        userId: args.userId,
+        audience: "sales",
+        agentId: args.call.agentId ?? undefined,
+        metadata: {
+          call_log_id: args.callLogId.toString(),
+        },
+      });
+    }
+
     return true;
   } catch (err: unknown) {
     log.warn("maybeRecordTenantActivation failed", {

@@ -8,18 +8,17 @@ import {
   useState,
 } from "react";
 
-import { ArrowLeft, Loader2, MessageSquareText, Phone, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Phone, Send, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import AgentFace from "./AgentFace";
 import OutboundDialDialog from "./OutboundDialDialog";
+import OutcomeLedger from "./OutcomeLedger";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
-
-type LooseRecord = Record<string, unknown>;
 
 type StudioMessage = {
   id: string;
@@ -162,7 +161,6 @@ const StudioWorkroom = forwardRef<
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
-  const [outcomes, setOutcomes] = useState<unknown[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const split = layout === "split";
@@ -241,23 +239,6 @@ const StudioWorkroom = forwardRef<
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [initialCommand, commandNonce]);
-
-  useEffect(() => {
-    if (!agentId || split) return;
-    authFetch(`/api/calls?limit=5`)
-      .then((r) => r.json())
-      .then((data) => {
-        const list = Array.isArray(data?.calls) ? data.calls : [];
-        const forAgent = list
-          .filter(
-            (c: unknown) =>
-              (c as LooseRecord)?.agentId === agentId || (c as LooseRecord)?.agent_id === agentId,
-          )
-          .slice(0, 2);
-        setOutcomes(forAgent);
-      })
-      .catch(() => {});
-  }, [agentId, split]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -428,77 +409,16 @@ const StudioWorkroom = forwardRef<
         <div className="mx-auto max-w-3xl px-4 pb-3 sm:px-6 xl:max-w-5xl 2xl:max-w-6xl">
           <div className="mb-2 flex items-center justify-between">
             <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-              Recent outcomes
+              Outcome ledger
             </div>
             <Link
-              to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
+              to="/approvals"
               className="text-[10px] text-muted-foreground hover:text-foreground"
             >
-              View in Knowledge →
+              Open approvals →
             </Link>
           </div>
-          <span className="sr-only">
-            Run calls, draft texts, queue follow-up, review approvals, and prepare handoff.
-          </span>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {(outcomes.length
-              ? outcomes
-              : [
-                  {
-                    id: "o1",
-                    channel: "voice",
-                    summary: "Scheduled follow-up for Tuesday 2pm. Customer confirmed address.",
-                    next: "Send SMS reminder + prep brief",
-                    tag: "scheduled",
-                    outcomeTag: "scheduled",
-                  },
-                  {
-                    id: "o2",
-                    channel: "sms",
-                    summary: "Confirmed service window. No escalations.",
-                    next: "Log in CRM",
-                    tag: "qualified",
-                    outcomeTag: "qualified",
-                  },
-                ]
-            ).map((o: unknown) => (
-              <button
-                key={(o as LooseRecord).id as string}
-                type="button"
-                onClick={() => {
-                  const oo = o as LooseRecord;
-                  setDraft(
-                    `Review and train from this outcome: ${oo.summary || ""}. Next step: ${oo.next || ""}.`,
-                  );
-                  requestAnimationFrame(() => inputRef.current?.focus());
-                }}
-                className="rounded-xl border border-border bg-card p-3 text-left text-sm transition hover:border-primary/30 active:scale-[0.985]"
-              >
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {((o as LooseRecord).channel || (o as LooseRecord).direction) === "voice" ||
-                  ((o as LooseRecord).channel || (o as LooseRecord).direction) === "inbound" ? (
-                    <Phone size={12} />
-                  ) : (
-                    <MessageSquareText size={12} />
-                  )}
-                  <span>
-                    {String((o as LooseRecord).channel || (o as LooseRecord).direction || "call")}
-                  </span>
-                  <span className="rounded bg-muted px-1.5 py-px text-[9px]">
-                    {String((o as LooseRecord).outcomeTag || (o as LooseRecord).tag || "outcome")}
-                  </span>
-                </div>
-                <div className="mt-1 leading-snug text-foreground sm:line-clamp-2">
-                  {String((o as LooseRecord).summary || "Call handled.")}
-                </div>
-                <div className="mt-1 text-[12px] text-muted-foreground">
-                  Next: {String((o as LooseRecord).next || "Review in ledger")}
-                </div>
-                <div className="mt-1 text-[10px] text-primary">Brief agent from this outcome</div>
-              </button>
-            ))}
-          </div>
-          <p className="mt-1 text-[10px] text-muted-foreground">Every outcome trains the fleet.</p>
+          <OutcomeLedger agentId={agentId} limit={4} compact showViewAll={false} />
         </div>
       ) : null}
 

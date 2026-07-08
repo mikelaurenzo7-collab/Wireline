@@ -98,7 +98,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
 const SYSTEM_WINS = [
   [
     "One clear promise",
-    "The homepage now leads with Wire your agent instead of forcing buyers to decode product modes first.",
+    "Wire your agent — train phone agents for sales, support, scheduling, intake, and follow-up without decoding product modes first.",
   ],
   [
     "One operating loop",

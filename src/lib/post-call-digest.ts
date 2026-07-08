@@ -22,6 +22,8 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { CRMService } from "./crm-service";
+import { requiresSalesApprovalForIntegration } from "./sales-integration-policy";
+import { executeAction } from "./action-engine";
 import { IntegrationService } from "./integrations";
 import { sanitizePhone } from "./vapi-helpers";
 import { enqueue } from "./job-queue";
@@ -97,6 +99,7 @@ async function resolveCampaignSource(
 interface CallContext {
   userId: string;
   callLogId: bigint | number;
+  agentId?: string | null;
   dialedNumber?: string | null;
   customerNumber?: string | null;
   customerName?: string | null;
@@ -189,31 +192,78 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
         intentLabel: ctx.intentLabel,
         endedReason: ctx.endedReason,
         outcomeTag,
+        agentId: ctx.agentId ?? null,
       },
     });
   } catch (err: any) {
     log.warn("post-call digest: activation check failed", { error: err?.message });
   }
 
-  // 2. CRM auto-log — best effort
+  // 2. CRM log — approval-gated for sales agents by default
   let crmLogged = false;
+  let crmQueuedForApproval = false;
   try {
     const [settings] = await drizzle
-      .select({ crmType: schema.settings.crmType })
+      .select({
+        crmType: schema.settings.crmType,
+        autonomyLevel: schema.settings.autonomyLevel,
+      })
       .from(schema.settings)
       .where(eq(schema.settings.userId, ctx.userId))
       .limit(1);
+
+    let agentRole: string | null = null;
+    if (ctx.agentId) {
+      const [agent] = await drizzle
+        .select({ role: schema.agents.role })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, ctx.agentId), eq(schema.agents.userId, ctx.userId)))
+        .limit(1);
+      agentRole = agent?.role ?? null;
+    }
+
     if (settings?.crmType === "hubspot" || settings?.crmType === "salesforce") {
-      const crm = new CRMService(ctx.userId);
-      const logId = await crm.logCall({
-        crmType: settings.crmType,
+      const crmPayload = {
         subject: `${ctx.direction === "outbound" ? "Outbound" : "Inbound"} call — ${outcomeTag}`,
         description: ctx.summary || "(no summary)",
         to_number: ctx.customerNumber || "",
         duration_minutes: Math.round((ctx.durationSeconds || 0) / 60),
         outcome: outcomeTag,
-      });
-      crmLogged = !!logId;
+        crm_type: settings.crmType,
+      };
+
+      if (
+        requiresSalesApprovalForIntegration({
+          agentRole,
+          autonomyLevel: settings.autonomyLevel,
+          actionType: "update_crm_lead",
+        })
+      ) {
+        const queued = await executeAction(
+          ctx.userId,
+          {
+            type: "update_crm_lead",
+            priority: "medium",
+            payload: crmPayload,
+            agentId: ctx.agentId || undefined,
+            reasoning: `Post-call CRM note for ${outcomeTag} outcome`,
+          },
+          { sourceId: String(ctx.callLogId), sourceType: "call_log" },
+          "draft",
+        );
+        crmQueuedForApproval = !!(queued.success && queued.queued);
+      } else {
+        const crm = new CRMService(ctx.userId);
+        const logId = await crm.logCall({
+          crmType: settings.crmType,
+          subject: crmPayload.subject,
+          description: crmPayload.description,
+          to_number: crmPayload.to_number,
+          duration_minutes: crmPayload.duration_minutes,
+          outcome: outcomeTag,
+        });
+        crmLogged = !!logId;
+      }
     }
   } catch (err: any) {
     log.warn("post-call digest: CRM log failed", { error: err?.message });
@@ -229,6 +279,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       outcomeTag,
       campaignSource,
       crmLogged,
+      crmQueuedForApproval,
     });
     // Send to the Account Holder's own connected mailbox address (first one we find).
     // If they have no mailbox connected we skip — log only.
@@ -303,6 +354,14 @@ async function pickAccountHolderEmail(userId: string): Promise<string | null> {
   }
 }
 
+function crmDigestStatusLine(crmLogged: boolean, crmQueuedForApproval: boolean): string {
+  if (crmLogged) return "✅ Logged to your CRM.";
+  if (crmQueuedForApproval) {
+    return "📋 CRM note queued for approval in your Approval Inbox.";
+  }
+  return "ℹ︎ No CRM connected — connect HubSpot or Salesforce in /integrations to auto-log.";
+}
+
 function renderDigestEmail(d: {
   agentName?: string | null;
   customerName?: string | null;
@@ -314,6 +373,7 @@ function renderDigestEmail(d: {
   outcomeTag: string;
   campaignSource: string | null;
   crmLogged: boolean;
+  crmQueuedForApproval?: boolean;
 }): string {
   const dur = Math.round((d.durationSeconds || 0) / 60);
   const next = nextActionFromOutcome(d.outcomeTag);
@@ -324,7 +384,7 @@ function renderDigestEmail(d: {
     `<p style="margin:0 0 16px;font-size:13px;color:#666;">${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: <strong>${d.campaignSource}</strong>` : ""}</p>`,
     `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${next}</p>`,
-    `<p style="margin:0 0 16px;font-size:12px;color:#666;">${d.crmLogged ? "✅ Logged to your CRM." : "ℹ︎ No CRM connected — connect HubSpot or Salesforce in /integrations to auto-log."}</p>`,
+    `<p style="margin:0 0 16px;font-size:12px;color:#666;">${crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false)}</p>`,
     `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/phone?tab=logs" style="color:${BRAND.colors.primary};text-decoration:none;">in Wireline →</a></p>`,
     `</div>`,
   ].join("");

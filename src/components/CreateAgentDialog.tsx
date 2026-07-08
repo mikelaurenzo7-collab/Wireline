@@ -291,6 +291,15 @@ export default function CreateAgentDialog({
         agentId: body.id,
         metadata: { role, posture: activePosture, phone_provisioned: phoneProvisioned },
       });
+      const salesRoles = new Set(["sales", "sales_sdr", "sdr", "outbound_sales"]);
+      if (salesRoles.has(role.toLowerCase()) || role.toLowerCase().includes("sales")) {
+        emitProductEvent({
+          event: "sales_agent_created",
+          audience: "sales",
+          agentId: body.id,
+          metadata: { role, posture: activePosture },
+        });
+      }
       if (postCreateWarning) stashCreateWarning(postCreateWarning);
       stashPostCreateWizard({
         agentId: body.id,

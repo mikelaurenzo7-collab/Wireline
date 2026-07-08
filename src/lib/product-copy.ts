@@ -39,7 +39,8 @@ export const MARKETING_VOICE = {
   subline:
     "Start outbound-first, then choose the call role: outbound campaigns, inbound coverage, or hybrid agents that answer, call back, follow up, and log every outcome.",
   proof: ["Create", "Train", "Wire", "Run"],
-  extensionLead: "Command your agent from any page. Wireline calls, answers, follows up, and logs the outcome while you stay focused.",
+  extensionLead:
+    "Command your agent from any page. Wireline calls, answers, follows up, and logs the outcome while you stay focused.",
   differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 
@@ -85,6 +86,10 @@ export const PRODUCT_POSTURE = {
 export function formatAgentRoleLabel(role?: string | null): string {
   return (role || "agent").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
+
+/** Canonical trust posture for sales and regulated verticals — policy-driven, not stealth. */
+export const TRUST_DISCLOSURE_FAQ =
+  "Wireline agents are configured around your disclosure policy, consent rules, and call purpose. When disclosure is required or enabled, it is logged automatically. The goal is not to trick prospects — it is to reach them quickly, qualify clearly, and move real opportunities forward." as const;
 
 export function rosterSummary(personalCount: number, businessCount: number): string {
   const parts: string[] = [];

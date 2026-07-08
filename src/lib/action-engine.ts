@@ -153,7 +153,7 @@ export async function executeAction(
           return { success: calOk };
         }
         case "update_crm_lead":
-          return await handleUpdateCRM(userId, action, context);
+          return await executeCrmAction(userId, action);
         case "create_internal_task":
           return await handleCreateInternalTask(userId, action, context);
         case "send_contract":
@@ -178,7 +178,7 @@ export async function executeAction(
       case "schedule_calendar":
         return await handleScheduleCalendar(userId, action, context);
       case "update_crm_lead":
-        return await handleUpdateCRM(userId, action, context);
+        return await queueCrmAction(userId, action, context);
       case "create_internal_task":
         return await handleCreateInternalTask(userId, action, context);
       case "send_contract":
@@ -216,6 +216,7 @@ async function handleSendEmail(
     sourceType: context.sourceType,
     sourceId: context.sourceId,
     targetChannel: "email",
+    payload: action.payload,
   });
   await touchNavCounts(userId);
   return { success: true, queued: true };
@@ -247,6 +248,7 @@ async function handleDraftSendTextMessage(
     sourceType: context.sourceType,
     sourceId: context.sourceId,
     targetChannel: "sms",
+    payload: action.payload,
   });
   await touchNavCounts(userId);
   return { success: true, queued: true };
@@ -266,16 +268,66 @@ async function handleScheduleCalendar(
     sourceType: context.sourceType,
     sourceId: context.sourceId,
     targetChannel: "calendar",
+    payload: action.payload,
   });
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
-async function handleUpdateCRM(
+
+function isCrmCallLogPayload(payload: Record<string, unknown>): boolean {
+  const crmType = payload.crm_type ?? payload.crmType;
+  return (
+    (crmType === "hubspot" || crmType === "salesforce") &&
+    (typeof payload.subject === "string" || typeof payload.description === "string")
+  );
+}
+
+async function queueCrmAction(
   userId: string,
   action: ActionItem,
-  _context: { sourceId: string; sourceType: string },
+  context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
+  const payload = (action.payload || {}) as Record<string, unknown>;
+  const description =
+    action.reasoning ||
+    (isCrmCallLogPayload(payload)
+      ? `CRM call log: ${payload.subject || "Post-call note"}`
+      : "CRM lead update");
+
+  await drizzle.insert(schema.followUpTasks).values({
+    userId,
+    agentId: action.agentId,
+    taskType: "update_crm_lead",
+    description,
+    priority: action.priority || "medium",
+    status: "pending",
+    sourceType: context.sourceType,
+    sourceId: context.sourceId,
+    targetChannel: "crm",
+    payload: action.payload,
+  });
+  await touchNavCounts(userId);
+  return { success: true, queued: true };
+}
+
+async function executeCrmAction(userId: string, action: ActionItem): Promise<ActionResult> {
   const crm = new CRMService(userId);
+  const payload = (action.payload || {}) as Record<string, unknown>;
+
+  if (isCrmCallLogPayload(payload)) {
+    const crmType = (payload.crm_type ?? payload.crmType) as "hubspot" | "salesforce";
+    const logId = await crm.logCall({
+      crmType,
+      subject: String(payload.subject || "Call"),
+      description: String(payload.description || ""),
+      to_number: String(payload.to_number || payload.customerNumber || ""),
+      duration_minutes:
+        typeof payload.duration_minutes === "number" ? payload.duration_minutes : undefined,
+      outcome: typeof payload.outcome === "string" ? payload.outcome : undefined,
+    });
+    return { success: !!logId };
+  }
+
   const updated = await crm.updateLead(action.payload as Parameters<CRMService["updateLead"]>[0]);
   return { success: updated };
 }

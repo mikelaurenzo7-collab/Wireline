@@ -15,6 +15,8 @@ import { claudeRateLimiter, campaignWriteRateLimit } from "../middleware/api-rat
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { CAMPAIGN_STATUS, LEAD_STATUS } from "../lib/outbound-status";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
+import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
+import { parsePlaybookFromGoal } from "../lib/sales-playbooks";
 
 const router = Router();
 
@@ -312,6 +314,7 @@ router.post(
         .select({
           id: schema.outboundCampaigns.id,
           name: schema.outboundCampaigns.name,
+          goal: schema.outboundCampaigns.goal,
           agentId: schema.outboundCampaigns.agentId,
           status: schema.outboundCampaigns.status,
           callWindowStart: schema.outboundCampaigns.callWindowStart,
@@ -351,6 +354,31 @@ router.post(
 
       if (!queued || queued.length === 0) {
         throw AppError.fromHttpStatus(400, "No queued leads in this campaign.");
+      }
+
+      const launchApprovalConfirmed =
+        req.body?.launch_approval_confirmed === true || req.body?.launchApprovalConfirmed === true;
+      if (!launchApprovalConfirmed) {
+        return res.status(400).json({
+          code: "LAUNCH_APPROVAL_REQUIRED",
+          error:
+            "Confirm the compliance checklist before launching. Set launch_approval_confirmed: true after review.",
+        });
+      }
+
+      const goalPlaybook = parsePlaybookFromGoal(campaign.goal);
+      const requiresFederalDnc =
+        goalPlaybook === "quote-follow-up" ||
+        goalPlaybook === "event-webinar-follow-up" ||
+        goalPlaybook === "crm-reactivation";
+      if (requiresFederalDnc) {
+        const federalGate = assertFederalDncForMarketing();
+        if (!federalGate.allowed) {
+          return res.status(503).json({
+            code: federalGate.code,
+            error: federalGate.message,
+          });
+        }
       }
 
       await drizzle

@@ -56,8 +56,28 @@ const blueprints: Array<{
   label: string;
   detail: string;
   direction: AgentDirection;
+  recommended?: boolean;
   defaults: Omit<BlueprintDraft, "kind" | "tone" | "direction">;
 }> = [
+  {
+    value: "sales",
+    label: "Sales and qualification",
+    detail: "Speed-to-lead, governed follow-up, and booked next steps.",
+    direction: "outbound",
+    recommended: true,
+    defaults: {
+      purpose:
+        "Qualify speed-to-lead and warm follow-up interest, then schedule the right next conversation.",
+      caller:
+        "Inbound demo requests, missed callbacks, quote follow-ups, and approved first-party lead lists.",
+      outcome:
+        "Understand the need, capture qualified details, answer approved questions, and book a clear next step.",
+      handoff:
+        "Escalate pricing exceptions, contract questions, enterprise requests, and frustrated prospects to a human owner.",
+      boundaries:
+        "Never pressure callers, make unapproved discounts, promise implementation dates, or claim features that are not confirmed.",
+    },
+  },
   {
     value: "personal",
     label: "Personal agent",
@@ -106,22 +126,6 @@ const blueprints: Array<{
         "Escalate VIPs, urgent operational issues, compliance-sensitive requests, and callers who need a human decision.",
       boundaries:
         "Never let a caller believe they reached a human queue when no human is available; never promise unapproved timelines or outcomes.",
-    },
-  },
-  {
-    value: "sales",
-    label: "Sales and qualification",
-    detail: "Respectful discovery and booked next steps.",
-    direction: "outbound",
-    defaults: {
-      purpose: "Qualify outbound or inbound interest and schedule the right next conversation.",
-      caller: "Prospects, referral partners, returning customers, and approved campaign lists.",
-      outcome:
-        "Understand the need, capture qualified details, answer approved questions, and book a clear next step.",
-      handoff:
-        "Escalate pricing exceptions, contract questions, enterprise requests, and frustrated prospects to a human owner.",
-      boundaries:
-        "Never pressure callers, make unapproved discounts, promise implementation dates, or claim features that are not confirmed.",
     },
   },
   {
@@ -251,7 +255,7 @@ function getBlueprint(kind: BlueprintKind) {
   return blueprints.find((blueprint) => blueprint.value === kind) ?? blueprints[0];
 }
 
-function createDraft(kind: BlueprintKind = "personal"): BlueprintDraft {
+function createDraft(kind: BlueprintKind = "sales"): BlueprintDraft {
   const blueprint = getBlueprint(kind);
   return { kind, direction: blueprint.direction, tone: "warm", ...blueprint.defaults };
 }
@@ -480,7 +484,12 @@ export default function PhoneAgentBlueprint({
                   key={blueprint.value}
                   onClick={() => chooseBlueprint(blueprint.value)}
                 >
-                  <strong>{blueprint.label}</strong>
+                  <strong>
+                    {blueprint.label}
+                    {blueprint.recommended ? (
+                      <span className="studio-blueprint-recommended">Recommended</span>
+                    ) : null}
+                  </strong>
                   <small>{blueprint.detail}</small>
                 </button>
               ))}

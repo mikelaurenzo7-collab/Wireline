@@ -131,6 +131,11 @@ export default function PostCreateActivationWizard({
         metadata: { channel: "phone", source: "fast_start_provision" },
       });
       emitProductEventOnce({
+        event: "number_wired",
+        agentId: payload.agentId,
+        metadata: { channel: "phone", source: "fast_start_provision" },
+      });
+      emitProductEventOnce({
         event: "phone_number_provision_completed",
         agentId: payload.agentId,
       });
@@ -169,6 +174,11 @@ export default function PostCreateActivationWizard({
     if (phoneNumber) {
       emitProductEventOnce({
         event: "phone_channel_wired",
+        agentId: payload.agentId,
+        metadata: { channel: "phone", source: "fast_start_provision" },
+      });
+      emitProductEventOnce({
+        event: "number_wired",
         agentId: payload.agentId,
         metadata: { channel: "phone", source: "fast_start_provision" },
       });
@@ -265,6 +275,9 @@ export default function PostCreateActivationWizard({
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                   {POST_CREATE_WIZARD_COPY.steps.train.detail}
+                </p>
+                <p className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs leading-relaxed text-foreground">
+                  {POST_CREATE_WIZARD_COPY.steps.train.salesHint}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
