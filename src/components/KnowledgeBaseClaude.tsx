@@ -2,6 +2,7 @@ import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "r
 import { FileText, Loader2, UploadCloud } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
+import { emitProductEvent } from "../lib/product-event-client";
 import { MetricTile } from "./atoms";
 
 /**
@@ -164,6 +165,15 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         const body = (await safeJson(response)) as { summary?: string; error?: string } | null;
         if (!response.ok) throw new Error(body?.error || `${file.name} could not be ingested.`);
         if (body?.summary) summaries.push(body.summary);
+        emitProductEvent({
+          event: "training_asset_added",
+          agentId,
+          metadata: {
+            source: "knowledge_upload",
+            file_name: file.name,
+            mime_type: payload.mimeType,
+          },
+        });
       }
       setNotice(summaries.length ? summaries.join(" ") : "Knowledge ingested.");
       setVersion((value) => value + 1);

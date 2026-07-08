@@ -6,6 +6,7 @@ import { usePresenceSignals } from "../hooks/usePresenceSignals";
 import { Download, Phone } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { emitProductEventOnce } from "../lib/product-event-client";
 import AgentFace from "./AgentFace";
 import LiveFloorPresence from "./LiveFloorPresence";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
@@ -214,6 +215,16 @@ export default function CallLogsClaude() {
     const ids = new Set<string>();
     for (const call of calls) if (call.agent_id) ids.add(call.agent_id);
     return ids.size;
+  }, [calls]);
+
+  useEffect(() => {
+    const reviewed = calls.find((call) => call.outcome_tag && !isLive(call));
+    if (!reviewed) return;
+    emitProductEventOnce({
+      event: "outcome_reviewed",
+      agentId: reviewed.agent_id ?? undefined,
+      metadata: { call_id: reviewed.id, source: "call_ops" },
+    });
   }, [calls]);
 
   const kpis = [

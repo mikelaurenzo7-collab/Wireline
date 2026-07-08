@@ -277,6 +277,16 @@ export default function CreateAgentDialog({
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
       emitProductEvent({
+        event: "training_asset_added",
+        agentId: body.id,
+        metadata: { source: "fast_start_brief", role, posture: activePosture },
+      });
+      emitProductEvent({
+        event: "launch_readiness_reached",
+        agentId: body.id,
+        metadata: { source: "fast_start_brief", has_training: true },
+      });
+      emitProductEvent({
         event: "agent_created",
         agentId: body.id,
         metadata: { role, posture: activePosture, phone_provisioned: phoneProvisioned },
