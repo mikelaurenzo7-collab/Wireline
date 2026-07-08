@@ -18,7 +18,13 @@ export type ShellNavItem = {
   href: string;
   label: string;
   shortLabel?: string;
-  icon: ComponentType<{ className?: string; strokeWidth?: number; style?: CSSProperties }>;
+  icon: ComponentType<{
+    className?: string;
+    size?: number | string;
+    strokeWidth?: number;
+    style?: CSSProperties;
+    "aria-hidden"?: boolean | "true" | "false";
+  }>;
   matches?: string[];
 };
 

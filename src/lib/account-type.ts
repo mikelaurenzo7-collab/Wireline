@@ -58,7 +58,7 @@ export function isRouteAvailableForAccount(type: AccountType, path: string): boo
 }
 
 /** NAV_GROUPS filtered for the account mode (drops business-only groups for personal). */
-export function accountNavGroups(type: AccountType): typeof NAV_GROUPS {
+export function accountNavGroups(type: AccountType): Array<(typeof NAV_GROUPS)[number]> {
   if (type === "business") {
     return NAV_GROUPS.filter((group) => !PERSONAL_ONLY_GROUPS.has(group.label));
   }
