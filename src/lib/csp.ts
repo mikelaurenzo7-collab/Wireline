@@ -14,6 +14,8 @@ export const INLINE_SCRIPT_HASHES = [
  */
 export const INLINE_STYLE_HASHES = [
   "'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw='",
+  // Playwright axe gate — disables transitions/animations before scanning.
+  "'sha256-pjBMouHaxzAZFuesw6ZdkjqrWeDPx0aK6XjL/EpYcbk='",
 ] as const;
 
 export const MARKETING_SCRIPT_SRCS = [

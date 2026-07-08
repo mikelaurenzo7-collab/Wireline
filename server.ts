@@ -5,7 +5,6 @@ import type { Server } from "node:http";
 import cors from "cors";
 import path from "path";
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { IS_PROD, log } from "./src/lib/server-context";
 import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { reportError } from "./src/lib/error-reporter";
@@ -188,9 +187,13 @@ async function startServer() {
   }
 
   const dist = path.join(process.cwd(), "dist");
+  const indexHtml = path.join(dist, "index.html");
   app.use(express.static(dist));
-  const html = readFileSync(path.join(dist, "index.html"));
-  app.get("*", (_req, res) => res.type("html").send(html));
+  // Always read index.html from disk — caching it at startup breaks SPA routes after
+  // a rebuild when Playwright or local dev reuses the same Node process.
+  app.get("*", (_req, res) => {
+    res.type("html").sendFile(indexHtml);
+  });
 }
 
 if (process.env.VERCEL !== "1") {

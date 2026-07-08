@@ -23,18 +23,16 @@ for (const directory of [out, screenshots]) {
 }
 
 const routes = [
-  "/ops",
-  "/chat",
-  "/agents",
-  "/training",
+  "/overview",
+  "/studio",
+  "/connections",
   "/phone",
-  "/sms",
-  "/email",
-  "/pipeline",
   "/insights",
-  "/integrations",
+  "/inbox",
+  "/knowledge",
+  "/apps",
+  "/settings",
   "/admin",
-  "/help",
 ];
 
 const report = {

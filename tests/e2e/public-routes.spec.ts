@@ -45,11 +45,13 @@ for (const route of PUBLIC_ROUTES) {
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(String(error)));
 
-    const response = await page.goto(route, { waitUntil: "domcontentloaded" });
+    const response = await page.goto(route, { waitUntil: "load" });
     expect(response, `no response for ${route}`).toBeTruthy();
     expect(response!.status(), `status for ${route}`).toBeLessThan(400);
 
-    await expect(page.locator("h1, h2").first()).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.locator("main#main-content h1, main#main-content h2, main h1, main h2, h1, h2").first(),
+    ).toBeVisible({ timeout: 15_000 });
     expect(pageErrors, `page errors on ${route}`).toEqual([]);
   });
 }
