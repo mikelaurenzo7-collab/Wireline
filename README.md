@@ -64,12 +64,14 @@ Use `npm run verify` for focused implementation branches and `npm run verify:ful
 | Repo health | `CODEBASE_HEALTH.md`, `docs/REPO_HEALTH_AUDIT_2026-07-04.md`, `docs/EXCLUDED_SURFACES_AUDIT_2026-07-06.md` |
 | Architecture | `ARCHITECTURE.md`, `src/server/register-api-routes.ts`, `src/routes/AppRoutes.tsx` |
 | Product docs | `docs/README.md`, `docs/CLIENT_SURFACES.md`, `docs/CHATGPT_APP.md`, `docs/PRODUCT_SHOWCASE_MATRIX.md`, `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` |
+| Release boundaries | `docs/CLIENT_SURFACES.md` for tier ownership/checks/non-goals/security/rollback; `docs/PRODUCT_SHOWCASE_MATRIX.md` for commercial status; `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` for execution sequencing |
 | Pricing and billing | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts` |
 | Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 | Voice and models | `src/lib/ai-models.ts`, `src/lib/voice/`, `src/routes/grok-voice-routes.ts`, `docs/GROK_LIVE_VOICE.md` |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts` |
-| Browser extension | `apps/browser-extension/` |
-| Native apps | `ios/`, `android/` |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts`; release as a consent-gated planned/beta add-on only |
+| Browser extension | `apps/browser-extension/`; beta release tier; explicit-user-action browser context only |
+| Native apps | `ios/`, `android/`; beta release tiers for urgent owner control |
+| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md`; beta release tier that cannot provision numbers, dial, or launch agents |
 | Tests and checks | `tests/`, `scripts/check-*.mjs`, `scripts/generate-authz-matrix.ts` |
 
 ## Repository hygiene contract

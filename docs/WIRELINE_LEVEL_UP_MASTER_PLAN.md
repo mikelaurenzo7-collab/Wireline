@@ -52,18 +52,23 @@ Exit criteria:
 
 ## Phase 3 — Multi-surface excellence
 
-Make every app surface serve a distinct job.
+Make every app surface serve a distinct job and release from an explicit tier boundary. `docs/CLIENT_SURFACES.md` is the canonical release-boundary contract; this plan tracks the execution intent.
 
-- Web: complete command center and setup workbench.
-- Native: urgent owner control for calls, approvals, notifications, handoff, wallet, and review.
-- Browser: explicit page-context handoff to Studio.
-- ChatGPT App: private account-bound drafting, refinement, and simulation.
-- API: stable server-owned contracts and adapters.
+| Tier | Launch status | Product job | Release gate |
+| --- | --- | --- | --- |
+| Web/API | **Live** | Complete command center, setup workbench, billing, voice/integration runtime, mobile adapters, MCP, and presenter APIs. | `npm run verify`, `npm run verify:full` for release/sensitive changes, `npm run verify:contracts`, targeted provider smoke, and read-only DB health when schema assumptions change. |
+| Browser extension | **Beta** | Explicit page-context handoff to Studio through Wireline Command. | Extension build `--check`, Chromium/Firefox packaging, manual browser smoke, permissions review, and explicit-action context handoff verification. |
+| iOS | **Beta** | Urgent owner control for calls, approvals, notifications, handoff, wallet, widgets, and review. | XcodeGen, simulator build, physical-device PushKit/CallKit, App Privacy/account deletion, and mobile API smoke. |
+| Android | **Beta** | Urgent owner control for calls, approvals, notifications, handoff, wallet, widgets, and review. | Gradle compile, emulator smoke, physical-device Telecom/FCM, Play Data safety/account deletion, and release signing verification. |
+| ChatGPT App | **Beta** | Private account-bound drafting, refinement, simulation, and account-aware workflow assistance. | MCP discovery/tool/resource probe, OAuth PKCE reviewer flow, private simulation boundary test, and no-side-effect tool review. |
+| Video presenter | **Planned/Beta add-on** | Optional consent-gated visual presenter layer for business agents. | Consent/fallback smoke, provider readiness, cost/metering review, customer-copy review, and support/pricing gate. |
 
 Exit criteria:
 - Native clients use a complete `/api/mobile/*` adapter surface except auth.
-- Browser extension remains explicit-action only.
-- ChatGPT tools cannot bypass Wireline authorization or launch controls.
+- Browser extension remains explicit-user-action only: no silent browsing, broad host permissions, background page harvesting, token storage, or independent outbound execution.
+- ChatGPT tools cannot bypass Wireline authorization, provision numbers, dial, launch agents, change billing, or claim external actions happened unless Wireline performed them through approved server workflows.
+- Video presenters ship only as consent-gated add-ons with server-owned credentials, fallback behavior, truthful customer copy, pricing, and rollback criteria.
+- Each tier has documented owning files/directories, required checks, non-goals, security/privacy constraints, and rollback criteria in `docs/CLIENT_SURFACES.md`.
 
 ## Phase 4 — Expansion
 
@@ -72,7 +77,7 @@ Expand only after the wedge loop, trust layer, and margin engine are dependable.
 Expansion lanes:
 - CRM/email/calendar automations.
 - Vertical templates and certified setup playbooks.
-- Live video presenter add-on.
+- Live video presenter add-on after consent, fallback, pricing, provider-readiness, privacy, and rollback gates are satisfied.
 - Enterprise package: SSO, security review, custom telephony, dedicated support, and negotiated volume economics.
 - Richer analytics, QA, leaderboard, and insight surfaces once rebuilt on the current runtime.
 
@@ -83,8 +88,9 @@ Exit criteria:
 
 - No client-owned provider secrets.
 - No browser-stored JWTs.
-- No silent browser harvesting.
+- No silent browser harvesting; browser context must remain explicit-user-action only.
 - No inactive endpoint claims in public contracts.
 - No vendor-name leakage in customer-facing presenter copy.
 - No expensive usage without metering, gating, and account-level visibility.
+- No ChatGPT App ability to provision numbers, dial, launch agents, change billing, or perform outbound actions.
 - No new canonical doc without `docs/README.md` linkage.
