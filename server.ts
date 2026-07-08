@@ -90,10 +90,8 @@ app.use(
   }),
 );
 
-// Must run before global JSON parsing so signed vendor payloads retain raw bytes.
-installWebhookBodyParsers(app);
-app.use(express.json({ limit: "6mb" }));
-app.use(assertSameOrigin);
+// Install request IDs before body parsing or security gates so every API
+// rejection and parser failure can be traced across logs, clients, and alerts.
 app.use((req, res, next) => {
   const incoming = String(req.headers["x-request-id"] || "").slice(0, 64);
   const requestId = /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID();
@@ -101,6 +99,14 @@ app.use((req, res, next) => {
   res.setHeader("X-Request-Id", requestId);
   next();
 });
+
+// Must run before global JSON parsing so signed vendor payloads retain raw bytes.
+installWebhookBodyParsers(app);
+// Reject disallowed mutating API requests before reading the general JSON body.
+// Vendor callbacks remain safe because the dedicated parsers above run first and
+// same-origin explicitly skips those signed provider routes.
+app.use(assertSameOrigin);
+app.use(express.json({ limit: "6mb" }));
 app.use(normalizeApiErrorResponse);
 
 const connectSrc = buildConnectSrcs(!IS_PROD);
