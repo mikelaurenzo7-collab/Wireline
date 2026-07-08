@@ -17,7 +17,7 @@ export default function LandingPage() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, iOS, Android, Chrome, Opera",
     description:
-      "Create, train, wire, run, and review outbound-first call agents with inbound and hybrid modes for sales prospecting, front desk, support triage, billing collection, negotiation, surveys, scheduling, and follow-up.",
+      "Wireline builds trained voice agents that answer, route, book, follow up, and text the outcome for solo business agents, call centers, and sales teams. Start outbound-first, then choose inbound or hybrid modes.",
     offers: {
       "@type": "OfferCatalog",
       name: "Wireline call agent plans",
@@ -32,8 +32,8 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Outbound, inbound, and hybrid call agents"
-        description="Wireline builds outbound-first call agents with inbound and hybrid modes for sales, front desk, support, billing collection, negotiation, surveys, scheduling, and follow-up."
+        title="Wireline | Wire your agent"
+        description="Wireline builds trained voice agents that answer, route, book, follow up, and text the outcome for solo business agents, call centers, and sales teams. Start outbound-first, then choose inbound or hybrid modes."
         image="/og-image.png"
       />
       <script
