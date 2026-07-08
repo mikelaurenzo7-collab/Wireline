@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/atoms";
 import AgentFace from "./AgentFace";
 import OutboundDialDialog from "./OutboundDialDialog";
+import AgentLaunchReadinessCard from "./AgentLaunchReadinessCard";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
@@ -137,6 +138,8 @@ const StudioWorkroom = forwardRef<
   {
     agentId: string;
     agentName: string;
+    agentRole?: string | null;
+    agentPhoneNumber?: string | null;
     initialCommand?: string;
     commandNonce?: string;
     onBack: () => void;
@@ -147,6 +150,8 @@ const StudioWorkroom = forwardRef<
   {
     agentId,
     agentName,
+    agentRole,
+    agentPhoneNumber,
     initialCommand,
     commandNonce,
     onBack,
@@ -390,6 +395,18 @@ const StudioWorkroom = forwardRef<
       ) : null}
 
       <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+        {split ? (
+          <AgentLaunchReadinessCard
+            agent={{
+              id: agentId,
+              name: agentName,
+              role: agentRole,
+              phone_number: agentPhoneNumber,
+            }}
+            compact
+            className="mb-5"
+          />
+        ) : null}
         {loading ? (
           <MessageSkeletons />
         ) : visibleMessages.length ? (

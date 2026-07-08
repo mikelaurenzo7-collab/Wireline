@@ -9,6 +9,7 @@ import VoiceGallery from "../components/voice/VoiceGallery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import AgentPresenceVoiceBridge from "../components/AgentPresenceVoiceBridge";
 import WirelineLiveVoiceProfile from "../components/WirelineLiveVoiceProfile";
+import AgentLaunchReadinessCard from "../components/AgentLaunchReadinessCard";
 import { useAgents } from "../contexts/AgentsContext";
 
 type TrainingTabId = "knowledge" | "voice" | "flows" | "simulator";
@@ -184,6 +185,7 @@ export default function KnowledgePage() {
               </NativeSelect>
             </div>
           ) : null}
+          {populated && activeAgent ? <AgentLaunchReadinessCard agent={activeAgent} /> : null}
           {activeTab === "knowledge" ? <KnowledgeBaseClaude agentId={agentId} /> : null}
           {activeTab === "voice" ? (
             <VoiceGallery agentId={agentId} agentName={activeAgent?.name} />

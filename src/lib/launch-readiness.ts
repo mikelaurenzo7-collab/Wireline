@@ -15,6 +15,12 @@ export type CapabilityReadiness = {
   level: ReadinessLevel;
   blockers: string[];
 };
+export type UserFacingLaunchReadinessDimension = {
+  id: string;
+  label: string;
+  owner_surface: "studio" | "train" | "wire" | "billing" | "test";
+};
+
 export type LaunchReadinessReport = {
   overall_score: number;
   campaign_ready: boolean;
@@ -22,7 +28,38 @@ export type LaunchReadinessReport = {
   capabilities: CapabilityReadiness[];
   launch_blockers: string[];
   generated_at: string;
+  user_facing_agent_checks: UserFacingLaunchReadinessDimension[];
 };
+
+export const USER_FACING_AGENT_LAUNCH_CHECKS: UserFacingLaunchReadinessDimension[] = [
+  {
+    id: "identity-purpose",
+    label: "Agent has name, role, and clear purpose",
+    owner_surface: "studio",
+  },
+  {
+    id: "training-material",
+    label: "Training instructions or source material exist",
+    owner_surface: "train",
+  },
+  {
+    id: "handoff-policy",
+    label: "Escalation/handoff policy is configured",
+    owner_surface: "train",
+  },
+  {
+    id: "outbound-consent",
+    label: "Outbound consent posture is known when dialing is enabled",
+    owner_surface: "wire",
+  },
+  { id: "channel-wiring", label: "Phone or channel wiring is complete", owner_surface: "wire" },
+  {
+    id: "usage-entitlement",
+    label: "Conversation Balance or plan entitlement supports intended usage",
+    owner_surface: "billing",
+  },
+  { id: "test-passed", label: "Test call or simulation has passed", owner_surface: "test" },
+];
 
 function levelFromBlockers(blockers: string[]): ReadinessLevel {
   if (blockers.length === 0) return "ready";
@@ -118,6 +155,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     capabilities,
     launch_blockers,
     generated_at: new Date().toISOString(),
+    user_facing_agent_checks: USER_FACING_AGENT_LAUNCH_CHECKS,
   };
 }
 

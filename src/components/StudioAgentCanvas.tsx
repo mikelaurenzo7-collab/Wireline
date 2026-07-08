@@ -8,9 +8,8 @@ import { type AgentToolName } from "../lib/agent-capabilities";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 import { providerLabel, resolveVoiceLabel } from "../lib/voice-catalog";
 import { useAgents } from "../contexts/AgentsContext";
-import { useAccount } from "../contexts/AccountContext";
-import { computeAgentReadiness } from "./fleet-settings/agent-readiness";
 import AgentPresenceSlot, { AgentPresenceMeta } from "./AgentPresenceSlot";
+import AgentLaunchReadinessCard from "./AgentLaunchReadinessCard";
 import AgentPresenceCatalogThumb from "./AgentPresenceCatalogThumb";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 import { PresenterPstnVoiceNotice } from "./voice/PresenterPstnVoiceNotice";
@@ -172,35 +171,22 @@ export default function StudioAgentCanvas({
   className = "",
 }: StudioAgentCanvasProps) {
   const { agents } = useAgents();
-  const { accountType } = useAccount();
   const [config, setConfig] = useState<AgentConfig | null>(null);
-  const [integrationStatus, setIntegrationStatus] = useState<Record<
-    string,
-    { connected: boolean }
-  > | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([
-      authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`),
-      authFetch("/api/oauth/crm/status"),
-    ])
-      .then(async ([configRes, crmRes]) => {
+    authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
+      .then(async (configRes) => {
         const data = configRes.ok ? ((await configRes.json()) as AgentConfig | null) : null;
-        const crmData = crmRes.ok
-          ? ((await crmRes.json()) as Record<string, { connected: boolean }>)
-          : null;
         if (!cancelled) {
           setConfig(data);
-          setIntegrationStatus(crmData);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setConfig(null);
-          setIntegrationStatus(null);
         }
       })
       .finally(() => {
@@ -242,9 +228,6 @@ export default function StudioAgentCanvas({
   const situationRows = directives.length
     ? directives.slice(0, 3).map((item) => item.content)
     : DEFAULT_SITUATIONS;
-  const readiness = computeAgentReadiness(selectedAgent, config, integrationStatus, {
-    accountType,
-  });
   const connectionRows = CONNECTION_CATALOG.map((item) => ({
     ...item,
     active: enabled.has(item.tool),
@@ -646,31 +629,7 @@ export default function StudioAgentCanvas({
           </div>
         </CardShell>
 
-        <div className="wl-paper wl-paper-elevated rounded-[14px] p-5">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <WiredEyebrow>Setup health</WiredEyebrow>
-            <span className="text-xs font-semibold text-primary">
-              {readiness.score}/{readiness.total} · {readiness.ready ? "Ready" : "In progress"}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-            {readiness.checks.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-lg border border-border px-3 py-2 text-muted-foreground"
-              >
-                <span
-                  className={
-                    item.done ? "text-primary" : "text-[var(--wireline-color-status-warning)]"
-                  }
-                >
-                  {item.done ? "✓" : "!"}
-                </span>{" "}
-                {item.label}
-              </div>
-            ))}
-          </div>
-        </div>
+        {selectedAgent ? <AgentLaunchReadinessCard agent={selectedAgent} config={config} /> : null}
       </div>
     </div>
   );

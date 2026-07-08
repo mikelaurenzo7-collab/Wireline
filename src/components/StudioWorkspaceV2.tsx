@@ -269,6 +269,8 @@ export default function StudioWorkspaceV2() {
       ref={workroomRef}
       agentId={active.id}
       agentName={active.name}
+      agentRole={active.role}
+      agentPhoneNumber={active.phone_number}
       initialCommand={params.get("command") || undefined}
       commandNonce={params.get("commandNonce") || undefined}
       onBack={workspaceView ? returnToCanvas : openWorkspacePanel}
