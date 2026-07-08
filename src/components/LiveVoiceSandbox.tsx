@@ -28,7 +28,7 @@ function resample(input: Float32Array, inputRate: number) {
     const left = Math.floor(index);
     const right = Math.min(left + 1, input.length - 1);
     const fraction = index - left;
-    output[i] = (input[left] || 0) * (1 - fraction) + (input[right] || 0) * fraction;
+    output[i] = (input[left] || 0) * (1 - fraction) + input[right] * fraction;
   }
   return output;
 }
@@ -100,12 +100,15 @@ export default function LiveVoiceSandbox({
   agentName,
   onAgentAudioDelta,
   onAgentAudioEnd,
+  onTestStarted,
 }: {
   agentId: string;
   agentName: string;
   /** When set, agent PCM from the live voice session is forwarded (e.g. LiveAvatar lip-sync). */
   onAgentAudioDelta?: (base64Pcm: string) => void;
   onAgentAudioEnd?: () => void;
+  /** Fires only after a private live voice test has connected successfully. */
+  onTestStarted?: () => void;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState("");
@@ -129,6 +132,7 @@ export default function LiveVoiceSandbox({
   const assistantLineId = useRef<string | null>(null);
   const assistantTranscriptMode = useRef<"audio" | "text" | null>(null);
   const userLineId = useRef<string | null>(null);
+  const reportedStarted = useRef(false);
 
   const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
     if (!text) return;
@@ -195,9 +199,7 @@ export default function LiveVoiceSandbox({
   const waitForAudio = () =>
     new Promise<void>((resolve) => {
       const context = audio.current;
-      const delay = context
-        ? Math.max(20, (nextAudio.current - context.currentTime) * 1000 + 30)
-        : 20;
+      const delay = context ? Math.max(20, (nextAudio.current - context.currentTime) * 1000 + 30) : 20;
       window.setTimeout(resolve, delay);
     });
 
@@ -332,6 +334,10 @@ export default function LiveVoiceSandbox({
           }),
         );
       }
+      if (!resume && !reportedStarted.current) {
+        reportedStarted.current = true;
+        onTestStarted?.();
+      }
       setState("listening");
     };
 
@@ -443,6 +449,7 @@ export default function LiveVoiceSandbox({
     if (state === "connecting" || ["listening", "speaking", "thinking"].includes(state)) return;
     stop();
     const connectionGeneration = generation.current;
+    reportedStarted.current = false;
     closedByUser.current = false;
     setError("");
     setLines([]);
