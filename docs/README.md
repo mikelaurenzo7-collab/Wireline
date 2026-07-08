@@ -8,7 +8,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | --- | --- | --- |
 | Overview | `src/pages/OverviewPage.tsx` | Calm command center for agents, calls, connections, Conversation Balance, and next actions. |
 | Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
-| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, and memory. |
+| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx`, `src/components/PhoneAgentBlueprint.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, memory, and guided call-plan readiness. |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` | Numbers, integrations, routing, connected tools, approvals, billing, and launch controls. |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` | Chat-first execution for calls, texts, follow-up, approvals, handoff, and review. |
 | Browser | `apps/browser-extension/` | Wireline Command: explicit page-context handoff into Studio. |
@@ -20,6 +20,7 @@ Wireline's durable documentation follows the active product model. The customer-
 
 - Public pages explain. Authenticated pages execute.
 - Create stays short; Training owns detailed setup.
+- Guided call-plan setup asks direction first, teaches the tradeoff, captures concrete behavior, and checks launch readiness.
 - Wire owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
 - Studio is the workroom; Overview is the calm command center.
 - The marketable wedge is outbound-first call agents: list, script, dial, log.
@@ -43,6 +44,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md) | **Active** — source-of-truth triage for excluded/unmounted surfaces and their rebuild/delete targets. |
 | [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | **Active** — whole-product showcase matrix across web, API, native, browser, ChatGPT, voice, video, integrations, trust, and margin. |
 | [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | **Active** — outbound-first wedge with outbound, inbound, and hybrid call modes, demo path, and pricing implications. |
+| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md) | **Active** — guided call-plan setup doctrine: ask, teach, capture, check, then launch. |
 | [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion. |
 | [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | **Active** — customer-facing trust, compliance, and proof posture without overclaiming. |
 | [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md) | **Active** — launch readiness scorecard and margin operating plan. |
@@ -86,7 +88,7 @@ Wireline's durable documentation follows the active product model. The customer-
 
 ## Verification
 
-- `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, and event taxonomy contracts.
+- `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, event taxonomy, chunk recovery, and guided setup contracts.
 - `npm run verify` - design check, source-control hygiene, route registry, docs index, design-token parity, Stripe catalog contract, build, and bundled-server smoke.
 - `npm run verify:full` - lint, server lint, design/source-control/route/docs/token/authz/CSP checks, tests, build, and smoke.
 - `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.
