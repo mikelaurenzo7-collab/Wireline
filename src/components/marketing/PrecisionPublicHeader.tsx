@@ -10,8 +10,7 @@ const links = [
   {
     to: "/for/personal",
     label: "Use cases",
-    active: (path: string) =>
-      path === "/" || path.startsWith("/for/") || path.startsWith("/solutions/"),
+    active: (path: string) => path.startsWith("/for/") || path.startsWith("/solutions/"),
   },
   { to: "/features", label: "Features", active: (path: string) => path === "/features" },
   { to: "/pricing", label: "Pricing", active: (path: string) => path === "/pricing" },
@@ -68,7 +67,7 @@ export default function PrecisionPublicHeader() {
               to="/signup"
               className="marketing-btn-primary min-h-9 px-4 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
             >
-              Start
+              Start free
             </Link>
           </div>
           <DialogTrigger asChild>
@@ -90,7 +89,7 @@ export default function PrecisionPublicHeader() {
         presentation="navigation"
         aria-label="Wireline navigation"
         showClose={false}
-        overlayClassName="!top-16 !z-[60] bg-[rgba(17,17,17,0.12)] backdrop-blur-[1px]"
+        overlayClassName="!top-16 !z-[60] bg-[color:color-mix(in_srgb,var(--wireline-page)_76%,transparent)] backdrop-blur-sm"
       >
         <DialogTitle className="sr-only">Wireline navigation</DialogTitle>
         <DialogDescription className="sr-only">
@@ -100,7 +99,7 @@ export default function PrecisionPublicHeader() {
           <div className="flex items-center justify-between border-b border-border pb-4">
             <p className="wl-overline">Wireline</p>
             <span className="font-[var(--wireline-font-display)] text-sm font-semibold tracking-[-.02em] text-foreground">
-              Menu
+              Wire your agent
             </span>
           </div>
           <nav className="mt-2" aria-label="Mobile site">
@@ -131,7 +130,7 @@ export default function PrecisionPublicHeader() {
               onClick={() => setOpen(false)}
               className="marketing-btn-primary min-h-12 text-[var(--wireline-typography-body-size)] font-semibold"
             >
-              Start
+              Start free
             </Link>
             <Link
               to="/signin"
