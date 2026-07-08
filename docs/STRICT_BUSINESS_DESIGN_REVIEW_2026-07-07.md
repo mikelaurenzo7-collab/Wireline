@@ -61,6 +61,24 @@ Why it matters: Wireline can position aggressively without publishing stale or u
 
 Why it matters: enterprise buyers do not want to feel trapped. They want confidence that setup compounds value.
 
+### 7. Homepage rhythm unified around the product loop
+
+The hero proof strip and how-it-works section now share the same Create → Train → Wire → Run sequence. The audience control uses the canonical segmented-control primitive, hero cards use the paper/elevated primitives, and pricing cards now stretch cleanly to a shared baseline.
+
+Why it matters: the product now feels designed from one doctrine instead of assembled from separate marketing blocks.
+
+### 8. Workspace rhythm polish added at the system layer
+
+`workspace-polish.css` now adds shared page rhythm, framed data rows, card border tuning, mobile dock elevation, active mobile-nav affordance, and consistent mobile action clustering.
+
+Why it matters: a small system-level layer improves many authenticated pages without rewriting each route.
+
+### 9. Settings redesigned into a composed surface
+
+Settings now reads as a clean account surface with framed profile rows, compact security rows, clearer destructive-action copy, and a calmer danger zone.
+
+Why it matters: Settings is a trust page. It should look deliberate, not like leftover form controls.
+
 ## Strict findings by area
 
 ### Design / branding
