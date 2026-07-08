@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
@@ -23,12 +23,6 @@ const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
 const loading = <RouteFallback />;
-
-/** Preserve ?tab= when retiring /ops links in emails and Slack. */
-function LegacyOpsRedirect() {
-  const location = useLocation();
-  return <Navigate to={`/phone${location.search}`} replace />;
-}
 
 function AuthNotFound() {
   return (
@@ -81,22 +75,6 @@ export default function AppRoutes() {
         <Route path="/settings/*" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminWorkspace />} />
         <Route path="/admin/*" element={<AdminWorkspace />} />
-
-        <Route path="/pulse" element={<Navigate to="/overview" replace />} />
-        <Route path="/fleet" element={<Navigate to="/studio" replace />} />
-        <Route path="/ops" element={<LegacyOpsRedirect />} />
-        <Route path="/ops/*" element={<LegacyOpsRedirect />} />
-        <Route path="/training" element={<Navigate to="/knowledge" replace />} />
-        <Route path="/chat" element={<Navigate to="/studio" replace />} />
-        <Route path="/chat/*" element={<Navigate to="/studio" replace />} />
-        <Route path="/actions" element={<Navigate to="/connections" replace />} />
-        <Route
-          path="/actions/salesforce"
-          element={<Navigate to="/connections/salesforce" replace />}
-        />
-        <Route path="/actions/*" element={<Navigate to="/connections" replace />} />
-        <Route path="/nexus" element={<Navigate to="/connections" replace />} />
-        <Route path="/wires" element={<Navigate to="/connections" replace />} />
 
         <Route path="*" element={<AuthNotFound />} />
       </Routes>

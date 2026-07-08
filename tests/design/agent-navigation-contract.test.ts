@@ -34,6 +34,7 @@ describe("agent navigation contract", () => {
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
     expect(appRoutes).toMatch(/path="\/agents"/);
     expect(appRoutes).toMatch(/to="\/overview"/);
+    expect(appRoutes).not.toMatch(/path="\/(pulse|fleet|ops|training|chat|actions|nexus|wires)"/);
   });
 
   it("uses the screenshot-inspired overview as the personal and business roster", () => {

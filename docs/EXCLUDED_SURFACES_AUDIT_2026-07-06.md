@@ -67,3 +67,17 @@ Status: **v2 is production-complete** for billing, tools, showcase, presence, an
 2. Keep `tsconfig.exclude` limited to tests/generated patterns only.
 
 Rule going forward: every explicit exclude path needs an owner, a reason, and a deletion/rebuild target. Deleted explicit paths now fail `verify:full` via `npm run tsconfig:excludes:check`.
+
+## Authenticated route/component cleanup — July 8, 2026
+
+Scope: `src/routes/AppRoutes.tsx`, `src/App.tsx`, `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx`, the route registry checker, and route/product contract tests.
+
+Findings and actions:
+
+- Deleted redirect-only authenticated client routes for historic concepts: `/pulse`, `/fleet`, `/ops`, `/ops/*`, `/training`, `/chat`, `/chat/*`, `/actions`, `/actions/salesforce`, `/actions/*`, `/nexus`, and `/wires`. These routes duplicated the active Overview, Studio, Training, Wire, and Phone surfaces and no longer carry enough external-link value to keep in the mounted route map.
+- Kept only defensive authenticated redirects with current audit value: `/` to `/overview`, `/agents` to `/overview`, `/call-logs` and `/logs` to `/phone?tab=logs`. These protect sign-in defaults, old agent-roster bookmarks, and phone log links still referenced by customer-facing contracts.
+- Deleted unmounted duplicate chrome/components: `src/components/layout/Sidebar.tsx`, `src/components/layout/WorkspaceSidebar.tsx`, and `src/components/layout/CreamBackdrop.tsx`. `WorkspaceShell` and `AppShell` remain the single mounted authenticated chrome path.
+- Documented the remaining `/agents` redirect in `AUTHENTICATED_SURFACE_CONTRACT` as a defensive Overview bookmark redirect, not an active assistant-management surface.
+- Updated product voice and authenticated-surface contracts to forbid the retired route names and historic dashboard/manager/control-center framing.
+
+Route registry note: server-side `dashboardRouter` and `fleetRouter` remain registered because the active Overview/Phone surfaces still consume their API planes; this cleanup only retires duplicate client wrappers and unmounted chrome.
