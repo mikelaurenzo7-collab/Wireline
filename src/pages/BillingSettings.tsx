@@ -213,7 +213,7 @@ export default function BillingSettings() {
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">
-          <article className="studio-card flex min-h-[148px] flex-col p-5">
+          <article className="wl-paper wl-paper-elevated flex min-h-[148px] flex-col p-5">
             <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Conversation Balance
             </h2>
@@ -272,7 +272,7 @@ export default function BillingSettings() {
               </>
             )}
           </article>
-          <article className="studio-card flex min-h-[148px] flex-col p-5">
+          <article className="wl-paper wl-paper-elevated flex min-h-[148px] flex-col p-5">
             <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Next invoice
             </h2>
@@ -311,7 +311,7 @@ export default function BillingSettings() {
           </p>
         ) : null}
 
-        <section className="studio-card p-5 sm:p-6">
+        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
             Recent invoices
           </h2>

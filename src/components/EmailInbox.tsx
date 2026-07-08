@@ -477,7 +477,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
             </StatusNotice>
           ) : (
             <div className="space-y-5">
-              <section className="studio-card p-5 sm:p-6">
+              <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -499,7 +499,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                   {selectedThread.summary}
                 </p>
               </section>
-              <section className="studio-card overflow-hidden">
+              <section className="wl-paper wl-paper-elevated overflow-hidden">
                 <div className="border-b border-border px-5 py-4 sm:px-6">
                   <p className="wl-card-title">Conversation record</p>
                 </div>
@@ -526,7 +526,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                   )}
                 </div>
               </section>
-              <section className="studio-card p-5 sm:p-6">
+              <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
                 <div className="flex items-start gap-3">
                   <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
                     <Route className="size-4" />

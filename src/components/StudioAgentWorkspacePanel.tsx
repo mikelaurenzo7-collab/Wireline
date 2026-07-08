@@ -129,7 +129,7 @@ export default function StudioAgentWorkspacePanel({
 
         <section
           id="agent-presence"
-          className="studio-card scroll-mt-6 p-6"
+          className="wl-paper wl-paper-elevated scroll-mt-6 p-6"
           aria-labelledby="agent-presence-heading"
         >
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -151,7 +151,7 @@ export default function StudioAgentWorkspacePanel({
           />
         </section>
 
-        <div className="studio-card p-6">
+        <div className="wl-paper wl-paper-elevated p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold tracking-tight">Setup</h3>
             <button
@@ -288,7 +288,7 @@ export default function StudioAgentWorkspacePanel({
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Tools
               </p>
-              <div className="studio-card p-4">
+              <div className="wl-paper wl-paper-elevated p-4">
                 <div className="flex flex-wrap gap-2">
                   {(AGENT_TOOL_CATALOG || [])
                     .filter(
@@ -314,7 +314,7 @@ export default function StudioAgentWorkspacePanel({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="studio-card p-5 lg:col-span-1">
+            <div className="wl-paper wl-paper-elevated p-5 lg:col-span-1">
               <div className="mb-3 font-semibold">Brain</div>
               <div className="space-y-2 text-sm">
                 <div>Memory</div>
@@ -329,12 +329,12 @@ export default function StudioAgentWorkspacePanel({
               </Link>
             </div>
 
-            <div className="studio-card p-5">
+            <div className="wl-paper wl-paper-elevated p-5">
               <div className="mb-3 font-semibold">Record</div>
               <p className="text-sm text-muted-foreground">Call history lives in the chat above.</p>
             </div>
 
-            <div className="studio-card p-5">
+            <div className="wl-paper wl-paper-elevated p-5">
               <div className="mb-3 font-semibold">Controls</div>
               <div className="flex flex-col gap-2 text-sm">
                 <Link to={`/studio?agent=${agentId}`} className="hover:text-primary">

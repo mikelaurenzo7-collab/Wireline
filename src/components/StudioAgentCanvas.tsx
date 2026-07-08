@@ -646,7 +646,7 @@ export default function StudioAgentCanvas({
           </div>
         </CardShell>
 
-        <div className="studio-card rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
+        <div className="wl-paper wl-paper-elevated rounded-[14px] p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
             <WiredEyebrow>Setup health</WiredEyebrow>
             <span className="text-xs font-semibold text-primary">
