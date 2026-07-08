@@ -25,6 +25,7 @@ import * as schema from "../db/schema";
 import { planById } from "./plan-catalog";
 import { emitVoiceMinuteOverageEvent } from "./stripe-helpers";
 import { debitForOverage, debitForVoiceUsage } from "./credit-wallet";
+import { isBalanceFundedVoicePlan } from "./voice-billing-policy";
 
 const DIMENSION = "voice_minutes_monthly";
 
@@ -114,12 +115,13 @@ export async function trackVoiceMinutes(opts: {
       .where(eq(schema.subscriptions.userId, userId))
       .limit(1);
 
-    const plan = planById(sub?.plan ?? "personal");
+    const planId = sub?.plan ?? null;
+    const plan = planById(planId ?? "personal");
     if (!plan) return;
 
-    // If they have no active subscription, they are on the free-to-build pay-as-you-go Personal path.
-    // Every minute is charged directly to their balance.
-    const isPayAsYouGo = !sub?.plan;
+    // Personal and no-subscription accounts are create/train-free and live-work prepaid.
+    // They do not receive the historical included-minute compatibility allowance.
+    const isPayAsYouGo = isBalanceFundedVoicePlan(planId);
     const included = isPayAsYouGo ? 0 : plan.voice_minutes_monthly;
     const newOverageMinutes = Math.max(0, newUsed - Math.max(included, previousUsed));
     if (newOverageMinutes <= 0) return;
@@ -185,8 +187,9 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
   ]);
 
   const used = Number(usageRow?.used ?? 0);
-  const plan = planById(sub?.plan ?? "personal");
-  const isPayAsYouGo = !sub?.plan;
+  const planId = sub?.plan ?? null;
+  const plan = planById(planId ?? "personal");
+  const isPayAsYouGo = isBalanceFundedVoicePlan(planId);
   const included = isPayAsYouGo ? 0 : (plan?.voice_minutes_monthly ?? 0);
   const overage = Math.max(0, used - included);
   const overageRate = plan?.overage_per_min_usd ?? 0.2;

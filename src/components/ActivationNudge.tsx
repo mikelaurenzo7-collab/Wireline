@@ -33,13 +33,29 @@ function formatTel(number: string): string {
   return `tel:${number}`;
 }
 
+function readDismissed(): boolean {
+  try {
+    return localStorage.getItem(DISMISS_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeDismissed(): void {
+  try {
+    localStorage.setItem(DISMISS_KEY, "true");
+  } catch {
+    /* storage can be unavailable in private or embedded browser contexts */
+  }
+}
+
 export default function ActivationNudge({ className }: { className?: string }) {
   const [visible, setVisible] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem(DISMISS_KEY) === "true") setDismissed(true);
+    if (readDismissed()) setDismissed(true);
   }, []);
 
   useEffect(() => {
@@ -102,7 +118,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
   }, []);
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, "true");
+    writeDismissed();
     setDismissed(true);
   };
 

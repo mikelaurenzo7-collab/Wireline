@@ -37,4 +37,25 @@ describe("product event client", () => {
     emitProductEventOnce({ event: "first_call_completed", agentId: "agent-2" });
     expect(pushes).toHaveLength(2);
   });
+
+  it("uses call metadata to scope call milestones when no agent or account is available", () => {
+    emitProductEventOnce({
+      event: "first_call_completed",
+      metadata: { call_id: "call-1", channel: "phone" },
+    });
+    emitProductEventOnce({
+      event: "first_call_completed",
+      metadata: { call_id: "call-1", channel: "phone" },
+    });
+    emitProductEventOnce({
+      event: "first_call_completed",
+      metadata: { call_id: "call-2", channel: "phone" },
+    });
+
+    expect(pushes).toHaveLength(2);
+    expect(pushes.map((push) => push.wireline_metadata)).toEqual([
+      { call_id: "call-1", channel: "phone" },
+      { call_id: "call-2", channel: "phone" },
+    ]);
+  });
 });
