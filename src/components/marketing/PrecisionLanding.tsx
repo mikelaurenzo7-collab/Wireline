@@ -42,12 +42,11 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
 
   return (
     <aside
-      className="relative rounded-[20px] border border-border bg-card p-5 shadow-[0_1px_3px_rgba(0,0,0,.03),_0_8px_32px_rgba(0,0,0,.05)] sm:p-6"
+      className="wl-paper wl-paper-elevated relative rounded-[20px] p-5 sm:p-6"
       aria-label={`${data.role} live call preview`}
     >
-      {/* Glow */}
       <div
-        className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-60"
+        className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-55"
         aria-hidden="true"
         style={{
           background:
@@ -56,7 +55,6 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
         }}
       />
       <div className="relative">
-        {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <div
@@ -67,7 +65,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             </div>
             <div className="min-w-0">
               <div className="truncate text-[14px] font-semibold">{data.name}</div>
-              <div className="wl-eyebrow text-primary">{data.role}</div>
+              <div className="wl-eyebrow wl-eyebrow--no-rule text-primary">{data.role}</div>
               <div className="mt-1 truncate text-[12px] text-muted-foreground">{data.caller}</div>
             </div>
           </div>
@@ -82,7 +80,6 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
           </div>
         </div>
 
-        {/* Waveform */}
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-muted px-4 py-3">
           <div className="flex h-6 items-end gap-[2px]" aria-hidden="true">
             {[30, 70, 100, 50, 85, 40, 95, 60].map((h, i) => (
@@ -103,7 +100,6 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
           </span>
         </div>
 
-        {/* Transcript */}
         <div className="mt-4 flex flex-col gap-2" role="list" aria-label="Example call transcript">
           {data.lines.map((line, i) => (
             <div
@@ -120,7 +116,6 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
           ))}
         </div>
 
-        {/* Tags */}
         <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Call outcomes">
           {data.tags.map((tag) => (
             <li key={tag} className="marketing-tag-success inline-flex items-center gap-1.5">
@@ -172,7 +167,7 @@ const HERO_AUDIENCE_COPY: Record<
   },
 };
 
-const HERO_OUTCOMES = ["Answers live", "Routes the handoff", "Texts the recap"] as const;
+const HERO_OUTCOMES = ["Answers live", "Routes handoff", "Texts recap"] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
@@ -226,23 +221,23 @@ const BUSINESS_CONFIGS = [
 const STEPS = [
   {
     num: "01",
-    title: "Connect",
-    body: "Keep your number or provision a business line. Wireline becomes the trained layer on top.",
+    title: "Create",
+    body: "Name the agent, pick the posture, and start from a personal or business playbook.",
   },
   {
     num: "02",
-    title: "Build",
-    body: "Name it, pick a voice, define the workflow, and start from a personal or business playbook.",
+    title: "Train",
+    body: "Feed the facts, scripts, policies, voice, limits, and handoff rules it must honor.",
   },
   {
     num: "03",
-    title: "Train",
-    body: "Feed scripts, FAQs, limits, and handoff rules. Test the call before it goes live.",
+    title: "Wire",
+    body: "Attach the number, tools, routing, approvals, billing controls, and launch checks.",
   },
   {
     num: "04",
-    title: "Deploy",
-    body: "Read transcripts, coach weak spots, and keep improving the line after every call.",
+    title: "Run",
+    body: "Review transcripts, coach weak spots, text outcomes, and keep the line improving.",
   },
 ];
 
@@ -324,16 +319,14 @@ export default function PrecisionLanding() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-        {/* ── HERO ──────────────────────────────────────────────── */}
         <section
           className="marketing-hero border-b border-border px-5 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20"
           aria-labelledby="wireline-hero-title"
         >
-          <div className="wl-public-rail grid items-center gap-10 lg:grid-cols-[1.12fr_.88fr] lg:gap-12">
-            {/* Left copy */}
+          <div className="wl-public-rail grid items-center gap-9 lg:grid-cols-[1.08fr_.92fr] lg:gap-12">
             <div className="wireline-hero-motion">
               <div
-                className="mb-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-[var(--wireline-elevation-xs)]"
+                className="wl-segmented mb-6"
                 role="tablist"
                 aria-label="Audience mode"
                 onKeyDown={handleAudienceKeyDown}
@@ -349,12 +342,9 @@ export default function PrecisionLanding() {
                       aria-selected={selected}
                       aria-controls={getAudiencePanelId(key)}
                       tabIndex={selected ? 0 : -1}
+                      data-active={selected ? "true" : undefined}
                       onClick={() => selectAudience(key)}
-                      className={`min-h-10 rounded-md px-4 text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
-                        selected
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                      className="wl-segmented__item px-4 sm:px-5"
                     >
                       {label}
                     </button>
@@ -364,7 +354,7 @@ export default function PrecisionLanding() {
 
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
                 <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
-                <span className="wl-eyebrow text-muted-foreground">
+                <span className="wl-eyebrow wl-eyebrow--no-rule text-muted-foreground">
                   {audience === "business"
                     ? BUSINESS_MARKETING_VOICE.eyebrow
                     : MARKETING_VOICE.eyebrow}
@@ -388,16 +378,24 @@ export default function PrecisionLanding() {
                 {heroCopy.note}
               </p>
 
-              <ul className="mt-6 flex flex-wrap gap-2" aria-label="Designed for">
-                {MARKETING_VOICE.proof.map((item) => (
+              <ol
+                className="mt-6 grid max-w-[32rem] grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-card"
+                aria-label="Wireline product loop"
+              >
+                {MARKETING_VOICE.proof.map((item, index) => (
                   <li
                     key={item}
-                    className="rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-muted-foreground"
+                    className="border-r border-border px-2 py-3 text-center last:border-r-0"
                   >
-                    {item}
+                    <span className="block font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-primary">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="mt-1 block text-[12px] font-semibold text-muted-foreground">
+                      {item}
+                    </span>
                   </li>
                 ))}
-              </ul>
+              </ol>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
@@ -419,10 +417,7 @@ export default function PrecisionLanding() {
 
               <ul className="mt-7 grid gap-2 sm:grid-cols-3" aria-label="Core outcomes">
                 {HERO_OUTCOMES.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-2 text-[13px] text-muted-foreground"
-                  >
+                  <li key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
                     <span className="marketing-proof-chip h-[18px] w-[18px]" aria-hidden="true">
                       ✓
                     </span>
@@ -432,7 +427,6 @@ export default function PrecisionLanding() {
               </ul>
             </div>
 
-            {/* Right: live call card */}
             <div className="wireline-hero-motion wireline-hero-motion--delay">
               {audiences.map(({ key, label }) => (
                 <div
@@ -450,7 +444,6 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        {/* ── DIFFERENTIATOR STRIP ──────────────────────────────── */}
         <div className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p
             className="marketing-ink-panel__soft text-[18px]"
@@ -458,12 +451,11 @@ export default function PrecisionLanding() {
               fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
             }}
           >
-            {heroCopy.stripLead}{" "}
+            {heroCopy.stripLead} {" "}
             <span className="text-[var(--wireline-color-text-primary)]">{heroCopy.stripWin}</span>
           </p>
         </div>
 
-        {/* ── WHAT IT DOES ──────────────────────────────────────── */}
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
@@ -471,9 +463,7 @@ export default function PrecisionLanding() {
                 Agent playbooks · {audience === "personal" ? "personal" : "business"}
               </p>
               <h2 className="wl-display-2 mt-4">
-                {audience === "personal"
-                  ? "Configure it for real life."
-                  : "Built for real call volume."}
+                {audience === "personal" ? "Configure it for real life." : "Built for real call volume."}
               </h2>
               <p className="mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
                 {audience === "personal"
@@ -486,7 +476,7 @@ export default function PrecisionLanding() {
               {configs.map(({ icon, name, body, plan }) => (
                 <div
                   key={name}
-                  className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_var(--wireline-color-glow-primarySoft)]"
+                  className="wl-paper group rounded-[16px] p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_var(--wireline-color-glow-primarySoft)]"
                 >
                   <div
                     className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[var(--wireline-color-action-primary-container)] text-[18px] text-primary"
@@ -496,19 +486,18 @@ export default function PrecisionLanding() {
                   </div>
                   <h3 className="wl-display-4 mb-2">{name}</h3>
                   <p className="mb-5 text-[14px] leading-[1.6] text-muted-foreground">{body}</p>
-                  <p className="wl-eyebrow text-muted-foreground">{plan}</p>
+                  <p className="wl-eyebrow wl-eyebrow--no-rule text-muted-foreground">{plan}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── HOW IT WORKS ──────────────────────────────────────── */}
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">Live before lunch.</h2>
+              <h2 className="wl-display-2 mt-4">Create. Train. Wire. Run.</h2>
             </div>
 
             <div className="grid overflow-hidden rounded-[16px] border border-border sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -531,7 +520,6 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        {/* ── PRICING ───────────────────────────────────────────── */}
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12 text-center">
@@ -545,18 +533,18 @@ export default function PrecisionLanding() {
               </p>
             </div>
 
-            <div className="mx-auto grid max-w-[960px] items-start gap-5 sm:grid-cols-3">
+            <div className="mx-auto grid max-w-[960px] items-stretch gap-5 sm:grid-cols-3">
               {PLANS.map((plan) => (
                 <div
                   key={plan.name}
-                  className={`relative rounded-[14px] p-8 ${
+                  className={`relative flex flex-col rounded-[14px] p-8 ${
                     plan.featured
                       ? "wl-featured-wire marketing-ink-panel shadow-[var(--wireline-elevation-lg)]"
-                      : "border border-border bg-card"
+                      : "wl-paper"
                   }`}
                 >
                   {plan.badge && (
-                    <div className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 wl-eyebrow text-primary-foreground">
+                    <div className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 wl-eyebrow wl-eyebrow--no-rule text-primary-foreground">
                       {plan.badge}
                     </div>
                   )}
@@ -579,7 +567,7 @@ export default function PrecisionLanding() {
                   >
                     {plan.body}
                   </p>
-                  <ul className="mb-6 flex flex-col gap-2">
+                  <ul className="mb-6 flex flex-1 flex-col gap-2">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-center gap-2 text-[13px]">
                         <span
@@ -613,14 +601,12 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        {/* ── ROI CALCULATOR ──────────────────────────────────────── */}
         <section className="px-5 py-4 sm:px-8 lg:px-10">
           <div className="wl-public-rail">
             <RoiCalculator />
           </div>
         </section>
 
-        {/* ── FINAL CTA ─────────────────────────────────────────── */}
         <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="wl-featured-wire wl-featured-wire--live relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-20">
