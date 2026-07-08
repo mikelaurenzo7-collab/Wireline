@@ -4,7 +4,10 @@ Turn the `WirelineWidgets` extension from a single static launcher into a
 glanceable, live, eventually-interactive surface — the iPhone payoff that earns
 Wireline its Home/Lock Screen spot. Grounded in the existing iOS app
 (`ios/Wireline`), the `/api/mobile/*` backend, and the App Store / CarPlay
-readiness runbook in `APP_STORE_CARPLAY_READINESS.md`.
+readiness runbook in `APP_STORE_CARPLAY_READINESS.md`. Widgets stay companion
+scoped: authenticated status, active/recent calls, follow-up count, and read-only
+wallet balance. They must not introduce billing checkout, CRM setup, campaign
+management, or long-form agent training flows.
 
 ## Architecture
 
@@ -56,10 +59,12 @@ calls `WidgetCenter.reloadAllTimelines()`.
 ## Phase W3 — Interactive widgets (iOS 17 AppIntent buttons) — next
 
 - "Call back last missed" `AppIntent` button on `RecentCallsWidget` (no app
-  launch) — maps to the #1 future intent in the readiness doc.
-- "Mark last call followed up" toggle (one-tap status change via
-  `/api/mobile/*`).
-- iOS 18 **Control Center** `ControlWidget`: Ask Wireline + call-back toggles.
+  launch) — maps to the #1 future intent in the readiness doc and must pass the
+  same safe outbound-call purpose/consent contract as the app.
+- "Mark last call followed up" toggle only after a narrow mobile endpoint exists
+  for that specific status change; do not add CRM workflows to the widget.
+- iOS 18 **Control Center** `ControlWidget`: Ask Wireline + call-back toggles,
+  still limited to explicit user-initiated actions.
 
 ## Phase W4 — Live Activity / Dynamic Island — next
 
