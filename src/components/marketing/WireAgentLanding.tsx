@@ -6,7 +6,7 @@ import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import RoiCalculator from "./RoiCalculator";
 import TrustSignals from "./TrustSignals";
-import { AGENT_DIRECTION_MODES } from "../../lib/product-copy";
+import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
 type AgentMode = "outbound" | "inbound" | "hybrid";
@@ -22,7 +22,7 @@ type ModeDetail = {
   ctaPath: string;
 };
 
-const HERO_LOOP = ["Create", "Train", "Wire", "Run"] as const;
+const HERO_LOOP = MARKETING_VOICE.proof;
 
 const AUDIENCES = ["Personal calls", "Sales", "Support", "Call centers"] as const;
 
@@ -286,29 +286,33 @@ export default function WireAgentLanding() {
             <div className="wireline-hero-motion text-center lg:text-left">
               <div className="mx-auto mb-5 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 lg:mx-0">
                 <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
-                <span className="wl-eyebrow wl-eyebrow--no-rule text-muted-foreground">
-                  From personal assistants to call centers and sales teams
+                <span className="wl-eyebrow wl-eyebrow--wired text-muted-foreground">
+                  {MARKETING_VOICE.eyebrow}
                 </span>
               </div>
 
               <h1
                 id="wireline-hero-title"
-                className="wl-display-1 mx-auto max-w-[9ch] text-[clamp(3.25rem,13vw,8rem)] uppercase leading-[.82] tracking-[-.075em] lg:mx-0"
+                className="wl-display-1 mx-auto max-w-[12ch] text-[clamp(3.25rem,13vw,8rem)] uppercase leading-[.82] tracking-[-.075em] lg:mx-0"
               >
-                Wire your <span className="text-primary">agent</span>
+                {MARKETING_VOICE.headline}
               </h1>
 
               <p className="wl-lead mx-auto mt-6 max-w-[42rem] lg:mx-0">
-                Create the agent, train the rules, wire the number, and run the work from one clean
-                operating surface.
+                {MARKETING_VOICE.subline}
               </p>
 
               <div className="mt-6 grid max-w-[35rem] grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-card lg:mx-0">
                 {HERO_LOOP.map((step, index) => (
                   <div
                     key={step}
-                    className="border-r border-border px-2 py-3 text-center last:border-r-0"
+                    className={`wl-wire-step border-r border-border px-2 py-3 text-center last:border-r-0 ${
+                      index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : ""
+                    }`}
                   >
+                    <div className="wl-wire-step__marker mb-2 flex justify-center">
+                      <span className="wl-wire-step__node" aria-hidden="true" />
+                    </div>
                     <span className="block font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-primary">
                       {String(index + 1).padStart(2, "0")}
                     </span>

@@ -53,7 +53,7 @@ export default function TuningRailMap({
     : "/training";
 
   return (
-    <div className="shrink-0 border-b border-border/80 bg-card/75 px-3 py-3 dark:bg-velvet/45">
+    <div className="shrink-0 border-b border-border/80 bg-card/75 px-3 py-3 dark:bg-card/75">
       <div className="rounded-md border border-brand/15 bg-brand/[0.04] px-3 py-2.5">
         <div className="flex items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5">

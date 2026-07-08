@@ -11,7 +11,7 @@ type Props = {
   /** Opt-in mobile bottom conversion bar. In-flow CTAs are the default. */
   stickyCta?: boolean;
   footer?: boolean;
-  /** Rich cream canvas (sign-in, reset password) — matches AuthPortal */
+  /** Aurora auth canvas (sign-in, reset password) — matches AuthPortal */
   authCanvas?: boolean;
   className?: string;
 };

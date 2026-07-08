@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import { authFetch } from "../lib/api";
 import { clientLog } from "../lib/client-log";
 import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
-import PageShell from "./PageShell";
+import { WorkspacePageFrame } from "./layout/WorkspacePageFrame";
 import { useToast } from "../contexts/ToastContext";
 import { useBranding } from "../contexts/BrandingContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
@@ -372,7 +372,7 @@ export default function AdminSettings() {
             label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,
           }))}
         />
-        <PageShell>
+        <WorkspacePageFrame mode="operate" className="gap-0 pb-0">
           <div className="h-full flex flex-col">
             <IntegrationHealthBanner
               health={integrationHealth}
@@ -509,7 +509,7 @@ export default function AdminSettings() {
               )}
             </div>
           </div>
-        </PageShell>
+        </WorkspacePageFrame>
       </AdminHubViewport>
       <ConfirmModal
         open={confirmState.open}

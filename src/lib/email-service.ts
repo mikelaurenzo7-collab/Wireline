@@ -401,7 +401,7 @@ export async function sendUrgentEscalationEmail(opts: {
     .filter((s) => s !== "")
     .join("\n");
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23; background: #FAF8F5;">
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23; background: #f6f5fa;">
       <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid rgba(79,30,123,0.08);">
         <div style="display: inline-block; background: rgba(232,70,106,0.10); color: #B91C3E; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 12px;">Urgent · Escalation</div>
         <h2 style="margin: 0 0 12px; font-weight: 600; font-size: 18px;">${escapeHtml(opts.title)}</h2>

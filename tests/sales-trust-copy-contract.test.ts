@@ -31,7 +31,6 @@ const PROHIBITED_PATTERNS: { pattern: RegExp; reason: string }[] = [
 const SCANNED_FILES = [
   "src/data/vertical-wedges.ts",
   "src/components/marketing/WireAgentLanding.tsx",
-  "src/components/marketing/PrecisionLanding.tsx",
 ] as const;
 
 describe("sales trust copy contract", () => {

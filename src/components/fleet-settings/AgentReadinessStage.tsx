@@ -36,7 +36,7 @@ export default function AgentReadinessStage({
   );
 
   return (
-    <div className="shrink-0 border-b border-border/50 bg-card/30 px-4 py-3 dark:bg-velvet/20">
+    <div className="shrink-0 border-b border-border/50 bg-card/30 px-4 py-3 dark:bg-card/30">
       <div className="flex items-center gap-4">
         {/* The one number that matters. */}
         <div className="flex shrink-0 items-baseline gap-1.5">

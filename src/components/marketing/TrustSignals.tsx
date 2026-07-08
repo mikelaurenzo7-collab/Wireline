@@ -74,7 +74,7 @@ const STATE_TONES = {
   },
   ready: {
     pill: "bg-primary/8 text-primary border-primary/20",
-    dot: "bg-brand",
+    dot: "bg-primary",
     label: "Ready",
   },
   progress: {
@@ -96,7 +96,7 @@ export default function TrustSignals() {
       data-testid="trust-signals"
     >
       <div className="flex items-center gap-2 mb-3">
-        <span className="hero-accent-line bg-brand" />
+        <span className="hero-accent-line bg-primary" />
         <h2
           id="trust-heading"
           className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.5em] text-muted/70 font-semibold"

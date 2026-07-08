@@ -82,7 +82,7 @@ const knowledgeBase = read("src/components/KnowledgeBaseClaude.tsx");
 const assistantComposer = read("src/components/AssistantComposer.tsx");
 const browserCallWidget = read("src/components/marketing/BrowserCallWidget.tsx");
 const trustSignals = read("src/components/marketing/TrustSignals.tsx");
-const precisionLanding = read("src/components/marketing/PrecisionLanding.tsx");
+const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
 const signalOrbFrame = read("src/components/ui/SignalOrbFrame.tsx");
 const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
 const pageMeta = read("src/lib/page-meta.tsx");
@@ -641,14 +641,14 @@ mustExclude(
   "trust strip must use agent language",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /MARKETING_VOICE\.headline/,
   "landing hero must frame agents across inbound and outbound conversations",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /MARKETING_VOICE\.subline/,
   "landing hero must keep the short punchy subhero",
 );
@@ -659,20 +659,20 @@ mustInclude(
   "marketing hero copy must live in product-copy module",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /MARKETING_VOICE/,
   "landing must consume shared marketing voice constants",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /STRIPE_PLANS/,
   "landing pricing must stay tied to the Stripe plan catalog",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /Conversation Balance/,
   "landing pricing must explain Conversation Balance",
 );
@@ -690,8 +690,8 @@ mustInclude(
   "the Wire pulse must respect reduced motion",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /wl-eyebrow--wired/,
   "landing section eyebrows must carry the Wire",
 );
@@ -708,14 +708,14 @@ mustInclude(
   "the setup steps must run silver-to-violet on the wire (Connect → Deploy)",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /wl-wire-step__node/,
   "landing setup steps must be nodes on the wire",
 );
 mustInclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /wl-featured-wire/,
   "dark ink panels (recommended plan, closing CTA) must carry the wire",
 );
@@ -732,8 +732,8 @@ mustInclude(
   "the mark's central node must carry the silver signal on public surfaces",
 );
 mustExclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /Start 7-day trial|Start your 7-day trial|Try 7 days free|7-day free trial|7-day trial|No gimmick free plan|name:\s*"Starter"|name:\s*"Pro"|Everything in Starter|Everything in Pro|\$79/,
   "landing pricing must not revive retired trial or Starter/Pro catalog copy",
 );
@@ -816,8 +816,8 @@ mustInclude(
   "default metadata title must match the current landing promise",
 );
 mustExclude(
-  "src/components/marketing/PrecisionLanding.tsx",
-  precisionLanding,
+  "src/components/marketing/WireAgentLanding.tsx",
+  wireAgentLanding,
   /Agents that answer calls, texts, and follow-up|Your best front desk|Create a short agent brief|Train it on your sources|Run live work from Studio/i,
   "landing hero subcopy must stay short and enticing",
 );

@@ -20,11 +20,9 @@ import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import { DNC_IMPORT_MAX_ENTRIES, dncImportLimitError } from "../lib/dnc-import-limits";
-import { OPS_SUPPORT_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/wireline-ops-design";
+import { OPS_SUPPORT_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import ClientToolbar from "./layout/ClientToolbar";
-import PageShell, { Panel } from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
-import AdminHubViewport from "./layout/AdminHubViewport";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +31,7 @@ import {
   DialogDescription,
 } from "./ui/shadcn/Dialog";
 import { Input } from "./ui/shadcn/Input";
-import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Button } from "./atoms";
 import { EmptyState } from "./ui/EmptyState";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
@@ -263,339 +261,326 @@ export default function DncManager() {
   };
 
   return (
-    <AdminHubViewport scroll>
-      <div className="bg-background text-foreground paper-texture h-full">
-        <PageShell title="" eyebrow="" subtitle="" scrollable>
-          <div className="flex flex-col flex-1 min-h-0 gap-3 h-full">
-            <ClientToolbar
-              left={
-                <span className="app-toolbar-stat">
-                  {loading
-                    ? OPS_CHANNEL_TOOLBAR.dnc.loading
-                    : OPS_CHANNEL_TOOLBAR.dnc.stat(entries.length)}
-                </span>
-              }
-              actions={
-                <>
-                  <Input
-                    ref={fileRef}
-                    type="file"
-                    accept=".csv"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleCsvImport(e.target.files[0])}
-                  />
-                  <ShadButton
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disableAnimations
-                    onClick={refresh}
-                    disabled={loading}
-                    className={cn(
-                      "h-9 rounded-full text-muted touch-press hover:scale-[1.05]",
-                      WL_OPS_CLASSES.filterChip,
-                    )}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-3 h-3" />
-                    )}
-                    {OPS_CHANNEL_TOOLBAR.dnc.refresh}
-                  </ShadButton>
-                  <ShadButton
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disableAnimations
-                    onClick={() => fileRef.current?.click()}
-                    disabled={importing}
-                    className={cn(
-                      "h-9 rounded-full text-muted touch-press hover:scale-[1.05]",
-                      WL_OPS_CLASSES.filterChip,
-                    )}
-                  >
-                    {importing ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Upload className="w-3 h-3" />
-                    )}
-                    {OPS_CHANNEL_TOOLBAR.dnc.import}
-                  </ShadButton>
-                  <ShadButton
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    disableAnimations
-                    onClick={() => setShowAdd(true)}
-                    className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 wl-label hover:bg-rose-500/25 shadow-none touch-press hover:scale-[1.05]"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    {OPS_CHANNEL_TOOLBAR.dnc.add}
-                  </ShadButton>
-                </>
-              }
-            />
-            {/* Stat bar */}
-            <div className="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Total Blocked", value: stats.total, icon: Shield },
-                { label: "Manual Entries", value: stats.manual, icon: Plus },
-                { label: "CSV Imported", value: stats.csv, icon: FileText },
-                { label: "Opt-Out", value: stats.optOut, icon: CheckCircle2 },
-              ].map(({ label, value, icon: Icon }) => (
-                <div
-                  key={label}
-                  className="relative rounded-md wl-panel border border-border p-4 overflow-hidden"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="wl-label-muted">{label}</p>
-                    <Icon className="w-3.5 h-3.5 text-brand" />
-                  </div>
-                  <p className="font-display italic text-3xl text-foreground leading-none">
-                    {value}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Main list */}
-            <div className="flex-1 min-h-0">
-              <Panel
-                title="Blocked Numbers"
-                hint={`${filtered.length} entries`}
-                icon={Shield}
-                scroll
-                className="h-full"
-                actions={
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                    <Input
-                      type="search"
-                      aria-label="Search blocked numbers"
-                      placeholder="Search numbers…"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="h-8 w-44 lg:w-64 pl-8 pr-3 rounded-full wl-panel border border-border text-[var(--wireline-typography-overline-size)] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none"
-                    />
-                  </div>
-                }
+    <div className="flex h-full min-h-0 flex-col gap-3 bg-background text-foreground">
+      <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {loading
+                ? OPS_CHANNEL_TOOLBAR.dnc.loading
+                : OPS_CHANNEL_TOOLBAR.dnc.stat(entries.length)}
+            </span>
+          }
+          actions={
+            <>
+              <Input
+                ref={fileRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleCsvImport(e.target.files[0])}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={refresh}
+                disabled={loading}
               >
                 {loading ? (
-                  <ClientRouteLoading
-                    icon={<Shield className="w-6 h-6" />}
-                    label={OPS_CHANNEL_TOOLBAR.dnc.loading}
-                  />
-                ) : loadErr ? (
-                  <EmptyState
-                    icon={Shield}
-                    title="Couldn't load the suppression list"
-                    description={loadErr}
-                    actions={[{ label: "Retry", onClick: refresh, primary: true }]}
-                    density="compact"
-                    withHalo={false}
-                    className="py-10"
-                  />
-                ) : filtered.length === 0 ? (
-                  <EmptyState
-                    icon={Shield}
-                    title={
-                      (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
-                        .title
-                    }
-                    density="compact"
-                    withHalo={false}
-                    actions={
-                      entries.length === 0
-                        ? [
-                            {
-                              label: "Add first number",
-                              onClick: () => setShowAdd(true),
-                              primary: true,
-                            },
-                            {
-                              label: "Import CSV",
-                              onClick: () => fileRef.current?.click(),
-                            },
-                          ]
-                        : []
-                    }
-                  />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <div className="divide-y divide-black/5 dark:divide-white/5">
-                    {filtered.map((entry) => (
-                      <motion.div
-                        key={entry.id}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-black/[0.02] dark:hover:bg-white/3 transition-all rounded-md touch-press hover:scale-[1.02]"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
-                            <Phone className="w-3.5 h-3.5 text-rose-500" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-mono text-sm text-foreground">
-                              {entry.phone_raw || entry.phone}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="wl-micro-meta">{formatDate(entry.created_at)}</span>
-                              <span className="w-1 h-1 rounded-full bg-black/15 dark:bg-white/15" />
-                              <span className="wl-micro-meta">{reasonLabel(entry.reason)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
-                          <span
-                            className={cn(
-                              "wl-label px-2 py-0.5 rounded-full border",
-                              sourceColor(entry.source),
-                            )}
-                          >
-                            {entry.source}
-                          </span>
-                          {confirmId === entry.id ? (
-                            <div className="flex items-center gap-1.5">
-                              <span className="wl-micro-meta text-rose-500">Remove?</span>
-                              <ShadButton
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                disableAnimations
-                                onClick={() => handleDelete(entry.id)}
-                                disabled={deletingId === entry.id}
-                                className="h-7 px-2.5 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 wl-label hover:bg-rose-500/30 shadow-none"
-                              >
-                                {deletingId === entry.id ? (
-                                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                ) : (
-                                  <CheckCircle2 className="w-2.5 h-2.5" />
-                                )}
-                                Confirm
-                              </ShadButton>
-                              <ShadButton
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                disableAnimations
-                                onClick={() => setConfirmId(null)}
-                                aria-label="Cancel delete"
-                                className="h-7 w-7 rounded-full"
-                              >
-                                <X className="w-3 h-3" />
-                              </ShadButton>
-                            </div>
-                          ) : (
-                            <ShadButton
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              disableAnimations
-                              onClick={() => setConfirmId(entry.id)}
-                              aria-label={`Remove ${entry.phone_raw || entry.phone} from DNC list`}
-                              className="h-7 w-7 rounded-full text-muted hover:text-rose-500 hover:border-rose-500/30"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </ShadButton>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                  <RefreshCw className="w-3 h-3" />
                 )}
-              </Panel>
+                {OPS_CHANNEL_TOOLBAR.dnc.refresh}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+                disabled={importing}
+              >
+                {importing ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Upload className="w-3 h-3" />
+                )}
+                {OPS_CHANNEL_TOOLBAR.dnc.import}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowAdd(true)}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {OPS_CHANNEL_TOOLBAR.dnc.add}
+              </Button>
+            </>
+          }
+        />
+        {/* Stat bar */}
+        <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Total Blocked", value: stats.total, icon: Shield },
+            { label: "Manual Entries", value: stats.manual, icon: Plus },
+            { label: "CSV Imported", value: stats.csv, icon: FileText },
+            { label: "Opt-Out", value: stats.optOut, icon: CheckCircle2 },
+          ].map(({ label, value, icon: Icon }) => (
+            <div
+              key={label}
+              className="relative overflow-hidden rounded-md border border-border wl-panel p-4"
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <p className="wl-label-muted">{label}</p>
+                <Icon className="h-3.5 w-3.5 text-brand" />
+              </div>
+              <p className="font-display text-3xl italic leading-none text-foreground">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Main list */}
+        <div className="min-h-0 flex-1">
+          <section className="relative flex h-full min-h-0 flex-col overflow-hidden border border-border wl-paper wl-paper-elevated">
+            <header className="relative flex shrink-0 flex-wrap items-center justify-between gap-3 px-3 py-2.5 max-md:px-4 max-md:py-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-border">
+                  <Shield className="h-3.5 w-3.5 text-brand" />
+                </div>
+                <h3 className="font-display text-base italic leading-tight text-foreground">
+                  Blocked Numbers
+                </h3>
+                <span className="text-eyebrow ml-1 opacity-80">{filtered.length} entries</span>
+              </div>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+                <Input
+                  type="search"
+                  aria-label="Search blocked numbers"
+                  placeholder="Search numbers…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-8 w-44 border border-border bg-transparent pl-8 pr-3 text-[var(--wireline-typography-overline-size)] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none lg:w-64"
+                />
+              </div>
+            </header>
+            <div className="h-px shrink-0 wl-panel-divider-fade" />
+            <div className="scroll-viewport panel-scroll min-h-0 flex-1 overscroll-contain scroll-pb-6 p-3 max-md:p-4">
+              {loading ? (
+                <ClientRouteLoading
+                  icon={<Shield className="w-6 h-6" />}
+                  label={OPS_CHANNEL_TOOLBAR.dnc.loading}
+                />
+              ) : loadErr ? (
+                <EmptyState
+                  icon={Shield}
+                  title="Couldn't load the suppression list"
+                  description={loadErr}
+                  actions={[{ label: "Retry", onClick: refresh, primary: true }]}
+                  density="compact"
+                  withHalo={false}
+                  className="py-10"
+                />
+              ) : filtered.length === 0 ? (
+                <EmptyState
+                  icon={Shield}
+                  title={
+                    (entries.length === 0 ? OPS_SUPPORT_EMPTY.dnc : OPS_SUPPORT_EMPTY.dncNoMatch)
+                      .title
+                  }
+                  density="compact"
+                  withHalo={false}
+                  actions={
+                    entries.length === 0
+                      ? [
+                          {
+                            label: "Add first number",
+                            onClick: () => setShowAdd(true),
+                            primary: true,
+                          },
+                          {
+                            label: "Import CSV",
+                            onClick: () => fileRef.current?.click(),
+                          },
+                        ]
+                      : []
+                  }
+                />
+              ) : (
+                <div className="divide-y divide-black/5 dark:divide-white/5">
+                  {filtered.map((entry) => (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-all touch-press hover:scale-[1.02] hover:bg-black/[0.02] dark:hover:bg-white/3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-brand/20 bg-brand/10">
+                          <Phone className="h-3.5 w-3.5 text-rose-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-mono text-sm text-foreground">
+                            {entry.phone_raw || entry.phone}
+                          </p>
+                          <div className="mt-0.5 flex items-center gap-1.5">
+                            <span className="wl-micro-meta">{formatDate(entry.created_at)}</span>
+                            <span className="h-1 w-1 rounded-full bg-black/15 dark:bg-white/15" />
+                            <span className="wl-micro-meta">{reasonLabel(entry.reason)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+                        <span
+                          className={cn(
+                            "wl-label rounded-md border px-2 py-0.5",
+                            sourceColor(entry.source),
+                          )}
+                        >
+                          {entry.source}
+                        </span>
+                        {confirmId === entry.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="wl-micro-meta text-rose-500">Remove?</span>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(entry.id)}
+                              disabled={deletingId === entry.id}
+                            >
+                              {deletingId === entry.id ? (
+                                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="h-2.5 w-2.5" />
+                              )}
+                              Confirm
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setConfirmId(null)}
+                              aria-label="Cancel delete"
+                              className="h-8 w-8"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setConfirmId(entry.id)}
+                            aria-label={`Remove ${entry.phone_raw || entry.phone} from DNC list`}
+                            className="h-8 w-8 text-muted hover:text-rose-500"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Add number modal */}
+      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+        <DialogContent className="sm:max-w-md rounded-md border border-border p-6 shadow-2xl wl-modal-surface">
+          <DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-border/60 pb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md border border-rose-500/30 bg-rose-500/10">
+              <Shield className="h-4.5 w-4.5 text-rose-500" />
+            </div>
+            <div className="text-left">
+              <DialogTitle className="font-display text-xl italic leading-none text-foreground">
+                Add to DNC
+              </DialogTitle>
+              <DialogDescription className="wl-label-muted mt-1">
+                Do Not Call List
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="mb-2 block wl-label-muted">Phone Number</label>
+              <div className="relative">
+                <Phone className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={addPhone}
+                  onChange={(e) => setAddPhone(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                  className="border-input bg-[var(--wireline-color-surface-recessed)] pl-9 text-sm text-foreground placeholder:text-foreground/55 focus-visible:ring-[var(--wireline-color-focus-default)]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block wl-label-muted">Reason</label>
+              <div className="relative">
+                <Select value={addReason} onValueChange={setAddReason}>
+                  <SelectTrigger
+                    aria-label="Reason"
+                    className="h-9 w-full rounded-md border border-input bg-transparent pl-3 text-sm text-foreground"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REASON_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 rounded-md border border-brand/15 bg-brand/5 p-3">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-brand" />
+              <p className="wl-micro-meta leading-snug text-brand/80">
+                This number will immediately be blocked from all outbound calls and campaigns.
+              </p>
             </div>
           </div>
 
-          {/* Add number modal */}
-          <Dialog open={showAdd} onOpenChange={setShowAdd}>
-            <DialogContent className="sm:max-w-md border border-border shadow-2xl p-6 wl-modal-surface rounded-md">
-              <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-border/60">
-                <div className="w-9 h-9 rounded-md bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
-                  <Shield className="w-4.5 h-4.5 text-rose-500" />
-                </div>
-                <div className="text-left">
-                  <DialogTitle className="font-display italic text-xl text-foreground leading-none">
-                    Add to DNC
-                  </DialogTitle>
-                  <DialogDescription className="wl-label-muted mt-1">
-                    Do Not Call List
-                  </DialogDescription>
-                </div>
-              </DialogHeader>
-
-              <div className="space-y-4 py-4">
-                <div>
-                  <label className="block wl-label-muted mb-2">Phone Number</label>
-                  <div className="relative">
-                    <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                    <Input
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      placeholder="+1 (555) 123-4567"
-                      value={addPhone}
-                      onChange={(e) => setAddPhone(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                      className="pl-9 bg-[var(--wireline-color-surface-recessed)] border-input text-sm text-foreground placeholder:text-foreground/55 focus-visible:ring-[var(--wireline-color-focus-default)]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block wl-label-muted mb-2">Reason</label>
-                  <div className="relative">
-                    <Select value={addReason} onValueChange={setAddReason}>
-                      <SelectTrigger
-                        aria-label="Reason"
-                        className="w-full h-9 pl-3 rounded-md border border-input bg-transparent text-sm text-foreground"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {REASON_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 p-3 rounded-md bg-brand/5 border border-brand/15">
-                  <AlertTriangle className="w-4 h-4 text-brand shrink-0" />
-                  <p className="wl-micro-meta text-brand/80 leading-snug">
-                    This number will immediately be blocked from all outbound calls and campaigns.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <ShadButton
-                  variant="outline"
-                  onClick={() => setShowAdd(false)}
-                  className="flex-1 rounded-md h-10 border-border hover:bg-accent/40 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-foreground"
-                >
-                  Cancel
-                </ShadButton>
-                <ShadButton
-                  onClick={handleAdd}
-                  disabled={adding || !addPhone.trim()}
-                  className="flex-1 rounded-md h-10 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-500 uppercase tracking-[0.2em] wl-label font-bold flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {adding ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Shield className="w-3.5 h-3.5" />
-                  )}
-                  Block Number
-                </ShadButton>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </PageShell>
-      </div>
-    </AdminHubViewport>
+          <div className="flex items-center gap-2 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowAdd(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleAdd}
+              disabled={adding || !addPhone.trim()}
+              className="flex-1"
+            >
+              {adding ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Shield className="h-3.5 w-3.5" />
+              )}
+              Block Number
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

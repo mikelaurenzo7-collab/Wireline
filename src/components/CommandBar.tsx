@@ -7,9 +7,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import {
+  BarChart3,
   Bot,
   BriefcaseBusiness,
   Cable,
+  CheckSquare,
   ChevronRight,
   CreditCard,
   Database,
@@ -17,6 +19,7 @@ import {
   LayoutDashboard,
   MonitorDown,
   PenLine,
+  Phone,
   Search,
   Settings,
   Sparkles,
@@ -32,6 +35,7 @@ import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
+import { APP_KEYBOARD_SHORTCUTS } from "../constants/navigation";
 
 type CommandCategory = "Workspace" | "Create" | "Manage";
 
@@ -93,6 +97,30 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     description: "Review conversations, outcomes, and team handoffs.",
     icon: Inbox,
     href: "/inbox",
+    category: "Workspace",
+  },
+  {
+    id: "phone",
+    label: "Phone",
+    description: "Call history, outbound campaigns, and appointments.",
+    icon: Phone,
+    href: "/phone",
+    category: "Workspace",
+  },
+  {
+    id: "approvals",
+    label: "Approvals",
+    description: "Review proposed post-call actions before they run.",
+    icon: CheckSquare,
+    href: "/approvals",
+    category: "Workspace",
+  },
+  {
+    id: "insights",
+    label: "Insights",
+    description: "Performance, quality, and revenue across agents.",
+    icon: BarChart3,
+    href: "/insights",
     category: "Workspace",
   },
   {
@@ -193,6 +221,8 @@ export default function CommandBar() {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const pendingGoRef = useRef(false);
+  const goTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useBodyScrollLock(isOpen);
 
@@ -221,19 +251,53 @@ export default function CommandBar() {
   );
 
   useEffect(() => {
+    const clearGoPending = () => {
+      pendingGoRef.current = false;
+      if (goTimeoutRef.current) {
+        clearTimeout(goTimeoutRef.current);
+        goTimeoutRef.current = null;
+      }
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const isCommandShortcut =
         (event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === "k";
       if (isCommandShortcut) {
         if (!isOpen && isTextEntryTarget(event.target)) return;
         event.preventDefault();
+        clearGoPending();
         if (isOpen) close();
         else setIsOpen(true);
         return;
       }
       if (event.key === "Escape" && isOpen) {
         event.preventDefault();
+        clearGoPending();
         close();
+        return;
+      }
+
+      // Chord: g then <key> navigates using APP_KEYBOARD_SHORTCUTS (when not typing).
+      if (isOpen || isTextEntryTarget(event.target)) {
+        clearGoPending();
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      const key = event.key.toLocaleLowerCase();
+      if (key === "g" && !event.repeat) {
+        pendingGoRef.current = true;
+        if (goTimeoutRef.current) clearTimeout(goTimeoutRef.current);
+        goTimeoutRef.current = setTimeout(clearGoPending, 800);
+        return;
+      }
+      if (pendingGoRef.current) {
+        const href = APP_KEYBOARD_SHORTCUTS[key.toUpperCase()];
+        clearGoPending();
+        if (href) {
+          event.preventDefault();
+          navigate(href);
+        }
       }
     };
     const handleOpen = () => setIsOpen(true);
@@ -241,10 +305,11 @@ export default function CommandBar() {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("wireline:open-command-bar", handleOpen);
     return () => {
+      clearGoPending();
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wireline:open-command-bar", handleOpen);
     };
-  }, [close, isOpen]);
+  }, [close, isOpen, navigate]);
 
   useEffect(() => {
     if (isOpen) {

@@ -392,20 +392,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         />
       ) : (
         <div className="flex-1 min-h-0">
-          <PageShell
-            eyebrow={embedded ? undefined : "Channels · Messaging"}
-            title={embedded ? "" : "SMS Inbox"}
-            subtitle={
-              embedded ? undefined : "Two-way text conversations with customers and agents."
-            }
-          >
-            <Panel
-              title="Inbox"
-              hint="SMS · THREADS & REPLIES"
-              icon={Inbox}
-              flush
-              className="h-full"
-            >
+          {embedded ? (
+            <div className="h-full min-h-0">
               <ChannelInboxGrid>
                 <ChannelInboxListPane label="All conversations" detailOpen={!!activeId}>
                   {!loading && !fetchErr && threads.length > 0 ? (
@@ -550,8 +538,155 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   )}
                 </ChannelInboxDetailPane>
               </ChannelInboxGrid>
-            </Panel>
-          </PageShell>
+            </div>
+          ) : (
+            <PageShell
+              eyebrow="Channels · Messaging"
+              title="SMS Inbox"
+              subtitle="Two-way text conversations with customers and agents."
+            >
+              <Panel
+                title="Inbox"
+                hint="SMS · THREADS & REPLIES"
+                icon={Inbox}
+                flush
+                className="h-full"
+              >
+                <ChannelInboxGrid>
+                  <ChannelInboxListPane label="All conversations" detailOpen={!!activeId}>
+                    {!loading && !fetchErr && threads.length > 0 ? (
+                      <div className="sticky top-0 z-10 bg-card/95 px-1 pb-3 backdrop-blur">
+                        <SearchField
+                          value={search}
+                          onChange={(event) => setSearch(event.target.value)}
+                          onClear={() => setSearch("")}
+                          placeholder="Search number or summary"
+                          aria-label="Search SMS threads"
+                        />
+                      </div>
+                    ) : null}
+                    {listContent()}
+                  </ChannelInboxListPane>
+
+                  <ChannelInboxDetailPane detailOpen={!!activeId} label="Selected SMS conversation">
+                    {!activeThread ? (
+                      <EmptyState
+                        icon={<MessageSquare className="size-5" />}
+                        title={OPS_CHANNEL_EMPTY.inboxDetail.title}
+                        density="compact"
+                      />
+                    ) : (
+                      <motion.div
+                        id="sms-thread-detail"
+                        key={activeThread.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex h-full min-h-0 flex-col p-4 sm:p-5"
+                      >
+                        <header className="flex shrink-0 items-center gap-2 border-b border-border pb-3">
+                          <Phone className="size-4 text-primary" />
+                          <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
+                            {activeThread.customer_number}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => void copyNumber(activeThread.customer_number)}
+                            aria-label={copied ? "Number copied" : "Copy customer number"}
+                          >
+                            {copied ? (
+                              <Check className="size-4 text-[var(--wireline-success)]" />
+                            ) : (
+                              <Copy className="size-4" />
+                            )}
+                          </Button>
+                          <span className="text-xs font-medium uppercase tracking-[.08em] text-muted-foreground">
+                            {activeThread.status}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="md:hidden"
+                            onClick={() => setActiveId(null)}
+                            aria-label="Back to thread list"
+                          >
+                            <ArrowLeft className="size-4" />
+                          </Button>
+                        </header>
+
+                        <div className="min-h-0 flex-1 overflow-y-auto py-4">
+                          {messagesLoading ? (
+                            <div className="space-y-3" aria-busy="true">
+                              {Array.from({ length: 4 }).map((_, i) => (
+                                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                              ))}
+                            </div>
+                          ) : messages.length === 0 ? (
+                            <EmptyState
+                              icon={<Sparkles className="size-5" />}
+                              title="No messages yet"
+                              density="compact"
+                            />
+                          ) : (
+                            <ConversationActivity>
+                              {messages.map((message) => (
+                                <ConversationMessage
+                                  key={message.id}
+                                  direction={
+                                    message.direction === "outbound" ? "outbound" : "inbound"
+                                  }
+                                  body={message.body}
+                                  meta={formatDate(message.created_at)}
+                                />
+                              ))}
+                            </ConversationActivity>
+                          )}
+                        </div>
+
+                        <div className="shrink-0 border-t border-border pt-3">
+                          <div className="flex items-end gap-2">
+                            <Input
+                              value={reply}
+                              onChange={(event) => setReply(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter" && !event.shiftKey) {
+                                  event.preventDefault();
+                                  void handleSend();
+                                }
+                              }}
+                              placeholder="Reply…"
+                              aria-label="SMS reply"
+                              className="min-h-[44px]"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              onClick={() => void handleSend()}
+                              disabled={sending || !reply.trim()}
+                              aria-label="Send SMS reply"
+                            >
+                              {sending ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <Send className="size-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                            Sent from your Wireline number · TCPA opt-out applies · STOP keyword
+                            auto-honored.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </ChannelInboxDetailPane>
+                </ChannelInboxGrid>
+              </Panel>
+            </PageShell>
+          )}
         </div>
       )}
     </div>

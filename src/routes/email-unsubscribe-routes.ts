@@ -95,7 +95,7 @@ function renderPage(title: string, body: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
 <title>${escapeHtml(title)} · Wireline</title></head>
-<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#FAF8F5;color:#1A1A23;">
+<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f6f5fa;color:#1A1A23;">
   <div style="max-width:480px;margin:80px auto;padding:32px;background:#fff;border-radius:16px;border:1px solid rgba(79,30,123,0.08);">
     <h1 style="margin:0 0 12px;font-size:20px;font-weight:600;">${escapeHtml(title)}</h1>
     <p style="margin:0;line-height:1.6;color:#2A2A33;font-size:14px;">${body}</p>

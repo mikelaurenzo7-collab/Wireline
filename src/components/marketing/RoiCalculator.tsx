@@ -150,7 +150,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
     >
       <div className="rounded-md border border-primary/12 bg-card p-4 sm:p-5 shadow-[var(--wireline-elevation-sm)]">
         <div className="flex items-center gap-2 mb-3">
-          <span className="hero-accent-line bg-brand" />
+          <span className="hero-accent-line bg-primary" />
           <h2
             id="roi-heading"
             className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.5em] text-primary font-semibold"
@@ -181,7 +181,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
                 className={
                   "text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] font-medium px-2.5 py-1 rounded-full " +
                   (active
-                    ? "bg-brand text-paper border-brand"
+                    ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card text-muted/75 border-border hover:border-primary/30 hover:text-foreground")
                 }
               >
@@ -225,7 +225,10 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
             />
           </div>
 
-          <div className="rounded-md border border-primary/15 bg-card p-4 flex flex-col" aria-live="polite">
+          <div
+            className="rounded-md border border-primary/15 bg-card p-4 flex flex-col"
+            aria-live="polite"
+          >
             <div className="grid grid-cols-2 gap-3 mb-3">
               <Stat
                 label="Revenue recovered"
@@ -265,7 +268,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               </div>
               <Link
                 to="/signup"
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-brand text-paper text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] font-semibold hover:bg-brand-deep hover:-translate-y-px transition-all shadow-[var(--wireline-elevation-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="marketing-btn-primary inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] font-semibold hover:-translate-y-px transition-all shadow-[var(--wireline-elevation-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 data-testid="roi-cta-start"
               >
                 Start free
@@ -275,9 +278,9 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         </div>
 
         <p className="mt-3 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
-          Assumes Wireline recovers 82% of missed conversations. Coverage math uses $22/hr
-          for comparable admin time. Wireline Business tier billed at $59/mo. Create and train
-          for free; live work uses Conversation Balance.
+          Assumes Wireline recovers 82% of missed conversations. Coverage math uses $22/hr for
+          comparable admin time. Wireline Business tier billed at $59/mo. Create and train for free;
+          live work uses Conversation Balance.
         </p>
       </div>
     </motion.section>

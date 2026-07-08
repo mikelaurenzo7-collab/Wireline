@@ -4,7 +4,8 @@ import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
 import { authFetch } from "../lib/api";
-import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Button } from "./atoms";
+import { StatusNotice } from "./molecules";
 
 type ComplianceCenterSummary = {
   federal_dnc_configured: boolean;
@@ -94,7 +95,7 @@ export default function ComplianceCenter() {
             Loading compliance status…
           </div>
         ) : error ? (
-          <p className="mt-4 text-sm text-destructive">{error}</p>
+          <StatusNotice tone="destructive" className="mt-4" title={error} />
         ) : summary ? (
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4">
@@ -125,13 +126,13 @@ export default function ComplianceCenter() {
         ) : null}
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <ShadButton type="button" size="sm" variant="secondary" asChild>
+          <Button type="button" size="sm" variant="secondary" asChild>
             <Link to="/trust" target="_blank" rel="noreferrer">
               <ExternalLink className="size-3.5" />
               Trust pack
             </Link>
-          </ShadButton>
-          <ShadButton
+          </Button>
+          <Button
             type="button"
             size="sm"
             variant="secondary"
@@ -144,7 +145,7 @@ export default function ComplianceCenter() {
               <Download className="size-3.5" />
             )}
             Audit export
-          </ShadButton>
+          </Button>
         </div>
       </section>
 

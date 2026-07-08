@@ -22,27 +22,27 @@ describe("product voice cohesion", () => {
   });
 
   it("wires landing and workroom surfaces to shared voice constants", () => {
-    const landing = read("src/components/marketing/PrecisionLanding.tsx");
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
-    expect(landing).toContain("OUTBOUND_WEDGE");
+    expect(landing).toContain("HERO_LOOP");
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 
   it("keeps public landing examples broad across outbound, inbound, and hybrid buyers", () => {
-    const landing = read("src/components/marketing/PrecisionLanding.tsx");
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("Sales SDR");
-    expect(landing).toContain("Billing Recovery");
+    expect(landing).toContain("Billing recovery");
     expect(landing).toContain("Re-engagement");
-    expect(landing).toContain("Front Desk");
-    expect(landing).toContain("Lead Qualifier");
-    expect(landing).toContain("Support Triage");
-    expect(landing).toContain("Revenue Desk");
-    expect(landing).toContain("Collections Desk");
-    expect(landing).toContain("Appointment Desk");
-    expect(landing).toContain("outbound, inbound, or hybrid call lanes");
+    expect(landing).toContain("Front desk");
+    expect(landing).toContain("Lead qualifier");
+    expect(landing).toContain("Support triage");
+    expect(landing).toContain("Revenue desk");
+    expect(landing).toContain("Collections desk");
+    expect(landing).toContain("Appointment desk");
+    expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).not.toContain("service estimate");
     expect(landing).not.toContain("Start booking them");
   });
