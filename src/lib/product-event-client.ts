@@ -44,6 +44,24 @@ export function emitProductEvent(
   }
 }
 
+function onceScope(
+  input: Omit<Parameters<typeof emitProductEvent>[0], "surface"> & {
+    surface?: ProductEventSurface;
+  },
+): string {
+  return (
+    input.agentId ??
+    input.accountId ??
+    String(
+      input.metadata?.user_id ??
+        input.metadata?.account_id ??
+        input.metadata?.call_id ??
+        input.metadata?.scope ??
+        "global",
+    )
+  );
+}
+
 /** Fire a product event at most once per browser profile (activation milestones). */
 export function emitProductEventOnce(
   input: Omit<Parameters<typeof emitProductEvent>[0], "surface"> & {
@@ -51,11 +69,7 @@ export function emitProductEventOnce(
   },
 ): boolean {
   if (typeof window === "undefined") return false;
-  const scopedId =
-    input.agentId ??
-    input.accountId ??
-    String(input.metadata?.user_id ?? input.metadata?.scope ?? "global");
-  const key = `${PRODUCT_EVENT_ONCE_PREFIX}${input.event}:${scopedId}`;
+  const key = `${PRODUCT_EVENT_ONCE_PREFIX}${input.event}:${onceScope(input)}`;
   try {
     if (localStorage.getItem(key) === "1") return false;
     localStorage.setItem(key, "1");
