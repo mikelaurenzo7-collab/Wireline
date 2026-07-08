@@ -32,7 +32,11 @@ import { ensureDefaultAccount } from "../lib/account-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
-import { isFederalDncListed } from "../lib/federal-dnc-service";
+import { isFederalDncListed, assertFederalDncForMarketing } from "../lib/federal-dnc-service";
+import {
+  buildOutboundComplianceStatus,
+  outboundComplianceBlock,
+} from "../lib/outbound-compliance-status";
 import {
   OUTBOUND_CALL_PURPOSES,
   isMarketingCallPurpose,
@@ -165,6 +169,7 @@ router.get(
           configured:
             !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv as string],
         },
+        compliance: buildOutboundComplianceStatus(),
         settings: {
           // The Account Holder's callback number for "take this call" handoffs.
           handoff_phone: row?.handoffPhone || null,
@@ -623,12 +628,28 @@ router.post(
       } = req.body;
       const expressConsent = normalizedExpressConsent({ callPurpose, hasExpressWrittenConsent });
 
+      if (isMarketingCallPurpose(callPurpose)) {
+        const federalGate = assertFederalDncForMarketing();
+        if (!federalGate.allowed) {
+          const complianceBlock = outboundComplianceBlock("FEDERAL_DNC_NOT_CONFIGURED");
+          return res.status(503).json({
+            code: federalGate.code,
+            error: federalGate.message,
+            compliance: buildOutboundComplianceStatus(),
+            blocked_call: complianceBlock,
+          });
+        }
+      }
+
       if (await isDncBlocked(req.user.id, customerNumber)) {
         log.warn("Mobile outbound dial blocked by DNC list", { customerNumber });
+        const complianceBlock = outboundComplianceBlock("TENANT_DNC_BLOCKED");
         return res.status(403).json({
           code: "FORBIDDEN",
           error: "This number is on the Do Not Call list and cannot be dialed.",
           dncBlocked: true,
+          compliance: buildOutboundComplianceStatus(),
+          blocked_call: complianceBlock,
         });
       }
 
@@ -645,11 +666,18 @@ router.post(
           customerNumber,
           abort_reason: tcpaDecision.abort_reason,
         });
+        const complianceBlock = outboundComplianceBlock(
+          tcpaDecision.abort_reason === "dnc_federal"
+            ? "FEDERAL_DNC_BLOCKED"
+            : "EXPRESS_WRITTEN_CONSENT_REQUIRED",
+        );
         return res.status(403).json({
           code: "FORBIDDEN",
           error: tcpaDecision.disclosure_script || "Call blocked by TCPA consent rules.",
           tcpaBlocked: true,
           tcpa: tcpaDecision,
+          compliance: buildOutboundComplianceStatus(),
+          blocked_call: complianceBlock,
         });
       }
 

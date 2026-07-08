@@ -23,6 +23,11 @@ import {
 import type { OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { emitProductEvent } from "../lib/product-event-client";
 
+type BlockedCall = {
+  reason: string;
+  action: { label: string; description: string; href?: string };
+};
+
 type OutboundDialDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -56,6 +61,7 @@ export default function OutboundDialDialog({
   const [callPurpose, setCallPurpose] = useState<OutboundCallPurpose>("service_or_requested");
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [blockedCall, setBlockedCall] = useState<BlockedCall | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -64,6 +70,7 @@ export default function OutboundDialDialog({
     setContext(initialContext);
     setCallPurpose("service_or_requested");
     setConsentConfirmed(false);
+    setBlockedCall(null);
   }, [open, initialAgentId, initialNumber, initialContext, voiceAgents]);
 
   const canPlace =
@@ -89,8 +96,13 @@ export default function OutboundDialDialog({
           hasExpressWrittenConsent: callPurpose === "marketing_or_sales" && consentConfirmed,
         }),
       });
-      const body = (await response.json()) as { error?: string; code?: string };
+      const body = (await response.json()) as {
+        error?: string;
+        code?: string;
+        blocked_call?: BlockedCall;
+      };
       if (!response.ok) {
+        setBlockedCall(body.blocked_call || null);
         toast({
           type: "error",
           title: "Call not placed",
@@ -99,6 +111,7 @@ export default function OutboundDialDialog({
         });
         return;
       }
+      setBlockedCall(null);
       toast({
         type: "success",
         title: "Call started",
@@ -198,6 +211,7 @@ export default function OutboundDialDialog({
                 onChange={(event) => {
                   setCallPurpose(event.target.value as OutboundCallPurpose);
                   setConsentConfirmed(false);
+                  setBlockedCall(null);
                 }}
               >
                 <option value="service_or_requested">Service or requested call</option>
@@ -205,6 +219,25 @@ export default function OutboundDialDialog({
                 <option value="marketing_or_sales">Marketing or sales</option>
               </select>
             </label>
+
+            {blockedCall ? (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+                <div className="font-medium text-amber-800 dark:text-amber-200">
+                  Call blocked: {blockedCall.reason}
+                </div>
+                <p className="mt-1 text-amber-900/80 dark:text-amber-100/80">
+                  Next: {blockedCall.action.description}
+                </p>
+                {blockedCall.action.href ? (
+                  <Link
+                    to={blockedCall.action.href}
+                    className="mt-2 inline-block text-amber-800 underline-offset-2 hover:underline dark:text-amber-200"
+                  >
+                    {blockedCall.action.label}
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
 
             {callPurpose === "marketing_or_sales" ? (
               <label className="flex items-start gap-3 rounded-md border border-input/80 bg-muted/30 p-3">
