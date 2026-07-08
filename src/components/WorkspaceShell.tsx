@@ -23,7 +23,7 @@ import { workspaceSidebarLabel } from "../lib/user-display";
 import AgentFace from "./AgentFace";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 
-type NavItem = { href: string; label: string; icon: typeof Bot };
+type NavItem = { href: string; label: string; shortLabel?: string; icon: typeof Bot };
 
 const WORKSPACE_NAV: NavItem[] = [
   { href: "/overview", label: "Overview", icon: Home },
@@ -40,9 +40,9 @@ const OPERATE_NAV: NavItem[] = [
 ];
 
 const MOBILE_NAV: NavItem[] = [
-  { href: "/overview", label: "Overview", icon: Home },
+  { href: "/overview", label: "Overview", shortLabel: "Home", icon: Home },
   { href: "/studio", label: "Studio", icon: Bot },
-  { href: "/knowledge", label: "Training", icon: GraduationCap },
+  { href: "/knowledge", label: "Training", shortLabel: "Train", icon: GraduationCap },
   { href: "/phone", label: "Phone", icon: Phone },
   { href: "/connections", label: "Wire", icon: Workflow },
   { href: "/inbox", label: "Inbox", icon: Inbox },
@@ -124,10 +124,10 @@ function MobileRailLink({ item, pathname }: { item: NavItem; pathname: string })
       aria-current={active ? "page" : undefined}
       data-wireline-nav-href={item.href}
       data-wireline-nav-active={active ? "true" : undefined}
-      className={`grid min-h-[44px] min-w-0 flex-1 place-items-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[10px] font-semibold transition-colors sm:px-1 ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"}`}
+      className={`grid min-h-[48px] min-w-0 flex-1 place-items-center gap-1 rounded-xl px-0.5 py-1.5 text-[9px] font-semibold leading-none transition-colors sm:px-1 sm:text-[10px] ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"}`}
     >
-      <Icon size={17} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
-      <span className="hidden max-w-full truncate leading-none sm:block">{item.label}</span>
+      <Icon size={16} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
+      <span className="block max-w-full truncate leading-none">{item.shortLabel ?? item.label}</span>
     </Link>
   );
 }
@@ -313,7 +313,7 @@ function MobileDock({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Workspace navigation"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl lg:hidden"
     >
       <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
         {MOBILE_NAV.map((item) => (
