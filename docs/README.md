@@ -49,6 +49,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md) | **Active** - dry-run-first demo tenant reset, reseed, and screenshot QA procedure. |
 | [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md) | **Active** — DNC, Redis, Sentry, and scale-readiness env vars. |
 | [MULTI_SURFACE_QA_2026-07-07.md](./MULTI_SURFACE_QA_2026-07-07.md) | **Active** — extension, native, and ChatGPT MCP QA rituals. |
+| [STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md](./STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md) | **Active** — strict branch review for design, UI/UX, branding, pricing, marketing, SEO, AI runtime, integrations, and business structure. |
 | [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md) | **Planned** — Conversation Balance referral loop (post-Horizon 0). |
 | [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | **Active** — brand voice, marketing/GTM, onboarding, pricing, voice/avatar product, and ops execution plan tied to the Aurora rebrand. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
