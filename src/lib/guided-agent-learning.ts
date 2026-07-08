@@ -54,6 +54,14 @@ export type CallPlanReadinessInput = {
   boundaries: string;
 };
 
+function isConcrete(value: string, minLength: number) {
+  const text = value.trim();
+  if (text.length < minLength) return false;
+  if (/^describe\b/i.test(text)) return false;
+  if (/^(sales|support|book|help|be helpful|ask me|be good)$/i.test(text)) return false;
+  return true;
+}
+
 export function scoreCallPlanReadiness(input: CallPlanReadinessInput) {
   const purpose = input.purpose.trim();
   const caller = input.caller.trim();
@@ -62,10 +70,10 @@ export function scoreCallPlanReadiness(input: CallPlanReadinessInput) {
   const boundaries = input.boundaries.trim();
 
   return [
-    { id: "role", label: "Role is specific", ready: purpose.length >= 24 },
-    { id: "caller", label: "Caller or list is named", ready: caller.length >= 16 },
-    { id: "outcome", label: "Success is defined", ready: outcome.length >= 24 },
-    { id: "handoff", label: "Human takeover is clear", ready: handoff.length >= 24 },
-    { id: "boundaries", label: "Guardrails are explicit", ready: boundaries.length >= 24 },
+    { id: "role", label: "Role is specific", ready: isConcrete(purpose, 24) },
+    { id: "caller", label: "Caller or list is named", ready: isConcrete(caller, 16) },
+    { id: "outcome", label: "Success is defined", ready: isConcrete(outcome, 24) },
+    { id: "handoff", label: "Human takeover is clear", ready: isConcrete(handoff, 24) },
+    { id: "boundaries", label: "Guardrails are explicit", ready: isConcrete(boundaries, 24) },
   ] as const;
 }
