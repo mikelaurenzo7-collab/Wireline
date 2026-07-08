@@ -1,5 +1,7 @@
 # Wireline Billing Catalog Direction
 
+Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
+
 ## Product model
 
 Wireline sells operating capacity, not template access.

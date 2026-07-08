@@ -8,7 +8,6 @@ import RoiCalculator from "./RoiCalculator";
 import {
   AGENT_DIRECTION_MODES,
   BUSINESS_MARKETING_VOICE,
-  MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
@@ -24,9 +23,15 @@ function LiveCallCard({ mode }: { mode: AgentMode }) {
     status: "Dialing",
     meter: "Calling · transcribing",
     lines: [
-      { from: "agent", text: "Hi Jordan, this is Wireline. I saw your team is hiring SDRs and thought this might be timely." },
+      {
+        from: "agent",
+        text: "Hi Jordan, this is Wireline. I saw your team is hiring SDRs and thought this might be timely.",
+      },
       { from: "caller", text: "What is this about?" },
-      { from: "agent", text: "Outbound call agents that qualify lists, handle objections, book meetings, and log outcomes. Is outbound capacity a priority this quarter?" },
+      {
+        from: "agent",
+        text: "Outbound call agents that qualify lists, handle objections, book meetings, and log outcomes. Is outbound capacity a priority this quarter?",
+      },
       { from: "caller", text: "Yes. Send details and book something with our revenue ops lead." },
     ],
     tags: ["Qualified", "Meeting booked", "CRM updated"],
@@ -43,7 +48,10 @@ function LiveCallCard({ mode }: { mode: AgentMode }) {
       { from: "caller", text: "Hi, do you have availability for a consultation this week?" },
       { from: "agent", text: "I can help. Is this for sales, support, or scheduling?" },
       { from: "caller", text: "Sales. We need pricing and implementation timing." },
-      { from: "agent", text: "Great. I’ll capture the fit, book the right handoff, and send the recap now." },
+      {
+        from: "agent",
+        text: "Great. I’ll capture the fit, book the right handoff, and send the recap now.",
+      },
     ],
     tags: ["Answered live", "Booked intake", "Recap sent"],
   };
@@ -56,10 +64,19 @@ function LiveCallCard({ mode }: { mode: AgentMode }) {
     status: "Handling",
     meter: "Answering · following up",
     lines: [
-      { from: "caller", text: "I missed your call earlier. Can someone explain the renewal options?" },
-      { from: "agent", text: "Absolutely. I can answer the basics, confirm fit, and queue the renewal specialist if needed." },
+      {
+        from: "caller",
+        text: "I missed your call earlier. Can someone explain the renewal options?",
+      },
+      {
+        from: "agent",
+        text: "Absolutely. I can answer the basics, confirm fit, and queue the renewal specialist if needed.",
+      },
       { from: "caller", text: "Can you call me again Friday if I don’t finish the form?" },
-      { from: "agent", text: "Done. I’ll send the link, log today’s intent, and schedule a Friday follow-up." },
+      {
+        from: "agent",
+        text: "Done. I’ll send the link, log today’s intent, and schedule a Friday follow-up.",
+      },
     ],
     tags: ["Answered", "Follow-up queued", "CRM synced"],
   };
@@ -126,7 +143,11 @@ function LiveCallCard({ mode }: { mode: AgentMode }) {
           </span>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2" role="list" aria-label={`Example ${mode} call transcript`}>
+        <div
+          className="mt-4 flex flex-col gap-2"
+          role="list"
+          aria-label={`Example ${mode} call transcript`}
+        >
           {data.lines.map((line, i) => (
             <div
               key={i}
@@ -214,7 +235,8 @@ const MODE_COPY: Record<
     demo: "Hear hybrid call",
     note: "For teams that need both sides: answer callbacks, make follow-ups, chase missing context, schedule next steps, and update the system of record.",
     stripLead: "Most real call work is not one-way.",
-    stripWin: "Wireline can answer, act, call back, and sync the outcome when the workflow crosses directions.",
+    stripWin:
+      "Wireline can answer, act, call back, and sync the outcome when the workflow crosses directions.",
     title: "HYBRID AGENTS",
     lead: "Choose hybrid when one workflow needs inbound coverage and outbound persistence: answer, act, follow up, and keep every next step moving.",
     loopLabel: "Wireline hybrid loop",
@@ -227,7 +249,10 @@ const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan
   (typeof STRIPE_PLANS)[number]
 >;
 
-const MODE_CONFIGS: Record<AgentMode, { icon: string; name: string; body: string; plan: string }[]> = {
+const MODE_CONFIGS: Record<
+  AgentMode,
+  { icon: string; name: string; body: string; plan: string }[]
+> = {
   outbound: [
     {
       icon: "◉",
@@ -463,7 +488,10 @@ export default function PrecisionLanding() {
 
               <ul className="mt-7 grid gap-2 sm:grid-cols-3" aria-label="Core outcomes">
                 {modeCopy.outcomes.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                  <li
+                    key={item}
+                    className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                  >
                     <span className="marketing-proof-chip h-[18px] w-[18px]" aria-hidden="true">
                       ✓
                     </span>
