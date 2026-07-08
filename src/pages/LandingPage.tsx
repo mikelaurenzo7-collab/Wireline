@@ -17,10 +17,10 @@ export default function LandingPage() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, iOS, Android, Chrome, Opera",
     description:
-      "Create, train, wire, run, and review outbound call agents for sales prospecting, marketing re-engagement, billing collection, negotiation, surveys, scheduling, and follow-up.",
+      "Create, train, wire, run, and review outbound-first call agents with inbound and hybrid modes for sales prospecting, front desk, support triage, billing collection, negotiation, surveys, scheduling, and follow-up.",
     offers: {
       "@type": "OfferCatalog",
-      name: "Wireline outbound agent plans",
+      name: "Wireline call agent plans",
       itemListElement: ["Personal", "Team", "Business", "Enterprise"].map((name) => ({
         "@type": "Offer",
         name,
@@ -32,8 +32,8 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Outbound call agents"
-        description="Wireline builds trained outbound call agents for sales, marketing re-engagement, billing collection, negotiation, surveys, scheduling, and follow-up."
+        title="Wireline | Outbound, inbound, and hybrid call agents"
+        description="Wireline builds outbound-first call agents with inbound and hybrid modes for sales, front desk, support, billing collection, negotiation, surveys, scheduling, and follow-up."
         image="/og-image.png"
       />
       <script
