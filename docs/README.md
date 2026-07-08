@@ -60,6 +60,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App contract and release verification. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Billing model, Stripe catalog direction, and Conversation Balance posture. |
+| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md) | **Active** — Stripe checkout, entitlement sync, Conversation Balance, webhook idempotency, cancellation, and usage reconciliation proof runbook. |
 | [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) | xAI realtime voice path, safety posture, and live test constraints. |
 | [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md) | Operational success motion and support posture. |
 | [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md) | Research lanes, prioritization, metrics, and 30/90/180-day execution roadmap. |

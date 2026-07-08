@@ -64,6 +64,8 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
     balance_usd: snapshot.balance_usd,
     required_usd: snapshot.required_usd,
     minute_rate_usd: snapshot.minute_rate_usd,
+    recovery_path: "/settings/billing",
+    recovery_action: "add_conversation_balance",
   };
   throw err;
 }
