@@ -1,35 +1,47 @@
 /** Shared product voice for public marketing, workspace copy, and audience positioning. */
 
+export const OUTBOUND_WEDGE = {
+  eyebrow: "outbound call agents · private beta",
+  headline: "Outbound agents that actually call.",
+  subline:
+    "Wireline builds trained outbound call agents for sales, marketing re-engagement, billing collection, negotiations, surveys, scheduling, and follow-up — then logs the outcome like an operator.",
+  lanes: ["Sales", "Collections", "Re-engagement", "Negotiation", "Surveys", "Scheduling"],
+  loop: ["List", "Script", "Dial", "Log"],
+  proof: ["Qualifies", "Negotiates", "Books", "Collects", "Recovers", "Reports"],
+  differentiator: "Wireline turns call lists into completed outcomes.",
+  beforeStrip: "A list is not a pipeline until somebody calls it.",
+} as const;
+
 export const MARKETING_VOICE = {
-  eyebrow: "voice agents · private beta",
+  eyebrow: OUTBOUND_WEDGE.eyebrow,
   headline: "Wire your agent.",
   subline:
-    "From personal assistants to call centers and sales teams: create, train, wire, and run a voice agent that answers, routes, books, qualifies, follows up, and texts the outcome.",
+    "Start with outbound: sales calls, billing collection, re-engagement, surveys, negotiation, scheduling, and follow-up. Create, train, wire, run, and review every call outcome.",
   proof: ["Create", "Train", "Wire", "Run"],
-  extensionLead: "Command your agent from any page. Wireline answers while you stay focused.",
-  differentiator: "Wireline puts a trained agent on the line.",
+  extensionLead: "Command your agent from any page. Wireline calls, follows up, and logs the outcome while you stay focused.",
+  differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "business phone agents · private beta",
-  proof: ["Answers every line", "Qualifies and routes", "Books or escalates"],
-  differentiator: "Wireline keeps the line moving.",
-  beforeStrip: "Missed calls turn real demand away.",
+  eyebrow: "outbound teams · private beta",
+  proof: ["Dials the list", "Handles objections", "Logs outcomes"],
+  differentiator: "Wireline keeps outbound work moving.",
+  beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
 export const WORKSPACE_VOICE = {
   createHeadline: "Wire an agent.",
   runHeadline: "Your phone is covered.",
   emptyCue: "Brief it. Train it. Put it on the line.",
-  commandPrompts: ["Change voice", "Edit workflows", "Review calls"],
+  commandPrompts: ["Start outbound", "Change script", "Review calls"],
   directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your agent"}...`,
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "Agent coverage",
-  tagline: "One voice. All channels.",
-  short: "Personal and business agents, in one place.",
-  hero: "Conversations, handled.",
+  eyebrow: "Outbound agent coverage",
+  tagline: "Call lists. Completed outcomes.",
+  short: "Outbound agents for revenue, recovery, and follow-up.",
+  hero: "Outbound, handled.",
 } as const;
 
 export const PRODUCT_POSTURE = {
@@ -41,11 +53,11 @@ export const PRODUCT_POSTURE = {
     emptyBody: "Your calls. Your rules.",
   },
   business: {
-    badge: "Business agent",
-    badgeShort: "Business",
-    createCta: "Wire business agent",
-    emptyTitle: "Business agent.",
-    emptyBody: "Brand on the line.",
+    badge: "Outbound agent",
+    badgeShort: "Outbound",
+    createCta: "Wire outbound agent",
+    emptyTitle: "Outbound agent.",
+    emptyBody: "List in. Outcome out.",
   },
 } as const;
 
@@ -59,7 +71,7 @@ export function rosterSummary(personalCount: number, businessCount: number): str
     parts.push(`${personalCount} personal agent${personalCount === 1 ? "" : "s"}`);
   }
   if (businessCount > 0) {
-    parts.push(`${businessCount} business agent${businessCount === 1 ? "" : "s"}`);
+    parts.push(`${businessCount} outbound agent${businessCount === 1 ? "" : "s"}`);
   }
   return parts.length ? parts.join(" / ") : "No agents yet";
 }
