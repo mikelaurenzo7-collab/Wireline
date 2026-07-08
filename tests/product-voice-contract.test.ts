@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MARKETING_VOICE } from "../src/lib/product-copy";
+import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -49,6 +50,41 @@ describe("product voice cohesion", () => {
     expect(footer).toContain('to: "/for/personal", label: "Personal"');
     expect(publicHeader).not.toContain('label: "Home services"');
     expect(footer).not.toContain('label: "Home services"');
+  });
+
+  it("keeps every public top-level surface session-optional", () => {
+    const publicPaths = [
+      "/",
+      "/features",
+      "/pricing",
+      "/compare",
+      "/about",
+      "/support",
+      "/contact",
+      "/showcase",
+      "/developers",
+      "/blog",
+      "/blog/founder-note",
+      "/status",
+      "/changelog",
+      "/security",
+      "/trust",
+      "/trust/medical",
+      "/privacy",
+      "/terms",
+      "/for/personal",
+      "/solutions/call-centers",
+      "/signin",
+      "/signup",
+      "/get-started",
+      "/reset-password",
+      "/oauth-complete",
+      "/auth/oauth-complete",
+    ];
+
+    for (const path of publicPaths) {
+      expect(isSessionOptionalPublicPath(path), path).toBe(true);
+    }
   });
 
   it("keeps authenticated setup examples broad across support and call coverage", () => {
