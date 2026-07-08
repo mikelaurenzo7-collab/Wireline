@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { isBalanceFundedVoicePlan } from "../src/lib/voice-billing-policy";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -77,13 +78,26 @@ describe("billing proof contract", () => {
     expect(spendControl).toContain("assertVoiceWalletSolvent");
   });
 
+  it("treats Personal voice usage as balance-funded even when a subscription row exists", () => {
+    const usage = read("src/lib/voice-usage.ts");
+    const guard = read("src/lib/voice-wallet-guard.ts");
+
+    expect(isBalanceFundedVoicePlan(null)).toBe(true);
+    expect(isBalanceFundedVoicePlan("personal")).toBe(true);
+    expect(isBalanceFundedVoicePlan("team")).toBe(false);
+    expect(isBalanceFundedVoicePlan("business")).toBe(false);
+    expect(usage).toContain("isBalanceFundedVoicePlan(planId)");
+    expect(guard).toContain("isBalanceFundedVoicePlan(planId)");
+    expect(usage).toContain("They do not receive the historical included-minute compatibility allowance.");
+  });
+
   it("reconciles usage events against plan, balance, and Stripe meter state", () => {
     const usage = read("src/lib/voice-usage.ts");
     const stripeHelpers = read("src/lib/stripe-helpers.ts");
 
     expect(usage).toContain("Math.ceil(durationSeconds / 60)");
     expect(usage).toContain("schema.quotaUsage");
-    expect(usage).toContain('planById(sub?.plan ?? "personal")');
+    expect(usage).toContain('planById(planId ?? "personal")');
     expect(usage).toContain("debitForVoiceUsage(userId, overageCostUsd, vapiCallId)");
     expect(usage).toContain("debitForOverage(userId, overageCostUsd, vapiCallId)");
     expect(usage).toContain("emitVoiceMinuteOverageEvent");
