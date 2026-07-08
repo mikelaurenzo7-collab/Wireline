@@ -497,6 +497,9 @@ export default function StudioAgentCanvas({
                     className="rounded-lg border border-[var(--wireline-color-border-subtle)] px-3 py-2.5"
                   >
                     <p className="text-sm font-medium leading-snug text-[var(--wireline-color-text-primary)]">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--wireline-color-action-primary-default)]">
+                        When
+                      </span>{" "}
                       {trigger}
                     </p>
                     {action ? (

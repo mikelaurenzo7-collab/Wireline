@@ -240,43 +240,25 @@ export default function CallLogsClaude() {
       </div>
       <section
         aria-label="Call ops metrics"
-        className="grid grid-cols-2 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] sm:flex sm:items-stretch sm:divide-x sm:divide-[var(--wireline-color-border-default)]"
+        className="grid grid-cols-2 gap-2 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-3 sm:grid-cols-4"
       >
-        {kpis.map((kpi, index) => {
-          const accent =
-            kpi.accent === "warning"
-              ? "var(--wireline-color-status-warning)"
-              : "var(--wireline-color-text-primary)";
-          // On phones, 2×2 grid with borders between cells; from sm up,
-          // a single equal-width row with vertical dividers.
-          const phoneBorders = [
-            "border-b border-r border-[var(--wireline-color-border-default)] sm:border-b-0 sm:border-r-0",
-            "border-b border-[var(--wireline-color-border-default)] sm:border-b-0",
-            "border-r border-[var(--wireline-color-border-default)] sm:border-r-0",
-            "",
-          ][index];
+        {kpis.map((kpi) => {
+          const isWarning = kpi.accent === "warning";
           return (
-            <div
-              key={kpi.label}
-              className={`px-4 py-3 sm:flex-1 sm:px-5 sm:py-3.5 ${phoneBorders}`}
-            >
-              <div
-                className={cn(WL_APP_CLASSES.wiredEyebrow)}
-                style={
-                  kpi.accent === "warning"
-                    ? { color: "var(--wireline-color-status-warning)" }
-                    : undefined
-                }
+            <article key={kpi.label} className="wl-metric-tile wl-metric-tile--compact">
+              <p
+                className="wl-metric-tile__label"
+                style={isWarning ? { color: "var(--wireline-color-status-warning)" } : undefined}
               >
                 {kpi.label}
-              </div>
+              </p>
               <div
-                className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+0.6vw,2rem)] leading-none tracking-[-0.02em]"
-                style={{ color: accent }}
+                className="wl-metric-tile__value tabular-nums"
+                style={isWarning ? { color: "var(--wireline-color-status-warning)" } : undefined}
               >
                 {loading ? "—" : kpi.value}
               </div>
-            </div>
+            </article>
           );
         })}
       </section>

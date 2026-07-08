@@ -16,6 +16,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
+import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import type { CallLog } from "../types/api";
 
 const DailyBriefPanel = lazy(() => import("../components/DailyBrief"));
@@ -232,8 +233,8 @@ export default function OverviewPage() {
           const logs: CallLog[] = data.recentLogs || [];
           setRecentCalls(logs.slice(0, 4));
 
-          const todayStr = new Date().toISOString().slice(0, 10);
-          const todayLogs = logs.filter((log) => log.created_at?.slice(0, 10) === todayStr);
+          const todayStr = localDateKey(new Date());
+          const todayLogs = logs.filter((log) => isoToLocalDateKey(log.created_at) === todayStr);
           const count = todayLogs.length;
           setCallsCount(count);
           if (count > 0) {

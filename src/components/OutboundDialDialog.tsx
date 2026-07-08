@@ -123,13 +123,13 @@ export default function OutboundDialDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md border-border bg-[var(--wireline-color-surface-default)] p-0 shadow-2xl">
+      <DialogContent className="max-w-md gap-0 overflow-hidden border-border bg-[var(--wireline-color-surface-default)] p-0 shadow-2xl">
         <DialogHeader className="border-b border-border px-6 py-5">
           <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
             <Phone className="h-4 w-4 text-primary" aria-hidden />
             New outbound call
           </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
+          <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
             Pick an agent with a live line, enter a number, and classify the call before dialing.
           </DialogDescription>
         </DialogHeader>
@@ -150,7 +150,7 @@ export default function OutboundDialDialog({
         ) : (
           <div className="space-y-4 px-6 py-5">
             <label className="block space-y-1.5">
-              <span className="text-xs font-semibold text-foreground">Agent</span>
+              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">Agent</span>
               <select
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={agentId}
@@ -165,7 +165,7 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="text-xs font-semibold text-foreground">Phone number</span>
+              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">Phone number</span>
               <input
                 type="tel"
                 inputMode="tel"
@@ -178,7 +178,9 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="text-xs font-semibold text-foreground">Instruction (optional)</span>
+              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">
+                Instruction (optional)
+              </span>
               <textarea
                 rows={3}
                 className="min-h-[88px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
@@ -189,7 +191,7 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="text-xs font-semibold text-foreground">Call type</span>
+              <span className="wl-eyebrow wl-eyebrow--muted wl-eyebrow--no-rule">Call type</span>
               <select
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={callPurpose}

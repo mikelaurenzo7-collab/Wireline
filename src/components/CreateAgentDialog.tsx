@@ -50,6 +50,11 @@ const ROLE_TEMPLATES = [
 
 const PERSONALITY_OPTIONS = ["Clear", "Warm", "Direct", "Polished"] as const;
 
+const FAST_START_SELECTED =
+  "border-primary bg-[var(--wireline-color-action-primary-container)] text-primary";
+const FAST_START_IDLE =
+  "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
+
 type Role = (typeof ROLE_TEMPLATES)[number]["value"];
 type Personality = (typeof PERSONALITY_OPTIONS)[number];
 type Posture = "personal" | "business";
@@ -353,7 +358,7 @@ export default function CreateAgentDialog({
                     setRole(defaultRole(value));
                     setBrief(defaultBrief(value));
                   }}
-                  className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]" : "border-border bg-card hover:border-primary/30"}`}
+                  className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? "border-primary bg-[var(--wireline-color-action-primary-container)]" : "border-border bg-card hover:border-primary/30"}`}
                   aria-pressed={selected}
                 >
                   <span className="flex items-center justify-between gap-3">
@@ -396,7 +401,7 @@ export default function CreateAgentDialog({
                     setRole(item.value);
                     setBrief(prompt);
                   }}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? "border-primary bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? FAST_START_SELECTED : FAST_START_IDLE}`}
                   aria-pressed={role === item.value}
                 >
                   {item.label}
@@ -443,7 +448,7 @@ export default function CreateAgentDialog({
                     key={item}
                     type="button"
                     onClick={() => setPersonality(item)}
-                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${personality === item ? "border-primary bg-[var(--wireline-color-feedback-success-surface)] text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${personality === item ? FAST_START_SELECTED : FAST_START_IDLE}`}
                     aria-pressed={personality === item}
                   >
                     {item}

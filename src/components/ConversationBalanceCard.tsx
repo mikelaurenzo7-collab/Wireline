@@ -92,7 +92,7 @@ export default function ConversationBalanceCard() {
 
   if (loading) {
     return (
-      <section className="studio-card flex items-center gap-3 p-5" aria-busy="true">
+      <section className="wl-paper wl-paper-elevated flex items-center gap-3 p-5" aria-busy="true">
         <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-muted text-primary">
           <Loader2 className="size-4 animate-spin" />
         </span>
@@ -110,7 +110,7 @@ export default function ConversationBalanceCard() {
   const balanceUsd = balance?.balance_usd ?? 0;
 
   return (
-    <section className="studio-card overflow-hidden">
+    <section className="wl-paper wl-paper-elevated overflow-hidden">
       <div className="flex flex-wrap items-start justify-between gap-5 border-b border-border p-5 sm:p-6">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-primary">

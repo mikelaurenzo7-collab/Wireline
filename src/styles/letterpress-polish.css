@@ -284,6 +284,17 @@
   color: var(--wireline-color-text-secondary);
 }
 
+.wl-metric-tile--compact {
+  min-height: 0;
+  gap: 0.375rem;
+  padding: 0.75rem 1rem;
+}
+
+.wl-metric-tile--compact .wl-metric-tile__value {
+  font-size: clamp(1.35rem, 1.1rem + 0.5vw, 1.75rem);
+  margin-block: 0;
+}
+
 /* ----------------------------------------------------------------------------
  * 7. Empty state — a single, deliberate pattern for "no data" surfaces.
  *    Use the icon as a mono-weight glyph and keep the prose tight.
