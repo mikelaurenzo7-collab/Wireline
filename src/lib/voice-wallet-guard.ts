@@ -1,13 +1,15 @@
 /**
  * Pre-call Conversation Balance gate for PSTN voice.
- * Pay-as-you-go (Personal) tenants must hold at least one billable minute
- * before outbound or inbound spend is allowed.
+ * Balance-funded tenants must hold at least one billable minute before outbound
+ * or inbound spend is allowed. That includes accounts without a subscription row
+ * and explicit Personal rows — Personal is create/train-free, live-work prepaid.
  */
 import { eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { planById } from "./plan-catalog";
 import { getCreditBalanceUsd } from "./credit-wallet";
+import { isBalanceFundedVoicePlan } from "./voice-billing-policy";
 
 export const MIN_BILLABLE_MINUTES_BUFFER = 1;
 
@@ -26,8 +28,9 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
     .where(eq(schema.subscriptions.userId, userId))
     .limit(1);
 
-  const isPayAsYouGo = !sub?.plan;
-  const plan = planById(sub?.plan ?? "personal");
+  const planId = sub?.plan ?? null;
+  const isPayAsYouGo = isBalanceFundedVoicePlan(planId);
+  const plan = planById(planId ?? "personal");
   const minuteRate = plan?.overage_per_min_usd ?? 0.2;
   const balance = await getCreditBalanceUsd(userId);
   const requiredUsd = Math.round(minuteRate * MIN_BILLABLE_MINUTES_BUFFER * 100) / 100;
