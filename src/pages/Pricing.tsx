@@ -139,24 +139,28 @@ const BUYER_ASSURANCES = [
 
 const BUYER_DECISION_ROWS = [
   {
-    choice: "Raw voice APIs",
+    choice: "Usage-based API minutes plus model and line economics",
     risk: "Great for engineers, but the buyer still has to assemble UX, logs, routing, billing, QA, and support.",
-    wireline: "A packaged phone operation: create, train, wire, run, review, and bill from one product surface.",
+    wireline:
+      "A packaged phone operation: create, train, wire, run, review, and bill from one product surface.",
   },
   {
     choice: "Generic call bot tools",
     risk: "Easy to demo, often messy once teams need approvals, handoffs, CRM context, and spend controls.",
-    wireline: "Team and Business capacity with numbers, approvals, inbox, analytics, and Conversation Balance.",
+    wireline:
+      "Team and Business capacity with numbers, approvals, inbox, analytics, and Conversation Balance.",
   },
   {
     choice: "Human answering services",
     risk: "Useful coverage, but context, consistency, reporting, and follow-up often fragment across vendors.",
-    wireline: "A trained agent that keeps scripts, outcomes, transcripts, routing, and coaching in the workspace.",
+    wireline:
+      "A trained agent that keeps scripts, outcomes, transcripts, routing, and coaching in the workspace.",
   },
   {
     choice: "Avatar/video tools",
     risk: "Presentation alone does not run the phone operation or maintain the business workflow behind it.",
-    wireline: "Voice-first operations with an optional presenter layer for higher-trust business moments.",
+    wireline:
+      "Voice-first operations with an optional presenter layer for higher-trust business moments.",
   },
 ] as const;
 
@@ -539,7 +543,7 @@ export default function Pricing() {
         <section className="border-y border-border bg-card/40 px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail mx-auto max-w-6xl">
             <div className="max-w-2xl">
-              <p className="wl-overline text-primary">Why Wireline</p>
+              <p className="wl-overline text-primary">Buying posture</p>
               <h2
                 className="mt-3 text-balance text-[clamp(2rem,4vw,3.25rem)] leading-[1.06] tracking-[-0.03em]"
                 style={{
