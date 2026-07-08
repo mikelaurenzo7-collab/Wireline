@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronRight, Loader2, PhoneCall, Sparkles } from "lucide-react";
 import { authFetch, safeJson } from "../lib/api";
+import {
+  AGENT_DIRECTION_GUIDANCE,
+  GUIDED_AGENT_LEARNING_LOOP,
+  type AgentDirection,
+  scoreCallPlanReadiness,
+} from "../lib/guided-agent-learning";
 
 export type PhoneAgentFlowStep = {
   id: string;
@@ -26,6 +32,7 @@ type Tone = "warm" | "concise" | "polished" | "calm" | "upbeat";
 
 type BlueprintDraft = {
   kind: BlueprintKind;
+  direction: AgentDirection;
   tone: Tone;
   purpose: string;
   caller: string;
@@ -42,18 +49,22 @@ type PhoneAgentBlueprintProps = {
   onSaved?: () => void;
 };
 
+const directionOrder: AgentDirection[] = ["outbound", "inbound", "hybrid"];
+
 const blueprints: Array<{
   value: BlueprintKind;
   label: string;
   detail: string;
-  defaults: Omit<BlueprintDraft, "kind" | "tone">;
+  direction: AgentDirection;
+  defaults: Omit<BlueprintDraft, "kind" | "tone" | "direction">;
 }> = [
   {
     value: "personal",
     label: "Personal agent",
     detail: "Routine calls, appointments, follow-through.",
+    direction: "hybrid",
     defaults: {
-      purpose: "Handle routine personal calls and appointment requests.",
+      purpose: "Handle routine personal calls and approved follow-up requests.",
       caller: "People calling for the account owner, providers, and businesses.",
       outcome:
         "Capture the request, schedule the next step when authorized, and send a clear recap.",
@@ -66,6 +77,7 @@ const blueprints: Array<{
     value: "support",
     label: "Support desk",
     detail: "FAQs, account help, escalation, and follow-up.",
+    direction: "inbound",
     defaults: {
       purpose:
         "Answer support calls, verify context, resolve approved questions, and route anything account-specific or urgent.",
@@ -82,6 +94,7 @@ const blueprints: Array<{
     value: "call-center",
     label: "Call center / overflow",
     detail: "Queue coverage, triage, routing, and recaps.",
+    direction: "inbound",
     defaults: {
       purpose:
         "Cover live call volume, classify caller intent, route to the right owner, and preserve a clean transcript and outcome.",
@@ -99,6 +112,7 @@ const blueprints: Array<{
     value: "home-services",
     label: "Home services",
     detail: "HVAC, plumbing, electrical, landscaping, and more.",
+    direction: "inbound",
     defaults: {
       purpose:
         "Answer inbound service calls, qualify the issue, and help the team respond quickly.",
@@ -115,6 +129,7 @@ const blueprints: Array<{
     value: "medical",
     label: "Medical office",
     detail: "Appointments, routine questions, and safe routing.",
+    direction: "inbound",
     defaults: {
       purpose: "Handle non-clinical calls, scheduling requests, and routine office information.",
       caller: "Patients, caregivers, pharmacies, and referring offices.",
@@ -130,6 +145,7 @@ const blueprints: Array<{
     value: "legal",
     label: "Legal intake",
     detail: "New inquiries, scheduling, and respectful routing.",
+    direction: "inbound",
     defaults: {
       purpose: "Handle new inquiry and scheduling calls with a professional intake experience.",
       caller: "Potential clients, current clients, courts, opposing offices, and vendors.",
@@ -145,8 +161,9 @@ const blueprints: Array<{
     value: "real-estate",
     label: "Real estate",
     detail: "Buyer, seller, showing, and inquiry follow-up.",
+    direction: "hybrid",
     defaults: {
-      purpose: "Handle property inquiries, showing requests, and follow-up calls.",
+      purpose: "Handle property inquiries, showing requests, and approved follow-up calls.",
       caller: "Buyers, sellers, renters, referral partners, and vendors.",
       outcome:
         "Capture contact details, property interest, timeline, and preferred appointment; create a clear next step.",
@@ -160,9 +177,10 @@ const blueprints: Array<{
     value: "insurance",
     label: "Insurance office",
     detail: "Service requests, intake, and safe escalation.",
+    direction: "hybrid",
     defaults: {
       purpose:
-        "Handle policy-service and new-inquiry calls while keeping coverage decisions with licensed staff.",
+        "Handle policy-service calls, new inquiries, and approved follow-up while keeping coverage decisions with licensed staff.",
       caller:
         "Policyholders, prospective customers, carriers, repair shops, and referral partners.",
       outcome:
@@ -177,6 +195,7 @@ const blueprints: Array<{
     value: "restaurant",
     label: "Restaurant or hospitality",
     detail: "Reservations, hours, events, and guest service.",
+    direction: "inbound",
     defaults: {
       purpose:
         "Handle reservations, guest questions, private-event inquiries, and routine service calls.",
@@ -193,9 +212,10 @@ const blueprints: Array<{
     value: "sales",
     label: "Sales and qualification",
     detail: "Respectful discovery and booked next steps.",
+    direction: "outbound",
     defaults: {
-      purpose: "Qualify inbound interest and schedule the right next conversation.",
-      caller: "Prospects, referral partners, and returning customers.",
+      purpose: "Qualify outbound or inbound interest and schedule the right next conversation.",
+      caller: "Prospects, referral partners, returning customers, and approved campaign lists.",
       outcome:
         "Understand the need, capture qualified details, answer approved questions, and book a clear next step.",
       handoff:
@@ -208,9 +228,10 @@ const blueprints: Array<{
     value: "custom",
     label: "Custom workflow",
     detail: "A blank but structured phone-agent plan.",
+    direction: "inbound",
     defaults: {
       purpose: "Describe the job this phone agent owns.",
-      caller: "Describe who calls this agent.",
+      caller: "Describe who calls this agent or which approved list it calls.",
       outcome: "Describe the completed result you want from a successful call.",
       handoff: "Describe exactly when a person should take over.",
       boundaries: "Describe promises this agent must never make.",
@@ -231,7 +252,8 @@ function getBlueprint(kind: BlueprintKind) {
 }
 
 function createDraft(kind: BlueprintKind = "personal"): BlueprintDraft {
-  return { kind, tone: "warm", ...getBlueprint(kind).defaults };
+  const blueprint = getBlueprint(kind);
+  return { kind, direction: blueprint.direction, tone: "warm", ...blueprint.defaults };
 }
 
 function safeMessage(payload: unknown, fallback: string) {
@@ -242,6 +264,7 @@ function safeMessage(payload: unknown, fallback: string) {
 
 function buildFlow(agentName: string, draft: BlueprintDraft): PhoneAgentFlowStep[] {
   const tone = tones.find((item) => item.value === draft.tone)?.label.toLowerCase() ?? "warm";
+  const direction = AGENT_DIRECTION_GUIDANCE[draft.direction];
   const prefix = agentName || "This agent";
   const stamp = `${Date.now()}`;
 
@@ -249,14 +272,14 @@ function buildFlow(agentName: string, draft: BlueprintDraft): PhoneAgentFlowStep
     {
       id: `blueprint-${stamp}-welcome`,
       name: "Welcome and orient",
-      instructions: `Answer as ${prefix}. Use a ${tone}, natural, and efficient tone. Clearly identify the business or person you represent when appropriate. The agent's job is: ${draft.purpose}`,
+      instructions: `Answer as ${prefix}. Use a ${tone}, natural, and efficient tone. This is a ${direction.label.toLowerCase()} call agent: ${direction.plainEnglish} Clearly identify the business or person you represent when appropriate. The agent's job is: ${draft.purpose}`,
       transitionCondition:
         "The caller knows they reached the right place and has stated what they need.",
     },
     {
       id: `blueprint-${stamp}-understand`,
       name: "Understand the request",
-      instructions: `These callers are typically: ${draft.caller} Ask only the questions needed to understand the request. Confirm the important details back in plain language before moving forward.`,
+      instructions: `Follow this call direction loop: ${direction.loop.join(" -> ")}. These callers or lists are typically: ${draft.caller} Ask only the questions needed to understand the request. Confirm the important details back in plain language before moving forward.`,
       transitionCondition:
         "You have enough accurate context to take the approved next action or hand the request off.",
     },
@@ -292,6 +315,10 @@ export default function PhoneAgentBlueprint({
   const stageCount = Array.isArray(existingSteps) ? existingSteps.length : 0;
   const isReplacing = stageCount > 0;
   const selectedBlueprint = useMemo(() => getBlueprint(draft.kind), [draft.kind]);
+  const directionGuidance = AGENT_DIRECTION_GUIDANCE[draft.direction];
+  const readiness = useMemo(() => scoreCallPlanReadiness(draft), [draft]);
+  const readyCount = readiness.filter((item) => item.ready).length;
+  const isReady = readyCount === readiness.length;
   const savedStageNames = useMemo(
     () =>
       (existingSteps ?? [])
@@ -307,11 +334,17 @@ export default function PhoneAgentBlueprint({
   }, [agentId, isOpen]);
 
   function chooseBlueprint(kind: BlueprintKind) {
-    setDraft((current) => ({ ...current, kind, ...getBlueprint(kind).defaults }));
+    const blueprint = getBlueprint(kind);
+    setDraft((current) => ({
+      ...current,
+      kind,
+      direction: blueprint.direction,
+      ...blueprint.defaults,
+    }));
   }
 
   async function savePlan() {
-    if (!agentId || saving) return;
+    if (!agentId || saving || !isReady) return;
     setSaving(true);
     setNotice("");
     try {
@@ -347,8 +380,8 @@ export default function PhoneAgentBlueprint({
         </div>
         <p className="studio-muted-copy">
           {isReplacing
-            ? "A saved call path is active. Replace it only when you want a new conversation structure."
-            : "Define how this agent opens, understands the caller, takes action, and hands off safely."}
+            ? "A saved call path is active. Replace it only when the call job, direction, or handoff rules change."
+            : "Choose the call direction, teach the job, and check launch readiness before the first live call."}
         </p>
         {isReplacing && savedStageNames.length > 0 && (
           <p
@@ -364,7 +397,7 @@ export default function PhoneAgentBlueprint({
           disabled={!agentId || disabled}
           onClick={() => setIsOpen(true)}
         >
-          <span>{isReplacing ? "Replace call plan" : "Build a call plan"}</span>
+          <span>{isReplacing ? "Review or replace call plan" : "Build guided call plan"}</span>
           <ChevronRight size={16} aria-hidden="true" />
         </button>
       </section>
@@ -384,14 +417,12 @@ export default function PhoneAgentBlueprint({
           >
             <div className="studio-blueprint-heading">
               <div>
-                <p className="studio-kicker">Phone agent blueprint</p>
+                <p className="studio-kicker">Guided call plan</p>
                 <h2 id="phone-agent-blueprint-title">
-                  Give {agentName || "this agent"} a dependable call path.
+                  Teach {agentName || "this agent"} the call job.
                 </h2>
                 <p>
-                  {isReplacing
-                    ? "This replaces the current staged call plan with a new, structured blueprint. Your rules, facts, tone, and integrations are not changed."
-                    : "Start with a proven shape, then tune the actual work, boundaries, and human handoff. This saves a runtime call flow—not a cosmetic prompt."}
+                  Choose direction first, tune the work, then pass the readiness check. This saves a real staged call plan.
                 </p>
               </div>
               <button
@@ -404,6 +435,42 @@ export default function PhoneAgentBlueprint({
               </button>
             </div>
 
+            <div className="studio-blueprint-learning" aria-label="Guided setup method">
+              {GUIDED_AGENT_LEARNING_LOOP.map((item) => (
+                <div key={item.step}>
+                  <strong>{item.step}</strong>
+                  <span>{item.promise}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="studio-blueprint-section-label">
+              <span>1. Direction</span>
+              <small>{directionGuidance.plainEnglish}</small>
+            </div>
+            <div className="studio-blueprint-directions" aria-label="Call direction">
+              {directionOrder.map((directionKey) => {
+                const direction = AGENT_DIRECTION_GUIDANCE[directionKey];
+                return (
+                  <button
+                    className={draft.direction === directionKey ? "is-selected" : ""}
+                    type="button"
+                    key={directionKey}
+                    onClick={() => setDraft((current) => ({ ...current, direction: directionKey }))}
+                  >
+                    <strong>{direction.label}</strong>
+                    <span>{direction.shortLabel}</span>
+                    <small>{direction.loop.join(" → ")}</small>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="studio-blueprint-teachback">{directionGuidance.proofQuestion}</p>
+
+            <div className="studio-blueprint-section-label">
+              <span>2. Use case</span>
+              <small>Templates fill the blanks; you can still edit every field.</small>
+            </div>
             <div className="studio-blueprint-templates" aria-label="Use case">
               {blueprints.map((blueprint) => (
                 <button
@@ -449,7 +516,7 @@ export default function PhoneAgentBlueprint({
                 />
               </label>
               <label>
-                <span>Who calls?</span>
+                <span>Who calls or gets called?</span>
                 <textarea
                   rows={4}
                   value={draft.caller}
@@ -496,8 +563,26 @@ export default function PhoneAgentBlueprint({
                   ? "The current plan will be replaced with:"
                   : "It will save four stages:"}
               </span>
-              <strong>Welcome → Understand → Resolve or route → Recap</strong>
+              <strong>{directionGuidance.loop.join(" → ")} · Welcome → Understand → Resolve or route → Recap</strong>
             </div>
+
+            <div className="studio-blueprint-readiness" aria-label="Launch readiness">
+              <div>
+                <strong>Readiness</strong>
+                <span>
+                  {readyCount}/{readiness.length} clear
+                </span>
+              </div>
+              <ul>
+                {readiness.map((item) => (
+                  <li key={item.id} className={item.ready ? "is-ready" : ""}>
+                    <Check size={13} aria-hidden="true" />
+                    {item.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             {notice && (
               <p
                 className={`studio-blueprint-notice ${notice.startsWith("Saved") ? "is-success" : ""}`}
@@ -516,13 +601,7 @@ export default function PhoneAgentBlueprint({
               <button
                 className="studio-primary-button"
                 type="button"
-                disabled={
-                  saving ||
-                  !draft.purpose.trim() ||
-                  !draft.outcome.trim() ||
-                  !draft.handoff.trim() ||
-                  !draft.boundaries.trim()
-                }
+                disabled={saving || !isReady}
                 onClick={() => void savePlan()}
               >
                 {saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}

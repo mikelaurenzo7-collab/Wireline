@@ -14,17 +14,26 @@ export default function LandingPage() {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Wireline",
-    applicationCategory: "ProductivityApplication",
-    operatingSystem: "Web, iOS, Android",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, iOS, Android, Chrome, Opera",
     description:
-      "Build trained voice agents for personal assistants, solo business agents, call centers, sales teams, scheduling, routing, follow-up, and business phone coverage.",
+      "Create, train, wire, run, and review outbound-first call agents with inbound and hybrid modes for sales prospecting, front desk, support triage, billing collection, negotiation, surveys, scheduling, and follow-up.",
+    offers: {
+      "@type": "OfferCatalog",
+      name: "Wireline call agent plans",
+      itemListElement: ["Personal", "Team", "Business", "Enterprise"].map((name) => ({
+        "@type": "Offer",
+        name,
+        url: "https://trywireline.com/pricing",
+      })),
+    },
   };
 
   return (
     <>
       <PageMeta
-        title="Wireline | Wire your agent"
-        description="From personal assistants to solo business agents, call centers, and sales teams, build a trained voice agent that answers, routes, books, follows up, and texts the outcome."
+        title="Wireline | Outbound, inbound, and hybrid call agents"
+        description="Wireline builds outbound-first call agents with inbound and hybrid modes for sales, front desk, support, billing collection, negotiation, surveys, scheduling, and follow-up."
         image="/og-image.png"
       />
       <script

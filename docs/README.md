@@ -1,6 +1,6 @@
 # Wireline Documentation
 
-Wireline's durable documentation follows the active product model. The customer-facing product loop is **Create -> Train -> Run**; the operational surface adds Wire between Train and Run for numbers, integrations, routing, approvals, billing, and launch controls (**Create -> Train -> Wire -> Run**). This index is the canonical map for repo docs; dated plans and one-off research files are historical unless promoted here.
+Wireline's durable documentation follows the active product model. The customer-facing product loop is **Create -> Train -> Run**; the operational surface adds Wire between Train and Run for numbers, integrations, routing, approvals, billing, and launch controls (**Create -> Train -> Wire -> Run**). The current go-to-market wedge is outbound-first call agents, while the product supports outbound, inbound, and hybrid modes. This index is the canonical map for repo docs; dated plans and one-off research files are historical unless promoted here.
 
 ## Active product surface
 
@@ -8,7 +8,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | --- | --- | --- |
 | Overview | `src/pages/OverviewPage.tsx` | Calm command center for agents, calls, connections, Conversation Balance, and next actions. |
 | Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
-| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, and memory. |
+| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx`, `src/components/PhoneAgentBlueprint.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, memory, and guided call-plan readiness. |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` | Numbers, integrations, routing, connected tools, approvals, billing, and launch controls. |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` | Chat-first execution for calls, texts, follow-up, approvals, handoff, and review. |
 | Browser | `apps/browser-extension/` | Wireline Command: explicit page-context handoff into Studio. |
@@ -20,12 +20,15 @@ Wireline's durable documentation follows the active product model. The customer-
 
 - Public pages explain. Authenticated pages execute.
 - Create stays short; Training owns detailed setup.
+- Guided call-plan setup asks direction first, teaches the tradeoff, captures concrete behavior, and checks launch readiness.
 - Wire owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
 - Studio is the workroom; Overview is the calm command center.
+- The marketable wedge is outbound-first call agents: list, script, dial, log.
+- Inbound and hybrid are first-class selectable modes, not lesser fallbacks.
 - Avoid authenticated page descriptions unless the user is reviewing history, coaching, analytics, exports, or past actions.
 - Use labels, tabs, icons, state, and clear next actions instead of prose paragraphs.
 - Phone / Call History and Analytics may explain history, coaching, exports, and insights.
-- User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `presenter`, and `live video add-on`.
+- User-facing language is `Agents`, `Training`, `Wire`, `Studio`, `outbound`, `inbound`, `hybrid`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `presenter`, and `live video add-on`.
 - Customer-facing video-presenter surfaces must not mention vendor names such as HeyGen or LiveAvatar.
 - Wireline Command is the browser surface name; do not restore retired extension names.
 - The design system is Wireline Letterpress / Wireline Clear System, on the Aurora palette. Product chrome uses electric-violet action, a cool obsidian (dark) or cool near-white (light) canvas, ink text, a platinum-silver wire accent, and restrained status colors.
@@ -40,6 +43,8 @@ Wireline's durable documentation follows the active product model. The customer-
 | [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md) | Current codebase/repo health-pass findings, actions, and next priorities. |
 | [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md) | **Active** — source-of-truth triage for excluded/unmounted surfaces and their rebuild/delete targets. |
 | [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | **Active** — whole-product showcase matrix across web, API, native, browser, ChatGPT, voice, video, integrations, trust, and margin. |
+| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | **Active** — outbound-first wedge with outbound, inbound, and hybrid call modes, demo path, and pricing implications. |
+| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md) | **Active** — guided call-plan setup doctrine: ask, teach, capture, check, then launch. |
 | [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion. |
 | [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | **Active** — customer-facing trust, compliance, and proof posture without overclaiming. |
 | [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md) | **Active** — launch readiness scorecard and margin operating plan. |
@@ -49,6 +54,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md) | **Active** - dry-run-first demo tenant reset, reseed, and screenshot QA procedure. |
 | [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md) | **Active** — DNC, Redis, Sentry, and scale-readiness env vars. |
 | [MULTI_SURFACE_QA_2026-07-07.md](./MULTI_SURFACE_QA_2026-07-07.md) | **Active** — extension, native, and ChatGPT MCP QA rituals. |
+| [STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md](./STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md) | **Active** — strict branch review for design, UI/UX, branding, pricing, marketing, SEO, AI runtime, integrations, and business structure. |
 | [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md) | **Planned** — Conversation Balance referral loop (post-Horizon 0). |
 | [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | **Active** — brand voice, marketing/GTM, onboarding, pricing, voice/avatar product, and ops execution plan tied to the Aurora rebrand. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
@@ -82,7 +88,7 @@ Wireline's durable documentation follows the active product model. The customer-
 
 ## Verification
 
-- `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, and event taxonomy contracts.
+- `npm run verify:contracts` - focused product voice, authenticated page map, authenticated copy discipline, marketing metadata, static metadata, event taxonomy, chunk recovery, and guided setup contracts.
 - `npm run verify` - design check, source-control hygiene, route registry, docs index, design-token parity, Stripe catalog contract, build, and bundled-server smoke.
 - `npm run verify:full` - lint, server lint, design/source-control/route/docs/token/authz/CSP checks, tests, build, and smoke.
 - `npm run test:e2e` - Playwright homepage story, accessibility, and audience-tab smoke.

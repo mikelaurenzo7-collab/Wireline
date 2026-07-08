@@ -17,24 +17,31 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/changelog",
   "/security",
   "/trust",
+  "/privacy",
+  "/terms",
   "/not-found",
   "/404",
 ]);
 
+const MARKETING_PUBLIC_PREFIXES = ["/blog/", "/for/", "/solutions/", "/trust/"];
+
 /** Broader marketing surface — must not block on session hydration. */
 export function isMarketingPublicPath(pathname: string): boolean {
   if (MARKETING_PUBLIC_PATHS.has(pathname)) return true;
-  if (pathname.startsWith("/blog/")) return true;
-  if (pathname.startsWith("/for/")) return true;
-  return false;
+  return MARKETING_PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 /** Sign-in / sign-up gates (including legacy /auth aliases). */
 export function isAuthPortalPath(pathname: string): boolean {
   return (
     pathname === "/signin" ||
+    pathname.startsWith("/signin/") ||
     pathname === "/signup" ||
+    pathname.startsWith("/signup/") ||
     pathname === "/login" ||
+    pathname === "/get-started" ||
+    pathname === "/reset-password" ||
+    pathname === "/oauth-complete" ||
     pathname === "/auth" ||
     pathname.startsWith("/auth/")
   );

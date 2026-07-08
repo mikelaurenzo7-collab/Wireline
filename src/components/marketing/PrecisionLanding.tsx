@@ -5,49 +5,74 @@ import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import TrustSignals from "./TrustSignals";
 import RoiCalculator from "./RoiCalculator";
-import { BUSINESS_MARKETING_VOICE, MARKETING_VOICE } from "../../lib/product-copy";
+import {
+  AGENT_DIRECTION_MODES,
+  BUSINESS_MARKETING_VOICE,
+  MARKETING_VOICE,
+  OUTBOUND_WEDGE,
+} from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
-// ─── Live call card (hero illustration) ────────────────────────────────────
-function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
-  const personal = {
-    initial: "M",
-    name: "Mike's Agent",
-    role: "Personal assistant",
-    caller: "Unknown · (312) 555-0182",
-    lines: [
-      { from: "caller", text: "Hi, is this Mike? I'm calling about your car warranty." },
-      { from: "agent", text: "Mike isn't available. Can I ask what this is regarding?" },
-      { from: "caller", text: "It's about an expiring warranty offer." },
-      { from: "agent", text: "Handled. I'll text Mike the summary now." },
-    ],
-    tags: ["Screened", "Message sent", "Caller logged"],
-  };
+type AgentMode = "outbound" | "inbound" | "hybrid";
 
-  const business = {
+function LiveCallCard({ mode }: { mode: AgentMode }) {
+  const outbound = {
     initial: "W",
-    name: "Wireline — Revenue Desk",
-    role: "Business agent",
-    caller: "Inbound · Acme Cloud",
+    name: "Wireline — Outbound Desk",
+    role: "Outbound sales agent",
+    caller: "Outbound · Acme Cloud",
+    status: "Dialing",
+    meter: "Calling · transcribing",
     lines: [
-      { from: "caller", text: "Can I talk to someone about pricing and implementation?" },
-      { from: "agent", text: "Absolutely. Are you evaluating this for sales, support, or operations?" },
-      { from: "caller", text: "Sales first, then support if it works." },
-      { from: "agent", text: "Got it. I'll qualify the fit, route the notes, and book the right handoff." },
+      { from: "agent", text: "Hi Jordan, this is Wireline. I saw your team is hiring SDRs and thought this might be timely." },
+      { from: "caller", text: "What is this about?" },
+      { from: "agent", text: "Outbound call agents that qualify lists, handle objections, book meetings, and log outcomes. Is outbound capacity a priority this quarter?" },
+      { from: "caller", text: "Yes. Send details and book something with our revenue ops lead." },
     ],
-    tags: ["Qualified", "Routed to sales", "Recap sent"],
+    tags: ["Qualified", "Meeting booked", "CRM updated"],
   };
 
-  const data = variant === "personal" ? personal : business;
+  const inbound = {
+    initial: "F",
+    name: "Wireline — Front Desk",
+    role: "Inbound call agent",
+    caller: "Inbound · New prospect",
+    status: "Answering",
+    meter: "Answering · routing",
+    lines: [
+      { from: "caller", text: "Hi, do you have availability for a consultation this week?" },
+      { from: "agent", text: "I can help. Is this for sales, support, or scheduling?" },
+      { from: "caller", text: "Sales. We need pricing and implementation timing." },
+      { from: "agent", text: "Great. I’ll capture the fit, book the right handoff, and send the recap now." },
+    ],
+    tags: ["Answered live", "Booked intake", "Recap sent"],
+  };
+
+  const hybrid = {
+    initial: "H",
+    name: "Wireline — Revenue Desk",
+    role: "Hybrid call agent",
+    caller: "Callback · Warm opportunity",
+    status: "Handling",
+    meter: "Answering · following up",
+    lines: [
+      { from: "caller", text: "I missed your call earlier. Can someone explain the renewal options?" },
+      { from: "agent", text: "Absolutely. I can answer the basics, confirm fit, and queue the renewal specialist if needed." },
+      { from: "caller", text: "Can you call me again Friday if I don’t finish the form?" },
+      { from: "agent", text: "Done. I’ll send the link, log today’s intent, and schedule a Friday follow-up." },
+    ],
+    tags: ["Answered", "Follow-up queued", "CRM synced"],
+  };
+
+  const data = { outbound, inbound, hybrid }[mode];
 
   return (
     <aside
-      className="relative rounded-[20px] border border-border bg-card p-5 shadow-[0_1px_3px_rgba(0,0,0,.03),_0_8px_32px_rgba(0,0,0,.05)] sm:p-6"
+      className="wl-paper wl-paper-elevated relative rounded-[20px] p-5 sm:p-6"
       aria-label={`${data.role} live call preview`}
     >
-      {/* Glow */}
       <div
-        className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-60"
+        className="pointer-events-none absolute inset-[-30px] rounded-[40px] opacity-55"
         aria-hidden="true"
         style={{
           background:
@@ -56,7 +81,6 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
         }}
       />
       <div className="relative">
-        {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <div
@@ -67,7 +91,7 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             </div>
             <div className="min-w-0">
               <div className="truncate text-[14px] font-semibold">{data.name}</div>
-              <div className="wl-eyebrow text-primary">{data.role}</div>
+              <div className="wl-eyebrow wl-eyebrow--no-rule text-primary">{data.role}</div>
               <div className="mt-1 truncate text-[12px] text-muted-foreground">{data.caller}</div>
             </div>
           </div>
@@ -77,12 +101,11 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
               aria-hidden="true"
             />
             <span className="font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
-              Live
+              {data.status}
             </span>
           </div>
         </div>
 
-        {/* Waveform */}
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-muted px-4 py-3">
           <div className="flex h-6 items-end gap-[2px]" aria-hidden="true">
             {[30, 70, 100, 50, 85, 40, 95, 60].map((h, i) => (
@@ -99,12 +122,11 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
             ))}
           </div>
           <span className="ml-auto font-mono text-[10px] uppercase tracking-[.1em] text-muted-foreground">
-            Answering · transcribing
+            {data.meter}
           </span>
         </div>
 
-        {/* Transcript */}
-        <div className="mt-4 flex flex-col gap-2" role="list" aria-label="Example call transcript">
+        <div className="mt-4 flex flex-col gap-2" role="list" aria-label={`Example ${mode} call transcript`}>
           {data.lines.map((line, i) => (
             <div
               key={i}
@@ -120,7 +142,6 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
           ))}
         </div>
 
-        {/* Tags */}
         <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Call outcomes">
           {data.tags.map((tag) => (
             <li key={tag} className="marketing-tag-success inline-flex items-center gap-1.5">
@@ -134,126 +155,148 @@ function LiveCallCard({ variant }: { variant: "personal" | "business" }) {
   );
 }
 
-// ─── Audience toggle ───────────────────────────────────────────────────────
-type Audience = "personal" | "business";
-
-const audiences: { key: Audience; label: string }[] = [
-  { key: "personal", label: "Personal" },
-  { key: "business", label: "Business" },
+const modes: { key: AgentMode; label: string }[] = [
+  { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
+  { key: "inbound", label: AGENT_DIRECTION_MODES.inbound.label },
+  { key: "hybrid", label: AGENT_DIRECTION_MODES.hybrid.label },
 ];
 
-function getAudienceTabId(key: Audience) {
-  return `wireline-${key}-audience-tab`;
+function getModeTabId(key: AgentMode) {
+  return `wireline-${key}-mode-tab`;
 }
 
-function getAudiencePanelId(key: Audience) {
-  return `wireline-${key}-audience-panel`;
+function getModePanelId(key: AgentMode) {
+  return `wireline-${key}-mode-panel`;
 }
 
-const HERO_AUDIENCE_COPY: Record<
-  Audience,
-  { cta: string; ctaPath: string; demo: string; note: string; stripLead: string; stripWin: string }
+const MODE_COPY: Record<
+  AgentMode,
+  {
+    cta: string;
+    ctaPath: string;
+    demo: string;
+    note: string;
+    stripLead: string;
+    stripWin: string;
+    title: string;
+    lead: string;
+    loopLabel: string;
+    outcomes: readonly string[];
+  }
 > = {
-  personal: {
-    cta: "Wire personal agent",
-    ctaPath: "/signup?plan=personal",
-    demo: "Hear a personal call",
-    note: "For unknown callers, appointments, errands, reminders, and side-hustle intake.",
-    stripLead: "Missed calls become missed context.",
-    stripWin: MARKETING_VOICE.differentiator,
-  },
-  business: {
-    cta: "Wire business agent",
-    ctaPath: "/signup?plan=business",
-    demo: "Hear a business call",
-    note: "For call centers, sales teams, front desks, support queues, agencies, and after-hours coverage.",
-    stripLead: BUSINESS_MARKETING_VOICE.beforeStrip,
+  outbound: {
+    cta: "Wire outbound agent",
+    ctaPath: "/signup?plan=business&mode=outbound",
+    demo: "Hear outbound call",
+    note: "For sales teams, marketing re-engagement, billing recovery, customer surveys, renewals, appointment campaigns, and follow-up.",
+    stripLead: OUTBOUND_WEDGE.beforeStrip,
     stripWin: BUSINESS_MARKETING_VOICE.differentiator,
+    title: "OUTBOUND AGENTS",
+    lead: OUTBOUND_WEDGE.subline,
+    loopLabel: "Wireline outbound loop",
+    outcomes: ["Calls the list", "Handles objections", "Logs outcomes"],
+  },
+  inbound: {
+    cta: "Wire inbound agent",
+    ctaPath: "/signup?plan=business&mode=inbound",
+    demo: "Hear inbound call",
+    note: "For front desks, inbound sales, support triage, scheduling, callbacks, overflow, after-hours coverage, and lead qualification.",
+    stripLead: "Not every agent starts with a list.",
+    stripWin: "Wireline can answer live demand, qualify intent, route handoffs, and log the call.",
+    title: "INBOUND AGENTS",
+    lead: "Choose inbound when the work starts with the customer: answer the call, understand intent, resolve or route, and leave a clean record behind.",
+    loopLabel: "Wireline inbound loop",
+    outcomes: ["Answers live", "Routes handoff", "Sends recap"],
+  },
+  hybrid: {
+    cta: "Wire hybrid agent",
+    ctaPath: "/signup?plan=business&mode=hybrid",
+    demo: "Hear hybrid call",
+    note: "For teams that need both sides: answer callbacks, make follow-ups, chase missing context, schedule next steps, and update the system of record.",
+    stripLead: "Most real call work is not one-way.",
+    stripWin: "Wireline can answer, act, call back, and sync the outcome when the workflow crosses directions.",
+    title: "HYBRID AGENTS",
+    lead: "Choose hybrid when one workflow needs inbound coverage and outbound persistence: answer, act, follow up, and keep every next step moving.",
+    loopLabel: "Wireline hybrid loop",
+    outcomes: ["Answers callbacks", "Follows up", "Syncs outcomes"],
   },
 };
-
-const HERO_OUTCOMES = ["Answers live", "Routes the handoff", "Texts the recap"] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
   (typeof STRIPE_PLANS)[number]
 >;
 
-// ─── What it does cards ────────────────────────────────────────────────────
-const PERSONAL_CONFIGS = [
-  {
-    icon: "◉",
-    name: "Gatekeeper",
-    body: "Screens unknowns, asks intent, patches through only when needed, and texts the recap.",
-    plan: "Personal · Day one",
-  },
-  {
-    icon: "◈",
-    name: "Scheduler",
-    body: "Books, reschedules, confirms, and waits on hold with the services you already call.",
-    plan: "Personal · Live outbound",
-  },
-  {
-    icon: "◫",
-    name: "Concierge",
-    body: "Turns a side hustle into a front desk: quotes, intake, follow-up, and handoff.",
-    plan: "Team · Drafting board",
-  },
-];
+const MODE_CONFIGS: Record<AgentMode, { icon: string; name: string; body: string; plan: string }[]> = {
+  outbound: [
+    {
+      icon: "◉",
+      name: "Sales SDR",
+      body: "Dials target accounts, opens cleanly, qualifies pain, handles objections, and books the meeting.",
+      plan: "Outbound · Sales",
+    },
+    {
+      icon: "◈",
+      name: "Billing Recovery",
+      body: "Makes compliant reminder calls, offers approved payment paths, documents promises, and routes hardship cases.",
+      plan: "Outbound · Collections",
+    },
+    {
+      icon: "◫",
+      name: "Re-engagement",
+      body: "Calls dormant customers, learns why they left, presents what changed, and books the right return path.",
+      plan: "Outbound · Marketing",
+    },
+  ],
+  inbound: [
+    {
+      icon: "◉",
+      name: "Front Desk",
+      body: "Answers live calls, captures intent, books the right next step, and keeps the brand calm on the line.",
+      plan: "Inbound · Reception",
+    },
+    {
+      icon: "◈",
+      name: "Lead Qualifier",
+      body: "Turns inbound demand into structured fit notes, routing decisions, and booked handoffs.",
+      plan: "Inbound · Revenue",
+    },
+    {
+      icon: "◫",
+      name: "Support Triage",
+      body: "Handles common questions, verifies context, escalates sensitive issues, and writes a useful ticket summary.",
+      plan: "Inbound · Support",
+    },
+  ],
+  hybrid: [
+    {
+      icon: "◉",
+      name: "Revenue Desk",
+      body: "Answers buyer callbacks, qualifies intent, books meetings, and makes the follow-up call when momentum stalls.",
+      plan: "Hybrid · Sales",
+    },
+    {
+      icon: "◈",
+      name: "Collections Desk",
+      body: "Answers payment questions, makes reminder calls, logs promises, and escalates disputes or hardship cases.",
+      plan: "Hybrid · Recovery",
+    },
+    {
+      icon: "◫",
+      name: "Appointment Desk",
+      body: "Confirms inbound requests, calls no-shows or pending leads, reschedules, and updates calendars.",
+      plan: "Hybrid · Scheduling",
+    },
+  ],
+};
 
-const BUSINESS_CONFIGS = [
-  {
-    icon: "◉",
-    name: "Revenue Desk",
-    body: "Qualifies inbound demand, captures buying context, and routes hot opportunities to the right owner.",
-    plan: "Business · Sales + CRM",
-  },
-  {
-    icon: "◈",
-    name: "Support Queue",
-    body: "Answers common questions, verifies context, and escalates account-specific or urgent work cleanly.",
-    plan: "Business · Support workflows",
-  },
-  {
-    icon: "◫",
-    name: "Call Center",
-    body: "Covers overflow, after-hours volume, campaign calls, and multi-line routing without losing the thread.",
-    plan: "Business · Full coverage",
-  },
-];
-
-// ─── How it works steps ────────────────────────────────────────────────────
-const STEPS = [
-  {
-    num: "01",
-    title: "Connect",
-    body: "Keep your number or provision a business line. Wireline becomes the trained layer on top.",
-  },
-  {
-    num: "02",
-    title: "Build",
-    body: "Name it, pick a voice, define the workflow, and start from a personal or business playbook.",
-  },
-  {
-    num: "03",
-    title: "Train",
-    body: "Feed scripts, FAQs, limits, and handoff rules. Test the call before it goes live.",
-  },
-  {
-    num: "04",
-    title: "Deploy",
-    body: "Read transcripts, coach weak spots, and keep improving the line after every call.",
-  },
-];
-
-// ─── Pricing ───────────────────────────────────────────────────────────────
 const PLANS = [
   {
     name: "Personal",
     sub: "For one person",
     price: "$0",
     period: "to create",
-    body: "Build and train one agent for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
+    body: "Build and train one agent for free. Live negotiation, errands, scheduling, inbound screening, and follow-up draw from prepaid Conversation Balance.",
     features: planCatalog.personal.features,
     cta: "Start with Personal",
     ctaPath: "/signup?plan=personal",
@@ -261,10 +304,10 @@ const PLANS = [
   },
   {
     name: "Team",
-    sub: "For a small team",
+    sub: "For one call lane",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: "Several agents, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
+    body: "Shared capacity for one focused lane: outbound, inbound, or hybrid call work with approvals and a team inbox.",
     features: planCatalog.team.features,
     cta: "Start Team",
     ctaPath: "/signup?plan=team",
@@ -273,10 +316,10 @@ const PLANS = [
   },
   {
     name: "Business",
-    sub: "Best operating tier",
+    sub: "For call operations",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: "The serious business tier: more agents, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
+    body: "Multiple agents, numbers, CRM sync, analytics, roles, approvals, and oversight across outbound, inbound, and hybrid lanes.",
     features: planCatalog.business.features,
     cta: "Start Business",
     ctaPath: "/signup?plan=business",
@@ -284,23 +327,23 @@ const PLANS = [
   },
 ];
 
-// ─── Main component ────────────────────────────────────────────────────────
 export default function PrecisionLanding() {
-  const [audience, setAudience] = useState<Audience>("business");
-  const configs = audience === "personal" ? PERSONAL_CONFIGS : BUSINESS_CONFIGS;
-  const heroCopy = HERO_AUDIENCE_COPY[audience];
+  const [mode, setMode] = useState<AgentMode>("outbound");
+  const configs = MODE_CONFIGS[mode];
+  const modeCopy = MODE_COPY[mode];
+  const loop = AGENT_DIRECTION_MODES[mode].loop;
 
-  const selectAudience = (key: Audience, focusAfterSelect = false) => {
-    setAudience(key);
+  const selectMode = (key: AgentMode, focusAfterSelect = false) => {
+    setMode(key);
 
     if (focusAfterSelect) {
-      window.requestAnimationFrame(() => document.getElementById(getAudienceTabId(key))?.focus());
+      window.requestAnimationFrame(() => document.getElementById(getModeTabId(key))?.focus());
     }
   };
 
-  const handleAudienceKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const currentIndex = audiences.findIndex(({ key }) => key === audience);
-    const lastIndex = audiences.length - 1;
+  const handleModeKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = modes.findIndex(({ key }) => key === mode);
+    const lastIndex = modes.length - 1;
     let nextIndex = currentIndex;
 
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
@@ -316,7 +359,7 @@ export default function PrecisionLanding() {
     }
 
     event.preventDefault();
-    selectAudience(audiences[nextIndex].key, true);
+    selectMode(modes[nextIndex].key, true);
   };
 
   return (
@@ -324,37 +367,32 @@ export default function PrecisionLanding() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-        {/* ── HERO ──────────────────────────────────────────────── */}
         <section
           className="marketing-hero border-b border-border px-5 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20"
           aria-labelledby="wireline-hero-title"
         >
-          <div className="wl-public-rail grid items-center gap-10 lg:grid-cols-[1.12fr_.88fr] lg:gap-12">
-            {/* Left copy */}
+          <div className="wl-public-rail grid items-center gap-9 lg:grid-cols-[1.08fr_.92fr] lg:gap-12">
             <div className="wireline-hero-motion">
               <div
-                className="mb-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-[var(--wireline-elevation-xs)]"
+                className="wl-segmented mb-6"
                 role="tablist"
-                aria-label="Audience mode"
-                onKeyDown={handleAudienceKeyDown}
+                aria-label="Agent call direction"
+                onKeyDown={handleModeKeyDown}
               >
-                {audiences.map(({ key, label }) => {
-                  const selected = audience === key;
+                {modes.map(({ key, label }) => {
+                  const selected = mode === key;
                   return (
                     <button
                       key={key}
-                      id={getAudienceTabId(key)}
+                      id={getModeTabId(key)}
                       type="button"
                       role="tab"
                       aria-selected={selected}
-                      aria-controls={getAudiencePanelId(key)}
+                      aria-controls={getModePanelId(key)}
                       tabIndex={selected ? 0 : -1}
-                      onClick={() => selectAudience(key)}
-                      className={`min-h-10 rounded-md px-4 text-[13px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
-                        selected
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                      data-active={selected ? "true" : undefined}
+                      onClick={() => selectMode(key)}
+                      className="wl-segmented__item px-3 sm:px-5"
                     >
                       {label}
                     </button>
@@ -364,48 +402,54 @@ export default function PrecisionLanding() {
 
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
                 <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
-                <span className="wl-eyebrow text-muted-foreground">
-                  {audience === "business"
-                    ? BUSINESS_MARKETING_VOICE.eyebrow
-                    : MARKETING_VOICE.eyebrow}
+                <span className="wl-eyebrow wl-eyebrow--no-rule text-muted-foreground">
+                  {AGENT_DIRECTION_MODES[mode].eyebrow}
                 </span>
               </div>
 
               <h1
                 id="wireline-hero-title"
-                aria-label={MARKETING_VOICE.headline}
+                aria-label={modeCopy.title}
                 className="wl-display-1 max-w-[10ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.84] tracking-[-.07em] sm:max-w-[9ch] lg:max-w-[10ch]"
               >
-                WIRE YOUR <span className="text-primary">AGENT</span>
+                {modeCopy.title.split(" ")[0]} <span className="text-primary">AGENTS</span>
               </h1>
 
-              <p className="wl-lead mt-6 max-w-[42rem]">{MARKETING_VOICE.subline}</p>
+              <p className="wl-lead mt-6 max-w-[42rem]">{modeCopy.lead}</p>
 
               <p
-                id="wireline-audience-note"
+                id="wireline-mode-note"
                 className="mt-3 max-w-[38rem] text-[14px] leading-[1.6] text-muted-foreground"
               >
-                {heroCopy.note}
+                {modeCopy.note}
               </p>
 
-              <ul className="mt-6 flex flex-wrap gap-2" aria-label="Designed for">
-                {MARKETING_VOICE.proof.map((item) => (
+              <ol
+                className="mt-6 grid max-w-[32rem] grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-card"
+                aria-label={modeCopy.loopLabel}
+              >
+                {loop.map((item, index) => (
                   <li
                     key={item}
-                    className="rounded-full border border-border bg-card px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.08em] text-muted-foreground"
+                    className="border-r border-border px-2 py-3 text-center last:border-r-0"
                   >
-                    {item}
+                    <span className="block font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-primary">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="mt-1 block text-[12px] font-semibold text-muted-foreground">
+                      {item}
+                    </span>
                   </li>
                 ))}
-              </ul>
+              </ol>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
-                  to={heroCopy.ctaPath}
+                  to={modeCopy.ctaPath}
                   className="marketing-btn-primary min-h-12 w-full px-6 py-3 text-[15px] font-semibold sm:w-auto"
-                  aria-describedby="wireline-audience-note"
+                  aria-describedby="wireline-mode-note"
                 >
-                  {heroCopy.cta}
+                  {modeCopy.cta}
                   <ArrowRight size={16} aria-hidden="true" />
                 </Link>
                 <Link
@@ -413,16 +457,13 @@ export default function PrecisionLanding() {
                   className="marketing-btn-secondary min-h-12 w-full px-6 py-3 text-[15px] font-semibold sm:w-auto"
                 >
                   <Phone size={15} aria-hidden="true" />
-                  {heroCopy.demo}
+                  {modeCopy.demo}
                 </Link>
               </div>
 
               <ul className="mt-7 grid gap-2 sm:grid-cols-3" aria-label="Core outcomes">
-                {HERO_OUTCOMES.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-2 text-[13px] text-muted-foreground"
-                  >
+                {modeCopy.outcomes.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-[13px] text-muted-foreground">
                     <span className="marketing-proof-chip h-[18px] w-[18px]" aria-hidden="true">
                       ✓
                     </span>
@@ -432,25 +473,23 @@ export default function PrecisionLanding() {
               </ul>
             </div>
 
-            {/* Right: live call card */}
             <div className="wireline-hero-motion wireline-hero-motion--delay">
-              {audiences.map(({ key, label }) => (
+              {modes.map(({ key, label }) => (
                 <div
                   key={key}
-                  id={getAudiencePanelId(key)}
+                  id={getModePanelId(key)}
                   role="tabpanel"
-                  aria-labelledby={getAudienceTabId(key)}
+                  aria-labelledby={getModeTabId(key)}
                   aria-label={`${label} agent preview`}
-                  hidden={audience !== key}
+                  hidden={mode !== key}
                 >
-                  {audience === key ? <LiveCallCard variant={key} /> : null}
+                  {mode === key ? <LiveCallCard mode={key} /> : null}
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── DIFFERENTIATOR STRIP ──────────────────────────────── */}
         <div className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p
             className="marketing-ink-panel__soft text-[18px]"
@@ -458,27 +497,30 @@ export default function PrecisionLanding() {
               fontFamily: "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
             }}
           >
-            {heroCopy.stripLead}{" "}
-            <span className="text-[var(--wireline-color-text-primary)]">{heroCopy.stripWin}</span>
+            {modeCopy.stripLead}{" "}
+            <span className="text-[var(--wireline-color-text-primary)]">{modeCopy.stripWin}</span>
           </p>
         </div>
 
-        {/* ── WHAT IT DOES ──────────────────────────────────────── */}
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">
-                Agent playbooks · {audience === "personal" ? "personal" : "business"}
+                Call playbooks · {AGENT_DIRECTION_MODES[mode].label.toLowerCase()}
               </p>
               <h2 className="wl-display-2 mt-4">
-                {audience === "personal"
-                  ? "Configure it for real life."
-                  : "Built for real call volume."}
+                {mode === "outbound"
+                  ? "Built for outbound volume."
+                  : mode === "inbound"
+                    ? "Clear coverage when customers call."
+                    : "One agent can work both directions."}
               </h2>
               <p className="mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
-                {audience === "personal"
-                  ? "One agent. Your rules. Personal errands, unknown callers, appointments, and side-hustle intake all run from the same playbook."
-                  : "From solo operators to multi-location teams, Wireline agents keep the phones moving while your team handles the work."}
+                {mode === "outbound"
+                  ? "The wedge remains outbound outcomes: qualify, collect, reactivate, survey, renew, schedule, and update the system of record."
+                  : mode === "inbound"
+                    ? "Inbound roles are first-class when the user wants live coverage, lead qualification, support triage, scheduling, or after-hours routing."
+                    : "Hybrid roles are for real operations where inbound callbacks, outbound follow-up, scheduling, collections, and CRM updates happen in the same workflow."}
               </p>
             </div>
 
@@ -486,7 +528,7 @@ export default function PrecisionLanding() {
               {configs.map(({ icon, name, body, plan }) => (
                 <div
                   key={name}
-                  className="group rounded-[16px] border border-border bg-card p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_var(--wireline-color-glow-primarySoft)]"
+                  className="wl-paper group rounded-[16px] p-7 transition-all hover:border-primary/40 hover:shadow-[0_4px_20px_var(--wireline-color-glow-primarySoft)]"
                 >
                   <div
                     className="mb-5 grid h-10 w-10 place-items-center rounded-[10px] bg-[var(--wireline-color-action-primary-container)] text-[18px] text-primary"
@@ -496,67 +538,91 @@ export default function PrecisionLanding() {
                   </div>
                   <h3 className="wl-display-4 mb-2">{name}</h3>
                   <p className="mb-5 text-[14px] leading-[1.6] text-muted-foreground">{body}</p>
-                  <p className="wl-eyebrow text-muted-foreground">{plan}</p>
+                  <p className="wl-eyebrow wl-eyebrow--no-rule text-muted-foreground">{plan}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── HOW IT WORKS ──────────────────────────────────────── */}
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12">
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">Live before lunch.</h2>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it runs</p>
+              <h2 className="wl-display-2 mt-4">{loop.join(". ")}.</h2>
             </div>
 
             <div className="grid overflow-hidden rounded-[16px] border border-border sm:grid-cols-4 sm:divide-x sm:divide-border">
-              {STEPS.map(({ num, title, body }, idx) => (
+              {loop.map((title, idx) => (
                 <div
-                  key={num}
+                  key={title}
                   className={`wl-wire-step bg-card p-8 transition-colors hover:bg-muted/40 ${
-                    idx === STEPS.length - 1 ? "wl-wire-step--settled" : ""
+                    idx === loop.length - 1 ? "wl-wire-step--settled" : ""
                   }`}
                 >
                   <div className="wl-wire-step__marker mb-7">
                     <span className="wl-wire-step__node" aria-hidden="true" />
-                    <span className="font-mono text-[13px] font-bold text-primary">{num}</span>
+                    <span className="font-mono text-[13px] font-bold text-primary">
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
                   </div>
                   <h3 className="wl-display-4 mb-2">{title}</h3>
-                  <p className="text-[13px] leading-[1.6] text-muted-foreground">{body}</p>
+                  <p className="text-[13px] leading-[1.6] text-muted-foreground">
+                    {mode === "outbound" && idx === 0
+                      ? "Upload or connect the people to call, with context, source, priority, and compliance posture."
+                      : mode === "outbound" && idx === 1
+                        ? "Train the opener, objections, escalation rules, approved offers, and success criteria."
+                        : mode === "outbound" && idx === 2
+                          ? "Wire the number, schedule the cadence, call live, and adapt to the conversation."
+                          : mode === "outbound"
+                            ? "Write the outcome, update the workspace or CRM, send the recap, and queue the next attempt."
+                            : mode === "inbound" && idx === 0
+                              ? "Classify the call by intent, urgency, customer type, and the right destination."
+                              : mode === "inbound" && idx === 1
+                                ? "Answer with brand-safe context, ask the right first question, and keep the caller moving."
+                                : mode === "inbound" && idx === 2
+                                  ? "Book, answer, route, escalate, or capture the ticket without making the caller repeat themselves."
+                                  : mode === "inbound"
+                                    ? "Write the summary, route the handoff, and leave a clean record."
+                                    : mode === "hybrid" && idx === 0
+                                      ? "Pick up live calls or callbacks with the same context used for outbound work."
+                                      : mode === "hybrid" && idx === 1
+                                        ? "Book, qualify, collect, answer, schedule, or escalate based on the workflow."
+                                        : mode === "hybrid" && idx === 2
+                                          ? "Call back, chase missing context, retry no-answers, and keep the task alive."
+                                          : "Sync transcripts, outcomes, next steps, CRM updates, and owner handoffs."}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── PRICING ───────────────────────────────────────────── */}
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mb-12 text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
               <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
-                Start wiring. Scale the line.
+                Start outbound. Add inbound when needed.
               </h2>
               <p className="mx-auto mt-4 max-w-[560px] text-[16px] leading-[1.6] text-muted-foreground">
-                Create for free, fund live work with Conversation Balance, then move into Team or
-                Business capacity when Wireline becomes an operating lane.
+                Create for free, fund live calls with Conversation Balance, then move into Team or
+                Business capacity for outbound, inbound, or hybrid call lanes.
               </p>
             </div>
 
-            <div className="mx-auto grid max-w-[960px] items-start gap-5 sm:grid-cols-3">
+            <div className="mx-auto grid max-w-[960px] items-stretch gap-5 sm:grid-cols-3">
               {PLANS.map((plan) => (
                 <div
                   key={plan.name}
-                  className={`relative rounded-[14px] p-8 ${
+                  className={`relative flex flex-col rounded-[14px] p-8 ${
                     plan.featured
                       ? "wl-featured-wire marketing-ink-panel shadow-[var(--wireline-elevation-lg)]"
-                      : "border border-border bg-card"
+                      : "wl-paper"
                   }`}
                 >
                   {plan.badge && (
-                    <div className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 wl-eyebrow text-primary-foreground">
+                    <div className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 wl-eyebrow wl-eyebrow--no-rule text-primary-foreground">
                       {plan.badge}
                     </div>
                   )}
@@ -579,7 +645,7 @@ export default function PrecisionLanding() {
                   >
                     {plan.body}
                   </p>
-                  <ul className="mb-6 flex flex-col gap-2">
+                  <ul className="mb-6 flex flex-1 flex-col gap-2">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-center gap-2 text-[13px]">
                         <span
@@ -613,14 +679,12 @@ export default function PrecisionLanding() {
           </div>
         </section>
 
-        {/* ── ROI CALCULATOR ──────────────────────────────────────── */}
         <section className="px-5 py-4 sm:px-8 lg:px-10">
           <div className="wl-public-rail">
             <RoiCalculator />
           </div>
         </section>
 
-        {/* ── FINAL CTA ─────────────────────────────────────────── */}
         <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="wl-featured-wire wl-featured-wire--live relative overflow-hidden rounded-[20px] marketing-ink-panel px-6 py-14 text-center sm:px-10 sm:py-20">
@@ -634,38 +698,46 @@ export default function PrecisionLanding() {
               />
               <div className="relative">
                 <h2 className="wl-display-2 mx-auto max-w-[18ch]">
-                  {audience === "business" ? (
+                  {mode === "outbound" ? (
+                    <>
+                      Stop staring at lists.
+                      <br />
+                      Start completing calls.
+                    </>
+                  ) : mode === "inbound" ? (
                     <>
                       Stop missing demand.
                       <br />
-                      Start routing it.
+                      Start answering cleanly.
                     </>
                   ) : (
                     <>
-                      Stop ignoring calls.
+                      Stop splitting workflows.
                       <br />
-                      Start delegating them.
+                      Start running the desk.
                     </>
                   )}
                 </h2>
                 <p className="mx-auto mt-4 max-w-[460px] text-[16px] marketing-ink-panel__soft">
-                  {audience === "business"
-                    ? "Stand up a trained business agent for sales, support, scheduling, or overflow. Fund live calls with Conversation Balance."
-                    : "Create first. Train the call. Fund live work when the line is ready."}
+                  {mode === "outbound"
+                    ? "Stand up a trained outbound agent for sales, collections, reactivation, surveys, renewals, scheduling, or follow-up."
+                    : mode === "inbound"
+                      ? "Stand up a trained inbound agent for front desk, lead qualification, support triage, scheduling, or after-hours coverage."
+                      : "Stand up a trained hybrid agent that answers callbacks, makes follow-up calls, and keeps every outcome synced."}
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
-                    to={heroCopy.ctaPath}
+                    to={modeCopy.ctaPath}
                     className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-text-primary)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-canvas-default)] transition-all hover:-translate-y-px hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
                   >
-                    {heroCopy.cta}
+                    {modeCopy.cta}
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
                     to="/showcase"
                     className="flex min-h-12 w-full items-center justify-center px-7 py-3 text-[15px] font-medium marketing-ink-panel__soft transition-colors hover:text-[var(--wireline-color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
                   >
-                    {heroCopy.demo}
+                    {modeCopy.demo}
                   </Link>
                 </div>
               </div>

@@ -106,13 +106,76 @@
   transform: translateY(1px);
 }
 
+.studio-blueprint-learning {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.studio-blueprint-learning div {
+  min-height: 76px;
+  padding: 10px;
+  border: 1px solid var(--wireline-line);
+  border-radius: var(--radius-lg);
+  background: var(--wireline-surface-subtle);
+}
+
+.studio-blueprint-learning strong,
+.studio-blueprint-learning span,
+.studio-blueprint-section-label span,
+.studio-blueprint-section-label small,
+.studio-blueprint-directions strong,
+.studio-blueprint-directions span,
+.studio-blueprint-directions small {
+  display: block;
+}
+
+.studio-blueprint-learning strong {
+  color: var(--wireline-ink);
+  font-size: var(--wireline-typography-caption-size);
+  font-weight: 700;
+}
+
+.studio-blueprint-learning span {
+  padding-top: 4px;
+  color: var(--wireline-muted);
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 15px;
+}
+
+.studio-blueprint-section-label {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.studio-blueprint-section-label span {
+  color: var(--wireline-ink);
+  font-size: var(--wireline-typography-body-size);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.studio-blueprint-section-label small {
+  max-width: 430px;
+  color: var(--wireline-muted);
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 16px;
+  text-align: right;
+}
+
+.studio-blueprint-directions,
 .studio-blueprint-templates {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 24px;
+  margin-top: 10px;
 }
 
+.studio-blueprint-directions button,
 .studio-blueprint-templates button {
   min-height: 76px;
   padding: 12px;
@@ -124,32 +187,39 @@
   transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
 }
 
+.studio-blueprint-directions button:hover,
 .studio-blueprint-templates button:hover {
   border-color: var(--wireline-line-strong);
   background: var(--wireline-surface-subtle);
   box-shadow: var(--wireline-shadow-sm);
 }
 
+.studio-blueprint-directions button:active,
 .studio-blueprint-templates button:active {
   transform: translateY(1px);
 }
 
+.studio-blueprint-directions button.is-selected,
 .studio-blueprint-templates button.is-selected {
   border-color: var(--wireline-accent);
   background: var(--wireline-accent);
   color: var(--wireline-color-text-onAction);
 }
 
-.studio-blueprint-templates strong,
-.studio-blueprint-templates small {
-  display: block;
-}
-
+.studio-blueprint-directions strong,
 .studio-blueprint-templates strong {
   font-size: var(--wireline-typography-body-size);
   font-weight: 600;
 }
 
+.studio-blueprint-directions span {
+  padding-top: 2px;
+  color: inherit;
+  font-size: var(--wireline-typography-caption-size);
+  opacity: 0.82;
+}
+
+.studio-blueprint-directions small,
 .studio-blueprint-templates small {
   padding-top: 4px;
   color: var(--wireline-muted);
@@ -157,8 +227,21 @@
   line-height: 16px;
 }
 
-.studio-blueprint-templates .is-selected small {
+.studio-blueprint-directions .is-selected small,
+.studio-blueprint-templates .is-selected small,
+.studio-blueprint-directions .is-selected span {
   color: rgba(255, 255, 255, 0.78);
+}
+
+.studio-blueprint-teachback {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--wireline-line);
+  border-radius: var(--radius-md);
+  background: var(--wireline-surface-subtle);
+  color: var(--wireline-muted);
+  font-size: var(--wireline-typography-caption-size);
+  line-height: 16px;
 }
 
 .studio-blueprint-form {
@@ -226,7 +309,8 @@
   font-size: var(--wireline-typography-body-size);
 }
 
-.studio-blueprint-preview {
+.studio-blueprint-preview,
+.studio-blueprint-readiness {
   display: grid;
   gap: 4px;
   margin-top: 20px;
@@ -246,6 +330,57 @@
   font-size: var(--wireline-typography-body-size);
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+.studio-blueprint-readiness > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.studio-blueprint-readiness strong {
+  color: var(--wireline-ink);
+  font-size: var(--wireline-typography-body-size);
+}
+
+.studio-blueprint-readiness span {
+  color: var(--wireline-muted);
+  font-size: var(--wireline-typography-caption-size);
+}
+
+.studio-blueprint-readiness ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-blueprint-readiness li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--wireline-line);
+  border-radius: 999px;
+  color: var(--wireline-muted);
+  font-size: var(--wireline-typography-caption-size);
+}
+
+.studio-blueprint-readiness li svg {
+  opacity: 0.35;
+}
+
+.studio-blueprint-readiness li.is-ready {
+  border-color: color-mix(in srgb, var(--wireline-status-active) 35%, var(--wireline-line));
+  color: var(--wireline-status-active);
+}
+
+.studio-blueprint-readiness li.is-ready svg {
+  opacity: 1;
 }
 
 .studio-blueprint-notice {
@@ -278,8 +413,19 @@
     line-height: 28px;
   }
 
+  .studio-blueprint-learning,
+  .studio-blueprint-directions,
   .studio-blueprint-templates {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-blueprint-section-label {
+    display: grid;
+  }
+
+  .studio-blueprint-section-label small {
+    max-width: none;
+    text-align: left;
   }
 
   .studio-blueprint-form {
@@ -291,9 +437,18 @@
   }
 }
 
+@media (max-width: 430px) {
+  .studio-blueprint-learning,
+  .studio-blueprint-directions,
+  .studio-blueprint-templates {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .studio-blueprint-trigger,
   .studio-blueprint-close,
+  .studio-blueprint-directions button,
   .studio-blueprint-templates button {
     transition: none;
   }

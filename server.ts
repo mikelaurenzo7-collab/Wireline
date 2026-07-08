@@ -2,10 +2,12 @@ import "dotenv/config";
 import "express-async-errors";
 import express from "express";
 import type { Server } from "node:http";
+import { AsyncLocalStorage } from "node:async_hooks";
 import cors from "cors";
 import path from "path";
 import { randomUUID } from "node:crypto";
 import { IS_PROD, log } from "./src/lib/server-context";
+import { bindRequestIdReader } from "./src/lib/server-logger";
 import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { reportError } from "./src/lib/error-reporter";
 import { normalizeApiErrorResponse } from "./src/middleware/normalize-api-error-response";
@@ -23,6 +25,9 @@ import gatewayCatalogRouter from "./src/lib/gateway-catalog";
 
 const SHUTDOWN_GRACE_MS = 30_000;
 let server: Server | null = null;
+
+const requestIdStore = new AsyncLocalStorage<string>();
+bindRequestIdReader(() => requestIdStore.getStore());
 
 function gracefulShutdown(signal: string) {
   log.info("Shutdown received", { signal });
@@ -90,17 +95,23 @@ app.use(
   }),
 );
 
-// Must run before global JSON parsing so signed vendor payloads retain raw bytes.
-installWebhookBodyParsers(app);
-app.use(express.json({ limit: "6mb" }));
-app.use(assertSameOrigin);
+// Install request IDs before body parsing or security gates so every API
+// rejection and parser failure can be traced across logs, clients, and alerts.
 app.use((req, res, next) => {
   const incoming = String(req.headers["x-request-id"] || "").slice(0, 64);
   const requestId = /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID();
   res.locals.requestId = requestId;
   res.setHeader("X-Request-Id", requestId);
-  next();
+  requestIdStore.run(requestId, next);
 });
+
+// Must run before global JSON parsing so signed vendor payloads retain raw bytes.
+installWebhookBodyParsers(app);
+// Reject disallowed mutating API requests before reading the general JSON body.
+// Vendor callbacks remain safe because the dedicated parsers above run first and
+// same-origin explicitly skips those signed provider routes.
+app.use(assertSameOrigin);
+app.use(express.json({ limit: "6mb" }));
 app.use(normalizeApiErrorResponse);
 
 const connectSrc = buildConnectSrcs(!IS_PROD);

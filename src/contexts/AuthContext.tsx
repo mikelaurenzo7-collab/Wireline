@@ -38,30 +38,6 @@ const AuthContext = createContext<AuthContextType>({
 
 const SESSION_PROBE_MS = 8_000;
 
-const SESSION_OPTIONAL_ROUTE_PREFIXES = ["/solutions/", "/for/"];
-const SESSION_OPTIONAL_ROUTES = new Set([
-  "/",
-  "/features",
-  "/pricing",
-  "/showcase",
-  "/compare",
-  "/about",
-  "/blog",
-  "/security",
-  "/trust",
-  "/status",
-  "/support",
-  "/contact",
-  "/privacy",
-  "/terms",
-  "/get-started",
-]);
-
-function shouldSkipSessionBootstrap(pathname: string): boolean {
-  if (SESSION_OPTIONAL_ROUTES.has(pathname)) return true;
-  return SESSION_OPTIONAL_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
-
 async function fetchSessionUser(): Promise<User | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), SESSION_PROBE_MS);
@@ -129,8 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!cancelled) setLoading(true);
       try {
-        const pathname = typeof window === "undefined" ? "/" : window.location.pathname || "/";
-        if (shouldSkipSessionBootstrap(pathname)) return;
         await migrateLegacyLocalStorage();
         const hydrated = await fetchSessionUser();
         if (!cancelled) {

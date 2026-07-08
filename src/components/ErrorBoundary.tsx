@@ -1,6 +1,7 @@
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw, Home } from "lucide-react";
+import { isLikelyStaleChunkError, requestStaleChunkReload } from "../lib/chunk-recovery";
 import { captureException } from "../lib/sentry";
 import { cn } from "../lib/utils";
 
@@ -33,6 +34,10 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    if (isLikelyStaleChunkError(error) && requestStaleChunkReload("error-boundary")) {
+      return;
+    }
+
     if (import.meta.env.DEV) {
       console.error("ErrorBoundary caught:", error, info);
     }
@@ -40,6 +45,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   reset = () => this.setState({ error: null });
+  reload = () => window.location.reload();
 
   render() {
     if (!this.state.error) return this.props.children;
@@ -50,49 +56,56 @@ export default class ErrorBoundary extends Component<Props, State> {
     // of what those callers want.
     if ("fallback" in this.props) return this.props.fallback;
 
+    const staleChunk = isLikelyStaleChunkError(this.state.error);
+    const title = staleChunk ? "Wireline updated" : "This view crashed";
+    const body = staleChunk
+      ? "A new version is available. Reload once to fetch the current app bundle and keep working."
+      : "The rest of the app is fine — only this view failed. Try again, reload, or head back to the workspace.";
+
     return (
-      <div className="min-h-[70svh] flex items-center justify-center p-6">
-        <div className={cn(WL_APP_CLASSES.panelFrame, "max-w-xl w-full")}>
-          <div className="relative p-8 md:p-10 space-y-6">
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-30 blur-3xl pointer-events-none bg-[radial-gradient(circle,var(--wireline-color-status-error),transparent)]" />
+      <div className="flex min-h-[70svh] items-center justify-center p-6">
+        <div className={cn(WL_APP_CLASSES.panelFrame, "w-full max-w-xl")}>
+          <div className="relative space-y-6 p-8 md:p-10">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-64 max-h-[50vw] w-64 max-w-[50vw] rounded-full bg-[radial-gradient(circle,var(--wireline-color-status-error),transparent)] opacity-30 blur-3xl sm:max-h-none sm:max-w-none" />
             <div className="relative z-10 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-md flex items-center justify-center bg-rose-500/15 border border-rose-500/30">
-                <AlertOctagon className="w-7 h-7 text-rose-500" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-md border border-rose-500/30 bg-rose-500/15">
+                <AlertOctagon className="h-7 w-7 text-rose-500" />
               </div>
               <div>
-                <div className="wl-label text-rose-500">Something broke</div>
-                <h2 className="font-display italic text-3xl text-foreground leading-tight mt-1">
-                  This view crashed
+                <div className="wl-label text-rose-500">
+                  {staleChunk ? "Update required" : "Something broke"}
+                </div>
+                <h2 className="mt-1 font-display text-3xl italic leading-tight text-foreground">
+                  {title}
                 </h2>
               </div>
             </div>
-            <p className="relative z-10 text-sm text-foreground/65 leading-relaxed">
-              The rest of the app is fine — only this view failed. Reload the page or head back to
-              the dashboard.
-            </p>
-            <details className="relative z-10 rounded-md bg-muted/10 border border-border p-4 text-xs text-foreground/70 font-mono overflow-x-auto">
-              <summary className="cursor-pointer wl-label-muted hover:text-foreground transition-colors">
-                Error details
-              </summary>
-              <pre className="mt-3 whitespace-pre-wrap break-words">{this.state.error.message}</pre>
-            </details>
+            <p className="relative z-10 text-sm leading-relaxed text-foreground/65">{body}</p>
+            {import.meta.env.DEV ? (
+              <details className="relative z-10 overflow-x-auto rounded-md border border-border bg-muted/10 p-4 font-mono text-xs text-foreground/70">
+                <summary className="wl-label-muted cursor-pointer transition-colors hover:text-foreground">
+                  Error details
+                </summary>
+                <pre className="mt-3 whitespace-pre-wrap break-words">{this.state.error.message}</pre>
+              </details>
+            ) : null}
             <div className="relative z-10 flex flex-wrap gap-3">
               <ShadButton
                 variant="editorial"
-                onClick={this.reset}
+                onClick={staleChunk ? this.reload : this.reset}
                 disableAnimations
-                className="!py-3 !px-6 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em]"
+                className="!px-6 !py-3 !text-[var(--wireline-typography-overline-size)] !tracking-[0.3em]"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Try Again
+                <RefreshCw className="h-3.5 w-3.5" /> {staleChunk ? "Reload" : "Try Again"}
               </ShadButton>
               <ShadButton
                 variant="outline"
                 asChild
                 disableAnimations
-                className="!text-[var(--wireline-typography-overline-size)] !tracking-[0.3em] uppercase"
+                className="!text-[var(--wireline-typography-overline-size)] !uppercase !tracking-[0.3em]"
               >
-                <a href="/" className="flex items-center gap-2">
-                  <Home className="w-3.5 h-3.5" /> Back to Dashboard
+                <a href="/overview" className="flex items-center gap-2">
+                  <Home className="h-3.5 w-3.5" /> Back to Workspace
                 </a>
               </ShadButton>
             </div>

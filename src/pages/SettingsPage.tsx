@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, ShieldCheck, Trash2 } from "lucide-react";
+import { LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../components/atoms";
@@ -35,10 +35,18 @@ function DangerZone() {
 
   return (
     <section className="wl-paper wl-paper-elevated border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
-      <p className="wl-eyebrow wl-eyebrow--muted mb-4 text-[var(--wireline-color-status-error)]">
-        Delete account
-      </p>
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="wl-eyebrow wl-eyebrow--muted text-[var(--wireline-color-status-error)]">
+            Delete account
+          </p>
+          <p className="mt-2 max-w-[48ch] text-sm leading-6 text-muted-foreground">
+            Permanent deletion requires typed confirmation so destructive work never feels casual.
+          </p>
+        </div>
+        <Trash2 className="hidden size-5 shrink-0 text-[var(--wireline-color-status-error)] sm:block" />
+      </div>
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           aria-label="Type DELETE to confirm"
           value={confirmation}
@@ -72,16 +80,27 @@ function DangerZone() {
   );
 }
 
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
+function ProfileRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof UserRound;
+  label: string;
+  value: string;
+}) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-foreground">
-      {label}
-      <input
-        readOnly
-        value={value}
-        className="h-12 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground outline-none"
-      />
-    </label>
+    <div className="wl-data-row wl-data-row--framed">
+      <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+        <Icon size={15} />
+      </span>
+      <span className="wl-data-row__main">
+        <span className="wl-data-row__detail">{label}</span>
+        <span className="wl-data-row__title" data-wireline-preserve-case>
+          {value}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -131,51 +150,72 @@ export default function SettingsPage() {
         <SettingsTabs />
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <p className="wl-eyebrow wl-eyebrow--muted mb-4">Profile</p>
-          <div className="grid gap-4">
-            <ReadOnlyField label="Name" value={displayName} />
-            <ReadOnlyField label="Email" value={email || "—"} />
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="wl-eyebrow wl-eyebrow--muted">Profile</p>
+              <h1 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,4vw,2.1rem)] font-normal leading-tight tracking-[-0.035em] text-foreground">
+                Account identity
+              </h1>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <ProfileRow icon={UserRound} label="Name" value={displayName} />
+            <ProfileRow icon={Mail} label="Email" value={email || "—"} />
           </div>
         </section>
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <p className="wl-eyebrow wl-eyebrow--muted mb-4">Security</p>
-          <div className="grid gap-3">
-            <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-foreground">Password</p>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={resetState !== "idle"}
-                onClick={() => void requestPasswordReset()}
-              >
-                {resetState === "sending"
-                  ? "Sending…"
-                  : resetState === "sent"
-                    ? "Sent"
-                    : "Reset password"}
-              </Button>
+          <p className="wl-eyebrow wl-eyebrow--muted">Security</p>
+          <div className="mt-5 grid gap-3">
+            <div className="wl-data-row wl-data-row--framed">
+              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+                <ShieldCheck size={15} />
+              </span>
+              <span className="wl-data-row__main">
+                <span className="wl-data-row__title">Password</span>
+                <span className="wl-data-row__detail">
+                  {resetState === "sent" ? "Reset email sent" : "Send a secure reset email"}
+                </span>
+              </span>
+              <span className="wl-data-row__trailing">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={resetState !== "idle"}
+                  onClick={() => void requestPasswordReset()}
+                >
+                  {resetState === "sending"
+                    ? "Sending…"
+                    : resetState === "sent"
+                      ? "Sent"
+                      : "Reset"}
+                </Button>
+              </span>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 px-4 py-4">
-              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ShieldCheck size={15} className="text-primary" aria-hidden="true" />
-                Session
-              </p>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={signingOut}
-                onClick={handleSignOut}
-              >
-                <LogOut aria-hidden="true" size={14} />
-                {signingOut ? "Signing out..." : "Sign out"}
-              </Button>
+            <div className="wl-data-row wl-data-row--framed">
+              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+                <LogOut size={15} />
+              </span>
+              <span className="wl-data-row__main">
+                <span className="wl-data-row__title">Session</span>
+                <span className="wl-data-row__detail">Leave this workspace on this device</span>
+              </span>
+              <span className="wl-data-row__trailing">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={signingOut}
+                  onClick={handleSignOut}
+                >
+                  {signingOut ? "Signing out…" : "Sign out"}
+                </Button>
+              </span>
             </div>
           </div>
           {error ? (
-            <StatusNotice tone="destructive" className="mt-4" title="Sign-out unavailable">
+            <StatusNotice tone="destructive" className="mt-4" title="Security action unavailable">
               {error}
             </StatusNotice>
           ) : null}

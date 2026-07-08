@@ -27,7 +27,7 @@
     "visual:qa": "node scripts/capture-visual-qa.mjs",
     "visual:qa:check": "node scripts/check-visual-qa-manifest.mjs",
     "visual:qa:full": "npm run build && node scripts/capture-visual-qa.mjs",
-    "verify:contracts": "vitest run --pool vmThreads tests/product-voice-contract.test.ts tests/marketing-metadata-contract.test.ts tests/static-metadata-contract.test.ts tests/product-events-contract.test.ts tests/structured-runtime-policy-contract.test.ts tests/dual-voice-routing-contract.test.ts",
+    "verify:contracts": "vitest run --pool vmThreads tests/product-voice-contract.test.ts tests/marketing-metadata-contract.test.ts tests/static-metadata-contract.test.ts tests/product-events-contract.test.ts tests/structured-runtime-policy-contract.test.ts tests/dual-voice-routing-contract.test.ts tests/chunk-recovery-contract.test.ts tests/guided-agent-learning-contract.test.ts",
     "test": "vitest --pool vmThreads --exclude 'tests/e2e/**'",
     "test:run": "vitest run --pool vmThreads --exclude 'tests/e2e/**'",
     "test:e2e": "playwright test",
