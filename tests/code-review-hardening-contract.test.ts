@@ -58,4 +58,17 @@ describe("code review hardening contracts", () => {
     const vapi = read("src/routes/vapi-v2.ts");
     expect(vapi).toContain("res.status(500).json({ success: false })");
   });
+
+  it("keeps duplicate end-of-call retries side-effect free after transcript backfill", () => {
+    const handlers = read("src/lib/vapi-handlers.ts");
+    expect(handlers).toContain(
+      "Duplicate end-of-call-report ignored after retry-safe transcript patch",
+    );
+    expect(handlers).toContain(
+      "All downstream side effects (usage, customer webhooks,\n    // compliance ledger, enrichment, notifications) are intentionally skipped",
+    );
+    expect(handlers).toContain(
+      "return;\n  }\n\n  // Fire-and-forget monthly voice-minute tracking",
+    );
+  });
 });
