@@ -106,7 +106,9 @@ export default function CreateAgentDialog({
   const [provisionNumber, setProvisionNumber] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const [step, setStep] = useState<1 | 2>(1);
   const briefRef = useRef<HTMLTextAreaElement>(null);
+  const voiceSectionRef = useRef<HTMLDivElement>(null);
   const activePosture: Posture = posture;
 
   useEffect(() => {
@@ -121,6 +123,8 @@ export default function CreateAgentDialog({
     setPersonality("Warm");
     setProvisionNumber(false);
     setBrief(initialBrief || defaultBrief(nextPosture));
+    setStep(1);
+    setError("");
     const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [business, initialBrief, open]);
@@ -139,6 +143,23 @@ export default function CreateAgentDialog({
     onClose();
   }
 
+  function continueToVoice() {
+    const trimmedBrief = brief.trim() || defaultBrief(activePosture);
+    if (!trimmedBrief.trim()) {
+      setError("Add a brief so Wireline knows what to handle.");
+      briefRef.current?.focus();
+      return;
+    }
+    setError("");
+    setStep(2);
+    requestAnimationFrame(() => {
+      const search = voiceSectionRef.current?.querySelector<HTMLInputElement>(
+        'input[type="search"], input[placeholder*="Search"]',
+      );
+      search?.focus();
+    });
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLFormElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -146,13 +167,17 @@ export default function CreateAgentDialog({
     }
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !creating) {
       event.preventDefault();
-      event.currentTarget.requestSubmit();
+      if (step === 1) {
+        continueToVoice();
+      } else {
+        event.currentTarget.requestSubmit();
+      }
     }
   }
 
   async function create(event: FormEvent) {
     event.preventDefault();
-    if (creating) return;
+    if (step === 1 || creating) return;
     const finalBrief = brief.trim() || defaultBrief(activePosture);
     const finalName = name.trim() || defaultAgentName(activePosture, role);
     setCreating(true);
@@ -328,157 +353,176 @@ export default function CreateAgentDialog({
             </Button>
           </div>
           <div className="mt-4 h-1 rounded-full bg-muted">
-            <div className="h-full w-2/5 rounded-full bg-primary" />
+            <div
+              className={`h-full rounded-full bg-primary transition-all duration-300 ${step === 1 ? "w-2/5" : "w-4/5"}`}
+            />
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Step 1 · Brief, voice, and face</p>
-          <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-            What do you need handled?
-          </h3>
-          <p className="mt-3 text-sm text-muted-foreground">
-            One sentence is enough — Wireline fills in the rest.
-          </p>
+          {step === 1 ? (
+            <>
+              <p className={WL_APP_CLASSES.wiredEyebrow}>Step 1 · Brief and name</p>
+              <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+                What do you need handled?
+              </h3>
+              <p className="mt-3 text-sm text-muted-foreground">
+                One sentence is enough — Wireline fills in the rest.
+              </p>
 
-          <div className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Agent type">
-            {(
-              [
-                ["personal", "Personal", "Unknown callers, errands, appointments"],
-                ["business", "Business", "Sales, support, scheduling, overflow"],
-              ] as const
-            ).map(([value, label, detail]) => {
-              const selected = activePosture === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    setPosture(value);
-                    setRole(defaultRole(value));
-                    setBrief(defaultBrief(value));
-                  }}
-                  className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? "border-primary bg-[var(--wireline-color-action-primary-container)]" : "border-border bg-card hover:border-primary/30"}`}
-                  aria-pressed={selected}
-                >
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-foreground">{label}</span>
-                    <span
-                      className={`grid size-5 place-items-center rounded-full border text-[10px] ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
+              <div className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Agent type">
+                {(
+                  [
+                    ["personal", "Personal", "Unknown callers, errands, appointments"],
+                    ["business", "Business", "Sales, support, scheduling, overflow"],
+                  ] as const
+                ).map(([value, label, detail]) => {
+                  const selected = activePosture === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setPosture(value);
+                        setRole(defaultRole(value));
+                        setBrief(defaultBrief(value));
+                      }}
+                      className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? "border-primary bg-[var(--wireline-color-action-primary-container)]" : "border-border bg-card hover:border-primary/30"}`}
+                      aria-pressed={selected}
                     >
-                      <Check size={12} aria-hidden="true" />
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold text-foreground">{label}</span>
+                        <span
+                          className={`grid size-5 place-items-center rounded-full border text-[10px] ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent"}`}
+                        >
+                          <Check size={12} aria-hidden="true" />
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                        {detail}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <label className="mt-5 block">
+                <span className="sr-only">Agent brief</span>
+                <Textarea
+                  ref={briefRef}
+                  value={brief}
+                  onChange={(event) => setBrief(event.target.value)}
+                  placeholder={briefPlaceholder}
+                  className="min-h-[112px] text-[15px]"
+                  resize="none"
+                />
+              </label>
+
+              <div className="mt-4 flex flex-wrap gap-2" aria-label="Quick briefs">
+                {ROLE_TEMPLATES.slice(0, 4).map((item) => {
+                  const prompt =
+                    activePosture === "business" ? item.businessPrompt : item.personalPrompt;
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => {
+                        setRole(item.value);
+                        setBrief(prompt);
+                      }}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? FAST_START_SELECTED : FAST_START_IDLE}`}
+                      aria-pressed={role === item.value}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <label className="mt-6 grid gap-1.5">
+                <span className="text-xs font-semibold text-foreground">Agent name</span>
+                <Input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder={defaultAgentName(activePosture, role)}
+                  autoComplete="off"
+                />
+              </label>
+            </>
+          ) : (
+            <>
+              <p className={WL_APP_CLASSES.wiredEyebrow}>Step 2 · Voice, face, and line</p>
+              <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,3.5vw,2.25rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
+                Sound and presence
+              </h3>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Pick how {previewName} answers — you can change everything later in Studio.
+              </p>
+
+              <div
+                ref={voiceSectionRef}
+                className="mt-6 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5"
+              >
+                <VoicePickerField
+                  value={voice}
+                  onChange={setVoice}
+                  suggestedPresenterVoice={matchedPresenterVoice}
+                />
+              </div>
+
+              <div className="mt-5 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5">
+                <CreateAgentCatalogFacePicker
+                  agentName={previewName}
+                  role={role}
+                  isBusinessAgent={activePosture === "business"}
+                  value={face}
+                  onChange={setFace}
+                  onMatchedVoiceChange={setMatchedPresenterVoice}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Response style</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {PERSONALITY_OPTIONS.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setPersonality(item)}
+                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${personality === item ? FAST_START_SELECTED : FAST_START_IDLE}`}
+                        aria-pressed={personality === item}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label
+                  className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={provisionNumber}
+                    onChange={(event) => setProvisionNumber(event.target.checked)}
+                  />
+                  <Phone size={15} aria-hidden="true" className="text-primary" />
+                  <span className="min-w-0">
+                    <span className="block text-xs font-semibold text-foreground">
+                      Provision Wireline number
+                    </span>
+                    <span className="block text-[10px] font-normal leading-4 text-muted-foreground">
+                      Dedicated line after create
                     </span>
                   </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    {detail}
+                  <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
+                    {provisionNumber ? "Now" : "Later"}
                   </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <label className="mt-5 block">
-            <span className="sr-only">Agent brief</span>
-            <Textarea
-              ref={briefRef}
-              value={brief}
-              onChange={(event) => setBrief(event.target.value)}
-              placeholder={briefPlaceholder}
-              className="min-h-[112px] text-[15px]"
-              resize="none"
-            />
-          </label>
-
-          <div className="mt-4 flex flex-wrap gap-2" aria-label="Quick briefs">
-            {ROLE_TEMPLATES.slice(0, 4).map((item) => {
-              const prompt =
-                activePosture === "business" ? item.businessPrompt : item.personalPrompt;
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => {
-                    setRole(item.value);
-                    setBrief(prompt);
-                  }}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? FAST_START_SELECTED : FAST_START_IDLE}`}
-                  aria-pressed={role === item.value}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <label className="mt-6 grid gap-1.5">
-            <span className="text-xs font-semibold text-foreground">Agent name</span>
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={defaultAgentName(activePosture, role)}
-              autoComplete="off"
-            />
-          </label>
-
-          <div className="mt-6 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5">
-            <VoicePickerField
-              value={voice}
-              onChange={setVoice}
-              suggestedPresenterVoice={matchedPresenterVoice}
-            />
-          </div>
-
-          <div className="mt-5 rounded-[12px] border border-border bg-card/40 p-4 sm:p-5">
-            <CreateAgentCatalogFacePicker
-              agentName={previewName}
-              role={role}
-              isBusinessAgent={activePosture === "business"}
-              value={face}
-              onChange={setFace}
-              onMatchedVoiceChange={setMatchedPresenterVoice}
-            />
-          </div>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div>
-              <p className="text-xs font-semibold text-foreground">Response style</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {PERSONALITY_OPTIONS.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setPersonality(item)}
-                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${personality === item ? FAST_START_SELECTED : FAST_START_IDLE}`}
-                    aria-pressed={personality === item}
-                  >
-                    {item}
-                  </button>
-                ))}
+                </label>
               </div>
-            </div>
-            <label
-              className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}
-            >
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={provisionNumber}
-                onChange={(event) => setProvisionNumber(event.target.checked)}
-              />
-              <Phone size={15} aria-hidden="true" className="text-primary" />
-              <span className="min-w-0">
-                <span className="block text-xs font-semibold text-foreground">
-                  Provision Wireline number
-                </span>
-                <span className="block text-[10px] font-normal leading-4 text-muted-foreground">
-                  Dedicated line after create
-                </span>
-              </span>
-              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-                {provisionNumber ? "Now" : "Later"}
-              </span>
-            </label>
-          </div>
+            </>
+          )}
 
           {error ? (
             <p className="mt-4 text-sm text-destructive" role="alert">
@@ -487,15 +531,39 @@ export default function CreateAgentDialog({
           ) : null}
         </div>
 
-        <div className="sticky bottom-0 z-10 flex shrink-0 items-center justify-end border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4">
-          <Button type="submit" disabled={creating} className="min-w-[140px] justify-center">
-            {creating ? (
-              <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-            ) : (
-              <WandSparkles aria-hidden="true" size={16} />
-            )}
-            Continue →
-          </Button>
+        <div className="sticky bottom-0 z-10 flex shrink-0 items-center justify-end gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4">
+          {step === 2 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={creating}
+              onClick={() => {
+                setError("");
+                setStep(1);
+              }}
+            >
+              Back
+            </Button>
+          ) : null}
+          {step === 1 ? (
+            <Button
+              type="button"
+              disabled={creating}
+              className="min-w-[140px] justify-center"
+              onClick={continueToVoice}
+            >
+              Continue →
+            </Button>
+          ) : (
+            <Button type="submit" disabled={creating} className="min-w-[140px] justify-center">
+              {creating ? (
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              ) : (
+                <WandSparkles aria-hidden="true" size={16} />
+              )}
+              Create agent
+            </Button>
+          )}
         </div>
       </form>
     </div>
