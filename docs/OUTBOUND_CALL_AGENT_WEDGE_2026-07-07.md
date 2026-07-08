@@ -5,15 +5,21 @@
 
 ## Decision
 
-Wireline should lead with **outbound call agents**.
+Wireline should lead with **outbound call agents** without becoming outbound-only.
 
-The platform can still handle inbound, personal assistants, call centers, video presenters, browser command, mobile approvals, and ChatGPT workflows. But the marketable wedge should be narrower and sharper:
+The marketable wedge stays narrow and sharp:
 
-> **List → Script → Dial → Log**
+> **Outbound-first: List → Script → Dial → Log**
 
-Outbound has an immediate business story: there is a list, a reason to call, a desired outcome, and a measurable result. That makes the product easier to sell, easier to demo, easier to price, and easier to prove.
+But the product must clearly support three user-selectable call directions:
 
-## Why outbound is the best wedge
+1. **Outbound** — list, script, dial, log.
+2. **Inbound** — route, answer, resolve, log.
+3. **Hybrid** — answer, act, follow up, sync.
+
+Outbound is the go-to-market edge because it has an immediate business story: there is a list, a reason to call, a desired outcome, and a measurable result. Inbound and hybrid remain first-class because many real customers need agents that answer callbacks, handle front-desk work, triage support, qualify inbound leads, schedule, and make follow-up calls in the same workflow.
+
+## Why outbound is still the best wedge
 
 ### 1. ROI is visible
 
@@ -33,6 +39,8 @@ The repo already contains serious playbook overlays for:
 
 - SDR outbound prospecting
 - Late-stage sales closing
+- Inbound lead qualification
+- Tier-1 phone support
 - Soft collections
 - Hard collections / recovery
 - Marketing re-engagement
@@ -42,6 +50,14 @@ The repo already contains serious playbook overlays for:
 
 That means the wedge is not invented from marketing. It is already latent in the product system.
 
+## Agent direction model
+
+| Direction | Loop | Best for | Proof moment |
+| --- | --- | --- | --- |
+| Outbound | List → Script → Dial → Log | sales prospecting, re-engagement, billing recovery, surveys, reminders, renewals, negotiation | queued list row becomes booked, promised, recovered, callback, no-answer, or escalated |
+| Inbound | Route → Answer → Resolve → Log | front desk, inbound sales, support triage, scheduling, overflow, after-hours, callbacks | caller gets a useful answer, booked next step, routed handoff, or clean ticket summary |
+| Hybrid | Answer → Act → Follow up → Sync | revenue desk, collections desk, appointment desk, renewal desk, service desk | the same agent answers, calls back, follows up, and keeps the system of record current |
+
 ## Positioning
 
 ### Primary line
@@ -50,15 +66,17 @@ That means the wedge is not invented from marketing. It is already latent in the
 
 ### Secondary line
 
-Wireline turns call lists into completed outcomes: qualified leads, booked meetings, payment promises, reactivated customers, survey answers, negotiated bills, and logged next steps.
+Wireline turns call lists into completed outcomes — and can also run inbound or hybrid call roles when the workflow needs both sides of the conversation.
 
 ### What to avoid
 
-Avoid leading with “AI SDR” only. That is crowded and too easy to compare against narrow sales-dialer tools. Wireline should own the broader primitive: outbound call work.
+Avoid leading with “AI SDR” only. That is crowded and too easy to compare against narrow sales-dialer tools. Wireline should own the broader primitive: call work with outcomes.
 
 Avoid leading with “phone agents for everything.” That is true, but too broad for launch.
 
-Avoid promising fully autonomous revenue without controls. Outbound requires consent, call windows, approved scripts, escalation rules, and visible outcome logging.
+Avoid implying inbound is secondary-quality. Outbound is the wedge; inbound and hybrid are product modes.
+
+Avoid promising fully autonomous revenue without controls. Call agents require consent, call windows, approved scripts, escalation rules, and visible outcome logging.
 
 ## High-value outbound lanes
 
@@ -73,27 +91,42 @@ Avoid promising fully autonomous revenue without controls. Outbound requires con
 | Personal negotiation | consumers / professionals | lower bill / confirmed terms | visceral demo, strong personal assistant story |
 | Vendor follow-up | individuals + businesses | answer captured / next step confirmed | broad, high-friction, defensible assistant use case |
 
+## High-value inbound and hybrid lanes
+
+| Lane | Direction | Buyer | Outcome |
+| --- | --- | --- | --- |
+| Front desk | Inbound | local services, clinics, agencies, SMBs | answered call, booked appointment, routed message |
+| Inbound lead qualifier | Inbound | sales teams, agencies, marketplaces | fit notes, booked meeting, routed hot lead |
+| Support triage | Inbound | SaaS, e-commerce, service businesses | resolved question or clean escalation |
+| After-hours coverage | Inbound | SMBs, healthcare-adjacent, home services | captured demand outside business hours |
+| Revenue desk | Hybrid | sales and revops teams | answer callbacks, qualify, book, follow up |
+| Collections desk | Hybrid | finance ops, clinics, service businesses | answer disputes, make reminders, log promises |
+| Appointment desk | Hybrid | healthcare, salons, field services | answer requests, call no-shows, reschedule |
+| Renewal desk | Hybrid | SaaS, memberships, subscriptions | answer questions, call expiring accounts, save churn |
+
 ## Product doctrine
 
-Outbound product surfaces should organize around the loop:
+Outbound product surfaces should organize around the wedge loop:
 
 1. **List** — who to call, why they are being called, consent/source, priority, attempt status.
 2. **Script** — opener, qualification, objections, compliance language, approved offers, escalation rules.
 3. **Dial** — schedule, number, cadence, live call, voicemail, retries, hold handling.
 4. **Log** — outcome, summary, CRM update, payment promise, meeting booked, callback, escalation.
 
-This loop is tighter than Create → Train → Wire → Run for the outbound wedge, but it maps cleanly:
+Inbound and hybrid should map to the same underlying operating system, not a separate product:
 
-- Create = List + agent posture
-- Train = Script
-- Wire = number, CRM, payment, calendar, approvals
-- Run = Dial + Log
+- Inbound: route, answer, resolve, log.
+- Hybrid: answer, act, follow up, sync.
+
+This keeps the platform unified: every mode has a clear input, a trained behavior, a live call, and an outcome record.
 
 ## Feature implications
 
 ### Must be first-class
 
-- Import / create call lists
+- Direction choice: outbound, inbound, hybrid
+- Import / create call lists for outbound lanes
+- Inbound routing and answer rules
 - Campaign or list view with call status
 - Approved scripts and objection handling
 - Compliance settings by lane
@@ -108,39 +141,40 @@ This loop is tighter than Create → Train → Wire → Run for the outbound wed
 - Collections and negotiation need explicit compliance disclaimers, permissioning, call windows, identity verification, and “never say” boundaries.
 - Sales calls need clear source/consent metadata, do-not-call posture, and human escalation when the contact asks for details the agent cannot answer.
 - Personal bill negotiation must never impersonate the user. The agent should openly represent itself as calling on behalf of the user.
+- Inbound support and healthcare-adjacent scheduling need strong escalation rules and no unsupported legal, financial, or medical advice.
 
 ### Can wait
 
-- Avatar/presenter marketing for outbound is secondary.
+- Avatar/presenter marketing for call agents is secondary.
 - Browser extension is a useful command surface, but not the wedge.
-- Inbound call center coverage remains a valuable expansion lane after outbound proof is strong.
+- Broad “call center for everything” messaging can wait until outbound proof and hybrid workflows are strong.
 
 ## Demo path
 
 The best demo is not a generic chat.
 
-1. Upload a small list of five prospects or overdue accounts.
-2. Pick a lane: SDR, re-engagement, collections, survey, negotiation.
-3. Show the script and guardrails.
-4. Dial one test call.
+1. Choose a mode: outbound, inbound, or hybrid.
+2. Pick a lane: SDR, re-engagement, collections, survey, front desk, support triage, scheduling, or negotiation.
+3. Show the script, answer rules, handoff rules, and guardrails.
+4. Dial or answer one test call.
 5. Show transcript, summary, outcome tag, and next action.
-6. Show the list updated in real time.
+6. Show the list, inbox, CRM, or workspace updated in real time.
 
-The magic moment is not the voice. The magic moment is the outcome row changing from **Queued** to **Booked**, **Promised**, **Recovered**, **No answer**, **Callback**, or **Escalated**.
+The magic moment is not the voice. The magic moment is the outcome row changing from **Queued** to **Booked**, **Promised**, **Recovered**, **Answered**, **Resolved**, **Callback**, or **Escalated**.
 
 ## Pricing implication
 
-Keep the current plan model, but explain it through outbound capacity:
+Keep the current plan model, but explain it through call-lane capacity:
 
-- Personal: create/train one agent; live outbound work uses Conversation Balance.
-- Team: one focused outbound lane with shared inbox, routing, approvals, and included numbers.
-- Business: multiple outbound lanes, more agents/numbers, CRM sync, analytics, roles, approvals, and campaign oversight.
+- Personal: create/train one agent; live outbound, inbound, or hybrid work uses Conversation Balance.
+- Team: one focused call lane with shared inbox, routing, approvals, and included numbers.
+- Business: multiple call lanes, more agents/numbers, CRM sync, analytics, roles, approvals, and campaign oversight.
 - Enterprise: compliance review, SSO, BYO telephony, custom workflows, committed usage, and implementation support.
 
 ## Success metric
 
 Wireline wins the wedge when a buyer can say:
 
-> “I gave it a list, trained the call, it dialed, and I got outcomes back.”
+> “I chose the call direction, trained the role, it handled the call, and I got outcomes back.”
 
-The first hard KPI is not generic engagement. It is **completed outbound outcomes per funded dollar**.
+The first hard KPI is not generic engagement. It is **completed call outcomes per funded dollar**.
