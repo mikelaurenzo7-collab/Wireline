@@ -1,39 +1,48 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { MARKETING_VOICE } from "../src/lib/product-copy";
+import { AGENT_DIRECTION_MODES, MARKETING_VOICE, OUTBOUND_WEDGE } from "../src/lib/product-copy";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("product voice cohesion", () => {
-  it("keeps marketing hero strings in one shared module", () => {
+  it("keeps marketing hero strings and call direction modes in one shared module", () => {
     expect(MARKETING_VOICE.headline).toBe("Wire your agent.");
-    expect(MARKETING_VOICE.subline).toContain("personal assistants");
-    expect(MARKETING_VOICE.subline).toContain("call centers and sales teams");
-    expect(MARKETING_VOICE.subline).toContain("answers, routes, books, qualifies");
-    expect(MARKETING_VOICE.proof).toEqual([
-      "Answers the line",
-      "Books and qualifies",
-      "Texts every outcome",
-    ]);
+    expect(MARKETING_VOICE.subline).toContain("outbound-first");
+    expect(MARKETING_VOICE.subline).toContain("inbound coverage");
+    expect(MARKETING_VOICE.subline).toContain("hybrid agents");
+    expect(MARKETING_VOICE.proof).toEqual(["Create", "Train", "Wire", "Run"]);
+
+    expect(OUTBOUND_WEDGE.headline).toBe("Outbound agents that actually call.");
+    expect(OUTBOUND_WEDGE.subline).toContain("inbound or hybrid roles");
+    expect(OUTBOUND_WEDGE.loop).toEqual(["List", "Script", "Dial", "Log"]);
+    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Route", "Answer", "Resolve", "Log"]);
+    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow up", "Sync"]);
   });
 
   it("wires landing and workroom surfaces to shared voice constants", () => {
     const landing = read("src/components/marketing/PrecisionLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
-    expect(landing).toContain("MARKETING_VOICE");
+    expect(landing).toContain("AGENT_DIRECTION_MODES");
+    expect(landing).toContain("OUTBOUND_WEDGE");
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 
-  it("keeps public landing examples broad enough for non-service-business buyers", () => {
+  it("keeps public landing examples broad across outbound, inbound, and hybrid buyers", () => {
     const landing = read("src/components/marketing/PrecisionLanding.tsx");
+    expect(landing).toContain("Sales SDR");
+    expect(landing).toContain("Billing Recovery");
+    expect(landing).toContain("Re-engagement");
+    expect(landing).toContain("Front Desk");
+    expect(landing).toContain("Lead Qualifier");
+    expect(landing).toContain("Support Triage");
     expect(landing).toContain("Revenue Desk");
-    expect(landing).toContain("Support Queue");
-    expect(landing).toContain("Call Center");
-    expect(landing).toContain("sales, support, scheduling, or overflow");
+    expect(landing).toContain("Collections Desk");
+    expect(landing).toContain("Appointment Desk");
+    expect(landing).toContain("outbound, inbound, or hybrid call lanes");
     expect(landing).not.toContain("service estimate");
     expect(landing).not.toContain("Start booking them");
   });
