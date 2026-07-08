@@ -1,6 +1,6 @@
 # Wireline Forward Plan — July 2026
 
-**Status:** Active · **Last audit:** 2026-07-07 · **Branch baseline:** `main` after founder cockpit removal + governance remediation
+**Status:** Active · **Last audit:** 2026-07-07 · **Branch baseline:** `main`
 
 ## North star
 
@@ -8,7 +8,7 @@ Wireline wins as the **voice AI business operating system** for people, teams, a
 
 ---
 
-## Audit synthesis (health guardian + scorecard)
+## Audit synthesis
 
 ### What is solid (keep)
 
@@ -19,17 +19,7 @@ Wireline wins as the **voice AI business operating system** for people, teams, a
 | CI / contracts | `verify-full` on `main`, 70+ contract tests, CodeQL |
 | Product truth | Trust Center, Compare beta copy, voice $/min clarity |
 | Launch readiness API | `GET /api/health/launch-readiness` for ops scorecard inputs |
-
-### Gaps closed in governance remediation
-
-| ID | Finding | Fix |
-|----|---------|-----|
-| H1 | Stale `AUTHZ_MATRIX.md` | Regenerate; `authz:check` fails on drift |
-| H2 | Founder cockpit surface drift | Removed UI + `/api/founder/*`; legacy `/founder` redirects to `/overview` |
-| H5 | Outbound contract missing federal DNC | Extended compliance contract |
-| M1 | Dead `OwnerOnlyRoute.tsx` | Deleted |
-| M2–M4 | Docs drift | `ARCHITECTURE.md`, `AGENTS.md`, this plan |
-| M7 | `.qa-temp/` noise | `.gitignore` |
+| Visual QA CI | PR capture + P0 manifest gate across core routes |
 
 ### Still open (operational)
 
@@ -46,13 +36,12 @@ Wireline wins as the **voice AI business operating system** for people, teams, a
 ### Horizon 0 — code complete, ops proof pending
 
 - [x] Trust Center, pricing clarity, outbound hub, product truth
-- [x] Federal DNC hook, AuthZ governance
-- [x] Founder cockpit removed (will revisit as a dedicated ops surface later)
+- [x] Federal DNC hook, AuthZ governance, visual QA CI
 - [ ] Activation E2E on production
 
 ### Horizon 1 — Use-case excellence (weeks 4–10)
 
-Federal DNC vendor live, outbound analytics UI, learning loop GA, and broad GTM across personal call delegation, sales, support, scheduling, call-center coverage, and optional vertical proof pages.
+Federal DNC vendor live, outbound analytics UI, learning loop GA, and broad GTM.
 
 ### Horizon 2 — Distribution (weeks 10–18)
 
@@ -66,13 +55,12 @@ SSO, live supervisor audio, SDK, marketplace, ERP connectors.
 
 ## Agent directives
 
-1. Do not reintroduce founder cockpit routes, auth flags, or nav without an explicit product spec.
-2. After new routes: `npm run authz:check` and commit matrix.
-3. New dial surfaces: `isFederalDncListed` + `evaluateOutboundConsent`.
-4. Ops metrics belong in health/observability APIs — not tenant Admin.
+1. After new routes: `npm run authz:check` and commit matrix.
+2. New dial surfaces: `isFederalDncListed` + `evaluateOutboundConsent`.
+3. Ops metrics belong in health/observability APIs — not tenant Admin.
 
 ---
 
 ## Verification gates
 
-`npm run authz:check` · `npm run verify:contracts` · `npm run verify:full`
+`npm run authz:check` · `npm run verify:contracts` · `npm run verify:full` · `npm run visual:qa`

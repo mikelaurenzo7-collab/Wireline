@@ -1,12 +1,12 @@
-/** Tabs reserved for legacy deep links — not shown in tenant Admin. */
-export const OWNER_ONLY_ADMIN_TABS = ["cockpit", "system"] as const;
+/** Legacy Admin deep-link tabs that redirect into the active tenant surface. */
+export const LEGACY_ADMIN_TAB_REDIRECTS = ["cockpit", "system"] as const;
 
-export type OwnerOnlyAdminTab = (typeof OWNER_ONLY_ADMIN_TABS)[number];
+export type LegacyAdminTabRedirect = (typeof LEGACY_ADMIN_TAB_REDIRECTS)[number];
 
 export function isWirelineAccountHolder(user: { is_owner?: boolean } | null | undefined): boolean {
   return user?.is_owner === true;
 }
 
-export function isOwnerOnlyAdminTab(tab: string): tab is OwnerOnlyAdminTab {
-  return (OWNER_ONLY_ADMIN_TABS as readonly string[]).includes(tab);
+export function isLegacyAdminTabRedirect(tab: string): tab is LegacyAdminTabRedirect {
+  return (LEGACY_ADMIN_TAB_REDIRECTS as readonly string[]).includes(tab);
 }

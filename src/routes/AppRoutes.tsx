@@ -81,8 +81,6 @@ export default function AppRoutes() {
         <Route path="/settings/*" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminWorkspace />} />
         <Route path="/admin/*" element={<AdminWorkspace />} />
-        <Route path="/founder" element={<Navigate to="/overview" replace />} />
-        <Route path="/founder/*" element={<Navigate to="/overview" replace />} />
 
         <Route path="/pulse" element={<Navigate to="/overview" replace />} />
         <Route path="/fleet" element={<Navigate to="/studio" replace />} />

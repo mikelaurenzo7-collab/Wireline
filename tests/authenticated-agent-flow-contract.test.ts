@@ -87,10 +87,13 @@ describe("authenticated agent flow", () => {
     expect(templates).toContain("searchableTemplateText");
     expect(templates).toContain("template.firstMessage");
     expect(templates).toContain("Search templates, roles, channels…");
-    expect(templates).toContain('role="group" aria-label="Template category filter"');
+    expect(templates).toContain('role="group"');
+    expect(templates).toContain('aria-label="Template category filter"');
     expect(templates).toContain("aria-pressed={selected}");
     expect(templates).toContain("Clear search");
-    expect(templates).toContain('aria-label={`${alreadyDeployed ? "Deploy another" : "Deploy"} ${template.name} agent`}');
+    expect(templates).toContain(
+      'aria-label={`${alreadyDeployed ? "Deploy another" : "Deploy"} ${template.name} agent`}',
+    );
     expect(templates).not.toContain("hidden hidden");
   });
 

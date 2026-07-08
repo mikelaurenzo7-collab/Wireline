@@ -66,8 +66,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - **Auth and authorization:** session middleware plus user-scoped ownership checks.
 - **Launch readiness API:** `GET /api/health/launch-readiness` is gated by
   `requireMonitorToken` (`HEALTH_MONITOR_TOKEN` / `CRON_SECRET`), not tenant session
-  auth; it exposes scorecard capability levels for ops monitors. There is no separate
-  founder cockpit UI in the product surface at this time.
+  auth; it exposes scorecard capability levels for ops monitors.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`.
 - **Billing:** Stripe-backed entitlements, plan catalog, Conversation Balance, checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice:**

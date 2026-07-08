@@ -29,7 +29,7 @@ import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
-import { isOwnerOnlyAdminTab } from "../lib/admin-access";
+import { isLegacyAdminTabRedirect } from "../lib/admin-access";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -133,7 +133,7 @@ export default function AdminSettings() {
     if (qsRaw === "dnc" || qsRaw === "audit") {
       return "activity";
     }
-    if (isOwnerOnlyAdminTab(qsRaw ?? "")) {
+    if (isLegacyAdminTabRedirect(qsRaw ?? "")) {
       queueMicrotask(() => navigate("/overview", { replace: true }));
       return "accounts";
     }

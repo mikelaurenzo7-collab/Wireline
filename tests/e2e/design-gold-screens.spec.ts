@@ -9,7 +9,7 @@ const GOLD_ROUTES = [
   {
     path: "/studio?create=1",
     eyebrow: /Create|Agent|Studio/i,
-    marker: ".wl-composer-dock, .studio-card",
+    marker: ".wl-composer-dock, .wl-paper",
   },
 ] as const;
 

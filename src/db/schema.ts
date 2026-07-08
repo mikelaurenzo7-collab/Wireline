@@ -1118,7 +1118,7 @@ export const cadenceRuns = pgTable(
 
 /**
  * Live call supervisor subscriptions — supervisor clicks "Listen in" or
- * "Whisper" on a live call in /cockpit, we capture the intent here. V1 is
+ * "Whisper" on a live call in Studio / Phone, we capture the intent here. V1 is
  * a bookmark + later audit; V2 wires Vapi's WebRTC streaming for real-time
  * audio.
  */

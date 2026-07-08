@@ -17,6 +17,8 @@ const FORBIDDEN_PATTERNS = [
   /founder_cockpit/,
   /FOUNDER_COCKPIT_/,
   /\/api\/founder\//,
+  /path="\/founder"/,
+  /Founder cockpit/,
 ];
 
 const ALLOWLIST = new Set([
@@ -45,19 +47,27 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
+function scanTree(relativeDir: string) {
+  const offenders: string[] = [];
+  const base = resolve(root, relativeDir);
+  if (!statSync(base, { throwIfNoEntry: false })?.isDirectory()) return offenders;
+  for (const file of walk(base)) {
+    if (ALLOWLIST.has(file)) continue;
+    const content = readFileSync(resolve(root, file), "utf8");
+    for (const pattern of FORBIDDEN_PATTERNS) {
+      if (pattern.test(content)) offenders.push(`${file} matches ${pattern}`);
+    }
+  }
+  return offenders;
+}
+
 describe("founder cockpit purge contract", () => {
   it("removes founder cockpit code from src/", () => {
-    const offenders: string[] = [];
-    for (const file of walk(resolve(root, "src"))) {
-      if (ALLOWLIST.has(file)) continue;
-      const content = readFileSync(resolve(root, file), "utf8");
-      for (const pattern of FORBIDDEN_PATTERNS) {
-        if (pattern.test(content)) {
-          offenders.push(`${file} matches ${pattern}`);
-        }
-      }
-    }
-    expect(offenders).toEqual([]);
+    expect(scanTree("src")).toEqual([]);
+  });
+
+  it("removes founder cockpit tests from tests/", () => {
+    expect(scanTree("tests")).toEqual([]);
   });
 
   it("does not mount founder cockpit APIs in the route registry", () => {
@@ -65,10 +75,9 @@ describe("founder cockpit purge contract", () => {
     expect(registry).not.toMatch(/founderCockpitRouter|founder-cockpit-routes/);
   });
 
-  it("redirects legacy /founder bookmarks to overview", () => {
+  it("does not register a /founder product route", () => {
     const routes = readFileSync(resolve(root, "src/routes/AppRoutes.tsx"), "utf8");
-    expect(routes).toContain('path="/founder"');
-    expect(routes).toContain('to="/overview"');
+    expect(routes).not.toContain('path="/founder"');
     expect(routes).not.toContain("FounderDashboardPage");
   });
 });

@@ -24,9 +24,13 @@ const marketingRoutes = [
   "/contact",
   "/support",
   "/security",
+  "/trust",
   "/status",
   "/privacy",
   "/terms",
+  "/developers",
+  "/for/personal",
+  "/for/sales",
   "/signin",
   "/signup",
 ];
@@ -38,9 +42,13 @@ const authenticatedRoutes = [
   "/knowledge",
   "/connections",
   "/connections/salesforce",
+  "/phone",
+  "/insights",
   "/inbox",
+  "/apps",
   "/settings",
   "/settings/billing",
+  "/settings/phone",
   "/settings/team",
   "/admin",
   "/admin?tab=subscription",
@@ -88,6 +96,25 @@ const ignoredRequestHosts = new Set([
   "www.googletagmanager.com",
   ...parseList(process.env.WIRELINE_VISUAL_IGNORED_REQUEST_HOSTS),
 ]);
+
+const LEGACY_ROUTE_PREFIXES = new Set([
+  "/agents",
+  "/training",
+  "/chat",
+  "/call-logs",
+  "/logs",
+  "/founder",
+  "/pulse",
+  "/fleet",
+  "/ops",
+]);
+
+function routeReached(base, requestedRoute, finalUrl) {
+  const requestedPath = requestedRoute.split("?")[0];
+  if (finalUrl.startsWith(`${base}${requestedPath}`)) return true;
+  if (LEGACY_ROUTE_PREFIXES.has(requestedPath)) return true;
+  return false;
+}
 
 function fileName(route) {
   if (route === "/") return "home";
@@ -224,7 +251,7 @@ async function captureRoute(page, viewportName, route, issues) {
   const finalUrl = page.url();
   if (status && status >= 400)
     pushIssue(issues, { viewport: viewportName, route, kind: "http", detail: String(status) });
-  if (!finalUrl.startsWith(`${baseUrl}${route.split("?")[0]}`)) {
+  if (!routeReached(baseUrl, route, finalUrl)) {
     pushIssue(issues, { viewport: viewportName, route, kind: "redirect", detail: finalUrl });
   }
   await auditResponsiveLayout(page, viewportName, route, issues);
