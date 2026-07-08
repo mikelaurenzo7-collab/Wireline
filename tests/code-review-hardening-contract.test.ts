@@ -71,4 +71,24 @@ describe("code review hardening contracts", () => {
       "return;\n  }\n\n  // Fire-and-forget monthly voice-minute tracking",
     );
   });
+
+  it("tracks post-create roleplay starts only from a connected live voice test", () => {
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const roleplay = read("src/components/RoleplaySandbox.tsx");
+    const liveVoice = read("src/components/LiveVoiceSandbox.tsx");
+
+    expect(wizard).not.toContain("onFocusCapture");
+    expect(wizard).toContain("onTestStarted={() =>");
+    expect(roleplay).toContain("onTestStarted?: () => void");
+    expect(liveVoice).toContain("onTestStarted?: () => void");
+    expect(liveVoice).toContain("reportedStarted.current = true");
+    expect(liveVoice).toContain("onTestStarted?.()");
+  });
+
+  it("defensively handles unavailable browser storage in activation nudges", () => {
+    const nudge = read("src/components/ActivationNudge.tsx");
+    expect(nudge).toContain("function readDismissed()");
+    expect(nudge).toContain("function writeDismissed()");
+    expect(nudge).toContain("catch");
+  });
 });
