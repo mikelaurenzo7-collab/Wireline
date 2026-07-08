@@ -45,6 +45,15 @@ describe("guided agent learning", () => {
     });
     expect(weakPlan.every((item) => item.ready)).toBe(false);
 
+    const placeholderPlan = scoreCallPlanReadiness({
+      purpose: "Describe the job this phone agent owns.",
+      caller: "Describe who calls this agent or which approved list it calls.",
+      outcome: "Describe the completed result you want from a successful call.",
+      handoff: "Describe exactly when a person should take over.",
+      boundaries: "Describe promises this agent must never make.",
+    });
+    expect(placeholderPlan.every((item) => item.ready)).toBe(false);
+
     const readyPlan = scoreCallPlanReadiness({
       purpose: "Qualify outbound sales calls and book approved next conversations.",
       caller: "Prospects from approved campaign lists and returning customers.",
