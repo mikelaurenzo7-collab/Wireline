@@ -14,17 +14,26 @@ export default function LandingPage() {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Wireline",
-    applicationCategory: "ProductivityApplication",
-    operatingSystem: "Web, iOS, Android",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, iOS, Android, Chrome, Opera",
     description:
-      "Build trained voice agents for personal assistants, solo business agents, call centers, sales teams, scheduling, routing, follow-up, and business phone coverage.",
+      "Create, train, wire, and run trained voice agents for personal assistants, call centers, sales teams, scheduling, routing, follow-up, and business phone coverage.",
+    offers: {
+      "@type": "OfferCatalog",
+      name: "Wireline agent plans",
+      itemListElement: ["Personal", "Team", "Business", "Enterprise"].map((name) => ({
+        "@type": "Offer",
+        name,
+        url: "https://trywireline.com/pricing",
+      })),
+    },
   };
 
   return (
     <>
       <PageMeta
         title="Wireline | Wire your agent"
-        description="From personal assistants to solo business agents, call centers, and sales teams, build a trained voice agent that answers, routes, books, follows up, and texts the outcome."
+        description="From personal assistants to call centers and sales teams, create, train, wire, and run a voice agent that answers, routes, books, qualifies, follows up, and texts the outcome."
         image="/og-image.png"
       />
       <script
