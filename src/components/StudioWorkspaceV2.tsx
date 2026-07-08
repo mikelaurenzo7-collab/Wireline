@@ -263,6 +263,25 @@ export default function StudioWorkspaceV2() {
     />
   );
 
+  const activationNextAction = active ? (
+    <div className="border-b border-primary/15 bg-primary/5 px-4 py-2 text-xs text-muted-foreground">
+      <span className="font-semibold text-foreground">First-agent next action:</span> Add training,
+      wire a phone channel, start a test call, then review the first outcome.
+      <Link
+        className="ml-2 font-semibold text-primary"
+        to={`/knowledge?agent=${encodeURIComponent(active.id)}`}
+      >
+        Add training
+      </Link>
+      <Link className="ml-2 font-semibold text-primary" to="/settings/phone">
+        Wire phone
+      </Link>
+      <Link className="ml-2 font-semibold text-primary" to="/phone?tab=logs">
+        Review outcomes
+      </Link>
+    </div>
+  ) : null;
+
   const workroomNode = (
     <StudioWorkroom
       key={active.id}
@@ -287,15 +306,19 @@ export default function StudioWorkspaceV2() {
   // exists in the React tree.
   if (isDesktop) {
     return (
-      <div className="grid h-full min-h-0 bg-background lg:grid-cols-[400px_minmax(0,1fr)]">
-        <div className="border-r border-border/60">{workroomNode}</div>
-        {rightPane}
+      <div className="flex h-full min-h-0 flex-col bg-background">
+        {activationNextAction}
+        <div className="grid min-h-0 flex-1 lg:grid-cols-[400px_minmax(0,1fr)]">
+          <div className="border-r border-border/60">{workroomNode}</div>
+          {rightPane}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
+      {activationNextAction}
       <div
         role="tablist"
         aria-label="Studio pane"

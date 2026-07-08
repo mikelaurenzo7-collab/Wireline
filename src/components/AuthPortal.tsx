@@ -39,6 +39,7 @@ import {
   captureDemoSourceFromLocation,
   readDemoSourceCookie,
 } from "../lib/demo-attribution-client";
+import { emitProductEventOnce } from "../lib/product-event-client";
 
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
@@ -561,7 +562,17 @@ export default function AuthPortal() {
         if (!data.user?.id) {
           throw new Error("Authentication succeeded but user payload was missing.");
         }
-        if (isSignUp) markFreshSignupSession();
+        if (isSignUp) {
+          markFreshSignupSession();
+          emitProductEventOnce({
+            event: "signup_completed",
+            accountId: data.user.id,
+            metadata: {
+              plan_id: attribution?.preferredPlanId ?? null,
+              wedge: attribution?.signupWedge ?? null,
+            },
+          });
+        }
         signIn({ user: data.user });
         // Explicit post-auth navigate (also covered by user effect above).
         navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });

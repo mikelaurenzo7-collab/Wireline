@@ -51,7 +51,11 @@ export function emitProductEventOnce(
   },
 ): boolean {
   if (typeof window === "undefined") return false;
-  const key = `${PRODUCT_EVENT_ONCE_PREFIX}${input.event}`;
+  const scopedId =
+    input.agentId ??
+    input.accountId ??
+    String(input.metadata?.user_id ?? input.metadata?.scope ?? "global");
+  const key = `${PRODUCT_EVENT_ONCE_PREFIX}${input.event}:${scopedId}`;
   try {
     if (localStorage.getItem(key) === "1") return false;
     localStorage.setItem(key, "1");

@@ -146,7 +146,12 @@ export default function KnowledgePage() {
       ) : (
         <WorkspacePageFrame>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <WorkspacePageIntro title="Training" align="start" />
+            <div>
+              <WorkspacePageIntro title="Training" align="start" />
+              <p className="mt-1 text-sm text-muted-foreground">
+                Next action: add one source, then test the agent in Simulator.
+              </p>
+            </div>
             <WorkspaceTabStrip
               ariaLabel="Training sections"
               tabs={trainingTabs}

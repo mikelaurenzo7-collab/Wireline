@@ -27,11 +27,14 @@ describe("product event client", () => {
     vi.unstubAllGlobals();
   });
 
-  it("fires a product event at most once per browser profile", () => {
+  it("fires a product event at most once per scoped activation milestone", () => {
     emitProductEventOnce({ event: "first_call_completed", agentId: "agent-1" });
     emitProductEventOnce({ event: "first_call_completed", agentId: "agent-1" });
 
     expect(pushes).toHaveLength(1);
     expect(pushes[0]?.event).toBe("first-call-made");
+
+    emitProductEventOnce({ event: "first_call_completed", agentId: "agent-2" });
+    expect(pushes).toHaveLength(2);
   });
 });

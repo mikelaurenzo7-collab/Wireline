@@ -21,12 +21,16 @@ describe("product event taxonomy", () => {
       "agent_draft_created",
       "agent_created",
       "training_asset_added",
+      "launch_readiness_reached",
       "post_create_wizard_step_completed",
+      "first_test_call_started",
       "test_call_completed",
       "wire_started",
+      "phone_channel_wired",
       "agent_launch_completed",
       "first_call_completed",
       "live_call_completed",
+      "outcome_reviewed",
       "upgrade_to_paid",
     ]);
   });
@@ -56,6 +60,9 @@ describe("product event taxonomy", () => {
     expect(isProductEventName("agent_draft_created")).toBe(true);
     expect(isProductEventName("agent_created")).toBe(true);
     expect(isProductEventName("post_create_wizard_step_completed")).toBe(true);
+    expect(isProductEventName("first_test_call_started")).toBe(true);
+    expect(isProductEventName("phone_channel_wired")).toBe(true);
+    expect(isProductEventName("outcome_reviewed")).toBe(true);
     expect(isProductEventName("first_call_completed")).toBe(true);
     expect(isProductEventName("upgrade_to_paid")).toBe(true);
     expect(isProductEventName("agent_created_eventually")).toBe(false);

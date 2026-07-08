@@ -59,6 +59,13 @@ export default function ActivationNudge({ className }: { className?: string }) {
       if (activation?.activated || isActivationCelebrated()) {
         if (activation?.activated && isRecentActivation(activation.activatedAt)) {
           emitProductEventOnce({
+            event: "live_call_completed",
+            metadata: {
+              channel: activation.activationChannel ?? "unknown",
+              call_id: activation.firstActivationCallId ?? null,
+            },
+          });
+          emitProductEventOnce({
             event: "first_call_completed",
             metadata: {
               channel: activation.activationChannel ?? "unknown",

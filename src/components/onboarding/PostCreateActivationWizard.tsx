@@ -126,6 +126,11 @@ export default function PostCreateActivationWizard({
         throw new Error(body?.error || body?.message || "Could not provision a number.");
       }
       emitProductEventOnce({
+        event: "phone_channel_wired",
+        agentId: payload.agentId,
+        metadata: { channel: "phone", source: "fast_start_provision" },
+      });
+      emitProductEventOnce({
         event: "phone_number_provision_completed",
         agentId: payload.agentId,
       });
@@ -143,6 +148,11 @@ export default function PostCreateActivationWizard({
   }
 
   function finish() {
+    emitProductEventOnce({
+      event: "test_call_completed",
+      agentId: payload.agentId,
+      metadata: { source: "wizard" },
+    });
     setStep("complete");
   }
 
@@ -157,6 +167,11 @@ export default function PostCreateActivationWizard({
   const markWireFunnelEvents = useCallback(() => {
     emitProductEventOnce({ event: "wire_started", agentId: payload.agentId });
     if (phoneNumber) {
+      emitProductEventOnce({
+        event: "phone_channel_wired",
+        agentId: payload.agentId,
+        metadata: { channel: "phone", source: "fast_start_provision" },
+      });
       emitProductEventOnce({
         event: "phone_number_provision_completed",
         agentId: payload.agentId,
@@ -258,7 +273,18 @@ export default function PostCreateActivationWizard({
                     {POST_CREATE_WIZARD_COPY.steps.train.primary}
                   </Link>
                 </Button>
-                <Button type="button" size="sm" onClick={() => setStep("channels")}>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    emitProductEventOnce({
+                      event: "launch_readiness_reached",
+                      agentId: payload.agentId,
+                      metadata: { source: "wizard_train_step" },
+                    });
+                    setStep("channels");
+                  }}
+                >
                   {POST_CREATE_WIZARD_COPY.steps.train.secondary}
                 </Button>
               </div>
@@ -411,7 +437,17 @@ export default function PostCreateActivationWizard({
                   {POST_CREATE_WIZARD_COPY.steps.test.detail}
                 </p>
               </div>
-              <RoleplaySandbox agentId={payload.agentId} agentName={payload.agentName} />
+              <div
+                onFocusCapture={() =>
+                  emitProductEventOnce({
+                    event: "first_test_call_started",
+                    agentId: payload.agentId,
+                    metadata: { channel: "roleplay" },
+                  })
+                }
+              >
+                <RoleplaySandbox agentId={payload.agentId} agentName={payload.agentName} />
+              </div>
               {hasLine && phoneNumber ? (
                 <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
                   <p className="text-xs font-semibold text-foreground">
@@ -422,6 +458,18 @@ export default function PostCreateActivationWizard({
                   </p>
                   <a
                     href={formatTel(phoneNumber)}
+                    onClick={() => {
+                      emitProductEventOnce({
+                        event: "first_test_call_started",
+                        agentId: payload.agentId,
+                        metadata: { channel: "phone" },
+                      });
+                      emitProductEventOnce({
+                        event: "test_call_started",
+                        agentId: payload.agentId,
+                        metadata: { channel: "phone" },
+                      });
+                    }}
                     className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
                   >
                     <Phone size={13} aria-hidden="true" />
