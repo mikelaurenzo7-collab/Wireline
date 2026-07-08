@@ -29,9 +29,8 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     tabs: KNOWLEDGE_TABS,
   },
   hierarchy: {
-    overview: "complete assistant roster and command center",
+    overview: "complete agent roster, health summary, and next-action home",
     studio: "full bleed chat plus spatial canvas",
-    assistants: "studio canvas",
-    agentsRoute: "redirects to studio",
+    agentsRoute: "defensive redirect to overview for old assistant-roster bookmarks",
   },
 } as const;

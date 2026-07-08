@@ -104,6 +104,8 @@ Run the narrowest sufficient check while developing, then the full gate before m
 
 ## Recent health actions
 
+- Audited authenticated route and chrome surfaces; removed stale redirect-only client routes for pulse/fleet/ops/training/chat/actions/nexus/wires and deleted unmounted legacy shell components while preserving only defensive `/agents`, `/call-logs`, and `/logs` redirects.
+
 ### 2026-07-06 level-up guardrails
 
 - Promoted source-control hygiene, route registry invariants, docs index integrity, and design-token parity into the normal verification path.

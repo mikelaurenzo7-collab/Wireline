@@ -138,9 +138,17 @@ describe("product voice cohesion", () => {
     expect(routes).toContain('path="/settings"');
     expect(routes).toContain('path="/admin"');
     expect(routes).toContain("RouteFallback");
-    expect(routes).toContain('path="/actions/salesforce"');
-    expect(routes).toContain('to="/connections/salesforce"');
+    expect(routes).toContain('path="/connections/salesforce"');
+    expect(routes).not.toContain('path="/actions"');
+    expect(routes).not.toContain('path="/actions/salesforce"');
     expect(routes).not.toContain('path="/dashboard"');
+    expect(routes).not.toContain('path="/pulse"');
+    expect(routes).not.toContain('path="/fleet"');
+    expect(routes).not.toContain('path="/ops"');
+    expect(routes).not.toContain('path="/training"');
+    expect(routes).not.toContain('path="/chat"');
+    expect(routes).not.toContain('path="/nexus"');
+    expect(routes).not.toContain('path="/wires"');
   });
 
   it("keeps top-level workspace pages mounted to the current surfaces", () => {
