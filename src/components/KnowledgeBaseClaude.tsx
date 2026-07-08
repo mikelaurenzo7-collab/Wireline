@@ -61,6 +61,25 @@ function entryHeadline(content: string | undefined, source: string | undefined):
   return firstLine.length > 64 ? `${firstLine.slice(0, 61)}…` : firstLine;
 }
 
+function ruleHeadline(content: string | undefined): string {
+  const text = (content || "").trim();
+  if (!text) return "Rule";
+  const colon = text.indexOf(":");
+  if (colon > 0 && colon < 56) return text.slice(0, colon);
+  const firstLine = text.split(/\r?\n/)[0]?.trim() || text;
+  return firstLine.length > 56 ? `${firstLine.slice(0, 53)}…` : firstLine;
+}
+
+function ruleBody(content: string | undefined, headline: string): string | null {
+  const text = (content || "").trim();
+  if (!text) return null;
+  if (text.startsWith(headline)) {
+    const rest = text.slice(headline.length).replace(/^:\s*/, "").trim();
+    return rest || null;
+  }
+  return text;
+}
+
 function entrySubtitle(content: string | undefined): string {
   const raw = (content || "").trim();
   if (!raw) return "Empty entry";
@@ -180,12 +199,50 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const knowledge = config?.knowledge ?? [];
   const directives = config?.directives ?? [];
   const hasPersonality = !!(config?.personality && config.personality.trim());
+  const compactUpload = knowledge.length === 0 && directives.length > 0;
 
   const stats: Array<{ value: number; label: string }> = [
     { value: knowledge.length, label: "Knowledge" },
     { value: directives.length, label: "Rules" },
     { value: hasPersonality ? 1 : 0, label: "Tone" },
   ];
+
+  const activeRulesPanel =
+    directives.length > 0 ? (
+      <section className="wl-paper wl-paper-elevated p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="wl-eyebrow">Active rules</div>
+          <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
+            {directives.length} total
+          </span>
+        </div>
+        <div className="flex flex-col gap-2">
+          {directives.slice(0, 5).map((directive, index) => {
+            const headline = ruleHeadline(directive.content);
+            const body = ruleBody(directive.content, headline);
+            return (
+              <div
+                key={directive.id ?? `d-${index}`}
+                className="rounded-[10px] border border-[var(--wireline-color-border-subtle)] px-3.5 py-2.5"
+              >
+                <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                  <FileText
+                    className="mr-1.5 inline size-3.5 text-[var(--wireline-color-action-primary-default)]"
+                    aria-hidden="true"
+                  />
+                  {headline}
+                </p>
+                {body ? (
+                  <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
+                    {body}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    ) : null;
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -294,6 +351,8 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
               })}
       </section>
 
+      {compactUpload ? activeRulesPanel : null}
+
       <div
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -307,48 +366,37 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             fileInputRef.current?.click();
           }
         }}
-        className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-[12px] border-2 border-dashed px-6 py-8 text-center transition-colors ${
+        className={`flex cursor-pointer rounded-[12px] border-2 border-dashed text-center transition-colors ${
+          compactUpload
+            ? "min-h-[72px] flex-row items-center justify-start gap-4 px-5 py-4 text-left"
+            : knowledge.length === 0
+              ? "min-h-[96px] flex-col items-center justify-center px-6 py-5"
+              : "min-h-[120px] flex-col items-center justify-center px-6 py-8"
+        } ${
           dragOver
             ? "border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)]"
             : "border-[var(--wireline-color-border-strong)] bg-transparent hover:border-[var(--wireline-color-action-primary-default)] hover:bg-[var(--wireline-color-surface-subtle)]"
         }`}
       >
         <UploadCloud
-          className="mb-2 size-5 text-[var(--wireline-color-text-tertiary)]"
+          className={`shrink-0 text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "size-4" : "mb-2 size-5"}`}
           aria-hidden="true"
         />
-        <div className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
-          Drop files here or click to upload
-        </div>
-        <div className="mt-1 text-xs text-[var(--wireline-color-text-tertiary)]">
-          PDF, DOCX, TXT, CSV — max 50 MB
+        <div className={compactUpload ? "min-w-0" : undefined}>
+          <div className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
+            {compactUpload
+              ? "Add documents to complement your rules"
+              : "Drop files here or click to upload"}
+          </div>
+          <div
+            className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
+          >
+            PDF, DOCX, TXT, CSV — max 50 MB
+          </div>
         </div>
       </div>
 
-      {directives.length > 0 ? (
-        <section className="rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="wl-eyebrow">Active rules</div>
-            <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
-              {directives.length} total
-            </span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {directives.slice(0, 5).map((directive, index) => (
-              <div
-                key={directive.id ?? `d-${index}`}
-                className="rounded-[10px] border border-[var(--wireline-color-border-subtle)] px-3.5 py-2.5 text-xs leading-snug text-[var(--wireline-color-text-secondary)]"
-              >
-                <FileText
-                  className="mr-1 inline size-3 text-[var(--wireline-color-action-primary-default)]"
-                  aria-hidden="true"
-                />
-                {directive.content}
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      {!compactUpload ? activeRulesPanel : null}
     </div>
   );
 }

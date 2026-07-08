@@ -190,7 +190,7 @@ export default function VoicePickerField({
           Loading voice catalog…
         </div>
       ) : (
-        <div className="grid max-h-[min(340px,42vh)] gap-4 overflow-y-auto pr-1 lg:grid-cols-2">
+        <div className="grid max-h-[min(260px,34vh)] gap-4 overflow-y-auto overscroll-contain pr-1 lg:grid-cols-2">
           {filteredLive.length ? (
             <VoiceGroup
               title="Wireline Live"

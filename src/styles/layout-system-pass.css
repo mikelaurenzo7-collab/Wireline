@@ -386,6 +386,11 @@
     transparent
   );
 }
+
+/* Studio cards use wl-paper cap from letterpress — suppress duplicate canvas cap. */
+.wl-canvas-card.wl-canvas-card--letterpress::before {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .wl-canvas-card {
     animation: none;

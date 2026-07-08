@@ -123,24 +123,24 @@ export default function OutboundDialDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Phone className="h-4 w-4" aria-hidden />
+      <DialogContent className="max-w-md border-border bg-[var(--wireline-color-surface-default)] p-0 shadow-2xl">
+        <DialogHeader className="border-b border-border px-6 py-5">
+          <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
+            <Phone className="h-4 w-4 text-primary" aria-hidden />
             New outbound call
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm leading-relaxed">
             Pick an agent with a live line, enter a number, and classify the call before dialing.
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
+          <div className="flex items-center gap-2 px-6 py-8 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Loading agents…
           </div>
         ) : voiceAgents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="px-6 py-8 text-sm text-muted-foreground">
             No voice agents with a phone line yet.{" "}
             <Link to="/studio?create=1" className="text-brand underline-offset-2 hover:underline">
               Create and activate one in Studio
@@ -148,11 +148,11 @@ export default function OutboundDialDialog({
             .
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 px-6 py-5">
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-foreground">Agent</span>
+              <span className="text-xs font-semibold text-foreground">Agent</span>
               <select
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={agentId}
                 onChange={(event) => setAgentId(event.target.value)}
               >
@@ -165,23 +165,23 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-foreground">Phone number</span>
+              <span className="text-xs font-semibold text-foreground">Phone number</span>
               <input
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
                 placeholder="+15551234567"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={number}
                 onChange={(event) => setNumber(event.target.value)}
               />
             </label>
 
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-foreground">Instruction (optional)</span>
+              <span className="text-xs font-semibold text-foreground">Instruction (optional)</span>
               <textarea
                 rows={3}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
+                className="min-h-[88px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={context}
                 onChange={(event) => setContext(event.target.value)}
                 placeholder="What should the agent accomplish on this call?"
@@ -189,9 +189,9 @@ export default function OutboundDialDialog({
             </label>
 
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-foreground">Call type</span>
+              <span className="text-xs font-semibold text-foreground">Call type</span>
               <select
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={callPurpose}
                 onChange={(event) => {
                   setCallPurpose(event.target.value as OutboundCallPurpose);
@@ -229,7 +229,7 @@ export default function OutboundDialDialog({
           </div>
         )}
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4 sm:gap-0">
           <Button type="button" variant="secondary" onClick={onClose} disabled={placing}>
             Cancel
           </Button>

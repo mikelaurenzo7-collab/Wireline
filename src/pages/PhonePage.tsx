@@ -84,7 +84,12 @@ export default function PhonePage() {
           {primaryTab === "appointments" && (
             <div className="grid flex-1 place-items-center px-6 py-10">
               <EmptyState
-                className="studio-card w-full max-w-lg px-6 py-10 text-center"
+                fill
+                framed
+                density="compact"
+                titleTone="ui"
+                withHalo={false}
+                className="w-full max-w-lg"
                 icon={<CalendarDays className="size-5" aria-hidden />}
                 title="Appointments sync through calendar connections"
                 description="Connect Google Workspace or Microsoft 365 from Connections to let agents book on live calls."

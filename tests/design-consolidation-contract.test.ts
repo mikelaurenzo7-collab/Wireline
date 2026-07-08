@@ -37,6 +37,11 @@ describe("design consolidation contracts", () => {
       "src/components/CreateAgentDialog.tsx",
       "src/pages/KnowledgePage.tsx",
       "src/components/voice/VoiceGallery.tsx",
+      "src/pages/SettingsPage.tsx",
+      "src/pages/ClientAppsPage.tsx",
+      "src/components/DailyBrief.tsx",
+      "src/components/KnowledgeBaseClaude.tsx",
+      "src/components/integrations/IntegrationOperatingMap.tsx",
     ];
     for (const file of migrated) {
       const source = read(file);

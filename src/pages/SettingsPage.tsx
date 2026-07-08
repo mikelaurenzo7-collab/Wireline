@@ -34,8 +34,10 @@ function DangerZone() {
   }
 
   return (
-    <section className="studio-card border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
-      <h3 className="text-sm font-semibold text-foreground">Delete account</h3>
+    <section className="wl-paper wl-paper-elevated border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
+      <p className="wl-eyebrow wl-eyebrow--muted mb-4 text-[var(--wireline-color-status-error)]">
+        Delete account
+      </p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           aria-label="Type DELETE to confirm"
@@ -128,17 +130,17 @@ export default function SettingsPage() {
       <WorkspacePageFrame narrow>
         <SettingsTabs />
 
-        <section className="studio-card p-5 sm:p-6">
-          <h2 className="text-sm font-semibold text-foreground">Profile</h2>
-          <div className="mt-4 grid gap-4">
+        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
+          <p className="wl-eyebrow wl-workspace-eyebrow mb-4">Profile</p>
+          <div className="grid gap-4">
             <ReadOnlyField label="Name" value={displayName} />
             <ReadOnlyField label="Email" value={email || "—"} />
           </div>
         </section>
 
-        <section className="studio-card p-5 sm:p-6">
-          <h2 className="text-sm font-semibold text-foreground">Security</h2>
-          <div className="mt-4 grid gap-3">
+        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
+          <p className="wl-eyebrow wl-workspace-eyebrow mb-4">Security</p>
+          <div className="grid gap-3">
             <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-foreground">Password</p>
               <Button

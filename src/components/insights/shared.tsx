@@ -88,6 +88,8 @@ export function InsightEmpty({
   titleOverride,
   actionsOverride,
   success,
+  fill = true,
+  framed = true,
 }: {
   configKey: InsightEmptyKey;
   icon: LucideIcon;
@@ -100,13 +102,18 @@ export function InsightEmpty({
     primary?: boolean;
   }>;
   success?: boolean;
+  /** Full-viewport centering — off when nested under another panel (e.g. AI Spend budget). */
+  fill?: boolean;
+  /** Panel chrome — off when the parent already supplies a frame. */
+  framed?: boolean;
 }) {
   const config = OPS_INSIGHTS_EMPTY[configKey];
   return (
     <EmptyState
-      framed
-      fill
+      framed={framed}
+      fill={fill}
       density="compact"
+      titleTone="ui"
       withHalo={false}
       icon={icon}
       title={titleOverride ?? config.title}
@@ -167,21 +174,24 @@ export function Stat({
   label,
   value,
   accent,
+  highlight,
 }: {
   label: string;
   value: React.ReactNode;
   accent?: string;
+  /** Emphasize a hero metric (e.g. total calls) in the insights stat row. */
+  highlight?: boolean;
 }) {
   return (
-    <div>
-      <div className={WL_OPS_CLASSES.insightLabel}>{label}</div>
+    <article className="wl-metric-tile px-4 py-3.5" data-tone={highlight ? "primary" : undefined}>
+      <p className="wl-metric-tile__label">{label}</p>
       <div
-        className={cn("font-display italic text-xl mt-1", accent ? "wl-accent-text" : "text-brand")}
+        className={cn("wl-metric-tile__value mt-3 tabular-nums", accent && "wl-accent-text")}
         data-accent={accent}
       >
         {value}
       </div>
-    </div>
+    </article>
   );
 }
 

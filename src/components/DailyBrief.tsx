@@ -90,7 +90,10 @@ export default function DailyBrief() {
   const hasCalls = logs.length > 0;
 
   return (
-    <section className="studio-card overflow-hidden p-5 sm:p-6" aria-label="Workspace pulse">
+    <section
+      className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-6"
+      aria-label="Workspace pulse"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-2">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -110,7 +113,7 @@ export default function DailyBrief() {
                       : "Line is quiet today."
                     : "Ready for the first call."}
               </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
                 {state.status === "loading"
                   ? "Checking recent workspace activity."
                   : hasCalls
@@ -151,7 +154,9 @@ export default function DailyBrief() {
                 </span>
               </span>
               <span className="wl-data-row__main">
-                <span className="wl-data-row__title">{callTitle(call)}</span>
+                <span className="wl-data-row__title wl-data-row__title--multiline">
+                  {callTitle(call)}
+                </span>
                 <span className="wl-data-row__detail">{callDetail(call)}</span>
               </span>
               <span className="wl-data-row__trailing">

@@ -31,13 +31,21 @@ export function WorkspacePageFrame({
 type WorkspacePageIntroProps = {
   title: string;
   action?: ReactNode;
+  /** Centered display serif (default) or left-aligned operate header. */
+  align?: "center" | "start";
 };
 
 /** Minimal page title — no eyebrows or explanatory copy in the workspace shell. */
-export function WorkspacePageIntro({ title, action }: WorkspacePageIntroProps) {
+export function WorkspacePageIntro({ title, action, align = "center" }: WorkspacePageIntroProps) {
+  const start = align === "start";
   return (
-    <header className="wl-workspace-page-intro flex items-center justify-between gap-4">
-      <h1 className="wl-display-3">{title}</h1>
+    <header
+      className={cn(
+        "wl-workspace-page-intro flex items-center justify-between gap-4",
+        start && "mx-0 max-w-none",
+      )}
+    >
+      <h1 className={cn("wl-display-3", start && "text-left")}>{title}</h1>
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>
   );

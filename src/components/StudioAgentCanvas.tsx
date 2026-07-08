@@ -89,6 +89,24 @@ const DEFAULT_SITUATIONS = [
   "caller asks pricing → Recite rate sheet",
 ] as const;
 
+function situationParts(text: string): { trigger: string; action: string | null } {
+  const arrow = text.indexOf("→");
+  if (arrow > 0) {
+    return {
+      trigger: text.slice(0, arrow).trim(),
+      action: text.slice(arrow + 1).trim() || null,
+    };
+  }
+  const colon = text.indexOf(":");
+  if (colon > 0 && colon < 48) {
+    return {
+      trigger: text.slice(0, colon).trim(),
+      action: text.slice(colon + 1).trim() || null,
+    };
+  }
+  return { trigger: text, action: null };
+}
+
 function CardShell({
   label,
   action,
@@ -109,7 +127,7 @@ function CardShell({
       type="button"
       onClick={onActivate}
       style={{ animationDelay: `${delay}ms` }}
-      className={`wl-canvas-card group flex w-full flex-col rounded-[14px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_var(--wireline-color-glow-primarySoft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
+      className={`wl-canvas-card wl-paper wl-paper-elevated wl-canvas-card--letterpress group flex w-full flex-col rounded-[14px] p-5 text-left transition-all hover:border-[var(--wireline-color-action-primary-default)] hover:shadow-[0_2px_12px_var(--wireline-color-glow-primarySoft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-action-primary-default)] ${className}`}
     >
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <span className={cn(WL_APP_CLASSES.wiredEyebrow, "wl-eyebrow")}>{label}</span>
@@ -125,8 +143,8 @@ function CardShell({
 
 function Connector() {
   return (
-    <div className="flex h-5 items-center justify-center" aria-hidden="true">
-      <div className="h-5 border-l border-dashed border-[var(--wireline-color-border-strong)]" />
+    <div className="flex h-4 items-center justify-center" aria-hidden="true">
+      <div className="h-4 w-px bg-[var(--wireline-color-border-subtle)] opacity-80" />
     </div>
   );
 }
@@ -471,17 +489,24 @@ export default function StudioAgentCanvas({
             className="min-h-[205px]"
           >
             <div className="flex flex-col gap-2">
-              {situationRows.map((situation, index) => (
-                <div
-                  key={`${situation}-${index}`}
-                  className="rounded-lg border border-[var(--wireline-color-border-subtle)] px-3 py-2 text-xs leading-snug text-[var(--wireline-color-text-secondary)]"
-                >
-                  <span className="font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em] text-[var(--wireline-color-action-primary-default)]">
-                    When
-                  </span>{" "}
-                  {situation}
-                </div>
-              ))}
+              {situationRows.map((situation, index) => {
+                const { trigger, action } = situationParts(situation);
+                return (
+                  <div
+                    key={`${situation}-${index}`}
+                    className="rounded-lg border border-[var(--wireline-color-border-subtle)] px-3 py-2.5"
+                  >
+                    <p className="text-sm font-medium leading-snug text-[var(--wireline-color-text-primary)]">
+                      {trigger}
+                    </p>
+                    {action ? (
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)] line-clamp-2">
+                        {action}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
               <div className="rounded-lg border border-dashed border-[var(--wireline-color-border-strong)] py-2 text-center text-xs text-[var(--wireline-color-text-tertiary)]">
                 + Add situation
               </div>

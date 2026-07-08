@@ -305,9 +305,15 @@ export default function AISpendView({ days }: { days: number }) {
 
   if (!data || !data.totals) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-4">
         <SpendBudgetCard />
-        <InsightEmpty configKey="spend" icon={Brain} />
+        <InsightEmpty
+          configKey="spend"
+          icon={Brain}
+          titleOverride="No AI usage yet"
+          fill={false}
+          framed={false}
+        />
       </div>
     );
   }
@@ -322,7 +328,17 @@ export default function AISpendView({ days }: { days: number }) {
     <div className="space-y-5">
       <SpendBudgetCard />
 
-      {!callsHaveHappened && <InsightEmpty configKey="spend" icon={Brain} />}
+      {!callsHaveHappened ? (
+        <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-8")}>
+          <InsightEmpty
+            configKey="spend"
+            icon={Brain}
+            titleOverride="No AI usage in this window"
+            fill={false}
+            framed={false}
+          />
+        </div>
+      ) : null}
 
       {callsHaveHappened && (
         <>

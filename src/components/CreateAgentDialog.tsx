@@ -284,13 +284,13 @@ export default function CreateAgentDialog({
       <form
         onSubmit={create}
         onKeyDown={onKeyDown}
-        className="wl-paper wl-paper-elevated my-auto max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto p-0 shadow-2xl"
+        className="wl-paper wl-paper-elevated my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden p-0 shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-agent-title"
         aria-describedby="create-agent-description"
       >
-        <div className="border-b border-border px-6 py-5">
+        <div className="shrink-0 border-b border-border px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-primary text-primary-foreground">
@@ -327,7 +327,7 @@ export default function CreateAgentDialog({
           </div>
         </div>
 
-        <div className="px-6 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <p className={WL_APP_CLASSES.wiredEyebrow}>Step 1 · Brief, voice, and face</p>
           <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(2rem,4vw,2.5rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
             What do you need handled?
@@ -482,7 +482,7 @@ export default function CreateAgentDialog({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-end border-t border-border px-6 py-4">
+        <div className="sticky bottom-0 z-10 flex shrink-0 items-center justify-end border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4">
           <Button type="submit" disabled={creating} className="min-w-[140px] justify-center">
             {creating ? (
               <Loader2 aria-hidden="true" className="size-4 animate-spin" />

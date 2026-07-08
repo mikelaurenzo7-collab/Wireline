@@ -37,16 +37,20 @@ export default function FunnelView({ days }: { days: number }) {
 
   const stages = data.stages || [];
   const max = Math.max(1, ...stages.map((s) => s.count));
+  const lastActiveIndex = stages.reduce(
+    (last, stage, index) => (stage.count > 0 ? index : last),
+    0,
+  );
 
   if (stages.length === 0 || stages.every((s) => s.count === 0)) {
     return <InsightEmpty configKey="funnel" icon={TrendingUp} />;
   }
 
   return (
-    <div className={cn(WL_APP_CLASSES.panelFrame, "p-5 md:p-6 space-y-3")}>
-      <div className="mb-2">
+    <div className={cn(WL_APP_CLASSES.panelFrame, "p-5 md:p-6 space-y-4")}>
+      <div>
         <p className="wl-insight-label text-brand/70">Conversion · {data.window_days}d</p>
-        <h3 className="font-display italic text-2xl text-foreground leading-tight">Funnel</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-foreground mt-1">Funnel</h3>
       </div>
       {stages.map((s, i) => {
         const pct = (s.count / max) * 100;
@@ -58,15 +62,15 @@ export default function FunnelView({ days }: { days: number }) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="space-y-1.5"
+            className={cn("space-y-1.5", s.count === 0 && i > lastActiveIndex && "opacity-65")}
           >
-            <div className="flex items-baseline justify-between text-sm">
-              <span className="font-display italic text-2xl text-foreground">{s.name}</span>
-              <span className="font-display italic text-3xl text-brand-display tabular-nums">
+            <div className="flex items-baseline justify-between gap-4 text-sm">
+              <span className="font-medium text-foreground">{s.name}</span>
+              <span className="font-display text-2xl tabular-nums text-brand-display leading-none">
                 {s.count.toLocaleString()}
               </span>
             </div>
-            <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
+            <div className="relative h-2.5 rounded-full bg-black/10 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
@@ -75,11 +79,11 @@ export default function FunnelView({ days }: { days: number }) {
               />
             </div>
             {drop !== null && drop > 0 && (
-              <div className="app-section-title text-right text-muted/80">
+              <p className="text-right text-xs font-medium text-muted-foreground sm:text-sm">
                 {drop === 100 && s.count === 0
                   ? "None progressed from previous stage"
                   : `↓ ${drop}% drop-off from previous stage`}
-              </div>
+              </p>
             )}
           </motion.div>
         );

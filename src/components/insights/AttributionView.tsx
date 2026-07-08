@@ -3,6 +3,7 @@ import { Megaphone } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { InsightsAttributionResponse, InsightsAttributionRow } from "../../types/api-insights";
 import { fetchInsight, InsightSkeleton, ErrCard, Stat, InsightEmpty } from "./shared";
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 
 export default function AttributionView({ days }: { days: number }) {
   const [rows, setRows] = useState<InsightsAttributionRow[]>([]);
@@ -60,16 +61,17 @@ export default function AttributionView({ days }: { days: number }) {
           })}
         </dl>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Tagged sources" value={rows.filter((r) => r.source !== "(untagged)").length} />
-        <Stat label="Total calls" value={totalCalls} />
+        <Stat label="Total calls" value={totalCalls} highlight />
         <Stat label="Booked" value={totalBooked} />
         <Stat
           label="Conv. rate"
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
+          highlight
         />
       </div>
-      <div className="rounded-md wl-panel overflow-hidden app-table-scroll" aria-hidden="true">
+      <div className={cn(WL_APP_CLASSES.panelFrame, "overflow-hidden app-table-scroll")}>
         <table className="w-full text-sm">
           <thead className="bg-black/[0.03] dark:bg-white/[0.02]">
             <tr className="text-left wl-insight-label">
@@ -130,6 +132,13 @@ export default function AttributionView({ days }: { days: number }) {
             })}
           </tbody>
         </table>
+        {rows.some((row) => row.source === "(untagged)") ? (
+          <p className="border-t border-border px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+            Calls without a campaign tag roll into{" "}
+            <span className="font-medium text-foreground/80">(untagged)</span>. Tag outbound work in
+            Studio to split attribution.
+          </p>
+        ) : null}
       </div>
     </div>
   );

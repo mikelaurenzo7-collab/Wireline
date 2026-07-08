@@ -448,12 +448,16 @@ export default function OverviewPage() {
                     </span>
                     <span className="wl-data-row__main">
                       <span className="wl-data-row__title">
-                        {call.customer_number || "Unknown caller"} —{" "}
-                        {call.intent_label || call.summary || "Call logged"}
+                        {call.customer_number || "Unknown caller"}
                       </span>
-                      <span className="wl-data-row__detail">
-                        {call.agent_name || primaryAgent?.name || "Agent"} ·{" "}
-                        {formatCallMeta(call.created_at, call.duration_seconds)}
+                      <span className="wl-data-row__detail wl-data-row__detail--clamp">
+                        {[
+                          call.agent_name || primaryAgent?.name || "Agent",
+                          formatCallMeta(call.created_at, call.duration_seconds),
+                          call.summary || call.intent_label,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </span>
                     </span>
                     <span className="wl-data-row__trailing">

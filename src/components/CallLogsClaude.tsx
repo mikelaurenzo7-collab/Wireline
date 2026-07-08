@@ -89,6 +89,29 @@ function isEscalation(call: Call): boolean {
   return false;
 }
 
+function outcomeStatusStyle(tag: string | null | undefined): {
+  color: string;
+  background: string;
+} {
+  const normalized = (tag || "").toLowerCase();
+  if (/unreachable|no.?answer|failed|busy|voicemail/.test(normalized)) {
+    return {
+      color: "var(--wireline-color-status-warning)",
+      background: "color-mix(in srgb, var(--wireline-color-status-warning) 14%, transparent)",
+    };
+  }
+  if (/booked|qualified|success|completed/.test(normalized)) {
+    return {
+      color: "var(--wireline-color-status-success)",
+      background: "var(--wireline-color-feedback-success-surface)",
+    };
+  }
+  return {
+    color: "var(--wireline-color-text-tertiary)",
+    background: "transparent",
+  };
+}
+
 function isActionItem(call: Call): boolean {
   if (isEscalation(call)) return false;
   if (typeof call.lead_score === "number" && call.lead_score >= 70) return true;
@@ -220,10 +243,6 @@ export default function CallLogsClaude() {
         className="grid grid-cols-2 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] sm:flex sm:items-stretch sm:divide-x sm:divide-[var(--wireline-color-border-default)]"
       >
         {kpis.map((kpi, index) => {
-          const accent =
-            kpi.accent === "warning"
-              ? "var(--wireline-color-status-warning)"
-              : "var(--wireline-color-text-primary)";
           // On phones, 2×2 grid with borders between cells; from sm up,
           // a single equal-width row with vertical dividers.
           const phoneBorders = [
@@ -238,18 +257,18 @@ export default function CallLogsClaude() {
               className={`px-4 py-3 sm:flex-1 sm:px-5 sm:py-3.5 ${phoneBorders}`}
             >
               <div
-                className={cn(WL_APP_CLASSES.wiredEyebrow)}
-                style={
-                  kpi.accent === "warning"
-                    ? { color: "var(--wireline-color-status-warning)" }
-                    : undefined
-                }
+                className={cn(
+                  "wl-metric-tile__label",
+                  kpi.accent === "warning" && "text-[var(--wireline-color-status-warning)]",
+                )}
               >
                 {kpi.label}
               </div>
               <div
-                className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+0.6vw,2rem)] leading-none tracking-[-0.02em]"
-                style={{ color: accent }}
+                className={cn(
+                  "wl-metric-tile__value mt-2 tabular-nums",
+                  kpi.accent === "warning" && "text-[var(--wireline-color-status-warning)]",
+                )}
               >
                 {loading ? "—" : kpi.value}
               </div>
@@ -325,7 +344,9 @@ function FloorTab({
   if (!calls.length) {
     return (
       <EmptyState
-        title="No call history yet."
+        fill
+        titleTone="ui"
+        title="No call history yet"
         description="Live and outbound conversations will appear here with summaries, outcomes, follow-ups, and exports."
         density="compact"
         withHalo={false}
@@ -364,7 +385,7 @@ function FloorTab({
         {calls.map((call) => (
           <li
             key={call.id}
-            className="flex items-center gap-4 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
+            className="wl-paper flex items-center gap-4 px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
           >
             <AgentFace
               seed={call.agent_name || call.agent_id || "agent"}
@@ -382,7 +403,7 @@ function FloorTab({
                   {formatTime(call.created_at)}
                 </span>
               </div>
-              <div className="mt-0.5 truncate text-[13px] text-[var(--wireline-color-text-secondary)]">
+              <div className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-[var(--wireline-color-text-secondary)]">
                 {call.summary || call.intent_label || "No summary yet."}
                 {call.agent_name ? (
                   <>
@@ -399,11 +420,14 @@ function FloorTab({
                 {formatDuration(call.duration_seconds)}
               </div>
               <div
-                className="mt-1 inline-flex items-center justify-end gap-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
+                className="mt-1 inline-flex items-center justify-end gap-1 rounded px-1.5 py-0.5 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
                 style={{
                   color: isLive(call)
                     ? "var(--wireline-color-status-success)"
-                    : "var(--wireline-color-text-tertiary)",
+                    : outcomeStatusStyle(call.outcome_tag).color,
+                  background: isLive(call)
+                    ? "var(--wireline-color-feedback-success-surface)"
+                    : outcomeStatusStyle(call.outcome_tag).background,
                 }}
               >
                 <span

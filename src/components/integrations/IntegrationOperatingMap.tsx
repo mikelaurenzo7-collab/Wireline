@@ -45,10 +45,16 @@ export default function IntegrationOperatingMap() {
   }));
 
   return (
-    <section className="rounded-md wl-panel border border-border px-3 py-3">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h2 className="wl-label text-muted/80">Integration map</h2>
-        <div className="grid grid-cols-4 gap-2 md:min-w-[24rem]">
+    <section className="wl-paper wl-paper-elevated px-3 py-4 md:px-5 md:py-5">
+      <header className="mb-4 flex flex-col gap-3 border-b border-border pb-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="wl-eyebrow wl-eyebrow--muted mb-2">Wire</p>
+          <h1 className="wl-display-3 text-left text-balance">Integration map</h1>
+          <p className="mt-2 max-w-prose text-sm text-muted-foreground">
+            Every connection your agents can use — live status, capabilities, and routing.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:min-w-[24rem]">
           {readinessCounts.map(({ status, count }) => {
             const meta = READINESS_COPY[status];
             const Icon = meta.Icon;
@@ -63,9 +69,9 @@ export default function IntegrationOperatingMap() {
             );
           })}
         </div>
-      </div>
+      </header>
 
-      <div className="mt-4 divide-y divide-border rounded-md border border-border">
+      <div className="divide-y divide-border rounded-md border border-border">
         <div className="hidden grid-cols-[13rem_8rem_minmax(17rem,1fr)_9rem] gap-3 bg-[var(--wireline-color-surface-subtle)] px-3 py-2 text-xs font-semibold text-muted/80 lg:grid">
           <div>Vendor</div>
           <div>Type</div>
@@ -86,7 +92,7 @@ function IntegrationRow({ entry }: { entry: WorkspaceIntegration }) {
   const logo = getIntegrationLogo(entry.id);
 
   return (
-    <div className="grid gap-3 px-3 py-3 text-sm lg:grid-cols-[13rem_8rem_minmax(17rem,1fr)_9rem] lg:items-center">
+    <div className="grid gap-3 px-3 py-2.5 text-sm lg:grid-cols-[13rem_8rem_minmax(17rem,1fr)_9rem] lg:items-center">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <div className="grid size-8 shrink-0 place-items-center rounded-md border border-border bg-background text-muted/80">
@@ -111,7 +117,7 @@ function IntegrationRow({ entry }: { entry: WorkspaceIntegration }) {
           </span>
         ))}
       </div>
-      <div className="flex min-w-0 flex-wrap gap-1">
+      <div className="flex min-w-0 max-h-[4.5rem] flex-wrap gap-1 overflow-y-auto pr-1">
         {entry.capabilities.map((capability) => (
           <span
             key={capability}

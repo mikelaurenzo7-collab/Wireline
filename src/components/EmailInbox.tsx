@@ -288,38 +288,39 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   if (threads.length === 0) {
     return (
-      <section className={`${frameClass} grid flex-1 place-items-center px-5 text-center`}>
-        <div className="w-full max-w-lg">
-          <EmptyState
-            density="default"
-            className="studio-card w-full px-6 py-10 text-center sm:px-8"
-            icon={<Mail className="size-5" />}
-            title="No email yet"
-            description="Connect Gmail, Outlook, or another inbox from Connections — threads land here after the first sync."
-            action={
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button asChild>
-                  <Link to="/connections">Open Connections</Link>
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={syncing}
-                  onClick={() => void syncInbox()}
-                >
-                  {syncing ? (
-                    <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                  ) : (
-                    <RefreshCw aria-hidden="true" className="size-4" />
-                  )}
-                  {syncing ? "Refreshing" : "Refresh inbox"}
-                </Button>
-              </div>
-            }
-          />
-        </div>
+      <section className={`${frameClass} flex flex-1 flex-col px-5 text-center`}>
+        <EmptyState
+          fill
+          framed
+          density="compact"
+          titleTone="ui"
+          withHalo={false}
+          icon={<Mail className="size-5" />}
+          title="Connect your inbox"
+          description="Link Gmail, Outlook, or another inbox from Connections — threads land here after the first sync."
+          action={
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button asChild>
+                <Link to="/connections">Open Connections</Link>
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={syncing}
+                onClick={() => void syncInbox()}
+              >
+                {syncing ? (
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw aria-hidden="true" className="size-4" />
+                )}
+                {syncing ? "Refreshing" : "Refresh inbox"}
+              </Button>
+            </div>
+          }
+        />
         {error ? (
-          <StatusNotice tone="destructive" className="mt-3 max-w-lg text-left">
+          <StatusNotice tone="destructive" className="mx-auto mt-3 max-w-lg text-left">
             {error}
           </StatusNotice>
         ) : null}

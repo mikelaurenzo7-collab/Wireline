@@ -25,13 +25,39 @@
   font-size: clamp(2rem, 1.6rem + 1vw, 2.75rem);
 }
 
+[data-wireline-route="/insights"] .wl-workspace-content-inner > .flex.h-full {
+  min-height: 0;
+}
+
+[data-wireline-route="/inbox"] .wl-workspace-page {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+[data-wireline-route="/phone"] .wl-operate-surface {
+  min-height: min(100%, calc(100dvh - 4rem));
+}
+
+[data-wireline-route="/phone"] .wl-operate-surface > .min-h-0.flex-1 {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
 /* A legacy per-agent Director surface needs a readable central conversation column. */
 .agent-workspace-chat-scroll {
   margin-inline: auto;
   width: min(100%, 56rem);
 }
 
-.agent-workspace-composer {
-  margin-inline: auto;
-  width: min(100%, 56rem);
+[data-wireline-route="/connections"] .wl-workspace-page {
+  max-width: min(100%, 1080px);
+}
+
+[data-wireline-route="/knowledge"] .wl-workspace-page-intro {
+  margin-bottom: 0;
+}
+
+[data-wireline-route="/studio"] .wl-scroll {
+  min-height: 0;
 }

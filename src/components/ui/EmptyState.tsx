@@ -46,6 +46,8 @@ export interface EmptyStateProps {
   fill?: boolean;
   /** compact = embedded panels with less vertical padding */
   density?: "default" | "compact";
+  /** Nested empties under a display page title should use UI sans, not a second serif headline. */
+  titleTone?: "display" | "ui";
   /** Optional slot between description and action buttons (task grids, hints). */
   children?: ReactNode;
 }
@@ -67,6 +69,7 @@ export function EmptyState({
   framed = false,
   fill = false,
   density = "default",
+  titleTone = "display",
   children,
 }: EmptyStateProps) {
   const reduceMotion = useReducedMotion();
@@ -127,6 +130,7 @@ export function EmptyState({
 
       <SectionHeader
         tone="instrument"
+        titleTone={titleTone}
         eyebrow={eyebrow}
         title={title}
         description={description}

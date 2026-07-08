@@ -12,6 +12,8 @@ interface SectionHeaderProps {
   divider?: boolean;
   /** Marketing retains the same Inter hierarchy at a larger scale. */
   tone?: "marketing" | "instrument";
+  /** Page titles use display serif; nested empties use UI sans to avoid double-serif stacks. */
+  titleTone?: "display" | "ui";
 }
 
 /** Shared Stitch-style section hierarchy for product and marketing surfaces. */
@@ -23,6 +25,7 @@ export function SectionHeader({
   actions,
   divider = true,
   tone = "instrument",
+  titleTone = "display",
 }: SectionHeaderProps) {
   const marketing = tone === "marketing";
 
@@ -39,7 +42,9 @@ export function SectionHeader({
             className={cn(
               marketing
                 ? "wl-stitch-headline text-[var(--wireline-typography-h3-size)]"
-                : WL_APP_CLASSES.proTitle,
+                : titleTone === "ui"
+                  ? "text-base font-semibold tracking-tight text-foreground"
+                  : WL_APP_CLASSES.proTitle,
             )}
           >
             {title}

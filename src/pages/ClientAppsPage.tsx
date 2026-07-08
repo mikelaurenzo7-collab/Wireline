@@ -58,15 +58,18 @@ export default function ClientAppsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame>
-        <WorkspacePageIntro title="Apps" />
+        <WorkspacePageIntro title="Apps" align="start" />
+        <p className="-mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
+          Install Wireline on every surface your team uses — browser, phone, and AI assistants.
+        </p>
         <section
-          className="grid gap-3 md:grid-cols-2"
+          className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
           aria-label="Wireline apps and companion surfaces"
         >
           {clientSurfaces.map(({ icon: Icon, title, status, statusVariant, action, href }) => (
             <article
               key={title}
-              className="studio-card group flex min-h-[132px] flex-col p-5 transition-all hover:border-primary/30"
+              className="wl-paper wl-paper-elevated group flex min-h-[132px] flex-col p-5 transition-all hover:border-primary/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
@@ -74,9 +77,7 @@ export default function ClientAppsPage() {
                 </span>
                 <Badge variant={statusVariant}>{status}</Badge>
               </div>
-              <h2 className="mt-5 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.02em] text-foreground">
-                {title}
-              </h2>
+              <h2 className="wl-card-title mt-5">{title}</h2>
               <Button
                 asChild
                 variant="link"

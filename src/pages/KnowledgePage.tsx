@@ -145,8 +145,8 @@ export default function KnowledgePage() {
         <EmptyTraining />
       ) : (
         <WorkspacePageFrame>
-          <WorkspacePageIntro title="Training" />
-          <div className="mb-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <WorkspacePageIntro title="Training" align="start" />
             <WorkspaceTabStrip
               ariaLabel="Training sections"
               tabs={trainingTabs}
@@ -155,9 +155,11 @@ export default function KnowledgePage() {
               density="compact"
               align="start"
               wrap
-              className="mb-0 flex-1 border-b-0 pb-0"
+              className="mb-0 w-full border-b-0 pb-0 sm:w-auto"
             />
-            {populated ? (
+          </div>
+          {populated ? (
+            <div className="mb-2 flex justify-end sm:-mt-2">
               <NativeSelect
                 value={agentId}
                 onChange={(event) =>
@@ -180,8 +182,8 @@ export default function KnowledgePage() {
                   </option>
                 ))}
               </NativeSelect>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           {activeTab === "knowledge" ? <KnowledgeBaseClaude agentId={agentId} /> : null}
           {activeTab === "voice" ? (
             <VoiceGallery agentId={agentId} agentName={activeAgent?.name} />
