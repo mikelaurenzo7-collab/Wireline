@@ -38,12 +38,6 @@
   min-height: min(100%, calc(100dvh - 4rem));
 }
 
-[data-wireline-route="/phone"] .wl-operate-surface > .min-h-0.flex-1 {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
 /* A legacy per-agent Director surface needs a readable central conversation column. */
 .agent-workspace-chat-scroll {
   margin-inline: auto;

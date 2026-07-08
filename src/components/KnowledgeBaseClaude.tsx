@@ -244,23 +244,26 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       </section>
     ) : null;
 
+  const uploadTrigger = (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        fileInputRef.current?.click();
+      }}
+      disabled={uploading || !agentId}
+      className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[8px] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+      style={{
+        background: "var(--wireline-color-action-primary-default)",
+        color: "var(--wireline-color-text-onAction)",
+      }}
+    >
+      {uploading ? <Loader2 className="size-4 animate-spin" /> : <span>+ Add document</span>}
+    </button>
+  );
+
   return (
     <div className="flex w-full flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading || !agentId}
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-[8px] px-4 text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-          style={{
-            background: "var(--wireline-color-action-primary-default)",
-            color: "var(--wireline-color-text-onAction)",
-          }}
-        >
-          {uploading ? <Loader2 className="size-4 animate-spin" /> : <span>+ Add document</span>}
-        </button>
-      </header>
-
       <input
         ref={fileInputRef}
         type="file"
@@ -366,9 +369,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             fileInputRef.current?.click();
           }
         }}
-        className={`flex cursor-pointer rounded-[12px] border-2 border-dashed text-center transition-colors ${
+        className={`relative flex cursor-pointer rounded-[12px] border-2 border-dashed text-center transition-colors ${
           compactUpload
-            ? "min-h-[72px] flex-row items-center justify-start gap-4 px-5 py-4 text-left"
+            ? "min-h-[72px] flex-row items-center justify-start gap-4 px-5 py-4 pr-[9.5rem] text-left"
             : knowledge.length === 0
               ? "min-h-[96px] flex-col items-center justify-center px-6 py-5"
               : "min-h-[120px] flex-col items-center justify-center px-6 py-8"
@@ -393,6 +396,13 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           >
             PDF, DOCX, TXT, CSV — max 50 MB
           </div>
+        </div>
+        <div
+          className={
+            compactUpload ? "absolute right-4 top-1/2 -translate-y-1/2" : "absolute right-4 top-4"
+          }
+        >
+          {uploadTrigger}
         </div>
       </div>
 

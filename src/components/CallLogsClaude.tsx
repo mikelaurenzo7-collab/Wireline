@@ -243,6 +243,10 @@ export default function CallLogsClaude() {
         className="grid grid-cols-2 border-b border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] sm:flex sm:items-stretch sm:divide-x sm:divide-[var(--wireline-color-border-default)]"
       >
         {kpis.map((kpi, index) => {
+          const accent =
+            kpi.accent === "warning"
+              ? "var(--wireline-color-status-warning)"
+              : "var(--wireline-color-text-primary)";
           // On phones, 2×2 grid with borders between cells; from sm up,
           // a single equal-width row with vertical dividers.
           const phoneBorders = [
@@ -257,18 +261,18 @@ export default function CallLogsClaude() {
               className={`px-4 py-3 sm:flex-1 sm:px-5 sm:py-3.5 ${phoneBorders}`}
             >
               <div
-                className={cn(
-                  "wl-metric-tile__label",
-                  kpi.accent === "warning" && "text-[var(--wireline-color-status-warning)]",
-                )}
+                className={cn(WL_APP_CLASSES.wiredEyebrow)}
+                style={
+                  kpi.accent === "warning"
+                    ? { color: "var(--wireline-color-status-warning)" }
+                    : undefined
+                }
               >
                 {kpi.label}
               </div>
               <div
-                className={cn(
-                  "wl-metric-tile__value mt-2 tabular-nums",
-                  kpi.accent === "warning" && "text-[var(--wireline-color-status-warning)]",
-                )}
+                className="font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+0.6vw,2rem)] leading-none tracking-[-0.02em]"
+                style={{ color: accent }}
               >
                 {loading ? "—" : kpi.value}
               </div>

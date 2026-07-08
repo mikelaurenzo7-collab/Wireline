@@ -92,7 +92,7 @@ function IntegrationRow({ entry }: { entry: WorkspaceIntegration }) {
   const logo = getIntegrationLogo(entry.id);
 
   return (
-    <div className="grid gap-3 px-3 py-2.5 text-sm lg:grid-cols-[13rem_8rem_minmax(17rem,1fr)_9rem] lg:items-center">
+    <div className="grid gap-3 px-3 py-3 text-sm lg:grid-cols-[13rem_8rem_minmax(17rem,1fr)_9rem] lg:items-center">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <div className="grid size-8 shrink-0 place-items-center rounded-md border border-border bg-background text-muted/80">

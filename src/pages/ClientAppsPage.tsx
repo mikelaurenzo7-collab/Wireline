@@ -77,7 +77,9 @@ export default function ClientAppsPage() {
                 </span>
                 <Badge variant={statusVariant}>{status}</Badge>
               </div>
-              <h2 className="wl-card-title mt-5">{title}</h2>
+              <h2 className="mt-5 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.02em] text-foreground">
+                {title}
+              </h2>
               <Button
                 asChild
                 variant="link"

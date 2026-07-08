@@ -113,7 +113,7 @@ export default function DailyBrief() {
                       : "Line is quiet today."
                     : "Ready for the first call."}
               </h2>
-              <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 {state.status === "loading"
                   ? "Checking recent workspace activity."
                   : hasCalls

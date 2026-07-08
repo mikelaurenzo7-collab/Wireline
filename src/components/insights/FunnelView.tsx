@@ -50,7 +50,7 @@ export default function FunnelView({ days }: { days: number }) {
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-5 md:p-6 space-y-4")}>
       <div>
         <p className="wl-insight-label text-brand/70">Conversion · {data.window_days}d</p>
-        <h3 className="text-lg font-semibold tracking-tight text-foreground mt-1">Funnel</h3>
+        <h3 className="font-display italic text-2xl text-foreground leading-tight mt-1">Funnel</h3>
       </div>
       {stages.map((s, i) => {
         const pct = (s.count / max) * 100;

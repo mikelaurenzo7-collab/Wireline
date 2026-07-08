@@ -230,7 +230,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
                     {remaining > 0 ? (
                       <Link
                         to="/overview"
-                        className="mt-1 flex min-h-[40px] items-center justify-between rounded-[10px] border border-dashed border-border px-2.5 py-2 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-primary/35 hover:bg-muted hover:text-foreground"
+                        className="mt-0.5 flex min-h-[36px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       >
                         <span>All agents</span>
                         <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">

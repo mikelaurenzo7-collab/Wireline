@@ -131,7 +131,7 @@ export default function SettingsPage() {
         <SettingsTabs />
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <p className="wl-eyebrow wl-workspace-eyebrow mb-4">Profile</p>
+          <p className="wl-eyebrow wl-eyebrow--muted mb-4">Profile</p>
           <div className="grid gap-4">
             <ReadOnlyField label="Name" value={displayName} />
             <ReadOnlyField label="Email" value={email || "—"} />
@@ -139,7 +139,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <p className="wl-eyebrow wl-workspace-eyebrow mb-4">Security</p>
+          <p className="wl-eyebrow wl-eyebrow--muted mb-4">Security</p>
           <div className="grid gap-3">
             <div className="flex flex-col gap-3 rounded-xl bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-foreground">Password</p>
