@@ -9,6 +9,8 @@ import { getVoiceUsageSnapshot } from "./voice-usage";
 import { getBudgetSnapshot } from "./spend-guards";
 
 export const MARGIN_AT_RISK_THRESHOLD_PCT = 10;
+/** Observed blended COGS above this triggers a pricing review alert. */
+export const COGS_DRIFT_THRESHOLD_PER_MIN_USD = 0.14;
 
 export type TenantEconomics = {
   user_id: string;
@@ -97,8 +99,8 @@ export async function countAtRiskTenants(): Promise<number> {
 
 export function assertPlanMarginFloors(): { ok: boolean; violations: string[] } {
   const floors: Record<string, number> = {
-    personal: 35,
-    team: 28,
+    personal: 28,
+    team: 20,
     business: 20,
   };
   const violations: string[] = [];

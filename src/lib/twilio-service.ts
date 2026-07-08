@@ -5,6 +5,8 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
+import { getCreditBalanceUsd } from "./credit-wallet";
+import { SMS_COST_PER_SEGMENT_USD, billSmsMessage } from "./sms-billing";
 
 export type TwilioMessageChannel = "sms" | "whatsapp";
 
@@ -293,8 +295,36 @@ export async function sendTenantMessage(
     };
   }
 
+  if (channel === "sms") {
+    const smsBalance = await getCreditBalanceUsd(userId);
+    if (smsBalance < SMS_COST_PER_SEGMENT_USD) {
+      return {
+        ok: false,
+        configured: true,
+        enabled: true,
+        reason:
+          "Add Conversation Balance before sending SMS. Outbound texts bill at $0.02 per segment.",
+      };
+    }
+  }
+
   try {
     const message = await client.messages.create(prepared.payload as any);
+
+    if (channel === "sms" && message.sid) {
+      const segments = Math.max(1, Number(message.numSegments) || 1);
+      const billed = await billSmsMessage(userId, message.sid, segments);
+      const expected = Math.round(SMS_COST_PER_SEGMENT_USD * segments * 100) / 100;
+      if (billed < expected) {
+        log.warn("sms segment billing incomplete after send", {
+          userId,
+          messageSid: message.sid,
+          segments,
+          billed,
+          expected,
+        });
+      }
+    }
 
     // Mirror the outbound message into the SMS inbox so account holders see
     // the full two-way history alongside replies. Idempotent thread

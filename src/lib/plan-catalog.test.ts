@@ -64,6 +64,16 @@ describe("plan-catalog", () => {
     }
   });
 
+  it("locks canonical voice and capacity rates (Jul 2026)", () => {
+    expect(planById("personal")?.overage_per_min_usd).toBe(0.18);
+    expect(planById("team")?.overage_per_min_usd).toBe(0.16);
+    expect(planById("business")?.overage_per_min_usd).toBe(0.16);
+    expect(planById("team")?.extra_agent_price_usd).toBe(8);
+    expect(planById("business")?.extra_agent_price_usd).toBe(10);
+    expect(planById("team")?.voice_minutes_monthly).toBe(0);
+    expect(planById("business")?.voice_minutes_monthly).toBe(0);
+  });
+
   it("keeps env price id fallback for older local catalog entries", () => {
     process.env.STRIPE_PRO_PRICE_ID = "price_env_business";
 

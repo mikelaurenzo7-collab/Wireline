@@ -13,7 +13,8 @@ describe("voice-pricing-display", () => {
   });
 
   it("estimates minutes from Conversation Balance", () => {
-    expect(estimateVoiceMinutesFromBalance(50, 0.2)).toBe(250);
-    expect(estimateVoiceMinutesFromBalance(0, 0.2)).toBe(0);
+    expect(estimateVoiceMinutesFromBalance(50, 0.18)).toBe(277);
+    expect(estimateVoiceMinutesFromBalance(10, 0.18)).toBe(55);
+    expect(estimateVoiceMinutesFromBalance(0, 0.18)).toBe(0);
   });
 });

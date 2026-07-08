@@ -2,6 +2,8 @@
 
 Status: **Active canonical execution plan**. This plan sequences the approved audit recommendations into a flawless product, monorepo, and business operating system.
 
+**Jul 2026 master plan:** Pricing lock + 90-day GTM (P0–P4) is captured in the Cursor master plan and operationalized here. Canonical commercial rates live in `docs/business-usage-pricing-decision.md` and `src/lib/plan-catalog.ts`. Operator proof: `docs/P0_BILLING_OPS_NOTE.md`.
+
 ## Principle
 
 Wireline should feel broad in capability but narrow in first value: an owner creates an agent, trains it, wires it to real work, and runs calls/texts/follow-up safely. Every repo improvement should either strengthen that loop, protect trust, protect margin, or make the whole multi-surface product easier to operate.
@@ -72,7 +74,7 @@ Exit criteria:
 
 ## Phase 4 — Expansion
 
-Expand only after the wedge loop, trust layer, and margin engine are dependable.
+Expand only after **20+ paying Team/Business accounts or $2k MRR** and 14 days of clean webhook/ledger reconciliation (see `docs/P0_BILLING_OPS_NOTE.md`).
 
 Expansion lanes:
 - CRM/email/calendar automations.

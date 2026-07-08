@@ -119,10 +119,9 @@ export async function trackVoiceMinutes(opts: {
     const plan = planById(planId ?? "personal");
     if (!plan) return;
 
-    // Personal and no-subscription accounts are create/train-free and live-work prepaid.
-    // They do not receive the historical included-minute compatibility allowance.
+    // All tiers bill live PSTN minutes — no included-minute pools (capacity is the subscription).
     const isPayAsYouGo = isBalanceFundedVoicePlan(planId);
-    const included = isPayAsYouGo ? 0 : plan.voice_minutes_monthly;
+    const included = 0;
     const newOverageMinutes = Math.max(0, newUsed - Math.max(included, previousUsed));
     if (newOverageMinutes <= 0) return;
 
@@ -189,10 +188,9 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
   const used = Number(usageRow?.used ?? 0);
   const planId = sub?.plan ?? null;
   const plan = planById(planId ?? "personal");
-  const isPayAsYouGo = isBalanceFundedVoicePlan(planId);
-  const included = isPayAsYouGo ? 0 : (plan?.voice_minutes_monthly ?? 0);
-  const overage = Math.max(0, used - included);
-  const overageRate = plan?.overage_per_min_usd ?? 0.2;
+  const included = 0;
+  const overage = used;
+  const overageRate = plan?.overage_per_min_usd ?? 0.18;
 
   return {
     plan_id: plan?.id ?? null,

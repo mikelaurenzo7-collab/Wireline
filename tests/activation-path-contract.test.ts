@@ -22,12 +22,13 @@ describe("activation path contract", () => {
     expect(overview).toContain("ActivationChecklist");
   });
 
-  it("aligns activation checklist with fleet setup progress (4 steps, live call gate)", () => {
+  it("aligns activation checklist with fleet setup progress (6 steps, live call gate)", () => {
     const checklist = read("src/components/ActivationChecklist.tsx");
     const progress = read("src/lib/fleet-setup-progress.ts");
-    expect(progress).toContain("FLEET_SETUP_STEP_COUNT = 4");
+    expect(progress).toContain("FLEET_SETUP_STEP_COUNT = 6");
     expect(checklist).toContain('id: "live"');
-    expect(checklist).not.toContain('id: "test"');
-    expect(checklist).toContain("does not count toward activation");
+    expect(checklist).toContain('id: "test"');
+    expect(checklist).toContain('id: "approve"');
+    expect(checklist).toContain("No training required for a quick browser preview");
   });
 });

@@ -11,7 +11,11 @@ type WindowWithAnalytics = Window & {
 /** GTM / FB Pixel aliases used in marketing tags (roadmap naming). */
 const GTM_EVENT_ALIASES: Partial<Record<ProductEventName, string>> = {
   agent_created: "agent-created",
+  training_asset_added: "first-training-source-added",
+  number_wired: "first-number-wired",
+  phone_channel_wired: "first-number-wired",
   first_call_completed: "first-call-made",
+  first_next_action_approved: "first_next_action_approved",
   upgrade_to_paid: "upgrade-to-paid",
 };
 

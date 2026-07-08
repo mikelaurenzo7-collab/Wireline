@@ -5,7 +5,7 @@
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { isOwnerEmail } from "./auth-service";
-import { planById, type StripePlanId } from "./plan-catalog";
+import type { StripePlanId } from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
 
@@ -88,15 +88,18 @@ export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
   }
 }
 
-/** Daily voice-minute burst cap derived from monthly plan allowance (~3.6× avg daily). */
-export function voiceMinutesDailyQuotaForTier(tier: PlanTier): number {
-  if (tier === "free") return PLAN_DEFAULTS_FREE_VOICE_DAILY;
-  const plan = planById(tier as StripePlanId);
-  if (!plan) return 15;
-  return Math.max(10, Math.ceil((plan.voice_minutes_monthly / 30) * 3.6));
-}
+/** Daily voice-minute burst cap — independent of billing (no included-minute pools). */
+const VOICE_BURST_DAILY: Record<PlanTier, number> = {
+  free: 10,
+  personal: 10,
+  team: 60,
+  business: 144,
+  enterprise: 360,
+};
 
-const PLAN_DEFAULTS_FREE_VOICE_DAILY = 10;
+export function voiceMinutesDailyQuotaForTier(tier: PlanTier): number {
+  return VOICE_BURST_DAILY[tier] ?? 10;
+}
 
 export async function getSubscriptionPlanId(userId: string): Promise<string | null> {
   const [sub] = await drizzle

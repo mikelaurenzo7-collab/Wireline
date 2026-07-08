@@ -10,6 +10,15 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 - **HTTP routes:** `src/routes/billing-routes.ts` owns `/api/billing/*`, `/api/stripe-webhook`, and add-on checkout. `src/routes/conversation-balance-routes.ts` owns `/api/conversation-balance/*`.
 - **Wallet ledger:** `src/lib/credit-wallet.ts` is the append-only USD ledger for top-ups, burns, refunds, disputes, and grants.
 - **Usage reconciliation:** `src/lib/voice-usage.ts` records monthly voice usage, burns Conversation Balance when applicable, and emits Stripe meter events only when configured.
+- **Welcome credit:** `src/lib/subscription-welcome-credit.ts` grants $10 Conversation Balance once on first Team/Business subscribe.
+- **SMS billing:** `src/lib/sms-billing.ts` + `src/lib/twilio-service.ts` debit $0.02/segment from Conversation Balance.
+
+## Commercial contract (Jul 2026)
+
+- Zero included voice minutes on all tiers — capacity is the subscription; minutes bill at plan rate.
+- Personal: **$0.18/min** from Conversation Balance. Team/Business: **$0.16/min** (balance first, then Stripe meter).
+- Extra agents: Team **$8/mo**, Business **$10/mo**.
+- Ops checklist: [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md).
 
 ## Required environment
 

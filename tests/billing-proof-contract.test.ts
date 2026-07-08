@@ -88,9 +88,7 @@ describe("billing proof contract", () => {
     expect(isBalanceFundedVoicePlan("business")).toBe(false);
     expect(usage).toContain("isBalanceFundedVoicePlan(planId)");
     expect(guard).toContain("isBalanceFundedVoicePlan(planId)");
-    expect(usage).toContain(
-      "They do not receive the historical included-minute compatibility allowance.",
-    );
+    expect(usage).toContain("const included = 0");
   });
 
   it("reconciles usage events against plan, balance, and Stripe meter state", () => {
@@ -104,6 +102,28 @@ describe("billing proof contract", () => {
     expect(usage).toContain("debitForOverage(userId, overageCostUsd, vapiCallId)");
     expect(usage).toContain("emitVoiceMinuteOverageEvent");
     expect(stripeHelpers).toContain("identifier: `voice_overage_${opts.vapiCallId}`");
+  });
+
+  it("grants welcome subscription credit on first Team/Business subscribe", () => {
+    const welcome = read("src/lib/subscription-welcome-credit.ts");
+    const stripeHelpers = read("src/lib/stripe-helpers.ts");
+    expect(welcome).toContain("WELCOME_SUBSCRIPTION_CREDIT_USD = 10");
+    expect(stripeHelpers).toContain("grantWelcomeSubscriptionCredit");
+  });
+
+  it("bills SMS segments from Conversation Balance", () => {
+    const sms = read("src/lib/sms-billing.ts");
+    const twilio = read("src/lib/twilio-service.ts");
+    expect(sms).toContain("SMS_COST_PER_SEGMENT_USD = 0.02");
+    expect(sms).toContain("billSmsMessage");
+    expect(twilio).toContain("billSmsMessage(userId, message.sid, segments)");
+    expect(twilio).toContain("message.numSegments");
+  });
+
+  it("grants welcome credit once per user not per subscription", () => {
+    const welcome = read("src/lib/subscription-welcome-credit.ts");
+    expect(welcome).toContain('type: "welcome_subscription"');
+    expect(welcome).toContain("id: userId");
   });
 
   it("links the canonical billing runbook from the docs index", () => {

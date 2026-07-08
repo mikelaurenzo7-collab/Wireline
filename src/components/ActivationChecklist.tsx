@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Circle, Phone, Sparkles, GraduationCap, Cable } from "lucide-react";
+import { Check, Circle, Phone, Sparkles, GraduationCap, Cable, Play, Inbox } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import {
@@ -19,7 +19,14 @@ type Step = {
 };
 
 function buildSteps(progress: AssistantSetupProgress | null): Step[] {
-  const p = progress ?? { agents: 0, knowledge: 0, numbers: 0, activated: false };
+  const p = progress ?? {
+    agents: 0,
+    knowledge: 0,
+    numbers: 0,
+    calls: 0,
+    activated: false,
+    approvedAction: false,
+  };
   return [
     {
       id: "agent",
@@ -43,11 +50,25 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       icon: Cable,
     },
     {
+      id: "test",
+      label: "Voice previewed",
+      done: p.calls > 0,
+      href: "/knowledge?tab=simulator",
+      icon: Play,
+    },
+    {
       id: "live",
       label: "Live call received",
       done: p.activated,
       href: "/phone?tab=logs",
       icon: Phone,
+    },
+    {
+      id: "approve",
+      label: "First action approved",
+      done: p.approvedAction,
+      href: "/inbox",
+      icon: Inbox,
     },
   ];
 }
@@ -101,7 +122,7 @@ export default function ActivationChecklist({ className }: { className?: string 
           Dismiss
         </button>
       </div>
-      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {steps.map((step) => {
           const Icon = step.icon;
           return (
@@ -135,19 +156,7 @@ export default function ActivationChecklist({ className }: { className?: string 
           <Link to={next.href} className="font-semibold text-primary hover:underline">
             {next.label}
           </Link>
-          {next.id === "live" ? (
-            <>
-              {" "}
-              · Optional:{" "}
-              <Link
-                to="/knowledge?tab=simulator"
-                className="font-medium text-primary hover:underline"
-              >
-                preview in the browser simulator
-              </Link>{" "}
-              (does not count toward activation)
-            </>
-          ) : null}
+          {next.id === "test" ? <> · No training required for a quick browser preview</> : null}
         </p>
       ) : null}
     </section>

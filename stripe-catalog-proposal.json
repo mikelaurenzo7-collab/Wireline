@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-05T00:57:08.717Z",
+  "generated_at": "2026-07-08T22:52:24.364Z",
   "account_id": "acct_1TXb0SJohDtfy3Ik",
-  "status": "applied_with_archive_warnings",
+  "status": "applied",
   "api_version": "2026-02-25.clover",
   "audit_snapshot": {
     "live_subscriptions": 0,
@@ -11,6 +11,7 @@
       "Conversation Balance",
       "Wireline Business",
       "Wireline Enterprise",
+      "Wireline Live Video",
       "Wireline Personal",
       "Wireline Team"
     ],
@@ -60,7 +61,7 @@
         "key": "live_video",
         "id": "prod_UpIyInJ8uVlple",
         "name": "Wireline Live Video",
-        "action": "created"
+        "action": "updated"
       },
       {
         "key": "conversation_balance",
@@ -88,10 +89,10 @@
       },
       {
         "key": "team_extra_agent",
-        "id": "price_1TmdGhJohDtfy3Ikzgblw3Qx",
+        "id": "price_1Tr4KEJohDtfy3IkN6gzsMak",
         "product": "Wireline Team",
         "nickname": "Wireline Team - Extra Agent",
-        "action": "reused",
+        "action": "created",
         "env_target": "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID"
       },
       {
@@ -120,18 +121,18 @@
       },
       {
         "key": "business_extra_agent",
-        "id": "price_1TmdHkJohDtfy3Ik5g6UijYD",
+        "id": "price_1Tr4KEJohDtfy3IkZG0QG82b",
         "product": "Wireline Business",
         "nickname": "Wireline Business - Extra Agent",
-        "action": "reused",
+        "action": "created",
         "env_target": "STRIPE_PRO_EXTRA_AGENT_PRICE_ID"
       },
       {
         "key": "business_voice_overage",
-        "id": "price_1TmdHlJohDtfy3Ik7xEVAwgF",
+        "id": "price_1Tr4KFJohDtfy3Ik70mvNu8Y",
         "product": "Wireline Business",
         "nickname": "Wireline Business - Voice Overage",
-        "action": "reused",
+        "action": "created",
         "env_target": "STRIPE_PRO_OVERAGE_PRICE_ID"
       },
       {
@@ -139,7 +140,7 @@
         "id": "price_1TpeMnJohDtfy3Ikv7t00l2v",
         "product": "Wireline Live Video",
         "nickname": "Live Video Add-on - Monthly",
-        "action": "created",
+        "action": "reused",
         "env_target": "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID"
       },
       {
@@ -209,23 +210,17 @@
         "name": "Sales & Reception"
       }
     ],
-    "archive_warnings": [
-      "Wireline Plus: kept default price price_1Tk6NOJohDtfy3IkY0tGVNrR active because Stripe blocks default-price archival",
-      "Wireline Household: kept default price price_1Tk6NZJohDtfy3IkTsjJfxft active because Stripe blocks default-price archival",
-      "Wireline Custom: kept default price price_1Tj1hiJohDtfy3IkPgH2SPa8 active because Stripe blocks default-price archival",
-      "Wireline Concierge: kept default price price_1Tk6NoJohDtfy3IksxWH7KIu active because Stripe blocks default-price archival",
-      "Wireline Everyday: kept default price price_1Tk6NBJohDtfy3IkR29dIaLF active because Stripe blocks default-price archival"
-    ]
+    "archive_warnings": []
   },
   "generated_env": {
     "STRIPE_BUSINESS_STARTER_PRICE_ID": "price_1TmdGgJohDtfy3IkkHqc12sU",
     "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID": "price_1TmdGhJohDtfy3IkY9hnw43E",
-    "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID": "price_1TmdGhJohDtfy3Ikzgblw3Qx",
+    "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID": "price_1Tr4KEJohDtfy3IkN6gzsMak",
     "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID": "price_1TmdHjJohDtfy3Ik40LV69mU",
     "STRIPE_PRO_PRICE_ID": "price_1TmdHkJohDtfy3Ik2UTD8Bur",
     "STRIPE_PRO_ANNUAL_PRICE_ID": "price_1TmdHkJohDtfy3IkOYlSAMEr",
-    "STRIPE_PRO_EXTRA_AGENT_PRICE_ID": "price_1TmdHkJohDtfy3Ik5g6UijYD",
-    "STRIPE_PRO_OVERAGE_PRICE_ID": "price_1TmdHlJohDtfy3Ik7xEVAwgF",
+    "STRIPE_PRO_EXTRA_AGENT_PRICE_ID": "price_1Tr4KEJohDtfy3IkZG0QG82b",
+    "STRIPE_PRO_OVERAGE_PRICE_ID": "price_1Tr4KFJohDtfy3Ik70mvNu8Y",
     "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID": "price_1TpeMnJohDtfy3Ikv7t00l2v"
   },
   "guardrails": [

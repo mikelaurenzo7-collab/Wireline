@@ -597,7 +597,9 @@ function ActiveSubCard({
                   className={
                     agentCount >= sub.max_agents
                       ? "text-[var(--wireline-color-status-warning)]"
-                      : ""
+                      : agentCount >= sub.max_agents - 1
+                        ? "text-[var(--wireline-color-status-warning)]"
+                        : ""
                   }
                 >
                   {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "agent" : "agents"} in use
@@ -605,6 +607,11 @@ function ActiveSubCard({
               ) : (
                 ""
               )}
+              {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
+                <span className="block mt-1 normal-case tracking-normal text-[var(--wireline-color-status-warning)]">
+                  Near capacity — add an extra agent from Manage subscription or upgrade your plan.
+                </span>
+              ) : null}
               {renews && (
                 <>
                   {sub.max_agents ? " · " : ""}renews {formatDate(renews)}

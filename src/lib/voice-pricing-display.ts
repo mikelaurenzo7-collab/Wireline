@@ -34,7 +34,7 @@ export function publishedVoiceRates(): VoiceRateRow[] {
       planId: id,
       label: plan.name,
       rateUsd: plan.overage_per_min_usd,
-      detail: `Metered voice overage after internal allowance — $${plan.overage_per_min_usd.toFixed(2)}/min.`,
+      detail: `Live PSTN minutes at $${plan.overage_per_min_usd.toFixed(2)}/min — Conversation Balance or metered billing.`,
     });
   }
   return rows;

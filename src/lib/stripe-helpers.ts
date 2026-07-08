@@ -6,6 +6,7 @@ import { getErrorMessage } from "./server-utils";
 import { planByStripePrice, type StripePlan } from "./plan-catalog";
 import { dispatchWebhook } from "./webhook-helpers";
 import { invalidateDashboard } from "./dashboard-cache";
+import { grantWelcomeSubscriptionCredit } from "./subscription-welcome-credit";
 
 export const STRIPE_API_VERSION = "2026-04-22.dahlia" as Stripe.LatestApiVersion;
 
@@ -145,14 +146,14 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       id: userId,
       userId: userId,
       subscriptionStatus: localStatus,
-      maxAgents: plan?.max_agents ?? 3,
+      maxAgents: plan?.max_agents ?? 1,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
       target: [schema.settings.userId],
       set: {
         subscriptionStatus: localStatus,
-        maxAgents: plan?.max_agents ?? 3,
+        maxAgents: plan?.max_agents ?? 1,
         updatedAt: new Date(),
       },
     });
@@ -180,6 +181,12 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       : (sub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
         ? "subscription_created"
         : "subscription_updated";
+
+  if (billingAction === "subscription_created" && plan?.id) {
+    await grantWelcomeSubscriptionCredit(userId, sub.id, plan.id).catch((e: unknown) =>
+      log.warn("welcome subscription credit failed", { userId, error: getErrorMessage(e) }),
+    );
+  }
 
   void auditLogger
     .logBilling(billingAction, {

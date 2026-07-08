@@ -31,7 +31,7 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
   const planId = sub?.plan ?? null;
   const isPayAsYouGo = isBalanceFundedVoicePlan(planId);
   const plan = planById(planId ?? "personal");
-  const minuteRate = plan?.overage_per_min_usd ?? 0.2;
+  const minuteRate = plan?.overage_per_min_usd ?? 0.18;
   const balance = await getCreditBalanceUsd(userId);
   const requiredUsd = Math.round(minuteRate * MIN_BILLABLE_MINUTES_BUFFER * 100) / 100;
 

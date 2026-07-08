@@ -65,7 +65,8 @@ const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
  * - Plans sell the operating layer: agents, numbers, routing, collaboration,
  *   integrations, support, and reliability.
  * - Personal remains top-up-led through Conversation Balance.
- * - Historical minute allowances are preserved for compatibility but are not public promises.
+ * - voice_minutes_monthly is 0 for all tiers — live PSTN is prepaid (Conversation Balance
+ *   or metered overage). Daily burst caps live in plan-entitlements, not here.
  */
 export const STRIPE_PLANS: StripePlan[] = [
   {
@@ -73,8 +74,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     name: "Wireline Personal",
     price_usd_monthly: 0,
     max_agents: 1,
-    voice_minutes_monthly: 60,
-    overage_per_min_usd: 0.2,
+    voice_minutes_monthly: 0,
+    overage_per_min_usd: 0.18,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
     extra_agent_price_usd: 0,
@@ -94,11 +95,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     name: "Wireline Team",
     price_usd_monthly: 29,
     max_agents: 4,
-    voice_minutes_monthly: 500,
-    overage_per_min_usd: 0.18,
+    voice_minutes_monthly: 0,
+    overage_per_min_usd: 0.16,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_BUSINESS_STARTER_PRICE_ID",
-    extra_agent_price_usd: 9,
+    extra_agent_price_usd: 8,
     extraAgentPriceIdEnv: "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 278,
     annualPriceIdEnv: "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID",
@@ -116,11 +117,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     name: "Wireline Business",
     price_usd_monthly: 59,
     max_agents: 8,
-    voice_minutes_monthly: 1_200,
-    overage_per_min_usd: 0.14,
+    voice_minutes_monthly: 0,
+    overage_per_min_usd: 0.16,
     included_phone_numbers: 4,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
-    extra_agent_price_usd: 12,
+    extra_agent_price_usd: 10,
     extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 566,
     annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",

@@ -47,7 +47,7 @@ Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
    Prices:
    - Monthly recurring: `$29`
    - Annual recurring: `$278`
-   - Extra agent recurring: `$9`
+   - Extra agent recurring: `$8`
    - Metered voice overage: `$0.16/min`, backed by Stripe Billing Meter `voice_minutes_overage`
      Metadata:
    - `wireline_plan_id=team`
@@ -56,8 +56,8 @@ Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
    Prices:
    - Monthly recurring: `$59`
    - Annual recurring: `$566`
-   - Extra agent recurring: `$12`
-   - Metered voice overage: `$0.14/min`, backed by Stripe Billing Meter `voice_minutes_overage`
+   - Extra agent recurring: `$10`
+   - Metered voice overage: `$0.16/min`, backed by Stripe Billing Meter `voice_minutes_overage`
      Metadata:
    - `wireline_plan_id=business`
    - `wireline_billing_model=capacity_plus_conversation_balance`
@@ -71,6 +71,21 @@ Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
    - One-time top-up: `$25`
    - One-time top-up: `$50`
      Reason: fixed top-up prices support catalog clarity while the app can still use dynamic Checkout `price_data` for controlled amounts.
+
+- Live work bills at published rates with **zero included voice minutes** on all tiers.
+- Personal Conversation Balance: **$0.18/min**. Team/Business metered voice: **$0.16/min**.
+- First Team/Business subscription grants **$10** welcome Conversation Balance (idempotent ledger grant).
+- SMS outbound segments bill Conversation Balance at **$0.02/segment**.
+
+## Pricing lock (Jul 2026)
+
+| Offer | Platform | Voice | Extra agent |
+| --- | ---: | ---: | ---: |
+| Personal | $0 | $0.18/min (balance) | — |
+| Team | $29/mo | $0.16/min | $8/mo |
+| Business | $59/mo | $0.16/min | $10/mo |
+
+Capacity sells agents, lines, routing, and governance — not bundled minutes.
 
 ## Current env mapping
 

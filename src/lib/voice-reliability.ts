@@ -5,6 +5,7 @@ import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { and, eq, gte } from "drizzle-orm";
 import { VOICE_VARIABLE_COST_PER_MIN_USD, planById } from "./plan-catalog";
+import { COGS_DRIFT_THRESHOLD_PER_MIN_USD } from "./tenant-economics";
 import { isAbnormalHangup } from "./call-reliability-capture";
 
 export { isAbnormalHangup } from "./call-reliability-capture";
@@ -226,7 +227,13 @@ export async function getVoiceReliabilitySummary(opts: {
       totalCostUsd: Math.round(totalCost * 100) / 100,
       totalMinutes: Math.round(totalMinutes * 10) / 10,
     },
-    healthy: latencyHealthy && hangupHealthy && toolHealthy && escalationHealthy && webhookHealthy,
+    healthy:
+      latencyHealthy &&
+      hangupHealthy &&
+      toolHealthy &&
+      escalationHealthy &&
+      webhookHealthy &&
+      (cogsPerMin == null || cogsPerMin <= COGS_DRIFT_THRESHOLD_PER_MIN_USD),
   };
 }
 
