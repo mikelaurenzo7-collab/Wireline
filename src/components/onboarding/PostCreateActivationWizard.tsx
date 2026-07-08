@@ -437,17 +437,17 @@ export default function PostCreateActivationWizard({
                   {POST_CREATE_WIZARD_COPY.steps.test.detail}
                 </p>
               </div>
-              <div
-                onFocusCapture={() =>
+              <RoleplaySandbox
+                agentId={payload.agentId}
+                agentName={payload.agentName}
+                onTestStarted={() =>
                   emitProductEventOnce({
                     event: "first_test_call_started",
                     agentId: payload.agentId,
                     metadata: { channel: "roleplay" },
                   })
                 }
-              >
-                <RoleplaySandbox agentId={payload.agentId} agentName={payload.agentName} />
-              </div>
+              />
               {hasLine && phoneNumber ? (
                 <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
                   <p className="text-xs font-semibold text-foreground">
