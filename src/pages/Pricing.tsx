@@ -106,6 +106,8 @@ const PRICING_TIERS = [
   },
 ] as const;
 
+type PricingTier = (typeof PRICING_TIERS)[number];
+
 const COMMERCIAL_RULES = [
   ["Create", "Templates, voices, and setup are unlocked before billing."],
   ["Fund", "Conversation Balance pays for calls, texts, and provider-backed actions."],
@@ -135,46 +137,26 @@ const BUYER_ASSURANCES = [
   },
 ] as const;
 
-const COMPETITOR_POSITIONING = [
+const BUYER_DECISION_ROWS = [
   {
-    platform: "Wireline",
-    useCase: "Voice + live presenter agents",
-    deployment: "Self-serve SaaS",
-    pricing: "Free create/train; Conversation Balance + Team/Business capacity",
-    edge: "Only lane blending live calls with on-screen presenter lip-sync and Letterpress UX.",
-    highlight: true,
+    choice: "Raw voice APIs",
+    risk: "Great for engineers, but the buyer still has to assemble UX, logs, routing, billing, QA, and support.",
+    wireline: "A packaged phone operation: create, train, wire, run, review, and bill from one product surface.",
   },
   {
-    platform: "Retell AI",
-    useCase: "Phone sales/support agents",
-    deployment: "SaaS builder",
-    pricing: "Metered voice AI with enterprise infrastructure options",
-    edge: "Strong phone automation; Wireline adds a guided operating console and live presenter lane.",
-    highlight: false,
+    choice: "Generic call bot tools",
+    risk: "Easy to demo, often messy once teams need approvals, handoffs, CRM context, and spend controls.",
+    wireline: "Team and Business capacity with numbers, approvals, inbox, analytics, and Conversation Balance.",
   },
   {
-    platform: "Vapi.ai",
-    useCase: "Developer voice toolkit",
-    deployment: "API / SDK",
-    pricing: "Usage-based API minutes plus model and line economics",
-    edge: "Flexible for engineers; Wireline packages the runtime into customer-ready workflows.",
-    highlight: false,
+    choice: "Human answering services",
+    risk: "Useful coverage, but context, consistency, reporting, and follow-up often fragment across vendors.",
+    wireline: "A trained agent that keeps scripts, outcomes, transcripts, routing, and coaching in the workspace.",
   },
   {
-    platform: "Bland AI",
-    useCase: "SMB voice agents",
-    deployment: "Voice-agent platform",
-    pricing: "Usage tiers with higher-volume platform commitments",
-    edge: "Built for call volume; Wireline is betting on a calmer workspace and presenter trust layer.",
-    highlight: false,
-  },
-  {
-    platform: "Synthflow AI",
-    useCase: "SMB and enterprise voice workflows",
-    deployment: "No-code voice platform",
-    pricing: "Volume, integrations, security, and support drive contract scope",
-    edge: "Flow builder depth; Wireline differentiates with live presenter identity and first-call activation.",
-    highlight: false,
+    choice: "Avatar/video tools",
+    risk: "Presentation alone does not run the phone operation or maintain the business workflow behind it.",
+    wireline: "Voice-first operations with an optional presenter layer for higher-trust business moments.",
   },
 ] as const;
 
@@ -200,6 +182,51 @@ const FAQ = [
 const VOICE_RATES = publishedVoiceRates();
 const BALANCE_MINUTE_ESTIMATES = conversationBalanceMinuteEstimates();
 
+function offerForPlan(plan: PricingTier) {
+  const numericPrice = Number(plan.price.replace("$", ""));
+  return {
+    "@type": "Offer",
+    name: `Wireline ${plan.name}`,
+    url: `https://trywireline.com${plan.ctaPath}`,
+    price: Number.isFinite(numericPrice) ? numericPrice : undefined,
+    priceCurrency: Number.isFinite(numericPrice) ? "USD" : undefined,
+    availability: "https://schema.org/InStock",
+    description: plan.detail,
+  };
+}
+
+const PRICING_JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://trywireline.com/pricing#webpage",
+      url: "https://trywireline.com/pricing",
+      name: "Wireline pricing",
+      description:
+        "Wireline pricing for Personal, Team, Business, and Enterprise voice agents with Conversation Balance for live work.",
+    },
+    {
+      "@type": "OfferCatalog",
+      "@id": "https://trywireline.com/pricing#plans",
+      name: "Wireline pricing plans",
+      itemListElement: PRICING_TIERS.map(offerForPlan),
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://trywireline.com/pricing#faq",
+      mainEntity: FAQ.map(([question, answer]) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: answer,
+        },
+      })),
+    },
+  ],
+};
+
 export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
@@ -207,6 +234,10 @@ export default function Pricing() {
         title="Pricing | Wireline - Personal, team, business, and enterprise phone agents"
         description="Create and train a personal phone agent for free, fund live work with Conversation Balance, or move into Team and Business capacity when Wireline becomes an operating lane."
         path="/pricing"
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(PRICING_JSON_LD) }}
       />
       <PrecisionPublicHeader />
 
@@ -246,7 +277,7 @@ export default function Pricing() {
                 to="/signup"
                 className="marketing-btn-primary min-h-12 px-6 text-sm font-semibold"
               >
-                Start free <ArrowRight size={14} />
+                Start free agent <ArrowRight size={14} />
               </Link>
               <a
                 href="#tiers"
@@ -394,8 +425,9 @@ export default function Pricing() {
               Clear per-minute rates — no surprise math after the call.
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Competitors often quote platform fees plus carrier plus model costs. Wireline
-              publishes one voice rate per funding path so you can budget before going live.
+              Many phone stacks split platform, carrier, model, and add-on costs across separate
+              invoices. Wireline publishes one voice rate per funding path so you can budget before
+              going live.
             </p>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {VOICE_RATES.map((row) => (
@@ -483,8 +515,8 @@ export default function Pricing() {
                   "Extra agents and additional line capacity can become clean add-ons instead of hidden usage surprises.",
                 ],
                 [
-                  "Lock-in",
-                  "Once a number, voice, playbook, transcripts, and outcomes live in Wireline, switching costs become real.",
+                  "Retention",
+                  "Once a number, voice, playbook, transcripts, and outcomes live in Wireline, the account has a real operating asset.",
                 ],
                 [
                   "Trust",
@@ -516,45 +548,32 @@ export default function Pricing() {
                   fontWeight: 400,
                 }}
               >
-                Live voice with a face — not another light-mode phone console.
+                More than a bot. More focused than a toolkit.
               </h2>
               <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
-                Voice platforms stop at audio. Avatar tools stop at rendered video. Wireline is
-                building the lane where callers meet a trained agent with a presenter — on a warm
-                ink canvas designed for long operating sessions.
+                The winning wedge is not more feature noise. It is the cleanest way for a buyer to
+                create an agent, train its rules, wire the number and tools, then run the phone
+                operation with visibility and spend control.
               </p>
             </div>
-            <div className="mt-10 overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                    <th className="px-3 py-3 font-semibold">Platform</th>
-                    <th className="px-3 py-3 font-semibold">Use case</th>
-                    <th className="px-3 py-3 font-semibold">Deployment</th>
-                    <th className="px-3 py-3 font-semibold">Buying posture</th>
-                    <th className="px-3 py-3 font-semibold">Gap vs Wireline</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {COMPETITOR_POSITIONING.map((row) => (
-                    <tr
-                      key={row.platform}
-                      className={`border-b border-border/70 ${row.highlight ? "bg-primary/5" : ""}`}
-                    >
-                      <td className="px-3 py-4 font-semibold text-foreground">{row.platform}</td>
-                      <td className="px-3 py-4 text-muted-foreground">{row.useCase}</td>
-                      <td className="px-3 py-4 text-muted-foreground">{row.deployment}</td>
-                      <td className="px-3 py-4 text-muted-foreground">{row.pricing}</td>
-                      <td className="px-3 py-4 text-foreground">{row.edge}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="mt-10 grid gap-3 md:grid-cols-2">
+              {BUYER_DECISION_ROWS.map((row) => (
+                <article
+                  key={row.choice}
+                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
+                >
+                  <p className="wl-eyebrow text-primary">{row.choice}</p>
+                  <p className="mt-4 text-sm leading-6 text-muted-foreground">{row.risk}</p>
+                  <p className="mt-4 border-t border-border pt-4 text-sm font-medium leading-6 text-foreground">
+                    {row.wireline}
+                  </p>
+                </article>
+              ))}
             </div>
             <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-              Public market pages change often. Wireline commercial truth is the tier cards above
-              plus <span className="text-foreground">docs/business-usage-pricing-decision.md</span>{" "}
-              in the repository.
+              Pricing claims on public competitor pages change often. This page keeps Wireline's
+              durable positioning tied to the tier cards above plus{" "}
+              <span className="text-foreground">docs/business-usage-pricing-decision.md</span>.
             </p>
           </div>
         </section>
