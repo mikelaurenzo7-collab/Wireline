@@ -22,7 +22,6 @@ jobs:
     name: Analyze TypeScript/JavaScript
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
     permissions:
       actions: read
       contents: read

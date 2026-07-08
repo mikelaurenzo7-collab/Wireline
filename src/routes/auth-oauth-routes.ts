@@ -40,7 +40,6 @@ import { sql } from "drizzle-orm";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { authSuccessBody, setSessionCookie } from "../lib/session-cookie";
 import { scheduleFounderBootstrap } from "../lib/founder-bootstrap";
-import { canAccessFounderCockpit } from "../lib/founder-cockpit-access";
 import { generateOAuthState, verifyOAuthState } from "../lib/oauth-helpers";
 import { getCanonicalAppUrl } from "../lib/app-url";
 import {
@@ -657,10 +656,6 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
       email: entry.user.email,
       full_name: entry.user.fullName,
       is_owner: entry.isOwner,
-      founder_cockpit: canAccessFounderCockpit({
-        id: entry.user.id,
-        email: entry.user.email,
-      }),
       account_type,
     }),
     user_id: entry.user.id,

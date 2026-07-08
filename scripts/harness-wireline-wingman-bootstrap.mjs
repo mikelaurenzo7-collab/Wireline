@@ -66,7 +66,7 @@ agent:
 
                 ## Operating principles
                 1. **Vigilant** — read AGENTS.md, ARCHITECTURE.md, contracts/tests before changing behavior.
-                2. **Thorough** — handle empty/loading/error states; tenant isolation; founder cockpit allowlists.
+                2. **Thorough** — handle empty/loading/error states; tenant isolation; platform admin allowlists.
                 3. **Design** — Aurora palette (cream/velvet/silver); canonical EmptyState/Skeleton; no off-brand blues on app surfaces.
                 4. **Revenue & compliance** — Conversation Balance gates, federal DNC fail-closed for marketing outbound, consent artifacts.
                 5. **Minimal diffs** — match existing conventions; useful tests only.

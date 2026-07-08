@@ -284,7 +284,7 @@ export default function CreateAgentDialog({
       <form
         onSubmit={create}
         onKeyDown={onKeyDown}
-        className="studio-card my-auto max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto p-0 shadow-2xl"
+        className="wl-paper wl-paper-elevated my-auto max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto p-0 shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-agent-title"
@@ -386,7 +386,8 @@ export default function CreateAgentDialog({
 
           <div className="mt-4 flex flex-wrap gap-2" aria-label="Quick briefs">
             {ROLE_TEMPLATES.slice(0, 4).map((item) => {
-              const prompt = activePosture === "business" ? item.businessPrompt : item.personalPrompt;
+              const prompt =
+                activePosture === "business" ? item.businessPrompt : item.personalPrompt;
               return (
                 <button
                   key={item.value}

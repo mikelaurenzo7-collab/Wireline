@@ -21,7 +21,6 @@ const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const PhoneSettings = lazy(() => import("../pages/PhoneSettings"));
 const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
-const FounderDashboardPage = lazy(() => import("../pages/FounderDashboardPage"));
 
 const loading = <RouteFallback />;
 
@@ -82,7 +81,8 @@ export default function AppRoutes() {
         <Route path="/settings/*" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminWorkspace />} />
         <Route path="/admin/*" element={<AdminWorkspace />} />
-        <Route path="/founder" element={<FounderDashboardPage />} />
+        <Route path="/founder" element={<Navigate to="/overview" replace />} />
+        <Route path="/founder/*" element={<Navigate to="/overview" replace />} />
 
         <Route path="/pulse" element={<Navigate to="/overview" replace />} />
         <Route path="/fleet" element={<Navigate to="/studio" replace />} />

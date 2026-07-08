@@ -48,7 +48,7 @@ Files:
 - ~~`src/services/google-drive-sync.ts`~~ (deleted)
 - `src/services/google-drive-sync-v2.ts` (used by workspace knowledge routes)
 
-Status: **deferred product feature** - legacy v1 ingest removed; v2 service retained for future first-class Knowledge UI.
+Status: **deferred product feature** — legacy v1 ingest removed; v2 service retained for future first-class Knowledge UI. **Decision (2026-07-07):** keep `google-drive-sync-v2.ts` as plumbing; ship Drive in Knowledge UI in Horizon 1, not Horizon 0.
 
 ### 4. Legacy Vapi v1 folder and helpers
 

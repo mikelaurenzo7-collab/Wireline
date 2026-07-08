@@ -1,6 +1,6 @@
 # Code Review Master Plan — 2026-07-06
 
-Status: **Executed** — verified findings implemented; July 2026 forward pass completed including founder-only ops cockpit at `/founder` (allowlist-gated).
+Status: **Executed** — verified findings implemented; July 2026 forward pass completed including founder cockpit removal pending a future dedicated ops surface.
 
 ## Verified critical / high findings (executed)
 
@@ -31,7 +31,7 @@ Status: **Executed** — verified findings implemented; July 2026 forward pass c
 | Extension handoff bridge + policy `--check` | **Done** — manifest `0.1.1` (store republish pending) |
 | Legacy Google Drive ingest (`drive-routes`, `google-drive-sync`) | **Deleted** — v2 path via `google-drive-sync-v2` retained |
 | Daily Brief / Insights routes | **Mounted** — removed from `tsconfig` exclude |
-| Founder operating cockpit / live metrics dashboard | **Shipped** — `/founder` + `/api/founder/*`; allowlist via `OWNER_EMAIL` / `FOUNDER_COCKPIT_*`; never in tenant Admin |
+| Launch readiness + margin scorecard | **Partial** — `GET /api/health/launch-readiness` + observability dashboards; dedicated ops UI deferred |
 
 ## Deferred (documented)
 
@@ -41,7 +41,7 @@ Status: **Executed** — verified findings implemented; July 2026 forward pass c
 | Vapi v1 folder deletion | Production uses `vapi-v2`; legacy folder still excluded pending full port |
 | Android local `assembleDebug` | No JDK on dev machine; CI workflow remains gate |
 | Browser extension store republish | Build verified; Chrome Web Store submission is manual |
-| Founder live metrics / ops cockpit | Shipped at `/founder`; see `docs/WIRELINE_FORWARD_PLAN_2026-07.md` |
+| Launch readiness API + observability | See `docs/WIRELINE_FORWARD_PLAN_2026-07.md` and `docs/LAUNCH_READINESS_AND_MARGIN.md` |
 
 ## Verification gate (2026-07-07)
 

@@ -6,7 +6,6 @@ import { and, eq, gte, isNull } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
-import { canAccessFounderCockpit } from "./founder-cockpit-access";
 export {
   getOwnerEmails,
   resetOwnerEmailCacheForTests,
@@ -72,7 +71,6 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 function authUserFlags(user: { id: string; email: string }) {
   return {
     is_owner: isOwnerEmail(user.email),
-    founder_cockpit: canAccessFounderCockpit(user),
   };
 }
 

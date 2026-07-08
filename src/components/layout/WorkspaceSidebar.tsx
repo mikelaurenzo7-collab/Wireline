@@ -21,7 +21,6 @@ import {
   Settings,
   LifeBuoy,
   LogOut,
-  Crown,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -238,19 +237,6 @@ export default function WorkspaceSidebar({
             <LifeBuoy className="w-4 h-4" />
             {!isCollapsed && <span>Help & Support</span>}
           </Link>
-
-          {user?.founder_cockpit && (
-            <Link
-              to="/founder"
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-[var(--wireline-color-surface-subtle)] text-sm",
-                isCollapsed && "justify-center px-2",
-              )}
-            >
-              <Crown className="w-4 h-4" />
-              {!isCollapsed && <span>Founder Dashboard</span>}
-            </Link>
-          )}
 
           <button
             onClick={signOut}

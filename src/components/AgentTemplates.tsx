@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import DeployAgentModal, { DeployValues } from "./DeployAgentModal";
@@ -391,14 +390,19 @@ function TemplateCard({
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-[var(--wireline-color-feedback-success-surface)]">
-            <Icon aria-hidden="true" className="w-5 h-5 text-[var(--wireline-color-action-primary-default)]" />
+            <Icon
+              aria-hidden="true"
+              className="w-5 h-5 text-[var(--wireline-color-action-primary-default)]"
+            />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
             {alreadyDeployed && (
               <span
                 className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success wl-text-success"
-                title={deployedCount === 1 ? "Already in your agents" : `${deployedCount} in your agents`}
+                title={
+                  deployedCount === 1 ? "Already in your agents" : `${deployedCount} in your agents`
+                }
               >
                 <Check aria-hidden="true" className="w-2.5 h-2.5" />
                 {deployedCount === 1 ? "Deployed" : `Deployed ×${deployedCount}`}
@@ -607,7 +611,11 @@ export default function AgentTemplates() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <div className="flex gap-1.5 flex-wrap" role="group" aria-label="Template category filter">
+          <div
+            className="flex gap-1.5 flex-wrap"
+            role="group"
+            aria-label="Template category filter"
+          >
             {CATEGORIES.map((cat) => {
               const selected = activeCategory === cat;
               return (

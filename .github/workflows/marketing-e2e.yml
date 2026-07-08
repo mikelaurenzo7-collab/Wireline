@@ -26,13 +26,15 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      # package-lock is retained for local installs but has historical root-entry
-      # drift. Install from package.json until full regeneration lands.
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Run marketing e2e smoke
         run: npm run test:e2e
+        env:
+          CI: "true"
+          WIRELINE_E2E_EMAIL: ${{ secrets.WIRELINE_E2E_EMAIL }}
+          WIRELINE_E2E_PASSWORD: ${{ secrets.WIRELINE_E2E_PASSWORD }}

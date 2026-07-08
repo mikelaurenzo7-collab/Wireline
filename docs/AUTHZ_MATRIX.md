@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 276
-**Protected:** 233
+**Routes scanned:** 274
+**Protected:** 231
 **Public (allowlisted):** 43
 **Violations:** 0
 
@@ -197,8 +197,6 @@
 | fleet-routes.ts | PATCH | `/api/Assistants/tasks/:id` | inline | — | — | Protected |
 | fleet-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/triage` | inline | — | — | Protected |
-| founder-cockpit-routes.ts | GET | `/api/founder/cockpit` | inline | founder_cockpit | — | Protected |
-| founder-cockpit-routes.ts | GET | `/api/founder/launch-readiness` | inline | founder_cockpit | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |

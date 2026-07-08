@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { GraduationCap, WandSparkles } from "lucide-react";
+import { GraduationCap, GitBranch, WandSparkles } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -25,7 +25,7 @@ function EmptyTraining() {
     <div className="grid min-h-[520px] flex-1 place-items-center py-8">
       <EmptyState
         density="default"
-        className="studio-card w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
+        className="wl-paper wl-paper-elevated w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
         icon={<GraduationCap size={30} strokeWidth={1.7} />}
         title="Training starts with an agent"
         action={
@@ -54,12 +54,26 @@ function EmptyTraining() {
 
 function FlowsTab({ agentId }: { agentId: string }) {
   return (
-    <section className="studio-card mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
-      <h2 className="wl-card-title">Flows</h2>
-      <Button asChild>
-        <Link to={`/studio?agent=${encodeURIComponent(agentId)}`}>Open Studio</Link>
-      </Button>
-    </section>
+    <EmptyState
+      density="default"
+      className="wl-paper wl-paper-elevated mx-auto max-w-lg px-8 py-12 text-center"
+      icon={<GitBranch size={28} strokeWidth={1.7} aria-hidden="true" />}
+      title="Call flows live in Studio"
+      action={
+        <div className="space-y-3">
+          <p className="mx-auto max-w-[44ch] text-sm leading-relaxed text-muted-foreground">
+            Flow composer for routing, handoffs, and escalation is in Studio today. A dedicated
+            Training flows surface is coming soon.
+          </p>
+          <Button asChild>
+            <Link to={`/studio?agent=${encodeURIComponent(agentId)}&view=workspace`}>
+              <WandSparkles aria-hidden="true" size={16} />
+              Open flow composer
+            </Link>
+          </Button>
+        </div>
+      }
+    />
   );
 }
 
@@ -76,7 +90,7 @@ function SimulatorTab({
 }) {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <section className="studio-card p-6">
+      <section className="wl-paper wl-paper-elevated p-6">
         <h2 className="wl-card-title">Live voice test</h2>
         <div className="mt-5 space-y-4">
           <WirelineLiveVoiceProfile agentId={agentId} />

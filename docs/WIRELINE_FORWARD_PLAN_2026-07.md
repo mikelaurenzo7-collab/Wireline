@@ -1,6 +1,6 @@
 # Wireline Forward Plan — July 2026
 
-**Status:** Active · **Last audit:** 2026-07-07 · **Branch baseline:** `main` after cockpit lockdown + governance remediation
+**Status:** Active · **Last audit:** 2026-07-07 · **Branch baseline:** `main` after founder cockpit removal + governance remediation
 
 ## North star
 
@@ -14,20 +14,18 @@ Wireline wins as the **voice AI business operating system** for people, teams, a
 
 | Area | Verdict |
 |------|---------|
-| Founder cockpit allowlist | Real defense in depth — UI, API, auth payloads, no `is_admin` bypass |
 | Federal DNC wiring | Web, mobile, campaign dialer → `evaluateOutboundConsent` |
 | Federal DNC fail-closed | Vendor configured + lookup error → block dial |
 | CI / contracts | `verify-full` on `main`, 70+ contract tests, CodeQL |
 | Product truth | Trust Center, Compare beta copy, voice $/min clarity |
+| Launch readiness API | `GET /api/health/launch-readiness` for ops scorecard inputs |
 
 ### Gaps closed in governance remediation
 
 | ID | Finding | Fix |
 |----|---------|-----|
 | H1 | Stale `AUTHZ_MATRIX.md` | Regenerate; `authz:check` fails on drift |
-| H2 | Scanner hid `requireFounderCockpit` | RBAC column + middleware in scanner |
-| H3 | Thin cockpit security tests | Security contract + stronger middleware assertions |
-| H4 | OAuth fallback missing `founder_cockpit` | `OAuthComplete.tsx` |
+| H2 | Founder cockpit surface drift | Removed UI + `/api/founder/*`; legacy `/founder` redirects to `/overview` |
 | H5 | Outbound contract missing federal DNC | Extended compliance contract |
 | M1 | Dead `OwnerOnlyRoute.tsx` | Deleted |
 | M2–M4 | Docs drift | `ARCHITECTURE.md`, `AGENTS.md`, this plan |
@@ -37,7 +35,7 @@ Wireline wins as the **voice AI business operating system** for people, teams, a
 
 | Item | Owner | Gate |
 |------|-------|------|
-| Activation E2E proof | Founder | Signup → PSTN call → top-up; validate `/founder` metrics |
+| Activation E2E proof | Founder | Signup → PSTN call → top-up; validate launch-readiness + billing |
 | Federal DNC vendor credentials | Ops | `FEDERAL_DNC_API_URL` + `FEDERAL_DNC_API_KEY` in Vercel |
 | Upstash Redis in production | Ops | Per `startup.ts` prod warning |
 
@@ -47,9 +45,9 @@ Wireline wins as the **voice AI business operating system** for people, teams, a
 
 ### Horizon 0 — code complete, ops proof pending
 
-- [x] Founder cockpit `/founder` (allowlist-only)
 - [x] Trust Center, pricing clarity, outbound hub, product truth
 - [x] Federal DNC hook, AuthZ governance
+- [x] Founder cockpit removed (will revisit as a dedicated ops surface later)
 - [ ] Activation E2E on production
 
 ### Horizon 1 — Use-case excellence (weeks 4–10)
@@ -68,11 +66,10 @@ SSO, live supervisor audio, SDK, marketplace, ERP connectors.
 
 ## Agent directives
 
-1. Never gate cockpit on `is_owner` / `is_admin` — use `founder_cockpit` only.
-2. Founder APIs only in `founder-cockpit-routes.ts` + `requireFounderCockpit`.
-3. After new routes: `npm run authz:check` and commit matrix.
-4. New dial surfaces: `isFederalDncListed` + `evaluateOutboundConsent`.
-5. Never embed cockpit in tenant Admin.
+1. Do not reintroduce founder cockpit routes, auth flags, or nav without an explicit product spec.
+2. After new routes: `npm run authz:check` and commit matrix.
+3. New dial surfaces: `isFederalDncListed` + `evaluateOutboundConsent`.
+4. Ops metrics belong in health/observability APIs — not tenant Admin.
 
 ---
 

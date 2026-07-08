@@ -12,8 +12,6 @@ export interface User {
   role?: string;
   /** True when email matches OWNER_EMAIL / OWNER_EMAILS (platform owner perks). */
   is_owner?: boolean;
-  /** True only for founder-approved cockpit operators — stricter than is_owner. */
-  founder_cockpit?: boolean;
 }
 
 export interface Session {

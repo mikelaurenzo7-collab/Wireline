@@ -64,11 +64,10 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 ## Runtime services
 
 - **Auth and authorization:** session middleware plus user-scoped ownership checks.
-- **Platform operations (founder-only):** `/founder` surfaces acquisition, activation,
-  margin, and launch-readiness metrics. APIs live at `/api/founder/*` and require
-  `requireFounderCockpit` (allowlist via `OWNER_EMAIL` / `FOUNDER_COCKPIT_*` env vars).
-  This is stricter than tenant admin (`is_admin`) and must never appear in customer
-  tenant Admin settings.
+- **Launch readiness API:** `GET /api/health/launch-readiness` is gated by
+  `requireMonitorToken` (`HEALTH_MONITOR_TOKEN` / `CRON_SECRET`), not tenant session
+  auth; it exposes scorecard capability levels for ops monitors. There is no separate
+  founder cockpit UI in the product surface at this time.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`.
 - **Billing:** Stripe-backed entitlements, plan catalog, Conversation Balance, checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice:**

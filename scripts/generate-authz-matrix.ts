@@ -24,7 +24,6 @@ const AUTH_MIDDLEWARE = [
   "requirePermission",
   "requireRole",
   "requirePlatformAdmin",
-  "requireFounderCockpit",
   "requireMonitorToken",
   "requireInternalJwtSecret",
 ];
@@ -114,7 +113,6 @@ interface RouteEntry {
   hasInlineAuth: boolean;
   hasRouterAuth: boolean;
   hasRequirePermission: boolean;
-  hasRequireFounderCockpit: boolean;
   hasRequirePlatformAdmin: boolean;
   allowReason: string | null;
   line: number;
@@ -185,7 +183,6 @@ function scanFile(filePath: string, mountBase: string): RouteEntry[] {
       hasInlineAuth: AUTH_MIDDLEWARE.some((middleware) => middlewareChain.includes(middleware)),
       hasRouterAuth: routerAuth,
       hasRequirePermission: middlewareChain.includes("requirePermission"),
-      hasRequireFounderCockpit: middlewareChain.includes("requireFounderCockpit"),
       hasRequirePlatformAdmin: middlewareChain.includes("requirePlatformAdmin"),
       allowReason: allowlistReason(fullPath),
       line: lineOf(content, match.index),
@@ -203,7 +200,6 @@ function resolveRouteFile(file: string): string {
 
 function formatRbac(entry: RouteEntry): string {
   const tags: string[] = [];
-  if (entry.hasRequireFounderCockpit) tags.push("founder_cockpit");
   if (entry.hasRequirePlatformAdmin) tags.push("platform_admin");
   if (entry.hasRequirePermission) tags.push("permission");
   return tags.length ? tags.join("+") : "—";

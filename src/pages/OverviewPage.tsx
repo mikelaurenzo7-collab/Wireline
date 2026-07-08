@@ -2,6 +2,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { ArrowRight, BarChart3, Bot, Cable, Clock3, Phone, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import ActivationChecklist from "../components/ActivationChecklist";
 import { Button, EmptyState, Skeleton } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -382,6 +383,8 @@ export default function OverviewPage() {
           </div>
         </section>
 
+        <ActivationChecklist className="mb-2" />
+
         <WidgetBoundary label="Daily brief">
           <Suspense fallback={<RouteFallback />}>
             <DailyBriefPanel />
@@ -389,7 +392,7 @@ export default function OverviewPage() {
         </WidgetBoundary>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_1fr]" aria-label="Agents and recent calls">
-          <article className="studio-card p-5 sm:p-6">
+          <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                 Agents
@@ -408,7 +411,7 @@ export default function OverviewPage() {
             )}
           </article>
 
-          <article className="studio-card p-5 sm:p-6">
+          <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                 Recent calls

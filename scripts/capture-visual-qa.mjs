@@ -2,7 +2,7 @@ import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:5000").replace(
+const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000").replace(
   /\/$/,
   "",
 );
@@ -70,6 +70,14 @@ function parseList(value) {
 }
 
 const viewportFilter = parseList(process.env.WIRELINE_VISUAL_VIEWPORTS);
+const marketingRouteFilter = parseList(process.env.WIRELINE_VISUAL_MARKETING_ROUTES);
+const authenticatedRouteFilter = parseList(process.env.WIRELINE_VISUAL_AUTH_ROUTES);
+const activeMarketingRoutes = marketingRouteFilter.size
+  ? marketingRoutes.filter((route) => marketingRouteFilter.has(route))
+  : marketingRoutes;
+const activeAuthenticatedRoutes = authenticatedRouteFilter.size
+  ? authenticatedRoutes.filter((route) => authenticatedRouteFilter.has(route))
+  : authenticatedRoutes;
 const activeViewports = viewportFilter.size
   ? viewports.filter((viewport) => viewportFilter.has(viewport.name))
   : viewports;
@@ -112,6 +120,19 @@ async function settle(page) {
   await page.waitForTimeout(450);
 }
 
+function pushIssue(issues, issue) {
+  const P0 = new Set([
+    "http",
+    "navigation",
+    "capture",
+    "overflow",
+    "control-overflow",
+    "redirect",
+    "auth",
+  ]);
+  issues.push({ ...issue, severity: P0.has(issue.kind) ? "P0" : "P1" });
+}
+
 async function auditResponsiveLayout(page, viewportName, route, issues) {
   const findings = await page.evaluate(() => {
     const viewportWidth = window.innerWidth;
@@ -152,7 +173,7 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
   });
 
   if (findings.pageOverflow) {
-    issues.push({
+    pushIssue(issues, {
       viewport: viewportName,
       route,
       kind: "overflow",
@@ -160,7 +181,7 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
     });
   }
   for (const control of findings.controls) {
-    issues.push({
+    pushIssue(issues, {
       viewport: viewportName,
       route,
       kind: "control-overflow",
@@ -190,7 +211,7 @@ async function captureRoute(page, viewportName, route, issues) {
   try {
     response = await gotoWithRetry(page, route);
   } catch (error) {
-    issues.push({
+    pushIssue(issues, {
       viewport: viewportName,
       route,
       kind: "navigation",
@@ -202,9 +223,9 @@ async function captureRoute(page, viewportName, route, issues) {
   const status = response?.status() ?? null;
   const finalUrl = page.url();
   if (status && status >= 400)
-    issues.push({ viewport: viewportName, route, kind: "http", detail: String(status) });
+    pushIssue(issues, { viewport: viewportName, route, kind: "http", detail: String(status) });
   if (!finalUrl.startsWith(`${baseUrl}${route.split("?")[0]}`)) {
-    issues.push({ viewport: viewportName, route, kind: "redirect", detail: finalUrl });
+    pushIssue(issues, { viewport: viewportName, route, kind: "redirect", detail: finalUrl });
   }
   await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
@@ -216,7 +237,7 @@ function attachPageDiagnostics(page, viewportName, issues) {
   page.setDefaultNavigationTimeout(45_000);
   page.on("console", (message) => {
     if (message.type() === "error") {
-      issues.push({
+      pushIssue(issues, {
         viewport: viewportName,
         route: page.url(),
         kind: "console",
@@ -228,7 +249,7 @@ function attachPageDiagnostics(page, viewportName, issues) {
     const failure = request.failure();
     if (isIgnoredRequestFailure(request)) return;
     if (failure?.errorText) {
-      issues.push({
+      pushIssue(issues, {
         viewport: viewportName,
         route: page.url(),
         kind: "request",
@@ -262,7 +283,7 @@ async function captureRouteInFreshPage(context, viewportName, route, issues) {
       `Capture timed out after ${routeTimeoutMs}ms`,
     );
   } catch (error) {
-    issues.push({
+    pushIssue(issues, {
       viewport: viewportName,
       route,
       kind: "capture",
@@ -288,7 +309,7 @@ async function signIn(page, viewportName, issues) {
     await settle(page);
     return true;
   } catch (error) {
-    issues.push({
+    pushIssue(issues, {
       viewport: viewportName,
       route: "/signin",
       kind: "auth",
@@ -328,11 +349,11 @@ try {
       storageState: authenticatedStorageState ?? undefined,
     });
 
-    for (const route of marketingRoutes)
+    for (const route of activeMarketingRoutes)
       await captureRouteInFreshPage(context, viewport.name, route, issues);
 
     if (authenticatedStorageState) {
-      for (const route of authenticatedRoutes)
+      for (const route of activeAuthenticatedRoutes)
         await captureRouteInFreshPage(context, viewport.name, route, issues);
     }
 
@@ -347,13 +368,17 @@ const manifest = {
   outputDir,
   authenticatedCapture: Boolean(authenticatedStorageState),
   viewports: activeViewports.map(({ name, width, height }) => ({ name, width, height })),
-  marketingRoutes,
-  authenticatedRoutes,
+  marketingRoutes: activeMarketingRoutes,
+  authenticatedRoutes: activeAuthenticatedRoutes,
   issues,
+  p0_count: issues.filter((i) => i.severity === "P0").length,
 };
 await writeFile(path.join(outputDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`Visual QA screenshots written to ${outputDir}`);
-if (issues.length) {
-  console.warn(`${issues.length} visual QA issue(s) recorded in manifest.json`);
+const p0Count = manifest.p0_count;
+if (p0Count) {
+  console.warn(`${p0Count} visual QA P0 issue(s) recorded in manifest.json`);
   process.exitCode = 1;
+} else if (issues.length) {
+  console.warn(`${issues.length} non-blocking visual QA issue(s) recorded in manifest.json`);
 }

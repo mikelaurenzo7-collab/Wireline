@@ -57,7 +57,6 @@ import dailyBriefRouter from "../routes/daily-brief-routes";
 import quotaRouter from "../routes/quota-routes";
 import browserHandoffRouter from "../routes/browser-handoff-routes";
 import adminSeedDemoRouter from "../routes/admin-seed-demo-routes";
-import founderCockpitRouter from "../routes/founder-cockpit-routes";
 
 /**
  * Canonical API route order.
@@ -146,6 +145,5 @@ export function registerApiRoutes(app: Express): void {
   app.use(pipelineRouter);
   app.use("/api/quotas", quotaRouter);
   app.use(adminSeedDemoRouter);
-  app.use(founderCockpitRouter);
   app.use(voiceObservabilityRouter);
 }

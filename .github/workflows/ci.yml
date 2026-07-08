@@ -24,7 +24,13 @@ jobs:
       # See verify-build.yml: resolve packages from the active manifest while
       # historical root entries in package-lock are being retired.
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Unit tests
+        run: npm run test:run
+
+      - name: ESLint
+        run: npm run lint:eslint
 
       - name: Professional Heritage contract
         run: npm run active-surface:check

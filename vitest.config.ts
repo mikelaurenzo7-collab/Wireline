@@ -12,5 +12,15 @@ export default defineConfig({
     environment: "node",
     pool: "vmThreads",
     exclude: ["node_modules/**", "dist/**", "tests/e2e/**", ".worktrees/**"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      thresholds: {
+        lines: 1,
+        functions: 1,
+        branches: 1,
+        statements: 1,
+      },
+    },
   },
 });

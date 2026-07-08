@@ -14,7 +14,6 @@ Disallow: /outbound
 Disallow: /triage
 Disallow: /inbox
 Disallow: /sms
-Disallow: /cockpit
 Disallow: /dnc
 Disallow: /knowledge
 Disallow: /email

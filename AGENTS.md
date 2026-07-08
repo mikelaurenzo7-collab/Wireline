@@ -31,10 +31,6 @@ surfaces and are not needed for core web/API development.
   (e.g. `POSTGRES_URL`, `INTERNAL_JWT_SECRET`) win over any value in `.env`.
 - The dev server never throws on missing env (`src/lib/startup.ts`); unconfigured
   features return actionable `503` JSON at request time instead of crashing.
-- **Founder cockpit (operator-only):** `/founder` and `/api/founder/*` are gated by
-  `canAccessFounderCockpit` — `OWNER_EMAIL` / `OWNER_EMAILS` plus optional
-  `FOUNDER_COCKPIT_EMAILS` and `FOUNDER_COCKPIT_USER_IDS`. Never mount cockpit UI
-  in tenant Admin; never infer access from `is_owner` or `is_admin`.
 - **Federal DNC scrub (outbound):** set `FEDERAL_DNC_API_URL` + `FEDERAL_DNC_API_KEY`
   before scaling marketing outbound; unconfigured vendor returns no federal scrub.
 

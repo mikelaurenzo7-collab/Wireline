@@ -1,6 +1,6 @@
-# Launch Readiness and Margin Cockpit Plan
+# Launch Readiness and Margin Plan
 
-Status: **Active canonical operating plan**. This is the owner/founder view Wireline needs before scaling paid traffic and live usage.
+Status: **Active canonical operating plan**. Ops scorecard Wireline needs before scaling paid traffic and live usage.
 
 ## Goal
 
@@ -19,7 +19,7 @@ Answer one question quickly: **Is Wireline safe, reliable, and profitable to sel
 | Error reporting | Production errors reach the owner dashboard or external reporter. | Silent 5xx, missing Sentry/alert sink. |
 | Trust/legal | Public proof is truthful and current. | Placeholder logos, implied certification, stale privacy copy. |
 
-## Margin cockpit
+## Margin tracking
 
 Wireline should track contribution margin at the account level.
 
@@ -47,7 +47,6 @@ Start with conservative alerts:
 
 Candidate code surfaces:
 
-- `src/components/FounderOperatingCockpit.tsx`
 - `src/components/analytics/ObservabilityDashboard.tsx`
 - `src/routes/health-routes.ts`
 - `src/routes/voice-observability-routes.ts`

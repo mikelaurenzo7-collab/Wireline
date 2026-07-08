@@ -81,6 +81,18 @@ export function validateStartupEnv() {
     }
   }
 
+  if (IS_PROD && (!process.env.FEDERAL_DNC_API_URL || !process.env.FEDERAL_DNC_API_KEY)) {
+    log.warn(
+      "FEDERAL_DNC_API_URL / FEDERAL_DNC_API_KEY not set in production — federal DNC scrub is skipped until configured. Set both before scaling marketing outbound.",
+    );
+  }
+
+  if (IS_PROD && !process.env.SENTRY_DSN) {
+    log.warn(
+      "SENTRY_DSN not set in production — 5xx and unhandled errors rely on manual log review. Set in Vercel before scaling traffic.",
+    );
+  }
+
   if (recommended.length) {
     log.warn("Recommended env vars not set", { recommended });
   }

@@ -14,6 +14,7 @@ import {
   WIRELINE_LIVE_VOICES,
   type VoiceOption,
 } from "../../lib/voice-catalog";
+import { groupVoicesByUseCase, TONE_PRESETS } from "../../lib/voice-use-case-groups";
 import { VoicePreviewButton } from "../DeployAgentModal";
 
 type VoiceGalleryProps = {
@@ -46,6 +47,26 @@ export default function VoiceGallery({
   const [applyingVoiceId, setApplyingVoiceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [applyingTone, setApplyingTone] = useState<string | null>(null);
+
+  async function applyTonePreset(presetId: string, content: string) {
+    if (!agentId || applyingTone) return;
+    setApplyingTone(presetId);
+    setError(null);
+    try {
+      const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "personality", content }),
+      });
+      if (!response.ok) throw new Error("Could not save tone preset.");
+      setNotice("Tone updated.");
+    } catch {
+      setError("Could not save tone preset.");
+    } finally {
+      setApplyingTone(null);
+    }
+  }
 
   useEffect(() => {
     if (!agentId) return;
@@ -201,13 +222,15 @@ export default function VoiceGallery({
     return selectedVoiceId === voice.id && (selectedProvider ?? voice.provider) === voice.provider;
   }
 
+  const liveGroups = useMemo(() => groupVoicesByUseCase(filteredLive), [filteredLive]);
+
   const currentLabel = resolveVoiceLabel(selectedVoiceId);
   const searchId = searchInputId ?? (embedded ? "voice-search" : undefined);
 
   return (
     <div className={`flex flex-col ${embedded ? "gap-3" : "gap-5"} ${className}`}>
       {!embedded ? (
-        <section className="studio-card p-5 sm:p-6">
+        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="wl-overline">Current</p>
@@ -242,7 +265,21 @@ export default function VoiceGallery({
         </StatusNotice>
       ) : null}
 
-      <section className={embedded ? "" : "studio-card p-5 sm:p-6"}>
+      <section className={embedded ? "" : "wl-paper wl-paper-elevated p-5 sm:p-6"}>
+        <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Tone presets">
+          {TONE_PRESETS.map((preset) => (
+            <Button
+              key={preset.id}
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={Boolean(applyingTone)}
+              onClick={() => void applyTonePreset(preset.id, preset.content)}
+            >
+              {applyingTone === preset.id ? "Saving…" : preset.label}
+            </Button>
+          ))}
+        </div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           {!embedded ? <p className="wl-overline">Gallery</p> : null}
           <label
@@ -276,48 +313,59 @@ export default function VoiceGallery({
               </p>
               <Badge variant="outline">Built-in</Badge>
             </div>
-            <div className="grid gap-2">
-              {filteredLive.map((voice) => {
-                const isSelected =
-                  selectedVoiceId === voice.id &&
-                  (selectedProvider ?? voice.provider) === voice.provider;
-                const isPlaying = playingVoiceId === voiceKey(voice);
-                const isApplying = applyingVoiceId === voiceKey(voice);
-                return (
-                  <div
-                    key={voice.id}
-                    className={`flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-                      isSelected ? "border-primary/30 bg-primary/5" : "border-border bg-background"
-                    }`}
-                  >
-                    <div className="min-w-0 text-left">
-                      <p className="text-sm font-semibold text-foreground">{voice.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {voiceFamilyLabel(voice.provider)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => playVoice(voice)}
-                      >
-                        <Play size={12} aria-hidden="true" />
-                        {isPlaying ? "Stop" : "Preview"}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={isApplying}
-                        onClick={() => void applyVoice(voice)}
-                      >
-                        {isApplying ? "Saving…" : isSelected ? "Selected" : "Use"}
-                      </Button>
-                    </div>
+            <div className="grid gap-4">
+              {liveGroups.map(({ group, voices }) => (
+                <div key={group.id}>
+                  <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
+                    {group.label}
+                  </p>
+                  <div className="grid gap-2">
+                    {voices.map((voice) => {
+                      const isSelected =
+                        selectedVoiceId === voice.id &&
+                        (selectedProvider ?? voice.provider) === voice.provider;
+                      const isPlaying = playingVoiceId === voiceKey(voice);
+                      const isApplying = applyingVoiceId === voiceKey(voice);
+                      return (
+                        <div
+                          key={voice.id}
+                          className={`flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                            isSelected
+                              ? "border-primary/30 bg-primary/5"
+                              : "border-border bg-background"
+                          }`}
+                        >
+                          <div className="min-w-0 text-left">
+                            <p className="text-sm font-semibold text-foreground">{voice.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {voiceFamilyLabel(voice.provider)}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => playVoice(voice)}
+                            >
+                              <Play size={12} aria-hidden="true" />
+                              {isPlaying ? "Stop" : "Preview"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={isApplying}
+                              onClick={() => void applyVoice(voice)}
+                            >
+                              {isApplying ? "Saving…" : isSelected ? "Selected" : "Use"}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
 

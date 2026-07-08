@@ -30,4 +30,18 @@ describe("design consolidation contracts", () => {
     expect(presets).toContain("export function PanelSkeleton");
     expect(presets).toContain('from "./Skeleton"');
   });
+
+  it("migrates hot-path surfaces off studio-card to wl-paper primitives", () => {
+    const migrated = [
+      "src/pages/OverviewPage.tsx",
+      "src/components/CreateAgentDialog.tsx",
+      "src/pages/KnowledgePage.tsx",
+      "src/components/voice/VoiceGallery.tsx",
+    ];
+    for (const file of migrated) {
+      const source = read(file);
+      expect(source).toContain("wl-paper");
+      expect(source).not.toContain("studio-card");
+    }
+  });
 });

@@ -7,7 +7,7 @@
  */
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Crown, LifeBuoy, LogOut, Search, Settings, CreditCard, PlugZap } from "lucide-react";
+import { LifeBuoy, LogOut, Search, Settings, CreditCard, PlugZap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import ThemeToggle from "../ThemeToggle";
@@ -249,18 +249,6 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                         <LifeBuoy className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
                         Help &amp; support
                       </Link>
-                      {/* Founder cockpit — approved operators only */}
-                      {user?.founder_cockpit && (
-                        <Link
-                          to="/founder"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-[var(--wireline-typography-caption-size)] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
-                          role="menuitem"
-                        >
-                          <Crown className="w-3.5 h-3.5 text-brand/50 group-hover:text-brand transition-colors" />
-                          Founder Dashboard
-                        </Link>
-                      )}
                     </div>
                     <div className="border-t border-white/8 py-1 text-left">
                       <ShadButton
@@ -302,14 +290,6 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               )
             }
           />
-          {user?.founder_cockpit && (
-            <FooterItem
-              to="/founder"
-              icon={Crown}
-              label="Founder"
-              active={location.pathname === "/founder"}
-            />
-          )}
 
           <Tooltip>
             <TooltipTrigger asChild>

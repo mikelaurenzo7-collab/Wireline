@@ -50,7 +50,6 @@ Every feature in this matrix should map to one of those states before paid acqui
 | Create → Train → Wire → Run (web) | **Live** | Primary product loop on trywireline.com |
 | Conversation Balance + Stripe billing | **Live** | Pre-call wallet gate; pay-as-you-go debits balance |
 | Outbound hub + campaigns + cadences | **Live** | Federal DNC required for marketing in production |
-| Founder cockpit (`/founder`) | **Live** | Allowlist-only operator surface |
 | Trust Center (`/trust`) | **Live** | Honest SOC2 roadmap + compliance posture |
 | Wireline Command (browser extension) | **Beta** | Local install; store submission in progress |
 | iOS app | **Beta** | WidgetSync, token refresh, account deletion shipped; TestFlight pending |

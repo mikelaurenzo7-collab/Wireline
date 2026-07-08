@@ -74,4 +74,10 @@ describe("Wireline Command extension contract", () => {
     expect(panelJs).toContain('route: "billing"');
     expect(panelJs).toContain('route: "studio"');
   });
+
+  it("documents multi-surface QA ritual", () => {
+    const doc = read("docs/MULTI_SURFACE_QA_2026-07-07.md");
+    expect(doc).toContain("browser-extension");
+    expect(doc).toContain("mcp-oauth-security-contract");
+  });
 });

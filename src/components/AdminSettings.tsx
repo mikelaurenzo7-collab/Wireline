@@ -60,7 +60,7 @@ interface AdminSettingsState {
 
 export default function AdminSettings() {
   const { success: toastSuccess, error: toastError } = useToast();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const { updateBranding } = useBranding();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [settings, setSettings] = useState<AdminSettingsState>({
@@ -133,11 +133,8 @@ export default function AdminSettings() {
     if (qsRaw === "dnc" || qsRaw === "audit") {
       return "activity";
     }
-    // Founder cockpit lives at /founder — never in tenant Admin.
     if (isOwnerOnlyAdminTab(qsRaw ?? "")) {
-      queueMicrotask(() =>
-        navigate(user?.founder_cockpit ? "/founder" : "/overview", { replace: true }),
-      );
+      queueMicrotask(() => navigate("/overview", { replace: true }));
       return "accounts";
     }
     if (qsRaw === "growth") return "flywheel";

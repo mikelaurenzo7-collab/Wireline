@@ -1,0 +1,75 @@
+name: Visual QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - src/**
+      - scripts/capture-visual-qa.mjs
+      - scripts/check-visual-qa-manifest.mjs
+      - .github/workflows/visual-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Capture core routes and gate P0 issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      VERCEL: "1"
+      PORT: "3000"
+      WIRELINE_VISUAL_BASE_URL: http://127.0.0.1:3000
+      WIRELINE_VISUAL_OUTPUT_DIR: artifacts/visual-qa-pr
+      WIRELINE_VISUAL_VIEWPORTS: phone-360,phone-390,tablet-768,laptop-1024,laptop-1280,desktop-1440
+      WIRELINE_VISUAL_MARKETING_ROUTES: /,/pricing,/signup
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start server, capture visual QA, and stop
+        run: |
+          npm run start &
+          SERVER_PID=$!
+          cleanup() { kill "$SERVER_PID" 2>/dev/null || true; }
+          trap cleanup EXIT
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000/api/health/public; then
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Server failed to start"
+              exit 1
+            fi
+            sleep 2
+          done
+          node scripts/capture-visual-qa.mjs
+
+      - name: Gate P0 manifest issues
+        run: |
+          MANIFEST=$(ls -td artifacts/visual-qa-pr/*/manifest.json | head -1)
+          node scripts/check-visual-qa-manifest.mjs "$MANIFEST"
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireline-visual-qa-pr
+          path: artifacts/visual-qa-pr
+          retention-days: 7
