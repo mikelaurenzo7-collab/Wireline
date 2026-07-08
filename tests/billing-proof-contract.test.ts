@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { isBalanceFundedVoicePlan } from "../src/lib/voice-billing-policy";
 
-const read = (path: string) => readFileSync(path, "utf8");
+const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 describe("billing proof contract", () => {
   it("keeps checkout reachable for new users while blocking retired/contact-sales plans clearly", () => {
@@ -88,7 +88,9 @@ describe("billing proof contract", () => {
     expect(isBalanceFundedVoicePlan("business")).toBe(false);
     expect(usage).toContain("isBalanceFundedVoicePlan(planId)");
     expect(guard).toContain("isBalanceFundedVoicePlan(planId)");
-    expect(usage).toContain("They do not receive the historical included-minute compatibility allowance.");
+    expect(usage).toContain(
+      "They do not receive the historical included-minute compatibility allowance.",
+    );
   });
 
   it("reconciles usage events against plan, balance, and Stripe meter state", () => {

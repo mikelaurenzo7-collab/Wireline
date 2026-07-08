@@ -106,6 +106,9 @@ describe("product voice cohesion", () => {
 
     expect(blueprint).toContain('label: "Support desk"');
     expect(blueprint).toContain('label: "Call center / overflow"');
+    expect(blueprint.indexOf('label: "Sales and qualification"')).toBeLessThan(
+      blueprint.indexOf('label: "Home services"'),
+    );
     expect(blueprint).toContain('aria-label="Use case"');
     expect(wireForm).toContain("qualifies sales calls");
     expect(wireForm).toContain("Use case or industry");

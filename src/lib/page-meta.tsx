@@ -14,7 +14,7 @@ const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "Wireline - Wire your agent";
 const DEFAULT_DESCRIPTION =
-  "Wireline builds trained voice agents that answer, route, book, follow up, and text the outcome for solo business agents, call centers, and sales teams. Start outbound-first, then choose inbound or hybrid modes.";
+  "Wireline builds trained voice agents for personal call delegation, sales, support, scheduling, call-center coverage, and vertical templates. Create, train, wire, and run outbound, inbound, or hybrid phone agents from one operating surface.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;

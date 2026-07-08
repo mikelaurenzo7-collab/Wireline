@@ -24,7 +24,7 @@ type ModeDetail = {
 
 const HERO_LOOP = ["Create", "Train", "Wire", "Run"] as const;
 
-const AUDIENCES = ["Personal assistants", "Call centers", "Sales teams"] as const;
+const AUDIENCES = ["Personal calls", "Sales", "Support", "Call centers"] as const;
 
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
   { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
@@ -63,7 +63,10 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
       { from: "caller", text: "Do you have availability for a consultation this week?" },
       { from: "agent", text: "I can help. Is this for sales, support, or scheduling?" },
       { from: "caller", text: "Sales. We need pricing and implementation timing." },
-      { from: "agent", text: "Great — I’ll capture fit, book the handoff, and send the recap now." },
+      {
+        from: "agent",
+        text: "Great — I’ll capture fit, book the handoff, and send the recap now.",
+      },
     ],
     outcomes: ["Answered live", "Booked intake", "Recap sent"],
     cta: "Wire inbound",
@@ -81,7 +84,10 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
         text: "Absolutely. I can answer basics, confirm fit, and queue the renewal specialist if needed.",
       },
       { from: "caller", text: "Can you call me Friday if I do not finish the form?" },
-      { from: "agent", text: "Done. I’ll send the link, log intent, and schedule a Friday follow-up." },
+      {
+        from: "agent",
+        text: "Done. I’ll send the link, log intent, and schedule a Friday follow-up.",
+      },
     ],
     outcomes: ["Answered", "Follow-up queued", "CRM synced"],
     cta: "Wire hybrid",
@@ -90,9 +96,18 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
 };
 
 const SYSTEM_WINS = [
-  ["One clear promise", "The homepage now leads with Wire your agent instead of forcing buyers to decode product modes first."],
-  ["One operating loop", "Create, Train, Wire, Run repeats across the page so the product feels learnable and memorable."],
-  ["One obvious action", "Start free stays primary; demos and pricing support the decision without competing for attention."],
+  [
+    "One clear promise",
+    "The homepage now leads with Wire your agent instead of forcing buyers to decode product modes first.",
+  ],
+  [
+    "One operating loop",
+    "Create, Train, Wire, Run repeats across the page so the product feels learnable and memorable.",
+  ],
+  [
+    "One obvious action",
+    "Start free stays primary; demos and pricing support the decision without competing for attention.",
+  ],
 ] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
@@ -159,7 +174,9 @@ function LiveAgentPreview({ mode }: { mode: AgentMode }) {
               <PhoneCall size={17} aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[14px] font-semibold text-foreground">Wireline live desk</p>
+              <p className="truncate text-[14px] font-semibold text-foreground">
+                Wireline live desk
+              </p>
               <p className="wl-eyebrow wl-eyebrow--no-rule mt-1 text-primary">{detail.eyebrow}</p>
             </div>
           </div>
@@ -282,12 +299,16 @@ export default function WireAgentLanding() {
               </h1>
 
               <p className="wl-lead mx-auto mt-6 max-w-[42rem] lg:mx-0">
-                Create the agent, train the rules, wire the number, and run the work from one clean operating surface.
+                Create the agent, train the rules, wire the number, and run the work from one clean
+                operating surface.
               </p>
 
               <div className="mt-6 grid max-w-[35rem] grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-card lg:mx-0">
                 {HERO_LOOP.map((step, index) => (
-                  <div key={step} className="border-r border-border px-2 py-3 text-center last:border-r-0">
+                  <div
+                    key={step}
+                    className="border-r border-border px-2 py-3 text-center last:border-r-0"
+                  >
                     <span className="block font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-primary">
                       {String(index + 1).padStart(2, "0")}
                     </span>
@@ -320,7 +341,10 @@ export default function WireAgentLanding() {
                 aria-label="Wireline audiences"
               >
                 {AUDIENCES.map((audience) => (
-                  <li key={audience} className="flex items-center justify-center gap-2 text-[13px] text-muted-foreground lg:justify-start">
+                  <li
+                    key={audience}
+                    className="flex items-center justify-center gap-2 text-[13px] text-muted-foreground lg:justify-start"
+                  >
                     <span className="marketing-proof-chip h-[18px] w-[18px]" aria-hidden="true">
                       ✓
                     </span>
@@ -349,14 +373,20 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Operating loop</p>
-              <h2 className="wl-display-2 mt-4">The product should feel obvious in thirty seconds.</h2>
+              <h2 className="wl-display-2 mt-4">
+                The product should feel obvious in thirty seconds.
+              </h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Every page should reinforce the same mental model: make the agent, teach it, connect it, then let it complete the work with a clean record behind it.
+                Every page should reinforce the same mental model: make the agent, teach it, connect
+                it, then let it complete the work with a clean record behind it.
               </p>
             </div>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
               {HERO_LOOP.map((step, index) => (
-                <article key={step} className="wl-wire-step p-7 text-center transition-colors hover:bg-muted/40">
+                <article
+                  key={step}
+                  className="wl-wire-step p-7 text-center transition-colors hover:bg-muted/40"
+                >
                   <div className="mx-auto mb-6 grid h-10 w-10 place-items-center rounded-full border border-border bg-background font-mono text-[12px] font-bold text-primary">
                     {String(index + 1).padStart(2, "0")}
                   </div>
@@ -382,7 +412,8 @@ export default function WireAgentLanding() {
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Choose the lane</p>
               <h2 className="wl-display-2 mt-4">Modes are choices, not complexity.</h2>
               <p className="mt-4 max-w-[34rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Buyers should not need to understand telephony architecture. They pick the work pattern; Wireline handles the line, handoff, record, and balance.
+                Buyers should not need to understand telephony architecture. They pick the work
+                pattern; Wireline handles the line, handoff, record, and balance.
               </p>
               <div
                 className="wl-segmented mt-7"
@@ -425,7 +456,9 @@ export default function WireAgentLanding() {
                   {mode === key ? (
                     <div className="grid gap-6">
                       <div>
-                        <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">{detail.eyebrow}</p>
+                        <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">
+                          {detail.eyebrow}
+                        </p>
                         <h3 className="wl-display-3 mt-3">{detail.title}</h3>
                         <p className="mt-4 text-[15px] leading-[1.65] text-muted-foreground">
                           {detail.lead}
@@ -433,7 +466,10 @@ export default function WireAgentLanding() {
                       </div>
                       <div className="grid gap-2 sm:grid-cols-3">
                         {detail.bestFor.map((item) => (
-                          <div key={item} className="rounded-[12px] border border-border bg-muted px-4 py-3 text-center text-[13px] font-semibold text-foreground">
+                          <div
+                            key={item}
+                            className="rounded-[12px] border border-border bg-muted px-4 py-3 text-center text-[13px] font-semibold text-foreground"
+                          >
                             {item}
                           </div>
                         ))}
@@ -462,7 +498,10 @@ export default function WireAgentLanding() {
             <div className="grid gap-3 sm:grid-cols-3">
               {SYSTEM_WINS.map(([title, body]) => (
                 <article key={title} className="wl-paper rounded-[16px] p-7 text-center">
-                  <span className="marketing-proof-chip mx-auto h-8 w-8 text-[13px]" aria-hidden="true">
+                  <span
+                    className="marketing-proof-chip mx-auto h-8 w-8 text-[13px]"
+                    aria-hidden="true"
+                  >
                     ✓
                   </span>
                   <h3 className="wl-display-4 mt-5">{title}</h3>
@@ -477,14 +516,20 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-              <h2 className="wl-display-2 mt-4">Create first. Fund live work. Scale the operation.</h2>
+              <h2 className="wl-display-2 mt-4">
+                Create first. Fund live work. Scale the operation.
+              </h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Personal starts free. Conversation Balance funds usage. Team and Business add capacity, numbers, controls, and reliability.
+                Personal starts free. Conversation Balance funds usage. Team and Business add
+                capacity, numbers, controls, and reliability.
               </p>
             </div>
             <div className="mx-auto grid max-w-[960px] gap-5 sm:grid-cols-3">
               {PLAN_PREVIEW.map((plan) => (
-                <article key={plan.name} className="wl-paper flex min-h-[260px] flex-col rounded-[16px] p-7 text-center">
+                <article
+                  key={plan.name}
+                  className="wl-paper flex min-h-[260px] flex-col rounded-[16px] p-7 text-center"
+                >
                   <h3 className="wl-display-4">{plan.name}</h3>
                   <div className="mt-5 flex items-baseline justify-center gap-1">
                     <span className="wl-display-2 leading-none">{plan.price}</span>
@@ -503,7 +548,10 @@ export default function WireAgentLanding() {
               ))}
             </div>
             <div className="mt-8 text-center">
-              <Link to="/pricing" className="inline-flex items-center gap-2 text-[14px] font-semibold text-primary hover:underline">
+              <Link
+                to="/pricing"
+                className="inline-flex items-center gap-2 text-[14px] font-semibold text-primary hover:underline"
+              >
                 Compare every plan <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </div>
@@ -530,7 +578,8 @@ export default function WireAgentLanding() {
               <div className="relative">
                 <h2 className="wl-display-2 mx-auto max-w-[16ch]">Wire the first line.</h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[480px] text-[16px] leading-[1.6]">
-                  Stand up one trained agent, connect one phone lane, and see one clean outcome after the first real conversation.
+                  Stand up one trained agent, connect one phone lane, and see one clean outcome
+                  after the first real conversation.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link

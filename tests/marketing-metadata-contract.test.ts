@@ -11,18 +11,18 @@ describe("marketing metadata contract", () => {
 
     expect(staticHead).toContain("Wireline — Wire your agent.");
     expect(runtimeMeta).toContain('const DEFAULT_TITLE = "Wireline - Wire your agent"');
-    expect(staticHead).toContain("trained voice agents that answer, route, book, follow up");
-    expect(staticHead).toContain("Start outbound-first, then choose inbound or hybrid modes");
-    expect(runtimeMeta).toContain("trained voice agents that answer, route, book, follow up");
-    expect(runtimeMeta).toContain("Start outbound-first, then choose inbound or hybrid modes");
+    expect(staticHead).toContain("personal call delegation, sales, support, scheduling");
+    expect(staticHead).toContain("outbound, inbound, or hybrid phone agents");
+    expect(runtimeMeta).toContain("personal call delegation, sales, support, scheduling");
+    expect(runtimeMeta).toContain("outbound, inbound, or hybrid phone agents");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
 
   it("does not hard-code plan prices into public structured data", () => {
     const staticHead = read("index.html");
 
-    expect(staticHead).toContain('"@type":"SoftwareApplication"');
-    expect(staticHead).not.toContain('"@type":"Offer"');
+    expect(staticHead).toMatch(/"@type"\s*:\s*"SoftwareApplication"/);
+    expect(staticHead).not.toMatch(/"@type"\s*:\s*"Offer"/);
   });
 
   it("keeps public pricing, contact, and ROI copy aligned to the active catalog", () => {

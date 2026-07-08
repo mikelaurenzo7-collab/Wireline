@@ -26,11 +26,11 @@
     <title>Wireline — Wire your agent.</title>
     <meta
       name="description"
-      content="Wireline builds trained voice agents that answer, route, book, follow up, and text the outcome for solo business agents, call centers, and sales teams. Start outbound-first, then choose inbound or hybrid modes."
+      content="Wireline builds trained voice agents for personal call delegation, sales, support, scheduling, call-center coverage, and vertical templates. Create, train, wire, and run outbound, inbound, or hybrid phone agents from one operating surface."
     />
     <meta
       name="keywords"
-      content="AI voice agent, trained voice agents, solo business agents, call centers, sales teams, outbound call agent, inbound call agent, hybrid call agent, sales SDR agent, billing collection agent, front desk AI, support triage, appointment scheduling, call automation"
+      content="AI voice agent, trained voice agents, personal phone agent, sales voice agent, support voice agent, scheduling agent, call center AI, outbound call agent, inbound call agent, hybrid call agent, sales SDR agent, billing collection agent, front desk AI, support triage, appointment scheduling, call automation"
     />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="googlebot" content="index, follow, max-image-preview:large" />
@@ -56,9 +56,11 @@
       src="https://plausible.io/js/script.tagged-events.js"
     ></script>
     <script>
-      window.plausible = window.plausible || function () {
-        (window.plausible.q = window.plausible.q || []).push(arguments);
-      };
+      window.plausible =
+        window.plausible ||
+        function () {
+          (window.plausible.q = window.plausible.q || []).push(arguments);
+        };
     </script>
 
     <script>
@@ -69,11 +71,9 @@
         if (isProd) {
           !(function (f, b, e, v, n, t, s) {
             if (f.fbq) return;
-            n =
-              f.fbq =
-              function () {
-                n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-              };
+            n = f.fbq = function () {
+              n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+            };
             if (!f._fbq) f._fbq = n;
             n.push = n;
             n.loaded = true;
@@ -110,7 +110,7 @@
     <meta property="og:title" content="Wireline — Wire your agent." />
     <meta
       property="og:description"
-      content="Trained voice agents that answer, route, book, follow up, and text the outcome for solo business agents, call centers, and sales teams. Start outbound-first, then choose inbound or hybrid modes."
+      content="Trained voice agents for personal call delegation, sales, support, scheduling, call-center coverage, and vertical templates. Create, train, wire, and run outbound, inbound, or hybrid phone agents."
     />
     <meta property="og:image" content="https://trywireline.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
@@ -118,7 +118,7 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Wireline — Wire your agent. Trained voice agents for solo business agents, call centers, and sales teams"
+      content="Wireline — Wire your agent. Voice agents for personal calls, sales, support, scheduling, and call-center coverage"
     />
     <meta property="og:locale" content="en_US" />
 
@@ -128,20 +128,66 @@
     <meta name="twitter:title" content="Wireline — Wire your agent." />
     <meta
       name="twitter:description"
-      content="Trained voice agents that answer, route, book, follow up, and text the outcome for solo business agents, call centers, and sales teams. Start outbound-first, then choose inbound or hybrid modes."
+      content="Trained voice agents for personal call delegation, sales, support, scheduling, call-center coverage, and vertical templates. Create, train, wire, and run outbound, inbound, or hybrid phone agents."
     />
     <meta name="twitter:image" content="https://trywireline.com/og-image.png" />
     <meta
       name="twitter:image:alt"
-      content="Wireline — Wire your agent. Trained voice agents for solo business agents, call centers, and sales teams"
+      content="Wireline — Wire your agent. Voice agents for personal calls, sales, support, scheduling, and call-center coverage"
     />
 
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@graph":[
-        {"@type":"Organization","@id":"https://trywireline.com/#organization","name":"Wireline","legalName":"Wireline","url":"https://trywireline.com/","logo":"https://trywireline.com/wireline-icon.svg","image":"https://trywireline.com/og-image.png","description":"Wireline builds trained voice agents that answer, route, book, follow up, and text the outcome for solo business agents, call centers, and sales teams. Start outbound-first, then choose inbound or hybrid modes.","slogan":"Wire your agent.","foundingDate":"2024","email":"support@trywireline.com","founder":{"@type":"Person","name":"Michael Laurenzo","jobTitle":"Founder","url":"https://trywireline.com/about"},"sameAs":["https://twitter.com/wirelineapp"],"contactPoint":[{"@type":"ContactPoint","telephone":"+1-630-642-5661","contactType":"customer support","areaServed":"US","availableLanguage":["en"]}]},
-        {"@type":"SoftwareApplication","@id":"https://trywireline.com/#software","name":"Wireline","applicationCategory":"BusinessApplication","operatingSystem":"Web, iOS, Android, Chrome, Opera","url":"https://trywireline.com/","description":"Wireline is a trained voice agent platform for solo business agents, call centers, and sales teams across calls, texts, follow-up, browser context, email, and integrations.","publisher":{"@id":"https://trywireline.com/#organization"}},
-        {"@type":"WebSite","@id":"https://trywireline.com/#website","url":"https://trywireline.com/","name":"Wireline","publisher":{"@id":"https://trywireline.com/#organization"}}
-      ]}
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://trywireline.com/#organization",
+            "name": "Wireline",
+            "legalName": "Wireline",
+            "url": "https://trywireline.com/",
+            "logo": "https://trywireline.com/wireline-icon.svg",
+            "image": "https://trywireline.com/og-image.png",
+            "description": "Wireline builds trained voice agents for personal call delegation, sales, support, scheduling, call-center coverage, and vertical templates. Create, train, wire, and run outbound, inbound, or hybrid phone agents from one operating surface.",
+            "slogan": "Wire your agent.",
+            "foundingDate": "2024",
+            "email": "support@trywireline.com",
+            "founder": {
+              "@type": "Person",
+              "name": "Michael Laurenzo",
+              "jobTitle": "Founder",
+              "url": "https://trywireline.com/about"
+            },
+            "sameAs": ["https://twitter.com/wirelineapp"],
+            "contactPoint": [
+              {
+                "@type": "ContactPoint",
+                "telephone": "+1-630-642-5661",
+                "contactType": "customer support",
+                "areaServed": "US",
+                "availableLanguage": ["en"]
+              }
+            ]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://trywireline.com/#software",
+            "name": "Wireline",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, iOS, Android, Chrome, Opera",
+            "url": "https://trywireline.com/",
+            "description": "Wireline is a trained voice agent platform for personal agents, sales, support, scheduling, call-center coverage, and vertical templates across calls, texts, follow-up, browser context, email, and integrations.",
+            "publisher": { "@id": "https://trywireline.com/#organization" }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://trywireline.com/#website",
+            "url": "https://trywireline.com/",
+            "name": "Wireline",
+            "publisher": { "@id": "https://trywireline.com/#organization" }
+          }
+        ]
+      }
     </script>
 
     <link rel="preconnect" href="https://plausible.io" crossorigin />

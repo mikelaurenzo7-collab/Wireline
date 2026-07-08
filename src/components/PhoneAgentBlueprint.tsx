@@ -109,6 +109,22 @@ const blueprints: Array<{
     },
   },
   {
+    value: "sales",
+    label: "Sales and qualification",
+    detail: "Respectful discovery and booked next steps.",
+    direction: "outbound",
+    defaults: {
+      purpose: "Qualify outbound or inbound interest and schedule the right next conversation.",
+      caller: "Prospects, referral partners, returning customers, and approved campaign lists.",
+      outcome:
+        "Understand the need, capture qualified details, answer approved questions, and book a clear next step.",
+      handoff:
+        "Escalate pricing exceptions, contract questions, enterprise requests, and frustrated prospects to a human owner.",
+      boundaries:
+        "Never pressure callers, make unapproved discounts, promise implementation dates, or claim features that are not confirmed.",
+    },
+  },
+  {
     value: "home-services",
     label: "Home services",
     detail: "HVAC, plumbing, electrical, landscaping, and more.",
@@ -206,22 +222,6 @@ const blueprints: Array<{
         "Escalate accessibility concerns, large events, complaints, and manager requests promptly.",
       boundaries:
         "Never guarantee table availability, allergy safety, menu pricing, delivery timing, or special accommodations without confirmation.",
-    },
-  },
-  {
-    value: "sales",
-    label: "Sales and qualification",
-    detail: "Respectful discovery and booked next steps.",
-    direction: "outbound",
-    defaults: {
-      purpose: "Qualify outbound or inbound interest and schedule the right next conversation.",
-      caller: "Prospects, referral partners, returning customers, and approved campaign lists.",
-      outcome:
-        "Understand the need, capture qualified details, answer approved questions, and book a clear next step.",
-      handoff:
-        "Escalate pricing exceptions, contract questions, enterprise requests, and frustrated prospects to a human owner.",
-      boundaries:
-        "Never pressure callers, make unapproved discounts, promise implementation dates, or claim features that are not confirmed.",
     },
   },
   {
@@ -422,7 +422,8 @@ export default function PhoneAgentBlueprint({
                   Teach {agentName || "this agent"} the call job.
                 </h2>
                 <p>
-                  Choose direction first, tune the work, then pass the readiness check. This saves a real staged call plan.
+                  Choose direction first, tune the work, then pass the readiness check. This saves a
+                  real staged call plan.
                 </p>
               </div>
               <button
@@ -563,7 +564,10 @@ export default function PhoneAgentBlueprint({
                   ? "The current plan will be replaced with:"
                   : "It will save four stages:"}
               </span>
-              <strong>{directionGuidance.loop.join(" → ")} · Welcome → Understand → Resolve or route → Recap</strong>
+              <strong>
+                {directionGuidance.loop.join(" → ")} · Welcome → Understand → Resolve or route →
+                Recap
+              </strong>
             </div>
 
             <div className="studio-blueprint-readiness" aria-label="Launch readiness">

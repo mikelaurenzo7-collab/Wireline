@@ -486,16 +486,11 @@ mustInclude(
   /fill="#6D28D9"/,
   "favicon must use the Aurora violet brand mark",
 );
+mustInclude("public/og-image.svg", ogImage, /fill="#0A0A0E"/, "OG image must use the dark canvas");
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /fill="#0A0A0E"/,
-  "OG image must use the dark canvas",
-);
-mustInclude(
-  "public/og-image.svg",
-  ogImage,
-  /WIRE YOUR[\s\S]*AGENT[\s\S]*Personal assistants · solo business · teams/,
+  /WIRE YOUR[\s\S]*AGENT[\s\S]*Personal · sales · support · call centers/,
   "OG image must match the Letterpress landing promise",
 );
 mustExclude(
@@ -793,7 +788,7 @@ mustInclude(
 mustInclude(
   "apps/browser-extension/panel/index.html",
   extensionPanel,
-  /Command your agent from any page\. Wireline answers while you stay focused\./,
+  /Command your agent from any page\. Wireline calls, answers, follows up, and logs the outcome while you stay focused\./,
   "extension hero must match shared marketing voice",
 );
 mustInclude(

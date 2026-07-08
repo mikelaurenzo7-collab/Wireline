@@ -205,6 +205,10 @@ function formatRbac(entry: RouteEntry): string {
   return tags.length ? tags.join("+") : "—";
 }
 
+function normalizeMarkdownForComparison(markdown: string): string {
+  return markdown.replace(/\r\n/g, "\n");
+}
+
 function main() {
   const mountTable = parseMountTable();
   const entries = [...mountTable.entries()]
@@ -247,7 +251,9 @@ function main() {
     markdown += `| ${entry.file} | ${entry.method} | \`${entry.fullPath}\` | ${auth} | ${formatRbac(entry)} | ${entry.allowReason ? "yes" : "—"} | ${status} |\n`;
   }
 
-  const previousMarkdown = fs.existsSync(OUTPUT_FILE) ? fs.readFileSync(OUTPUT_FILE, "utf8") : null;
+  const previousMarkdown = fs.existsSync(OUTPUT_FILE)
+    ? normalizeMarkdownForComparison(fs.readFileSync(OUTPUT_FILE, "utf8"))
+    : null;
 
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, markdown, "utf8");

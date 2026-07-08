@@ -8,6 +8,7 @@ import RoiCalculator from "./RoiCalculator";
 import {
   AGENT_DIRECTION_MODES,
   BUSINESS_MARKETING_VOICE,
+  MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
@@ -357,6 +358,7 @@ export default function PrecisionLanding() {
   const configs = MODE_CONFIGS[mode];
   const modeCopy = MODE_COPY[mode];
   const loop = AGENT_DIRECTION_MODES[mode].loop;
+  const [heroFirst, heroSecond, heroThird] = MARKETING_VOICE.headline.split(" ");
 
   const selectMode = (key: AgentMode, focusAfterSelect = false) => {
     setMode(key);
@@ -434,19 +436,19 @@ export default function PrecisionLanding() {
 
               <h1
                 id="wireline-hero-title"
-                aria-label={modeCopy.title}
+                aria-label={MARKETING_VOICE.headline}
                 className="wl-display-1 max-w-[10ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.84] tracking-[-.07em] sm:max-w-[9ch] lg:max-w-[10ch]"
               >
-                {modeCopy.title.split(" ")[0]} <span className="text-primary">AGENTS</span>
+                {heroFirst} {heroSecond} <span className="text-primary">{heroThird}</span>
               </h1>
 
-              <p className="wl-lead mt-6 max-w-[42rem]">{modeCopy.lead}</p>
+              <p className="wl-lead mt-6 max-w-[42rem]">{MARKETING_VOICE.subline}</p>
 
               <p
                 id="wireline-mode-note"
                 className="mt-3 max-w-[38rem] text-[14px] leading-[1.6] text-muted-foreground"
               >
-                {modeCopy.note}
+                {modeCopy.lead}
               </p>
 
               <ol

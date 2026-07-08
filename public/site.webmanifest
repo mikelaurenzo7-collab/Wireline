@@ -1,7 +1,7 @@
 {
   "name": "Wireline - Wire your agent",
   "short_name": "Wireline",
-  "description": "Trained voice agents for personal assistants, solo business agents, and teams.",
+  "description": "Trained voice agents for personal call delegation, sales, support, scheduling, call-center coverage, and vertical templates.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",

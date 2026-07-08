@@ -119,7 +119,8 @@ export default function Features() {
               Everything your agent needs to finish the call.
             </h1>
             <p className="wl-public-copy mt-5">
-              Wireline keeps the product simple: create the agent, train the workflow, wire the number and tools, then run the work with a clean record behind it.
+              Wireline keeps the product simple: create the agent, train the workflow, wire the
+              number and tools, then run the work with a clean record behind it.
             </p>
             <div className="marketing-hero__actions mt-8">
               <Link
@@ -142,7 +143,9 @@ export default function Features() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-overline text-primary">Create → Train → Wire → Run</p>
-              <h2 className="wl-public-section-heading mt-3">One operating loop across every feature.</h2>
+              <h2 className="wl-public-section-heading mt-3">
+                One operating loop across every feature.
+              </h2>
             </div>
             <div className="grid overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
               {OPERATING_LOOP.map(({ step, title, body }, index) => (
@@ -165,7 +168,9 @@ export default function Features() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-overline text-primary">Core product</p>
-              <h2 className="wl-public-section-heading mt-3">Only the features that make the call work.</h2>
+              <h2 className="wl-public-section-heading mt-3">
+                Only the features that make the call work.
+              </h2>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
@@ -184,12 +189,16 @@ export default function Features() {
                 Connect tools only when they improve the outcome.
               </h2>
               <p className="wl-public-copy mt-5">
-                Calendars, CRMs, email, payments, and commerce systems should never be decorative logos. Each connection needs permission clarity, status, and a useful recent result.
+                Calendars, CRMs, email, payments, and commerce systems should never be decorative
+                logos. Each connection needs permission clarity, status, and a useful recent result.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {INTEGRATION_STATES.map(([title, body]) => (
-                <article key={title} className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
+                <article
+                  key={title}
+                  className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
+                >
                   <p className="wl-overline text-primary">{title}</p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
                 </article>
@@ -202,9 +211,12 @@ export default function Features() {
           <div className="wl-public-rail">
             <div className="mx-auto max-w-2xl text-center">
               <p className="wl-overline text-primary">Works with your stack</p>
-              <h2 className="wl-public-section-heading mt-3">Approved context, not manual cleanup.</h2>
+              <h2 className="wl-public-section-heading mt-3">
+                Approved context, not manual cleanup.
+              </h2>
               <p className="wl-public-copy mt-5">
-                Wireline can read and write to the systems that already run the business after the user approves the connection.
+                Wireline can read and write to the systems that already run the business after the
+                user approves the connection.
               </p>
             </div>
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -252,7 +264,7 @@ export default function Features() {
 
         <section className="px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail text-center">
-            <p className="wl-overline text-primary">Create -> Train -> Run</p>
+            <p className="wl-overline text-primary">Create -&gt; Train -&gt; Run</p>
             <h2 className="wl-public-section-heading mt-3">
               Your training. Your playbook. Every channel.
             </h2>
@@ -278,10 +290,22 @@ export default function Features() {
   );
 }
 
-function FeatureCard({ icon: Icon, title, body }: { icon: LucideIcon; title: string; body: string }) {
+function FeatureCard({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+}) {
   return (
     <article className="wl-stitch-card group flex min-h-[13rem] flex-col items-center rounded-xl p-6 text-center transition-all hover:-translate-y-px hover:shadow-sm sm:p-7">
-      <Icon size={22} className="text-primary transition group-hover:scale-110" aria-hidden="true" />
+      <Icon
+        size={22}
+        className="text-primary transition group-hover:scale-110"
+        aria-hidden="true"
+      />
       <h3 className="wl-section-title mt-5 max-w-[16ch]">{title}</h3>
       <p className="mt-4 text-sm leading-6 text-muted-foreground">{body}</p>
     </article>

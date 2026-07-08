@@ -93,7 +93,8 @@ describe("Wireline product documentation contract", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(head).toContain("Wireline — Wire your agent.");
-    expect(head).toContain("trained voice agents that answer, route, book, follow up");
+    expect(head).toContain("personal call delegation, sales, support, scheduling");
+    expect(head).toContain("outbound, inbound, or hybrid phone agents");
     expect(ogImage).toMatch(/WIRE YOUR[\s\S]*AGENT/);
     expect(ogImage).toContain("Answer. Route. Book. Follow up. Text the outcome.");
     expectNoTerms(head, retiredProductTerms);

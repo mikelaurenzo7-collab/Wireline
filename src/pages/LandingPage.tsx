@@ -17,7 +17,7 @@ export default function LandingPage() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, iOS, Android, Chrome, Opera",
     description:
-      "Wireline helps personal assistants, call centers, and sales teams create, train, wire, and run voice agents from one clean operating surface.",
+      "Wireline helps people, teams, and businesses create, train, wire, and run phone agents for personal calls, sales, support, scheduling, and call-center coverage from one operating surface.",
     offers: {
       "@type": "OfferCatalog",
       name: "Wireline voice agent plans",
@@ -33,7 +33,7 @@ export default function LandingPage() {
     <>
       <PageMeta
         title="Wireline | Wire your agent"
-        description="Wireline helps personal assistants, call centers, and sales teams create, train, wire, and run voice agents from one clean operating surface."
+        description="Wireline helps people, teams, and businesses create, train, wire, and run phone agents for personal calls, sales, support, scheduling, and call-center coverage from one operating surface."
         image="/og-image.png"
       />
       <script

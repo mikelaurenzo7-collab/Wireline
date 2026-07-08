@@ -25,11 +25,18 @@ export default [
     ignores: [
       "dist/**",
       "node_modules/**",
-      "*.cjs",          // built CJS output
+      ".tmp/**",
+      ".worktrees/**",
+      "worktrees/**",
+      "artifacts/**",
+      "coverage/**",
+      "test-results/**",
+      "playwright-report/**",
+      "*.cjs", // built CJS output
       "public/**",
       "supabase/**",
-      "scripts/*.mjs",  // maintenance scripts use console intentionally
-      "*.config.ts",    // vite.config.ts, vitest.config.ts
+      "scripts/*.mjs", // maintenance scripts use console intentionally
+      "*.config.ts", // vite.config.ts, vitest.config.ts
       "*.config.js",
     ],
   },
