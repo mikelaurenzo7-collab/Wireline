@@ -3,7 +3,6 @@ import {
   ArrowRight,
   BarChart3,
   CalendarClock,
-  Check,
   Contact,
   CreditCard,
   Mail,
