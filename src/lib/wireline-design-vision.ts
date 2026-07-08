@@ -18,6 +18,9 @@ export const WIRELINE_DESIGN_VISION = {
     "No decorative green, orange, or off-palette marketing hues.",
     "44px minimum for primary touch targets; 2px focus-visible rings, 4px halo optional.",
     "Letterpress depth: inset highlights on surfaces, restrained glow only on active affordances.",
+    "Route load → RouteFallback; panel load → skeleton presets; sole empty → EmptyState; errors → StatusNotice.",
+    "Primary actions use atoms/Button — not HaloButton, VoidButton, or hand-rolled gradient CTAs on app surfaces.",
+    "Navigation IA lives in constants/navigation.ts — never duplicate nav arrays in shell components.",
   ],
   tokens: {
     canvas: "#0A0A0E",

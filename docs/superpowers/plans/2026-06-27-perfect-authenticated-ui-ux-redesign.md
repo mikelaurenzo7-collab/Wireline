@@ -2,6 +2,7 @@
 
 **Date:** 2026-06-27 (Updated Masterclass Redesign)
 **Status:** COMPLETE — First merge done; final polish + thin agent bar + wire branding + recipe rename + fixes + contracts green; second merge pending final validation.
+**Note (2026-07):** Warm cream / forest-green palette described below is **retired**. Live product doctrine is **Aurora Letterpress** — obsidian canvas, electric violet action, silver wire (`wireline-design-vision.ts`, `surface-contract.ts`).
 **Goal:** Masterclass redesign of authenticated pages for a professional, consistent, polished, non-chaotic, flawless experience. Persistent left side rail (DesktopRail) on *every* page including Studio. Clear, logical IA and routing that makes Create → Train → Run obvious and seamless. Consistent page structure using WorkspaceShell everywhere. User flows are frictionless, purposeful, and reinforce the product model. Pages feel like one cohesive, premium system under Wireline Letterpress. No "loses side rail", no inconsistencies, no amateur chaos. Public pages untouched. Keep current Letterpress colors: warm paper canvas, dark neutrals, forest green primary action, and status colors only for meaning.
 
 This addresses the broken structure: Studio bypassing shell, chaotic layouts, poor IA, inconsistent navigation/headers/content, sloppy feel despite strong design system and prior elevation work (flywheel, ledger, responsive).

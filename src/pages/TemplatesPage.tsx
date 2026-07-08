@@ -5,7 +5,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 export default function TemplatesPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
-      <WorkspacePageFrame>
+      <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro title="Templates" />
         <AgentTemplates />
       </WorkspacePageFrame>

@@ -27,9 +27,10 @@ describe("agent navigation contract", () => {
   const teamPage = read("src/pages/TeamSettings.tsx");
 
   it("keeps the old Assistants rail out while exposing agents in Overview", () => {
+    const navigation = read("src/constants/navigation.ts");
     expect(workspaceShell).not.toMatch(/label:\s*"Assistants"/);
     expect(workspaceShell).not.toMatch(/label:\s*"Agent Studio"/);
-    expect(workspaceShell).toMatch(/label:\s*"Overview"/);
+    expect(navigation).toMatch(/label:\s*"Overview"/);
     expect(workspaceShell).toMatch(/aria-label="Agents"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
     expect(appRoutes).toMatch(/path="\/agents"/);
@@ -43,16 +44,16 @@ describe("agent navigation contract", () => {
     expect(overviewPage).toMatch(/Workspace metrics/);
     expect(overviewPage).toMatch(/Personal agents/);
     expect(overviewPage).toMatch(/Business agents/);
-    expect(overviewPage).toMatch(/Browse templates/);
+    expect(overviewPage).toMatch(/Wire your first agent|Open /);
     expect(overviewPage).toMatch(/posture=/);
     expect(overviewPage).toMatch(/Recent calls/);
-    expect(overviewPage).toMatch(/Quick actions/);
+    expect(overviewPage).not.toMatch(/Quick actions/);
     expect(overviewPage).not.toMatch(/Your assistants|New assistant|Create assistant/);
   });
 
   it("keeps Studio visually aligned with the ZIP screenshot", () => {
     expect(studioWorkspace).toMatch(/400px_minmax/);
-    expect(studioChrome).toMatch(/Agent Studio/);
+    expect(studioChrome).toMatch(/Studio/);
     expect(studioChrome).toMatch(/Run test call/);
     expect(studioChrome).not.toMatch(/agentSubtitle|Talk to build\. Canvas to tune\./);
     expect(studioWorkroom).toMatch(/Wireline AI/);
@@ -96,7 +97,8 @@ describe("agent navigation contract", () => {
   });
 
   it("keeps Wire as the customer-facing wiring surface while preserving routes", () => {
-    expect(workspaceShell).toMatch(/href: "\/connections", label: "Wire"/);
+    const navigation = read("src/constants/navigation.ts");
+    expect(navigation).toMatch(/href: "\/connections", label: "Wire"/);
     expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
     expect(read("src/components/integrations/IntegrationOperatingMap.tsx")).toMatch(
       /wl-eyebrow[\s\S]*Wire/,
@@ -104,15 +106,22 @@ describe("agent navigation contract", () => {
     expect(read("src/components/integrations/IntegrationOperatingMap.tsx")).toMatch(
       /Integration map/,
     );
-    expect(read("src/constants/navigation.ts")).toMatch(
-      /label: "Wire"[\s\S]*path: "\/connections"/,
-    );
+    expect(navigation).toMatch(/label: "Wire"[\s\S]*href: "\/connections"/);
     expect(read("src/lib/wireline-onboarding-copy.ts")).toMatch(/Open Wire/);
   });
 
   it("keeps Training tabs compact and resilient across narrow workspaces", () => {
     expect(trainingPage).toMatch(/WorkspaceTabStrip/);
     expect(trainingPage).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
+  });
+
+  it("uses navigation.ts as the shell source of truth with a 5-item mobile dock", () => {
+    const navigation = read("src/constants/navigation.ts");
+    expect(workspaceShell).toMatch(/from "\.\.\/constants\/navigation"/);
+    expect(navigation).toMatch(/MOBILE_PRIMARY_NAV/);
+    expect(navigation).toMatch(/MOBILE_MORE_NAV/);
+    expect(navigation).toMatch(/label: "More"/);
+    expect(read("src/components/layout/MobileNavMoreSheet.tsx")).toMatch(/MOBILE_MORE_NAV/);
   });
 
   it("migrates secondary workspace pages to the new quiet screenshot system", () => {

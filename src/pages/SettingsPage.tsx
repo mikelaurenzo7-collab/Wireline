@@ -146,7 +146,7 @@ export default function SettingsPage() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
-      <WorkspacePageFrame narrow>
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
@@ -156,6 +156,10 @@ export default function SettingsPage() {
               <h1 className="mt-2 font-[var(--wireline-font-family-display)] text-[clamp(1.55rem,4vw,2.1rem)] font-normal leading-tight tracking-[-0.035em] text-foreground">
                 Account identity
               </h1>
+              <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
+                Signed-in identity and session controls. Profile edits ship in a later release — use
+                Security below for password and compliance.
+              </p>
             </div>
           </div>
           <div className="grid gap-3">

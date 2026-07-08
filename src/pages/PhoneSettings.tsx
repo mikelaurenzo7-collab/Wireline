@@ -98,7 +98,7 @@ export default function PhoneSettings() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
-      <WorkspacePageFrame>
+      <WorkspacePageFrame mode="standard">
         <SettingsTabs />
 
         <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">

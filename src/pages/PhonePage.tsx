@@ -4,6 +4,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import CallLogsClaude from "../components/CallLogsClaude";
 import OutboundHub from "../components/outbound/OutboundHub";
 import { EmptyState, Button } from "../components/atoms";
+import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import {
   OUTBOUND_VIEW_TABS,
@@ -64,18 +65,21 @@ export default function PhonePage() {
 
   return (
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="border-b border-border px-4 py-2">
-          <WorkspaceTabStrip
-            tabs={[...PHONE_TABS]}
-            activeId={primaryTab}
-            onSelect={setPrimaryTab}
-            ariaLabel="Phone sections"
-            density="compact"
-            align="start"
-            className="mb-0 border-b-0 pb-0"
-          />
-        </div>
+      <WorkspacePageFrame mode="operate" className="flex h-full min-h-0 flex-1 flex-col gap-0 pb-0">
+        <WorkspaceOperateIntro
+          title="Phone"
+          tabs={
+            <WorkspaceTabStrip
+              tabs={[...PHONE_TABS]}
+              activeId={primaryTab}
+              onSelect={setPrimaryTab}
+              ariaLabel="Phone sections"
+              density="compact"
+              align="start"
+              className="mb-0 border-b-0 pb-0"
+            />
+          }
+        />
         <div className="flex-1 min-h-0 overflow-hidden">
           {primaryTab === "logs" && <CallLogsClaude />}
           {primaryTab === "outbound" && (
@@ -102,7 +106,7 @@ export default function PhonePage() {
             </div>
           )}
         </div>
-      </div>
+      </WorkspacePageFrame>
     </WorkspaceShell>
   );
 }

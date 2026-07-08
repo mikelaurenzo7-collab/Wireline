@@ -3,6 +3,7 @@ import { Loader2, Check, Phone, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button, Input, Textarea } from "./atoms";
+import { StatusNotice } from "./molecules";
 import CreateAgentCatalogFacePicker, {
   type FacePickerValue,
 } from "./create-agent/CreateAgentCatalogFacePicker";
@@ -371,9 +372,17 @@ export default function CreateAgentDialog({
               <X aria-hidden="true" size={16} />
             </Button>
           </div>
-          <div className="mt-4 h-1 rounded-full bg-muted">
+          <div
+            className="mt-4 h-1 rounded-full bg-muted"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={step === 1 ? 40 : 80}
+            aria-label={`Fast Start step ${step} of 2`}
+          >
             <div
-              className={`h-full rounded-full bg-primary transition-all duration-300 ${step === 1 ? "w-2/5" : "w-4/5"}`}
+              className="h-full rounded-full bg-primary transition-all duration-300"
+              style={{ width: step === 1 ? "40%" : "80%" }}
             />
           </div>
         </div>
@@ -543,11 +552,7 @@ export default function CreateAgentDialog({
             </>
           )}
 
-          {error ? (
-            <p className="mt-4 text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          ) : null}
+          {error ? <StatusNotice tone="destructive" className="mt-4" title={error} /> : null}
         </div>
 
         <div className="sticky bottom-0 z-10 flex shrink-0 items-center justify-end gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4">

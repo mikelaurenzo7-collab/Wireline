@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import RoleplaySandbox from "../RoleplaySandbox";
 import { Button } from "../atoms";
+import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
 import {
   ACTIVATION_PENDING_COPY,
@@ -393,11 +394,7 @@ export default function PostCreateActivationWizard({
                 </div>
               )}
 
-              {wireError ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {wireError}
-                </p>
-              ) : null}
+              {wireError ? <StatusNotice tone="destructive" title={wireError} /> : null}
 
               <div className="flex flex-wrap gap-2">
                 {hasLine ? (

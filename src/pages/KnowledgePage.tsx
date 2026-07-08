@@ -144,10 +144,10 @@ export default function KnowledgePage() {
       {!loading && !agents.length ? (
         <EmptyTraining />
       ) : (
-        <WorkspacePageFrame>
+        <WorkspacePageFrame mode="standard">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <WorkspacePageIntro title="Training" align="start" />
+              <WorkspacePageIntro title="Training" />
               <p className="mt-1 text-sm text-muted-foreground">
                 Next action: add one source, then test the agent in Simulator.
               </p>

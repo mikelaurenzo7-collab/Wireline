@@ -49,7 +49,7 @@ const surfaceLinks = [
 export default function CustomizationSettings() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-8">
-      <WorkspacePageFrame>
+      <WorkspacePageFrame mode="standard">
         <SettingsTabs />
         <AppearanceSettings />
 

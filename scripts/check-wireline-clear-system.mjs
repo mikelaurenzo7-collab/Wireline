@@ -1086,8 +1086,8 @@ mustExclude(
 mustInclude(
   "src/components/WorkspaceShell.tsx",
   workspaceShell,
-  /Studio/,
-  "primary rail must include Studio as the entry to the canvas",
+  /MOBILE_PRIMARY_NAV|\/studio/,
+  "shell must expose Studio via the canonical navigation module",
 );
 mustInclude(
   "src/components/WorkspaceShell.tsx",

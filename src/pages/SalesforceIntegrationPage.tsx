@@ -210,7 +210,7 @@ export default function SalesforceIntegrationPage() {
         </div>
       }
     >
-      <WorkspacePageFrame>
+      <WorkspacePageFrame mode="standard">
         {connectionError ? (
           <StatusNotice tone="warning" title="Connection state unavailable">
             {connectionError}

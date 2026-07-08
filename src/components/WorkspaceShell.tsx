@@ -1,56 +1,26 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  CheckSquare,
-  Bot,
-  BarChart3,
-  GraduationCap,
-  Home,
-  Inbox,
-  LayoutGrid,
-  Phone,
-  Settings,
-  Workflow,
-} from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import ActivationNudge from "./ActivationNudge";
 import SkipToContentLink from "./layout/SkipToContentLink";
+import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import { useAuth } from "../contexts/AuthContext";
 import { useAccount } from "../contexts/AccountContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceSidebarLabel } from "../lib/user-display";
+import {
+  MOBILE_MORE_HREF,
+  MOBILE_PRIMARY_NAV,
+  OPERATE_NAV,
+  WORKSPACE_NAV,
+  isMobileMoreActive,
+  isNavActive,
+  type ShellNavItem,
+} from "../constants/navigation";
 import AgentFace from "./AgentFace";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
-
-type NavItem = { href: string; label: string; shortLabel?: string; icon: typeof Bot };
-
-const WORKSPACE_NAV: NavItem[] = [
-  { href: "/overview", label: "Overview", icon: Home },
-  { href: "/knowledge", label: "Training", icon: GraduationCap },
-  { href: "/connections", label: "Wire", icon: Workflow },
-];
-
-const OPERATE_NAV: NavItem[] = [
-  { href: "/phone", label: "Phone", icon: Phone },
-  { href: "/approvals", label: "Approvals", icon: CheckSquare },
-  { href: "/insights", label: "Insights", icon: BarChart3 },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/apps", label: "Apps", icon: LayoutGrid },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
-const MOBILE_NAV: NavItem[] = [
-  { href: "/overview", label: "Overview", shortLabel: "Home", icon: Home },
-  { href: "/studio", label: "Studio", icon: Bot },
-  { href: "/knowledge", label: "Training", shortLabel: "Train", icon: GraduationCap },
-  { href: "/phone", label: "Phone", icon: Phone },
-  { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
-  { href: "/connections", label: "Wire", icon: Workflow },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
 
 type NativeWindow = Window & {
   WirelineNative?: unknown;
@@ -79,29 +49,8 @@ function readinessLabel(agent: { phone_number?: string | null } | undefined): st
   return agent?.phone_number ? "Active" : "Training";
 }
 
-function cleanPath(pathname: string) {
-  return pathname.replace(/\/+$/, "") || "/";
-}
-
-function isActive(pathname: string, href: string) {
-  const current = cleanPath(pathname);
-  const target = cleanPath(href);
-  if (target === "/settings") {
-    return (
-      current === "/settings" ||
-      current.startsWith("/settings/") ||
-      current === "/admin" ||
-      current.startsWith("/admin/")
-    );
-  }
-  if (target === "/studio") {
-    return current === "/studio" || current.startsWith("/studio/") || current === "/agents";
-  }
-  return current === target || current.startsWith(`${target}/`);
-}
-
-function RailLink({ item, pathname }: { item: NavItem; pathname: string }) {
-  const active = isActive(pathname, item.href);
+function RailLink({ item, pathname }: { item: ShellNavItem; pathname: string }) {
+  const active = isNavActive(pathname, item.href);
   const Icon = item.icon;
   return (
     <Link
@@ -117,9 +66,45 @@ function RailLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-function MobileRailLink({ item, pathname }: { item: NavItem; pathname: string }) {
-  const active = isActive(pathname, item.href);
+function MobileDockLink({
+  item,
+  pathname,
+  moreOpen,
+  onMore,
+}: {
+  item: ShellNavItem;
+  pathname: string;
+  moreOpen: boolean;
+  onMore: () => void;
+}) {
+  const isMore = item.href === MOBILE_MORE_HREF;
+  const active = isMore ? isMobileMoreActive(pathname) : isNavActive(pathname, item.href);
   const Icon = item.icon;
+
+  if (isMore) {
+    return (
+      <button
+        type="button"
+        aria-label="More destinations"
+        aria-expanded={moreOpen}
+        aria-haspopup="dialog"
+        data-wireline-nav-href={MOBILE_MORE_HREF}
+        data-wireline-nav-active={active ? "true" : undefined}
+        onClick={onMore}
+        className={`grid min-h-[48px] min-w-0 flex-1 place-items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-semibold leading-none transition-colors wl-focus-ring-halo sm:text-[11px] ${
+          active
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        }`}
+      >
+        <Icon size={18} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
+        <span className="block max-w-full truncate leading-none">
+          {item.shortLabel ?? item.label}
+        </span>
+      </button>
+    );
+  }
+
   return (
     <Link
       to={item.href}
@@ -127,9 +112,13 @@ function MobileRailLink({ item, pathname }: { item: NavItem; pathname: string })
       aria-current={active ? "page" : undefined}
       data-wireline-nav-href={item.href}
       data-wireline-nav-active={active ? "true" : undefined}
-      className={`grid min-h-[48px] min-w-0 flex-1 place-items-center gap-1 rounded-xl px-0.5 py-1.5 text-[9px] font-semibold leading-none transition-colors sm:px-1 sm:text-[10px] ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"}`}
+      className={`grid min-h-[48px] min-w-0 flex-1 place-items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-semibold leading-none transition-colors wl-focus-ring-halo sm:text-[11px] ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
     >
-      <Icon size={16} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
+      <Icon size={18} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
       <span className="block max-w-full truncate leading-none">
         {item.shortLabel ?? item.label}
       </span>
@@ -142,11 +131,8 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
-  // Account posture, not billing tier — the actual plan lives in Settings → Billing.
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
-  // Inside Studio with an active agent: swap the user card for a
-  // "Current agent" card that matches the prototype's sidebar footer.
-  const onStudio = isActive(pathname, "/studio");
+  const onStudio = isNavActive(pathname, "/studio");
   const activeAgent =
     onStudio && resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
 
@@ -191,10 +177,6 @@ function DesktopRail({ pathname }: { pathname: string }) {
         <nav className="flex min-h-0 flex-1 flex-col gap-1 pr-0.5" aria-label="Agents">
           {agents.length ? (
             <>
-              {/* Cap to 5 most-recent so the rail stops duplicating the full
-                  Overview roster. The active agent is always pinned first so
-                  the user sees the one they're working in even if it's not
-                  among the most recent. */}
               {(() => {
                 const activeFirst = resolvedId
                   ? [
@@ -207,13 +189,17 @@ function DesktopRail({ pathname }: { pathname: string }) {
                 return (
                   <>
                     {visible.map((agent) => {
-                      const active = isActive(pathname, "/studio") && resolvedId === agent.id;
+                      const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
                       return (
                         <Link
                           key={agent.id}
                           to={`/studio?agent=${encodeURIComponent(agent.id)}`}
                           aria-current={active ? "page" : undefined}
-                          className={`wl-rail-agent-link flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${active ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                          className={`wl-rail-agent-link flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${
+                            active
+                              ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}
                         >
                           <AgentFace
                             seed={agent.name || agent.id}
@@ -314,18 +300,35 @@ function DesktopRail({ pathname }: { pathname: string }) {
   );
 }
 
-function MobileDock({ pathname }: { pathname: string }) {
+function MobileDock({
+  pathname,
+  moreOpen,
+  onMoreOpen,
+}: {
+  pathname: string;
+  moreOpen: boolean;
+  onMoreOpen: (open: boolean) => void;
+}) {
   return (
-    <nav
-      aria-label="Workspace navigation"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl lg:hidden"
-    >
-      <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
-        {MOBILE_NAV.map((item) => (
-          <MobileRailLink key={item.href} item={item} pathname={pathname} />
-        ))}
-      </div>
-    </nav>
+    <>
+      <nav
+        aria-label="Workspace navigation"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl lg:hidden"
+      >
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-0.5">
+          {MOBILE_PRIMARY_NAV.map((item) => (
+            <MobileDockLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              moreOpen={moreOpen}
+              onMore={() => onMoreOpen(true)}
+            />
+          ))}
+        </div>
+      </nav>
+      <MobileNavMoreSheet open={moreOpen} onOpenChange={onMoreOpen} pathname={pathname} />
+    </>
   );
 }
 
@@ -347,12 +350,9 @@ export default function WorkspaceShell({
   fullBleed?: boolean;
 }) {
   const location = useLocation();
+  const [moreOpen, setMoreOpen] = useState(false);
   const nativeAppShell = isNativeAppShell();
   const showHeader = Boolean(title || eyebrow || action);
-  // Responsive padding scale that scales gracefully from the smallest phone
-  // (≥320px, mobile dock below) up through ultra-wide desktops. The main
-  // content max-w-[1480px] cap below means anything wider becomes side
-  // breathing room — and at 2xl we widen so 4K+ doesn't read as starved.
   const mainSpacing = fullBleed
     ? "p-0 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0"
     : "px-3 pt-2 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-3 lg:px-8 lg:pt-4 lg:pb-6 xl:px-10 2xl:px-14 2xl:pt-6";
@@ -404,7 +404,7 @@ export default function WorkspaceShell({
         </main>
       </div>
       {!nativeAppShell ? <MobileBrowserUtilities /> : null}
-      <MobileDock pathname={location.pathname} />
+      <MobileDock pathname={location.pathname} moreOpen={moreOpen} onMoreOpen={setMoreOpen} />
     </div>
   );
 }

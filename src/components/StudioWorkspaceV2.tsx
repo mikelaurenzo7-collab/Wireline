@@ -2,7 +2,9 @@ import { Plus, Sparkles } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import { Skeleton } from "../components/atoms";
+import { Button, Skeleton } from "../components/atoms";
+import { PanelSkeleton } from "../components/atoms/skeleton-presets";
+import { EmptyState } from "../components/ui/EmptyState";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
@@ -14,24 +16,18 @@ import { useIsDesktop } from "../hooks/useMediaQuery";
 function StudioLoadingState() {
   return (
     <main
-      className="grid min-h-[55vh] place-items-center bg-background px-4 sm:px-6 safe-area-insets"
+      className="flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6 safe-area-insets"
       aria-busy="true"
       aria-label="Loading Studio"
     >
-      <div className="w-full max-w-5xl space-y-4">
+      <div className="mx-auto w-full max-w-5xl space-y-4">
         <Skeleton shape="text" className="h-3 w-20" />
         <Skeleton shape="text" className="h-8 w-80 max-w-full" />
-        <Skeleton shape="text" className="h-3 w-64" />
-        <div className="pt-3">
-          <Skeleton
-            shape="surface"
-            className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]"
-          />
-        </div>
-        <div className="flex gap-2 pt-1">
-          <Skeleton shape="text" className="h-8 w-28 rounded-full" />
-          <Skeleton shape="text" className="h-8 w-28 rounded-full" />
-        </div>
+        <Skeleton
+          shape="surface"
+          className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]"
+        />
+        <PanelSkeleton rows={2} className="pt-1" />
       </div>
     </main>
   );
@@ -53,57 +49,41 @@ function StudioEmptyState() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center bg-background px-4 py-8 text-center sm:px-6 sm:py-12">
-      <div className="w-full max-w-xl lg:max-w-2xl">
-        <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-card sm:mb-6 sm:h-14 sm:w-14">
-          <Sparkles size={24} strokeWidth={1.5} className="sm:size-7" />
-        </div>
-
-        <h1 className="font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-0.025em] sm:text-4xl lg:text-5xl">
-          Wire one.
-        </h1>
-        <p className="mx-auto mt-2 max-w-prose text-base text-muted-foreground sm:mt-3 sm:text-lg">
-          Brief it. It learns from every outcome.
-        </p>
-
-        <div className="mt-6 space-y-4 sm:mt-8">
-          <div>
-            <label className="sr-only" htmlFor="studio-brief">
-              What should this agent do?
-            </label>
-            <textarea
-              id="studio-brief"
-              value={brief}
-              onChange={(event) => setBrief(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  startCreate();
-                }
-              }}
-              className="w-full min-h-[68px] resize-y rounded-xl border border-border bg-card p-3 text-[14px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 sm:min-h-[80px] sm:p-4 sm:text-[15px]"
-              placeholder="Book appointments, answer pricing questions, follow up on leads..."
-            />
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link
-              to={createHref()}
-              style={{
-                background: "var(--wireline-color-action-primary-default)",
-                color: "var(--wireline-color-text-onAction)",
-              }}
-              className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium shadow-sm transition hover:opacity-95 active:scale-[0.985] sm:px-8 sm:py-3 sm:text-base"
-            >
-              <Plus size={15} className="sm:size-[17px]" /> Wire it (start setup)
+    <EmptyState
+      fill
+      icon={Sparkles}
+      title="Wire one."
+      description="Brief it. It learns from every outcome."
+      className="wl-composer-dock"
+    >
+      <div className="mx-auto mt-2 w-full max-w-xl text-left">
+        <label className="sr-only" htmlFor="studio-brief">
+          What should this agent do?
+        </label>
+        <textarea
+          id="studio-brief"
+          value={brief}
+          onChange={(event) => setBrief(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              startCreate();
+            }
+          }}
+          className="w-full min-h-[68px] resize-y rounded-xl border border-border bg-card p-3 text-[14px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 sm:min-h-[80px] sm:p-4 sm:text-[15px]"
+          placeholder="Book appointments, answer pricing questions, follow up on leads..."
+        />
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <Button asChild>
+            <Link to={createHref()}>
+              <Plus size={15} aria-hidden="true" />
+              Wire it (start setup)
             </Link>
-            <span className="self-center text-[10px] text-muted-foreground sm:text-xs">
-              or press Enter
-            </span>
-          </div>
+          </Button>
+          <span className="text-xs text-muted-foreground">or press Enter</span>
         </div>
       </div>
-    </div>
+    </EmptyState>
   );
 }
 

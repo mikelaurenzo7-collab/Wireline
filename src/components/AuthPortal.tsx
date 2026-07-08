@@ -2,7 +2,6 @@
 import React, { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Building2,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../contexts/AuthContext";
+import { StatusNotice } from "./molecules";
 import { PageMeta } from "../lib/page-meta";
 import {
   captureSignupIntentFromLocation,
@@ -750,15 +750,7 @@ export default function AuthPortal() {
                 </button>
               )}
 
-              {error && (
-                <div
-                  role="alert"
-                  className="flex items-start gap-2 rounded-xl border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] p-3 text-sm text-[var(--wireline-color-status-error)]"
-                >
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <div>{error}</div>
-                </div>
-              )}
+              {error ? <StatusNotice tone="destructive" title={error} /> : null}
               {message && (
                 <div className="flex items-start gap-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-3 text-sm text-[var(--wireline-color-text-primary)]">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--wireline-color-status-success)]" />

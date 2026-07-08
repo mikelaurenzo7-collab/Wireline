@@ -57,7 +57,7 @@ const clientSurfaces = [
 export default function ClientAppsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
-      <WorkspacePageFrame>
+      <WorkspacePageFrame mode="standard">
         <WorkspacePageIntro title="Apps" align="start" />
         <p className="-mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
           Install Wireline on every surface your team uses — browser, phone, and AI assistants.

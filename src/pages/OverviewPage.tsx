@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from "react";
-import { ArrowRight, BarChart3, Bot, Cable, Clock3, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, Clock3, Phone, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import ActivationChecklist from "../components/ActivationChecklist";
@@ -10,8 +10,8 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
-import RouteFallback from "../components/layout/RouteFallback";
 import WidgetBoundary from "../components/WidgetBoundary";
+import RouteFallback from "../components/layout/RouteFallback";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel } from "../lib/product-copy";
@@ -21,14 +21,6 @@ import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import type { CallLog } from "../types/api";
 
 const DailyBriefPanel = lazy(() => import("../components/DailyBrief"));
-
-const QUICK_ACTIONS = [
-  { href: "/studio", icon: Sparkles, title: "Open Studio" },
-  { href: "/templates", icon: Bot, title: "Browse templates" },
-  { href: "/phone", icon: Phone, title: "Review calls" },
-  { href: "/insights", icon: BarChart3, title: "Open insights" },
-  { href: "/connections", icon: Cable, title: "Add connection" },
-] as const;
 
 function todayLabel() {
   return new Intl.DateTimeFormat(undefined, {
@@ -160,9 +152,9 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
 type AgentKind = "personal" | "business";
 
 function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgentSummary[] }) {
-  // Literal "Personal agents" / "Business agents" so test regexes and the
-  // Claude Design copy stay aligned and don't depend on string interpolation.
   const heading = kind === "personal" ? "Personal agents" : "Business agents";
+  if (agents.length === 0) return null;
+
   return (
     <section aria-label={heading}>
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -300,10 +292,13 @@ export default function OverviewPage() {
   const hasAgents = !loading && agents.length > 0;
   const primaryAgent = agents[0];
   const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
+  const primaryStudioHref = primaryAgent
+    ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}`
+    : "/studio?create=1";
 
   return (
     <WorkspaceShell contentClassName="pt-7 pb-10 lg:pt-8">
-      <WorkspacePageFrame className="wl-overview">
+      <WorkspacePageFrame mode="standard" className="wl-overview">
         <section className="relative wl-overview-greeting text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             {todayLabel()}
@@ -315,24 +310,37 @@ export default function OverviewPage() {
               </h1>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
-                <Link to="/studio?create=1">
-                  <Sparkles aria-hidden="true" size={15} />
-                  New agent
-                </Link>
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                className="shrink-0 justify-center sm:min-w-[154px]"
-                onClick={() => setShowOutboundDial(true)}
-              >
-                <Phone aria-hidden="true" size={15} />
-                New call
-              </Button>
+              {hasAgents ? (
+                <>
+                  <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
+                    <Link to={primaryStudioHref}>
+                      <Sparkles aria-hidden="true" size={15} />
+                      {primaryAgent ? `Open ${primaryAgent.name}` : "Open Studio"}
+                    </Link>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="shrink-0 justify-center sm:min-w-[154px]"
+                    onClick={() => setShowOutboundDial(true)}
+                  >
+                    <Phone aria-hidden="true" size={15} />
+                    New call
+                  </Button>
+                </>
+              ) : (
+                <Button asChild className="shrink-0 justify-center sm:min-w-[180px]">
+                  <Link to="/studio?create=1">
+                    <Sparkles aria-hidden="true" size={15} />
+                    Wire your first agent
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </section>
+
+        <ActivationChecklist className="mb-2" />
 
         <section
           className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
@@ -370,23 +378,6 @@ export default function OverviewPage() {
           </StatusNotice>
         ) : null}
 
-        <section aria-label="Quick actions">
-          <div className="flex flex-wrap justify-center gap-2">
-            {QUICK_ACTIONS.map(({ href, icon: Icon, title }) => (
-              <Link
-                key={href}
-                to={href}
-                className="wl-surface-tint inline-flex min-h-[44px] items-center gap-2 rounded-[var(--wireline-radius-pill)] border border-border bg-card px-4 text-sm font-semibold text-foreground wl-focus-ring-halo"
-              >
-                <Icon aria-hidden="true" size={15} className="text-primary" />
-                {title}
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <ActivationChecklist className="mb-2" />
-
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Outcome ledger">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -417,11 +408,25 @@ export default function OverviewPage() {
             </div>
             {loading ? (
               <AgentLoadingRows />
-            ) : (
+            ) : hasAgents ? (
               <div className="grid gap-5">
                 <AgentSection kind="personal" agents={personalAgents} />
                 <AgentSection kind="business" agents={businessAgents} />
               </div>
+            ) : (
+              <EmptyState
+                density="compact"
+                titleTone="ui"
+                withHalo={false}
+                icon={<Bot aria-hidden="true" />}
+                title="No agents yet"
+                description="Wire one in Studio — it learns from every outcome."
+                action={
+                  <Button asChild size="sm">
+                    <Link to="/studio?create=1">Wire one</Link>
+                  </Button>
+                }
+              />
             )}
           </article>
 

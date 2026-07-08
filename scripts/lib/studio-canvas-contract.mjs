@@ -15,6 +15,7 @@ export const STUDIO_CANVAS_VISION = {
 export const STUDIO_CANVAS_SURFACES = {
   appRoutes: "src/routes/AppRoutes.tsx",
   studioShell: "src/components/WorkspaceShell.tsx",
+  navigation: "src/constants/navigation.ts",
   studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
@@ -55,14 +56,18 @@ export const STUDIO_CANVAS_REQUIRED = {
   studioShell: [
     { id: "workspace-navigation", pattern: /Workspace navigation/ },
     { id: "rail-width", pattern: /w-\[236px\]/ },
-    { id: "apps-route", pattern: /\/apps/ },
+    { id: "apps-route", pattern: /OPERATE_NAV/ },
     { id: "route-active-state", pattern: /useLocation/ },
-    // "Assistants" nav was retired; the rail is agent-language only.
+    { id: "nav-source", pattern: /from "\.\.\/constants\/navigation"/ },
+    { id: "mobile-more", pattern: /MobileNavMoreSheet/ },
+  ],
+  navigation: [
     { id: "studio-label", pattern: /label: "Studio"/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
+    { id: "apps-route", pattern: /\/apps/ },
   ],
   studioChrome: [
-    { id: "breadcrumb", pattern: /Studio breadcrumb|Assistant breadcrumb/ },
+    { id: "breadcrumb", pattern: /Studio breadcrumb|Studio context|Assistant breadcrumb/ },
     { id: "readiness", pattern: /Active|Training/ },
     { id: "test-call", pattern: /Run test call|Test call/ },
     { id: "deploy", pattern: /Deploy/ },
@@ -72,7 +77,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     // personalized greeting headline.
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
     // Agent language only; Assistant was retired by the migration plan.
-    { id: "new-agent", pattern: /New agent/ },
+    { id: "new-agent", pattern: /New agent|Wire your first agent|Wire one/ },
     { id: "personal-agents", pattern: /Personal agents/ },
     { id: "business-agents", pattern: /Business agents/ },
     { id: "full-roster", pattern: /agents\.map/ },

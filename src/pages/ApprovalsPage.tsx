@@ -6,9 +6,8 @@ import WorkspaceShell from "../components/WorkspaceShell";
 export default function ApprovalsPage() {
   return (
     <WorkspaceShell contentClassName="flex min-h-0 flex-1 flex-col pt-1 pb-8">
-      <WorkspacePageFrame className="flex min-h-0 flex-1 flex-col">
+      <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
         <WorkspacePageIntro
-          align="start"
           title="Approvals"
           action={
             <p className="max-w-md text-right text-xs leading-relaxed text-muted-foreground">

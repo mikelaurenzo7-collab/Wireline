@@ -5,6 +5,7 @@ export const STUDIO_CANVAS_VISION = WIRELINE_DESIGN_VISION.studioCanvas;
 export const STUDIO_CANVAS_SURFACES = {
   appRoutes: "src/routes/AppRoutes.tsx",
   studioShell: "src/components/WorkspaceShell.tsx",
+  navigation: "src/constants/navigation.ts",
   studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
@@ -56,16 +57,19 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "rail-width", pattern: /w-\[236px\]/ },
     { id: "wordmark", pattern: /Wireline\s*<\/span>/ },
     { id: "route-active-state", pattern: /useLocation/ },
-    { id: "apps-route", pattern: /href: "\/apps"/ },
-    { id: "studio-route", pattern: /target === "\/studio"/ },
-    // "Assistants" nav was retired per the migration plan; the roster lives
-    // in Overview now. Rail items are agent-language only.
-    { id: "studio-label", pattern: /label: "Studio"/ },
-    { id: "touch-target", pattern: /min-h-\[44px\]/ },
+    { id: "apps-route", pattern: /OPERATE_NAV/ },
+    { id: "nav-source", pattern: /from "\.\.\/constants\/navigation"/ },
+    { id: "mobile-more", pattern: /MobileNavMoreSheet/ },
+    { id: "touch-target", pattern: /min-h-\[44px\]|min-h-\[48px\]/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
+  navigation: [
+    { id: "studio-route", pattern: /target === "\/studio"/ },
+    { id: "studio-label", pattern: /label: "Studio"/ },
+    { id: "apps-route", pattern: /href: "\/apps"/ },
+  ],
   studioChrome: [
-    { id: "breadcrumb", pattern: /Studio breadcrumb|Assistant breadcrumb/ },
+    { id: "breadcrumb", pattern: /Studio breadcrumb|Studio context|Assistant breadcrumb/ },
     { id: "readiness", pattern: /Active|Training/ },
     { id: "test-call", pattern: /Run test call|Test call/ },
     { id: "deploy", pattern: /Deploy/ },
@@ -75,7 +79,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
     // Wireline uses "agent" language; Assistant was retired by the migration
     // plan. The dashboard CTA wires a new agent.
-    { id: "new-agent", pattern: /New agent/ },
+    { id: "new-agent", pattern: /New agent|Wire your first agent|Wire one/ },
     { id: "personal-agents", pattern: /Personal agents/ },
     { id: "business-agents", pattern: /Business agents/ },
     { id: "all-agents", pattern: /agents\.map/ },

@@ -155,7 +155,7 @@ export default function BillingSettings() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
-      <WorkspacePageFrame narrow>
+      <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
 
         {loadError && (
