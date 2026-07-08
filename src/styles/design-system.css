@@ -306,3 +306,28 @@
 .bg-primary\/10 {
   background-color: var(--wireline-action-soft) !important;
 }
+
+.wl-card-interactive {
+  position: relative;
+  box-shadow: var(--wireline-elevation-xs, 0 1px 2px rgb(15 23 42 / 0.04));
+}
+
+.wl-card-interactive::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--wireline-action-soft) 18%, transparent),
+    transparent 45%
+  );
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.wl-card-interactive:hover::after,
+.wl-card-interactive:focus-within::after {
+  opacity: 1;
+}
