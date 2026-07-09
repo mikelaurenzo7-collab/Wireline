@@ -181,7 +181,7 @@ export default function ComplianceCenter() {
         </div>
       </section>
 
-      <section className="wl-paper wl-paper-elevated overflow-hidden">
+      <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
         <DncManager />
       </section>
     </div>
