@@ -171,7 +171,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
       >
         <Search size={14} strokeWidth={2} aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate">Search workspace</span>
+        <span className="min-w-0 flex-1 truncate">Search</span>
         <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
           ⌘K
         </kbd>

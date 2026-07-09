@@ -178,7 +178,7 @@ export default function SettingsPage() {
               <span className="wl-data-row__main">
                 <span className="wl-data-row__title">Compliance Center</span>
                 <span className="wl-data-row__detail">
-                  DNC, consent ledger, federal scrub status, and audit export
+                  DNC, consent ledger, scrub status, and audit export
                 </span>
               </span>
               <span className="wl-data-row__trailing">

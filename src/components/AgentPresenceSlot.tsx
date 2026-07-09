@@ -129,11 +129,17 @@ export function AgentPresenceMeta({
     VIDEO_PRESENTER_PROVIDERS[presenterOverride?.provider ?? identity.video.providerPreference]
       .surfaceLabel;
   const customization = presenterOverride ? presenterCustomizationMessage(presenterOverride) : null;
+  const showSurfaceChip =
+    Boolean(surfaceLabel) &&
+    surfaceLabel.trim().toLowerCase() !==
+      String(headline || "")
+        .trim()
+        .toLowerCase();
 
   return (
     <p className={`wl-presence__strip ${className}`.trim()} role="status">
       <strong>{headline}</strong>
-      <span className="wl-presence__chip">{surfaceLabel}</span>
+      {showSurfaceChip ? <span className="wl-presence__chip">{surfaceLabel}</span> : null}
       {customization ? <span className="wl-presence__chip">{customization}</span> : null}
       <span className="text-[var(--wireline-color-text-tertiary)]">
         {identity.persona.shortLabel} · {identity.persona.microcopy}

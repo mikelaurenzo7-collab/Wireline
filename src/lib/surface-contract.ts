@@ -1,6 +1,6 @@
 const KNOWLEDGE_TABS = ["Knowledge", "Voice", "Flows", "Simulator"] as const;
 
-const SETTINGS_TABS = ["Account", "Billing", "Phone", "Team", "Branding", "Compliance"] as const;
+const SETTINGS_TABS = ["Account", "Billing", "Phone", "Team", "Brand", "Compliance"] as const;
 
 const PAGE_CHROME_MODES = ["standard", "narrow", "operate", "studio"] as const;
 
@@ -71,7 +71,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
       "ComplianceCenterPage",
     ],
     narrowTabs: ["Account", "Billing", "Team", "Compliance"],
-    standardTabs: ["Phone", "Branding"],
+    standardTabs: ["Phone", "Brand"],
     requiredPhoneSections: [
       "Your Wireline number",
       "Call forwarding",

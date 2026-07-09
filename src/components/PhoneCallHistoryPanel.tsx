@@ -50,7 +50,10 @@ export default function PhoneCallHistoryPanel() {
     );
   }
 
-  if (hasCalls || hasCalls === null) return <CallLogsClaude />;
+  // Only mount the heavy console when we positively know there is at least one call.
+  // Probe failure (null) and empty workspaces both get the framed empty state — never
+  // the black CallLogsClaude void that previously shipped on first paint.
+  if (hasCalls === true) return <CallLogsClaude />;
 
   return (
     <div className="grid h-full min-h-0 place-items-center px-6 py-10">

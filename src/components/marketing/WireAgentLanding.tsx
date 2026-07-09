@@ -341,18 +341,21 @@ export default function WireAgentLanding() {
               </div>
 
               <ul
-                className="mx-auto mt-7 grid max-w-[40rem] gap-2 sm:grid-cols-3 lg:mx-0"
+                className="mx-auto mt-7 grid max-w-[40rem] grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 lg:mx-0"
                 aria-label="Wireline audiences"
               >
                 {AUDIENCES.map((audience) => (
                   <li
                     key={audience}
-                    className="flex items-center justify-center gap-2 text-[13px] text-muted-foreground lg:justify-start"
+                    className="flex items-center justify-start gap-2 text-[13px] text-muted-foreground"
                   >
-                    <span className="marketing-proof-chip h-[18px] w-[18px]" aria-hidden="true">
+                    <span
+                      className="marketing-proof-chip h-[18px] w-[18px] shrink-0"
+                      aria-hidden="true"
+                    >
                       ✓
                     </span>
-                    {audience}
+                    <span className="min-w-0 leading-snug">{audience}</span>
                   </li>
                 ))}
               </ul>
