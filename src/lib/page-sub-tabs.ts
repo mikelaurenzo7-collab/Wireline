@@ -57,10 +57,10 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     ariaLabel: "Insights categories",
     layoutIdPrefix: "insights-group",
     tabs: [
-      { id: "performance", label: "Performance", icon: BarChart3 },
-      { id: "reliability", label: "Reliability", icon: ShieldAlert },
+      { id: "performance", label: "Perf", icon: BarChart3 },
+      { id: "reliability", label: "Uptime", icon: ShieldAlert },
       { id: "quality", label: "Quality", icon: Star },
-      { id: "revenue", label: "Revenue", icon: Receipt },
+      { id: "revenue", label: "Rev", icon: Receipt },
     ],
   },
   {
@@ -137,7 +137,7 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
 export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
   { id: "campaigns", label: "Campaigns", icon: Megaphone },
-  { id: "sequences", label: "Sequences", icon: Repeat },
+  { id: "sequences", label: "Seqs", icon: Repeat },
   { id: "callbacks", label: "Callbacks", icon: CalendarClock },
 ];
 

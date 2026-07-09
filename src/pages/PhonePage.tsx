@@ -80,15 +80,14 @@ export default function PhonePage() {
             />
           }
         />
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {primaryTab === "logs" && <PhoneCallHistoryPanel />}
           {primaryTab === "outbound" && (
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
           )}
           {primaryTab === "appointments" && (
-            <div className="grid flex-1 place-items-center px-6 py-10">
+            <div className="flex h-full min-h-0 w-full flex-col items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
               <EmptyState
-                fill
                 framed
                 density="compact"
                 titleTone="ui"

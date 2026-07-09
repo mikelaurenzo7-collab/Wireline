@@ -1,6 +1,6 @@
 const KNOWLEDGE_TABS = ["Knowledge", "Voice", "Flows", "Simulator"] as const;
 
-const SETTINGS_TABS = ["Account", "Billing", "Phone", "Team", "Brand", "Compliance"] as const;
+const SETTINGS_TABS = ["Account", "Billing", "Phone", "Team", "Brand", "Legal"] as const;
 
 const PAGE_CHROME_MODES = ["standard", "narrow", "operate", "studio"] as const;
 
@@ -39,7 +39,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     narrow: {
       maxWidth: "700px",
       header: "Settings tabs + intro",
-      surfaces: ["Account", "Billing", "Team", "Compliance"],
+      surfaces: ["Account", "Billing", "Team", "Legal"],
     },
     operate: {
       fullBleed: true,
@@ -70,7 +70,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
       "CustomizationSettings",
       "ComplianceCenterPage",
     ],
-    narrowTabs: ["Account", "Billing", "Team", "Compliance"],
+    narrowTabs: ["Account", "Billing", "Team", "Legal"],
     standardTabs: ["Phone", "Brand"],
     requiredPhoneSections: [
       "Your Wireline number",

@@ -26,4 +26,10 @@
     text-overflow: unset;
     line-height: 1.4;
   }
+
+  /* Operate empties: keep framed empty states inside the visible panel. */
+  [data-wireline-route="/phone"] .wl-empty-state,
+  [data-wireline-route="/phone"] .wl-panel-elevated {
+    scroll-margin-block: 1rem;
+  }
 }

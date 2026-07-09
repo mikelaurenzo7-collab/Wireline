@@ -39,9 +39,9 @@ export default function OutboundHub({
           </Button>
         )}
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {activeView === "dispatch" && (
-          <div className="flex h-full min-h-0 flex-col overflow-auto">
+          <div className="flex min-h-0 flex-col">
             <div className="border-b border-border px-6 py-5">
               <div className="max-w-2xl">
                 <p className="wl-label mb-2 text-brand">Outbound dispatch</p>

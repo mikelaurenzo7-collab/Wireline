@@ -15,7 +15,7 @@ describe("authenticated surfaces", () => {
       "Phone",
       "Team",
       "Brand",
-      "Compliance",
+      "Legal",
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.training.tabs).toEqual([
       "Knowledge",

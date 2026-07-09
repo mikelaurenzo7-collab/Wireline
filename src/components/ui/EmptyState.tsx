@@ -39,9 +39,9 @@ export interface EmptyStateProps {
    */
   framed?: boolean;
   /**
-   * Center the empty state in its available vertical space (min 55vh) so a
-   * full-page / full-tab empty doesn't cling to the top of the viewport with a
-   * large dead void below it. Opt-in: only the sole-content empties should fill.
+   * Center the empty state in the parent height chain (`h-full` / `flex-1`).
+   * Opt-in for sole-content empties. Avoid viewport min-heights inside
+   * overflow-hidden operate shells — those park content below the fold.
    */
   fill?: boolean;
   /** compact = embedded panels with less vertical padding */
@@ -229,12 +229,8 @@ export function EmptyState({
 
   if (!fill) return content;
 
-  // Center the empty surface within its available vertical space so full-page
-  // empties read as balanced rather than top-glued with a large void beneath.
-  // `flex-1` fills the parent when it's a height-bearing flex column (the
-  // desktop console layout); `min-h-[75vh]` is the floor that guarantees the
-  // same centered balance on mobile, where that flex height chain collapses
-  // and `flex-1`/`h-full` would otherwise resolve to zero. Together they fix
-  // mobile without regressing the desktop centering.
-  return <div className="flex flex-1 flex-col w-full min-h-[75vh] justify-center">{content}</div>;
+  // Center within the parent height chain. Prefer `h-full`/`flex-1` over a
+  // viewport-based min-height — `min-h-[75vh]` inside overflow-hidden operate
+  // shells (Phone History) parked the framed empty below the fold.
+  return <div className="flex h-full min-h-0 w-full flex-1 flex-col justify-center">{content}</div>;
 }
