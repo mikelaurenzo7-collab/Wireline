@@ -37,7 +37,7 @@ router.get("/api/public/stats", async (req, res) => {
   );
   res.json({
     ...PUBLIC_MARKETING_STATS,
-    as_of: new Date().toISOString(),
+    source: "static_example",
   });
 });
 

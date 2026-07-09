@@ -12,6 +12,7 @@ import { dispatchWebhook } from "../lib/webhook-helpers";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 import { runInBackground } from "../lib/background-work";
 import { placeOutboundCall } from "../lib/vapi-client";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 
 const router = express.Router();
 
@@ -84,7 +85,7 @@ function isIntakeRateFailure(
   return !result.ok;
 }
 
-async function checkIntakeRate(keyId: string): Promise<IntakeRateCheck> {
+async function checkIntakeRate(keyId: string, cost = 1): Promise<IntakeRateCheck> {
   const limiter = distributedLimiterStatus();
   if (!limiter.ok) {
     return {
@@ -100,6 +101,7 @@ async function checkIntakeRate(keyId: string): Promise<IntakeRateCheck> {
       bucket: "public_intake",
       windowMs: INTAKE_RATE_WINDOW_MS,
       max: INTAKE_RATE_MAX,
+      cost,
       failClosedOnError: true,
     });
     if (result.allowed) return { ok: true };
@@ -284,6 +286,29 @@ async function processIntakeLead(
     auto_dial_initiated = true;
     runInBackground("intake auto-dial", async () => {
       try {
+        const gate = await evaluateOutboundDialGate({
+          userId: key.user_id,
+          phone: customer_number,
+          leadId: insertedId!,
+          metadata: (metadata || {}) as Record<string, unknown>,
+        });
+
+        if (!gate.allowed) {
+          await drizzle
+            .update(schema.outboundLeads)
+            .set({
+              status: gate.status,
+              metadata: (gate.metadataPatch || metadata || {}) as any,
+            })
+            .where(eq(schema.outboundLeads.id, insertedId!));
+          log.warn("Auto-dial blocked by outbound gate", {
+            leadId: insertedId,
+            reason: gate.reason,
+            status: gate.status,
+          });
+          return;
+        }
+
         const result = await placeOutboundCall({
           userId: key.user_id,
           agentId: agent_id,
@@ -410,20 +435,18 @@ router.post("/leads", async (req: Request, res: Response) => {
       });
     }
 
-    for (let i = 0; i < leads.length; i++) {
-      const r = await checkIntakeRate(key.id);
-      if (isIntakeRateFailure(r)) {
-        if (r.status === 429) {
-          res.set("Retry-After", String(r.retry_after_s));
-          return res.status(429).json({
-            error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
-            code: r.code,
-            retry_after_s: r.retry_after_s,
-            accepted_so_far: i,
-          });
-        }
-        return res.status(r.status).json({ error: r.error, code: r.code });
+    const r = await checkIntakeRate(key.id, leads.length);
+    if (isIntakeRateFailure(r)) {
+      if (r.status === 429) {
+        res.set("Retry-After", String(r.retry_after_s));
+        return res.status(429).json({
+          error: `Rate limit would be exceeded by this batch (${INTAKE_RATE_MAX}/min). Retry in ${r.retry_after_s}s.`,
+          code: r.code,
+          retry_after_s: r.retry_after_s,
+          accepted_so_far: 0,
+        });
       }
+      return res.status(r.status).json({ error: r.error, code: r.code });
     }
 
     const results = await Promise.all(

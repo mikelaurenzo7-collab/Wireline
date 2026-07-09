@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, lt, inArray, gte } from "drizzle-orm";
-import { isDncBlocked } from "../lib/compliance";
-import { evaluateOutboundConsent } from "../lib/tcpa-consent";
-import { isFederalDncListed, assertFederalDncForMarketing } from "../lib/federal-dnc-service";
+import { eq, and, sql, lt, inArray } from "drizzle-orm";
+import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
 import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
@@ -29,7 +28,38 @@ export function isWithinCallWindow(start: string, end: string, now: string): boo
 
 export class CampaignDialerService {
   /**
-   * Processes running campaigns and dials eligible leads.
+   * Processes a single running campaign (launch worker path).
+   */
+  async processCampaignById(userId: string, campaignId: string) {
+    const [campaign] = await drizzle
+      .select()
+      .from(schema.outboundCampaigns)
+      .where(
+        and(
+          eq(schema.outboundCampaigns.id, campaignId),
+          eq(schema.outboundCampaigns.userId, userId),
+          eq(schema.outboundCampaigns.status, CAMPAIGN_STATUS.RUNNING),
+        ),
+      )
+      .limit(1);
+
+    if (!campaign) {
+      log.warn("campaign_dial: campaign not RUNNING or not found", { userId, campaignId });
+      return;
+    }
+
+    if (
+      !this.isWithinWindow(campaign.callWindowStart || "09:00", campaign.callWindowEnd || "17:00")
+    ) {
+      log.info(`Campaign ${campaign.name} is outside its call window`);
+      return;
+    }
+
+    await this.processCampaignLeads(campaign);
+  }
+
+  /**
+   * Processes running campaigns and dials eligible leads (sweep / cron path).
    * @param userId Optional filter to only process campaigns for a specific user.
    */
   async processAllCampaigns(userId?: string) {
@@ -118,81 +148,62 @@ export class CampaignDialerService {
    */
   private async dialLead(lead: any, campaign: any) {
     try {
-      // 0. 24h duplicate-dial guard — never place another campaign call to the
-      // same number within 24 hours (includes this lead's own lastCalledAt).
-      if (lead.customerNumber) {
-        const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const [recent] = await drizzle
-          .select({ id: schema.outboundLeads.id })
-          .from(schema.outboundLeads)
-          .where(
-            and(
-              eq(schema.outboundLeads.userId, lead.userId!),
-              eq(schema.outboundLeads.customerNumber, lead.customerNumber),
-              gte(schema.outboundLeads.lastCalledAt, since),
-            ),
-          )
-          .limit(1);
-        if (recent) {
-          log.info("Skipping dial — number called within 24h", {
+      if (!lead.customerNumber) return;
+
+      const metadata = (lead.metadata || {}) as Record<string, unknown>;
+      const gate = await evaluateOutboundDialGate({
+        userId: lead.userId!,
+        phone: lead.customerNumber,
+        leadId: lead.id,
+        lastCalledAt: lead.lastCalledAt,
+        metadata,
+      });
+
+      if (!gate.allowed) {
+        if (gate.reason === "federal_dnc_unconfigured") {
+          log.warn("Skipping dial — federal DNC vendor not configured", {
             leadId: lead.id,
             campaignId: campaign.id,
           });
           return;
         }
-      }
 
-      // 1. Check DNC
-      if (lead.customerNumber && (await isDncBlocked(lead.userId!, lead.customerNumber))) {
-        await drizzle
-          .update(schema.outboundLeads)
-          .set({ status: LEAD_STATUS.BLOCKED_DNC })
-          .where(eq(schema.outboundLeads.id, lead.id));
-
-        await drizzle.insert(schema.consentLog).values({
-          userId: lead.userId!,
-          customerNumber: lead.customerNumber,
-          event: "outbound_blocked_dnc",
-          state: "blocked",
-          metadata: { leadId: lead.id, campaignId: campaign.id },
-        });
-        return;
-      }
-
-      // 2. TCPA consent gate. Campaigns are automated outbound marketing by default,
-      // so they require the same explicit consent attestation as manual dials.
-      const metadata = (lead.metadata || {}) as Record<string, unknown>;
-      const isFederalDnc = await isFederalDncListed(lead.customerNumber!);
-      const tcpaDecision = evaluateOutboundConsent({
-        phone: lead.customerNumber!,
-        is_internal_dnc: false,
-        is_federal_dnc: isFederalDnc,
-        is_marketing_call: true,
-        has_express_written_consent: metadata.has_express_written_consent === true,
-      });
-      if (!tcpaDecision.allowed) {
         await drizzle
           .update(schema.outboundLeads)
           .set({
-            status: LEAD_STATUS.BLOCKED_TCPA,
-            metadata: { ...metadata, tcpa: tcpaDecision },
+            status: gate.status,
+            ...(gate.metadataPatch ? { metadata: gate.metadataPatch as any } : {}),
           })
           .where(eq(schema.outboundLeads.id, lead.id));
 
-        await drizzle.insert(schema.consentLog).values({
-          userId: lead.userId!,
-          customerNumber: lead.customerNumber,
-          event: "outbound_blocked_tcpa",
-          state: "blocked",
-          metadata: { leadId: lead.id, campaignId: campaign.id, tcpa: tcpaDecision },
-        });
+        if (gate.consentLogEvent) {
+          await drizzle.insert(schema.consentLog).values({
+            userId: lead.userId!,
+            customerNumber: lead.customerNumber,
+            event: gate.consentLogEvent,
+            state: "blocked",
+            metadata: {
+              leadId: lead.id,
+              campaignId: campaign.id,
+              ...(gate.metadataPatch?.tcpa ? { tcpa: gate.metadataPatch.tcpa } : {}),
+            },
+          });
+        } else if (
+          gate.reason === "skipped_duplicate" ||
+          gate.reason === "self_recent_call_scheduled"
+        ) {
+          log.info("Dial blocked by duplicate guard", {
+            leadId: lead.id,
+            campaignId: campaign.id,
+            reason: gate.reason,
+          });
+        }
         return;
       }
 
-      // 3. Centralized launch/spend/rate/quota guard.
+      // Campaigns are automated outbound marketing by default — gate enforces consent.
       await assertOutboundVoiceAllowed({ userId: lead.userId!, source: "campaign", units: 0 });
 
-      // 4. Place Call
       const result = await placeOutboundCall({
         userId: lead.userId!,
         agentId: campaign.agentId!,

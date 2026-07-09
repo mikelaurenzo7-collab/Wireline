@@ -16,7 +16,7 @@ import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { CAMPAIGN_STATUS, LEAD_STATUS } from "../lib/outbound-status";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
-import { parsePlaybookFromGoal } from "../lib/sales-playbooks";
+import { enqueue } from "../lib/job-queue";
 
 const router = Router();
 
@@ -378,20 +378,15 @@ router.post(
         throw AppError.fromHttpStatus(400, "No queued leads in this campaign.");
       }
 
-      const goalPlaybook = parsePlaybookFromGoal(campaign.goal);
-      const requiresFederalDnc =
-        goalPlaybook === "quote-follow-up" ||
-        goalPlaybook === "event-webinar-follow-up" ||
-        goalPlaybook === "crm-reactivation";
-      if (requiresFederalDnc) {
-        const federalGate = assertFederalDncForMarketing();
-        if (!federalGate.allowed) {
-          return res.status(503).json({
-            code: federalGate.code,
-            error: federalGate.message,
-          });
-        }
+      const federalGate = assertFederalDncForMarketing();
+      if (!federalGate.allowed) {
+        return res.status(503).json({
+          code: federalGate.code,
+          error: federalGate.message,
+        });
       }
+
+      const previousStatus = campaign.status;
 
       await drizzle
         .update(schema.outboundCampaigns)
@@ -403,25 +398,29 @@ router.post(
           ),
         );
 
-      res.json({ success: true, dispatching: queued.length });
+      const enq = await enqueue(drizzle, {
+        userId: req.user.id,
+        type: "campaign_dial",
+        payload: { userId: req.user.id, campaignId },
+      });
 
-      // Enqueue the campaign to be dialed by the durable background worker queue.
-      // This prevents serverless timeouts and allows proper concurrency control.
-      // Fire-and-forget: response is already sent, log errors but don't propagate.
-      import("../lib/job-queue")
-        .then((mq) =>
-          mq.enqueue(drizzle, {
-            userId: req.user.id,
-            type: "campaign_dial",
-            payload: { userId: req.user.id, campaignId },
-          }),
-        )
-        .catch((err: unknown) =>
-          log.error("Failed to enqueue campaign_dial job", {
-            error: err instanceof Error ? err.message : String(err),
-            userId: req.user.id,
-          }),
-        );
+      if (!enq.ok) {
+        await drizzle
+          .update(schema.outboundCampaigns)
+          .set({ status: previousStatus, updatedAt: new Date() })
+          .where(
+            and(
+              eq(schema.outboundCampaigns.id, campaignId),
+              eq(schema.outboundCampaigns.userId, req.user.id),
+            ),
+          );
+        return res.status(503).json({
+          code: "CAMPAIGN_ENQUEUE_FAILED",
+          error: enq.error || "Failed to enqueue campaign dial job.",
+        });
+      }
+
+      res.json({ success: true, jobId: enq.jobId, dispatching: queued.length });
     } catch (error: any) {
       log.error("Campaign launch failed", { error: getErrorMessage(error) });
       if (error instanceof AppError) throw error;

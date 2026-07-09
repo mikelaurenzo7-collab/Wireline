@@ -188,6 +188,15 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
 /**
  * Branded payment-link email for the showcase `send_payment_link` Vapi tool.
  */
+function redactPayUrlForLog(payUrl: string): { payUrlRedacted: true; payUrlHost?: string } {
+  try {
+    const parsed = new URL(payUrl);
+    return { payUrlRedacted: true, payUrlHost: parsed.hostname };
+  } catch {
+    return { payUrlRedacted: true };
+  }
+}
+
 export async function sendPaymentLinkEmail(opts: {
   to: string;
   payUrl: string;
@@ -219,7 +228,7 @@ export async function sendPaymentLinkEmail(opts: {
   if (!process.env.RESEND_API_KEY?.trim()) {
     log.warn("send_payment_link called but RESEND_API_KEY is not set — failing loud.", {
       to: opts.to,
-      payUrl: opts.payUrl,
+      ...redactPayUrlForLog(opts.payUrl),
     });
     return {
       ok: false,
@@ -233,7 +242,7 @@ export async function sendPaymentLinkEmail(opts: {
     log.error("send_payment_link Resend rejected send", {
       to: opts.to,
       error: sent.error,
-      payUrl: opts.payUrl,
+      ...redactPayUrlForLog(opts.payUrl),
     });
   }
   return sent;

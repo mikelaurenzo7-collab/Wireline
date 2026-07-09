@@ -62,6 +62,8 @@ export interface RateLimiterOptions {
   windowMs: number;
   /** Maximum requests allowed in the window. */
   max: number;
+  /** Hit count for this check (default 1). Bulk routes pass batch size once. */
+  cost?: number;
   /** Whether to throw an error on Redis failure instead of falling back to memory. */
   failClosedOnError?: boolean;
 }
@@ -71,12 +73,16 @@ export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<
   const now = Date.now();
   const window = Math.floor(now / opts.windowMs);
   const composite = `wireline:rl:${opts.bucket}:${key}:${window}`;
+  const cost = Math.max(1, Math.floor(opts.cost ?? 1));
 
   const r = getRedis();
   if (r) {
     try {
-      const count = (await r.incr(composite)) as number;
-      if (count === 1) {
+      const count =
+        cost === 1
+          ? ((await r.incr(composite)) as number)
+          : ((await r.incrby(composite, cost)) as number);
+      if (count === cost) {
         await r.pexpire(composite, opts.windowMs);
       }
       const remaining = Math.max(0, opts.max - count);
@@ -111,11 +117,15 @@ export async function rateLimit(key: string, opts: RateLimiterOptions): Promise<
   if (!bucket || bucket.resetAt <= now) {
     // Evict oldest entries if at capacity
     evictLRUIfNeeded();
-    memBuckets.set(composite, { count: 1, resetAt: now + opts.windowMs });
+    memBuckets.set(composite, { count: cost, resetAt: now + opts.windowMs });
     touchKey(composite);
-    return { allowed: true, remaining: opts.max - 1, resetMs: opts.windowMs };
+    return {
+      allowed: cost <= opts.max,
+      remaining: Math.max(0, opts.max - cost),
+      resetMs: opts.windowMs,
+    };
   }
-  bucket.count += 1;
+  bucket.count += cost;
   touchKey(composite);
   return {
     allowed: bucket.count <= opts.max,

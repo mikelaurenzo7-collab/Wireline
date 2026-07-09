@@ -23,6 +23,7 @@ export const LEAD_STATUS = {
   MAX_ATTEMPTS: "Max-Attempts",
   VOICEMAIL_LEFT: "Voicemail-Left",
   CALLBACK_SCHEDULED: "Callback-Scheduled",
+  SKIPPED_DUPLICATE: "Skipped-Duplicate",
 } as const;
 
 export type LeadStatus = (typeof LEAD_STATUS)[keyof typeof LEAD_STATUS];
@@ -42,6 +43,9 @@ export function isTerminalLeadStatus(status: string | null | undefined): boolean
     LEAD_STATUS.BLOCKED_DNC,
     LEAD_STATUS.BLOCKED_TCPA,
     LEAD_STATUS.MAX_ATTEMPTS,
+    LEAD_STATUS.SKIPPED_DUPLICATE,
+    LEAD_STATUS.VOICEMAIL_LEFT,
+    LEAD_STATUS.CALLBACK_SCHEDULED,
   ];
   return terminalStatuses.includes(status || "");
 }

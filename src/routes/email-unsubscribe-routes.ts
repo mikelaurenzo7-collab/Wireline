@@ -48,7 +48,9 @@ router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request,
   try {
     const email = verifyUnsubscribeToken(String(req.query.token || ""));
     if (!email) {
-      throw AppError.fromHttpStatus(400, "Invalid or missing unsubscribe token");
+      log.warn("Invalid or missing unsubscribe token on POST");
+      res.status(200).json({ ok: true, unsubscribed: false });
+      return;
     }
     await recordEmailSuppression(email, "one_click_unsubscribe");
     log.info("Email one-click unsubscribe recorded", { email });

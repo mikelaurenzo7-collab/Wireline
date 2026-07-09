@@ -40,16 +40,16 @@ describe("outbound compliance contract", () => {
   it("keeps bulk and campaign dialing explicitly marketing-only", () => {
     const outbound = read("src/routes/outbound-routes.ts");
     const campaignDialer = read("src/services/campaign-dialer.ts");
+    const dialGate = read("src/lib/outbound-dial-gate.ts");
 
     expect(outbound).toContain('callPurpose: "marketing_or_sales"');
     expect(outbound).toContain('source: "bulk"');
     expect(outbound).toContain("has_express_written_consent: req.body.has_express_written_consent");
-    expect(campaignDialer).toContain("Campaigns are automated outbound marketing by default");
-    expect(campaignDialer).toContain("is_marketing_call: true");
-    expect(campaignDialer).toContain("metadata.has_express_written_consent === true");
+    expect(campaignDialer).toContain("evaluateOutboundDialGate");
+    expect(dialGate).toContain("is_marketing_call: true");
+    expect(dialGate).toContain("has_express_written_consent === true");
     expect(campaignDialer).toContain('call_purpose: "marketing_or_sales"');
-    expect(campaignDialer).toContain("isFederalDncListed(lead.customerNumber!");
-    expect(campaignDialer).toContain("is_federal_dnc: isFederalDnc");
+    expect(dialGate).toContain("isFederalDncListed");
     expect(campaignDialer).toContain('source: "campaign"');
   });
 

@@ -717,10 +717,14 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "campaign_dial") {
-    const p = job.payload as { userId: string };
+    const p = job.payload as { userId: string; campaignId?: string };
+    if (!p.userId || !p.campaignId) {
+      log.error("campaign_dial job missing campaignId", { jobId: job.id, payload: p });
+      throw new Error("campaign_dial job requires userId and campaignId");
+    }
     const { CampaignDialerService } = await import("../services/campaign-dialer");
     const dialer = new CampaignDialerService();
-    await dialer.processAllCampaigns(p.userId);
+    await dialer.processCampaignById(p.userId, p.campaignId);
   }
 
   if (job.type === "cadence_tick") {

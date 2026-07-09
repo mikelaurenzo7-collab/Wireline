@@ -90,6 +90,8 @@ export const PRESERVED_LEAD_STATUSES: readonly string[] = [
   "Voicemail-Left",
   "Callback-Scheduled",
   "Blocked-DNC",
+  "Blocked-TCPA",
+  "Skipped-Duplicate",
 ];
 
 export const SENTIMENT_ANGRY_SIGNALS = [
