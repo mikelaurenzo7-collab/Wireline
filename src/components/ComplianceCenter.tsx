@@ -73,15 +73,15 @@ export default function ComplianceCenter() {
   }
 
   return (
-    <div className="grid gap-6">
-      <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
+    <div className="grid gap-4">
+      <section className="wl-paper wl-paper-elevated p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="wl-eyebrow wl-eyebrow--muted">Compliance Center</p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">
+            <h2 className="mt-1 text-base font-semibold text-foreground">
               Prove what happened on every call
             </h2>
-            <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
               Wireline helps you prove who was called, why they were callable, what was disclosed,
               and what action was taken.
             </p>
@@ -90,15 +90,15 @@ export default function ComplianceCenter() {
         </div>
 
         {loading ? (
-          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
             Loading compliance status…
           </div>
         ) : error ? (
-          <StatusNotice tone="destructive" className="mt-4" title={error} />
+          <StatusNotice tone="destructive" className="mt-3" title={error} />
         ) : summary ? (
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card p-3.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Federal DNC
               </p>
@@ -106,7 +106,7 @@ export default function ComplianceCenter() {
                 {summary.federal_dnc_configured ? "Vendor configured" : "Not configured"}
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-xl border border-border bg-card p-3.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Tenant DNC
               </p>
@@ -114,7 +114,7 @@ export default function ComplianceCenter() {
                 {summary.dnc_entry_count} suppressed numbers
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-xl border border-border bg-card p-3.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Consent events
               </p>
@@ -125,7 +125,7 @@ export default function ComplianceCenter() {
           </div>
         ) : null}
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button type="button" size="sm" variant="secondary" asChild>
             <Link to="/trust" target="_blank" rel="noreferrer">
               <ExternalLink className="size-3.5" />
@@ -149,13 +149,13 @@ export default function ComplianceCenter() {
         </div>
       </section>
 
-      <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
+      <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
         <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Recent disclosure and consent events (rule version {summary?.consent_rule_version || "—"}
           ).
         </p>
-        <div className="mt-4 grid gap-2">
+        <div className="mt-3 grid gap-2">
           {(summary?.recent_consent_events || []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No consent events logged yet.</p>
           ) : (
@@ -181,7 +181,7 @@ export default function ComplianceCenter() {
         </div>
       </section>
 
-      <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
+      <section className="wl-paper wl-paper-elevated p-4">
         <DncManager />
       </section>
     </div>
