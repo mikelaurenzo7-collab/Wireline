@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Hammer, Loader2, Check, ArrowRight } from "lucide-react";
-import { ShadButton } from "../../atoms/Button";
+import { ShadButton } from "../../ui/shadcn/ShadButton";
 import { authFetch } from "../../../lib/api";
 import { Field, FormShell, ResultCard, TextArea, TextInput, ErrCard, RunButton } from "../shared";
 
