@@ -93,7 +93,7 @@ export async function evaluateOutboundDialGate(opts: {
       reason: "skipped_duplicate",
       metadataPatch: {
         ...metadata,
-        duplicate_of_lead_id: otherRecent.id,
+        duplicate_of_lead_id: String(otherRecent.id),
         duplicate_guard: "other_within_24h",
       },
     };
