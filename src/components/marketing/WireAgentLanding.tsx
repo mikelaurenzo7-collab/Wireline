@@ -22,7 +22,7 @@ type ModeDetail = {
 
 const HERO_LOOP = MARKETING_VOICE.proof;
 
-const AUDIENCES = ["Personal calls", "Sales", "Support", "Call centers"] as const;
+const AUDIENCES = ["Sales", "Scheduling", "Intake", "Support"] as const;
 
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
   { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
@@ -32,36 +32,36 @@ const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
 
 const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   outbound: {
-    eyebrow: "Outbound",
-    title: "Call the list. Book the next step.",
-    lead: "Sales, reactivation, collections, surveys, renewals, and appointment campaigns — persistence without chaos.",
-    bestFor: ["Sales SDR", "Billing recovery", "Re-engagement"],
-    cta: "Wire outbound",
+    eyebrow: "Sales follow-up",
+    title: "Sales follow-up without another hire.",
+    lead: "Qualify warm leads, revive quotes, book the next step, collect the context, and log the result from one AI phone employee.",
+    bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
+    cta: "Start sales follow-up",
     ctaPath: "/signup?plan=business&mode=outbound",
   },
   inbound: {
-    eyebrow: "Inbound",
-    title: "Answer live demand cleanly.",
-    lead: "Front desk, lead qualification, support triage, scheduling, callbacks, overflow, and after-hours coverage.",
+    eyebrow: "Front desk",
+    title: "Answer demand before it leaks.",
+    lead: "Handle front desk calls, lead qualification, support triage, scheduling, callbacks, overflow, and after-hours coverage.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
-    cta: "Wire inbound",
+    cta: "Start front desk",
     ctaPath: "/signup?plan=business&mode=inbound",
   },
   hybrid: {
-    eyebrow: "Hybrid",
+    eyebrow: "Revenue desk",
     title: "Answer, follow up, and keep moving.",
-    lead: "When inbound callbacks, outbound follow-up, scheduling, and CRM updates belong in one workflow.",
+    lead: "When callbacks, outbound follow-up, scheduling, and CRM updates belong in one workflow, one AI phone employee owns the handoff.",
     bestFor: ["Revenue desk", "Collections desk", "Appointment desk"],
-    cta: "Wire hybrid",
+    cta: "Start revenue desk",
     ctaPath: "/signup?plan=business&mode=hybrid",
   },
 };
 
 const LOOP_COPY = [
-  "Name the role, goal, audience, and what success looks like.",
-  "Set voice, rules, approvals, context, and handoff logic.",
-  "Attach the number, tools, inbox, routing, and spend controls.",
-  "Call, answer, follow up, log outcomes, and improve the next run.",
+  "Name the employee, job, audience, and business result.",
+  "Add voice, rules, approvals, facts, and handoff logic.",
+  "Connect the number, tools, inbox, routing, and spend controls.",
+  "Answer, qualify, book, follow up, log outcomes, and improve the next run.",
 ] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
@@ -74,7 +74,7 @@ const PLAN_PREVIEW = [
     name: "Personal",
     price: "$0",
     period: "to create",
-    body: "Build and train one agent. Live work draws from Conversation Balance.",
+    body: "Build and train one AI phone employee. Live work draws from Conversation Balance.",
     cta: "Start Personal",
     ctaPath: "/signup?plan=personal",
   },
@@ -82,7 +82,7 @@ const PLAN_PREVIEW = [
     name: "Team",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: "Shared capacity for one focused call lane with approvals and a team inbox.",
+    body: "Shared capacity for one focused revenue lane with approvals and a team inbox.",
     cta: "Start Team",
     ctaPath: "/signup?plan=team",
   },
@@ -90,7 +90,7 @@ const PLAN_PREVIEW = [
     name: "Business",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: "More agents, numbers, CRM sync, analytics, roles, and oversight for real operations.",
+    body: "More employees, numbers, CRM sync, analytics, roles, and oversight for real operations.",
     cta: "Start Business",
     ctaPath: "/signup?plan=business",
   },
@@ -157,12 +157,12 @@ export default function WireAgentLanding() {
 
               <h1
                 id="wireline-hero-title"
-                className="wl-display-1 mx-auto max-w-[12ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.82] tracking-[-.075em]"
+                className="wl-display-1 mx-auto max-w-[13ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.82] tracking-[-.075em]"
               >
                 {MARKETING_VOICE.headline}
               </h1>
 
-              <p className="wl-lead mx-auto mt-6 max-w-[38rem]">{MARKETING_VOICE.subline}</p>
+              <p className="wl-lead mx-auto mt-6 max-w-[40rem]">{MARKETING_VOICE.subline}</p>
 
               <div className="mx-auto mt-7 grid max-w-[32rem] grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-card">
                 {HERO_LOOP.map((step, index) => (
@@ -190,7 +190,7 @@ export default function WireAgentLanding() {
                   to="/signup"
                   className="marketing-btn-primary min-h-12 w-full px-6 py-3 text-[15px] font-semibold sm:w-auto"
                 >
-                  Start free agent
+                  Build your first employee
                   <ArrowRight size={16} aria-hidden="true" />
                 </Link>
                 <Link
@@ -227,9 +227,9 @@ export default function WireAgentLanding() {
 
         <section className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p className="marketing-ink-panel__soft text-[18px] font-[var(--wireline-font-family-display)]">
-            One agent. One line.{" "}
+            Sales follow-up without another hire. {" "}
             <span className="text-[var(--wireline-color-text-primary)]">
-              Completed work on the record.
+              Every lead gets a next step.
             </span>
           </p>
         </section>
@@ -238,10 +238,10 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">Four steps from blank agent to live calls.</h2>
+              <h2 className="wl-display-2 mt-4">Four steps from blank role to live phone work.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Create the agent, train it, wire the channel, then run — with a clean record behind
-                every conversation.
+                Build the employee, train it, launch the channel, then improve with a clean record
+                behind every conversation.
               </p>
             </div>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -266,11 +266,11 @@ export default function WireAgentLanding() {
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:items-start">
             <div>
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Call direction</p>
-              <h2 className="wl-display-2 mt-4">Pick the work. Wireline runs the line.</h2>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Phone employee lanes</p>
+              <h2 className="wl-display-2 mt-4">Pick the job. Wireline handles the line.</h2>
               <p className="mt-4 max-w-[34rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Outbound, inbound, or hybrid — same product. You choose the pattern; Wireline
-                handles the number, handoff, record, and balance.
+                Outbound, inbound, or hybrid — same product. You choose the business result;
+                Wireline handles the number, handoff, record, and balance.
               </p>
               <div
                 className="wl-segmented mt-7"
@@ -311,7 +311,7 @@ export default function WireAgentLanding() {
                   hidden={mode !== key}
                 >
                   {mode === key ? (
-                    <div className="grid gap-6">
+                    <div className="space-y-6">
                       <div>
                         <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">
                           {detail.eyebrow}
@@ -408,9 +408,9 @@ export default function WireAgentLanding() {
                 }}
               />
               <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[16ch]">Wire the first line.</h2>
-                <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[480px] text-[16px] leading-[1.6]">
-                  Stand up one trained agent, connect one phone lane, and see the outcome after the
+                <h2 className="wl-display-2 mx-auto max-w-[17ch]">Launch the first phone employee.</h2>
+                <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[520px] text-[16px] leading-[1.6]">
+                  Stand up one trained role, connect one phone lane, and see the outcome after the
                   first real conversation.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -418,7 +418,7 @@ export default function WireAgentLanding() {
                     to="/signup"
                     className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-text-primary)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-canvas-default)] transition-all hover:-translate-y-px hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
                   >
-                    Start free agent
+                    Build your first employee
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
