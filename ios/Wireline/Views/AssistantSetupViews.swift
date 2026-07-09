@@ -14,11 +14,11 @@ struct KnowledgeView: View {
         NavigationStack {
             Group {
                 if agents.isEmpty && !isLoading {
-                    BrandEmptyState(title: "Start with an agent", message: "Create an agent first, then add the facts, rules, and sources that make it useful.", systemImage: "book.closed")
+                    BrandEmptyState(title: "Start with an AI phone employee", message: "Create the employee first, then add the facts, rules, and sources that make it useful.", systemImage: "book.closed")
                 } else {
                     List {
                         if agents.count > 1 {
-                            Section { Picker("Agent", selection: $selectedId) { ForEach(agents) { agent in Text(agent.name).tag(agent.id) } } }
+                            Section { Picker("Employee", selection: $selectedId) { ForEach(agents) { agent in Text(agent.name).tag(agent.id) } } }
                         }
                         Section("Training details") {
                             if let setup, setup.knowledge.isEmpty { Text("No saved details yet.").foregroundStyle(Brand.text2) }
@@ -30,7 +30,7 @@ struct KnowledgeView: View {
                         }
                         Section("Add a detail") {
                             Picker("Save as", selection: $entryType) { Text("Detail").tag("knowledge"); Text("Rule").tag("directive") }.pickerStyle(.segmented)
-                            TextField(entryType == "knowledge" ? "A preference, fact, routine, or policy" : "What the agent should do or avoid", text: $draft, axis: .vertical).lineLimit(3...6)
+                            TextField(entryType == "knowledge" ? "A preference, fact, routine, or policy" : "What the employee should do or avoid", text: $draft, axis: .vertical).lineLimit(3...6)
                             Button { Task { await save() } } label: { if isSaving { ProgressView().frame(maxWidth: .infinity) } else { Label(entryType == "knowledge" ? "Save detail" : "Save rule", systemImage: "plus").frame(maxWidth: .infinity) } }
                                 .buttonStyle(.borderedProminent).tint(Brand.accent).disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving || selectedId.isEmpty)
                         }
@@ -38,7 +38,7 @@ struct KnowledgeView: View {
                     }.scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Training")
+            .navigationTitle("Train")
             .wirelineBrand()
             .task { await loadAgents() }
             .onChange(of: selectedId) { _, _ in Task { await loadSetup() } }
@@ -91,11 +91,11 @@ struct ActionsView: View {
         NavigationStack {
             Group {
                 if agents.isEmpty && !isLoading {
-                    BrandEmptyState(title: "Start with an agent", message: "Create an agent first, then choose what it is allowed to do.", systemImage: "slider.horizontal.3")
+                    BrandEmptyState(title: "Start with an AI phone employee", message: "Create the employee first, then choose what it is allowed to do.", systemImage: "slider.horizontal.3")
                 } else {
                     List {
-                        if agents.count > 1 { Section { Picker("Agent", selection: $selectedId) { ForEach(agents) { agent in Text(agent.name).tag(agent.id) } } } }
-                        Section("Ways your agent can help") {
+                        if agents.count > 1 { Section { Picker("Employee", selection: $selectedId) { ForEach(agents) { agent in Text(agent.name).tag(agent.id) } } } }
+                        Section("Ways your employee can help") {
                             ForEach(personalActions) { action in
                                 Toggle(isOn: binding(for: action.id)) { VStack(alignment: .leading, spacing: 3) { Text(action.title).foregroundStyle(Brand.text); Text(action.detail).font(.caption).foregroundStyle(Brand.text2) } }
                                     .tint(Brand.accent).disabled(isSaving || selectedId.isEmpty)
@@ -106,7 +106,7 @@ struct ActionsView: View {
                     }.scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Wire")
+            .navigationTitle("Launch")
             .wirelineBrand()
             .task { await loadAgents() }
             .onChange(of: selectedId) { _, _ in Task { await loadSetup() } }
