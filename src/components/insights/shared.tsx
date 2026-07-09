@@ -88,7 +88,7 @@ export function InsightEmpty({
   titleOverride,
   actionsOverride,
   success,
-  fill = true,
+  fill = false,
   framed = true,
 }: {
   configKey: InsightEmptyKey;
@@ -102,7 +102,7 @@ export function InsightEmpty({
     primary?: boolean;
   }>;
   success?: boolean;
-  /** Full-viewport centering — off when nested under another panel (e.g. AI Spend budget). */
+  /** Keep empty insight panels in the visible page rhythm unless a view explicitly opts into centering. */
   fill?: boolean;
   /** Panel chrome — off when the parent already supplies a frame. */
   framed?: boolean;
