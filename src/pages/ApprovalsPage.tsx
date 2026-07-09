@@ -9,11 +9,7 @@ export default function ApprovalsPage() {
       <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
         <WorkspacePageIntro
           title="Approvals"
-          action={
-            <p className="max-w-md text-right text-xs leading-relaxed text-muted-foreground">
-              Every proposed action cites call evidence. Approve, edit, or reject before execution.
-            </p>
-          }
+          description="Every proposed action cites call evidence. Approve, edit, or reject before execution."
         />
         <ApprovalInbox embedded />
       </WorkspacePageFrame>
