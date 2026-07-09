@@ -66,23 +66,23 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: 
 
   return (
     <FormShell>
-      <Field label="Goal" hint="Describe the agent's job in one sentence.">
+      <Field label="First line" hint="One job, one audience, one outcome.">
         <TextArea
           value={goal}
           onChange={setGoal}
           rows={3}
-          placeholder="A polished phone agent that qualifies sales calls, answers support questions, and routes urgent requests."
+          placeholder="Outbound follow-up agent that calls warm leads, qualifies intent, books the next step, and logs the outcome."
         />
       </Field>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="Company Name">
           <TextInput value={companyName} onChange={setCompanyName} placeholder="Acme Cloud" />
         </Field>
-        <Field label="Use case or industry">
+        <Field label="Use case or lane">
           <TextInput
             value={industry}
             onChange={setIndustry}
-            placeholder="Sales, support, scheduling, healthcare..."
+            placeholder="Sales follow-up, billing recovery, scheduling, support overflow..."
           />
         </Field>
         <Field label="Website (optional)">
@@ -96,7 +96,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: 
           />
         </Field>
       </div>
-      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Wire Agent" />
+      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Design first line" />
 
       {err && <ErrCard error={err} />}
       {design && (
@@ -104,7 +104,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: 
           {createdAgentId && (
             <div className="rounded-md wl-status-success border p-4 wl-text-success text-sm flex items-center gap-3">
               <Check className="w-4 h-4" />
-              Agent created. Open Agents to assign a phone number and voice.
+              Agent draft created. Next: assign a number, voice, and launch controls.
             </div>
           )}
           <div className="rounded-md wl-panel-elevated border border-white/12 p-6 space-y-3">
@@ -175,7 +175,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: 
                 </>
               ) : (
                 <>
-                  <Hammer className="w-4 h-4" /> Wire & Deploy <ArrowRight className="w-4 h-4" />
+                  <Hammer className="w-4 h-4" /> Create agent draft <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </ShadButton>
