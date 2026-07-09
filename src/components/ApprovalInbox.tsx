@@ -95,6 +95,20 @@ function actionIcon(task: FollowUpTaskRow) {
   return <Sparkles size={16} aria-hidden="true" />;
 }
 
+function ApprovalEmptyCard({ title, description }: { title: string; description: string }) {
+  return (
+    <section className="rounded-2xl border border-border bg-card/75 px-6 py-10 text-center shadow-[var(--wireline-shadow-sm)]">
+      <span className="mx-auto grid size-10 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+        <Check size={18} aria-hidden="true" />
+      </span>
+      <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
+      <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+        {description}
+      </p>
+    </section>
+  );
+}
+
 type ApprovalTaskCardProps = {
   task: FollowUpTaskRow;
   onResolved: () => void;
@@ -385,9 +399,14 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         <p className="text-sm text-destructive">{error}</p>
       ) : bucket === "pending" || bucket === "compliance" ? (
         actionableTasks.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            No pending actions. Completed calls with proposed follow-ups will appear here.
-          </p>
+          <ApprovalEmptyCard
+            title={bucket === "compliance" ? "Compliance queue clear" : "Approval queue clear"}
+            description={
+              bucket === "compliance"
+                ? "Compliance-sensitive follow-ups will land here with call evidence before anything executes."
+                : "Completed calls with proposed follow-ups will land here with evidence, edit controls, and an approve-or-reject decision."
+            }
+          />
         ) : (
           <div className="grid gap-3">
             {actionableTasks.map((task) => (
@@ -396,9 +415,10 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
           </div>
         )
       ) : bucketItems.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-          Nothing in this bucket right now.
-        </p>
+        <ApprovalEmptyCard
+          title={`${BUCKET_SHORT_LABELS[bucket]} clear`}
+          description="Nothing needs attention in this bucket right now. New evidence-backed items will appear here automatically."
+        />
       ) : (
         <div className="grid gap-3">
           {bucketItems.map((item) => (
