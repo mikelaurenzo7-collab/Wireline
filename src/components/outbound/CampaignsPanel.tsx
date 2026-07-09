@@ -274,15 +274,21 @@ export default function CampaignsPanel() {
 
       <div className="flex-1 min-h-0 overflow-auto p-4">
         {campaigns.length === 0 && !error ? (
-          <EmptyState
-            icon={Megaphone}
-            title={OPS_CHANNEL_EMPTY.campaigns.title}
-            actions={[
-              { label: "Create campaign", onClick: () => setShowCreate(true), primary: true },
-              ...OPS_CHANNEL_EMPTY.campaigns.actions.filter((a) => a.label !== "Create campaign"),
-            ]}
-            fill
-          />
+          <div className="flex w-full flex-col items-center px-2 py-6 sm:px-4">
+            <EmptyState
+              framed
+              density="compact"
+              titleTone="ui"
+              withHalo={false}
+              className="w-full max-w-lg"
+              icon={Megaphone}
+              title={OPS_CHANNEL_EMPTY.campaigns.title}
+              actions={[
+                { label: "Create campaign", onClick: () => setShowCreate(true), primary: true },
+                ...OPS_CHANNEL_EMPTY.campaigns.actions.filter((a) => a.label !== "Create campaign"),
+              ]}
+            />
+          </div>
         ) : (
           <ul className="space-y-3">
             {campaigns.map((c) => (

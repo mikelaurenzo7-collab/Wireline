@@ -54,13 +54,19 @@ export default function CallbacksPanel() {
 
   if (callbacks.length === 0) {
     return (
-      <EmptyState
-        icon={CalendarClock}
-        title={OPS_CHANNEL_EMPTY.callbacks.title}
-        description="Callbacks appear when agents or callers schedule follow-up dials."
-        actions={[...OPS_CHANNEL_EMPTY.callbacks.actions]}
-        fill
-      />
+      <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
+        <EmptyState
+          framed
+          density="compact"
+          titleTone="ui"
+          withHalo={false}
+          className="w-full max-w-lg"
+          icon={CalendarClock}
+          title={OPS_CHANNEL_EMPTY.callbacks.title}
+          description="Callbacks appear when agents or callers schedule follow-up dials."
+          actions={[...OPS_CHANNEL_EMPTY.callbacks.actions]}
+        />
+      </div>
     );
   }
 

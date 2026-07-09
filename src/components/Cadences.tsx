@@ -291,6 +291,7 @@ export default function Cadences() {
         <EmptyState
           icon={Repeat}
           title={OPS_CHANNEL_EMPTY.cadences.title}
+          titleTone="ui"
           actions={[
             {
               label: "Create sequence",

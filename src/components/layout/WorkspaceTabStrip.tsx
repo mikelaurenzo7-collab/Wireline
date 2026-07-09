@@ -5,6 +5,8 @@ import { cn } from "../../lib/utils";
 export type WorkspaceTabItem = {
   id: string;
   label: string;
+  /** Accessible name when `label` is abbreviated for narrow viewports. */
+  ariaLabel?: string;
   href?: string;
 };
 
@@ -73,6 +75,8 @@ export function WorkspaceTabStrip({
               <Link
                 key={tab.id}
                 to={tab.href}
+                aria-label={tab.ariaLabel}
+                title={tab.ariaLabel}
                 aria-current={active ? "page" : undefined}
                 className={tabClassName(active, density)}
               >
@@ -84,6 +88,8 @@ export function WorkspaceTabStrip({
             <button
               key={tab.id}
               type="button"
+              aria-label={tab.ariaLabel}
+              title={tab.ariaLabel}
               aria-current={active ? "page" : undefined}
               onClick={() => onSelect?.(tab.id)}
               className={tabClassName(active, density)}

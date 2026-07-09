@@ -490,6 +490,7 @@ export default function OverviewPage() {
               ) : (
                 <EmptyState
                   density="compact"
+                  titleTone="ui"
                   icon={<Phone aria-hidden="true" />}
                   title="No calls yet"
                   action={

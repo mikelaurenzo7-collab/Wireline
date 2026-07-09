@@ -292,7 +292,7 @@ export default function AgentPresenceLivePreview({
               {session.live.sandbox ? "Sandbox" : "Live video"}
             </span>
             <span className="wl-presence__chip">{showSpeaking ? "Speaking" : "Idle"}</span>
-            <span className="wl-presence__chip">Fallback · Wireline face</span>
+            <span className="wl-presence__chip">Fallback ready</span>
           </div>
         </div>
       ) : (

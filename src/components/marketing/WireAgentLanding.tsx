@@ -347,7 +347,7 @@ export default function WireAgentLanding() {
                 {AUDIENCES.map((audience) => (
                   <li
                     key={audience}
-                    className="flex items-center justify-start gap-2 text-[13px] text-muted-foreground"
+                    className="flex items-center justify-center gap-2 text-[13px] text-muted-foreground lg:justify-start"
                   >
                     <span
                       className="marketing-proof-chip h-[18px] w-[18px] shrink-0"

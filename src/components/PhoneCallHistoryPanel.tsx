@@ -74,7 +74,7 @@ export default function PhoneCallHistoryPanel() {
             <Button asChild>
               <Link to="/studio?create=1">Create first agent</Link>
             </Button>
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link to="/settings/phone">Wire a number</Link>
             </Button>
           </div>

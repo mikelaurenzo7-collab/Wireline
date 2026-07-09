@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { KeyRound, LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "../components/atoms";
@@ -189,7 +189,7 @@ export default function SettingsPage() {
             </div>
             <div className="wl-data-row wl-data-row--framed">
               <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
-                <ShieldCheck size={15} />
+                <KeyRound size={15} />
               </span>
               <span className="wl-data-row__main">
                 <span className="wl-data-row__title">Password</span>

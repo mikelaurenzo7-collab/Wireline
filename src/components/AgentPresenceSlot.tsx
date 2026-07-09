@@ -48,6 +48,15 @@ export default function AgentPresenceSlot({
   const videoSlotCopy = identity.video.consentRequired
     ? `${surfaceLabel}, consent-gated`
     : surfaceLabel;
+  const showSurfaceChip =
+    Boolean(surfaceLabel) &&
+    surfaceLabel.trim().toLowerCase() !==
+      String(headline || "")
+        .trim()
+        .toLowerCase();
+  // Default synthetic path already reads as Wireline face — don't stack
+  // "Wireline face · Fallback · Wireline face" on the stage strip.
+  const showFallbackChip = surfaceLabel.trim().toLowerCase() !== "wireline face";
   const faceSize = variant === "badge" ? 28 : variant === "stage" ? 120 : 44;
 
   if (variant === "badge") {
@@ -95,8 +104,10 @@ export default function AgentPresenceSlot({
       {variant === "stage" ? (
         <div className="wl-presence__strip" role="status">
           <strong>{headline}</strong>
-          <span className="wl-presence__chip">{videoSlotCopy}</span>
-          <span className="wl-presence__chip">Fallback · Wireline face</span>
+          {showSurfaceChip ? <span className="wl-presence__chip">{videoSlotCopy}</span> : null}
+          {showFallbackChip ? (
+            <span className="wl-presence__chip">Fallback · Wireline face</span>
+          ) : null}
         </div>
       ) : null}
     </div>

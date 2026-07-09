@@ -131,6 +131,7 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
       framed
       fill
       density="compact"
+      titleTone="ui"
       withHalo={false}
       icon={Icon}
       title={green ? "All clear" : "No data"}
