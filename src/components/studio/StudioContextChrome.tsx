@@ -29,8 +29,8 @@ export default function StudioContextChrome() {
       className="wl-studio-context-chrome shrink-0 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
       aria-label="Studio context"
     >
-      <div className="flex min-h-[52px] items-center justify-between gap-3 px-3 sm:px-5">
-        <div className="min-w-0 flex items-center gap-2.5">
+      <div className="flex min-h-[52px] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-5">
+        <div className="min-w-0 flex items-center gap-2 sm:gap-2.5">
           <span className="shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-[var(--wireline-color-action-primary-default)]">
             Studio
           </span>
@@ -39,15 +39,19 @@ export default function StudioContextChrome() {
               <span aria-hidden="true" className="text-muted-foreground/50">
                 /
               </span>
-              <span className="truncate font-semibold text-foreground inline-flex items-center gap-2">
-                <AgentPresenceSlot
-                  name={activeAgent.name}
-                  agentId={activeAgent.id}
-                  role={activeAgent.role}
-                  isBusinessAgent={activeAgent.is_business_agent}
-                  variant="badge"
-                />
-                {activeAgent.name}
+              <span className="inline-flex min-w-0 items-center gap-2 font-semibold text-foreground">
+                <span className="hidden shrink-0 sm:inline-flex">
+                  <AgentPresenceSlot
+                    name={activeAgent.name}
+                    agentId={activeAgent.id}
+                    role={activeAgent.role}
+                    isBusinessAgent={activeAgent.is_business_agent}
+                    variant="badge"
+                  />
+                </span>
+                <span className="block max-w-[9rem] truncate sm:max-w-[14rem]">
+                  {activeAgent.name}
+                </span>
               </span>
             </>
           ) : null}
@@ -63,7 +67,8 @@ export default function StudioContextChrome() {
             <>
               <Button asChild variant="secondary" size="sm">
                 <Link to={`/knowledge?agent=${encodeURIComponent(activeAgent.id)}&tab=simulator`}>
-                  Run test call
+                  <span className="sm:hidden">Test</span>
+                  <span className="hidden sm:inline">Run test call</span>
                 </Link>
               </Button>
               <Button asChild size="sm">
