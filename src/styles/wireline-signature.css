@@ -67,55 +67,20 @@
   border-radius: 999px;
 }
 
-/* ── Ledger ruling ──────────────────────────────────────────────────────
-   Front-desk ledger: faint horizontal rules across the hero. Ink at ~3.5%
-   on a masked layer so rules feather in/out — no hard stop at the section
-   edge or a violet wash at the top center. */
+/* ── Marketing hero ─────────────────────────────────────────────────────
+   Quiet canvas with a soft full-bleed wash — no incomplete ledger grid,
+   no decorative half-patterns that stop mid-section. */
 .marketing-hero {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   background:
     radial-gradient(
-      ellipse 42rem 28rem at 92% -8%,
-      color-mix(in srgb, var(--wireline-color-action-secondary-default) 5%, transparent),
-      transparent 68%
-    ),
-    radial-gradient(
-      ellipse 36rem 24rem at 6% 108%,
-      color-mix(in srgb, var(--wireline-color-action-secondary-default) 4%, transparent),
-      transparent 62%
+      ellipse 70% 55% at 50% -5%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 6%, transparent),
+      transparent 72%
     ),
     var(--wireline-color-canvas-default);
-}
-
-.marketing-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 55px,
-    color-mix(in srgb, var(--wireline-color-text-primary) 3.5%, transparent) 55px,
-    color-mix(in srgb, var(--wireline-color-text-primary) 3.5%, transparent) 56px
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    #000 14%,
-    #000 76%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    #000 14%,
-    #000 76%,
-    transparent 100%
-  );
 }
 
 .marketing-hero > * {

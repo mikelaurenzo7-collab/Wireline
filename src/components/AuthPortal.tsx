@@ -236,18 +236,18 @@ const AUTH_BRAND = {
   signin: {
     label: "Welcome back",
     headline: "Back on the line.",
-    body: "Sign in to your workspace — your agents, calls, and follow-ups are right where you left them.",
+    body: "Your agents, call history, and follow-ups are waiting.",
   },
   signup: {
     personal: {
-      label: "Your workspace",
+      label: "Personal",
       headline: "Wire your agent.",
-      body: "A trained voice agent that answers, makes calls, books, and follows up — you get a text with what happened.",
+      body: "Train one phone agent, put it on a real line, and get the outcome back.",
     },
     business: {
-      label: "Business workspace",
-      headline: "Your front desk, open 24/7.",
-      body: "Deploy trained voice agents that answer calls, qualify leads, book appointments, and follow up — on your playbook, under your brand.",
+      label: "Business",
+      headline: "Call work, handled.",
+      body: "Outbound, inbound, or hybrid agents — trained on your playbook, supervised from one workspace.",
     },
   },
 } as const;
@@ -281,9 +281,10 @@ function AuthBrandPanel({
       </div>
       <div className="wl-auth-brand-grid">
         {[
-          ["Google", "Workspace"],
-          ["Outlook", "Microsoft 365"],
-          ["Yahoo", "Mail"],
+          ["Create", "Role and goal"],
+          ["Train", "Voice and rules"],
+          ["Wire", "Number and tools"],
+          ["Run", "Calls and outcomes"],
         ].map(([name, sub]) => (
           <div key={name} className="wl-auth-brand-grid-cell">
             <div className="wl-auth-brand-grid-name">{name}</div>

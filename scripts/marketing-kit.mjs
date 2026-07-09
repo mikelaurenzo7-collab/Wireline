@@ -14,12 +14,34 @@
  *   manifest.json
  */
 import { chromium } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(root, "..");
+
+function loadEnvFileEarly(filePath) {
+  try {
+    const text = readFileSync(filePath, "utf8");
+    for (const line of text.split(/\r?\n/)) {
+      if (!line || line.startsWith("#")) continue;
+      const i = line.indexOf("=");
+      if (i < 0) continue;
+      const k = line.slice(0, i).trim();
+      let v = line.slice(i + 1).trim();
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+      if (!(k in process.env)) process.env[k] = v;
+    }
+  } catch {
+    /* optional */
+  }
+}
+loadEnvFileEarly(path.join(repoRoot, ".env.visual-qa"));
+loadEnvFileEarly(path.join(repoRoot, ".env.local"));
+loadEnvFileEarly(path.join(repoRoot, ".env"));
+
 const baseURL = process.env.E2E_BASE_URL || "https://trywireline.com";
 const demoEmail = process.env.DEMO_EMAIL || "composer.demo@trywireline.com";
 const demoPassword = process.env.DEMO_PASSWORD || "";
@@ -170,14 +192,53 @@ const pages = [
   { id: "billing", route: "/settings/billing", auth: true },
 ];
 
+const resolvedEmail =
+  process.env.DEMO_EMAIL ||
+  process.env.DOGFOOD_EMAIL ||
+  process.env.WIRELINE_E2E_EMAIL ||
+  process.env.E2E_USER_EMAIL ||
+  demoEmail;
+const resolvedPassword =
+  process.env.DEMO_PASSWORD ||
+  process.env.DOGFOOD_PASSWORD ||
+  process.env.WIRELINE_E2E_PASSWORD ||
+  process.env.E2E_USER_PASSWORD ||
+  demoPassword;
+
+function parseSetCookie(header) {
+  if (!header) return null;
+  const [pair, ...attrs] = header.split(";").map((s) => s.trim());
+  const eq = pair.indexOf("=");
+  if (eq < 0) return null;
+  const name = pair.slice(0, eq);
+  const value = pair.slice(eq + 1);
+  const cookie = { name, value, path: "/", secure: true, httpOnly: true, sameSite: "Lax" };
+  for (const a of attrs) {
+    const [k, v] = a.split("=");
+    const key = k.toLowerCase();
+    if (key === "path" && v) cookie.path = v;
+    if (key === "max-age" && v) cookie.expires = Math.floor(Date.now() / 1000) + Number(v);
+    if (key === "expires" && v) cookie.expires = Math.floor(new Date(v).getTime() / 1000);
+  }
+  return cookie;
+}
+
 async function fetchSession() {
-  if (!demoPassword) throw new Error("Set DEMO_PASSWORD (see docs/DEMO_ACCOUNT.md)");
+  if (!resolvedEmail || !resolvedPassword) throw new Error("Set DEMO_PASSWORD / DOGFOOD_* / WIRELINE_E2E_*");
   const res = await fetch(new URL("/api/auth/signin", baseURL).toString(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: demoEmail, password: demoPassword }),
+    body: JSON.stringify({ email: resolvedEmail, password: resolvedPassword }),
   });
   const data = await res.json().catch(() => ({}));
+  const setCookies =
+    typeof res.headers.getSetCookie === "function"
+      ? res.headers.getSetCookie()
+      : [res.headers.get("set-cookie")].filter(Boolean);
+  const sessionCookie = setCookies.map(parseSetCookie).find((c) => c?.name === "wireline_session");
+  if (res.ok && data.user && sessionCookie) {
+    return { user: data.user, cookie: sessionCookie, email: resolvedEmail };
+  }
   if (res.ok && data.token) return { access_token: data.token, user: data.user };
   console.warn(`API sign-in failed (${res.status}), falling back to UI login…`);
   return null;
@@ -190,36 +251,51 @@ async function loginViaUi(browser) {
     localStorage.setItem("wireline_cookie_consent", "acknowledged");
   }, { o: new URL(baseURL).origin });
   const page = await ctx.newPage();
-  await page.goto(new URL("/", baseURL).toString(), { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Use composer\.demo@trywireline\.com/i }).click().catch(() => {});
-  await page.fill('input[type="email"]', demoEmail);
-  await page.fill('input[type="password"]', demoPassword);
+  await page.goto(new URL("/signin", baseURL).toString(), { waitUntil: "domcontentloaded" });
+  await page.fill('input[type="email"]', resolvedEmail);
+  await page.fill('input[type="password"]', resolvedPassword);
   await page.locator('form button[type="submit"]').click();
   await page.waitForURL(/\/(overview|studio|phone|connections|apps)?/i, { timeout: 45_000 }).catch(() => {});
   await page.waitForTimeout(2000);
-  const session = await page.evaluate(() => {
-    try {
-      return JSON.parse(localStorage.getItem("wireline_session") || "null");
-    } catch {
-      return null;
-    }
-  });
+  const cookies = await ctx.cookies();
+  const sessionCookie = cookies.find((c) => c.name === "wireline_session");
   await ctx.close();
-  if (!session?.access_token) throw new Error("UI sign-in did not produce wireline_session");
-  return session;
+  if (!sessionCookie) throw new Error("UI sign-in did not produce wireline_session cookie");
+  return {
+    user: { email: resolvedEmail },
+    cookie: {
+      name: sessionCookie.name,
+      value: sessionCookie.value,
+      path: sessionCookie.path || "/",
+      expires: sessionCookie.expires,
+    },
+  };
 }
 
 async function seedSession(context, session) {
   const origin = new URL(baseURL).origin;
-  await context.addInitScript(
-    ({ o, s }) => {
-      if (window.location.origin !== o) return;
-      if (s) localStorage.setItem("wireline_session", JSON.stringify(s));
-      localStorage.setItem("wireline_cookie_consent", "acknowledged");
-      localStorage.setItem("wireline_tour_seen", "true");
-    },
-    { o: origin, s: session },
-  );
+  const host = new URL(baseURL).hostname;
+  if (session?.cookie) {
+    await context.addCookies([
+      {
+        name: session.cookie.name,
+        value: session.cookie.value,
+        domain: host,
+        path: session.cookie.path || "/",
+        httpOnly: true,
+        secure: true,
+        sameSite: "Lax",
+        expires: session.cookie.expires || Math.floor(Date.now() / 1000) + 7200,
+      },
+    ]);
+  }
+  await context.addInitScript(({ o, s }) => {
+    if (window.location.origin !== o) return;
+    if (s?.access_token) localStorage.setItem("wireline_session", JSON.stringify(s));
+    localStorage.setItem("wireline_cookie_consent", "acknowledged");
+    localStorage.setItem("wireline_tour_seen", "true");
+    localStorage.setItem("wireline_onboarding_completed", "true");
+  }, { o: origin, s: session?.access_token ? session : null });
 }
 
 async function mockSession(context) {
@@ -227,7 +303,7 @@ async function mockSession(context) {
     access_token: "marketing-mock",
     user: {
       id: "2f85bad8-f9f6-479f-bb39-818d9cb9bf07",
-      email: demoEmail,
+      email: resolvedEmail,
       full_name: "Wireline Demo Showcase",
       role: "owner",
       is_owner: false,
@@ -405,7 +481,7 @@ async function writeCopy(manifest) {
   await mkdir(copyDir, { recursive: true });
   const md = `# Wireline marketing copy pack
 
-Generated from **${demoEmail}** on ${baseURL} — ${new Date().toISOString().slice(0, 10)}.
+Generated from **${resolvedEmail}** on ${baseURL} — ${new Date().toISOString().slice(0, 10)}.
 
 ## Hero (website / LinkedIn)
 
@@ -480,7 +556,7 @@ async function run() {
   const manifest = {
     generatedAt: new Date().toISOString(),
     baseURL,
-    demoEmail,
+    demoEmail: resolvedEmail,
     mode: useMocks ? "local-mock" : "production-session",
     assets: [],
   };

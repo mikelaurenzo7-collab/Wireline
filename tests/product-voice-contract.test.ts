@@ -9,9 +9,10 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
     expect(MARKETING_VOICE.headline).toBe("Wire your agent.");
-    expect(MARKETING_VOICE.subline).toContain("outbound-first");
-    expect(MARKETING_VOICE.subline).toContain("inbound coverage");
-    expect(MARKETING_VOICE.subline).toContain("hybrid agents");
+    expect(MARKETING_VOICE.subline).toContain("phone agent");
+    expect(MARKETING_VOICE.subline).toContain("outbound");
+    expect(MARKETING_VOICE.subline).toContain("inbound");
+    expect(MARKETING_VOICE.subline).toContain("hybrid");
     expect(MARKETING_VOICE.proof).toEqual(["Create", "Train", "Wire", "Run"]);
 
     expect(OUTBOUND_WEDGE.headline).toBe("Outbound agents that actually call.");

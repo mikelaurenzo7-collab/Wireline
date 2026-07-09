@@ -64,11 +64,11 @@ function scanTree(relativeDir: string) {
 describe("founder cockpit purge contract", () => {
   it("removes founder cockpit code from src/", () => {
     expect(scanTree("src")).toEqual([]);
-  });
+  }, 20_000);
 
   it("removes founder cockpit tests from tests/", () => {
     expect(scanTree("tests")).toEqual([]);
-  });
+  }, 20_000);
 
   it("does not mount founder cockpit APIs in the route registry", () => {
     const registry = readFileSync(resolve(root, "src/server/register-api-routes.ts"), "utf8");

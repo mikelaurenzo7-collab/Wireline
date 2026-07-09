@@ -70,22 +70,19 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            // Mobile: a slim, full-width pill that doesn't compete with hero copy.
-            // ≥sm: bottom-RIGHT compact card — the landing hero copy + CTAs are
-            // left-aligned, so the right gutter is the clear, non-overlapping spot.
+            // Mobile: slim full-width pill. ≥sm: bottom-right so it stays clear
+            // of the centered hero CTAs.
             "fixed z-[9999] left-3 right-3 sm:right-5 sm:left-auto sm:max-w-[320px]",
             onAuthRoute
               ? "top-[max(0.75rem,env(safe-area-inset-top,0))]"
               : clearMarketingSticky
                 ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
-                : // Extra clearance on marketing routes to keep the banner below the centered hero preview card
-                  "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0))]",
+                : "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0))]",
           )}
           role="dialog"
           aria-label="Cookie notice"
         >
-          {/* Compact contained card — bottom-right, never spans the screen or
-              overlaps the left-aligned hero CTAs. */}
+          {/* Compact card — bottom-right, clear of centered hero CTAs. */}
           <div className="rounded-md border border-border backdrop-blur-xl shadow-lg px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
             {/* Icon */}
             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">

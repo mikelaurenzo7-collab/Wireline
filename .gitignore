@@ -127,3 +127,14 @@ scripts/.tmp-*
 # Visual QA screenshot dumps (local only)
 .qa-temp/
 .vercel
+
+# Visual QA local artifacts
+.env.visual-qa
+visual-qa/
+
+
+marketing-kit/
+official-assets/
+wireline-*-screenshots.zip
+wireline-*-assets*.zip
+

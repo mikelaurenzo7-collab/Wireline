@@ -37,7 +37,7 @@ export const MARKETING_VOICE = {
   eyebrow: OUTBOUND_WEDGE.eyebrow,
   headline: "Wire your agent.",
   subline:
-    "Start outbound-first, then choose the call role: outbound campaigns, inbound coverage, or hybrid agents that answer, call back, follow up, and log every outcome.",
+    "Train a phone agent, put it on a real line, and get completed call work back — outbound, inbound, or hybrid.",
   proof: ["Create", "Train", "Wire", "Run"],
   extensionLead:
     "Command your agent from any page. Wireline calls, answers, follows up, and logs the outcome while you stay focused.",

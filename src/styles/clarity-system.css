@@ -41,8 +41,7 @@
   text-wrap: balance;
 }
 
-/* .marketing-hero background lives in wireline-signature.css — the ledger
-   ruling and the counter-glow are part of the Wire signature. */
+/* .marketing-hero background lives in wireline-signature.css. */
 
 .marketing-hero__content {
   max-width: none;
