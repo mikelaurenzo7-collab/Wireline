@@ -4,6 +4,9 @@ import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
+const PUBLIC_DESCRIPTION =
+  "Wireline builds AI phone employees that answer calls, qualify leads, book appointments, follow up, collect, route, and report back with every result.";
+
 export default function LandingPage() {
   useEffect(() => {
     captureSignupIntentFromLocation();
@@ -16,11 +19,10 @@ export default function LandingPage() {
     name: "Wireline",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, iOS, Android, Chrome, Opera",
-    description:
-      "Wireline helps people, teams, and businesses create, train, wire, and run phone agents for personal calls, sales, support, scheduling, and call-center coverage from one operating surface.",
+    description: PUBLIC_DESCRIPTION,
     offers: {
       "@type": "OfferCatalog",
-      name: "Wireline voice agent plans",
+      name: "Wireline AI phone employee plans",
       itemListElement: ["Personal", "Team", "Business", "Enterprise"].map((name) => ({
         "@type": "Offer",
         name,
@@ -32,8 +34,8 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Wire your agent"
-        description="Wireline helps people, teams, and businesses create, train, wire, and run phone agents for personal calls, sales, support, scheduling, and call-center coverage from one operating surface."
+        title="Wireline | AI phone employees that turn calls into sales"
+        description={PUBLIC_DESCRIPTION}
         image="/og-image.png"
       />
       <script
