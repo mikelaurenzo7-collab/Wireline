@@ -15,9 +15,9 @@ export function videoPresenterStatusMessage(
   }
   if (presenter.status === "disabled" || presenter.provider === "synthetic") {
     if (presenter.chosenAvatarId) {
-      return "You picked a catalog face for this agent. Add live video when you want it on calls and your site — the Wireline face stays as fallback.";
+      return "Catalog face saved. Add live video when you want it on calls and your site — the built-in face stays as fallback.";
     }
-    return "Wireline face is active on every surface. Pick a catalog presenter below, then add live video when you want photoreal streaming.";
+    return "Use the built-in face now. Pick a catalog presenter below, then add live video when you want photoreal streaming.";
   }
   if (!platformConfigured) {
     return "Live video add-on is not available on this workspace yet.";
