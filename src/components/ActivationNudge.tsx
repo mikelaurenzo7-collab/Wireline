@@ -117,7 +117,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
 
       if (cancelled) return;
       setPhoneNumber(firstNumber ?? null);
-      setVisible(true);
+      setVisible(Boolean(firstNumber));
     };
 
     void refresh();
@@ -134,7 +134,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
     setDismissed(true);
   };
 
-  if (dismissed || !visible || shouldYieldToFirstSession()) return null;
+  if (dismissed || !visible || !phoneNumber || shouldYieldToFirstSession()) return null;
 
   return (
     <div
@@ -150,21 +150,17 @@ export default function ActivationNudge({ className }: { className?: string }) {
         <p className="max-w-[62ch] text-xs leading-relaxed text-foreground/75">
           {ACTIVATION_NUDGE_COPY.body}
         </p>
-        {phoneNumber ? (
-          <p className="mt-1 font-mono text-[var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">
-            {phoneNumber}
-          </p>
-        ) : null}
+        <p className="mt-1 font-mono text-[var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">
+          {phoneNumber}
+        </p>
       </div>
-      {phoneNumber ? (
-        <a
-          href={formatTel(phoneNumber)}
-          className="mt-2 inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded bg-brand px-3 py-1.5 wl-label text-on-brand transition-opacity hover:opacity-95 active:scale-[0.98] sm:mt-0"
-        >
-          <Phone className="size-3.5" />
-          {ACTIVATION_NUDGE_COPY.cta}
-        </a>
-      ) : null}
+      <a
+        href={formatTel(phoneNumber)}
+        className="mt-2 inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded bg-brand px-3 py-1.5 wl-label text-on-brand transition-opacity hover:opacity-95 active:scale-[0.98] sm:mt-0"
+      >
+        <Phone className="size-3.5" />
+        {ACTIVATION_NUDGE_COPY.cta}
+      </a>
       <ShadButton
         type="button"
         variant="ghost"
