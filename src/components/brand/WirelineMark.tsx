@@ -1,41 +1,66 @@
+import { useId } from "react";
+
 type WirelineMarkProps = {
   className?: string;
   label?: string;
   /**
-   * Render the central diamond as the copper signal node — the mark joining
-   * the Wire (the W is the wire, the node is the signal). Opt-in so the
-   * favicon and native adaptive icon stay monochrome; use on marketing
-   * surfaces only.
+   * Public/marketing treatment: the mark carries the Aurora signal gradient.
+   * Product/native surfaces can keep the mark monochrome by omitting this.
    */
   signal?: boolean;
+  /** Stroke width in the 128x96 viewBox. */
+  strokeWidth?: number;
 };
 
 /**
- * Source-matched geometric W used across the current Stitch delivery and
- * native adaptive icon. It inherits `currentColor` so each surface can use
- * semantic tokens without maintaining separate logo assets. With `signal`,
- * the central node picks up copper (via .wl-mark-signal) while the W keeps
- * currentColor — the two-tone treatment reserved for public surfaces.
+ * Official Wireline circuit-W mark.
+ *
+ * The glyph is intentionally simple: a W built from routed wire, with three
+ * terminal nodes for signal in, routing, and outcome. It reads as a brand mark
+ * at favicon size while still carrying the product story on public pages.
  */
-export default function WirelineMark({ className = "", label, signal = false }: WirelineMarkProps) {
+export default function WirelineMark({
+  className = "",
+  label,
+  signal = false,
+  strokeWidth = 9,
+}: WirelineMarkProps) {
+  const gradientId = `wireline-mark-${useId().replace(/:/g, "")}`;
+  const stroke = signal ? `url(#${gradientId})` : "currentColor";
+
   return (
     <svg
-      viewBox="0 0 108 108"
+      viewBox="0 0 128 96"
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
       focusable="false"
-      className={`inline-block shrink-0 fill-current ${className}`}
+      className={`inline-block shrink-0 overflow-visible ${className}`}
+      fill="none"
     >
-      <path
-        fillRule="evenodd"
-        d="M18 27h14l11.5 32.5L54 38l10.5 21.5L76 27h14L69.5 83 54 56 38.5 83Z"
-      />
-      <path
-        fillRule="evenodd"
-        d="m54 47 6 11-6 11-6-11Z"
-        className={signal ? "wl-mark-signal" : undefined}
-      />
+      {signal && (
+        <defs>
+          <linearGradient id={gradientId} x1="14" y1="18" x2="122" y2="78" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="var(--wireline-color-action-secondary-default, #C7CCD6)" />
+            <stop offset="0.28" stopColor="var(--wireline-color-action-primary-default, #A78BFA)" />
+            <stop offset="0.58" stopColor="#6D28D9" />
+            <stop offset="1" stopColor="#C084FC" />
+          </linearGradient>
+        </defs>
+      )}
+      <g
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      >
+        <path d="M21 31H25L44 73C47 80 53 80 56 74L82 25" />
+        <path d="M51 33H63C68 33 71 36 73 40L90 73C94 80 100 80 103 74L115 33H122" />
+        <circle cx="14" cy="31" r="6.5" />
+        <circle cx="82" cy="18" r="6.5" />
+        <circle cx="122" cy="33" r="6.5" />
+      </g>
     </svg>
   );
 }
