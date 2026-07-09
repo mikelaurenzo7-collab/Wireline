@@ -62,8 +62,8 @@ export function WorkspacePageIntro({
   return (
     <header
       className={cn(
-        "wl-workspace-page-intro flex items-start justify-between gap-4",
-        !start && "mx-auto max-w-prose flex-col items-center text-center",
+        "wl-workspace-page-intro flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4",
+        !start && "mx-auto max-w-prose items-center text-center sm:flex-col",
       )}
     >
       <div className={cn("min-w-0", start ? "flex-1" : "w-full")}>
@@ -74,7 +74,7 @@ export function WorkspacePageIntro({
           </p>
         ) : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="w-full shrink-0 sm:w-auto">{action}</div> : null}
     </header>
   );
 }
