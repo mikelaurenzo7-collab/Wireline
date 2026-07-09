@@ -39,10 +39,11 @@ describe("authenticated agent flow", () => {
   it("mounts insights and daily brief on active workspace routes", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
     const overview = read("src/pages/OverviewPage.tsx");
+    const nav = read("src/constants/navigation.ts");
 
     expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
+    expect(nav).toMatch(/href:\s*["']\/insights["']/);
     expect(overview).toContain("DailyBriefPanel");
-    expect(overview).toContain('href: "/insights"');
   });
 
   it("keeps studio as the authenticated run surface entry", () => {

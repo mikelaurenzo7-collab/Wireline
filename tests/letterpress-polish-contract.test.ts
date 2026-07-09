@@ -181,10 +181,8 @@ describe("Wireline Letterpress polish layer", () => {
     expect(overview).toContain("wl-chip wl-chip--${");
     expect(overview).toContain("wl-focus-ring-halo");
     expect(overview).toContain("wl-press");
-    // Masterful upgrade: quick actions use the surface-tint hover primitive,
-    // recent-call rows use the data-row primitive, and the empty state uses
-    // the EmptyState atom (which renders wl-empty).
-    expect(overview).toContain("wl-surface-tint");
+    // Quick actions use Button atoms; recent-call rows use the data-row
+    // primitive; empty state uses the EmptyState atom (renders wl-empty).
     expect(overview).toContain("wl-data-row");
     expect(overview).toContain("wl-data-row--divided");
     expect(overview).toContain("EmptyState");
@@ -315,8 +313,10 @@ describe("Wireline Letterpress polish layer", () => {
 
   it("removes the raw rose palette from AuthPortal error and success notices", () => {
     const portal = read("src/components/AuthPortal.tsx");
+    const statusNotice = read("src/components/molecules/StatusNotice.tsx");
     expect(portal).not.toMatch(/border-rose-500|bg-rose-500|text-rose-600/);
-    expect(portal).toContain("var(--wireline-color-feedback-error-border)");
+    expect(portal).toContain('tone="destructive"');
+    expect(statusNotice).toContain("var(--wireline-color-feedback-error-border)");
     expect(portal).toContain("var(--wireline-color-feedback-success-surface)");
   });
 
