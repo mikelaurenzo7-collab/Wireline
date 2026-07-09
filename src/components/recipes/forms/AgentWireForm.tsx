@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Hammer, Loader2, Check, ArrowRight } from "lucide-react";
 import { ShadButton } from "../../atoms/Button";
 import { authFetch } from "../../../lib/api";
-import { Field, FormShell, ResultCard, TextArea, TextInput, ErrCard, RunButton } from "./FormPrimitives";
+import { Field, FormShell, ResultCard, TextArea, TextInput, ErrCard, RunButton } from "../shared";
 
 export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?: boolean }) {
   const [goal, setGoal] = useState(initial?.goal || "");
