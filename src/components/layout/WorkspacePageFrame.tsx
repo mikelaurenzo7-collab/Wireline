@@ -34,7 +34,7 @@ export function WorkspacePageFrame({
       className={cn(
         "wl-workspace-page mx-auto flex w-full flex-col gap-5 pb-8 sm:gap-6",
         MODE_MAX_WIDTH[resolvedMode],
-        resolvedMode === "operate" && "gap-4 px-3 sm:px-5 lg:px-6",
+        resolvedMode === "operate" && "gap-4 px-3 pt-3 sm:px-5 lg:px-6 lg:pt-4",
         className,
       )}
     >
