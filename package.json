@@ -45,6 +45,8 @@
     "stripe:verify-vercel-parity": "node scripts/verify-stripe-vercel-parity.mjs",
     "vercel:redeploy-production": "node scripts/redeploy-vercel-production.mjs",
     "stripe:catalog:check": "node scripts/check-stripe-catalog-contract.mjs",
+    "stripe:webhook:check": "node scripts/align-stripe-webhook-events.mjs",
+    "stripe:webhook:align": "node scripts/align-stripe-webhook-events.mjs --apply",
     "stripe:sync-vercel": "node scripts/sync-stripe-env-to-vercel.mjs",
     "vapi:sync-vercel": "node scripts/sync-vapi-env-to-vercel.mjs",
     "resend:sync-vercel": "node scripts/sync-resend-env-to-vercel.mjs",

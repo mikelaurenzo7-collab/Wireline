@@ -20,6 +20,7 @@ if (!token) {
 
 const required = [
   "POSTGRES_URL",
+  "DATABASE_POOL_URL",
   "INTERNAL_JWT_SECRET",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
