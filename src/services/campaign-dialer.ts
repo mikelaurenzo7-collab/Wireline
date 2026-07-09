@@ -8,6 +8,8 @@ import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
 import { CAMPAIGN_STATUS, LEAD_PROCESSABLE_STATUSES, LEAD_STATUS } from "../lib/outbound-status";
+import { enqueue } from "../lib/job-queue";
+import { jsonSafeId, toJsonbSafe } from "../lib/server-utils";
 
 /**
  * Returns true when `now` (HH:MM, 24-hour) falls inside the [start, end] call
@@ -26,9 +28,42 @@ export function isWithinCallWindow(start: string, end: string, now: string): boo
   return now >= start || now <= end;
 }
 
+/** Format a Date as zero-padded HH:MM in the server's local timezone. */
+export function formatLocalHhMm(date: Date = new Date()): string {
+  return date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * Next time the workspace call window opens at or after `from` (server local clock).
+ * If already inside the window, returns `from`.
+ */
+export function nextCallWindowOpenAt(start: string, end: string, from: Date = new Date()): Date {
+  const nowHhMm = formatLocalHhMm(from);
+  if (isWithinCallWindow(start, end, nowHhMm)) {
+    return from;
+  }
+
+  const [sh, sm] = start.split(":").map((p) => Number(p));
+  const openToday = new Date(from);
+  openToday.setHours(sh, sm, 0, 0);
+
+  if (start <= end) {
+    // Same-day window: before open → today; after close → tomorrow.
+    if (nowHhMm < start) return openToday;
+    const tomorrow = new Date(openToday);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  }
+
+  // Overnight window: outside means end < now < start → next open is today at start.
+  return openToday;
+}
+
 export class CampaignDialerService {
   /**
    * Processes a single running campaign (launch worker path).
+   * When outside the workspace call window, enqueues a deferred campaign_dial
+   * job for the next eligible open time instead of silently no-oping.
    */
   async processCampaignById(userId: string, campaignId: string) {
     const [campaign] = await drizzle
@@ -48,10 +83,10 @@ export class CampaignDialerService {
       return;
     }
 
-    if (
-      !this.isWithinWindow(campaign.callWindowStart || "09:00", campaign.callWindowEnd || "17:00")
-    ) {
-      log.info(`Campaign ${campaign.name} is outside its call window`);
+    const windowStart = campaign.callWindowStart || "09:00";
+    const windowEnd = campaign.callWindowEnd || "17:00";
+    if (!this.isWithinWindow(windowStart, windowEnd)) {
+      await this.rescheduleCampaignDial(campaign, windowStart, windowEnd);
       return;
     }
 
@@ -79,20 +114,75 @@ export class CampaignDialerService {
       log.info(`Processing ${activeCampaigns.length} running campaigns`);
 
       for (const campaign of activeCampaigns) {
-        if (
-          this.isWithinWindow(
-            campaign.callWindowStart || "09:00",
-            campaign.callWindowEnd || "17:00",
-          )
-        ) {
+        const windowStart = campaign.callWindowStart || "09:00";
+        const windowEnd = campaign.callWindowEnd || "17:00";
+        if (this.isWithinWindow(windowStart, windowEnd)) {
           await this.processCampaignLeads(campaign);
         } else {
-          log.info(`Campaign ${campaign.name} is outside its call window`);
+          await this.rescheduleCampaignDial(campaign, windowStart, windowEnd);
         }
       }
     } catch (error: any) {
       log.error("Failed to process campaigns", { error: error.message });
     }
+  }
+
+  /**
+   * Enqueue a deferred campaign_dial for the next workspace call-window open.
+   * Campaign stays RUNNING; dialing resumes when the deferred job runs.
+   */
+  private async rescheduleCampaignDial(
+    campaign: { id: string; userId: string; name: string },
+    windowStart: string,
+    windowEnd: string,
+  ) {
+    const runAt = nextCallWindowOpenAt(windowStart, windowEnd);
+
+    // Avoid stacking multiple deferred dials for the same campaign.
+    const [existing] = await drizzle
+      .select({ id: schema.jobs.id })
+      .from(schema.jobs)
+      .where(
+        and(
+          eq(schema.jobs.userId, campaign.userId),
+          eq(schema.jobs.type, "campaign_dial"),
+          eq(schema.jobs.status, "pending"),
+          sql`${schema.jobs.payload}->>'campaignId' = ${campaign.id}`,
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      log.info(`Campaign ${campaign.name} outside call window — deferred job already pending`, {
+        campaignId: campaign.id,
+        jobId: existing.id,
+        windowStart,
+        windowEnd,
+      });
+      return;
+    }
+
+    const enq = await enqueue(drizzle, {
+      userId: campaign.userId,
+      type: "campaign_dial",
+      payload: { userId: campaign.userId, campaignId: campaign.id },
+      runAt,
+    });
+    if (!enq.ok) {
+      log.error("Failed to reschedule campaign_dial outside call window", {
+        campaignId: campaign.id,
+        error: enq.error,
+        nextOpenAt: runAt.toISOString(),
+      });
+      return;
+    }
+    log.info(`Campaign ${campaign.name} outside call window — rescheduled`, {
+      campaignId: campaign.id,
+      jobId: enq.jobId,
+      nextOpenAt: runAt.toISOString(),
+      windowStart,
+      windowEnd,
+    });
   }
 
   /**
@@ -147,6 +237,7 @@ export class CampaignDialerService {
    * Dials a single lead.
    */
   private async dialLead(lead: any, campaign: any) {
+    const leadIdStr = jsonSafeId(lead.id);
     try {
       if (!lead.customerNumber) return;
 
@@ -162,7 +253,7 @@ export class CampaignDialerService {
       if (!gate.allowed) {
         if (gate.reason === "federal_dnc_unconfigured") {
           log.warn("Skipping dial — federal DNC vendor not configured", {
-            leadId: lead.id,
+            leadId: leadIdStr,
             campaignId: campaign.id,
           });
           return;
@@ -172,7 +263,7 @@ export class CampaignDialerService {
           .update(schema.outboundLeads)
           .set({
             status: gate.status,
-            ...(gate.metadataPatch ? { metadata: gate.metadataPatch as any } : {}),
+            ...(gate.metadataPatch ? { metadata: toJsonbSafe(gate.metadataPatch) as any } : {}),
           })
           .where(eq(schema.outboundLeads.id, lead.id));
 
@@ -182,18 +273,18 @@ export class CampaignDialerService {
             customerNumber: lead.customerNumber,
             event: gate.consentLogEvent,
             state: "blocked",
-            metadata: {
-              leadId: lead.id,
+            metadata: toJsonbSafe({
+              leadId: leadIdStr,
               campaignId: campaign.id,
               ...(gate.metadataPatch?.tcpa ? { tcpa: gate.metadataPatch.tcpa } : {}),
-            },
+            }),
           });
         } else if (
           gate.reason === "skipped_duplicate" ||
           gate.reason === "self_recent_call_scheduled"
         ) {
           log.info("Dial blocked by duplicate guard", {
-            leadId: lead.id,
+            leadId: leadIdStr,
             campaignId: campaign.id,
             reason: gate.reason,
           });
@@ -229,13 +320,13 @@ export class CampaignDialerService {
             callId: result.callId,
             event: "outbound_call_placed",
             state: "initiated",
-            metadata: {
-              leadId: lead.id,
+            metadata: toJsonbSafe({
+              leadId: leadIdStr,
               campaignId: campaign.id,
               call_purpose: "marketing_or_sales",
               consent_version: OUTBOUND_CONSENT_VERSION,
               source: "campaign",
-            },
+            }),
           }),
         ]);
       } else {
@@ -245,12 +336,15 @@ export class CampaignDialerService {
             status: LEAD_STATUS.ERROR,
             attempts: (lead.attempts || 0) + 1,
             lastCalledAt: new Date(),
-            metadata: { ...((lead.metadata as object) || {}), lastError: result.error },
+            metadata: toJsonbSafe({
+              ...((lead.metadata as object) || {}),
+              lastError: result.error,
+            }) as any,
           })
           .where(eq(schema.outboundLeads.id, lead.id));
       }
     } catch (error: any) {
-      log.error(`Failed to dial lead ${lead.id}`, { error: error.message });
+      log.error(`Failed to dial lead ${leadIdStr}`, { error: error.message });
     }
   }
 
@@ -259,9 +353,7 @@ export class CampaignDialerService {
    * call window. Uses the server's local clock — not lead-state jurisdiction hours.
    */
   private isWithinWindow(start: string, end: string, currentTimeOverride?: string): boolean {
-    const now =
-      currentTimeOverride ||
-      new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    const now = currentTimeOverride || formatLocalHhMm();
     return isWithinCallWindow(start, end, now);
   }
 }

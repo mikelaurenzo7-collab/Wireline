@@ -7,7 +7,7 @@ import { validateBody, createIntakeKeySchema, updateIntakeKeySchema } from "../l
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { getErrorMessage } from "../lib/server-utils";
+import { getErrorMessage, toJsonbSafe } from "../lib/server-utils";
 import { dispatchWebhook } from "../lib/webhook-helpers";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 import { runInBackground } from "../lib/background-work";
@@ -298,11 +298,11 @@ async function processIntakeLead(
             .update(schema.outboundLeads)
             .set({
               status: gate.status,
-              metadata: (gate.metadataPatch || metadata || {}) as any,
+              metadata: toJsonbSafe(gate.metadataPatch || metadata || {}) as any,
             })
             .where(eq(schema.outboundLeads.id, insertedId!));
           log.warn("Auto-dial blocked by outbound gate", {
-            leadId: insertedId,
+            leadId: String(insertedId),
             reason: gate.reason,
             status: gate.status,
           });
@@ -330,15 +330,15 @@ async function processIntakeLead(
             .update(schema.outboundLeads)
             .set({
               status: "AutoDialFailed",
-              metadata: {
+              metadata: toJsonbSafe({
                 ...(metadata || {}),
                 auto_dial_error: result.error,
                 auto_dial_status: result.status,
-              } as any,
+              }) as any,
             })
             .where(eq(schema.outboundLeads.id, insertedId!));
           log.warn("Auto-dial failed for lead", {
-            leadId: insertedId,
+            leadId: String(insertedId),
             status: result.status,
             error: result.error,
           });
@@ -348,10 +348,16 @@ async function processIntakeLead(
           .update(schema.outboundLeads)
           .set({
             status: "AutoDialFailed",
-            metadata: { ...(metadata || {}), auto_dial_error: getErrorMessage(err) } as any,
+            metadata: toJsonbSafe({
+              ...(metadata || {}),
+              auto_dial_error: getErrorMessage(err),
+            }) as any,
           })
           .where(eq(schema.outboundLeads.id, insertedId!));
-        log.warn("Auto-dial threw for lead", { leadId: insertedId, error: getErrorMessage(err) });
+        log.warn("Auto-dial threw for lead", {
+          leadId: String(insertedId),
+          error: getErrorMessage(err),
+        });
       }
     });
   }

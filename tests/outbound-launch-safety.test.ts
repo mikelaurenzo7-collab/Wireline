@@ -51,9 +51,28 @@ describe("outbound launch safety", () => {
     expect(gate).toContain("LEAD_STATUS.SKIPPED_DUPLICATE");
     expect(gate).toContain("LEAD_STATUS.CALLBACK_SCHEDULED");
     expect(gate).toContain("self_within_24h");
+    expect(gate).toContain("jsonSafeId(otherRecent.id)");
     const vapi = read("src/lib/vapi-helpers.ts");
     expect(vapi).toContain('"Skipped-Duplicate"');
     expect(vapi).toContain('"Blocked-TCPA"');
+  });
+
+  it("reschedules campaign_dial when outside workspace call window", () => {
+    const dialer = read("src/services/campaign-dialer.ts");
+    expect(dialer).toContain("rescheduleCampaignDial");
+    expect(dialer).toContain("nextCallWindowOpenAt");
+    expect(dialer).toContain('type: "campaign_dial"');
+    expect(dialer).toContain("toJsonbSafe");
+    expect(dialer).toContain("jsonSafeId(lead.id)");
+  });
+
+  it("indexes retrying leads with LEAD_STATUS.RETRYING value", () => {
+    expect(LEAD_STATUS.RETRYING).toBe("Retrying");
+    const schema = read("src/db/schema.ts");
+    expect(schema).toContain("WHERE status IN ('Pending', 'Retrying')");
+    expect(schema).not.toContain("WHERE status IN ('Pending', 'Retry')");
+    const migration = read("drizzle/migrations/0086_fix_leads_retry_status_index.sql");
+    expect(migration).toContain("WHERE status IN ('Pending', 'Retrying')");
   });
 
   it("gates intake auto-dial through shared outbound compliance helper", () => {

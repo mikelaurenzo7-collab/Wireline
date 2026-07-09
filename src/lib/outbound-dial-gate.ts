@@ -5,6 +5,7 @@ import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { LEAD_STATUS } from "./outbound-status";
+import { jsonSafeId } from "./server-utils";
 
 const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -93,7 +94,8 @@ export async function evaluateOutboundDialGate(opts: {
       reason: "skipped_duplicate",
       metadataPatch: {
         ...metadata,
-        duplicate_of_lead_id: otherRecent.id,
+        // jsonb cannot store raw JS BigInt — always stringify lead IDs
+        duplicate_of_lead_id: jsonSafeId(otherRecent.id),
         duplicate_guard: "other_within_24h",
       },
     };

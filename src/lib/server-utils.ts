@@ -15,6 +15,25 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
+ * Coerce Postgres bigint / numeric IDs into JSON-safe strings.
+ * Raw JS BigInt values throw on JSON.stringify and break jsonb inserts.
+ */
+export function jsonSafeId(id: bigint | number | string | null | undefined): string | null {
+  if (id == null || id === "") return null;
+  return String(id);
+}
+
+/**
+ * Deep-clone a value into a JSON-serializable shape (BigInt → string).
+ * Use before writing objects into jsonb columns or structured logs.
+ */
+export function toJsonbSafe<T>(value: T): T {
+  return JSON.parse(
+    JSON.stringify(value, (_key, v) => (typeof v === "bigint" ? v.toString() : v)),
+  ) as T;
+}
+
+/**
  * Recursively redact sensitive fields from an arbitrary object before
  * persisting to the audit log. The audit trail is queryable by
  * non-engineers, so credentials must never reach it.
