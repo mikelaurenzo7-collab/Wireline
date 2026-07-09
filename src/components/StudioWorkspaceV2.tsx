@@ -271,7 +271,7 @@ export default function StudioWorkspaceV2() {
       initialCommand={params.get("command") || undefined}
       commandNonce={params.get("commandNonce") || undefined}
       onBack={workspaceView ? returnToCanvas : openWorkspacePanel}
-      backLabel={workspaceView ? "Back to canvas" : "Deep edit"}
+      backLabel={workspaceView ? "Canvas" : "Deep edit"}
       layout="split"
     />
   );
