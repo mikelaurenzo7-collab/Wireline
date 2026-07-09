@@ -136,9 +136,9 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
 
 export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
-  { id: "campaigns", label: "Campaigns", icon: Megaphone },
+  { id: "campaigns", label: "Camps", icon: Megaphone },
   { id: "sequences", label: "Seqs", icon: Repeat },
-  { id: "callbacks", label: "Callbacks", icon: CalendarClock },
+  { id: "callbacks", label: "Backs", icon: CalendarClock },
 ];
 
 export const APP_PAGE_SECONDARY_TAB_ROUTES: AppPageSecondaryTabRoute[] = [

@@ -33,9 +33,16 @@ export default function OutboundHub({
           className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
         />
         {activeView === "dispatch" && (
-          <Button type="button" variant="secondary" size="sm" onClick={() => setShowDial(true)}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="shrink-0"
+            onClick={() => setShowDial(true)}
+            aria-label="Dial now"
+          >
             <Phone className="h-3.5 w-3.5" aria-hidden />
-            Dial now
+            <span className="hidden sm:inline">Dial now</span>
           </Button>
         )}
       </div>
