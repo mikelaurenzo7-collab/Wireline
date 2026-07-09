@@ -44,7 +44,7 @@ export default function MarketingFooter({
         <div className="marketing-footer-rail">
           <div className="marketing-footer-brand">
             <p className="flex items-center gap-2.5 font-[var(--wireline-font-display)] text-[var(--wireline-typography-h3-size)] font-semibold tracking-[-.035em] text-foreground">
-              <WirelineMark className="h-6 w-6 shrink-0 text-primary" signal />
+              <WirelineMark className="h-6 w-9 shrink-0 text-primary" signal />
               Wireline
             </p>
             <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
