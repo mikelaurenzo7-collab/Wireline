@@ -1,23 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useState } from "react";
-import { ArrowRight, Check, Hammer, Loader2 } from "lucide-react";
+import { Hammer, Loader2, Check, ArrowRight } from "lucide-react";
+import { ShadButton } from "../../atoms/Button";
 import { authFetch } from "../../../lib/api";
-import { FormShell, Field, TextInput, TextArea, RunButton, ResultCard, ErrCard } from "../shared";
-import { ShadButton } from "../../ui/shadcn/ShadButton";
+import { Field, FormShell, ResultCard, TextArea, TextInput, ErrCard, RunButton } from "./FormPrimitives";
 
-export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: boolean }) {
-  const [goal, setGoal] = useState(initial?.goal ?? "");
-  const [companyName, setCompanyName] = useState(initial?.companyName ?? "");
-  const [industry, setIndustry] = useState(initial?.industry ?? "");
-  const [websiteUrl, setWebsiteUrl] = useState(initial?.websiteUrl ?? "");
-  const [voicePref, setVoicePref] = useState("");
+export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?: boolean }) {
+  const [goal, setGoal] = useState(initial?.goal || "");
+  const [companyName, setCompanyName] = useState(initial?.companyName || "");
+  const [industry, setIndustry] = useState(initial?.industry || "");
+  const [websiteUrl, setWebsiteUrl] = useState(initial?.websiteUrl || "");
+  const [voicePref, setVoicePref] = useState(initial?.voicePreference || "");
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [design, setDesign] = useState<any>(null);
   const [creating, setCreating] = useState(false);
+  const [design, setDesign] = useState<any>(null);
   const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   const run = async () => {
+    if (!goal) return;
     setLoading(true);
     setErr(null);
     setDesign(null);
@@ -26,13 +26,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: 
       const r = await authFetch("/api/claude/forge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          goal,
-          companyName,
-          industry,
-          websiteUrl,
-          voicePreference: voicePref,
-        }),
+        body: JSON.stringify({ goal, companyName, industry, websiteUrl, voicePreference: voicePref }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
@@ -96,7 +90,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled: 
           />
         </Field>
       </div>
-      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Design first line" />
+      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Design agent draft" />
 
       {err && <ErrCard error={err} />}
       {design && (
