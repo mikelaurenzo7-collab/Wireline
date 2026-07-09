@@ -86,7 +86,7 @@ export default function PhonePage() {
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
           )}
           {primaryTab === "appointments" && (
-            <div className="flex h-full min-h-0 w-full flex-col items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
+            <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
               <EmptyState
                 framed
                 density="compact"

@@ -34,8 +34,10 @@
   flex: 1 1 auto;
 }
 
+/* Phone operate intro must stay shrink-0 — a near-viewport min-height here
+   collapsed the History panel to ~36px and parked the empty state below the fold. */
 [data-wireline-route="/phone"] .wl-operate-surface {
-  min-height: min(100%, calc(100dvh - 4rem));
+  min-height: 0;
 }
 
 /* A legacy per-agent Director surface needs a readable central conversation column. */

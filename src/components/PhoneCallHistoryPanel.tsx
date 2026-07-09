@@ -55,11 +55,11 @@ export default function PhoneCallHistoryPanel() {
   // the black CallLogsClaude void that previously shipped on first paint.
   if (hasCalls === true) return <CallLogsClaude />;
 
-  // Center in the visible operate panel. Do not use EmptyState `fill` here —
-  // its min-h-[75vh] + justify-center can park the framed empty below the fold
-  // inside Phone's overflow-hidden shell (the classic black void).
+  // Top-align the framed empty inside the operate panel. Vertical centering
+  // against a scrollable/unbounded height chain parks the card below the fold
+  // (the classic Phone History black void).
   return (
-    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center overflow-y-auto px-4 py-8 sm:px-6">
+    <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
       <EmptyState
         framed
         density="compact"
