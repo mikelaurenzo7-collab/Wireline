@@ -26,7 +26,7 @@ export default function SettingsTabs() {
       tabs={settingsTabs}
       activeId={activeTab}
       density="compact"
-      wrap
+      align="start"
       className="mb-7 border-b border-border/70 pb-3"
     />
   );
