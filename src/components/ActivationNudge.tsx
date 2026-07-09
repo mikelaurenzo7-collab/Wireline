@@ -127,43 +127,43 @@ export default function ActivationNudge({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "mx-4 mt-2 mb-0.5 flex flex-col gap-2 border border-border bg-card px-3 py-2 text-[var(--wireline-typography-caption-size)] sm:flex-row sm:items-center",
+        "relative mx-3 mt-1.5 mb-1 rounded-xl border border-border/80 bg-card/95 px-3.5 py-3 pr-12 text-[var(--wireline-typography-caption-size)] shadow-sm sm:mx-6 sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3 sm:pr-12",
         className,
       )}
       role="status"
       aria-live="polite"
     >
-      <div className="min-w-0 flex-1 pl-1">
+      <div className="min-w-0 flex-1">
         <p className="wl-label mb-1 text-primary">{ACTIVATION_NUDGE_COPY.eyebrow}</p>
-        <p className="text-xs leading-relaxed text-foreground/75">{ACTIVATION_NUDGE_COPY.body}</p>
+        <p className="max-w-[62ch] text-xs leading-relaxed text-foreground/75">
+          {ACTIVATION_NUDGE_COPY.body}
+        </p>
         {phoneNumber ? (
           <p className="mt-1 font-mono text-[var(--wireline-typography-caption-size)] tabular-nums text-[var(--wireline-color-text-secondary)]">
             {phoneNumber}
           </p>
         ) : null}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:pl-2">
-        {phoneNumber ? (
-          <a
-            href={formatTel(phoneNumber)}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded bg-brand px-4 py-2 wl-label text-on-brand transition-opacity hover:opacity-95 active:scale-[0.98]"
-          >
-            <Phone className="size-3.5" />
-            {ACTIVATION_NUDGE_COPY.cta}
-          </a>
-        ) : null}
-        <ShadButton
-          type="button"
-          variant="ghost"
-          size="icon"
-          disableAnimations
-          onClick={dismiss}
-          aria-label="Dismiss activation reminder"
-          className="size-9 rounded text-muted hover:text-foreground active:scale-[0.98]"
+      {phoneNumber ? (
+        <a
+          href={formatTel(phoneNumber)}
+          className="mt-2 inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded bg-brand px-3 py-1.5 wl-label text-on-brand transition-opacity hover:opacity-95 active:scale-[0.98] sm:mt-0"
         >
-          <X className="size-3.5" />
-        </ShadButton>
-      </div>
+          <Phone className="size-3.5" />
+          {ACTIVATION_NUDGE_COPY.cta}
+        </a>
+      ) : null}
+      <ShadButton
+        type="button"
+        variant="ghost"
+        size="icon"
+        disableAnimations
+        onClick={dismiss}
+        aria-label="Dismiss activation reminder"
+        className="absolute right-2 top-2 size-8 rounded text-muted hover:text-foreground active:scale-[0.98]"
+      >
+        <X className="size-3.5" />
+      </ShadButton>
     </div>
   );
 }
