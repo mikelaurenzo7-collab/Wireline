@@ -27,7 +27,8 @@ export default function SettingsTabs() {
       activeId={activeTab}
       density="compact"
       align="start"
-      className="mb-7 border-b border-border/70 pb-3"
+      wrap
+      className="mb-5 border-b border-border/70 pb-3 sm:mb-7"
     />
   );
 }
