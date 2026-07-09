@@ -491,7 +491,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: Shield,
         title: "TCPA-clean outbound",
-        body: "Compliance ledger logs every disclosure, opt-out, and DNC honor. Campaign call windows and attempt caps are enforced before dial. Federal and internal DNC checks run on every outbound attempt.",
+        body: "Compliance ledger logs every disclosure, opt-out, and DNC honor. Workspace call windows and attempt caps are enforced before dial. Federal and internal DNC checks run on every outbound attempt.",
       },
     ],
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week — got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,

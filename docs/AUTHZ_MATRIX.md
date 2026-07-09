@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 274
-**Protected:** 231
+**Routes scanned:** 276
+**Protected:** 233
 **Public (allowlisted):** 43
 **Violations:** 0
 
@@ -157,6 +157,8 @@
 | carrier-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
 | carrier-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
 | carrier-routes.ts | POST | `/api/phone-numbers/search` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/api/compliance/center` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/api/compliance/consent-log` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/dnc` | inline | — | — | Protected |
 | compliance-routes.ts | POST | `/dnc` | inline | — | — | Protected |
 | compliance-routes.ts | DELETE | `/dnc/:id` | inline | — | — | Protected |

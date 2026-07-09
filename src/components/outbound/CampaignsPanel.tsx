@@ -118,11 +118,11 @@ export default function CampaignsPanel() {
     const playbook = parsePlaybookFromGoal(campaignGoal);
     const checklist = [
       "I attest lead source and consent provenance are documented for this list.",
-      "Campaign call windows and retry caps match our policy (enforced at dial time).",
+      "Workspace call windows and retry caps are enforced at dial time (server timezone; not lead-state jurisdiction hours).",
       "I understand DNC / TCPA / federal DNC gates run on every dial attempt.",
     ];
     const confirmed = window.confirm(
-      `Launch attestation (dialer still enforces DNC/TCPA/windows):\n\n${checklist
+      `Launch attestation (dialer still enforces DNC/TCPA and workspace call windows):\n\n${checklist
         .map((line) => `• ${line}`)
         .join("\n")}\n\n${
         playbook ? `Playbook: ${playbook}` : "No playbook tag on this campaign."

@@ -1,4 +1,3 @@
- 
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, ne } from "drizzle-orm";
@@ -33,7 +32,8 @@ export type OutboundDialGateResult =
 export async function evaluateOutboundDialGate(opts: {
   userId: string;
   phone: string;
-  leadId?: string;
+  /** Outbound lead primary key (bigint column). */
+  leadId?: bigint | number | string;
   lastCalledAt?: Date | null;
   metadata?: Record<string, unknown>;
 }): Promise<OutboundDialGateResult> {
@@ -76,8 +76,8 @@ export async function evaluateOutboundDialGate(opts: {
     eq(schema.outboundLeads.customerNumber, opts.phone),
     gte(schema.outboundLeads.lastCalledAt, since),
   ];
-  if (opts.leadId) {
-    otherConditions.push(ne(schema.outboundLeads.id, opts.leadId));
+  if (opts.leadId != null && opts.leadId !== "") {
+    otherConditions.push(ne(schema.outboundLeads.id, BigInt(opts.leadId)));
   }
 
   const [otherRecent] = await drizzle

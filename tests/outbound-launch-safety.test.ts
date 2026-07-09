@@ -14,6 +14,8 @@ describe("outbound launch safety", () => {
     const smsRoutes = read("src/routes/sms-routes.ts");
     expect(smsRoutes).toContain("smsReplySchema");
     expect(smsRoutes).toContain('from "../lib/api-validation"');
+    const validation = read("src/lib/api-validation.ts");
+    expect(validation).toMatch(/export const sendSmsSchema[\s\S]*export const smsReplySchema/);
   });
 
   it("awaits enqueue after RUNNING and returns jobId on launch", () => {
@@ -45,7 +47,7 @@ describe("outbound launch safety", () => {
   it("defines duplicate skip status and preserves compliance outcomes", () => {
     expect(LEAD_STATUS.SKIPPED_DUPLICATE).toBe("Skipped-Duplicate");
     const gate = read("src/lib/outbound-dial-gate.ts");
-    expect(gate).toContain("ne(schema.outboundLeads.id, opts.leadId)");
+    expect(gate).toContain("ne(schema.outboundLeads.id, BigInt(opts.leadId))");
     expect(gate).toContain("LEAD_STATUS.SKIPPED_DUPLICATE");
     expect(gate).toContain("LEAD_STATUS.CALLBACK_SCHEDULED");
     expect(gate).toContain("self_within_24h");

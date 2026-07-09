@@ -342,6 +342,11 @@ export const sendSmsSchema = z.object({
   agentId: z.string().optional(),
 });
 
+/** Inbox thread reply body — used by POST /api/sms/threads/:id/reply. */
+export const smsReplySchema = z.object({
+  body: z.string().min(1, "body is required").max(1600),
+});
+
 // ============================================================================
 // Agent Config Schemas (apply-role, manual entry)
 // ============================================================================
@@ -429,12 +434,8 @@ export const updateFollowUpTaskSchema = z.object({
 });
 
 // ============================================================================
-// Tier-2 route schemas (SMS, carrier, email, director, workspace)
+// Tier-2 route schemas (carrier, email, director, workspace)
 // ============================================================================
-
-export const smsReplySchema = z.object({
-  body: z.string().min(1, "body is required").max(1600),
-});
 
 export const phoneNumberCreateSchema = z.object({
   phone_number: z.string().min(3).max(32),

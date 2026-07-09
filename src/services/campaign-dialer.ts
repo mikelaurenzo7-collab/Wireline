@@ -255,7 +255,8 @@ export class CampaignDialerService {
   }
 
   /**
-   * Checks if the current time (or a provided time) is within the call window.
+   * Checks if the current time (or a provided time) is within the workspace
+   * call window. Uses the server's local clock — not lead-state jurisdiction hours.
    */
   private isWithinWindow(start: string, end: string, currentTimeOverride?: string): boolean {
     const now =
