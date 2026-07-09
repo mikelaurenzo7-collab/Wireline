@@ -140,7 +140,7 @@ export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
   { id: "campaigns", label: "Camps", icon: Megaphone },
   { id: "sequences", label: "Seqs", icon: Repeat },
-  { id: "callbacks", label: "CBs", ariaLabel: "Callbacks", icon: CalendarClock },
+  { id: "callbacks", label: "Callbacks", icon: CalendarClock },
 ];
 
 export const APP_PAGE_SECONDARY_TAB_ROUTES: AppPageSecondaryTabRoute[] = [
