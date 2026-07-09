@@ -49,6 +49,11 @@ function writeDismissed(): void {
   }
 }
 
+function shouldYieldToFirstSession(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname === "/overview";
+}
+
 export default function ActivationNudge({ className }: { className?: string }) {
   const [visible, setVisible] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -64,7 +69,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
     let interval: ReturnType<typeof setInterval> | undefined;
 
     const refresh = async () => {
-      if (cancelled || stopped || isPostSignupFlowActive() || isFreshSignupSession()) return;
+      if (cancelled || stopped || shouldYieldToFirstSession() || isPostSignupFlowActive() || isFreshSignupSession()) return;
 
       const [activation, progress] = await Promise.all([
         fetchActivationStatusFull(),
@@ -122,7 +127,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
     setDismissed(true);
   };
 
-  if (dismissed || !visible) return null;
+  if (dismissed || !visible || shouldYieldToFirstSession()) return null;
 
   return (
     <div
