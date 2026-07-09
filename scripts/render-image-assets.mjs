@@ -1,5 +1,5 @@
 // Renders canonical SVG sources to PNGs in public/.
-// Runs as a prebuild step so og-image.png + apple-touch-icon.png are
+// Runs as a prebuild step so favicon.png, og-image.png, and touch icons are
 // always in sync with their SVG sources without committing binary blobs.
 //
 // Why @resvg/resvg-js: pure-WASM, no native compile, no system deps,
@@ -18,8 +18,9 @@ const publicDir = resolve(root, "public");
 if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 
 const targets = [
-  { src: "public/og-image.svg",          out: "public/og-image.png",         width: 1200 },
-  { src: "scripts/apple-touch-icon.svg", out: "public/apple-touch-icon.png", width: 180  },
+  { src: "public/favicon.svg",          out: "public/favicon.png",            width: 512  },
+  { src: "public/og-image.svg",         out: "public/og-image.png",           width: 1200 },
+  { src: "scripts/apple-touch-icon.svg", out: "public/apple-touch-icon.png",  width: 180  },
   { src: "scripts/apple-touch-icon.svg", out: "public/wireline-icon-192.png", width: 192  },
 ];
 
