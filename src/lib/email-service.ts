@@ -148,8 +148,8 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
       <h2 style="margin: 0 0 16px; font-weight: 600;">Reset your Wireline password</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">Someone (hopefully you) requested a password reset for your Wireline account.</p>
       <p style="margin: 0 0 24px; line-height: 1.55;">Click the button below to set a new password. The link expires in <strong>${expiresHuman}</strong>.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.resetUrl}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
-      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.resetUrl}</span></p>
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.resetUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset password</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.resetUrl)}</span></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you did not request this, you can ignore this email — your password stays unchanged.</p>
     </div>
   `;
@@ -193,12 +193,12 @@ export async function sendPaymentLinkEmail(opts: {
   payUrl: string;
   planLabel?: string;
 }): Promise<SendResult> {
-  const planSuffix = opts.planLabel ? ` (${opts.planLabel} plan)` : "";
+  const planSuffix = opts.planLabel ? ` (${escapeHtml(opts.planLabel)} plan)` : "";
   const subject = "Your Wireline payment link";
   const text = [
     "Hi,",
     "",
-    `Here's your secure link to activate your Wireline plan${planSuffix}:`,
+    `Here's your secure link to activate your Wireline plan${opts.planLabel ? ` (${opts.planLabel} plan)` : ""}:`,
     "",
     opts.payUrl,
     "",
@@ -210,8 +210,8 @@ export async function sendPaymentLinkEmail(opts: {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">Hi,</p>
       <p style="margin: 0 0 16px; line-height: 1.55;">Here's your secure link to activate your Wireline plan${planSuffix}.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.payUrl}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Open payment link</a></p>
-      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.payUrl}</span></p>
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.payUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Open payment link</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.payUrl)}</span></p>
       <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline</p>
     </div>
   `;
@@ -245,12 +245,14 @@ export async function sendSignupLinkEmail(opts: {
   agentName?: string;
 }): Promise<SendResult> {
   const signupUrl = `${(process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "")}/signup`;
-  const greeting = opts.callerName ? `Hi ${opts.callerName.split(/\s+/)[0]},` : "Hi,";
-  const fromAgent = opts.agentName ? ` — ${opts.agentName}` : "";
+  const greetingHtml = firstNameGreeting(opts.callerName);
+  const greetingText = opts.callerName ? `Hi ${opts.callerName.trim().split(/\s+/)[0]},` : "Hi,";
+  const fromAgentHtml = opts.agentName ? ` — ${escapeHtml(opts.agentName)}` : "";
+  const fromAgentText = opts.agentName ? ` — ${opts.agentName}` : "";
 
   const subject = "Your Wireline sign-up link";
   const text = [
-    greeting,
+    greetingText,
     "",
     "Thanks for the call. Here's the link to start your 14-day Wireline trial — no credit card, dedicated phone number included, deploy your first AI agent in under 10 minutes:",
     "",
@@ -258,17 +260,17 @@ export async function sendSignupLinkEmail(opts: {
     "",
     "If you have any follow-up questions, just call back — same number you reached me on. Looking forward to hearing how the trial goes.",
     "",
-    `— Wireline${fromAgent}`,
+    `— Wireline${fromAgentText}`,
   ].join("\n");
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
-      <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">${greetingHtml}</p>
       <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to start your <strong>14-day Wireline trial</strong> — no credit card, dedicated phone number included, deploy your first AI agent in under 10 minutes.</p>
-      <p style="margin: 0 0 24px;"><a href="${signupUrl}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your trial</a></p>
-      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${signupUrl}</span></p>
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(signupUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start your trial</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(signupUrl)}</span></p>
       <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back — same number you reached me on.</p>
-      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline${fromAgent}</p>
+      <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">— Wireline${fromAgentHtml}</p>
     </div>
   `;
 
@@ -328,11 +330,12 @@ export async function sendEmailVerification(opts: {
   verifyUrl: string;
   fullName?: string | null;
 }): Promise<SendResult> {
-  const greeting = opts.fullName ? `Hi ${opts.fullName.split(/\s+/)[0]},` : "Hi,";
+  const greetingHtml = firstNameGreeting(opts.fullName);
+  const greetingText = opts.fullName ? `Hi ${opts.fullName.trim().split(/\s+/)[0]},` : "Hi,";
 
   const subject = "Verify your Wireline email";
   const text = [
-    greeting,
+    greetingText,
     "",
     "Welcome to Wireline. Click the link below to verify your email and unlock your 14-day trial:",
     "",
@@ -345,10 +348,10 @@ export async function sendEmailVerification(opts: {
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
-      <p style="margin: 0 0 16px; line-height: 1.55;">${greeting}</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">${greetingHtml}</p>
       <p style="margin: 0 0 16px; line-height: 1.55;">Welcome to Wireline. Click the button below to verify your email and unlock your 14-day trial.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.verifyUrl}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
-      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${opts.verifyUrl}</span></p>
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.verifyUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify email</a></p>
+      <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(opts.verifyUrl)}</span></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">The link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>
     </div>
   `;
@@ -456,8 +459,8 @@ export async function sendPaymentFailedEmail(opts: {
       <h2 style="margin: 0 0 16px; font-weight: 600;">Payment failed</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">A recent payment of <strong>${escapeHtml(opts.amountDisplay)}</strong> for your Wireline subscription was declined.</p>
       <p style="margin: 0 0 24px; line-height: 1.55;">To keep your agents live, update your payment method.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.updateCardUrl}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method</a></p>
-      ${opts.invoiceUrl ? `<p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;"><a href="${opts.invoiceUrl}" style="color: ${BRAND.colors.primary};">View invoice</a></p>` : ""}
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.updateCardUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update payment method</a></p>
+      ${opts.invoiceUrl ? `<p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;"><a href="${escapeHtml(opts.invoiceUrl)}" style="color: ${BRAND.colors.primary};">View invoice</a></p>` : ""}
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have questions, reply to this email — we're happy to help.</p>
     </div>
   `;
@@ -511,7 +514,7 @@ export async function sendTrialEndingSoonEmail(opts: {
       <h2 style="margin: 0 0 16px; font-weight: 600;">Fund live work within ${escapeHtml(dayWord)}</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">Your Wireline activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
       <p style="margin: 0 0 24px; line-height: 1.55;">Add Conversation Balance now to keep your agents live — your phone number, call history, and agent configuration all carry over.</p>
-      <p style="margin: 0 0 24px;"><a href="${opts.checkoutUrl}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.checkoutUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your agents will stop answering calls when activation lapses.</p>
       ${buildComplianceFooterHtml(opts.to)}
     </div>
@@ -536,8 +539,7 @@ export async function sendTrialEndingSoonEmail(opts: {
   };
 }
 
-/** Tiny HTML escape — sufficient for the small set of user-supplied
- * strings (title, message, callId) we inject. */
+/** Tiny HTML escape — sufficient for user-supplied strings and URL attributes. */
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -545,4 +547,9 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function firstNameGreeting(fullName?: string | null): string {
+  const first = fullName?.trim().split(/\s+/)[0];
+  return first ? `Hi ${escapeHtml(first)},` : "Hi,";
 }

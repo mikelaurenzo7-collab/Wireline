@@ -61,18 +61,24 @@ describe("Wireline Command extension contract", () => {
     expect(studioSource).not.toContain("handoff=");
   });
 
-  it("keeps fast jumps to agents, wire, usage, and studio", () => {
+  it("keeps fast jumps to agents, wire, phone, inbox, and studio", () => {
     const panel = read("apps/browser-extension/panel/index.html");
     const panelJs = read("apps/browser-extension/panel/panel.js");
+    const worker = read("apps/browser-extension/background/service-worker.js");
 
     expect(panel).toContain('id="open-agents"');
     expect(panel).toContain('id="open-wire"');
-    expect(panel).toContain('id="open-billing"');
+    expect(panel).toContain('id="open-phone"');
+    expect(panel).toContain('id="open-inbox"');
     expect(panel).toContain('id="open-studio"');
+    expect(panel).toContain(">Wire</button>");
     expect(panelJs).toContain('route: "agents"');
     expect(panelJs).toContain('route: "wire"');
-    expect(panelJs).toContain('route: "billing"');
+    expect(panelJs).toContain('route: "phone"');
+    expect(panelJs).toContain('route: "inbox"');
     expect(panelJs).toContain('route: "studio"');
+    expect(worker).toContain('["phone", "https://trywireline.com/phone"]');
+    expect(worker).toContain('["inbox", "https://trywireline.com/inbox"]');
   });
 
   it("documents multi-surface QA ritual", () => {

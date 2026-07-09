@@ -1,11 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
 import { Cable, CreditCard, MonitorDown, Settings, UsersRound } from "lucide-react";
+import { PAGE_TITLES } from "../constants/navigation";
 
 const mobileUtilityLinks = [
-  { href: "/settings", label: "Settings", detail: "Account", icon: Settings },
+  { href: "/settings", label: PAGE_TITLES["/settings"], detail: "Account", icon: Settings },
   { href: "/settings/billing", label: "Billing", detail: "Usage + balance", icon: CreditCard },
-  { href: "/connections", label: "Integrations", detail: "Connected tools", icon: Cable },
-  { href: "/settings/apps", label: "Apps", detail: "Surfaces", icon: MonitorDown },
+  {
+    href: "/connections",
+    label: PAGE_TITLES["/connections"],
+    detail: "Connected tools",
+    icon: Cable,
+  },
+  { href: "/apps", label: PAGE_TITLES["/apps"], detail: "Surfaces", icon: MonitorDown },
   { href: "/settings/team", label: "Team", detail: "Access", icon: UsersRound },
 ] as const;
 

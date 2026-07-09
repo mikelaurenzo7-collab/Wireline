@@ -120,18 +120,25 @@ export function buildComplianceFooterText(email: string): string {
 /** HTML compliance footer matching the email design system. */
 export function buildComplianceFooterHtml(email: string): string {
   const addr = getPostalAddress();
+  const safeEmail = escapeBasicHtml(normalizeEmail(email));
+  const safeUnsub = escapeBasicHtml(unsubscribeUrl(email));
   return `
     <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.06); margin: 28px 0 16px;" />
     <p style="margin: 0 0 6px; line-height: 1.5; color: #9A9AA8; font-size: 11px;">
-      You're receiving this because you have a Wireline account (${normalizeEmail(email)}).
-      <a href="${unsubscribeUrl(email)}" style="color: #6B6B7A;">Unsubscribe</a> from product &amp; billing reminders.
+      You're receiving this because you have a Wireline account (${safeEmail}).
+      <a href="${safeUnsub}" style="color: #6B6B7A;">Unsubscribe</a> from product &amp; billing reminders.
     </p>
     ${addr ? `<p style="margin: 0; line-height: 1.5; color: #9A9AA8; font-size: 11px;">${escapeBasicHtml(addr)}</p>` : ""}
   `;
 }
 
 function escapeBasicHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /**

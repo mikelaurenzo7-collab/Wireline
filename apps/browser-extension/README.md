@@ -2,7 +2,7 @@
 
 Wireline Command is a privacy-minimal browser command surface for Wireline Studio.
 
-The website remains the full operating system for setup, billing, training, integrations, launch, and review. The extension exists for the moment when a customer is already inside a browser tab and wants Wireline to act with that page as context.
+The website remains the full operating system for setup, billing, training, Wire (connections), Phone, Inbox, launch, and review. The extension exists for the moment when a customer is already inside a browser tab and wants Wireline to act with that page as context.
 
 It lets a signed-in Wireline customer deliberately bring the active page, text they select, or a linked contact into the existing Studio workflow, where all agent configuration, authorization, consent, billing, and launch controls remain server-owned.
 

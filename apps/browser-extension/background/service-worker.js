@@ -6,6 +6,10 @@ const ROUTES = new Map([
   ["agents", "https://trywireline.com/overview"],
   ["training", "https://trywireline.com/knowledge"],
   ["wire", "https://trywireline.com/connections"],
+  ["phone", "https://trywireline.com/phone"],
+  ["inbox", "https://trywireline.com/inbox"],
+  ["approvals", "https://trywireline.com/approvals"],
+  ["insights", "https://trywireline.com/insights"],
   ["billing", "https://trywireline.com/settings/billing"],
 ]);
 const MAX_SELECTION_LENGTH = 1600;

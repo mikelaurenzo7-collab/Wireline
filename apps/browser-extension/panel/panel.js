@@ -11,8 +11,9 @@ const refreshButton = document.querySelector("#refresh-context");
 const quickActions = [...document.querySelectorAll(".quick-action")];
 const agentsButton = document.querySelector("#open-agents");
 const wireButton = document.querySelector("#open-wire");
+const phoneButton = document.querySelector("#open-phone");
+const inboxButton = document.querySelector("#open-inbox");
 const trainingButton = document.querySelector("#open-training");
-const billingButton = document.querySelector("#open-billing");
 const studioButton = document.querySelector("#open-studio");
 
 const actionPrompts = {
@@ -125,11 +126,14 @@ agentsButton.addEventListener("click", () =>
 wireButton.addEventListener("click", () =>
   void sendMessage({ type: "wireline:open-route", route: "wire" }),
 );
+phoneButton.addEventListener("click", () =>
+  void sendMessage({ type: "wireline:open-route", route: "phone" }),
+);
+inboxButton.addEventListener("click", () =>
+  void sendMessage({ type: "wireline:open-route", route: "inbox" }),
+);
 trainingButton.addEventListener("click", () =>
   void sendMessage({ type: "wireline:open-route", route: "training" }),
-);
-billingButton.addEventListener("click", () =>
-  void sendMessage({ type: "wireline:open-route", route: "billing" }),
 );
 studioButton.addEventListener("click", () =>
   void sendMessage({ type: "wireline:open-route", route: "studio" }),

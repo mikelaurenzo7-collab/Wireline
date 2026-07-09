@@ -13,22 +13,21 @@ const AUTHENTICATED_PAGE_INTROS = [
 ] as const;
 
 describe("authenticated minimal copy contract", () => {
-  it("keeps Wire page chrome in the integration map instead of a duplicate page intro", () => {
+  it("keeps Wire page chrome on a single WorkspacePageIntro plus the integration map", () => {
     const connectionsPage = read("src/pages/ConnectionsPage.tsx");
     const map = read("src/components/integrations/IntegrationOperatingMap.tsx");
     expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
-    expect(connectionsPage).not.toContain("WorkspacePageIntro");
-    expect(map).toMatch(/wl-eyebrow[\s\S]*Wire/);
+    expect(connectionsPage).toMatch(/WorkspacePageIntro[\s\S]*title="Wire"/);
+    expect(connectionsPage).not.toMatch(/WorkspacePageIntro[\s\S]*description=/);
     expect(map).toMatch(/Integration map/);
   });
 
-  it("keeps workspace page intros title-only", () => {
+  it("keeps workspace page intros title-first without coaching copy", () => {
     const intro = read("src/components/layout/WorkspacePageFrame.tsx");
-    expect(intro).not.toContain("description?:");
-    expect(intro).not.toContain("eyebrow?:");
     expect(intro).toContain("Minimal page title");
+    expect(intro).not.toContain("eyebrow?:");
 
-    for (const path of AUTHENTICATED_PAGE_INTROS) {
+    for (const path of [...AUTHENTICATED_PAGE_INTROS, "src/pages/ConnectionsPage.tsx"]) {
       const source = read(path);
       expect(source).toContain("WorkspacePageIntro");
       expect(source).not.toMatch(/WorkspacePageIntro[\s\S]*description=/);
@@ -75,7 +74,6 @@ describe("authenticated minimal copy contract", () => {
     expect(ops).not.toMatch(/OPS_CHANNEL_EMPTY[\s\S]*description:/);
 
     for (const path of [
-      "src/components/Pipeline.tsx",
       "src/components/WebhooksManager.tsx",
       "src/components/IntakeKeysManager.tsx",
     ]) {

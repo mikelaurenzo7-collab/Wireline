@@ -16,6 +16,7 @@ import {
   MOBILE_PRIMARY_NAV,
   OPERATE_NAV,
   WORKSPACE_NAV,
+  NAV_SHORTCUT_HINTS,
   isMobileMoreActive,
   isNavActive,
   type ShellNavItem,
@@ -54,16 +55,23 @@ function readinessLabel(agent: { phone_number?: string | null } | undefined): st
 function RailLink({ item, pathname }: { item: ShellNavItem; pathname: string }) {
   const active = isNavActive(pathname, item.href);
   const Icon = item.icon;
+  const hint = NAV_SHORTCUT_HINTS[item.href];
   return (
     <Link
       to={item.href}
       aria-current={active ? "page" : undefined}
+      title={hint ? `Shortcut ${hint}` : undefined}
       data-wireline-nav-href={item.href}
       data-wireline-nav-active={active ? "true" : undefined}
       className="wl-rail-link"
     >
       <Icon size={16} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
-      {item.label}
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      {hint ? (
+        <kbd className="shrink-0 font-mono text-[10px] uppercase tracking-wide opacity-60">
+          {hint}
+        </kbd>
+      ) : null}
     </Link>
   );
 }
@@ -236,7 +244,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
                     {remaining > 0 ? (
                       <Link
                         to="/overview"
-                        className="mt-0.5 flex min-h-[36px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        className="mt-0.5 flex min-h-[44px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       >
                         <span>All agents</span>
                         <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">

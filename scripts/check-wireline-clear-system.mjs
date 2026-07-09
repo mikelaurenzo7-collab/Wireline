@@ -266,8 +266,8 @@ mustInclude(
 mustInclude(
   "apps/browser-extension/panel/index.html",
   extensionPanel,
-  /Agents[\s\S]*(Wire|Integrations)[\s\S]*Usage[\s\S]*Studio/,
-  "extension panel must expose Agents, Wire or Integrations, Usage, and Studio jumps",
+  /Agents[\s\S]*Wire[\s\S]*Phone[\s\S]*Inbox[\s\S]*Studio/,
+  "extension panel must expose Agents, Wire, Phone, Inbox, and Studio jumps",
 );
 mustInclude(
   "apps/browser-extension/panel/panel.js",
@@ -520,8 +520,8 @@ mustInclude(
 mustInclude(
   "src/components/MobileBrowserUtilities.tsx",
   mobileBrowserUtilities,
-  /Integrations[\s\S]*Connected tools/,
-  "mobile browser must expose integrations",
+  /\/connections[\s\S]*Connected tools|Connected tools[\s\S]*\/connections/,
+  "mobile browser must expose Wire (connections)",
 );
 mustInclude(
   "src/components/WorkspaceShell.tsx",

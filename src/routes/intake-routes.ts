@@ -2,7 +2,7 @@ import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- inbound lead payloads are vendor-defined JSON envelopes. */
 import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
-import { log, auditLogger, drizzle } from "../lib/server-context";
+import { log, auditLogger, drizzle, tenantStore } from "../lib/server-context";
 import { validateBody, createIntakeKeySchema, updateIntakeKeySchema } from "../lib/api-validation";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -358,18 +358,22 @@ router.post("/lead", async (req: Request, res: Response) => {
 
     const idemHeader =
       (req.headers["idempotency-key"] as string | undefined)?.toString().trim() || null;
-    const result = await processIntakeLead(key, req.body || {}, idemHeader);
+    const result = await tenantStore.run(key.user_id, () =>
+      processIntakeLead(key, req.body || {}, idemHeader),
+    );
 
     if (result.ok) {
       if (!result.idempotent_replay) {
         runInBackground("intake key use-count", () =>
-          drizzle
-            .update(schema.intakeKeys)
-            .set({
-              lastUsedAt: new Date(),
-              useCount: (key.use_count || 0) + 1,
-            })
-            .where(eq(schema.intakeKeys.id, key.id)),
+          tenantStore.run(key.user_id, () =>
+            drizzle
+              .update(schema.intakeKeys)
+              .set({
+                lastUsedAt: new Date(),
+                useCount: (key.use_count || 0) + 1,
+              })
+              .where(eq(schema.intakeKeys.id, key.id)),
+          ),
         );
       }
       return res.json(result);
@@ -424,27 +428,31 @@ router.post("/leads", async (req: Request, res: Response) => {
 
     const results = await Promise.all(
       (leads as IntakeLeadInput[]).map((lead) =>
-        processIntakeLead(key, lead).catch(
-          (err: unknown) =>
-            ({
-              ok: false,
-              error: getErrorMessage(err),
-              code: "PROCESS_FAILED",
-            }) as IntakeLeadResult,
-        ),
+        tenantStore
+          .run(key.user_id, () => processIntakeLead(key, lead))
+          .catch(
+            (err: unknown) =>
+              ({
+                ok: false,
+                error: getErrorMessage(err),
+                code: "PROCESS_FAILED",
+              }) as IntakeLeadResult,
+          ),
       ),
     );
 
     const successes = results.filter((r) => r.ok).length;
     if (successes > 0) {
       runInBackground("intake key bulk use-count", () =>
-        drizzle
-          .update(schema.intakeKeys)
-          .set({
-            lastUsedAt: new Date(),
-            useCount: (key.use_count || 0) + successes,
-          })
-          .where(eq(schema.intakeKeys.id, key.id)),
+        tenantStore.run(key.user_id, () =>
+          drizzle
+            .update(schema.intakeKeys)
+            .set({
+              lastUsedAt: new Date(),
+              useCount: (key.use_count || 0) + successes,
+            })
+            .where(eq(schema.intakeKeys.id, key.id)),
+        ),
       );
     }
 

@@ -285,7 +285,7 @@ export default function CommandBar() {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
 
       const key = event.key.toLocaleLowerCase();
-      if (key === "g" && !event.repeat) {
+      if (key === "g" && !event.repeat && !pendingGoRef.current) {
         pendingGoRef.current = true;
         if (goTimeoutRef.current) clearTimeout(goTimeoutRef.current);
         goTimeoutRef.current = setTimeout(clearGoPending, 800);

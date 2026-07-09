@@ -41,6 +41,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
+  min-height: 44px;
   border-radius: 7px;
   padding: 0.5rem 0.625rem;
   font-size: 13px;

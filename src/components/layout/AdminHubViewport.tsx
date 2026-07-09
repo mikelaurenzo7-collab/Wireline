@@ -13,7 +13,7 @@ type AdminHubViewportProps = {
  * Used by Settings, DNC, Audit, and Integrations — not the Agents Assistants page.
  *
  * Long pages use `scroll` so ClientRouteViewport owns the sole scroll axis
- * (same contract as HelpCenter). Fixed-height pages keep inner panel scroll.
+ * Fixed-height pages keep inner panel scroll.
  */
 export default function AdminHubViewport({ children, scroll, className }: AdminHubViewportProps) {
   return (

@@ -3,7 +3,7 @@ import { AppError } from "../lib/api-error";
 import express, { Request, Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { decryptSecret } from "../lib/secret-vault";
@@ -257,30 +257,32 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
             continue;
           }
 
-          await drizzle
-            .insert(schema.outboundLeads)
-            .values({
-              userId: tenant.userId,
-              phoneNumber: null,
-              customerNumber: phone,
-              customerName: fullName || null,
-              email: email || null,
-              context: `Meta Lead Ad submission${v.form_id ? ` (form ${v.form_id})` : ""}`,
-              status: "Queued",
-              source: "meta",
-              campaignSource: v.ad_id ? `ad:${v.ad_id}` : "meta_lead_ad",
-              idempotencyKey: leadgenId,
-              metadata: {
-                meta_leadgen_id: leadgenId,
-                page_id: pageId,
-                form_id: v.form_id,
-                ad_id: v.ad_id,
-                created_time: detail.created_time,
-                event_type: field,
-              },
-              receivedAt: new Date(),
-            })
-            .onConflictDoNothing();
+          await tenantStore.run(tenant.userId, () =>
+            drizzle
+              .insert(schema.outboundLeads)
+              .values({
+                userId: tenant.userId,
+                phoneNumber: null,
+                customerNumber: phone,
+                customerName: fullName || null,
+                email: email || null,
+                context: `Meta Lead Ad submission${v.form_id ? ` (form ${v.form_id})` : ""}`,
+                status: "Queued",
+                source: "meta",
+                campaignSource: v.ad_id ? `ad:${v.ad_id}` : "meta_lead_ad",
+                idempotencyKey: leadgenId,
+                metadata: {
+                  meta_leadgen_id: leadgenId,
+                  page_id: pageId,
+                  form_id: v.form_id,
+                  ad_id: v.ad_id,
+                  created_time: detail.created_time,
+                  event_type: field,
+                },
+                receivedAt: new Date(),
+              })
+              .onConflictDoNothing(),
+          );
 
           log.info("Meta lead ingested", {
             userId: tenant.userId,
@@ -301,17 +303,19 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
           const msg = v.message || {};
           const senderId = v.sender?.id || "unknown";
           const text = msg.text || "(non-text message)";
-          await drizzle.insert(schema.followUpTasks).values({
-            userId: tenant.userId,
-            taskType: "messenger_inbound",
-            description: `Facebook message from ${senderId}: ${text.slice(0, 240)}`,
-            priority: "medium",
-            status: "pending",
-            sourceType: "meta_webhook",
-            sourceId: `${pageId}:${msg.mid || senderId}`,
-            payload: { sender_id: senderId, message: msg, page_id: pageId },
-            targetChannel: "manual",
-          });
+          await tenantStore.run(tenant.userId, () =>
+            drizzle.insert(schema.followUpTasks).values({
+              userId: tenant.userId,
+              taskType: "messenger_inbound",
+              description: `Facebook message from ${senderId}: ${text.slice(0, 240)}`,
+              priority: "medium",
+              status: "pending",
+              sourceType: "meta_webhook",
+              sourceId: `${pageId}:${msg.mid || senderId}`,
+              payload: { sender_id: senderId, message: msg, page_id: pageId },
+              targetChannel: "manual",
+            }),
+          );
           log.info("Meta inbound message routed to Assistants tasks", {
             userId: tenant.userId,
             senderId,
@@ -325,17 +329,19 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
           const reviewerId = v.reviewer_id || "unknown";
           const reviewText = v.review_text || "";
           if (rating > 0 && rating <= 3) {
-            await drizzle.insert(schema.followUpTasks).values({
-              userId: tenant.userId,
-              taskType: "review_escalation",
-              description: `${rating}-star Facebook review from ${reviewerId}: ${reviewText.slice(0, 240)}`,
-              priority: rating <= 2 ? "high" : "medium",
-              status: "pending",
-              sourceType: "meta_webhook",
-              sourceId: `${pageId}:${reviewerId}`,
-              payload: { rating, review_text: reviewText, page_id: pageId },
-              targetChannel: "manual",
-            });
+            await tenantStore.run(tenant.userId, () =>
+              drizzle.insert(schema.followUpTasks).values({
+                userId: tenant.userId,
+                taskType: "review_escalation",
+                description: `${rating}-star Facebook review from ${reviewerId}: ${reviewText.slice(0, 240)}`,
+                priority: rating <= 2 ? "high" : "medium",
+                status: "pending",
+                sourceType: "meta_webhook",
+                sourceId: `${pageId}:${reviewerId}`,
+                payload: { rating, review_text: reviewText, page_id: pageId },
+                targetChannel: "manual",
+              }),
+            );
           }
           log.info("Meta rating processed", {
             userId: tenant.userId,
@@ -485,18 +491,20 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
       );
 
     for (const row of matching || []) {
-      await drizzle
-        .update(schema.crmConnections)
-        .set({
-          active: false,
-          metadata: {
-            ...((row.metadata as Record<string, unknown>) || {}),
-            deletion_requested_at: new Date().toISOString(),
-            deletion_confirmation_code: confirmationCode,
-          },
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.crmConnections.id, row.id));
+      await tenantStore.run(row.userId, () =>
+        drizzle
+          .update(schema.crmConnections)
+          .set({
+            active: false,
+            metadata: {
+              ...((row.metadata as Record<string, unknown>) || {}),
+              deletion_requested_at: new Date().toISOString(),
+              deletion_confirmation_code: confirmationCode,
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.crmConnections.id, row.id)),
+      );
 
       log.info("Meta deletion callback honored — connection deactivated", {
         userId: row.userId,
