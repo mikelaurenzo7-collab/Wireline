@@ -41,7 +41,7 @@ export default function PhoneCallHistoryPanel() {
 
   if (loading) {
     return (
-      <div className="grid h-full min-h-0 place-items-center px-6 py-10 text-sm text-muted-foreground">
+      <div className="flex w-full items-center justify-center px-4 py-10 text-sm text-muted-foreground sm:px-6">
         <span className="inline-flex items-center gap-2">
           <Loader2 className="size-4 animate-spin" aria-hidden />
           Loading call history…
