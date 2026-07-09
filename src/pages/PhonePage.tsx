@@ -1,7 +1,7 @@
 import { useSearchParams, Link } from "react-router-dom";
 import { CalendarDays } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
-import CallLogsClaude from "../components/CallLogsClaude";
+import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
 import OutboundHub from "../components/outbound/OutboundHub";
 import { EmptyState, Button } from "../components/atoms";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
@@ -81,7 +81,7 @@ export default function PhonePage() {
           }
         />
         <div className="flex-1 min-h-0 overflow-hidden">
-          {primaryTab === "logs" && <CallLogsClaude />}
+          {primaryTab === "logs" && <PhoneCallHistoryPanel />}
           {primaryTab === "outbound" && (
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
           )}
