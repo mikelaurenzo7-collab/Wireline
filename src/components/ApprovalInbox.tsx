@@ -14,6 +14,7 @@ import {
 import { authFetch } from "../lib/api";
 import { emitProductEventOnce } from "../lib/product-event-client";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 
 export type FollowUpTaskRow = {
   id: string;
@@ -53,6 +54,14 @@ const BUCKET_LABELS: Record<ApprovalBucket, string> = {
   hot_leads: "Hot leads",
   escalations: "Escalations",
   knowledge_gaps: "Knowledge gaps",
+};
+
+const BUCKET_SHORT_LABELS: Record<ApprovalBucket, string> = {
+  pending: "Pending",
+  compliance: "Compliance",
+  hot_leads: "Hot",
+  escalations: "Escalations",
+  knowledge_gaps: "Gaps",
 };
 
 function taskType(task: FollowUpTaskRow): string {
@@ -344,31 +353,28 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     (item) => item.task_type !== "hot_lead_review" && item.task_type !== "escalation_review",
   );
 
+  const approvalTabs = (Object.keys(BUCKET_LABELS) as ApprovalBucket[]).map((key) => {
+    const count =
+      key === "pending"
+        ? (triage?.counts?.pending_tasks ?? tasks.length)
+        : (triage?.counts?.[key] ?? triage?.[key]?.length ?? 0);
+    return {
+      id: key,
+      label: `${BUCKET_SHORT_LABELS[key]} (${count})`,
+    };
+  });
+
   return (
     <div className={embedded ? "flex min-h-0 flex-1 flex-col gap-4" : "grid gap-4"}>
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(BUCKET_LABELS) as ApprovalBucket[]).map((key) => {
-          const count =
-            key === "pending"
-              ? (triage?.counts?.pending_tasks ?? tasks.length)
-              : (triage?.counts?.[key] ?? triage?.[key]?.length ?? 0);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setBucket(key)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                bucket === key
-                  ? "border-primary/40 bg-primary/10 text-foreground"
-                  : "border-border text-muted-foreground hover:border-primary/25"
-              }`}
-            >
-              {BUCKET_LABELS[key]}
-              {typeof count === "number" ? ` (${count})` : ""}
-            </button>
-          );
-        })}
-      </div>
+      <WorkspaceTabStrip
+        tabs={approvalTabs}
+        activeId={bucket}
+        onSelect={(id) => setBucket(id as ApprovalBucket)}
+        ariaLabel="Approval buckets"
+        density="compact"
+        align="start"
+        className="mb-0 border-b-0 pb-0"
+      />
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
