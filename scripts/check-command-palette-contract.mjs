@@ -33,7 +33,8 @@ requirePattern("src/components/CommandBar.tsx", commandBar, /event\.target === c
 requirePattern("src/components/CommandBar.tsx", commandBar, /href: "\/overview"/, "must include the active Overview route");
 requirePattern("src/components/CommandBar.tsx", commandBar, /href: "\/inbox"/, "must include the active Inbox route");
 requirePattern("src/components/CommandBar.tsx", commandBar, /href: "\/settings\/apps"/, "must include client-app settings");
-forbidPattern("src/components/CommandBar.tsx", commandBar, /href: "\/(ops|phone|chat|sms|pipeline|founder|dnc|audit)"/, "must not expose obsolete or unsupported destinations");
+forbidPattern("src/components/CommandBar.tsx", commandBar, /href: "\/(ops|chat|sms|pipeline|founder|dnc|audit)"/, "must not expose obsolete or unsupported destinations");
+requirePattern("src/components/CommandBar.tsx", commandBar, /href: "\/phone"/, "must include the active Phone route");
 requirePattern("src/components/layout/AppShell.tsx", appShell, /<CommandBar\s*\/>/, "must mount the command palette for authenticated workspace routes");
 requirePattern("src/components/WorkspaceShell.tsx", workspaceShell, /wireline:open-command-bar/, "must expose a visible workspace trigger");
 

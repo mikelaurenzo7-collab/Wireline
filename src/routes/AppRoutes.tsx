@@ -77,6 +77,8 @@ export default function AppRoutes() {
         <Route path="/settings/compliance" element={<ComplianceCenterPage />} />
         <Route path="/settings/apps" element={<ClientAppsPage />} />
         <Route path="/settings/*" element={<SettingsPage />} />
+        <Route path="/dnc" element={<Navigate to="/settings/compliance" replace />} />
+        <Route path="/audit" element={<Navigate to="/admin?tab=activity" replace />} />
         <Route path="/admin" element={<AdminWorkspace />} />
         <Route path="/admin/*" element={<AdminWorkspace />} />
 

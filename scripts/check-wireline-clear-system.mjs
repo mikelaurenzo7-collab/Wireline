@@ -146,7 +146,7 @@ const androidLauncherBg = read("android/app/src/main/res/drawable/ic_launcher_ba
 mustInclude(
   "package.json",
   packageJson,
-  /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs"/,
+  /"design:check"\s*:\s*"node scripts\/check-wireline-clear-system\.mjs(?:\s*&&\s*node scripts\/check-command-palette-contract\.mjs)?"/,
   "design:check must run this file",
 );
 mustExclude(

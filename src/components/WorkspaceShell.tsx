@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Search } from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import ActivationNudge from "./ActivationNudge";
@@ -19,6 +20,7 @@ import {
   isNavActive,
   type ShellNavItem,
 } from "../constants/navigation";
+import { isRouteAvailableForAccount } from "../lib/account-type";
 import AgentFace from "./AgentFace";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
 
@@ -154,6 +156,19 @@ function DesktopRail({ pathname }: { pathname: string }) {
         </span>
       </Link>
 
+      <button
+        type="button"
+        aria-label="Open command palette"
+        className="mb-3 flex min-h-[44px] w-full items-center gap-2 rounded-[10px] border border-border bg-muted/40 px-2.5 text-left text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+        onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
+      >
+        <Search size={14} strokeWidth={2} aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate">Search workspace</span>
+        <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
+          ⌘K
+        </kbd>
+      </button>
+
       <WiredEyebrow className="px-2.5 pb-2 pt-2.5">Workspace</WiredEyebrow>
       <nav className="flex flex-col gap-0.5" aria-label="Workspace">
         {WORKSPACE_NAV.map((item) => (
@@ -246,9 +261,11 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
       <WiredEyebrow className="shrink-0 px-2.5 pb-2 pt-4">Operate</WiredEyebrow>
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
-        {OPERATE_NAV.map((item) => (
-          <RailLink key={item.href} item={item} pathname={pathname} />
-        ))}
+        {OPERATE_NAV.filter((item) => isRouteAvailableForAccount(accountType, item.href)).map(
+          (item) => (
+            <RailLink key={item.href} item={item} pathname={pathname} />
+          ),
+        )}
       </nav>
 
       {activeAgent ? (

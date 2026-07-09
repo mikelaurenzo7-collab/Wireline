@@ -68,7 +68,7 @@ function SmsLoadingState() {
 }
 
 /** Two-way SMS inbox. Delivery semantics stay server-owned; this surface renders their state clearly. */
-export default function SmsThreads({ embedded: _embedded = false }: { embedded?: boolean }) {
+export default function SmsThreads({ embedded = false }: { embedded?: boolean }) {
   const { success, error: toastError } = useToast();
   const [threads, setThreads] = useState<SmsThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -372,16 +372,18 @@ export default function SmsThreads({ embedded: _embedded = false }: { embedded?:
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-background text-foreground">
-      <ClientToolbar
-        left={
-          <span className="app-toolbar-stat">
-            {showInitialLoad
-              ? OPS_CHANNEL_TOOLBAR.sms.loading
-              : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}
-          </span>
-        }
-        actions={refreshAction}
-      />
+      {!embedded ? (
+        <ClientToolbar
+          left={
+            <span className="app-toolbar-stat">
+              {showInitialLoad
+                ? OPS_CHANNEL_TOOLBAR.sms.loading
+                : OPS_CHANNEL_TOOLBAR.sms.stat(threads.length)}
+            </span>
+          }
+          actions={refreshAction}
+        />
+      ) : null}
       {showInitialLoad ? (
         <ClientRouteLoading
           icon={<MessageSquare className="size-7" />}

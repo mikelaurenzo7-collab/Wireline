@@ -51,7 +51,7 @@ describe("canonical mobile overlay system", () => {
     // Full Claude Design sidebar IA, posture-aware.
     expect(shell).toContain("WORKSPACE_NAV");
     expect(shell).toContain("OPERATE_NAV");
-    expect(shell).toContain("MOBILE_NAV");
+    expect(shell).toContain("MOBILE_PRIMARY_NAV");
     expect(shell).not.toContain("document.body.style.overflow");
     expect(shell).not.toContain("window.addEventListener");
   });

@@ -58,6 +58,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     layoutIdPrefix: "insights-group",
     tabs: [
       { id: "performance", label: "Performance", icon: BarChart3 },
+      { id: "reliability", label: "Reliability", icon: ShieldAlert },
       { id: "quality", label: "Quality", icon: Star },
       { id: "revenue", label: "Revenue", icon: Receipt },
     ],
@@ -80,7 +81,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
   // tab. (AssistantSettings owns that toggle via local view state.)
 ];
 
-const ADMIN_HUB_PATHS = ["/admin", "/actions", "/dnc", "/audit"] as const;
+const ADMIN_HUB_PATHS = ["/admin"] as const;
 
 export function isAdminHubPath(pathname: string): boolean {
   return (ADMIN_HUB_PATHS as readonly string[]).includes(pathname);

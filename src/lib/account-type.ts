@@ -18,16 +18,17 @@ import { NAV_GROUPS, SIDEBAR_NAV_ITEMS, type NavItem } from "../constants/naviga
 export type AccountType = "personal" | "business";
 
 /**
- * Nav groups that only make sense for a business. The Run group is the
- * supervisor cockpit (Recaps), cross-agent intelligence (Insights), and SDR
- * pipeline. A personal, single-agent account does not need those surfaces.
- * Build (Studio), Channels, and Admin are shared by both modes.
+ * Business-only Operate destinations (Insights / Approvals / Apps) use the
+ * legacy item `section: "Run"` from `toLegacyItem(..., "Run")`. Group labels
+ * in `NAV_GROUPS` are "Workspace" | "Operate" — filter groups by label, items
+ * by section.
  *
- * NOTE: this must track the group label and section names in
- * constants/navigation.ts. The account-type contract test guards it.
+ * Personal accounts keep Phone, Inbox, and Settings on Operate.
  */
-const BUSINESS_ONLY_GROUPS = new Set<string>(["Run", "Channels"]);
+const BUSINESS_ONLY_GROUP_LABELS = new Set<string>(["Operate"]);
+const BUSINESS_ONLY_ITEM_SECTIONS = new Set<string>(["Run"]);
 const PERSONAL_ONLY_GROUPS = new Set<string>(["Personal"]);
+const PERSONAL_OPERATE_PATHS = new Set<string>(["/phone", "/inbox", "/settings"]);
 
 /**
  * Resolve the account mode from the billing plan id. Only the "personal" tier
@@ -39,9 +40,9 @@ export function resolveAccountType(planId: string | null | undefined): AccountTy
   return planId === "personal" ? "personal" : "business";
 }
 
-/** True when a nav item's section is a business-only group. */
+/** True when a nav item's section is a business-only Operate section. */
 export function isBusinessOnlySection(section: string | undefined): boolean {
-  return !!section && BUSINESS_ONLY_GROUPS.has(section);
+  return !!section && BUSINESS_ONLY_ITEM_SECTIONS.has(section);
 }
 
 export function isPersonalOnlySection(section: string | undefined): boolean {
@@ -52,17 +53,25 @@ export function isPersonalOnlySection(section: string | undefined): boolean {
 export function isRouteAvailableForAccount(type: AccountType, path: string): boolean {
   if (type === "business") return true;
   const item = SIDEBAR_NAV_ITEMS.find((i) => i.path === path);
-  // Unknown paths (admin, deep links) stay available; only known business-only
-  // rail items are withheld from a personal account.
-  return item ? !isBusinessOnlySection(item.section) : true;
+  if (!item) return true;
+  if (!isBusinessOnlySection(item.section)) return true;
+  return PERSONAL_OPERATE_PATHS.has(item.path);
 }
 
-/** NAV_GROUPS filtered for the account mode (drops business-only groups for personal). */
+/** NAV_GROUPS filtered for the account mode (Operate kept, business-only items trimmed). */
 export function accountNavGroups(type: AccountType): Array<(typeof NAV_GROUPS)[number]> {
   if (type === "business") {
     return NAV_GROUPS.filter((group) => !PERSONAL_ONLY_GROUPS.has(group.label));
   }
-  return NAV_GROUPS.filter((group) => !BUSINESS_ONLY_GROUPS.has(group.label));
+  return NAV_GROUPS.map((group) => {
+    if (!BUSINESS_ONLY_GROUP_LABELS.has(group.label)) return group;
+    return {
+      ...group,
+      items: group.items.filter(
+        (item) => !isBusinessOnlySection(item.section) || PERSONAL_OPERATE_PATHS.has(item.path),
+      ),
+    };
+  }).filter((group) => group.items.length > 0);
 }
 
 /** SIDEBAR_NAV_ITEMS filtered for the account mode. */
@@ -70,5 +79,7 @@ export function accountSidebarItems(type: AccountType): NavItem[] {
   if (type === "business") {
     return SIDEBAR_NAV_ITEMS.filter((item) => !isPersonalOnlySection(item.section));
   }
-  return SIDEBAR_NAV_ITEMS.filter((item) => !isBusinessOnlySection(item.section));
+  return SIDEBAR_NAV_ITEMS.filter(
+    (item) => !isBusinessOnlySection(item.section) || PERSONAL_OPERATE_PATHS.has(item.path),
+  );
 }

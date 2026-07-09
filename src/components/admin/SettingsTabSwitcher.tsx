@@ -11,8 +11,7 @@ type AdminTab =
   | "team"
   | "flywheel"
   | "activity"
-  | "dnc"
-  | "audit";
+  | "dnc";
 
 interface TabDef {
   id: AdminTab;
@@ -32,12 +31,7 @@ const TAB_GROUPS: { tabs: TabDef[] }[] = [
   { tabs: [{ id: "flywheel", label: "Growth", path: "/admin?tab=flywheel" }] },
   { tabs: [{ id: "integrations", label: "Integrations", path: "/connections" }] },
   { tabs: [{ id: "activity", label: "Activity", path: "/admin?tab=activity" }] },
-  {
-    tabs: [
-      { id: "dnc", label: "DNC", path: "/dnc" },
-      { id: "audit", label: "Audit", path: "/audit" },
-    ],
-  },
+  { tabs: [{ id: "dnc", label: "Compliance", path: "/settings/compliance" }] },
 ];
 
 export default function SettingsTabSwitcher({
@@ -57,8 +51,9 @@ export default function SettingsTabSwitcher({
   const getActiveTab = (): AdminTab => {
     const pathname = location.pathname;
     if (pathname === "/connections" || pathname === "/actions") return "integrations";
-    if (pathname === "/dnc") return "dnc";
-    if (pathname === "/audit") return "audit";
+    if (pathname === "/settings/compliance" || pathname.startsWith("/settings/compliance")) {
+      return "dnc";
+    }
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab") as AdminTab;
     const validTabs: AdminTab[] = [

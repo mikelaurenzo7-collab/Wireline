@@ -93,7 +93,7 @@ router.get(
         },
         incident_response_template: incidentTemplate,
         export_surfaces: {
-          audit_activity: "/audit",
+          audit_activity: "/admin?tab=activity",
           ai_usage_summary: "GET /api/audit/summary",
           operational_slos: "GET /api/health/slos",
         },
