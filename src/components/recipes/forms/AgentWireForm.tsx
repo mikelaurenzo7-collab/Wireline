@@ -60,19 +60,19 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
 
   return (
     <FormShell>
-      <Field label="First line" hint="One job, one audience, one outcome.">
+      <Field label="Agent job" hint="What should it do?">
         <TextArea
           value={goal}
           onChange={setGoal}
           rows={3}
-          placeholder="Outbound follow-up agent that calls warm leads, qualifies intent, books the next step, and logs the outcome."
+          placeholder="Call warm leads, qualify interest, book the next step, and log the outcome."
         />
       </Field>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Company Name">
+        <Field label="Company">
           <TextInput value={companyName} onChange={setCompanyName} placeholder="Acme Cloud" />
         </Field>
-        <Field label="Use case or lane">
+        <Field label="Use case">
           <TextInput
             value={industry}
             onChange={setIndustry}
@@ -82,15 +82,15 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
         <Field label="Website (optional)">
           <TextInput value={websiteUrl} onChange={setWebsiteUrl} placeholder="https://acme.co" />
         </Field>
-        <Field label="Voice Preference (optional)">
+        <Field label="Voice (optional)">
           <TextInput
             value={voicePref}
             onChange={setVoicePref}
-            placeholder="Warm, mid-range female voice"
+            placeholder="Warm, clear, calm"
           />
         </Field>
       </div>
-      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Design agent draft" />
+      <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Draft agent" />
 
       {err && <ErrCard error={err} />}
       {design && (
@@ -98,7 +98,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
           {createdAgentId && (
             <div className="rounded-md wl-status-success border p-4 wl-text-success text-sm flex items-center gap-3">
               <Check className="w-4 h-4" />
-              Agent draft created. Next: assign a number, voice, and launch controls.
+              Draft saved. Next: add a number, voice, and launch rules.
             </div>
           )}
           <div className="rounded-md wl-panel-elevated border border-white/12 p-6 space-y-3">
@@ -113,14 +113,14 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
             <p className="text-foreground/80 text-sm italic">"{design.first_message}"</p>
             {design.suggested_voice_tone && (
               <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
-                Voice tone · {design.suggested_voice_tone}
+                Voice · {design.suggested_voice_tone}
               </p>
             )}
           </div>
-          <ResultCard title="Personality Block" copyText={design.personality_block}>
+          <ResultCard title="Style" copyText={design.personality_block}>
             <pre className="whitespace-pre-wrap font-sans">{design.personality_block}</pre>
           </ResultCard>
-          <ResultCard title="Directives">
+          <ResultCard title="Rules">
             <ul className="space-y-2">
               {design.directives.map((d: any, i: number) => (
                 <li key={i} className="flex items-start gap-3">
@@ -132,7 +132,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
               ))}
             </ul>
           </ResultCard>
-          <ResultCard title="Training Seeds">
+          <ResultCard title="What it knows">
             <ul className="list-disc list-inside text-foreground/85 space-y-1">
               {design.seed_knowledge.map((k: string, i: number) => (
                 <li key={i}>{k}</li>
@@ -140,7 +140,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
             </ul>
           </ResultCard>
           {design.success_metrics?.length > 0 && (
-            <ResultCard title="Success Metrics">
+            <ResultCard title="Goals">
               <ul className="list-disc list-inside wl-text-success/90 space-y-1">
                 {design.success_metrics.map((m: string, i: number) => (
                   <li key={i}>{m}</li>
@@ -149,7 +149,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
             </ResultCard>
           )}
           {design.reasoning && (
-            <ResultCard title="Reasoning">
+            <ResultCard title="Why this fits">
               <p className="text-foreground/65">{design.reasoning}</p>
             </ResultCard>
           )}
@@ -165,11 +165,11 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
             >
               {creating ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Creating Agent…
+                  <Loader2 className="w-4 h-4 animate-spin" /> Saving…
                 </>
               ) : (
                 <>
-                  <Hammer className="w-4 h-4" /> Create agent draft <ArrowRight className="w-4 h-4" />
+                  <Hammer className="w-4 h-4" /> Save draft <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </ShadButton>
