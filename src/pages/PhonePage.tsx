@@ -13,9 +13,9 @@ import {
 } from "../lib/page-sub-tabs";
 
 const PHONE_TABS = [
-  { id: "logs", label: "Call History" },
+  { id: "logs", label: "History" },
   { id: "outbound", label: "Outbound" },
-  { id: "appointments", label: "Appointments" },
+  { id: "appointments", label: "Appts" },
 ] as const;
 
 export default function PhonePage() {
