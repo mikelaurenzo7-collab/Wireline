@@ -56,9 +56,9 @@ import com.wireline.app.ui.theme.Brand
 
 sealed class Screen(val route: String, val title: String) {
     object Studio : Screen("studio", "Command")
-    object Assistants : Screen("assistants", "Agents")
+    object Assistants : Screen("assistants", "Employees")
     object Knowledge : Screen("knowledge", "Train")
-    object Actions : Screen("actions", "Wire")
+    object Actions : Screen("actions", "Launch")
     object Recaps : Screen("recaps", "Calls")
     object Wallet : Screen("wallet", "Wallet")
     object Settings : Screen("settings", "Settings")
@@ -120,7 +120,7 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                     containerColor = Brand.Accent,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(Brand.RadiusMd),
-                ) { Icon(Icons.Default.Add, contentDescription = "Create agent") }
+                ) { Icon(Icons.Default.Add, contentDescription = "Create employee") }
                 else -> Unit
             }
         },
@@ -138,8 +138,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                 NavigationBarItem(
                     selected = currentRoute == Screen.Assistants.route,
                     onClick = { navActions.navigateTo(Screen.Assistants) },
-                    icon = { Icon(Icons.Default.PhoneInTalk, contentDescription = "Agents") },
-                    label = { Text("Agents") },
+                    icon = { Icon(Icons.Default.PhoneInTalk, contentDescription = "Employees") },
+                    label = { Text("Employees") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Knowledge.route,
@@ -150,8 +150,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                 NavigationBarItem(
                     selected = currentRoute == Screen.Actions.route,
                     onClick = { navActions.navigateTo(Screen.Actions) },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Wire") },
-                    label = { Text("Wire") },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Launch") },
+                    label = { Text("Launch") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Recaps.route,
@@ -251,7 +251,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
         Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
         Text("WIRELINE", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
-        Text("Wire your agent.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text("AI phone employees for sales, appointments, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Spacer(Modifier.height(12.dp))
@@ -288,12 +288,12 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     MetricStatCard(value = "${state.activeCalls.size}", label = "CALLS NOW", highlighted = state.activeCalls.isNotEmpty(), modifier = Modifier.weight(1f))
                     MetricStatCard(value = "$followUps", label = "FOLLOW-UPS", highlighted = followUps > 0, modifier = Modifier.weight(1f))
-                    MetricStatCard(value = "${state.agents.size}", label = "AGENTS", highlighted = false, modifier = Modifier.weight(1f))
+                    MetricStatCard(value = "${state.agents.size}", label = "EMPLOYEES", highlighted = false, modifier = Modifier.weight(1f))
                 }
             }
         }
         state.me?.let { me ->
-            item { AssistantCard { Text(me.account.businessName ?: me.user.fullName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} - ${state.agents.size} agents", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
+            item { AssistantCard { Text(me.account.businessName ?: me.user.fullName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} - ${state.agents.size} phone employees", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
         }
         item {
             AssistantCard {
@@ -305,7 +305,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                     FilterChip(selected = callPurpose == "service_or_requested", onClick = { callPurpose = "service_or_requested"; consentConfirmed = false }, label = { Text("Service") })
                     FilterChip(selected = callPurpose == "callback", onClick = { callPurpose = "callback"; consentConfirmed = false }, label = { Text("Callback") })
-                    FilterChip(selected = callPurpose == "marketing_or_sales", onClick = { callPurpose = "marketing_or_sales"; consentConfirmed = false }, label = { Text("Marketing") })
+                    FilterChip(selected = callPurpose == "marketing_or_sales", onClick = { callPurpose = "marketing_or_sales"; consentConfirmed = false }, label = { Text("Sales") })
                 }
                 if (requiresMarketingConsent) {
                     Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -331,15 +331,15 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
 @Composable
 private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCreate: () -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Personal, front desk, sales, support, and operations agents.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create agent", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("AI phone employees", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Sales, scheduling, intake, support, collections, and follow-up employees.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create employee", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
         if (agents.isEmpty()) {
             item {
               AssistantCard {
-                Text("No agents yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
+                Text("No phone employees yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
                 Spacer(Modifier.height(4.dp))
-                Text("Forge your first agent for calls, texts, or follow-up. One fleet, one voice across every channel.", color = Brand.Text2, style = MaterialTheme.typography.bodySmall)
+                Text("Build your first AI phone employee for calls, appointments, sales follow-up, or support. One workspace, every outcome logged.", color = Brand.Text2, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create agent") }
+                Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create employee") }
               }
             }
         } else {
@@ -347,7 +347,7 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
                 AssistantCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Medallion(Icons.Default.PhoneInTalk, size = 40.dp)
-                        Column(Modifier.weight(1f)) { Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(if (agent.isBusinessAgent == true) "Business agent" else agent.role?.replace("_", " ")?.replace("assistant", "agent") ?: "Personal agent", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
+                        Column(Modifier.weight(1f)) { Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(if (agent.isBusinessAgent == true) "Business phone employee" else agent.role?.replace("_", " ")?.replace("assistant", "agent") ?: "Personal phone employee", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
                         Text("Ready", style = MaterialTheme.typography.labelSmall, color = Brand.Success)
                     }
                 }
@@ -362,26 +362,26 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
     var role by rememberSaveable { mutableStateOf("scheduler") }
     var isBusinessAgent by rememberSaveable { mutableStateOf(false) }
     val choices = state.agentRoles.takeIf { it.isNotEmpty() }?.map { it.id to it.label }
-        ?: listOf("scheduler" to "Personal agent", "customer_service" to "Support desk", "receptionist" to "Front desk", "custom" to "Operations")
+        ?: listOf("scheduler" to "Appointment setter", "customer_service" to "Support desk", "receptionist" to "Front desk", "custom" to "Operations")
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Agent type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+        Text("Employee type", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            FilterChip(selected = !isBusinessAgent, onClick = { isBusinessAgent = false }, label = { Text("Personal agent") }, modifier = Modifier.weight(1f))
-            FilterChip(selected = isBusinessAgent, onClick = { isBusinessAgent = true; if (role == "scheduler") role = "receptionist" }, label = { Text("Business agent") }, modifier = Modifier.weight(1f))
+            FilterChip(selected = !isBusinessAgent, onClick = { isBusinessAgent = false }, label = { Text("Personal") }, modifier = Modifier.weight(1f))
+            FilterChip(selected = isBusinessAgent, onClick = { isBusinessAgent = true; if (role == "scheduler") role = "receptionist" }, label = { Text("Business") }, modifier = Modifier.weight(1f))
         }
-        Text(if (isBusinessAgent) "New business agent" else "New personal agent", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-        Text(if (isBusinessAgent) "Name the agent and describe how it should represent your business. Refine policies from Command next." else "Name the help you want. You can add knowledge, actions, and voice from Command next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text(if (isBusinessAgent) "New business phone employee" else "New personal phone employee", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+        Text(if (isBusinessAgent) "Name the employee and describe the business result it should own. Refine policies from Command next." else "Name the help you want. You can add knowledge, actions, and voice from Command next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, placeholder = { Text("Casey") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
-        Text("What kind of help?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+        Text("What should it handle?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
         if (state.agentRoles.isEmpty() && state.isWorking) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = Brand.Accent, trackColor = Brand.Border)
-            Text("Loading agent roles…", style = MaterialTheme.typography.bodySmall, color = Brand.Text3)
+            Text("Loading roles…", style = MaterialTheme.typography.bodySmall, color = Brand.Text3)
         } else {
             choices.chunked(2).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { row.forEach { (value, label) -> FilterChip(selected = role == value, onClick = { role = value }, label = { Text(label, maxLines = 1) }, modifier = Modifier.weight(1f)) }; if (row.size == 1) Spacer(Modifier.weight(1f)) } }
         }
         ErrorText(state.error)
         Button(onClick = { onCreate(name, role, isBusinessAgent) }, enabled = name.isNotBlank() && !state.isWorking, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm)) {
-            if (state.isWorking) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White) else { Icon(Icons.Default.Add, contentDescription = "Create agent"); Spacer(Modifier.width(8.dp)); Text("Create agent") }
+            if (state.isWorking) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White) else { Icon(Icons.Default.Add, contentDescription = "Create employee"); Spacer(Modifier.width(8.dp)); Text("Create employee") }
         }
     }
 }
