@@ -183,7 +183,7 @@ export class CampaignDialerService {
             event: gate.consentLogEvent,
             state: "blocked",
             metadata: {
-              leadId: lead.id,
+              leadId: String(lead.id),
               campaignId: campaign.id,
               ...(gate.metadataPatch?.tcpa ? { tcpa: gate.metadataPatch.tcpa } : {}),
             },
@@ -230,7 +230,7 @@ export class CampaignDialerService {
             event: "outbound_call_placed",
             state: "initiated",
             metadata: {
-              leadId: lead.id,
+              leadId: String(lead.id),
               campaignId: campaign.id,
               call_purpose: "marketing_or_sales",
               consent_version: OUTBOUND_CONSENT_VERSION,
