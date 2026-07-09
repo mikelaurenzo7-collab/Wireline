@@ -46,9 +46,9 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     ariaLabel: "Phone sections",
     layoutIdPrefix: "phone-section",
     tabs: [
-      { id: "logs", label: "Call History", icon: History },
+      { id: "logs", label: "History", icon: History },
       { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
-      { id: "appointments", label: "Appointments", icon: Calendar },
+      { id: "appointments", label: "Appts", icon: Calendar },
     ],
   },
   {
