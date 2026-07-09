@@ -69,6 +69,13 @@ The client must never compute paid entitlements from returned Checkout success U
 
 Webhook processing must claim `wireline_stripe_events.event_id` before side effects. Duplicate event ids return `{ received: true, duplicate: true }` and do not re-credit wallets, re-run entitlement sync, or re-dispatch usage mutations.
 
+### 3a. Webhook endpoint subscribes to every handled event
+
+The production endpoint's `enabled_events` must exactly match the `case` arms of the webhook switch in `src/routes/billing-routes.ts` — a handled event missing from the endpoint is silently dropped by Stripe (subscription updates never sync), and an enabled-but-unhandled event is delivery noise.
+
+- `npm run stripe:webhook:check` — read-only drift report (exits 1 on drift).
+- `npm run stripe:webhook:align` — sets `enabled_events` to exactly the handled set; endpoint URL and signing secret are untouched.
+
 If a claimed event fails after side effects begin, the handler deletes the idempotency claim so Stripe can retry. Wallet mutations remain additionally idempotent through `(user, ref_type, ref_id)` / idempotency-key ledger semantics.
 
 ### 4. Cancellation or downgrade is reflected in the app

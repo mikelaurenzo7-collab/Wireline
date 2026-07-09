@@ -35,6 +35,10 @@ const required = [
 ];
 
 const recommended = [
+  [
+    "DATABASE_POOL_URL",
+    "Pooler URL the runtime prefers; env-validator marks it required in production (falls back to POSTGRES_URL)",
+  ],
   ["OPENAI_API_KEY", "Direct OpenAI fallback and OpenAI Realtime sessions"],
   ["GEMINI_API_KEY", "Gemini fallback when OpenAI or AI Gateway is unavailable"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],

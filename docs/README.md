@@ -48,6 +48,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion. |
 | [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | **Active** — customer-facing trust, compliance, and proof posture without overclaiming. |
 | [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md) | **Active** — launch readiness scorecard and margin operating plan. |
+| [PERFECTION_PLAN.md](./PERFECTION_PLAN.md) | **Active** — canonical launch-readiness audit record, production gate commands, and open pre-launch actions. |
 | [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md) | **Active** — takeover pass: design system beautification, polish layer, contracts, and verified upgrades. |
 | [COMPOSER_CERTIFICATION_2026-07-05.md](./COMPOSER_CERTIFICATION_2026-07-05.md) | **Active** — Composer 2.5 certification ladder, dual-voice PSTN, funnel events, and ops proof. |
 | [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) | **Active** - Supabase security/performance advisor posture, custom-auth HIBP control, and unused-index evidence gate. |

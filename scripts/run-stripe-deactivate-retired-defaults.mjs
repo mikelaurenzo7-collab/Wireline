@@ -2,9 +2,8 @@
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getVercelEnvValue } from "./lib/vercel-env-values.mjs";
 
-const TEAM_ID = "team_ssX7cPECdHvXGFHSOuS9iXos";
-const PROJECT_ID = "prj_mCjWa69TtFye8z11u8bSaWwO41f2";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const token = process.env.VERCEL_TOKEN?.trim();
 
@@ -13,15 +12,7 @@ if (!token) {
   process.exit(1);
 }
 
-const res = await fetch(
-  `https://api.vercel.com/v9/projects/${PROJECT_ID}/env?decrypt=true&teamId=${TEAM_ID}`,
-  { headers: { Authorization: `Bearer ${token}` } },
-);
-const text = await res.text();
-if (!res.ok) throw new Error(`Vercel API ${res.status}: ${text.slice(0, 400)}`);
-
-const { envs = [] } = JSON.parse(text);
-const stripeKey = envs.find((e) => e.key === "STRIPE_SECRET_KEY")?.value;
+const stripeKey = await getVercelEnvValue(token, "STRIPE_SECRET_KEY");
 if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not found on Vercel project");
 
 const result = spawnSync(

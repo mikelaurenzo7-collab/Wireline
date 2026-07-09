@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Push Resend env vars to the Wireline Vercel project (plain · all targets).
+ * Push Resend env vars to the Wireline Vercel project (encrypted · all targets).
  *
  * Usage:
  *   $env:VERCEL_TOKEN = "<token>"
@@ -75,7 +75,7 @@ async function deleteEnv(envId) {
 async function createEnv(key, value) {
   await vercelFetch(`/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`, {
     method: "POST",
-    body: JSON.stringify({ key, value, type: "plain", target: TARGETS }),
+    body: JSON.stringify({ key, value, type: "encrypted", target: TARGETS }),
   });
   console.log(`  + created ${key}`);
 }
@@ -87,23 +87,12 @@ async function upsertEnv(key, value) {
     return;
   }
 
-  const isSensitive = existing.type === "encrypted" || existing.type === "sensitive";
-  const targetsMismatch =
-    JSON.stringify([...(existing.target || [])].sort()) !== JSON.stringify([...TARGETS].sort());
-
-  if (isSensitive || targetsMismatch) {
-    await deleteEnv(existing.id);
-    await createEnv(key, value);
-    console.log(`  ↻ recreated ${key}${isSensitive ? " (sensitive → plain)" : " (targets updated)"}`);
-    return;
-  }
-
   try {
     await vercelFetch(
       `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(existing.id)}`,
       {
         method: "PATCH",
-        body: JSON.stringify({ value, type: "plain", target: TARGETS }),
+        body: JSON.stringify({ value, type: "encrypted", target: TARGETS }),
       },
     );
     console.log(`  ↻ updated ${key}`);
@@ -119,7 +108,7 @@ async function upsertEnv(key, value) {
 }
 
 async function main() {
-  console.log("Syncing Resend env vars to Vercel (plain · production + preview + development)…\n");
+  console.log("Syncing Resend env vars to Vercel (encrypted · production + preview + development)…\n");
   for (const [key, value] of Object.entries(envMap)) {
     await upsertEnv(key, value);
   }
