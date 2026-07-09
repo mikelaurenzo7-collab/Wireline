@@ -11,11 +11,12 @@ struct SignInView: View {
             Medallion(systemImage: "phone.connection.fill", size: 72)
             VStack(spacing: 6) {
                 Text("Wireline").font(.largeTitle.weight(.bold))
-                Text("Your call agent, built around your rules.")
+                Text("AI phone employees for sales, appointments, and follow-up.")
                     .font(.subheadline).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Wireline, your call agent, built around your rules")
+            .accessibilityLabel("Wireline, AI phone employees for sales, appointments, and follow-up")
 
             VStack(spacing: 12) {
                 TextField("Email", text: $email)
