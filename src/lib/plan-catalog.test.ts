@@ -71,7 +71,7 @@ describe("plan-catalog", () => {
     expect(planById("enterprise")?.overage_per_min_usd).toBe(0.17);
   });
 
-  it("locks paid extra-agent add-ons as capacity bundles", () => {
+  it("keeps paid extra-agent add-ons as capacity bundles", () => {
     for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
       expect(plan.extra_agent_price_usd, plan.id).toBe(15);
       expect(plan.extra_agent_voice_minutes_monthly, plan.id).toBe(50);
@@ -120,8 +120,7 @@ describe("plan-catalog", () => {
   it("documents extra-agent prices as add-ons, not standalone base-plan purchases", () => {
     // The shared add-on price is intentionally present on paid plan objects so
     // UIs can display it and billing code can match Stripe subscription items.
-    // Subscription sync must still identify the base plan from the base price
-    // item, not from this add-on item.
+    // Subscription sync identifies the base plan from the base price item only.
     expect(EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID).toBe("price_1TrnEvJohDtfy3IkjBi7VOCP");
     expect(STRIPE_PLANS.filter((plan) => plan.extraAgentFallbackPriceId)).toHaveLength(4);
   });
