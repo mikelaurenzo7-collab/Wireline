@@ -6,6 +6,7 @@ import {
   resolveAppPageSecondaryTabId,
   resolveAppPageSubTabId,
   resolveAppPageSubTabRoute,
+  resolveInsightsGroupForView,
   type AppPageSecondaryTabRoute,
   type AppPageSubTabRoute,
 } from "../lib/page-sub-tabs";
@@ -51,6 +52,14 @@ export function useAppChromeTabs():
     (id: string, secondaryRoute: Pick<AppPageSecondaryTabRoute, "defaultView">) => {
       setSearchParams(
         (prev) => {
+          if (pathname === "/insights") {
+            const ownerRoute = resolveAppPageSubTabRoute(pathname);
+            const nextGroup = resolveInsightsGroupForView(id);
+            if (nextGroup && ownerRoute) {
+              if (nextGroup === ownerRoute.defaultTab) prev.delete("tab");
+              else prev.set("tab", nextGroup);
+            }
+          }
           if (id === secondaryRoute.defaultView) prev.delete("view");
           else prev.set("view", id);
           return prev;
@@ -58,15 +67,18 @@ export function useAppChromeTabs():
         { replace: true },
       );
     },
-    [setSearchParams],
+    [pathname, setSearchParams],
   );
 
   const secondary = useMemo((): AppChromeSecondaryTabs | null => {
     if (!route) return null;
-    const primaryId = resolveAppPageSubTabId(route, searchParams.get("tab"));
+    const tabParam = searchParams.get("tab");
+    const viewParam = searchParams.get("view");
+    const inferredGroup = route.pathname === "/insights" ? resolveInsightsGroupForView(viewParam) : null;
+    const primaryId = inferredGroup ?? resolveAppPageSubTabId(route, tabParam);
     const secondaryRoute = resolveAppPageSecondaryRoute(pathname, primaryId);
     if (!secondaryRoute) return null;
-    const activeId = resolveAppPageSecondaryTabId(secondaryRoute, searchParams.get("view"));
+    const activeId = resolveAppPageSecondaryTabId(secondaryRoute, viewParam);
     return {
       ...secondaryRoute,
       activeId,
@@ -76,7 +88,9 @@ export function useAppChromeTabs():
 
   if (route) {
     const tabParam = searchParams.get("tab");
-    const activeId = resolveAppPageSubTabId(route, tabParam);
+    const viewParam = searchParams.get("view");
+    const inferredGroup = route.pathname === "/insights" ? resolveInsightsGroupForView(viewParam) : null;
+    const activeId = inferredGroup ?? resolveAppPageSubTabId(route, tabParam);
     return { ...route, activeId, setActiveId, showAdminTabs: false as const, secondary };
   }
 
