@@ -143,9 +143,14 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
-  const onStudio = isNavActive(pathname, "/studio");
-  const activeAgent =
-    onStudio && resolvedId ? agents.find((agent) => agent.id === resolvedId) : undefined;
+  const orderedAgents = resolvedId
+    ? [
+        ...agents.filter((agent) => agent.id === resolvedId),
+        ...agents.filter((agent) => agent.id !== resolvedId),
+      ]
+    : agents;
+  const visibleAgents = orderedAgents.slice(0, 3);
+  const hiddenAgentCount = Math.max(agents.length - visibleAgents.length, 0);
 
   return (
     <aside
@@ -185,10 +190,10 @@ function DesktopRail({ pathname }: { pathname: string }) {
         ))}
       </nav>
 
-      <div className="flex min-h-0 flex-1 flex-col pt-4">
-        <div className="flex items-center justify-between px-2.5 pb-2">
-          <WiredEyebrow>Agents</WiredEyebrow>
-          {agents.length ? (
+      {agents.length ? (
+        <div className="shrink-0 pt-3">
+          <div className="flex items-center justify-between px-2.5 pb-2">
+            <WiredEyebrow>Agents</WiredEyebrow>
             <Link
               to="/studio?create=1"
               aria-label="New agent"
@@ -196,79 +201,54 @@ function DesktopRail({ pathname }: { pathname: string }) {
             >
               New
             </Link>
-          ) : null}
+          </div>
+          <nav className="grid gap-1 pr-0.5" aria-label="Agents">
+            {visibleAgents.map((agent) => {
+              const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
+              return (
+                <Link
+                  key={agent.id}
+                  to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+                  aria-current={active ? "page" : undefined}
+                  className={`wl-rail-agent-link flex min-h-[40px] items-center gap-2 rounded-[10px] px-2 py-1.5 transition-colors ${
+                    active
+                      ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <AgentFace
+                    seed={agent.name || agent.id}
+                    size={24}
+                    title={`${agent.name} face`}
+                    className="shrink-0"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
+                    <span className="block truncate text-[10px] text-[color:var(--wireline-color-text-secondary)]">
+                      {formatAgentRoleLabel(agent.role)} · {readinessLabel(agent)}
+                    </span>
+                  </span>
+                </Link>
+              );
+            })}
+            {hiddenAgentCount > 0 ? (
+              <Link
+                to="/studio"
+                className="mt-0.5 flex min-h-[40px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <span>All agents</span>
+                <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
+                  {agents.length}
+                </span>
+              </Link>
+            ) : null}
+          </nav>
         </div>
-        <nav className="flex min-h-0 flex-1 flex-col gap-1 pr-0.5" aria-label="Agents">
-          {agents.length ? (
-            <>
-              {(() => {
-                const activeFirst = resolvedId
-                  ? [
-                      ...agents.filter((agent) => agent.id === resolvedId),
-                      ...agents.filter((agent) => agent.id !== resolvedId),
-                    ]
-                  : agents;
-                const visible = activeFirst.slice(0, 5);
-                const remaining = agents.length - visible.length;
-                return (
-                  <>
-                    {visible.map((agent) => {
-                      const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
-                      return (
-                        <Link
-                          key={agent.id}
-                          to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-                          aria-current={active ? "page" : undefined}
-                          className={`wl-rail-agent-link flex min-h-[44px] items-center gap-2.5 rounded-[10px] px-2.5 py-2 transition-colors ${
-                            active
-                              ? "border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          }`}
-                        >
-                          <AgentFace
-                            seed={agent.name || agent.id}
-                            size={28}
-                            title={`${agent.name} face`}
-                            className="shrink-0"
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate text-[12px] font-semibold">
-                              {agent.name}
-                            </span>
-                            <span className="block truncate text-[11px] text-[color:var(--wireline-color-text-secondary)]">
-                              {formatAgentRoleLabel(agent.role)}
-                            </span>
-                          </span>
-                        </Link>
-                      );
-                    })}
-                    {remaining > 0 ? (
-                      <Link
-                        to="/overview"
-                        className="mt-0.5 flex min-h-[44px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      >
-                        <span>All agents</span>
-                        <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
-                          {agents.length}
-                        </span>
-                      </Link>
-                    ) : null}
-                  </>
-                );
-              })()}
-            </>
-          ) : (
-            <Link
-              to="/studio?create=1"
-              className="rounded-[10px] border border-dashed border-border px-2.5 py-3 text-[12px] text-muted-foreground hover:border-primary/30 hover:text-foreground"
-            >
-              Create your first agent
-            </Link>
-          )}
-        </nav>
-      </div>
+      ) : null}
 
-      <WiredEyebrow className="shrink-0 px-2.5 pb-2 pt-4">Operate</WiredEyebrow>
+      <div className="min-h-3 flex-1" />
+
+      <WiredEyebrow className="shrink-0 px-2.5 pb-2 pt-3">Operate</WiredEyebrow>
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
         {OPERATE_NAV.filter((item) => isRouteAvailableForAccount(accountType, item.href)).map(
           (item) => (
@@ -277,51 +257,21 @@ function DesktopRail({ pathname }: { pathname: string }) {
         )}
       </nav>
 
-      {activeAgent ? (
-        <div className="mt-2 shrink-0 border-t border-border pt-3.5">
-          <p className="mb-2 px-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--wireline-color-text-secondary)]">
-            Current agent
-          </p>
-          <Link
-            to={`/studio?agent=${encodeURIComponent(activeAgent.id)}`}
-            className="flex items-center gap-2.5 rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-2.5 py-2 transition-opacity hover:opacity-90"
-            aria-label={`Current agent: ${activeAgent.name}`}
-          >
-            <AgentFace
-              seed={activeAgent.name || activeAgent.id}
-              size={32}
-              title={`${activeAgent.name} face`}
-              className="shrink-0"
-            />
-            <span className="min-w-0">
-              <span className="block truncate text-[13px] font-medium text-foreground">
-                {activeAgent.name}
-              </span>
-              <span className="block truncate text-[11px] text-[color:var(--wireline-color-text-secondary)]">
-                {formatAgentRoleLabel(activeAgent.role)} · {readinessLabel(activeAgent)}
-              </span>
-            </span>
-          </Link>
-        </div>
-      ) : (
-        <Link
-          to="/settings"
-          className="mt-2 flex shrink-0 items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80"
-          aria-label="Account settings"
-        >
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
-            {userInitial(user?.full_name, user?.email)}
+      <Link
+        to="/settings"
+        className="mt-3 flex shrink-0 items-center gap-2.5 border-t border-border pt-3.5 transition-opacity hover:opacity-80"
+        aria-label="Account settings"
+      >
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
+          {userInitial(user?.full_name, user?.email)}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-[13px] font-medium text-foreground">{displayName}</span>
+          <span className="block text-[11px] text-[color:var(--wireline-color-text-secondary)]">
+            {planLabel}
           </span>
-          <span className="min-w-0">
-            <span className="block truncate text-[13px] font-medium text-foreground">
-              {displayName}
-            </span>
-            <span className="block text-[11px] text-[color:var(--wireline-color-text-secondary)]">
-              {planLabel}
-            </span>
-          </span>
-        </Link>
-      )}
+        </span>
+      </Link>
     </aside>
   );
 }
