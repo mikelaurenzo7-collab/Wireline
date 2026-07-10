@@ -62,8 +62,10 @@ const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
 /**
  * Commercial contract:
  * - Templates are not plan locks. Every customer can start from any agent template.
- * - Plans sell the operating layer: agents, numbers, routing, collaboration,
+ * - Plans sell the operating layer: agents, included numbers, routing, collaboration,
  *   integrations, support, and reliability.
+ * - Every included agent includes one dedicated number so the agent feels like a real
+ *   profit-producing operating asset before extra line capacity is sold.
  * - Personal remains top-up-led through Conversation Balance.
  * - voice_minutes_monthly is 0 for all tiers — live PSTN is prepaid (Conversation Balance
  *   or metered overage). Daily burst caps live in plan-entitlements, not here.
@@ -86,7 +88,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     public: false,
     features: [
       "Create and train for free before anything goes live",
-      "One active agent and one number",
+      "One active profit agent with one included number",
       "Live calls, texts, and follow-up funded through Conversation Balance",
     ],
   },
@@ -97,7 +99,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 4,
     voice_minutes_monthly: 0,
     overage_per_min_usd: 0.16,
-    included_phone_numbers: 2,
+    included_phone_numbers: 4,
     priceIdEnv: "STRIPE_BUSINESS_STARTER_PRICE_ID",
     extra_agent_price_usd: 8,
     extraAgentPriceIdEnv: "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID",
@@ -106,8 +108,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     overagePriceIdEnv: "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID",
     features: [
       "Shared operating capacity for a small team",
-      "Several active agents with one inbox",
-      "Routing, approvals, and connected numbers",
+      "Every included agent includes a dedicated number",
+      "Routing, approvals, and connected profit-agent inbox",
       "Core integrations and follow-up controls",
       "Conversation Balance alongside shared operations",
     ],
@@ -119,7 +121,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     max_agents: 8,
     voice_minutes_monthly: 0,
     overage_per_min_usd: 0.16,
-    included_phone_numbers: 4,
+    included_phone_numbers: 8,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
     extra_agent_price_usd: 10,
     extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
@@ -127,8 +129,8 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PRO_OVERAGE_PRICE_ID",
     features: [
-      "Operating capacity for revenue and support teams",
-      "Shared routing, approvals, and analytics",
+      "Operating capacity for profit, revenue, and support teams",
+      "Every included agent includes a dedicated number",
       "CRM sync, policies, and role-aware controls",
       "Outbound, inbound, and follow-up in one workspace",
       "Conversation Balance pooled with the platform plan",
