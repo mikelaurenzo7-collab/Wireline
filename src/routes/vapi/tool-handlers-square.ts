@@ -34,7 +34,7 @@ export async function handleSquareToolCall(
             "I couldn't find a Square order matching that. Double-check the order ID or the email on the account.",
         };
       }
-      const itemList = order.lineItems.map((li) => `${li.quantity}x ${li.name}`).join(", ");
+      const itemList = order.lineItems.map((lineItem) => `${lineItem.quantity}x ${lineItem.name}`).join(", ");
       return {
         toolCallId,
         result: `Order ${order.displayId || order.id}: state ${order.state}, total ${order.total}. Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
@@ -94,8 +94,8 @@ export async function handleSquareToolCall(
       const summary = items
         .slice(0, 5)
         .map((item) => {
-          const inStock = item.variations.some((v) => (v.stockCount ?? 0) > 0);
-          return `${item.name}: ${item.variations.map((v) => `${v.name} ${v.price}`).join(", ")} — ${inStock ? "in stock" : "out of stock"}`;
+          const inStock = item.variations.some((variation) => (variation.stockCount ?? 0) > 0);
+          return `${item.name}: ${item.variations.map((variation) => `${variation.name} ${variation.price}`).join(", ")} — ${inStock ? "in stock" : "out of stock"}`;
         })
         .join(" | ");
       return {
@@ -142,19 +142,19 @@ export async function handleSquareToolCall(
   }
 
   if (fn === "square_send_invoice") {
-    try {
-      const { email, amount, description: _description } = args || {};
-      // Stub or call actual square invoice service
-      return {
-        toolCallId,
-        result: `An invoice for $${amount} has been sent to ${email}.`,
-      };
-    } catch {
-      return {
-        toolCallId,
-        result: "I've noted the invoice request.",
-      };
-    }
+    const { email, amount, description } = args || {};
+    return {
+      toolCallId,
+      result: [
+        "I cannot confirm that an invoice was sent because direct Square invoice delivery is not enabled.",
+        email ? `Invoice recipient requested: ${email}.` : null,
+        amount != null ? `Amount requested: $${amount}.` : null,
+        description ? `Description: ${description}.` : null,
+        "I can create a verified Square payment link now, or record this invoice request for the account holder to approve and send.",
+      ]
+        .filter(Boolean)
+        .join(" "),
+    };
   }
 
   return null;
