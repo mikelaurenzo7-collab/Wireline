@@ -18,10 +18,9 @@ import { NAV_GROUPS, SIDEBAR_NAV_ITEMS, type NavItem } from "../constants/naviga
 export type AccountType = "personal" | "business";
 
 /**
- * Business-only Operate destinations (Insights / Approvals / Apps) use the
- * legacy item `section: "Run"` from `toLegacyItem(..., "Run")`. Group labels
- * in `NAV_GROUPS` are "Workspace" | "Operate" — filter groups by label, items
- * by section.
+ * Business-only Operate destinations (Approvals / Insights) use the legacy item
+ * `section: "Run"` from `toLegacyItem(..., "Run")`. Group labels in NAV_GROUPS
+ * are "Workspace" | "Operate" — filter groups by label, items by section.
  *
  * Personal accounts keep Phone, Inbox, and Settings on Operate.
  */
