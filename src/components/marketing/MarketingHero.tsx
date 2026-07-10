@@ -32,6 +32,10 @@ type MarketingHeroProps = {
   compact?: boolean;
 };
 
+function isExternalHref(href: string): boolean {
+  return /^(tel:|mailto:|https?:)/.test(href);
+}
+
 export default function MarketingHero({
   eyebrow,
   title,
@@ -79,17 +83,24 @@ export default function MarketingHero({
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               {actions.map((action) => {
                 const primary = action.tone !== "secondary";
-                return (
-                  <Link
-                    key={`${action.to}-${action.label}`}
-                    to={action.to}
-                    className={cn(
-                      primary ? "marketing-btn-primary" : "marketing-btn-secondary",
-                      "min-h-12 justify-center px-6 text-[15px] font-semibold sm:w-auto",
-                    )}
-                  >
+                const className = cn(
+                  primary ? "marketing-btn-primary" : "marketing-btn-secondary",
+                  "min-h-12 justify-center px-6 text-[15px] font-semibold sm:w-auto",
+                );
+                const children = (
+                  <>
                     {action.label}
                     {primary ? <ArrowRight size={16} aria-hidden="true" /> : null}
+                  </>
+                );
+
+                return isExternalHref(action.to) ? (
+                  <a key={`${action.to}-${action.label}`} href={action.to} className={className}>
+                    {children}
+                  </a>
+                ) : (
+                  <Link key={`${action.to}-${action.label}`} to={action.to} className={className}>
+                    {children}
                   </Link>
                 );
               })}
