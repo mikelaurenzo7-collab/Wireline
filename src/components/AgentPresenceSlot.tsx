@@ -1,9 +1,9 @@
 /**
- * AgentPresenceSlot — authenticated "put a face to your agent" surface.
+ * AgentPresenceSlot — authenticated in-app identity surface.
  *
- * The marketing stage (AgentPresenterStage) sells the promise; this component
- * delivers it inside the product: deterministic AgentFace in a compact video
- * slot frame, with Wireline-native copy for live presenter policy.
+ * Deterministic AgentFace stays useful as an internal recognition badge across
+ * Studio, training, analytics, and call logs. It must not be positioned as a
+ * video presenter; premium human/character Presence is a separate future layer.
  */
 import AgentFace from "./AgentFace";
 import { buildAgentIdentityPreview, VIDEO_PRESENTER_PROVIDERS } from "../lib/agent-identity";
@@ -41,10 +41,9 @@ export default function AgentPresenceSlot({
     role,
     isBusinessAgent,
   });
+  const activeProvider = presenterOverride?.provider ?? identity.video.providerPreference;
   const headline = presenterOverride?.headline ?? identity.video.headline;
-  const surfaceLabel =
-    VIDEO_PRESENTER_PROVIDERS[presenterOverride?.provider ?? identity.video.providerPreference]
-      .surfaceLabel;
+  const surfaceLabel = VIDEO_PRESENTER_PROVIDERS[activeProvider].surfaceLabel;
   const videoSlotCopy = identity.video.consentRequired
     ? `${surfaceLabel}, consent-gated`
     : surfaceLabel;
@@ -54,9 +53,8 @@ export default function AgentPresenceSlot({
       String(headline || "")
         .trim()
         .toLowerCase();
-  // Default synthetic path already reads as Wireline face — don't stack
-  // "Wireline face · Fallback · Wireline face" on the stage strip.
-  const showFallbackChip = surfaceLabel.trim().toLowerCase() !== "wireline face";
+  const isSyntheticIdentity = activeProvider === "synthetic";
+  const showFallbackChip = !isSyntheticIdentity && surfaceLabel.trim().toLowerCase() !== "identity badge";
   const faceSize = variant === "badge" ? 28 : variant === "stage" ? 120 : 44;
 
   if (variant === "badge") {
@@ -65,7 +63,7 @@ export default function AgentPresenceSlot({
         seed={identity.seed}
         size={faceSize}
         speaking={speaking}
-        title={`${name || "Agent"} face`}
+        title={`${name || "Agent"} identity badge`}
         className={className}
       />
     );
@@ -76,7 +74,7 @@ export default function AgentPresenceSlot({
   return (
     <div className={rootClass}>
       <div className={`wl-presence__frame${variant === "stage" ? " wl-presence__frame--ink" : ""}`}>
-        {showLiveBadge ? (
+        {showLiveBadge && !isSyntheticIdentity ? (
           <span className="wl-presence__live">
             <span className="wl-presence__live-dot" aria-hidden="true" />
             On screen
@@ -87,7 +85,7 @@ export default function AgentPresenceSlot({
             seed={identity.seed}
             size={faceSize}
             speaking={speaking}
-            title={`${name || "Agent"} face`}
+            title={`${name || "Agent"} identity badge`}
           />
         </div>
         {showWaveform ? (
@@ -105,8 +103,11 @@ export default function AgentPresenceSlot({
         <div className="wl-presence__strip" role="status">
           <strong>{headline}</strong>
           {showSurfaceChip ? <span className="wl-presence__chip">{videoSlotCopy}</span> : null}
+          {isSyntheticIdentity ? (
+            <span className="wl-presence__chip">App-only identifier</span>
+          ) : null}
           {showFallbackChip ? (
-            <span className="wl-presence__chip">Fallback · Wireline face</span>
+            <span className="wl-presence__chip">Fallback · identity badge</span>
           ) : null}
         </div>
       ) : null}
@@ -135,10 +136,9 @@ export function AgentPresenceMeta({
     role,
     isBusinessAgent,
   });
+  const activeProvider = presenterOverride?.provider ?? identity.video.providerPreference;
   const headline = presenterOverride?.headline ?? identity.video.headline;
-  const surfaceLabel =
-    VIDEO_PRESENTER_PROVIDERS[presenterOverride?.provider ?? identity.video.providerPreference]
-      .surfaceLabel;
+  const surfaceLabel = VIDEO_PRESENTER_PROVIDERS[activeProvider].surfaceLabel;
   const customization = presenterOverride ? presenterCustomizationMessage(presenterOverride) : null;
   const showSurfaceChip =
     Boolean(surfaceLabel) &&
