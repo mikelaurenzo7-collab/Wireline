@@ -49,6 +49,26 @@ Then create the CEO agent with broad capabilities and tighten from permissions.
 - Template gallery: CEO / Operating Agent first; specialists below it.
 - Empty states: "Your front office is covered" rather than "pick a role."
 
+## Pricing decision
+
+Paid extra agents should add useful capacity, not just another seat consuming the same pool.
+
+Founder catalog decision:
+
+- Starter: $9/mo, 1 live agent, 20 guaranteed live-voice minutes.
+- Starter Plus: $19/mo, 1 live agent, 75 guaranteed live-voice minutes.
+- Pro: $59/mo, up to 5 live agents, 250 guaranteed live-voice minutes.
+- Business: $149/mo, up to 15 live agents, 650 guaranteed live-voice minutes.
+- Extra live agent add-on: $15/mo, plus 1 additional live agent, 1 production-number slot, and 50 additional guaranteed live-voice minutes.
+
+Stripe object configured:
+
+```bash
+STRIPE_EXTRA_AGENT_PRICE_ID=price_1TrnEvJohDtfy3IkjBi7VOCP
+```
+
+This keeps the upsell honest: if the customer pays for another agent, they also get more minutes to use that agent.
+
 ## Permission model
 
 CEO gets the broad operating toolbox by default, but execution is still constrained by:
@@ -104,6 +124,7 @@ The default should always feel like: "start with CEO, split later if needed."
 - Validate CEO agent with no explicit `enabledTools` gets the full tool catalog, then filters by connected integrations.
 - Validate `gemini_ground` still works as the compatible Vapi tool name when only `PERPLEXITY_API_KEY` is set.
 - Validate fallback to Gemini when Perplexity is missing, times out, or returns a non-2xx response.
+- Validate paid extra-agent checkout adds both an agent slot and 50 additional guaranteed voice minutes.
 - Validate personal-plan copy does not accidentally use CRM / pipeline language.
 
 ## Success metrics
@@ -113,4 +134,5 @@ The default should always feel like: "start with CEO, split later if needed."
 - % of CEO users enabling at least one live channel.
 - First-week handled conversations.
 - Second-agent creation rate by role.
+- Paid extra-agent attach rate and minutes consumed per add-on.
 - Escalation rate and owner-interruption reduction.
