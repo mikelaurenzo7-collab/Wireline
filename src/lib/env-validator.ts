@@ -1,4 +1,5 @@
 import { log } from "./server-context";
+import { isPostgresConnectionString } from "./database-connection";
 
 export type EnvGroup =
   | "core"
@@ -28,7 +29,6 @@ export type EnvValidationResult = {
 
 const nonEmpty = (value: string) => value.length > 0;
 const isUrl = (value: string) => /^https?:\/\//.test(value);
-const isPostgresUrl = (value: string) => /^postgresql:\/\//.test(value);
 const isHex32 = (value: string) => /^[a-f0-9]{64}$/i.test(value);
 const isStripe = (value: string) => /^sk_(test|live)_/.test(value);
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -43,16 +43,15 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "core",
     required: true,
     description: "PostgreSQL connection string",
-    validate: isPostgresUrl,
+    validate: isPostgresConnectionString,
     formatHint: "postgresql://user:pass@host:port/db",
   },
   {
     name: "DATABASE_POOL_URL",
     group: "core",
     required: false,
-    requiredInProd: true,
     description: "PostgreSQL pooler/proxy URL (Supabase Transaction mode pooler on :6543)",
-    validate: (value) => !value || isPostgresUrl(value),
+    validate: (value) => !value || isPostgresConnectionString(value),
     formatHint: "postgresql://user:pass@host:6543/db",
   },
   {
