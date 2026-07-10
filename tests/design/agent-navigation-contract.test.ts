@@ -23,18 +23,23 @@ describe("agent navigation contract", () => {
   const connectionsPage = read("src/pages/ConnectionsPage.tsx");
   const trainingPage = read("src/pages/KnowledgePage.tsx");
   const settingsPage = read("src/pages/SettingsPage.tsx");
+  const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
   const billingPage = read("src/pages/BillingSettings.tsx");
   const teamPage = read("src/pages/TeamSettings.tsx");
 
-  it("keeps the old Assistants rail out while exposing agents in Overview", () => {
+  it("keeps agent-first IA with Studio as the primary build destination", () => {
     const navigation = read("src/constants/navigation.ts");
     expect(workspaceShell).not.toMatch(/label:\s*"Assistants"/);
     expect(workspaceShell).not.toMatch(/label:\s*"Agent Studio"/);
-    expect(navigation).toMatch(/label:\s*"Overview"/);
+    expect(navigation).toMatch(/href: "\/overview"[\s\S]*label: "Overview"/);
+    expect(navigation).toMatch(/href: "\/studio", label: "Studio"/);
+    expect(navigation).toMatch(/href: "\/knowledge"[\s\S]*label: "Training"/);
+    expect(navigation).toMatch(/href: "\/connections", label: "Wire"/);
     expect(workspaceShell).toMatch(/aria-label="Agents"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
-    expect(appRoutes).toMatch(/path="\/agents"/);
-    expect(appRoutes).toMatch(/to="\/overview"/);
+    expect(workspaceShell).toMatch(/to="\/settings"[\s\S]*aria-label="Account settings"/);
+    expect(workspaceShell).not.toMatch(/Current agent/);
+    expect(appRoutes).toMatch(/path="\/agents"[\s\S]*to="\/studio"/);
     expect(appRoutes).not.toMatch(/path="\/(pulse|fleet|ops|training|chat|actions|nexus|wires)"/);
   });
 
@@ -121,6 +126,8 @@ describe("agent navigation contract", () => {
     expect(navigation).toMatch(/MOBILE_PRIMARY_NAV/);
     expect(navigation).toMatch(/MOBILE_MORE_NAV/);
     expect(navigation).toMatch(/label: "More"/);
+    expect(navigation).not.toMatch(/href: "\/apps", label: "Apps"/);
+    expect(settingsTabs).toMatch(/href: "\/settings\/apps", label: "Apps"/);
     expect(read("src/components/layout/MobileNavMoreSheet.tsx")).toMatch(/MOBILE_MORE_NAV/);
   });
 
