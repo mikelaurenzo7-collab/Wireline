@@ -56,7 +56,7 @@ const PRICING_TIERS = [
     features: [
       `${planById.team.max_agents} active phone employees`,
       `${planById.team.included_phone_numbers} phone lines included`,
-      `Extra employees at ${planById.team.extra_agent_price_usd}/mo`,
+      `Extra employees at \${planById.team.extra_agent_price_usd}/mo`,
       "Routing, approvals, and team inbox",
     ],
     cta: "Start Team",
@@ -76,7 +76,7 @@ const PRICING_TIERS = [
     features: [
       `${planById.business.max_agents} active phone employees`,
       `${planById.business.included_phone_numbers} phone lines included`,
-      `Extra employees at ${planById.business.extra_agent_price_usd}/mo`,
+      `Extra employees at \${planById.business.extra_agent_price_usd}/mo`,
       "CRM sync, analytics, roles, approvals",
     ],
     cta: "Start Business",
