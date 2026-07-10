@@ -29,6 +29,8 @@ const LEGACY_ROLE_ALIASES: Record<string, AgentRoleId> = {
   director: "ceo",
   general_manager: "ceo",
   operator: "ceo",
+  best_employee: "ceo",
+  right_hand: "ceo",
 };
 
 export type AgentRoleDefinition = {
@@ -40,9 +42,10 @@ export type AgentRoleDefinition = {
 
 const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
   ceo: {
-    label: "Wireline CEO",
-    archetype: "Business Operating Agent",
-    description: "Runs the front office across calls, sales, support, scheduling, marketing, finance, and personal admin",
+    label: "Wireline Operator",
+    archetype: "All-Purpose AI Employee",
+    description:
+      "Handles sales, marketing, front desk, support, scheduling, follow-up, recovery, and personal admin under owner-controlled rules",
   },
   sales: {
     label: "Sales",
