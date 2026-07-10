@@ -1,8 +1,9 @@
 import { useState, type KeyboardEvent } from "react";
-import { ArrowRight, PlayCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import MarketingFooter from "./MarketingFooter";
+import MarketingHero from "./MarketingHero";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import RoiCalculator from "./RoiCalculator";
 import TrustSignals from "./TrustSignals";
@@ -23,6 +24,12 @@ type ModeDetail = {
 const HERO_LOOP = MARKETING_VOICE.proof;
 
 const AUDIENCES = ["Sales", "Scheduling", "Intake", "Support"] as const;
+const HERO_VISUAL_ITEMS = [
+  "Create the employee",
+  "Train the playbook",
+  "Wire the number",
+  "Run the work",
+] as const;
 
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
   { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
@@ -142,88 +149,18 @@ export default function WireAgentLanding() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
-        <section
-          className="marketing-hero border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10 lg:py-24"
-          aria-labelledby="wireline-hero-title"
-        >
-          <div className="wl-public-rail">
-            <div className="wireline-hero-motion mx-auto max-w-[44rem] text-center">
-              <div className="mx-auto mb-5 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
-                <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
-                <span className="wl-eyebrow wl-eyebrow--wired text-muted-foreground">
-                  {MARKETING_VOICE.eyebrow}
-                </span>
-              </div>
-
-              <h1
-                id="wireline-hero-title"
-                className="wl-display-1 mx-auto max-w-[13ch] text-[clamp(3.25rem,12vw,7.5rem)] uppercase leading-[.82] tracking-[-.075em]"
-              >
-                {MARKETING_VOICE.headline}
-              </h1>
-
-              <p className="wl-lead mx-auto mt-6 max-w-[40rem]">{MARKETING_VOICE.subline}</p>
-
-              <div className="mx-auto mt-7 grid max-w-[32rem] grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-card">
-                {HERO_LOOP.map((step, index) => (
-                  <div
-                    key={step}
-                    className={`wl-wire-step border-r border-border px-2 py-3 text-center last:border-r-0 ${
-                      index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : ""
-                    }`}
-                  >
-                    <div className="wl-wire-step__marker mb-2 flex justify-center">
-                      <span className="wl-wire-step__node" aria-hidden="true" />
-                    </div>
-                    <span className="block font-mono text-[10px] font-semibold uppercase tracking-[.12em] text-primary">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className="mt-1 block text-[12px] font-semibold text-muted-foreground">
-                      {step}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link
-                  to="/signup"
-                  className="marketing-btn-primary min-h-12 w-full px-6 py-3 text-[15px] font-semibold sm:w-auto"
-                >
-                  Build your first employee
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-                <Link
-                  to="/showcase"
-                  className="marketing-btn-secondary min-h-12 w-full px-6 py-3 text-[15px] font-semibold sm:w-auto"
-                >
-                  <PlayCircle size={16} aria-hidden="true" />
-                  Hear a demo
-                </Link>
-              </div>
-
-              <ul
-                className="mx-auto mt-7 grid max-w-[36rem] grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4"
-                aria-label="Wireline audiences"
-              >
-                {AUDIENCES.map((audience) => (
-                  <li
-                    key={audience}
-                    className="flex items-center justify-center gap-2 text-[13px] text-muted-foreground"
-                  >
-                    <span
-                      className="marketing-proof-chip h-[18px] w-[18px] shrink-0"
-                      aria-hidden="true"
-                    >
-                      ✓
-                    </span>
-                    <span className="min-w-0 leading-snug">{audience}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
+        <MarketingHero
+          eyebrow={MARKETING_VOICE.eyebrow}
+          title={MARKETING_VOICE.headline}
+          description={MARKETING_VOICE.subline}
+          primaryAction={{ label: "Build your first employee", to: "/signup" }}
+          secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
+          proof={AUDIENCES}
+          visualEyebrow="Create -> Train -> Wire -> Run"
+          visualTitle="One line from idea to outcome."
+          visualBody="Define the job, teach the playbook, connect the number, then review exactly what happened after every conversation."
+          visualItems={HERO_VISUAL_ITEMS}
+        />
 
         <section className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p className="marketing-ink-panel__soft text-[18px] font-[var(--wireline-font-family-display)]">
