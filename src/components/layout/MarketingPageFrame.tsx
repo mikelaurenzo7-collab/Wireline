@@ -38,7 +38,7 @@ export default function MarketingPageFrame({
   return (
     <div
       className={cn(
-        "marketing-surface relative flex flex-col bg-background text-foreground safe-area-insets",
+        "marketing-surface relative flex flex-col bg-background text-foreground",
         scroll ? "min-h-dvh" : "h-dvh max-h-dvh overflow-hidden",
         className,
       )}
