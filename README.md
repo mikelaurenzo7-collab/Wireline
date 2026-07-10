@@ -48,6 +48,7 @@ Load the generated target package from `apps/browser-extension/dist/chromium` or
 ## Verification before changes land
 
 ```bash
+npm run check-prod-env
 npm run verify       # design + source-control + routes + docs + token parity + Stripe + build + smoke
 npm run verify:full  # lint + server lint + design + Stripe + authz + CSP + tests + build + smoke
 npm run verify:contracts
@@ -55,7 +56,7 @@ node apps/browser-extension/scripts/build.mjs --check
 node scripts/check-chatgpt-app-release.mjs --url https://trywireline.com
 ```
 
-Use `npm run verify` for focused implementation branches and `npm run verify:full` before merge, release, or anything touching auth, billing, CSP, routes, data access, provider integrations, or shared runtime contracts.
+Use `npm run verify` for focused implementation branches and `npm run verify:full` before merge, release, or anything touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, or production environment shape.
 
 ## Repository map
 
@@ -65,7 +66,7 @@ Use `npm run verify` for focused implementation branches and `npm run verify:ful
 | Architecture | `ARCHITECTURE.md`, `src/server/register-api-routes.ts`, `src/routes/AppRoutes.tsx` |
 | Product docs | `docs/README.md`, `docs/CLIENT_SURFACES.md`, `docs/CHATGPT_APP.md`, `docs/PRODUCT_SHOWCASE_MATRIX.md`, `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` |
 | Release boundaries | `docs/CLIENT_SURFACES.md` for tier ownership/checks/non-goals/security/rollback; `docs/PRODUCT_SHOWCASE_MATRIX.md` for commercial status; `docs/WIRELINE_LEVEL_UP_MASTER_PLAN.md` for execution sequencing |
-| Pricing and billing | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts` |
+| Pricing and billing | `docs/business-usage-pricing-decision.md`, `docs/P0_BILLING_OPS_NOTE.md`, `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts` |
 | Design system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
 | Voice and models | `src/lib/ai-models.ts`, `src/lib/voice/`, `src/routes/grok-voice-routes.ts`, `docs/GROK_LIVE_VOICE.md` |
 | Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts`; release as a consent-gated planned/beta add-on only |
