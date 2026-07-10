@@ -1,109 +1,54 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
-import { log, quotaTracker, auditLogger, drizzle } from "./server-context";
+/* eslint-disable @typescript-eslint/no-explicit-any -- durable job payloads are stored as Postgres jsonb. */
+import { eq } from "drizzle-orm";
+
 import * as schema from "../db/schema";
-import { eq, and, sql, desc } from "drizzle-orm";
-import * as claudeBrain from "./ai-brains";
-import * as geminiBrain from "./gemini-brain";
-import { getErrorMessage } from "./server-utils";
-import { startWorker, type JobRow, enqueue } from "./job-queue";
-import { executeAction } from "./action-engine";
-import { ActionItemSchema } from "./action-types";
-import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
-import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
-import { CRMService } from "./crm-service";
 import {
-  apolloPlatformConfigured,
-  enrichLead as apolloEnrich,
-  searchLeads as apolloSearch,
-} from "./apollo-service";
-import { purgeAccount } from "./account-deletion";
+  handleJob as handleBaseJob,
+} from "./job-worker-base";
+import {
+  ARTIFACT_RUNTIME_RESERVE_USD,
+  refundRuntimeUsage,
+  reserveRuntimeUsage,
+  type RuntimeArtifactFormat,
+} from "./runtime-usage-billing";
+import {
+  generateAndStorePostCallArtifact,
+  type PostCallArtifactInput,
+} from "./openai-post-call-artifact";
+import {
+  generateScheduledOperatingReport,
+  type ScheduledReportJobPayload,
+} from "./scheduled-report-service";
+import { drizzle, log } from "./server-context";
+import { getErrorMessage } from "./server-utils";
+import { startWorker, type JobRow } from "./job-queue";
 
-type SupportedCrmType = "salesforce" | "hubspot";
+export * from "./job-worker-base";
 
-function truncateForCrm(text: string | undefined, max = 1_500): string {
-  if (!text) return "";
-  return text.length <= max ? text : `${text.slice(0, max - 3)}...`;
+const ARTIFACT_FORMATS = new Set<RuntimeArtifactFormat>(["pdf", "docx", "pptx", "xlsx"]);
+const ARTIFACT_DESTINATIONS = new Set(["google_drive", "onedrive"]);
+
+function attemptNumber(job: JobRow): number {
+  const value = Number((job as unknown as { attempts?: number }).attempts || 1);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
 }
 
-function buildCrmCallDescription(input: {
-  agentName?: string;
-  direction: "inbound" | "outbound";
-  customerNumber?: string | null;
-  durationSeconds?: number;
-  summary?: string;
-  leadScore?: number;
-  intentLabel?: string;
-  sentiment?: string;
-}): string {
-  const lines = [
-    input.agentName ? `Agent: ${input.agentName}` : null,
-    `Direction: ${input.direction}`,
-    input.customerNumber ? `Customer number: ${input.customerNumber}` : null,
-    typeof input.durationSeconds === "number" ? `Duration: ${input.durationSeconds}s` : null,
-    input.intentLabel ? `Intent: ${input.intentLabel}` : null,
-    input.sentiment ? `Sentiment: ${input.sentiment}` : null,
-    typeof input.leadScore === "number" ? `Lead score: ${input.leadScore}` : null,
-    input.summary ? `Summary: ${truncateForCrm(input.summary)}` : null,
-  ].filter(Boolean);
-  return lines.join("\n");
+function executionReference(job: JobRow): string {
+  return `${job.type}:${job.id}:attempt:${attemptNumber(job)}`;
 }
 
-async function syncCallActivityToCrm(input: {
-  userId: string;
-  crmType?: string | null;
-  agentName?: string;
-  callId: string;
-  direction: "inbound" | "outbound";
-  customerNumber?: string | null;
-  durationSeconds?: number;
-  summary?: string;
-  leadScore?: number;
-  intentLabel?: string;
-  sentiment?: string;
-}) {
-  if (!input.crmType || (input.crmType !== "salesforce" && input.crmType !== "hubspot")) return;
-  if (!input.customerNumber) return;
-
-  const crm = new CRMService(input.userId);
-  const subjectSuffix = input.intentLabel ? ` - ${truncateForCrm(input.intentLabel, 80)}` : "";
-  const activityId = await crm.logCall({
-    crmType: input.crmType as SupportedCrmType,
-    subject: `Wireline ${input.direction} call${subjectSuffix}`,
-    description: buildCrmCallDescription(input),
-    to_number: input.customerNumber,
-    duration_minutes: input.durationSeconds
-      ? Math.max(1, Math.round(input.durationSeconds / 60))
-      : 0,
-    outcome: input.intentLabel || "completed",
-  });
-
-  if (activityId) {
-    log.info("Post-call CRM sync succeeded", {
-      userId: input.userId,
-      crmType: input.crmType,
-      callId: input.callId,
-      activityId,
-    });
-
-    if (input.leadScore != null) {
-      void crm
-        .syncEnrichedLead({
-          customerNumber: input.customerNumber,
-          leadScore: input.leadScore,
-        })
-        .catch((e) =>
-          log.warn("Post-call lead score CRM sync failed", { error: getErrorMessage(e) }),
-        );
-    }
-
-    return;
+function validateFormat(value: unknown): RuntimeArtifactFormat {
+  if (typeof value !== "string" || !ARTIFACT_FORMATS.has(value as RuntimeArtifactFormat)) {
+    throw new Error("Artifact job contains an unsupported file format.");
   }
+  return value as RuntimeArtifactFormat;
+}
 
-  log.warn("Post-call CRM sync skipped or failed", {
-    userId: input.userId,
-    crmType: input.crmType,
-    callId: input.callId,
-  });
+function validateDestination(value: unknown): "google_drive" | "onedrive" {
+  if (typeof value !== "string" || !ARTIFACT_DESTINATIONS.has(value)) {
+    throw new Error("Artifact job requires a connected Google Drive or OneDrive destination.");
+  }
+  return value as "google_drive" | "onedrive";
 }
 
 async function persistJobResult(jobId: string, result: Record<string, unknown>): Promise<void> {
@@ -113,835 +58,107 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
     .where(eq(schema.jobs.id, jobId));
 }
 
-/**
- * Global job handler.
- * Dispatches jobs from the wireline_jobs table.
- */
-export async function handleJob(job: JobRow): Promise<void> {
-  if (job.type === "post_call_enrichment") {
-    const p = job.payload as {
-      agentId: string;
-      userId: string;
-      callId: string;
-      agentName?: string;
-      archetype?: string;
-      role?: string;
-      customerNumber?: string;
-      durationSeconds?: number;
-      summary?: string;
-      transcript?: string;
-      useFlash?: boolean;
-    };
+async function withRuntimeReservation<T>(
+  job: JobRow,
+  userId: string,
+  format: RuntimeArtifactFormat,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const amountUsd = ARTIFACT_RUNTIME_RESERVE_USD[format];
+  const referenceId = executionReference(job);
+  const reservation = await reserveRuntimeUsage({
+    userId,
+    amountUsd,
+    referenceId,
+    reason: `${format.toUpperCase()} business artifact`,
+    metadata: {
+      job_id: job.id,
+      job_type: job.type,
+      attempt: attemptNumber(job),
+      format,
+    },
+  });
 
-    // Check user tier for model selection
-    const [settings] = await drizzle
-      .select({ aiTier: schema.settings.aiTier, crmType: schema.settings.crmType })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, p.userId))
-      .limit(1);
-    const useFlash = p.useFlash || settings?.aiTier === "starter";
-
-    let result;
-    let records: any[] = [];
-
-    if (useFlash) {
-      log.info("Using Gemini Flash for post-call enrichment", {
-        userId: p.userId,
-        callId: p.callId,
-      });
-      const capture = await claudeBrain.withAuditCapture(() =>
-        geminiBrain.postCallAnalysis({
-          transcript: p.transcript!,
-          summary: p.summary || "",
-        }),
-      );
-      result = capture.result;
-      records = capture.records;
-    } else {
-      if (!claudeBrain.isBrainAvailable() || !p.transcript) return;
-      const capture = await claudeBrain.withAuditCapture(() =>
-        claudeBrain.postCallAnalysis({
-          agentName: p.agentName || "Wireline Agent",
-          archetype: p.archetype || "Receptionist",
-          role: p.role,
-          customerNumber: p.customerNumber,
-          durationSeconds: p.durationSeconds ?? 0,
-          summary: p.summary || "",
-          transcript: p.transcript!,
-        }),
-      );
-      result = capture.result;
-      records = capture.records;
-    }
-
-    await drizzle
-      .update(schema.callLogs)
-      .set({
-        leadScore: result.lead_score,
-        intentLabel: result.intent_label,
-        sentiment: result.sentiment,
-        coachingNote: result.coaching_note,
-      })
-      .where(eq(schema.callLogs.vapiCallId, p.callId));
-
-    if (result.lesson?.trim()) {
-      await drizzle
-        .insert(schema.agentLessons)
-        .values({
-          agentId: p.agentId,
-          userId: p.userId,
-          lesson: result.lesson.trim(),
-          sourceCallId: p.callId,
-          source: "phone_call",
-        })
-        .onConflictDoNothing({
-          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
-        });
-    }
-
-    if (records.length) {
-      await persistRuntimeAuditRecords({
-        userId: p.userId,
-        action: "jobs.post_call_enrichment",
-        records,
-        requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
-      }).catch((e: unknown) =>
-        log.warn("post_call audit persist failed", { error: getErrorMessage(e) }),
-      );
-    } else {
-      const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-      await quotaTracker
-        .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
-        .catch((e: unknown) => {
-          log.warn("quota token increment failed — usage may be under-counted", {
-            user_id: p.userId,
-            error: getErrorMessage(e),
-          });
-        });
-    }
-
-    const [logRow] = await drizzle
-      .select({
-        direction: schema.callLogs.direction,
-        customerNumber: schema.callLogs.customerNumber,
-      })
-      .from(schema.callLogs)
-      .where(eq(schema.callLogs.vapiCallId, p.callId))
-      .limit(1);
-    const direction =
-      logRow?.direction === "outbound" ? ("outbound" as const) : ("inbound" as const);
-    const enrichment = {
-      lead_score: result.lead_score,
-      intent_label: result.intent_label,
-      sentiment: result.sentiment,
-      coaching_note: result.coaching_note,
-      lesson_extracted: !!(result.lesson && result.lesson.trim()),
-    };
-    const payload = buildCallCompletedOutcome({
-      vapi_call_id: p.callId,
-      agent_id: p.agentId,
-      customer_number: logRow?.customerNumber || p.customerNumber || null,
-      direction,
-      duration_seconds: p.durationSeconds,
-      enrichment_source: "async_post_call_job",
-      enrichment,
-    });
-    await syncCallActivityToCrm({
-      userId: p.userId,
-      crmType: settings?.crmType,
-      agentName: p.agentName,
-      callId: p.callId,
-      direction,
-      customerNumber: payload.customer_number,
-      durationSeconds: p.durationSeconds,
-      summary: p.summary,
-      leadScore: result.lead_score,
-      intentLabel: result.intent_label,
-      sentiment: result.sentiment,
-    }).catch((e: unknown) =>
-      log.warn("post_call CRM sync failed", {
-        userId: p.userId,
-        callId: p.callId,
-        error: getErrorMessage(e),
-      }),
+  if (!reservation.reserved) {
+    throw new Error(
+      `Insufficient Runtime Balance for this ${format.toUpperCase()} file. Add balance and retry.`,
     );
-    dispatchWebhook(p.userId, "call.completed", payload).catch((e: unknown) =>
-      log.error("webhook dispatch failed", {
-        userId: p.userId,
-        event: "call.completed",
-        error: getErrorMessage(e),
-      }),
-    );
-    if (typeof result.lead_score === "number" && result.lead_score >= 70) {
-      dispatchWebhook(p.userId, "lead.hot", {
-        vapi_call_id: p.callId,
-        lead_score: result.lead_score,
-        customer_number: payload.customer_number,
-      }).catch((e: unknown) =>
-        log.error("webhook dispatch failed", {
-          userId: p.userId,
-          event: "lead.hot",
-          error: getErrorMessage(e),
-        }),
-      );
-    }
-    const intent = (result.intent_label || "").toLowerCase();
-    if (intent === "escalation" || intent === "escalate") {
-      dispatchWebhook(p.userId, "call.escalated", {
-        vapi_call_id: p.callId,
-        intent_label: result.intent_label,
-        customer_number: payload.customer_number,
-      }).catch((e: unknown) =>
-        log.error("webhook dispatch failed", {
-          userId: p.userId,
-          event: "call.escalated",
-          error: getErrorMessage(e),
-        }),
-      );
-    }
-
-    // Automatically enqueue action extraction after enrichment
-    await enqueue(drizzle, {
-      userId: p.userId,
-      type: "v2a_action_extraction",
-      payload: {
-        userId: p.userId,
-        callId: p.callId,
-        summary: p.summary,
-        transcript: p.transcript,
-        customerNumber: p.customerNumber,
-      },
-    }).catch((e) => log.error("Failed to enqueue V2A extraction", { error: getErrorMessage(e) }));
   }
 
-  if (job.type === "v2a_action_extraction") {
-    const p = job.payload as {
-      userId: string;
-      callId: string;
-      transcript: string;
-      summary: string;
-      customerNumber?: string;
-    };
-
-    const actions = await claudeBrain.extractActions({
-      transcript: p.transcript,
-      summary: p.summary,
-      customerNumber: p.customerNumber,
-    });
-
-    for (const action of actions) {
-      await enqueue(drizzle, {
-        userId: p.userId,
-        type: "execute_action",
-        payload: {
-          userId: p.userId,
-          action,
-          context: { sourceId: p.callId, sourceType: "phone_call" },
+  try {
+    return await operation();
+  } catch (error) {
+    // A unique reference is used for every attempt, so an unsuccessful attempt
+    // can be refunded without giving a later retry a free reservation.
+    if (!reservation.alreadyReserved) {
+      await refundRuntimeUsage({
+        userId,
+        amountUsd,
+        referenceId,
+        reason: `${format.toUpperCase()} artifact generation failed`,
+        metadata: {
+          job_id: job.id,
+          job_type: job.type,
+          attempt: attemptNumber(job),
+          error: getErrorMessage(error),
         },
       });
     }
-    log.info("V2A extraction complete", {
-      userId: p.userId,
-      callId: p.callId,
-      actionsCount: actions.length,
-    });
-  }
-
-  if (job.type === "execute_action") {
-    const p = job.payload as {
-      userId: string;
-      action: any;
-      context: { sourceId: string; sourceType: string };
-    };
-
-    const parsed = ActionItemSchema.safeParse(p.action);
-    if (!parsed.success) {
-      log.error("Invalid action payload", { userId: p.userId, error: parsed.error });
-      return;
-    }
-
-    await executeAction(p.userId, parsed.data, p.context);
-  }
-
-  if (job.type === "adaptive_optimization") {
-    const p = job.payload as {
-      agentId: string;
-      userId: string;
-      callId: string;
-      score: number;
-      breakdown: any;
-    };
-
-    const [call] = await drizzle
-      .select({ transcript: schema.callLogs.transcript })
-      .from(schema.callLogs)
-      .where(eq(schema.callLogs.id, BigInt(p.callId)))
-      .limit(1);
-    if (!call?.transcript) return;
-
-    const lesson = await claudeBrain.synthesizeLesson({
-      transcript: call.transcript,
-      score: p.score,
-      breakdown: p.breakdown,
-    });
-
-    if (lesson) {
-      await drizzle
-        .insert(schema.agentLessons)
-        .values({
-          agentId: p.agentId,
-          userId: p.userId,
-          lesson: lesson,
-          sourceCallId: p.callId,
-          source: "adaptive_tuning",
-        })
-        .onConflictDoNothing({
-          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
-        });
-      log.info("Adaptive optimization: new lesson synthesized", { agentId: p.agentId, lesson });
-    }
-  }
-
-  if (job.type === "purge_old_data") {
-    const p = job.payload as { user_id: string; retention_days?: number };
-    if (!p.user_id) {
-      log.warn("purge_old_data job missing user_id", { jobId: job.id });
-      return;
-    }
-    const retentionDays = typeof p.retention_days === "number" ? p.retention_days : 365;
-    try {
-      // Use parameterized query to prevent SQL injection
-      const result = await drizzle.execute(
-        sql`SELECT wireline_purge_old_data(${p.user_id}, ${retentionDays})`,
-      );
-      log.info("purge_old_data job completed", {
-        jobId: job.id,
-        user_id: p.user_id,
-        retention_days: retentionDays,
-        result,
-      });
-    } catch (error: any) {
-      log.error("purge_old_data job failed", {
-        jobId: job.id,
-        user_id: p.user_id,
-        error: error.message,
-      });
-      throw new Error(error.message);
-    }
-  }
-
-  if (job.type === "purge_deleted_account") {
-    const p = job.payload as { user_id: string; queue_id?: string };
-    if (!p.user_id) {
-      log.warn("purge_deleted_account job missing user_id", { jobId: job.id });
-      return;
-    }
-
-    // Guard: the queue row must still be 'pending' AND past its
-    // scheduled_purge_at. If the user cancelled in the grace window, skip.
-    let queueRow: any = null;
-    if (p.queue_id) {
-      const [data] = await drizzle
-        .select()
-        .from(schema.deletionQueue)
-        .where(eq(schema.deletionQueue.id, p.queue_id))
-        .limit(1);
-      queueRow = data;
-    } else {
-      const [data] = await drizzle
-        .select()
-        .from(schema.deletionQueue)
-        .where(
-          and(
-            eq(schema.deletionQueue.userId, p.user_id),
-            eq(schema.deletionQueue.status, "pending"),
-          ),
-        )
-        .limit(1);
-      queueRow = data;
-    }
-
-    if (!queueRow || queueRow.status !== "pending") {
-      log.info("purge_deleted_account skipped — no pending queue row", {
-        jobId: job.id,
-        user_id: p.user_id,
-      });
-      return;
-    }
-    if (new Date(queueRow.scheduledPurgeAt).getTime() > Date.now()) {
-      log.info("purge_deleted_account skipped — still within grace window", {
-        jobId: job.id,
-        user_id: p.user_id,
-        scheduled_purge_at: queueRow.scheduledPurgeAt,
-      });
-      return;
-    }
-
-    const result = await purgeAccount(p.user_id, { db: drizzle, log });
-    if (!result.ok) {
-      log.error("purge_deleted_account failed", {
-        jobId: job.id,
-        user_id: p.user_id,
-        error: result.error,
-      });
-      throw new Error(result.error ?? "account purge failed");
-    }
-
-    // Audit BEFORE marking the queue row purged so the audit row is still
-    // owned by a (now-deleted) user — historical record of the action.
-    void auditLogger
-      .logAccountDeletion({
-        userId: p.user_id,
-        tablesTouched: result.tablesTouched,
-        ip: queueRow.ip ?? undefined,
-      })
-      .catch(() => {});
-
-    // Mark the queue row purged. The FK ON DELETE CASCADE from auth.users
-    // would have already removed it when the auth row was deleted, so this
-    // update may affect zero rows — that's fine.
-    await drizzle
-      .update(schema.deletionQueue)
-      .set({ status: "purged", purgedAt: new Date() })
-      .where(eq(schema.deletionQueue.id, queueRow.id));
-
-    log.info("purge_deleted_account completed", {
-      jobId: job.id,
-      user_id: p.user_id,
-      tables_touched: result.tablesTouched.length,
-    });
-  }
-
-  if (job.type === "proactive_lead_enrichment") {
-    const p = job.payload as { userId: string; customerNumber: string };
-
-    log.info("Starting proactive lead enrichment", {
-      userId: p.userId,
-      customerNumber: p.customerNumber,
-    });
-
-    try {
-      const [enrichment, calls, emails] = await Promise.all([
-        apolloEnrich(p.customerNumber, p.userId),
-        drizzle
-          .select({ summary: schema.callLogs.summary, createdAt: schema.callLogs.createdAt })
-          .from(schema.callLogs)
-          .where(eq(schema.callLogs.customerNumber, p.customerNumber))
-          .orderBy(desc(schema.callLogs.createdAt))
-          .limit(3),
-        drizzle
-          .select({
-            summary: schema.emailThreads.summary,
-            lastMessageAt: schema.emailThreads.lastMessageAt,
-          })
-          .from(schema.emailThreads)
-          .where(eq(schema.emailThreads.customerEmail, p.customerNumber))
-          .orderBy(desc(schema.emailThreads.lastMessageAt))
-          .limit(3),
-      ]);
-
-      let summaryText = "";
-      if (calls?.length)
-        summaryText +=
-          "Recent Calls: " + calls.map((c) => c.summary || "No summary").join("; ") + ". ";
-      if (emails?.length)
-        summaryText +=
-          "Recent Emails: " + emails.map((e) => e.summary || "No summary").join("; ") + ". ";
-
-      if (enrichment) {
-        await drizzle
-          .insert(schema.leadDossiers)
-          .values({
-            userId: p.userId,
-            customerNumber: p.customerNumber,
-            fullName:
-              enrichment.first_name && enrichment.last_name
-                ? `${enrichment.first_name} ${enrichment.last_name}`
-                : undefined,
-            jobTitle: enrichment.title,
-            company: enrichment.company,
-            linkedInUrl: enrichment.linkedin_url,
-            metadata: enrichment,
-            interactionSummary: summaryText || "No prior interactions found.",
-          })
-          .onConflictDoUpdate({
-            target: [schema.leadDossiers.userId, schema.leadDossiers.customerNumber],
-            set: {
-              fullName:
-                enrichment.first_name && enrichment.last_name
-                  ? `${enrichment.first_name} ${enrichment.last_name}`
-                  : undefined,
-              jobTitle: enrichment.title,
-              company: enrichment.company,
-              linkedInUrl: enrichment.linkedin_url,
-              metadata: enrichment,
-              interactionSummary: summaryText || "No prior interactions found.",
-            },
-          });
-
-        log.info("Lead enrichment successful", {
-          userId: p.userId,
-          customerNumber: p.customerNumber,
-          company: enrichment.company,
-        });
-
-        // Sync to CRM
-        const crmService = new CRMService(p.userId);
-        void crmService
-          .syncEnrichedLead({
-            customerNumber: p.customerNumber,
-            fullName:
-              enrichment.first_name && enrichment.last_name
-                ? `${enrichment.first_name} ${enrichment.last_name}`
-                : undefined,
-            jobTitle: enrichment.title,
-            company: enrichment.company,
-            linkedInUrl: enrichment.linkedin_url,
-            leadScore: 85, // Default lead score for highly enriched lead
-          })
-          .catch((e) => log.warn("CRM enrichment sync failed", { error: getErrorMessage(e) }));
-      } else {
-        log.info("No enrichment data found for lead", { customerNumber: p.customerNumber });
-      }
-    } catch (error) {
-      log.error("Proactive lead enrichment failed", { error: getErrorMessage(error) });
-    }
-  }
-
-  if (job.type === "autonomous_prospecting") {
-    const p = job.payload as { userId: string };
-    const [settings] = await drizzle
-      .select()
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, p.userId))
-      .limit(1);
-
-    if (!settings?.prospectingEnabled) {
-      log.info("Prospecting disabled for user", { userId: p.userId });
-      await persistJobResult(job.id, {
-        skipped: true,
-        reason: "prospecting_disabled",
-        leadsFound: 0,
-        leadsAdded: 0,
-      });
-      return;
-    }
-
-    const apolloReady = apolloPlatformConfigured();
-    log.info("Starting autonomous prospecting", {
-      userId: p.userId,
-      titles: settings.targetTitles,
-      apolloReady,
-    });
-
-    if (!apolloReady) {
-      await persistJobResult(job.id, {
-        skipped: true,
-        reason: "apollo_not_configured",
-        leadsFound: 0,
-        leadsAdded: 0,
-        hint: "Connect Apollo in Settings → Integrations or set APOLLO_API_KEY on the platform.",
-      });
-      return;
-    }
-
-    const leads = await apolloSearch(
-      {
-        titles: (settings.targetTitles as string[]) || [],
-        industries: (settings.targetIndustries as string[]) || [],
-        states: (settings.targetStates as string[]) || [],
-        employee_ranges: (settings.targetEmployeeRanges as string[]) || [],
-        limit: 10,
-      },
-      p.userId,
-    );
-
-    let added = 0;
-    for (const lead of leads) {
-      try {
-        await drizzle.insert(schema.outboundLeads).values({
-          userId: p.userId,
-          customerName: `${lead.first_name} ${lead.last_name}`,
-          customerNumber: lead.phone,
-          email: lead.email,
-          status: "New",
-          context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`,
-        });
-        added++;
-      } catch {
-        void 0; /* ignore duplicate lead / constraint violations */
-      }
-    }
-
-    await persistJobResult(job.id, {
-      leadsFound: leads.length,
-      leadsAdded: added,
-      apolloReady: true,
-    });
-
-    log.info("Autonomous prospecting complete", {
-      userId: p.userId,
-      leadsFound: leads.length,
-      leadsAdded: added,
-    });
-  }
-
-  if (job.type === "knowledge_from_url") {
-    const p = job.payload as {
-      userId: string;
-      url: string;
-      agentContext?: string;
-      maxEntries?: number;
-      maxPages?: number;
-    };
-    if (!claudeBrain.isBrainAvailable()) {
-      throw new Error("Claude is not configured — cannot crawl URL for knowledge.");
-    }
-    const result = await claudeBrain.knowledgeFromUrl({
-      url: p.url,
-      agentContext: p.agentContext,
-      maxEntries: p.maxEntries ?? 12,
-      maxPages: p.maxPages ?? 5,
-    });
-    await persistJobResult(job.id, result as unknown as Record<string, unknown>);
-  }
-
-  if (job.type === "vapi_webhook") {
-    const { processVapiWebhookJob } = await import("./vapi-webhook-queue");
-    const result = await processVapiWebhookJob(job);
-    await persistJobResult(job.id, {
-      webhookType: result.webhookType,
-      vapiCallId: result.vapiCallId ?? null,
-    });
-    return;
-  }
-
-  if (job.type === "campaign_dial") {
-    const p = job.payload as { userId: string; campaignId?: string };
-    if (!p.userId || !p.campaignId) {
-      log.error("campaign_dial job missing campaignId", { jobId: job.id, payload: p });
-      throw new Error("campaign_dial job requires userId and campaignId");
-    }
-    const { CampaignDialerService } = await import("../services/campaign-dialer");
-    const dialer = new CampaignDialerService();
-    await dialer.processCampaignById(p.userId, p.campaignId);
-  }
-
-  if (job.type === "cadence_tick") {
-    const { tickDueCadenceRuns } = await import("./cadence-engine");
-    const summary = await tickDueCadenceRuns({ limit: 100 });
-    log.info("cadence_tick processed", summary);
-  }
-
-  if (job.type === "auto_qa_score") {
-    const p = job.payload as { callLogId: number | string; userId: string };
-    if (!claudeBrain.isBrainAvailable()) {
-      log.warn("auto_qa_score skipped — claude unavailable", { callLogId: p.callLogId });
-      return;
-    }
-
-    // Safe-parse the callLogId — BigInt() throws on malformed input which
-    // would crash the worker. Skip the job cleanly instead.
-    let callLogIdBig: bigint;
-    try {
-      callLogIdBig = BigInt(p.callLogId as any);
-    } catch {
-      log.warn("auto_qa_score skipped — unparseable callLogId", { callLogId: p.callLogId });
-      return;
-    }
-
-    const [call] = await drizzle
-      .select({
-        id: schema.callLogs.id,
-        agentId: schema.callLogs.agentId,
-        summary: schema.callLogs.summary,
-        transcript: schema.callLogs.transcript,
-        sentiment: schema.callLogs.sentiment,
-        direction: schema.callLogs.direction,
-        durationSeconds: schema.callLogs.durationSeconds,
-        qaScore: schema.callLogs.qaScore,
-        agentRole: schema.agents.role,
-      })
-      .from(schema.callLogs)
-      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-      .where(eq(schema.callLogs.id, callLogIdBig))
-      .limit(1);
-
-    if (!call || !call.transcript) {
-      log.info("auto_qa_score skipped — no call or transcript", { callLogId: p.callLogId });
-      return;
-    }
-
-    // Idempotency: if the call already has a QA score (e.g. Vapi retried
-    // end-of-call-report and the job ran twice), skip the second pass to
-    // save a Claude API call per duplicate.
-    if (call.qaScore != null) {
-      log.info("auto_qa_score skipped — already scored", { callLogId: p.callLogId });
-      return;
-    }
-
-    // Cost gate: skip auto-QA on calls under 30s — those are almost always
-    // unreachable / voicemail / wrong-number and carry no coachable
-    // signal. Saves a Claude call per dead-call without losing learning.
-    if ((call.durationSeconds || 0) < 30) {
-      log.info("auto_qa_score skipped — call too short for useful coaching", {
-        callLogId: p.callLogId,
-        durationSeconds: call.durationSeconds,
-      });
-      return;
-    }
-
-    try {
-      const breakdown = await claudeBrain.qaScore({
-        direction: (call.direction || "inbound") as "inbound" | "outbound",
-        agentRole: call.agentRole || undefined,
-        summary: call.summary || "",
-        transcript: call.transcript || "",
-        sentiment: call.sentiment || "neutral",
-        durationSeconds: call.durationSeconds || 0,
-      });
-      const QA_DIMS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
-      const score = Math.min(
-        100,
-        Math.max(
-          0,
-          QA_DIMS.reduce((s, d) => s + (Number((breakdown as any)[d]) || 0), 0),
-        ),
-      );
-
-      const updates: any = { qaScore: score, qaBreakdown: breakdown as any };
-      if ((breakdown as any)?.coaching_note)
-        updates.coachingNote = (breakdown as any).coaching_note;
-      await drizzle
-        .update(schema.callLogs)
-        .set(updates)
-        .where(eq(schema.callLogs.id, callLogIdBig));
-
-      if (score < 60 && call.agentId) {
-        await enqueue(drizzle, {
-          userId: p.userId,
-          type: "adaptive_optimization",
-          payload: { agentId: call.agentId, callId: String(call.id), score, breakdown },
-        });
-      }
-
-      log.info("auto_qa_score completed", { callLogId: p.callLogId, score });
-    } catch (err: any) {
-      log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
-    }
-  }
-
-  if (job.type === "sweep_orphan_supervisor_subs") {
-    // Delete any supervisor_subscriptions row that violates the
-    // ownership invariant the route enforces at insert time: the
-    // subscription's user_id MUST match the user_id of the call_log row
-    // the call_id points at. Catches both:
-    //   - rows whose call_id doesn't reference any call at all
-    //     (audit probes, dev testing)
-    //   - rows whose call_id points at ANOTHER tenant's call (the
-    //     cross-tenant snoop case the route now blocks)
-    // The NOT EXISTS subquery requires both call_id match AND user_id
-    // match — single-table same-row check.
-    try {
-      const result: any = await drizzle.execute(sql`
-        DELETE FROM wireline_supervisor_subscriptions s
-        WHERE NOT EXISTS (
-          SELECT 1
-          FROM wireline_call_logs c
-          WHERE c.vapi_call_id = s.call_id
-            AND c.user_id = s.user_id
-        )
-        RETURNING s.id
-      `);
-      const deleted = (result?.rowCount ?? result?.rows?.length ?? 0) | 0;
-      log.info("sweep_orphan_supervisor_subs completed", { deleted });
-    } catch (err: any) {
-      // Re-throw after logging so the outer claim/fail/retry loop in
-      // job-queue marks the job failed and dead-letters/retries it.
-      // Without the throw, the job silently completes successfully
-      // even when the DELETE crashed, masking real DB issues from the
-      // queue health metrics.
-      log.error("sweep_orphan_supervisor_subs failed", { error: err?.message });
-      throw err;
-    }
-  }
-
-  if (job.type === "trial_ending_soon_email") {
-    const p = job.payload as { userId: string; daysLeft: number };
-    try {
-      const [userRow] = await drizzle
-        .select({ email: schema.users.email })
-        .from(schema.users)
-        .where(eq(schema.users.id, p.userId))
-        .limit(1);
-      if (!userRow?.email) return;
-      const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
-      const { sendTrialEndingSoonEmail } = await import("./email-service");
-      const result = await sendTrialEndingSoonEmail({
-        to: userRow.email,
-        daysLeft: p.daysLeft ?? 3,
-        checkoutUrl: `${appUrl}/pricing`,
-      });
-      if (!result.ok) {
-        log.warn("trial_ending_soon_email send failed", { userId: p.userId, error: result.error });
-      } else {
-        log.info("trial_ending_soon_email sent", { userId: p.userId, daysLeft: p.daysLeft });
-      }
-    } catch (err: any) {
-      log.error("trial_ending_soon_email job failed", { userId: p.userId, error: err?.message });
-      throw err;
-    }
-  }
-
-  if (job.type === "demo_line_canary") {
-    const { runDemoLineCanary } = await import("./demo-line-canary");
-    const result = await runDemoLineCanary();
-    await drizzle
-      .update(schema.jobs)
-      .set({
-        result: { allHealthy: result.allHealthy, timestamp: result.timestamp },
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.jobs.id, job.id));
-    log.info("demo_line_canary job completed", {
-      jobId: job.id,
-      allHealthy: result.allHealthy,
-      alertSent: result.alertSent,
-      unhealthy: result.lines.filter((l) => !l.numberOk || !l.assistantOk).length,
-    });
-    if (!result.allHealthy && !result.alertSent) {
-      // If alert failed to send, let the job retry
-      throw new Error("Canary detected failures but could not deliver alert");
-    }
-  }
-
-  if (job.type === "margin_at_risk_alert") {
-    const { countAtRiskTenants, listAtRiskTenants } = await import("./tenant-economics");
-    const { sendEmail } = await import("./email-service");
-    const count = await countAtRiskTenants();
-    if (count === 0) return;
-    const top = await listAtRiskTenants(5);
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (!ownerEmail) return;
-    const lines = top
-      .map(
-        (t) =>
-          `• ${t.user_id.slice(0, 8)}… plan=${t.plan_id ?? "—"} margin=${t.gross_margin_pct ?? "n/a"}% overage=${t.overage_minutes}m`,
-      )
-      .join("\n");
-    await sendEmail({
-      to: ownerEmail,
-      subject: `[Wireline] ${count} tenant(s) at margin risk`,
-      text: `${count} tenant(s) are below the margin safety threshold this month.\n\n${lines}`,
-      html: `<p>${count} tenant(s) are below the margin safety threshold this month.</p><pre>${lines}</pre>`,
-    });
+    throw error;
   }
 }
 
-/**
- * Initializes the background job worker.
- * Returns a stop function.
- */
+async function handlePostCallArtifact(job: JobRow): Promise<void> {
+  const payload = job.payload as unknown as PostCallArtifactInput;
+  const userId = typeof payload.userId === "string" ? payload.userId : "";
+  if (!userId || userId !== String((job as unknown as { userId?: string }).userId || userId)) {
+    throw new Error("Artifact job is missing a valid tenant owner.");
+  }
+
+  const format = validateFormat(payload.format);
+  const destination = validateDestination(payload.destination);
+  const artifact = await withRuntimeReservation(job, userId, format, () =>
+    generateAndStorePostCallArtifact({ ...payload, format, destination }),
+  );
+
+  await persistJobResult(job.id, {
+    provider: artifact.provider,
+    external_id: artifact.externalId,
+    external_url: artifact.externalUrl,
+    file_name: artifact.fileName,
+    mime_type: artifact.mimeType,
+    size_bytes: artifact.sizeBytes,
+    openai_response_id: artifact.openaiResponseId,
+  });
+}
+
+async function handleScheduledReport(job: JobRow): Promise<void> {
+  const payload = job.payload as unknown as ScheduledReportJobPayload;
+  const userId = typeof payload.userId === "string" ? payload.userId : "";
+  if (!userId) throw new Error("Scheduled report job is missing a tenant owner.");
+  const format = validateFormat(payload.format);
+  const destination = validateDestination(payload.destination);
+
+  const result = await withRuntimeReservation(job, userId, format, () =>
+    generateScheduledOperatingReport({ ...payload, format, destination }),
+  );
+  await persistJobResult(job.id, result as unknown as Record<string, unknown>);
+}
+
+/** Global durable-job dispatcher including launch reporting extensions. */
+export async function handleJob(job: JobRow): Promise<void> {
+  if (job.type === "post_call_artifact") {
+    await handlePostCallArtifact(job);
+    return;
+  }
+  if (job.type === "scheduled_report") {
+    await handleScheduledReport(job);
+    return;
+  }
+  await handleBaseJob(job as never);
+}
+
+/** Initializes the extended worker outside Vercel serverless. */
 export function initJobWorker(opts?: { dbReady?: boolean }) {
   if (process.env.VERCEL === "1") return null;
   if (opts?.dbReady === false) {
@@ -951,9 +168,9 @@ export function initJobWorker(opts?: { dbReady?: boolean }) {
 
   return startWorker(drizzle, handleJob, {
     pollIntervalMs: 10_000,
-    onError: (err) =>
+    onError: (error) =>
       log.error("job worker poll failed", {
-        error: err.message,
+        error: error.message,
         hint: "Check POSTGRES_URL and that wireline_jobs exists",
       }),
   });
