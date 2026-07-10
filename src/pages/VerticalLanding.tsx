@@ -92,7 +92,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   };
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16 sm:pt-20">
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -100,16 +100,16 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-12 pt-12 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="mx-auto flex max-w-3xl flex-col items-center">
+      <section className="mx-auto max-w-7xl px-5 pb-14 pt-10 text-center sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
+        <div className="mx-auto flex max-w-4xl flex-col items-center">
           <p className="wl-stitch-eyebrow">{isPersonal ? "Personal call help" : cfg.eyebrow}</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">{cfg.headline}</h1>
-          <p className="mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
+          <p className="mt-5 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
             {isPersonal
               ? "Offload the calls that follow you around."
               : "Every important call gets a clear next step."}
           </p>
-          <div className="mt-7 flex w-full max-w-md flex-col justify-center gap-3 sm:flex-row">
+          <div className="mt-7 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row">
             <CtaLink
               href={cfg.primaryCta.href}
               className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
@@ -137,7 +137,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       </section>
 
       <section className="border-y border-border bg-card px-5 py-7 sm:px-8 sm:py-10">
-        <div className="mx-auto grid max-w-3xl justify-items-center gap-4 text-center">
+        <div className="mx-auto grid max-w-4xl justify-items-center gap-4 text-center">
           <div className="wl-stitch-stat-box w-fit font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
             <span className="wl-stitch-status-dot" aria-hidden />
             <strong className="text-foreground">{cfg.statValue}</strong>
