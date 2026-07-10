@@ -15,36 +15,39 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
-    // CEO-first positioning must make the default feel like one capable phone employee,
-    // not a menu of departments the customer needs to configure before value.
-    expect(BRAND_SYSTEM.northStar).toBe("AI phone employees for the work that grows your business.");
-    expect(BRAND_SYSTEM.proofLoop).toEqual(["Build", "Train", "Launch", "Improve"]);
+    // Customer-facing positioning must feel like the owner's best employee,
+    // not a threatening executive title or a menu of departments to configure.
+    expect(BRAND_SYSTEM.northStar).toBe(
+      "The best employee you've ever had, for next to nothing.",
+    );
+    expect(BRAND_SYSTEM.defaultRole).toBe("Wireline Operator");
+    expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
     expect(BRAND_SYSTEM.toneRules).toContain("Lead with business outcomes before AI mechanics.");
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Make the default feel like the owner's best employee, not another executive title.",
+    );
     expect(MARKETING_VOICE.headline).toBe(BRAND_SYSTEM.northStar);
-    expect(MARKETING_VOICE.subline).toContain("trained operator");
+    expect(MARKETING_VOICE.subline).toContain("trained AI employee");
     expect(MARKETING_VOICE.subline).toContain("answers");
-    expect(MARKETING_VOICE.subline).toContain("researches");
+    expect(MARKETING_VOICE.subline).toContain("sells");
+    expect(MARKETING_VOICE.subline).toContain("markets");
     expect(MARKETING_VOICE.subline).toContain("revives stale leads");
     expect(MARKETING_VOICE.subline).toContain("reports every outcome");
-    expect(MARKETING_VOICE.subline).toContain("included number");
-    expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Improve"]);
+    expect(MARKETING_VOICE.subline).toContain("owner-controlled rules");
+    expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);
 
-    expect(OUTBOUND_WEDGE.headline).toBe("AI phone employees for growth work.");
+    expect(OUTBOUND_WEDGE.headline).toBe("Your best employee for growth work.");
     expect(OUTBOUND_WEDGE.subline).toContain("answers");
     expect(OUTBOUND_WEDGE.subline).toContain("researches");
-    expect(OUTBOUND_WEDGE.subline).toContain("books");
+    expect(OUTBOUND_WEDGE.subline).toContain("sells");
+    expect(OUTBOUND_WEDGE.subline).toContain("markets");
     expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
     expect(OUTBOUND_WEDGE.subline).toContain("included number");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
     expect(AGENT_NUMBER_PROMISE).toContain("Every included Wireline phone employee");
     expect(AGENT_NUMBER_PROMISE).toContain("included number");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
-    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual([
-      "Answer",
-      "Research",
-      "Follow up",
-      "Sync",
-    ]);
+    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Sell", "Follow up", "Sync"]);
   });
 
   it("keeps the canonical operating loop across public buying surfaces", () => {
@@ -94,6 +97,7 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).not.toContain("service estimate");
     expect(landing).not.toContain("Start booking them");
+    expect(landing).not.toContain("Wireline CEO");
   });
 
   it("keeps the free-number promise backed by included capacity", () => {
