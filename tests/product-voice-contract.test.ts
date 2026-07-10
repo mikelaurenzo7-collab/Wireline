@@ -1,26 +1,32 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { AGENT_DIRECTION_MODES, MARKETING_VOICE, OUTBOUND_WEDGE } from "../src/lib/product-copy";
+import {
+  AGENT_DIRECTION_MODES,
+  MARKETING_VOICE,
+  OUTBOUND_WEDGE,
+  PROFIT_AGENT_NUMBER_PROMISE,
+} from "../src/lib/product-copy";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
-    expect(MARKETING_VOICE.headline).toBe("AI phone employees that turn calls into sales.");
-    expect(MARKETING_VOICE.subline).toContain("qualify more leads");
-    expect(MARKETING_VOICE.subline).toContain("book more appointments");
-    expect(MARKETING_VOICE.subline).toContain("without adding payroll");
-    expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Improve"]);
+    expect(MARKETING_VOICE.headline).toBe("AI profit agents that actually call.");
+    expect(MARKETING_VOICE.subline).toContain("Book more appointments");
+    expect(MARKETING_VOICE.subline).toContain("revive stale leads");
+    expect(MARKETING_VOICE.subline).toContain("included number for every included agent");
+    expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Profit"]);
 
-    expect(OUTBOUND_WEDGE.headline).toBe(
-      "AI phone employees for the work that grows your business.",
-    );
-    expect(OUTBOUND_WEDGE.subline).toContain("lead response");
-    expect(OUTBOUND_WEDGE.subline).toContain("support overflow");
-    expect(OUTBOUND_WEDGE.loop).toEqual(["Leads", "Qualify", "Book", "Log"]);
-    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Route", "Schedule", "Log"]);
+    expect(OUTBOUND_WEDGE.headline).toBe("AI profit agents that actually call.");
+    expect(OUTBOUND_WEDGE.subline).toContain("book appointments");
+    expect(OUTBOUND_WEDGE.subline).toContain("promote offers");
+    expect(OUTBOUND_WEDGE.subline).toContain("without commission");
+    expect(OUTBOUND_WEDGE.loop).toEqual(["List", "Pitch", "Call", "Profit"]);
+    expect(PROFIT_AGENT_NUMBER_PROMISE).toContain("Every included Wireline agent");
+    expect(PROFIT_AGENT_NUMBER_PROMISE).toContain("included number");
+    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Book", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow up", "Sync"]);
   });
 
@@ -58,7 +64,7 @@ describe("product voice cohesion", () => {
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
 
-  it("keeps public landing examples broad across outbound, inbound, and hybrid buyers", () => {
+  it("keeps public landing examples broad across profit, inbound, and hybrid buyers", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("Lead response");
     expect(landing).toContain("Quote follow-up");
@@ -72,6 +78,18 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).not.toContain("service estimate");
     expect(landing).not.toContain("Start booking them");
+  });
+
+  it("keeps the free-number promise backed by included capacity", () => {
+    const catalog = read("src/lib/plan-catalog.ts");
+    const billing = read("src/pages/BillingSettings.tsx");
+    expect(catalog).toContain("Every included agent includes one dedicated number");
+    expect(catalog).toContain("max_agents: 4");
+    expect(catalog).toContain("included_phone_numbers: 4");
+    expect(catalog).toContain("max_agents: 8");
+    expect(catalog).toContain("included_phone_numbers: 8");
+    expect(catalog).toContain("One active profit agent with one included number");
+    expect(billing).toContain("plan.included_phone_numbers");
   });
 
   it("keeps public entry paths broad instead of defaulting to home services", () => {
