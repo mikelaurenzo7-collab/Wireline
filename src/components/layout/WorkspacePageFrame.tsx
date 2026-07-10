@@ -7,15 +7,15 @@ export type WorkspacePageMode = "standard" | "narrow" | "operate";
 type WorkspacePageFrameProps = {
   children: ReactNode;
   className?: string;
-  /** Page chrome mode — standard 980px, narrow 700px, operate full-bleed rail. */
+  /** Page chrome mode — standard 1080px, narrow 860px, operate full-bleed rail. */
   mode?: WorkspacePageMode;
   /** @deprecated Use mode="narrow" */
   narrow?: boolean;
 };
 
 const MODE_MAX_WIDTH: Record<WorkspacePageMode, string> = {
-  standard: "max-w-[980px]",
-  narrow: "max-w-[700px]",
+  standard: "max-w-[1080px]",
+  narrow: "max-w-[860px]",
   operate: "max-w-none",
 };
 
