@@ -71,11 +71,11 @@ export default function MarketingHero({
             </span>
           </div>
 
-          <h1 className="mt-6 max-w-[18ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(3rem,6.4vw,6.4rem)] font-normal uppercase leading-[.9] tracking-[-.068em] text-foreground md:max-w-[21ch] lg:max-w-[18.5ch]">
+          <h1 className="mt-6 max-w-[18.75ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.85rem,6.05vw,6.1rem)] font-bold leading-[.92] tracking-[-.055em] text-foreground md:max-w-[21ch] lg:max-w-[18.75ch]">
             {title}
           </h1>
 
-          <p className="mt-6 max-w-[44rem] text-pretty text-[1.05rem] leading-8 text-muted-foreground sm:text-[1.18rem]">
+          <p className="mt-6 max-w-[48rem] text-pretty text-[1.0625rem] leading-8 text-muted-foreground sm:text-[1.2rem] sm:leading-[1.62]">
             {description}
           </p>
 
@@ -143,7 +143,7 @@ export default function MarketingHero({
             {visual ?? (
               <>
                 <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">{visualEyebrow}</p>
-                <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-normal leading-[.98] tracking-[-.045em] text-foreground">
+                <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-bold leading-[.98] tracking-[-.045em] text-foreground">
                   {visualTitle}
                 </h2>
                 <p className="mt-4 text-[15px] leading-7 text-muted-foreground">{visualBody}</p>
@@ -167,7 +167,7 @@ export default function MarketingHero({
               <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                 {metrics.map((metric) => (
                   <div key={metric.label} className="rounded-[14px] border border-border bg-card/70 p-4">
-                    <p className="font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-.04em] text-foreground">
+                    <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
                       {metric.value}
                     </p>
                     <p className="mt-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
