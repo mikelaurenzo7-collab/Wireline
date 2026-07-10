@@ -2,9 +2,7 @@
 import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
-import {
-  handleJob as handleBaseJob,
-} from "./job-worker-base";
+import { handleJob as handleBaseJob } from "./job-worker-base";
 import {
   ARTIFACT_RUNTIME_RESERVE_USD,
   refundRuntimeUsage,
@@ -16,6 +14,7 @@ import {
   type PostCallArtifactInput,
 } from "./openai-post-call-artifact";
 import {
+  currentScheduledReportPreferences,
   generateScheduledOperatingReport,
   type ScheduledReportJobPayload,
 } from "./scheduled-report-service";
@@ -31,6 +30,11 @@ const ARTIFACT_DESTINATIONS = new Set(["google_drive", "onedrive"]);
 function attemptNumber(job: JobRow): number {
   const value = Number((job as unknown as { attempts?: number }).attempts || 1);
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
+}
+
+function jobOwnerId(job: JobRow): string {
+  const shaped = job as unknown as { userId?: string; user_id?: string };
+  return String(shaped.userId || shaped.user_id || "");
 }
 
 function executionReference(job: JobRow): string {
@@ -58,11 +62,21 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
     .where(eq(schema.jobs.id, jobId));
 }
 
+async function hasPersistedResult(jobId: string): Promise<boolean> {
+  const [row] = await drizzle
+    .select({ result: schema.jobs.result })
+    .from(schema.jobs)
+    .where(eq(schema.jobs.id, jobId))
+    .limit(1);
+  return Boolean(row?.result && typeof row.result === "object" && Object.keys(row.result).length > 0);
+}
+
 async function withRuntimeReservation<T>(
   job: JobRow,
   userId: string,
   format: RuntimeArtifactFormat,
   operation: () => Promise<T>,
+  refundWhen?: (result: T) => boolean,
 ): Promise<T> {
   const amountUsd = ARTIFACT_RUNTIME_RESERVE_USD[format];
   const referenceId = executionReference(job);
@@ -86,7 +100,23 @@ async function withRuntimeReservation<T>(
   }
 
   try {
-    return await operation();
+    const result = await operation();
+    if (refundWhen?.(result) && !reservation.alreadyReserved) {
+      await refundRuntimeUsage({
+        userId,
+        amountUsd,
+        referenceId,
+        reason: `${format.toUpperCase()} artifact skipped before provider work`,
+        metadata: {
+          job_id: job.id,
+          job_type: job.type,
+          attempt: attemptNumber(job),
+          format,
+          skipped: true,
+        },
+      });
+    }
+    return result;
   } catch (error) {
     // A unique reference is used for every attempt, so an unsuccessful attempt
     // can be refunded without giving a later retry a free reservation.
@@ -109,9 +139,12 @@ async function withRuntimeReservation<T>(
 }
 
 async function handlePostCallArtifact(job: JobRow): Promise<void> {
+  if (await hasPersistedResult(job.id)) return;
+
   const payload = job.payload as unknown as PostCallArtifactInput;
   const userId = typeof payload.userId === "string" ? payload.userId : "";
-  if (!userId || userId !== String((job as unknown as { userId?: string }).userId || userId)) {
+  const ownerId = jobOwnerId(job);
+  if (!userId || !ownerId || userId !== ownerId) {
     throw new Error("Artifact job is missing a valid tenant owner.");
   }
 
@@ -133,14 +166,28 @@ async function handlePostCallArtifact(job: JobRow): Promise<void> {
 }
 
 async function handleScheduledReport(job: JobRow): Promise<void> {
+  if (await hasPersistedResult(job.id)) return;
+
   const payload = job.payload as unknown as ScheduledReportJobPayload;
   const userId = typeof payload.userId === "string" ? payload.userId : "";
-  if (!userId) throw new Error("Scheduled report job is missing a tenant owner.");
+  const ownerId = jobOwnerId(job);
+  if (!userId || !ownerId || userId !== ownerId) {
+    throw new Error("Scheduled report job is missing a valid tenant owner.");
+  }
+
   const format = validateFormat(payload.format);
   const destination = validateDestination(payload.destination);
+  if (!(await currentScheduledReportPreferences({ ...payload, format, destination }))) {
+    await persistJobResult(job.id, { skipped: true, reason: "schedule_changed" });
+    return;
+  }
 
-  const result = await withRuntimeReservation(job, userId, format, () =>
-    generateScheduledOperatingReport({ ...payload, format, destination }),
+  const result = await withRuntimeReservation(
+    job,
+    userId,
+    format,
+    () => generateScheduledOperatingReport({ ...payload, format, destination }),
+    (value) => Boolean((value as { skipped?: boolean }).skipped),
   );
   await persistJobResult(job.id, result as unknown as Record<string, unknown>);
 }

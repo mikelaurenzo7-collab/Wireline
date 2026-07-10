@@ -59,7 +59,6 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
   const activeSubscription =
     !!sub?.plan && (sub.status === "active" || sub.status === "trialing");
   const liveVoiceEnabled = activeSubscription && planId !== "personal";
-  const enterpriseContract = liveVoiceEnabled && planId === "enterprise";
   const minuteRate = plan?.overage_per_min_usd ?? 0.2;
   const includedMinutes = Math.max(0, plan?.voice_minutes_monthly ?? 0);
   const includedUsed = Number(usage?.used ?? 0);
@@ -70,9 +69,7 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
   const sufficient =
     liveVoiceEnabled &&
     completionGraceDue === 0 &&
-    (enterpriseContract ||
-      includedRemaining >= MIN_BILLABLE_MINUTES_BUFFER ||
-      balance >= requiredUsd);
+    (includedRemaining >= MIN_BILLABLE_MINUTES_BUFFER || balance >= requiredUsd);
 
   return {
     plan_id: planId,

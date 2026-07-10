@@ -63,12 +63,18 @@ function slug(value: string | null | undefined, fallback: string): string {
   );
 }
 
+function recordKey(input: PostCallArtifactInput): string {
+  const safe = slug(input.callLogId, "record");
+  return safe.length > 18 ? safe.slice(-18) : safe;
+}
+
 function fileName(input: PostCallArtifactInput): string {
   const date = new Date().toISOString().slice(0, 10);
+  const key = recordKey(input);
   if (input.purpose === "operating_report") {
-    return `Wireline-${date}-${slug(input.reportTitle, "Operating-Report")}.${input.format}`;
+    return `Wireline-${date}-${slug(input.reportTitle, "Operating-Report")}-${key}.${input.format}`;
   }
-  return `Wireline-${date}-${slug(input.customerName || input.customerNumber, "customer")}-${input.outcomeTag}.${input.format}`;
+  return `Wireline-${date}-${slug(input.customerName || input.customerNumber, "customer")}-${input.outcomeTag}-${key}.${input.format}`;
 }
 
 function formatDirection(input: PostCallArtifactInput): string {
@@ -208,9 +214,7 @@ export async function generateAndStorePostCallArtifact(
   const stored = await uploadArtifactToConnectedStorage({
     userId: input.userId,
     destination: input.destination,
-    fileName: citation.filename?.toLowerCase().endsWith(suffix)
-      ? citation.filename
-      : fileName(input),
+    fileName: fileName(input),
     mimeType: MIME_BY_FORMAT[input.format],
     bytes,
   });

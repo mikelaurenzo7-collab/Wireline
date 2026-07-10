@@ -140,9 +140,9 @@ export async function saveSignupAttribution(
 }
 
 /**
- * Existing accounts without a settings row remain active for migration safety.
- * A failed query is different: live provider spend must stop until state can be
- * verified, so lookup failures are surfaced to the gate.
+ * Missing entitlement state fails closed. A new account whose settings write
+ * failed must never inherit paid live-work access by absence.
+ * Query failures are surfaced separately so the client can retry safely.
  */
 async function getTrialState(userId: string): Promise<TrialCheck> {
   try {
@@ -158,7 +158,7 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
 
     if (!row) {
       return {
-        status: "active",
+        status: "pending_activation",
         trialEndsAt: null,
         trialOutboundCount: 0,
         daysLeft: null,

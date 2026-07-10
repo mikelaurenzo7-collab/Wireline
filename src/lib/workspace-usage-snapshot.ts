@@ -81,12 +81,11 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
   const tokenPct = pct(tokenUsed, tokenLimit);
   const creditBalanceRounded = Number(creditBalanceUsd.toFixed(2));
   const completionGraceDueUsd = Math.max(0, Number((-creditBalanceRounded).toFixed(2)));
-  const enterpriseContract = plan?.id === "enterprise";
   const freeBuilder = !plan || plan.id === "personal";
   const insufficientForNextAttempt =
     voice.voice_minutes_remaining < 1 && creditBalanceRounded < voice.overage_per_min_usd;
   const liveVoiceBlocked =
-    freeBuilder || (!enterpriseContract && (completionGraceDueUsd > 0 || insufficientForNextAttempt));
+    freeBuilder || completionGraceDueUsd > 0 || insufficientForNextAttempt;
 
   return {
     plan_id: voice.plan_id,

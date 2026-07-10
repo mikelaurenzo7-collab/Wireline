@@ -5,7 +5,11 @@
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { isOwnerEmail } from "./auth-service";
-import type { StripePlanId } from "./plan-catalog";
+import {
+  VOICE_VARIABLE_COST_PER_MIN_USD,
+  planById,
+  type StripePlanId,
+} from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
 
@@ -73,19 +77,30 @@ export async function getEffectiveSubscriptionPlanId(
   return effectivePlanIdForEntitlements(planId, email);
 }
 
+const PLAN_ID_FOR_TIER: Partial<Record<PlanTier, StripePlanId>> = {
+  personal: "starter",
+  team: "team",
+  business: "business",
+  enterprise: "enterprise",
+};
+
+/**
+ * Default account-level provider-spend envelope.
+ *
+ * This is not an additional customer allowance. It is a fail-safe around the
+ * provider COGS already funded by guaranteed voice plus the plan's Runtime
+ * Allowance. Deriving it from the commercial catalog prevents a low-price plan
+ * from silently inheriting an unrelated $20–$500 legacy spend ceiling.
+ */
 export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
-  switch (tier) {
-    case "personal":
-      return 20;
-    case "team":
-      return 50;
-    case "business":
-      return 125;
-    case "enterprise":
-      return 500;
-    default:
-      return 5;
-  }
+  const planId = PLAN_ID_FOR_TIER[tier];
+  if (!planId) return 0.5;
+  const plan = planById(planId);
+  if (!plan) return 0.5;
+  const fundedProviderEnvelope =
+    plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD +
+    plan.runtime_allowance_usd_monthly;
+  return Math.ceil(fundedProviderEnvelope * 100) / 100;
 }
 
 /** Daily burst caps are guardrails, not included-minute promises. */

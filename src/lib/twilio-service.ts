@@ -3,9 +3,9 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
-import { debitForVoiceUsage, getCreditBalanceUsd } from "./credit-wallet";
 import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
-import { SMS_COST_PER_SEGMENT_USD, billSmsMessage } from "./sms-billing";
+import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing";
+import { SMS_COST_PER_SEGMENT_USD } from "./sms-billing";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import {
@@ -52,6 +52,10 @@ function boundedValidityPeriod(): number {
   const configured = Number(process.env.TWILIO_MESSAGE_VALIDITY_SECONDS || 3600);
   if (!Number.isFinite(configured)) return 3600;
   return Math.max(60, Math.min(36_000, Math.floor(configured)));
+}
+
+function money(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 /** Conservative pre-send segment estimate. Smart Encoding can lower the final Twilio count. */
@@ -118,7 +122,7 @@ async function blockedByDnc(userId: string, phone: string): Promise<boolean> {
 function whatsappCustomerRate(): number | null {
   if (process.env.WIRELINE_WHATSAPP_PRIVATE_BETA !== "true") return null;
   const rate = Number(process.env.WIRELINE_WHATSAPP_CUSTOMER_RATE_USD || "");
-  return Number.isFinite(rate) && rate > 0 ? Math.round(rate * 100) / 100 : null;
+  return Number.isFinite(rate) && rate > 0 ? money(rate) : null;
 }
 
 async function persistOutbound(input: {
@@ -167,11 +171,70 @@ async function persistOutbound(input: {
   }
 }
 
+async function adjustMessagingReservation(input: {
+  userId: string;
+  referenceId: string;
+  estimatedUsd: number;
+  actualUsd: number;
+  channel: TwilioMessageChannel;
+  sid: string;
+  actualSegments: number;
+}): Promise<void> {
+  const difference = money(input.actualUsd - input.estimatedUsd);
+  if (difference === 0) return;
+  const adjustmentReference = `${input.referenceId}:actual`;
+
+  if (difference < 0) {
+    await refundRuntimeUsage({
+      userId: input.userId,
+      amountUsd: Math.abs(difference),
+      referenceId: adjustmentReference,
+      reason: "Twilio segment estimate adjustment",
+      provider: "twilio",
+      source: "twilio",
+      metadata: {
+        channel: input.channel,
+        message_sid: input.sid,
+        actual_segments: input.actualSegments,
+        estimated_usd: input.estimatedUsd,
+        actual_usd: input.actualUsd,
+      },
+    });
+    return;
+  }
+
+  const adjustment = await reserveRuntimeUsage({
+    userId: input.userId,
+    amountUsd: difference,
+    referenceId: adjustmentReference,
+    reason: "Twilio segment count adjustment",
+    provider: "twilio",
+    source: "twilio",
+    metadata: {
+      channel: input.channel,
+      message_sid: input.sid,
+      actual_segments: input.actualSegments,
+      estimated_usd: input.estimatedUsd,
+      actual_usd: input.actualUsd,
+    },
+  });
+  if (!adjustment.reserved) {
+    log.error("Twilio message exceeded its prepaid reservation", {
+      userId: input.userId,
+      sid: input.sid,
+      channel: input.channel,
+      estimatedUsd: input.estimatedUsd,
+      actualUsd: input.actualUsd,
+      missingUsd: difference,
+    });
+  }
+}
+
 /**
  * Profit-safe outbound SMS/WhatsApp boundary.
  * - honors DNC for both channels
- * - estimates the complete SMS segment cost before sending
- * - preserves agent-specific sender identity
+ * - estimates and atomically reserves the complete customer charge before Twilio
+ * - keeps a chosen agent sender associated with its Messaging Service controls
  * - validates new SMS contacts once instead of paying Lookup on every reply
  * - attaches a signed delivery-status callback and stale-message validity period
  * - keeps WhatsApp private-beta until a configured customer rate covers variable fees
@@ -263,23 +326,13 @@ export async function sendTenantMessage(
     };
   }
   const requiredBalance =
-    channel === "sms"
-      ? Math.round(SMS_COST_PER_SEGMENT_USD * segments * 100) / 100
-      : whatsappRate || 0;
-  const balance = await getCreditBalanceUsd(userId);
-  if (balance < requiredBalance) {
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: `Add Runtime Balance before sending. This message requires at least $${requiredBalance.toFixed(2)}.`,
-      channel,
-    };
-  }
+    channel === "sms" ? money(SMS_COST_PER_SEGMENT_USD * segments) : whatsappRate || 0;
 
   let sender = channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
+  let agentSender: string | null = null;
   if (channel === "sms" && params.agentId) {
-    sender = (await resolveAgentSmsFromNumber(userId, params.agentId)) || sender;
+    agentSender = await resolveAgentSmsFromNumber(userId, params.agentId);
+    sender = agentSender || sender;
   }
   if (!sender && !settings.messagingServiceSid) {
     return {
@@ -306,37 +359,54 @@ export async function sendTenantMessage(
     statusCallback: `${appUrl()}/api/twilio-webhook/message-status`,
     validityPeriod: boundedValidityPeriod(),
   };
-  if (sender) payload.from = address(cleanPhone(sender), channel);
-  if (settings.messagingServiceSid) payload.messagingServiceSid = settings.messagingServiceSid;
+  if (channel === "whatsapp") {
+    payload.from = address(cleanPhone(sender), channel);
+  } else if (settings.messagingServiceSid) {
+    payload.messagingServiceSid = settings.messagingServiceSid;
+    if (agentSender) payload.from = cleanPhone(agentSender);
+  } else if (sender) {
+    payload.from = cleanPhone(sender);
+  }
+
+  const reservationReference = `twilio_message:${channel}:${randomUUID()}`;
+  const reservation = await reserveRuntimeUsage({
+    userId,
+    amountUsd: requiredBalance,
+    referenceId: reservationReference,
+    reason: channel === "sms" ? "Outbound SMS" : "Outbound WhatsApp message",
+    provider: "twilio",
+    source: "twilio",
+    metadata: {
+      channel,
+      estimated_segments: segments,
+      estimated_usd: requiredBalance,
+      destination_suffix: phone.slice(-4),
+    },
+  });
+  if (!reservation.reserved) {
+    return {
+      ok: false,
+      configured: true,
+      enabled: true,
+      reason: `Add Runtime Balance before sending. This message requires at least $${requiredBalance.toFixed(2)}.`,
+      channel,
+    };
+  }
 
   try {
     const message = await client.messages.create(payload);
     if (channel === "sms") {
       const actualSegments = Math.max(1, Number(message.numSegments) || segments);
-      const billed = await billSmsMessage(userId, message.sid, actualSegments);
-      const expected = Math.round(SMS_COST_PER_SEGMENT_USD * actualSegments * 100) / 100;
-      if (billed < expected) {
-        log.error("SMS delivered without a complete Runtime Balance debit", {
-          userId,
-          sid: message.sid,
-          expected,
-          billed,
-        });
-      }
-    } else if (whatsappRate) {
-      const debited = await debitForVoiceUsage(
+      const actualCost = money(SMS_COST_PER_SEGMENT_USD * actualSegments);
+      await adjustMessagingReservation({
         userId,
-        whatsappRate,
-        `whatsapp_${message.sid || randomUUID()}`,
-      );
-      if (debited < whatsappRate) {
-        log.error("WhatsApp message delivered without a complete Runtime Balance debit", {
-          userId,
-          sid: message.sid,
-          expected: whatsappRate,
-          debited,
-        });
-      }
+        referenceId: reservationReference,
+        estimatedUsd: requiredBalance,
+        actualUsd: actualCost,
+        channel,
+        sid: message.sid,
+        actualSegments,
+      });
     }
 
     await persistOutbound({
@@ -357,10 +427,34 @@ export async function sendTenantMessage(
       channel,
     };
   } catch (error) {
+    const status = Number((error as { status?: number } | null)?.status || 0);
+    // A Twilio 4xx means the provider definitively rejected the request. Network
+    // and 5xx errors are ambiguous: the message may have been accepted before the
+    // response was lost, so retain the reservation for reconciliation instead of
+    // refunding and potentially funding duplicate carrier spend.
+    if (status >= 400 && status < 500 && !reservation.alreadyReserved) {
+      await refundRuntimeUsage({
+        userId,
+        amountUsd: requiredBalance,
+        referenceId: reservationReference,
+        reason: "Twilio rejected the outbound message",
+        provider: "twilio",
+        source: "twilio",
+        metadata: { channel, status, estimated_segments: segments },
+      }).catch((refundError) =>
+        log.error("Twilio rejection refund failed", {
+          userId,
+          channel,
+          error: getErrorMessage(refundError),
+        }),
+      );
+    }
     log.warn("Twilio message send failed", {
       userId,
       channel,
       segments,
+      status: status || undefined,
+      reservationRetained: !(status >= 400 && status < 500),
       error: getErrorMessage(error),
     });
     return {
