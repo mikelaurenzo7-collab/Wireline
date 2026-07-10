@@ -95,19 +95,34 @@ export async function ensureNextScheduledReport(
   return result.jobId || null;
 }
 
+function preferencesMatchScheduledJob(
+  preferences: PostCallOutputPreferences,
+  payload: ScheduledReportJobPayload,
+): boolean {
+  return (
+    preferences.scheduled_report_frequency !== "off" &&
+    preferences.scheduled_report_version === payload.scheduleVersion &&
+    preferences.scheduled_report_frequency === payload.frequency &&
+    preferences.scheduled_report_format === payload.format &&
+    preferences.scheduled_report_destination === payload.destination
+  );
+}
+
+/** Returns the current matching preferences, or null when a queued job became stale. */
+export async function currentScheduledReportPreferences(
+  payload: ScheduledReportJobPayload,
+): Promise<PostCallOutputPreferences | null> {
+  const preferences = await getPostCallOutputPreferences(payload.userId);
+  return preferencesMatchScheduledJob(preferences, payload) ? preferences : null;
+}
+
 function periodStart(frequency: "daily" | "weekly", end: Date): Date {
   return new Date(end.getTime() - (frequency === "daily" ? 24 : 7 * 24) * 60 * 60 * 1000);
 }
 
 export async function generateScheduledOperatingReport(payload: ScheduledReportJobPayload) {
-  const preferences = await getPostCallOutputPreferences(payload.userId);
-  if (
-    preferences.scheduled_report_frequency === "off" ||
-    preferences.scheduled_report_version !== payload.scheduleVersion ||
-    preferences.scheduled_report_frequency !== payload.frequency ||
-    preferences.scheduled_report_format !== payload.format ||
-    preferences.scheduled_report_destination !== payload.destination
-  ) {
+  const preferences = await currentScheduledReportPreferences(payload);
+  if (!preferences) {
     return { skipped: true, reason: "schedule_changed" } as const;
   }
 
