@@ -1,12 +1,12 @@
 /* Letterpress typography scale.
- * Sentence-case Instrument Serif for display/titles; DM Sans for controls and copy.
- * Uppercase is reserved for Space Mono micro-labels (eyebrows, overlines) only. */
+ * Sentence-case Inter Tight for display/titles; Inter for controls and copy.
+ * Uppercase is reserved for IBM Plex Mono micro-labels (eyebrows, overlines) only. */
 
 .wl-ui-caps {
-  --wl-caps-display-tracking: -0.025em;
-  --wl-caps-title-tracking: -0.02em;
-  --wl-caps-control-tracking: 0.01em;
-  --wl-caps-label-tracking: 0.14em;
+  --wl-caps-display-tracking: -0.035em;
+  --wl-caps-title-tracking: -0.025em;
+  --wl-caps-control-tracking: 0.005em;
+  --wl-caps-label-tracking: 0.12em;
 }
 
 .wl-ui-caps :where(h1, h2, h3, h4, h5, h6),
@@ -19,7 +19,7 @@
 .wl-public-section-heading,
 .wl-stitch-display {
   font-family: var(--wireline-font-family-display);
-  font-weight: 400;
+  font-weight: 700;
   letter-spacing: var(--wl-caps-title-tracking);
   line-height: 1.05;
   text-wrap: balance;
@@ -50,12 +50,12 @@
 .wl-metric-value {
   font-family: var(--wireline-font-family-display);
   font-size: clamp(2.25rem, 4vw + 1rem, 3.25rem);
-  font-weight: 400;
+  font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 0.96;
 }
 
-/* Space Mono micro-labels — the only uppercase in the system. */
+/* Mono micro-labels — the only uppercase in the system. */
 .wl-overline,
 .wl-pro-eyebrow,
 .wl-micro-meta,
@@ -67,7 +67,7 @@
 .text-eyebrow {
   font-family: var(--wireline-font-family-mono);
   font-size: clamp(0.61rem, 0.57rem + 0.12vw, 0.7rem);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: var(--wl-caps-label-tracking);
   line-height: 1.25;
   text-transform: uppercase;
@@ -114,8 +114,8 @@
 
 @media (max-width: 640px) {
   .wl-ui-caps {
-    --wl-caps-control-tracking: 0.01em;
-    --wl-caps-label-tracking: 0.12em;
+    --wl-caps-control-tracking: 0.005em;
+    --wl-caps-label-tracking: 0.11em;
   }
 
   .wl-page-title {
