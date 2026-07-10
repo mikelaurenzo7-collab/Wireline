@@ -111,7 +111,7 @@ export default function Features() {
         path="/features"
       />
       <PrecisionPublicHeader />
-      <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
+      <main id="main-content" className="pt-16" tabIndex={-1}>
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
           <div className="wl-public-rail text-center">
             <p className="wl-overline text-primary">Features</p>
