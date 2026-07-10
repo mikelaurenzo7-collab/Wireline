@@ -66,6 +66,7 @@ const viewports = [
   { name: "laptop-1024", width: 1024, height: 768, isMobile: false, hasTouch: false },
   { name: "laptop-1280", width: 1280, height: 900, isMobile: false, hasTouch: false },
   { name: "desktop-1440", width: 1440, height: 1100, isMobile: false, hasTouch: false },
+  { name: "desktop-1920", width: 1920, height: 1080, isMobile: false, hasTouch: false },
 ];
 
 function parseList(value) {
@@ -347,7 +348,19 @@ async function signIn(page, viewportName, issues) {
 }
 
 await mkdir(outputDir, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const proxyServer = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy;
+const browser = await chromium.launch({
+  headless: true,
+  // Sandboxes with a preinstalled Chromium can point at it instead of
+  // downloading a browser (e.g. /opt/pw-browsers/chromium).
+  ...(process.env.WIRELINE_E2E_CHROMIUM
+    ? { executablePath: process.env.WIRELINE_E2E_CHROMIUM }
+    : {}),
+  // Chromium does not read HTTPS_PROXY from the environment on its own —
+  // sandboxes that route outbound HTTPS through an agent proxy need it wired
+  // through explicitly or every navigation hangs until timeout.
+  ...(proxyServer ? { proxy: { server: proxyServer } } : {}),
+});
 const issues = [];
 let authenticatedStorageState = null;
 

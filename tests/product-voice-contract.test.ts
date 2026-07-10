@@ -84,21 +84,26 @@ describe("product voice cohesion", () => {
   it("keeps the free-number promise backed by included capacity", () => {
     const catalog = read("src/lib/plan-catalog.ts");
     const billing = read("src/pages/BillingSettings.tsx");
-    expect(catalog).toContain("Every included agent includes one dedicated number");
-    expect(catalog).toContain("max_agents: 4");
-    expect(catalog).toContain("included_phone_numbers: 4");
-    expect(catalog).toContain("max_agents: 8");
-    expect(catalog).toContain("included_phone_numbers: 8");
-    expect(catalog).toContain("One active profit agent with one included number");
+    expect(catalog).toContain(
+      "Every paid tier guarantees live voice capacity and an on-demand number slot",
+    );
+    expect(catalog).toContain("max_agents: 1");
+    expect(catalog).toContain("included_phone_numbers: 1");
+    expect(catalog).toContain("max_agents: 5");
+    expect(catalog).toContain("included_phone_numbers: 5");
     expect(billing).toContain("plan.included_phone_numbers");
   });
 
   it("keeps included number capacity mathematically aligned to included agents", () => {
-    const publicCapacityPlans = STRIPE_PLANS.filter((plan) => plan.id !== "enterprise");
+    // Personal (Free Builder) is pre-activation by design: no production number
+    // until the Account Holder pays. Every paid tier still guarantees one
+    // included number per included agent.
+    const publicCapacityPlans = STRIPE_PLANS.filter(
+      (plan) => plan.id !== "enterprise" && plan.id !== "personal",
+    );
 
     for (const plan of publicCapacityPlans) {
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
-      expect(plan.voice_minutes_monthly, plan.id).toBe(0);
     }
   });
 

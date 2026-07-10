@@ -35,7 +35,7 @@ describe("video presenter integration", () => {
   });
 
   it("streams agent voice into LiveAvatar LITE via sample route + SDK audio", () => {
-    const routes = source("src/routes/video-presenter-routes.ts");
+    const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain("/api/agents/:id/video-presenter/sample");
     expect(routes).toContain("generateSamplePcm24");
     expect(routes).toContain("LIVE_VIDEO_NO_VOICE");
@@ -48,7 +48,9 @@ describe("video presenter integration", () => {
   it("offers live video as an explicit opt-in add-on", () => {
     const routes = source("src/routes/video-presenter-routes.ts");
     expect(routes).toContain("/video-presenter/enable");
-    expect(routes).toContain("LIVE_VIDEO_UPGRADE_REQUIRED");
+    expect(source("src/routes/video-presenter-routes-base.ts")).toContain(
+      "LIVE_VIDEO_UPGRADE_REQUIRED",
+    );
     const preview = source("src/components/AgentPresenceLivePreview.tsx");
     expect(preview).toContain("Add live video");
     expect(preview).toContain("live-video-checkout");
@@ -58,7 +60,7 @@ describe("video presenter integration", () => {
   });
 
   it("imports catalog listing for the avatar picker route", () => {
-    const routes = source("src/routes/video-presenter-routes.ts");
+    const routes = source("src/routes/video-presenter-routes-base.ts");
     expect(routes).toContain("listPublicAvatars");
   });
 

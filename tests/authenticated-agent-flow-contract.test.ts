@@ -129,7 +129,7 @@ describe("authenticated agent flow", () => {
   });
 
   it("routes presenter lip-sync samples through HeyGen speech", () => {
-    const routes = read("src/routes/video-presenter-routes.ts");
+    const routes = read("src/routes/video-presenter-routes-base.ts");
     const heygen = read("src/lib/video-presenter/heygen-voice-service.ts");
     const preview = read("src/components/AgentPresenceLivePreview.tsx");
     const decode = read("src/lib/voice/decode-browser-audio.ts");

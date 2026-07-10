@@ -82,27 +82,27 @@ const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan
 
 const PLAN_PREVIEW = [
   {
-    name: "Personal",
+    name: "Free Builder",
     price: "$0",
     period: "to create",
     body: "Build and train one AI profit agent with one included number. Live work draws from Conversation Balance.",
-    cta: "Start Personal",
+    cta: "Start free",
     ctaPath: "/signup?plan=personal",
   },
   {
-    name: "Team",
+    name: "Starter Plus",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.team.max_agents} profit agents and ${planCatalog.team.included_phone_numbers} included numbers for one focused growth lane.`,
-    cta: "Start Team",
+    body: `${planCatalog.team.max_agents} profit agent and ${planCatalog.team.included_phone_numbers} included number, plus ${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.`,
+    cta: "Start Starter Plus",
     ctaPath: "/signup?plan=team",
   },
   {
-    name: "Business",
+    name: "Pro",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
     body: `${planCatalog.business.max_agents} profit agents and ${planCatalog.business.included_phone_numbers} included numbers with CRM sync, analytics, roles, and oversight.`,
-    cta: "Start Business",
+    cta: "Go Pro",
     ctaPath: "/signup?plan=business",
   },
 ] as const;

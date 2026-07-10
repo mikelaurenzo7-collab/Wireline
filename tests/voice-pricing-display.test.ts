@@ -8,8 +8,8 @@ import {
 describe("voice-pricing-display", () => {
   it("publishes balance and paid-tier overage rates", () => {
     const rates = publishedVoiceRates();
-    expect(rates.map((row) => row.planId)).toEqual(["balance", "team", "business"]);
-    expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("personal"));
+    expect(rates.map((row) => row.planId)).toEqual(["starter", "team", "business"]);
+    expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("starter"));
   });
 
   it("estimates minutes from Conversation Balance", () => {

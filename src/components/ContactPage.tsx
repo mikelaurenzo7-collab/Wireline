@@ -145,7 +145,7 @@ export function ContactPage() {
             <Sparkles className="h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
-              Create and train for free. Team starts at $29/mo; Business at $59/mo.
+              Create and train for free. Starter Plus starts at $19/mo; Pro at $59/mo.
             </p>
           </Link>
         </section>

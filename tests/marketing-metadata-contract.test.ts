@@ -35,22 +35,20 @@ describe("marketing metadata contract", () => {
     const catalog = read("src/lib/plan-catalog.ts");
 
     expect(catalog).toContain('id: "team"');
-    expect(catalog).toContain("price_usd_monthly: 29");
-    expect(catalog).toContain("included_phone_numbers: 4");
+    expect(catalog).toContain("price_usd_monthly: 19");
+    expect(catalog).toContain("included_phone_numbers: 1");
     expect(catalog).toContain('id: "business"');
     expect(catalog).toContain("price_usd_monthly: 59");
-    expect(catalog).toContain("included_phone_numbers: 8");
+    expect(catalog).toContain("included_phone_numbers: 5");
 
-    expect(pricing).toContain("Build and train one AI profit agent for free");
+    expect(pricing).toContain("Build free. Go live from $9. Scale when the work proves itself.");
     expect(contact).toContain(
-      "Create and train for free. Team starts at $29/mo; Business at $59/mo.",
+      "Create and train for free. Starter Plus starts at $19/mo; Pro at $59/mo.",
     );
     expect(contact).toContain('searchParams.get("intent") ?? searchParams.get("topic")');
     expect(contact).toContain("Preferred callback");
-    expect(roi).toContain("Net annual savings (after Wireline Business)");
-    expect(roi).toContain("Business tier billed at $59/mo");
-    expect(pricing).toContain("Buying posture");
-    expect(pricing).toContain("Usage-based API minutes plus model and line economics");
+    expect(roi).toContain("Net annual savings (after the Pro plan)");
+    expect(roi).toContain("Pro tier billed at $59/mo");
 
     for (const source of [pricing, contact, roi]) {
       expect(source).not.toContain("Personal starts at $9");
@@ -61,6 +59,7 @@ describe("marketing metadata contract", () => {
       expect(source).not.toContain("~$0.07/min");
       expect(source).not.toContain("~$0.05/min");
       expect(source).not.toContain("~$0.08/min");
+      expect(source).not.toContain("Team starts at $29");
     }
   });
 });
