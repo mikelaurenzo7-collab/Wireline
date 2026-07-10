@@ -24,6 +24,24 @@ describe("product voice cohesion", () => {
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow up", "Sync"]);
   });
 
+  it("keeps the canonical operating loop across public buying surfaces", () => {
+    const features = read("src/pages/Features.tsx");
+    const pricing = read("src/pages/Pricing.tsx");
+    const authPortal = read("src/components/AuthPortal.tsx");
+
+    for (const surface of [features, authPortal]) {
+      expect(surface).toContain("Build");
+      expect(surface).toContain("Train");
+      expect(surface).toContain("Launch");
+      expect(surface).toContain("Improve");
+    }
+
+    expect(features).toContain("Build → Train → Launch → Improve");
+    expect(features).not.toContain("Create → Train → Wire → Run");
+    expect(pricing).toContain("build, train, launch, improve");
+    expect(pricing).not.toContain("create, train, wire, run");
+  });
+
   it("wires landing and workroom surfaces to shared voice constants", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
