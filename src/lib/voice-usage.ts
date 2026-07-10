@@ -6,12 +6,15 @@
  * - Every completed live-call attempt consumes at least one minute, including
  *   rejected, busy, voicemail, and zero-second outbound attempts.
  * - Paid plans consume their monthly included pool first.
- * - Usage beyond the included pool debits prepaid Conversation Balance.
+ * - Usage beyond the included pool is finalized against Conversation Balance.
+ * - A live call is never terminated for billing. If the call exceeds available
+ *   prepaid coverage, completion grace records the amount due and the next live
+ *   action is blocked until the balance is restored.
  * - No Stripe meter event is emitted and no automatic overage invoice is created.
  */
 
 import { and, eq, sql } from "drizzle-orm";
-import { debitForOverage, debitForVoiceUsage } from "./credit-wallet";
+import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
 import { planById } from "./plan-catalog";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
@@ -103,20 +106,25 @@ export async function trackVoiceMinutes(opts: {
       Math.round(incrementalOverageMinutes * plan.overage_per_min_usd * 100) / 100;
     if (overageCostUsd <= 0) return;
 
-    const debited =
-      plan.id === "personal"
-        ? await debitForVoiceUsage(userId, overageCostUsd, vapiCallId).catch(() => 0)
-        : await debitForOverage(userId, overageCostUsd, vapiCallId).catch(() => 0);
+    const charge = await chargeCompletedVoiceUsage({
+      userId,
+      costUsd: overageCostUsd,
+      providerCallId: vapiCallId,
+      billableMinutes: incrementalOverageMinutes,
+      rateUsd: plan.overage_per_min_usd,
+    });
 
-    if (debited + 0.0001 < overageCostUsd) {
-      log.warn("Voice usage exceeded prepaid coverage", {
+    if (charge.used_completion_grace) {
+      log.warn("Completed call used voice completion grace", {
         userId,
         planId: plan.id,
         callId: vapiCallId,
         billableMinutes: minutes,
         incrementalOverageMinutes,
-        requiredUsd: overageCostUsd,
-        debitedUsd: debited,
+        chargedUsd: overageCostUsd,
+        balanceUsd: charge.balance_usd,
+        completionGraceDueUsd: charge.completion_grace_due_usd,
+        policy: "finish_current_block_next",
       });
     }
   } catch (error: any) {
