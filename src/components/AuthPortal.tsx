@@ -313,7 +313,7 @@ function AuthShell({
       <AuthBrandPanel headerActive={headerActive} workspaceMode={mode} />
       <main
         id="main-content"
-        className="wl-auth-form-panel flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 safe-area-insets"
+        className="wl-auth-form-panel flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12"
       >
         <div className="w-full max-w-[440px]">
           <Link to="/" className="wl-auth-mobile-mark">
