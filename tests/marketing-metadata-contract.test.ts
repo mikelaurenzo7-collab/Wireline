@@ -10,7 +10,9 @@ describe("marketing metadata contract", () => {
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
     expect(staticHead).toContain("Wireline — AI profit agents that actually call.");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "Wireline - AI profit agents that actually call"');
+    expect(runtimeMeta).toContain(
+      'const DEFAULT_TITLE = "Wireline - AI profit agents that actually call"',
+    );
     expect(staticHead).toContain("AI profit agents with included numbers");
     expect(staticHead).toContain("book appointments, revive leads, promote offers");
     expect(runtimeMeta).toContain("AI profit agents with included numbers");
@@ -39,7 +41,7 @@ describe("marketing metadata contract", () => {
     expect(catalog).toContain("price_usd_monthly: 59");
     expect(catalog).toContain("included_phone_numbers: 8");
 
-    expect(pricing).toContain("Build and train one AI phone employee for free");
+    expect(pricing).toContain("Build and train one AI profit agent for free");
     expect(contact).toContain(
       "Create and train for free. Team starts at $29/mo; Business at $59/mo.",
     );

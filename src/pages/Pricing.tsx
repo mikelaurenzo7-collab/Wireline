@@ -33,9 +33,9 @@ const PRICING_TIERS = [
     period: "to create",
     tagline: "Start the line before billing starts.",
     detail:
-      "Build and train one AI phone employee for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
+      "Build and train one AI profit agent for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
     features: [
-      "1 active phone employee",
+      "1 active profit agent",
       "1 phone line when live",
       "All templates unlocked",
       "Conversation Balance funds usage",
@@ -53,9 +53,9 @@ const PRICING_TIERS = [
     period: "mo",
     tagline: "Shared capacity for a focused lane.",
     detail:
-      "Several phone employees, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
+      "Several profit agents, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
     features: [
-      `${planById.team.max_agents} active phone employees`,
+      `${planById.team.max_agents} active profit agents`,
       `${planById.team.included_phone_numbers} phone lines included`,
       `Extra employees at $${planById.team.extra_agent_price_usd}/mo`,
       "Routing, approvals, and team inbox",
@@ -73,9 +73,9 @@ const PRICING_TIERS = [
     period: "mo",
     tagline: "Front desk, revenue, and support coverage.",
     detail:
-      "The serious business tier: more phone employees, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
+      "The serious business tier: more profit agents, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
     features: [
-      `${planById.business.max_agents} active phone employees`,
+      `${planById.business.max_agents} active profit agents`,
       `${planById.business.included_phone_numbers} phone lines included`,
       `Extra employees at $${planById.business.extra_agent_price_usd}/mo`,
       "CRM sync, analytics, roles, approvals",
@@ -242,8 +242,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline - Personal, team, business, and enterprise AI phone employees"
-        description="Build and train a personal AI phone employee for free, fund live work with Conversation Balance, or move into Team and Business capacity when Wireline becomes an operating lane."
+        title="Pricing | Wireline - Personal, team, business, and enterprise AI profit agents"
+        description="Build and train a personal AI profit agent for free, fund live work with Conversation Balance, or move into Team and Business capacity when Wireline becomes an operating lane."
         path="/pricing"
       />
       <script
@@ -255,7 +255,7 @@ export default function Pricing() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Pricing"
-          title="Start with one phone employee. Scale into a phone operation."
+          title="Start with one profit agent. Scale into a phone operation."
           description="Personal is balance-led. Team and Business add operating capacity: employees, numbers, routing, approvals, integrations, support, and reliability."
           primaryAction={{ label: "Build your first employee", to: "/signup" }}
           secondaryAction={{ label: "Compare plans", to: "#tiers", tone: "secondary" }}
@@ -529,8 +529,8 @@ export default function Pricing() {
               </h2>
               <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
                 The winning wedge is not more feature noise. It is the cleanest way for a buyer to
-                build a phone employee, train its rules, launch the number and tools, then improve
-                the operation with visibility and spend control.
+                build a profit agent, train its rules, launch the number and tools, then improve the
+                operation with visibility and spend control.
               </p>
             </div>
             <div className="mt-10 grid gap-3 md:grid-cols-2">
