@@ -112,13 +112,13 @@ export default function Features() {
       />
       <PrecisionPublicHeader />
       <main id="main-content" className="pt-16" tabIndex={-1}>
-        <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
+        <section className="border-b border-border px-5 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
           <div className="wl-public-rail text-center">
             <p className="wl-overline text-primary">Features</p>
-            <h1 className="mx-auto mt-4 max-w-[15ch] font-[var(--wireline-font-display)] text-[clamp(38px,5.4vw,64px)] font-semibold leading-[1.02] tracking-[-.055em] text-foreground [text-wrap:balance]">
+            <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(42px,6.2vw,76px)] font-normal leading-[.98] tracking-[-.06em] text-foreground [text-wrap:balance]">
               Everything your agent needs to finish the call.
             </h1>
-            <p className="wl-public-copy mt-5">
+            <p className="wl-public-copy mt-6">
               Wireline keeps the product simple: build the employee, train the workflow, launch the
               number and tools, then improve the work from every recorded outcome.
             </p>
