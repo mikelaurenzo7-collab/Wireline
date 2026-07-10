@@ -50,7 +50,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     tabs: [
       { id: "logs", label: "History", icon: History },
       { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
-      { id: "appointments", label: "Appts", icon: Calendar },
+      { id: "appointments", label: "Appointments", icon: Calendar },
     ],
   },
   {
@@ -71,8 +71,8 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     ariaLabel: "Training modules",
     layoutIdPrefix: "training-module",
     tabs: [
-      { id: "database", label: "Training", icon: Database },
-      { id: "voices", label: "Voices", icon: Mic },
+      { id: "database", label: "Knowledge", icon: Database },
+      { id: "voices", label: "Voice", icon: Mic },
       { id: "pronunciation", label: "Pronunciation", icon: BookOpen },
       { id: "simulator", label: "Simulator", icon: PlayCircle },
       { id: "flow", label: "Flow", icon: Workflow },
@@ -138,8 +138,8 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
 
 export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
-  { id: "campaigns", label: "Camps", icon: Megaphone },
-  { id: "sequences", label: "Seqs", icon: Repeat },
+  { id: "campaigns", label: "Campaigns", icon: Megaphone },
+  { id: "sequences", label: "Sequences", icon: Repeat },
   { id: "callbacks", label: "Callbacks", icon: CalendarClock },
 ];
 
@@ -162,17 +162,6 @@ export function resolveInsightsSecondaryTabs(groupId: string): AppPageSubTab[] {
     .filter((tab): tab is AppPageSubTab => Boolean(tab));
 }
 
-export function resolveAllInsightsSecondaryTabs(): AppPageSubTab[] {
-  const seen = new Set<string>();
-  return OPS_INSIGHTS_GROUPS.flatMap((group) => group.tabs)
-    .map((id) => INSIGHTS_VIEW_TABS[id])
-    .filter((tab): tab is AppPageSubTab => {
-      if (!tab || seen.has(tab.id)) return false;
-      seen.add(tab.id);
-      return true;
-    });
-}
-
 export function resolveInsightsGroupForView(viewId: string | null): string | null {
   if (!viewId) return null;
   const group = OPS_INSIGHTS_GROUPS.find((candidate) =>
@@ -186,13 +175,12 @@ export function resolveAppPageSecondaryRoute(
   primaryTabId: string,
 ): Omit<AppPageSecondaryTabRoute, "whenPrimaryTab"> | null {
   if (pathname === "/insights") {
-    const allTabs = resolveAllInsightsSecondaryTabs();
-    const primaryTabs = resolveInsightsSecondaryTabs(primaryTabId);
-    if (allTabs.length === 0) return null;
+    const tabs = resolveInsightsSecondaryTabs(primaryTabId);
+    if (tabs.length === 0) return null;
     return {
       pathname,
-      tabs: allTabs,
-      defaultView: primaryTabs[0]?.id ?? allTabs[0]!.id,
+      tabs,
+      defaultView: tabs[0]!.id,
       ariaLabel: "Insights views",
       layoutIdPrefix: "insights-view",
     };
