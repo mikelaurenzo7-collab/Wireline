@@ -9,7 +9,7 @@ export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 
-export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v2";
+export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v3";
 
 export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
 
@@ -20,6 +20,11 @@ export type StripePlan = {
   price_usd_annual: number;
   max_agents: number;
   voice_minutes_monthly: number;
+  /**
+   * Subscription-funded flexible runtime for optional work. Voice minutes remain
+   * separately guaranteed so document/research/SMS usage cannot disable the phone agent.
+   */
+  runtime_allowance_usd_monthly: number;
   overage_per_min_usd: number;
   included_phone_numbers: number;
   features: string[];
@@ -78,13 +83,13 @@ const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
 /**
  * Founder Early Access commercial contract:
  * - Free Builder creates, trains, and privately simulates one draft agent.
- * - Paid tiers include live agent capacity and on-demand number slots.
- * - Included voice capacity is deliberately conservative and profitable at full use.
- * - Lead Hunt is available on every paid plan. Connected customer data/mail providers
- *   retain their own limits; provider-funded enrichment, SMS, and extra voice consume
- *   prepaid Conversation Balance.
- * - There is no automatic postpaid metered overage line item.
- * - Active calls finish normally; depleted coverage blocks only the next live action.
+ * - Every paid tier guarantees live voice capacity and an on-demand number slot.
+ * - Voice is the primary pricing driver because it is the only mandatory, high-variable-cost channel.
+ * - Optional SMS, platform AI/research, enrichment, and business-artifact generation use a
+ *   smaller flexible monthly Runtime Allowance included in the same subscription.
+ * - Connected customer email, calendar, CRM, commerce, and data providers retain their own limits.
+ * - Runtime Balance funds only usage beyond included capacity; there is no automatic postpaid meter.
+ * - Active calls finish normally; depleted coverage blocks only the next paid action.
  */
 export const STRIPE_PLANS: StripePlan[] = [
   {
@@ -94,6 +99,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_annual: 0,
     max_agents: 1,
     voice_minutes_monthly: 0,
+    runtime_allowance_usd_monthly: 0,
     overage_per_min_usd: 0.25,
     included_phone_numbers: 0,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
@@ -112,6 +118,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_annual: 90,
     max_agents: 1,
     voice_minutes_monthly: 20,
+    runtime_allowance_usd_monthly: 0.5,
     overage_per_min_usd: 0.25,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
@@ -123,10 +130,10 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "1 live AI communications agent",
       "1 production-number slot, provisioned when needed",
-      "20 pooled live-call minutes each month",
-      "Lead Hunt workspace access",
-      "Connected email workflows and conversation inbox",
-      "Prepaid Conversation Balance for SMS, enrichment, and extra voice",
+      "20 guaranteed live-voice minutes each month",
+      "$0.50 monthly flexible Runtime Allowance",
+      "Lead Hunt access and connected email workflows",
+      "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
     ],
   },
@@ -137,6 +144,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_annual: 190,
     max_agents: 1,
     voice_minutes_monthly: 75,
+    runtime_allowance_usd_monthly: 2,
     overage_per_min_usd: 0.22,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
@@ -148,11 +156,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "1 live AI communications agent",
       "1 production-number slot, provisioned when needed",
-      "75 pooled live-call minutes each month",
-      "Full Lead Hunt, enrichment, and niche-research workflows",
-      "Connected email and SMS automation",
-      "Shared conversation inbox, outcomes, and private simulation",
-      "Prepaid Conversation Balance for controlled extra usage",
+      "75 guaranteed live-voice minutes each month",
+      "$2 monthly flexible Runtime Allowance",
+      "Full Lead Hunt, enrichment, niche research, email, and SMS workflows",
+      "Branded recap and report artifact workflow",
+      "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
     ],
   },
@@ -163,6 +171,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_annual: 590,
     max_agents: 5,
     voice_minutes_monthly: 250,
+    runtime_allowance_usd_monthly: 6,
     overage_per_min_usd: 0.19,
     included_phone_numbers: 5,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
@@ -174,11 +183,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "Up to 5 live AI communications agents",
       "Up to 5 production-number slots, provisioned when needed",
-      "250 pooled live-call minutes each month",
-      "Lead Hunt campaigns, enrichment, and tailored niche research",
-      "Shared inbox, routing, approvals, and team visibility",
-      "Connected email and SMS automation",
-      "Prepaid Conversation Balance for controlled extra usage",
+      "250 guaranteed live-voice minutes each month",
+      "$6 monthly flexible Runtime Allowance",
+      "Lead Hunt campaigns, enrichment, niche research, routing, and approvals",
+      "Connected calendar, CRM, email, SMS, contracts, and commerce actions",
+      "Branded recap, proposal, and report artifact workflow",
+      "Automatic post-call summary, outcome, note, and next action",
       "No automatic overages",
     ],
   },
@@ -189,6 +199,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_annual: 1490,
     max_agents: 15,
     voice_minutes_monthly: 650,
+    runtime_allowance_usd_monthly: 15,
     overage_per_min_usd: 0.17,
     included_phone_numbers: 15,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
@@ -200,13 +211,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "Up to 15 live AI communications agents",
       "Up to 15 production-number slots, provisioned when needed",
-      "650 pooled live-call minutes each month",
-      "Lead Hunt, enrichment, analytics, and CRM controls",
-      "Role-aware policies, routing, approvals, and team visibility",
-      "Connected email and SMS automation",
-      "Priority support posture",
-      "Prepaid Conversation Balance for controlled extra usage",
-      "No automatic overages",
+      "650 guaranteed live-voice minutes each month",
+      "$15 monthly flexible Runtime Allowance",
+      "Lead Hunt, enrichment, analytics, CRM controls, routing, and approvals",
+      "Connected calendar, email, SMS, contracts, payments, and commerce actions",
+      "Branded recap, proposal, presentation, and report artifact workflow",
+      "Automatic post-call summary, outcome, note, and next action",
+      "Priority support posture and no automatic overages",
     ],
   },
 ];
@@ -282,6 +293,7 @@ export function plansForClient() {
     price_usd_annual: plan.price_usd_annual,
     max_agents: plan.max_agents,
     voice_minutes_monthly: plan.voice_minutes_monthly,
+    runtime_allowance_usd_monthly: plan.runtime_allowance_usd_monthly,
     overage_per_min_usd: plan.overage_per_min_usd,
     included_phone_numbers: plan.included_phone_numbers,
     extra_agent_price_usd: null,
@@ -291,6 +303,6 @@ export function plansForClient() {
     contact_sales: false,
     is_free: plan.id === "personal",
     public: true,
-    pricing_model: "included_minutes_plus_prepaid_balance" as const,
+    pricing_model: "guaranteed_voice_plus_flexible_runtime" as const,
   }));
 }
