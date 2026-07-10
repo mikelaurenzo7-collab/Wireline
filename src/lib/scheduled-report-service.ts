@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { enqueue } from "./job-queue";
@@ -81,7 +81,7 @@ export async function ensureNextScheduledReport(
     userId,
     type: "scheduled_report",
     runAt,
-    maxAttempts: 1,
+    maxAttempts: 3,
     payload: {
       userId,
       scheduleVersion: preferences.scheduled_report_version,
@@ -114,6 +114,11 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
   const end = new Date(payload.scheduledFor);
   const safeEnd = Number.isNaN(end.getTime()) ? new Date() : end;
   const start = periodStart(payload.frequency, safeEnd);
+
+  // Schedule the next occurrence before doing external work. A transient OpenAI
+  // or connector outage can fail this report without silently stopping all future reports.
+  await ensureNextScheduledReport(payload.userId, preferences, new Date(safeEnd.getTime() + 60_000));
+
   const calls = await drizzle
     .select({
       createdAt: schema.callLogs.createdAt,
@@ -130,7 +135,13 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
       qaScore: schema.callLogs.qaScore,
     })
     .from(schema.callLogs)
-    .where(and(eq(schema.callLogs.userId, payload.userId), gte(schema.callLogs.createdAt, start)))
+    .where(
+      and(
+        eq(schema.callLogs.userId, payload.userId),
+        gte(schema.callLogs.createdAt, start),
+        lt(schema.callLogs.createdAt, safeEnd),
+      ),
+    )
     .orderBy(desc(schema.callLogs.createdAt))
     .limit(250);
 
@@ -138,7 +149,13 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     drizzle
       .select({ id: schema.appointments.id, status: schema.appointments.status })
       .from(schema.appointments)
-      .where(and(eq(schema.appointments.userId, payload.userId), gte(schema.appointments.createdAt, start))),
+      .where(
+        and(
+          eq(schema.appointments.userId, payload.userId),
+          gte(schema.appointments.createdAt, start),
+          lt(schema.appointments.createdAt, safeEnd),
+        ),
+      ),
     drizzle
       .select({
         description: schema.followUpTasks.description,
@@ -165,7 +182,9 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     return acc;
   }, {});
   const qualified = (outcomes.qualified || 0) + (outcomes.booked || 0);
-  const qaScores = calls.map((call) => call.qaScore).filter((value): value is number => value != null);
+  const qaScores = calls
+    .map((call) => call.qaScore)
+    .filter((value): value is number => value != null);
   const averageQa = qaScores.length
     ? Math.round(qaScores.reduce((sum, value) => sum + value, 0) / qaScores.length)
     : null;
@@ -211,7 +230,6 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     periodLabel,
   });
 
-  await ensureNextScheduledReport(payload.userId, preferences, new Date(safeEnd.getTime() + 60_000));
   return {
     skipped: false,
     title,
@@ -219,7 +237,7 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     calls: calls.length,
     externalUrl: artifact.externalUrl,
     fileName: artifact.fileName,
-    destination: artifact.destination,
+    destination: artifact.provider,
     openaiResponseId: artifact.openaiResponseId,
   } as const;
 }
