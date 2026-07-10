@@ -7,7 +7,11 @@ import MarketingHero from "./MarketingHero";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import RoiCalculator from "./RoiCalculator";
 import TrustSignals from "./TrustSignals";
-import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
+import {
+  AGENT_DIRECTION_MODES,
+  MARKETING_VOICE,
+  PROFIT_AGENT_NUMBER_PROMISE,
+} from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
 type AgentMode = "outbound" | "inbound" | "hybrid";
@@ -23,12 +27,12 @@ type ModeDetail = {
 
 const HERO_LOOP = MARKETING_VOICE.proof;
 
-const AUDIENCES = ["Sales", "Scheduling", "Intake", "Support"] as const;
+const AUDIENCES = ["Appointments", "Lead revival", "Promotions", "Recovery"] as const;
 const HERO_VISUAL_ITEMS = [
-  "Create the employee",
-  "Train the playbook",
-  "Wire the number",
-  "Run the work",
+  "Pick the profit role",
+  "Train the pitch",
+  "Claim the number",
+  "Log the outcome",
 ] as const;
 
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
@@ -39,36 +43,36 @@ const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
 
 const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   outbound: {
-    eyebrow: "Sales follow-up",
-    title: "Sales follow-up without another hire.",
-    lead: "Qualify warm leads, revive quotes, book the next step, collect the context, and log the result from one AI phone employee.",
+    eyebrow: "Profit calls",
+    title: "Your best salesperson, without the commission.",
+    lead: "Call warm lists, revive old leads, promote offers, follow up on quotes, book appointments, and log profit-moving outcomes from one AI profit agent.",
     bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
-    cta: "Start sales follow-up",
+    cta: "Build profit agent",
     ctaPath: "/signup?plan=business&mode=outbound",
   },
   inbound: {
-    eyebrow: "Front desk",
-    title: "Answer demand before it leaks.",
-    lead: "Handle front desk calls, lead qualification, support triage, scheduling, callbacks, overflow, and after-hours coverage.",
+    eyebrow: "Demand capture",
+    title: "Answer demand before profit leaks.",
+    lead: "Handle front desk calls, inbound lead qualification, scheduling, callbacks, overflow, and after-hours coverage with a reachable agent number.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
-    cta: "Start front desk",
+    cta: "Build inbound agent",
     ctaPath: "/signup?plan=business&mode=inbound",
   },
   hybrid: {
-    eyebrow: "Revenue desk",
-    title: "Answer, follow up, and keep moving.",
-    lead: "When callbacks, outbound follow-up, scheduling, and CRM updates belong in one workflow, one AI phone employee owns the handoff.",
+    eyebrow: "Profit desk",
+    title: "Answer, call back, and keep profit moving.",
+    lead: "When callbacks, outbound follow-up, scheduling, recovery, and CRM updates belong in one workflow, one AI profit agent owns the handoff.",
     bestFor: ["Revenue desk", "Collections desk", "Appointment desk"],
-    cta: "Start revenue desk",
+    cta: "Build profit desk",
     ctaPath: "/signup?plan=business&mode=hybrid",
   },
 };
 
 const LOOP_COPY = [
-  "Name the employee, job, audience, and business result.",
-  "Add voice, rules, approvals, facts, and handoff logic.",
-  "Connect the number, tools, inbox, routing, and spend controls.",
-  "Answer, qualify, book, follow up, log outcomes, and improve the next run.",
+  "Choose the profit role, list, audience, and business result.",
+  "Add pitch, offers, objections, rules, approvals, and handoff logic.",
+  "Use the included number, tools, inbox, routing, and spend controls.",
+  "Call, book, revive, recover, follow up, log outcomes, and improve the next run.",
 ] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
@@ -81,7 +85,7 @@ const PLAN_PREVIEW = [
     name: "Personal",
     price: "$0",
     period: "to create",
-    body: "Build and train one AI phone employee. Live work draws from Conversation Balance.",
+    body: "Build and train one AI profit agent with one included number. Live work draws from Conversation Balance.",
     cta: "Start Personal",
     ctaPath: "/signup?plan=personal",
   },
@@ -89,7 +93,7 @@ const PLAN_PREVIEW = [
     name: "Team",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: "Shared capacity for one focused revenue lane with approvals and a team inbox.",
+    body: `${planCatalog.team.max_agents} profit agents and ${planCatalog.team.included_phone_numbers} included numbers for one focused growth lane.`,
     cta: "Start Team",
     ctaPath: "/signup?plan=team",
   },
@@ -97,7 +101,7 @@ const PLAN_PREVIEW = [
     name: "Business",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: "More employees, numbers, CRM sync, analytics, roles, and oversight for real operations.",
+    body: `${planCatalog.business.max_agents} profit agents and ${planCatalog.business.included_phone_numbers} included numbers with CRM sync, analytics, roles, and oversight.`,
     cta: "Start Business",
     ctaPath: "/signup?plan=business",
   },
@@ -153,20 +157,20 @@ export default function WireAgentLanding() {
           eyebrow={MARKETING_VOICE.eyebrow}
           title={MARKETING_VOICE.headline}
           description={MARKETING_VOICE.subline}
-          primaryAction={{ label: "Build your first employee", to: "/signup" }}
+          primaryAction={{ label: "Build your profit agent", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={AUDIENCES}
-          visualEyebrow="Create -> Train -> Wire -> Run"
-          visualTitle="One line from idea to outcome."
-          visualBody="Define the job, teach the playbook, connect the number, then review exactly what happened after every conversation."
+          visualEyebrow="List -> Pitch -> Call -> Profit"
+          visualTitle="One number. One role. One outcome record."
+          visualBody="Pick the profit job, train the pitch, give the agent its line, then review exactly what moved after every conversation."
           visualItems={HERO_VISUAL_ITEMS}
         />
 
         <section className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p className="marketing-ink-panel__soft text-[18px] font-[var(--wireline-font-family-display)]">
-            Sales follow-up without another hire. {" "}
+            Your best salesperson, without the commission. {" "}
             <span className="text-[var(--wireline-color-text-primary)]">
-              Every lead gets a next step.
+              Every included agent gets an included number.
             </span>
           </p>
         </section>
@@ -175,10 +179,10 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">Four steps from blank role to live phone work.</h2>
+              <h2 className="wl-display-2 mt-4">Four steps from blank role to profit calls.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Build the employee, train it, launch the channel, then improve with a clean record
-                behind every conversation.
+                Build the profit agent, train its pitch, launch the included number, then improve
+                with a clean record behind every conversation.
               </p>
             </div>
             <div className="grid overflow-hidden rounded-[16px] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
@@ -203,11 +207,11 @@ export default function WireAgentLanding() {
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:items-start">
             <div>
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Phone employee lanes</p>
-              <h2 className="wl-display-2 mt-4">Pick the job. Wireline handles the line.</h2>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Profit agent lanes</p>
+              <h2 className="wl-display-2 mt-4">Pick the job. Wireline gives it a line.</h2>
               <p className="mt-4 max-w-[34rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Outbound, inbound, or hybrid — same product. You choose the business result;
-                Wireline handles the number, handoff, record, and balance.
+                Outbound, inbound, or hybrid — same product. You choose the profit result; Wireline
+                handles the number, handoff, record, and balance. {PROFIT_AGENT_NUMBER_PROMISE}
               </p>
               <div
                 className="wl-segmented mt-7"
@@ -290,7 +294,7 @@ export default function WireAgentLanding() {
               <h2 className="wl-display-2 mt-4">Create first. Fund live work. Scale when ready.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
                 Personal starts free. Conversation Balance funds usage. Team and Business add
-                capacity, numbers, and controls.
+                profit-agent capacity, included numbers, controls, and shared operations.
               </p>
             </div>
             <div className="mx-auto grid max-w-[960px] gap-5 sm:grid-cols-3">
@@ -345,9 +349,9 @@ export default function WireAgentLanding() {
                 }}
               />
               <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[17ch]">Launch the first phone employee.</h2>
+                <h2 className="wl-display-2 mx-auto max-w-[17ch]">Launch the first profit agent.</h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[520px] text-[16px] leading-[1.6]">
-                  Stand up one trained role, connect one phone lane, and see the outcome after the
+                  Stand up one trained role, claim its included number, and see the outcome after the
                   first real conversation.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -355,7 +359,7 @@ export default function WireAgentLanding() {
                     to="/signup"
                     className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-text-primary)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-canvas-default)] transition-all hover:-translate-y-px hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
                   >
-                    Build your first employee
+                    Build your profit agent
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
