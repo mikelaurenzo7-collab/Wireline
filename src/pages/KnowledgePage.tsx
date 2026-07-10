@@ -10,6 +10,7 @@ import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import AgentPresenceVoiceBridge from "../components/AgentPresenceVoiceBridge";
 import WirelineLiveVoiceProfile from "../components/WirelineLiveVoiceProfile";
 import ReportingPreferences from "../components/training/ReportingPreferences";
+import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
 import { useAgents } from "../contexts/AgentsContext";
 
 type TrainingTabId = "knowledge" | "voice" | "flows" | "simulator" | "reports";
@@ -204,7 +205,12 @@ export default function KnowledgePage() {
               agentRole={activeAgent.role}
             />
           ) : null}
-          {activeTab === "reports" ? <ReportingPreferences /> : null}
+          {activeTab === "reports" ? (
+            <div className="space-y-5">
+              <ReportingPreferences />
+              <RecentCallArtifactRequests />
+            </div>
+          ) : null}
         </WorkspacePageFrame>
       )}
     </WorkspaceShell>
