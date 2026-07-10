@@ -114,8 +114,10 @@ export default function BillingSettings() {
 
   const activePlan = planDetails(subscription?.plan ?? null);
   const hasSubscription = Boolean(subscription?.plan && subscription?.current_period_end);
-  const monthlyPrice = activePlan.monthly > 0 ? `$${activePlan.monthly}/mo` : "$0";
+  const zeroMonthly = activePlan.monthly <= 0;
+  const monthlyPrice = zeroMonthly ? "$0" : `$${activePlan.monthly}/mo`;
   const invoiceTotal = `$${activePlan.monthly}.00`;
+  const planStatus = subscription?.status?.replace(/_/g, " ") || (hasSubscription ? "active" : "personal");
   const balanceFill =
     balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
@@ -155,7 +157,7 @@ export default function BillingSettings() {
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
-      <WorkspacePageFrame mode="narrow">
+      <WorkspacePageFrame mode="standard">
         <SettingsTabs />
 
         {loadError && (
@@ -167,53 +169,68 @@ export default function BillingSettings() {
           </div>
         )}
 
-        <section className="rounded-[16px] border border-primary/20 bg-primary p-6 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary-foreground/70">
-            Current plan
-          </h2>
-          {loading ? (
-            <div className="mt-4 space-y-3" aria-busy="true">
-              <Skeleton shape="text" className="h-10 w-48 bg-primary-foreground/20" />
-              <Skeleton shape="text" className="h-4 w-full max-w-md bg-primary-foreground/15" />
+        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Current plan
+              </h2>
+              {loading ? (
+                <div className="mt-4 space-y-3" aria-busy="true">
+                  <Skeleton shape="text" className="h-10 w-56" />
+                  <Skeleton shape="text" className="h-4 w-full max-w-md" />
+                </div>
+              ) : (
+                <>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.85rem,1.45rem+1.8vw,2.65rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
+                      {subscription?.plan_name || activePlan.name}
+                    </h2>
+                    <Badge variant={planStatus === "active" ? "success" : "outline"}>
+                      {planStatus}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 max-w-[64ch] text-sm leading-6 text-muted-foreground">
+                    {zeroMonthly
+                      ? "Founder access is active. Conversation Balance still controls live usage."
+                      : activePlan.features}
+                  </p>
+                </>
+              )}
             </div>
-          ) : (
-            <>
-              <div className="mt-4 flex flex-wrap items-end gap-2">
-                <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,1.4rem+1.6vw,2.4rem)] font-normal leading-none tracking-[-0.035em]">
-                  {subscription?.plan_name || activePlan.name}
-                </h2>
-                <span className="pb-1 font-[var(--wireline-font-family-display)] text-[clamp(1.5rem,1.2rem+1.4vw,2rem)] leading-none tracking-[-0.035em]">
-                  — {monthlyPrice}
-                </span>
-              </div>
-              {subscription?.status ? (
-                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-primary-foreground/60">
-                  Status · {subscription.status.replace(/_/g, " ")}
+            {!loading ? (
+              <div className="rounded-xl border border-border bg-card px-4 py-3 lg:min-w-40">
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  Monthly
                 </p>
-              ) : null}
-              {hasSubscription ? (
-                <Button
-                  type="button"
-                  disableAnimations
-                  variant="outline"
-                  onClick={() => void openBillingPortal()}
-                  disabled={portalBusy}
-                  className="mt-5 inline-flex gap-2 border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
-                >
-                  {portalBusy ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <ExternalLink className="size-4" aria-hidden="true" />
-                  )}
-                  Manage subscription
-                </Button>
-              ) : null}
-            </>
-          )}
+                <p className="mt-1 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
+                  {monthlyPrice}
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          {hasSubscription ? (
+            <Button
+              type="button"
+              disableAnimations
+              variant="secondary"
+              onClick={() => void openBillingPortal()}
+              disabled={portalBusy}
+              className="mt-5 inline-flex gap-2"
+            >
+              {portalBusy ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <ExternalLink className="size-4" aria-hidden="true" />
+              )}
+              Manage subscription
+            </Button>
+          ) : null}
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2">
-          <article className="wl-paper wl-paper-elevated flex min-h-[148px] flex-col p-5">
+        <section className="grid gap-4 lg:grid-cols-2">
+          <article className="wl-paper wl-paper-elevated flex min-h-[168px] flex-col p-5">
             <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Conversation Balance
             </h2>
@@ -272,7 +289,7 @@ export default function BillingSettings() {
               </>
             )}
           </article>
-          <article className="wl-paper wl-paper-elevated flex min-h-[148px] flex-col p-5">
+          <article className="wl-paper wl-paper-elevated flex min-h-[168px] flex-col p-5">
             <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Next invoice
             </h2>
@@ -283,16 +300,17 @@ export default function BillingSettings() {
               </div>
             ) : hasSubscription ? (
               <>
-                <p className="wl-display-3 mt-auto pt-4">{invoiceTotal}</p>
+                <p className="wl-display-3 mt-auto pt-4">
+                  {zeroMonthly ? "No charge" : invoiceTotal}
+                </p>
                 <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                  Due {formatInvoiceDate(subscription?.current_period_end ?? null)}
+                  {zeroMonthly ? "Included through" : "Due"} {formatInvoiceDate(subscription?.current_period_end ?? null)}
                 </p>
               </>
             ) : (
               <>
                 <p className="mt-auto pt-4 text-sm leading-6 text-muted-foreground">
-                  No subscription invoice on Personal — Conversation Balance funds live work as you
-                  go.
+                  No subscription invoice on Personal — Conversation Balance funds live work as you go.
                 </p>
                 <Link
                   to="/pricing"
@@ -323,11 +341,13 @@ export default function BillingSettings() {
             </div>
           ) : subscription?.current_period_end ? (
             <div className="mt-4 grid gap-2">
-              <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3">
                 <p className="text-sm font-medium text-foreground">
                   {formatInvoiceDate(subscription.current_period_end)}
                 </p>
-                <p className="text-sm font-semibold text-foreground">{invoiceTotal}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {zeroMonthly ? "No charge" : invoiceTotal}
+                </p>
                 <Badge variant="outline">
                   {(subscription.status || "active").replace(/_/g, " ")}
                 </Badge>
