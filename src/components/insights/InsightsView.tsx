@@ -18,6 +18,7 @@ import {
   resolveAppPageSecondaryTabId,
   resolveAppPageSubTabId,
   resolveAppPageSubTabRoute,
+  resolveInsightsGroupForView,
 } from "../../lib/page-sub-tabs";
 
 import FunnelView from "./FunnelView";
@@ -41,15 +42,16 @@ const INSIGHTS_ROUTE = resolveAppPageSubTabRoute("/insights")!;
 export default function InsightsView() {
   const [days, setDays] = useState(30);
   const [searchParams] = useSearchParams();
-  const activeGroup = resolveAppPageSubTabId(
+  const routeGroup = resolveAppPageSubTabId(
     INSIGHTS_ROUTE,
     searchParams.get("tab"),
   ) as InsightGroupId;
 
-  const secondaryRoute = resolveAppPageSecondaryRoute("/insights", activeGroup);
+  const secondaryRoute = resolveAppPageSecondaryRoute("/insights", routeGroup);
   const activeView = secondaryRoute
     ? resolveAppPageSecondaryTabId(secondaryRoute, searchParams.get("view"))
     : "funnel";
+  const activeGroup = (resolveInsightsGroupForView(activeView) ?? routeGroup) as InsightGroupId;
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
