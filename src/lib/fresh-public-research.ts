@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- vendor API responses are not fully typed. */
-import { log } from "./server-context";
+import { fetchWithTimeout, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { groundedSearch } from "./gemini-brain";
 
@@ -18,9 +18,17 @@ export interface FreshResearchResult {
 const PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions";
 const PERPLEXITY_MODEL = process.env.PERPLEXITY_MODEL || "sonar";
 const MAX_QUERY_CHARS = 600;
+const MAX_ANSWER_CHARS = 1_000;
+const LIVE_RESEARCH_TIMEOUT_MS = Number(process.env.LIVE_RESEARCH_TIMEOUT_MS || 8_000);
 
 function cleanQuery(query: string): string {
   return query.replace(/\s+/g, " ").trim().slice(0, MAX_QUERY_CHARS);
+}
+
+function cleanVoiceAnswer(answer: string): string {
+  const trimmed = answer.replace(/\s+/g, " ").trim();
+  if (trimmed.length <= MAX_ANSWER_CHARS) return trimmed;
+  return `${trimmed.slice(0, MAX_ANSWER_CHARS)}…`;
 }
 
 function parsePerplexityCitations(payload: any): { title?: string; uri?: string }[] {
@@ -58,26 +66,30 @@ async function runPerplexityResearch(query: string): Promise<FreshResearchResult
   }
 
   try {
-    const response = await fetch(PERPLEXITY_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      PERPLEXITY_API_URL,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: PERPLEXITY_MODEL,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are Wireline's live public-research tool for phone agents. Answer in two concise sentences, use current public information, and avoid guessing. Include the most relevant facts only. Do not expose raw JSON, markdown tables, or internal tooling details.",
+            },
+            { role: "user", content: safeQuery },
+          ],
+          temperature: 0.2,
+          max_tokens: 450,
+        }),
       },
-      body: JSON.stringify({
-        model: PERPLEXITY_MODEL,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are Wireline's live public-research tool for phone agents. Answer in two concise sentences, use current public information, and avoid guessing. Include the most relevant facts only.",
-          },
-          { role: "user", content: safeQuery },
-        ],
-        temperature: 0.2,
-        max_tokens: 450,
-      }),
-    });
+      LIVE_RESEARCH_TIMEOUT_MS,
+    );
 
     if (!response.ok) {
       throw new Error(`Perplexity returned ${response.status}`);
@@ -88,7 +100,7 @@ async function runPerplexityResearch(query: string): Promise<FreshResearchResult
     if (!answer) throw new Error("Perplexity returned an empty answer");
 
     return {
-      answer,
+      answer: cleanVoiceAnswer(answer),
       sources: parsePerplexityCitations(payload),
       mode: "perplexity_live",
     };
@@ -106,7 +118,7 @@ export async function freshPublicResearch(query: string): Promise<FreshResearchR
 
   const gemini = await groundedSearch(query);
   return {
-    answer: gemini.answer,
+    answer: cleanVoiceAnswer(gemini.answer),
     sources: gemini.sources,
     mode:
       gemini.groundingMode === "pro_grounded"
