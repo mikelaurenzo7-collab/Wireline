@@ -45,14 +45,15 @@ export function resolveAgentVideoPresenter(input: {
   const consentStatus = normalizeConsent(input.videoPresenterConsentStatus);
 
   const catalogReady = usesLiveAvatar && liveAvatar.configured && Boolean(avatarId);
-  const consentBlocked = usesLiveAvatar && consentStatus === "rejected";
+  const consentApproved = consentStatus === "approved";
+  const consentRejected = consentStatus === "rejected";
 
   let status: AgentVideoPresenterConfig["status"] = "not_configured";
   if (providerPreference === "synthetic" || !usesLiveAvatar) {
     status = "disabled";
-  } else if (consentBlocked) {
+  } else if (consentRejected) {
     status = "error";
-  } else if (catalogReady && consentStatus !== "pending") {
+  } else if (catalogReady && consentApproved) {
     status = "ready";
   }
 
@@ -67,13 +68,17 @@ export function resolveAgentVideoPresenter(input: {
     headline:
       status === "ready"
         ? avatarSource === "agent"
-          ? "Custom presenter locked in"
-          : "Live video slot ready"
-        : status === "disabled" && chosenAvatarId
-          ? "Presenter face chosen"
-          : status === "disabled"
-            ? "Wireline face"
-            : identity.video.headline,
+          ? "Presenter identity ready"
+          : "Live presenter ready"
+        : consentStatus === "pending"
+          ? "Presenter consent pending"
+          : consentStatus === "not_started" && usesLiveAvatar
+            ? "Presenter consent required"
+            : status === "disabled" && chosenAvatarId
+              ? "Presenter face chosen"
+              : status === "disabled"
+                ? "Wireline identity"
+                : identity.video.headline,
     description: videoPresenterStatusMessage(
       {
         provider: providerPreference,
