@@ -23,6 +23,7 @@ import emailOutcomeRouter from "../routes/email-outcome-routes";
 import emailSyncRouter from "../routes/email-sync-routes";
 import accountRouter from "../routes/account-routes";
 import settingsRouter from "../routes/settings-routes";
+import postCallOutputRouter from "../routes/post-call-output-routes";
 import carrierRouter from "../routes/carrier-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
@@ -83,6 +84,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(elevenlabsWebhookRouter);
   app.use(accountRouter);
   app.use(settingsRouter);
+  app.use(postCallOutputRouter);
   app.use(carrierRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);
