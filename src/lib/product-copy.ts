@@ -2,8 +2,8 @@
 
 export const BRAND_SYSTEM = {
   northStar: "The best employee you've ever had, for next to nothing.",
-  productNoun: "AI phone employee",
-  defaultRole: "Wireline Operator",
+  productNoun: "AI employee",
+  defaultRole: "Your best employee",
   proofLoop: ["Brief", "Train", "Launch", "Improve"],
   toneRules: [
     "Lead with business outcomes before AI mechanics.",
@@ -11,6 +11,7 @@ export const BRAND_SYSTEM = {
     "Keep the owner in control: rules, approvals, spend, handoffs, and escalation stay explicit.",
     "Treat specialists as expansion, not setup homework.",
     "Show logged proof after every call, handoff, campaign, and follow-up.",
+    "Never name the role Wireline Operator; Wireline is the platform and the customer owns the employee.",
   ],
 } as const;
 
@@ -31,21 +32,21 @@ export const AGENT_DIRECTION_MODES = {
   },
   hybrid: {
     label: "All-purpose",
-    eyebrow: "Best employee · right-hand operator",
+    eyebrow: "Best employee · right-hand employee",
     loop: ["Answer", "Sell", "Follow up", "Sync"],
     promise:
-      "Keeps sales, marketing, service, scheduling, and follow-through in one visible operating loop.",
+      "Keeps sales, marketing, service, scheduling, and follow-through in one visible operating loop under the owner's rules.",
   },
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every included Wireline phone employee comes with an included number at no extra line fee, so it can call out, receive callbacks, and own the handoff under your rules." as const;
+  "Every included AI employee comes with an included Wireline number at no extra line fee, so it can call out, receive callbacks, and own the handoff under your rules." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
   headline: "Your best employee for growth work.",
   subline:
-    "Start with one Wireline Operator: it answers, researches, sells, markets, books, revives stale leads, follows up, and logs proof - with an included number before you add headcount.",
+    "Start with one all-in-one AI employee: it answers, researches, sells, markets, books, revives stale leads, follows up, and logs proof - with an included Wireline number before you add headcount.",
   lanes: [
     "Appointment setting",
     "Lead revival",
@@ -63,13 +64,13 @@ export const OUTBOUND_WEDGE = {
 } as const;
 
 export const MARKETING_VOICE = {
-  eyebrow: "AI phone employees for sales, marketing, calls, scheduling, support, and follow-up",
+  eyebrow: "AI employees for sales, marketing, calls, scheduling, support, and follow-up",
   headline: BRAND_SYSTEM.northStar,
   subline:
     "Wireline gives any business or person a trained AI employee that answers, researches, sells, markets, books appointments, revives stale leads, follows up, and reports every outcome - with an included number and owner-controlled rules.",
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
-    "Command your Wireline Operator from any page. It researches, calls, answers, follows up, books the next step, and logs proof while you stay focused.",
+    "Command your AI employee from any page. It researches, calls, answers, follows up, books the next step, and logs proof while you stay focused.",
   differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 
@@ -82,18 +83,18 @@ export const BUSINESS_MARKETING_VOICE = {
 
 export const WORKSPACE_VOICE = {
   createHeadline: "Build your best employee.",
-  runHeadline: "Your right-hand operator is live.",
+  runHeadline: "Your right-hand employee is live.",
   emptyCue: "Brief it. Train it. Launch it on the line.",
   commandPrompts: ["Answer calls", "Book appointments", "Revive leads", "Run follow-up"],
   directAgent: (name?: string | null) =>
-    `Ask anything about ${name?.trim() || "your Wireline Operator"}...`,
+    `Ask anything about ${name?.trim() || "your AI employee"}...`,
 } as const;
 
 export const PRODUCT_VERSATILITY = {
   eyebrow: "All-purpose AI employee",
   tagline: "One best employee first. Specialists when needed.",
   short:
-    "One trained operator for sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
+    "One trained AI employee for sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
   hero: "One employee for the work that keeps moving.",
 } as const;
 
@@ -115,7 +116,7 @@ export const PRODUCT_POSTURE = {
 } as const;
 
 export function formatAgentRoleLabel(role?: string | null): string {
-  if (role === "ceo") return "Wireline Operator";
+  if (role === "ceo") return "Best Employee";
   return (role || "agent").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
