@@ -40,8 +40,12 @@ describe("product voice cohesion", () => {
     expect(features).not.toContain("Create → Train → Wire → Run");
     expect(pricing).toContain("build, train, launch, improve");
     expect(pricing).not.toContain("create, train, wire, run");
-    expect(pricing).toContain("Extra employees at \\${planById.team.extra_agent_price_usd}/mo");
-    expect(pricing).toContain("Extra employees at \\${planById.business.extra_agent_price_usd}/mo");
+    expect(pricing).toContain(
+      "Extra employees at " + "\\" + "$" + "${planById.team.extra_agent_price_usd}/mo",
+    );
+    expect(pricing).toContain(
+      "Extra employees at " + "\\" + "$" + "${planById.business.extra_agent_price_usd}/mo",
+    );
   });
 
   it("wires landing and workroom surfaces to shared voice constants", () => {
