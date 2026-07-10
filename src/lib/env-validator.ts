@@ -367,10 +367,7 @@ export function validateEnv(): EnvValidationResult {
 
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
-  const fallback =
-    process.env.OPENAI_API_KEY?.trim() ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.PERPLEXITY_API_KEY?.trim();
+  const fallback = process.env.OPENAI_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim();
   if (!gateway && !fallback) {
     result.valid = false;
     byGroup.ai.invalid++;
@@ -384,19 +381,27 @@ export function validateEnv(): EnvValidationResult {
 }
 
 export const getEnvByGroup = (group: EnvGroup) =>
-  ENV_REGISTRY.filter((config) => config.group === group);
+  ENV_REGISTRY.filter((entry) => entry.group === group);
 
-export function logEnvValidation(result: EnvValidationResult) {
-  if (!result.valid) {
-    log.error("Environment validation failed", {
-      errors: result.errors,
-      warnings: result.warnings,
-      summary: result.byGroup,
+export function logEnvValidation(verbose = false) {
+  const result = validateEnv();
+  if (result.valid) log.info("Environment validation passed", { groups: result.byGroup });
+  else
+    log.warn("Environment validation has missing or invalid settings", {
+      errors: result.errors.map((error) => error.var),
+      ...(verbose ? { byGroup: result.byGroup } : {}),
     });
-  } else if (result.warnings.length) {
-    log.warn("Environment validation warnings", {
-      warnings: result.warnings,
-      summary: result.byGroup,
-    });
-  }
+  return result;
+}
+
+export function generateSetupChecklist(): string[] {
+  const result = validateEnv();
+  return [
+    "# Wireline Environment Setup Checklist",
+    "",
+    ...result.errors.map(
+      (error) =>
+        `- ${error.var}: ${error.message}${error.formatHint ? ` (${error.formatHint})` : ""}`,
+    ),
+  ];
 }
