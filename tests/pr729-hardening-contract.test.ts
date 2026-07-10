@@ -10,13 +10,16 @@ describe("PR 729 hardening contract", () => {
     expect(queue).toContain('row?.type === "post_call_artifact"');
     expect(queue).toContain('row?.type === "scheduled_report"');
     expect(queue).toContain("longRunning ? 5 * 60 : 0");
+    expect(queue).toContain("claimLegacyFailed");
   });
 
   it("does not reserve Runtime Balance for a stale scheduled report", () => {
     const worker = read("src/lib/job-worker.ts");
-    const staleCheck = worker.indexOf("currentScheduledReportPreferences");
-    const reportReservation = worker.indexOf("withRuntimeReservation(", staleCheck);
-    expect(staleCheck).toBeGreaterThan(-1);
+    const handler = worker.indexOf("async function handleScheduledReport");
+    const staleCheck = worker.indexOf("currentScheduledReportPreferences", handler);
+    const reportReservation = worker.indexOf("withRuntimeReservation(", handler);
+    expect(handler).toBeGreaterThan(-1);
+    expect(staleCheck).toBeGreaterThan(handler);
     expect(reportReservation).toBeGreaterThan(staleCheck);
     expect(worker).toContain('persistJobResult(job.id, { skipped: true, reason: "schedule_changed" })');
   });
@@ -38,10 +41,14 @@ describe("PR 729 hardening contract", () => {
     expect(twilio).not.toContain("billSmsMessage");
   });
 
-  it("uses either an explicit sender or a Messaging Service, never both", () => {
+  it("keeps a chosen agent sender associated with its Messaging Service", () => {
     const twilio = read("src/lib/twilio-service.ts");
-    expect(twilio).toContain('} else if (settings.messagingServiceSid) {');
-    expect(twilio).toContain('payload.messagingServiceSid = settings.messagingServiceSid;');
+    const serviceBlock = twilio.slice(
+      twilio.indexOf('} else if (settings.messagingServiceSid) {'),
+      twilio.indexOf("const reservationReference"),
+    );
+    expect(serviceBlock).toContain('payload.messagingServiceSid = settings.messagingServiceSid;');
+    expect(serviceBlock).toContain('if (agentSender) payload.from = cleanPhone(agentSender);');
   });
 
   it("limits START to reversing only Twilio-created SMS opt-outs", () => {
@@ -62,5 +69,12 @@ describe("PR 729 hardening contract", () => {
     const api = read("src/lib/api.ts");
     expect(preview).toContain("JSON.stringify({ consentAcknowledged: true })");
     expect(api.trim()).toBe('export * from "./api-base";');
+  });
+
+  it("exposes manual special-file requests from Training", () => {
+    const training = read("src/pages/KnowledgePage.tsx");
+    const requests = read("src/components/training/RecentCallArtifactRequests.tsx");
+    expect(training).toContain("<RecentCallArtifactRequests />");
+    expect(requests).toContain("/api/call-logs/${encodeURIComponent(callId)}/artifact");
   });
 });
