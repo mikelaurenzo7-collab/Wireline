@@ -22,7 +22,8 @@ describe("public navigation mobile regression contract", () => {
   it("keeps all primary navigation and account actions visible in the mobile dialog", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
-    expect(header).toContain('label: "Use cases"');
+    expect(header).toContain('label: "Solutions"');
+    expect(header).toContain('to: "/solutions/support"');
     expect(header).toContain('label: "Features"');
     expect(header).toContain('label: "Pricing"');
     expect(header).toContain('label: "Demos"');
