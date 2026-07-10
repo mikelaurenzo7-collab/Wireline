@@ -10,6 +10,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import MarketingFooter from "../components/marketing/MarketingFooter";
+import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 import { STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
@@ -185,6 +186,12 @@ const FAQ = [
 
 const VOICE_RATES = publishedVoiceRates();
 const BALANCE_MINUTE_ESTIMATES = conversationBalanceMinuteEstimates();
+const PRICING_HERO_ITEMS = [
+  "Build before billing",
+  "Fund live work",
+  "Add capacity",
+  "Control spend",
+] as const;
 
 function offerForPlan(plan: PricingTier) {
   const numericPrice = Number(plan.price.replace("$", ""));
@@ -246,52 +253,18 @@ export default function Pricing() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="pt-16" tabIndex={-1}>
-        <section className="border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail text-center">
-            <p className="wl-overline text-primary">Pricing</p>
-            <h1
-              className="mx-auto mt-4 max-w-4xl text-balance leading-[1.02] tracking-[-0.035em] text-foreground"
-              style={{
-                fontFamily:
-                  "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                fontWeight: 400,
-                fontSize: "clamp(2.7rem, 6vw, 5.6rem)",
-              }}
-            >
-              Start with one phone employee. Scale into a phone operation.
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Personal is balance-led. Team and Business add operating capacity: employees, numbers,
-              routing, approvals, integrations, support, and reliability.
-            </p>
-            <div className="mx-auto mt-8 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {BUYER_ASSURANCES.map(({ icon: Icon, label, detail }) => (
-                <div
-                  key={label}
-                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-card/70 p-4 text-left"
-                >
-                  <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                  <p className="mt-3 text-sm font-semibold text-foreground">{label}</p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/signup"
-                className="marketing-btn-primary min-h-12 px-6 text-sm font-semibold"
-              >
-                Build your first employee <ArrowRight size={14} />
-              </Link>
-              <a
-                href="#tiers"
-                className="inline-flex min-h-12 items-center gap-2 rounded-[var(--wireline-radius-md)] border border-border bg-card px-5 text-sm font-semibold text-foreground transition hover:bg-muted"
-              >
-                Compare plans
-              </a>
-            </div>
-          </div>
-        </section>
+        <MarketingHero
+          eyebrow="Pricing"
+          title="Start with one phone employee. Scale into a phone operation."
+          description="Personal is balance-led. Team and Business add operating capacity: employees, numbers, routing, approvals, integrations, support, and reliability."
+          primaryAction={{ label: "Build your first employee", to: "/signup" }}
+          secondaryAction={{ label: "Compare plans", to: "#tiers", tone: "secondary" }}
+          proof={BUYER_ASSURANCES.map(({ label }) => label)}
+          visualEyebrow="Commercial model"
+          visualTitle="Create first. Fund live work. Scale when ready."
+          visualBody="Pricing stays clean: plan capacity pays for the business layer; Conversation Balance funds calls, texts, and provider-backed actions."
+          visualItems={PRICING_HERO_ITEMS}
+        />
 
         <section id="tiers" className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail mx-auto grid max-w-[1360px] gap-4 lg:grid-cols-4 lg:items-stretch">
