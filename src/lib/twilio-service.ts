@@ -4,10 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
-import {
-  refundRuntimeUsage,
-  reserveRuntimeUsage,
-} from "./runtime-usage-billing";
+import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing";
 import { SMS_COST_PER_SEGMENT_USD } from "./sms-billing";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -237,7 +234,7 @@ async function adjustMessagingReservation(input: {
  * Profit-safe outbound SMS/WhatsApp boundary.
  * - honors DNC for both channels
  * - estimates and atomically reserves the complete customer charge before Twilio
- * - preserves agent-specific sender identity without sending both From and MessagingServiceSid
+ * - keeps a chosen agent sender associated with its Messaging Service controls
  * - validates new SMS contacts once instead of paying Lookup on every reply
  * - attaches a signed delivery-status callback and stale-message validity period
  * - keeps WhatsApp private-beta until a configured customer rate covers variable fees
@@ -364,10 +361,9 @@ export async function sendTenantMessage(
   };
   if (channel === "whatsapp") {
     payload.from = address(cleanPhone(sender), channel);
-  } else if (agentSender) {
-    payload.from = cleanPhone(agentSender);
   } else if (settings.messagingServiceSid) {
     payload.messagingServiceSid = settings.messagingServiceSid;
+    if (agentSender) payload.from = cleanPhone(agentSender);
   } else if (sender) {
     payload.from = cleanPhone(sender);
   }
