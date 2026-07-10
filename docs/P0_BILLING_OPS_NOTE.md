@@ -1,6 +1,6 @@
 # P0 Billing Ops Note — 2026-07-08
 
-Status: **Operator checklist** for launch integrity after the Jul 2026 pricing lock.
+Status: **Operator checklist** for launch integrity after the Jul 2026 pricing lock. Last MCP cross-check: **2026-07-10**.
 
 ## Pricing lock (code)
 
@@ -23,6 +23,36 @@ Run after deploy with live keys:
 5. Voice minute → balance burn or Stripe meter `voice_minutes_overage` when balance empty
 6. `npm run stripe:catalog:check` green
 
+## Stripe MCP cross-check — 2026-07-10
+
+Account: Wireline (`acct_1TXb0SJohDtfy3Ik`).
+
+Active products observed:
+
+- Wireline Personal
+- Wireline Team
+- Wireline Business
+- Wireline Enterprise
+- Conversation Balance
+- Wireline Live Video
+
+Active expected prices observed:
+
+- Team monthly/annual, Team extra-agent, Team voice overage
+- Business monthly/annual, Business extra-agent, Business voice overage
+- Conversation Balance `$5`, `$10`, `$25`, `$50`
+- Live Video add-on monthly
+
+Open cleanup candidate: Stripe search still surfaces active zero-dollar `Retired catalog anchor` prices. They are not referenced by source, but they should not be exposed through public checkout or pricing UX. Before a broad public checkout push, run and verify:
+
+```bash
+npm run stripe:deactivate-retired-defaults
+npm run stripe:catalog:check
+npm run stripe:verify-vercel-parity
+```
+
+Do not delete or rewrite historical billing docs solely because they mention retired price ids; keep the operational truth here and in `docs/business-usage-pricing-decision.md`.
+
 ## Env hygiene
 
 - [x] `STRIPE_VOICE_OVERAGE_METER_EVENT_NAME=voice_minutes_overage` — confirmed in Vercel prod/preview/dev
@@ -30,6 +60,7 @@ Run after deploy with live keys:
 - [x] Stale duplicate launch prices deactivated (`npm run stripe:deactivate-stale-launch`)
 - [x] Live catalog audit green (`node scripts/run-stripe-audit-from-vercel.mjs`)
 - [x] Production redeploy after env sync: `dpl_FeCUbQHUFeGuGU9cUBxMFhZkwbAN` (2026-07-08)
+- [x] Production env shape must include deploy-safe DB URLs: `npm run check-prod-env` now rejects single-label Postgres hosts such as `base` before deploy.
 - No `CLERK_*` references in runtime code (custom JWT auth canonical)
 - Migration `0082_phone_voice_routing.sql` targets `wireline_agents`
 
@@ -47,6 +78,6 @@ Run after deploy with live keys:
 | Stripe catalog contract | `npm run stripe:catalog:check` — **PASS** |
 | Stripe live audit | `node scripts/run-stripe-audit-from-vercel.mjs` — **PASS** (0 findings) |
 | Vercel env parity | `npm run stripe:verify-vercel-parity` — **PASS** |
-| Production deploy | **READY** `dpl_FeCUbQHUFeGuGU9cUBxMFhZkwbAN` → trywireline.com |
+| Production deploy | **READY** `dpl_CdxKLQM7AZ65NZKcrb39YtSL5g1t` → trywireline.com as of the 2026-07-10 MCP check |
 
 _Refresh this note after each live billing proof run._
