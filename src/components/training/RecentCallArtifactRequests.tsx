@@ -106,23 +106,25 @@ export default function RecentCallArtifactRequests() {
         if (active) setLoading(false);
       });
 
-    const onPreferencesSaved = (event: Event) => {
-      const detail = (event as CustomEvent<ArtifactPreferences | undefined>).detail;
-      if (detail) {
-        setPreferences(detail);
-        return;
-      }
+    const refreshPreferences = () => {
       void fetchArtifactPreferences()
         .then((next) => {
           if (active) setPreferences(next);
         })
         .catch(() => undefined);
     };
+    const onPreferencesSaved = (event: Event) => {
+      const detail = (event as CustomEvent<ArtifactPreferences | undefined>).detail;
+      if (detail) setPreferences(detail);
+      else refreshPreferences();
+    };
     window.addEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
+    const preferencesRefreshTimer = window.setInterval(refreshPreferences, 5_000);
 
     return () => {
       active = false;
       window.removeEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
+      window.clearInterval(preferencesRefreshTimer);
       for (const timer of polling.current.values()) window.clearTimeout(timer);
       polling.current.clear();
     };
