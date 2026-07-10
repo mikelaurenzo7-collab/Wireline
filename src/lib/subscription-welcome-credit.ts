@@ -1,41 +1,74 @@
 /**
- * One-time welcome Conversation Balance on first Team/Business subscription.
+ * Subscription-funded Wireline Runtime Allowance.
+ *
+ * Voice minutes remain separately guaranteed by the plan. This grant funds optional
+ * SMS, platform AI/research, enrichment, and generated business artifacts without
+ * allowing those workloads to consume the customer's guaranteed phone capacity.
  */
 import { addCredit } from "./credit-wallet";
+import { planById } from "./plan-catalog";
 import { log } from "./server-context";
 
-export const WELCOME_SUBSCRIPTION_CREDIT_USD = 10;
+export type SubscriptionBillingInterval = "month" | "year";
 
-const WELCOME_PLANS = new Set(["team", "business"]);
-
-export async function grantWelcomeSubscriptionCredit(
-  userId: string,
-  subscriptionId: string,
+export function runtimeAllowanceUsdForPlan(
   planId: string | null | undefined,
+  interval: SubscriptionBillingInterval = "month",
+): number {
+  const monthly = planById(planId)?.runtime_allowance_usd_monthly ?? 0;
+  if (!(monthly > 0)) return 0;
+  return Math.round(monthly * (interval === "year" ? 12 : 1) * 100) / 100;
+}
+
+export async function grantSubscriptionRuntimeAllowance(
+  userId: string,
+  billingPeriodReference: string,
+  planId: string | null | undefined,
+  interval: SubscriptionBillingInterval = "month",
 ): Promise<void> {
-  if (!planId || !WELCOME_PLANS.has(planId)) return;
-  if (!subscriptionId) return;
+  if (!userId || !billingPeriodReference) return;
+  const amountUsd = runtimeAllowanceUsdForPlan(planId, interval);
+  if (!(amountUsd > 0)) return;
 
   const { applied } = await addCredit(
     userId,
-    WELCOME_SUBSCRIPTION_CREDIT_USD,
-    "welcome_subscription",
+    amountUsd,
+    "subscription_runtime_allowance",
     {
-      type: "welcome_subscription",
-      id: userId,
+      type: "subscription_runtime_allowance",
+      id: billingPeriodReference,
       entryKind: "grant",
       source: "stripe",
       provider: "stripe",
-      customerReason: "Welcome Conversation Balance on your first shared capacity plan",
+      customerReason: "Included Wireline Runtime Allowance",
       metadata: {
         plan_id: planId,
-        subscription_id: subscriptionId,
-        welcome_credit_usd: WELCOME_SUBSCRIPTION_CREDIT_USD,
+        billing_interval: interval,
+        runtime_allowance_usd: amountUsd,
+        voice_capacity_separate: true,
       },
     },
   );
 
   if (applied > 0) {
-    log.info("welcome subscription credit granted", { userId, planId, subscriptionId, applied });
+    log.info("subscription runtime allowance granted", {
+      userId,
+      planId,
+      interval,
+      billingPeriodReference,
+      applied,
+    });
   }
+}
+
+/**
+ * Backward-compatible export for older call sites. It now grants the first period's
+ * included runtime rather than a separate promotional credit.
+ */
+export async function grantWelcomeSubscriptionCredit(
+  userId: string,
+  subscriptionId: string,
+  planId: string | null | undefined,
+): Promise<void> {
+  return grantSubscriptionRuntimeAllowance(userId, subscriptionId, planId, "month");
 }

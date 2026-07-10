@@ -1,32 +1,31 @@
-import { useEffect, useState } from "react";
-import { ExternalLink, Loader2, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ExternalLink, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Badge, Button, Skeleton } from "../components/atoms";
+import UsageMeter from "../components/UsageMeter";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { CONVERSATION_BALANCE_PRESETS_USD } from "../lib/conversation-balance";
-import {
-  conversationBalanceMinuteEstimates,
-  publishedVoiceRates,
-} from "../lib/voice-pricing-display";
+import { conversationBalanceMinuteEstimates } from "../lib/voice-pricing-display";
+import type { BillingStatusResponse } from "../types/api";
 
-type SubscriptionState = {
-  plan: string | null;
-  plan_name: string | null;
-  status: string | null;
-  current_period_end: string | null;
+type SubscriptionState = BillingStatusResponse["subscription"];
+
+type ConversationBalanceResponse = {
+  balance_usd: number;
 };
 
 function formatUsd(value: number | null) {
   if (value === null) return "—";
-  return `$${value.toFixed(2)}`;
+  const absolute = Math.abs(value);
+  return value < 0 ? `-$${absolute.toFixed(2)}` : `$${absolute.toFixed(2)}`;
 }
 
-function formatInvoiceDate(value: string | null) {
+function formatDate(value: string | null | undefined) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
@@ -37,27 +36,13 @@ function formatInvoiceDate(value: string | null) {
   }).format(date);
 }
 
-function planDetails(planId: string | null) {
-  // No subscription means the free Personal tier — never fabricate a paid
-  // plan or an invoice amount the account does not actually carry.
-  const plan =
-    STRIPE_PLANS.find((item) => item.id === planId) ??
-    STRIPE_PLANS.find((item) => item.id === "personal");
-  if (!plan) return { name: "Wireline Personal", monthly: 0, features: "1 agent · 1 line" };
-  const capacity = `${plan.max_agents} agent${plan.max_agents === 1 ? "" : "s"} · ${plan.included_phone_numbers} line${plan.included_phone_numbers === 1 ? "" : "s"}`;
-  return {
-    name: plan.name,
-    monthly: plan.price_usd_monthly,
-    features:
-      plan.id === "personal"
-        ? `${capacity} · Conversation Balance funds live work`
-        : `${capacity} · Routing · Approvals · Shared inbox`,
-  };
+function isPaidPlan(planId: string | null | undefined) {
+  return Boolean(planId && planId !== "personal");
 }
 
 export default function BillingSettings() {
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionState>(null);
   const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
@@ -75,19 +60,17 @@ export default function BillingSettings() {
           authFetch("/api/conversation-balance"),
         ]);
         if (cancelled) return;
-        if (!statusRes.ok && !balanceRes.ok) {
-          setLoadError("Couldn't load billing details. Refresh or try again in a moment.");
-          return;
-        }
+
         if (statusRes.ok) {
-          const data = await statusRes.json();
+          const data = (await statusRes.json()) as BillingStatusResponse;
           setSubscription(data.subscription ?? null);
         } else {
           setLoadError("Subscription status is temporarily unavailable.");
         }
+
         if (balanceRes.ok) {
-          const data = await balanceRes.json();
-          setBalanceUsd(data.balance_usd ?? 0);
+          const data = (await balanceRes.json()) as ConversationBalanceResponse;
+          setBalanceUsd(Number(data.balance_usd ?? 0));
         } else if (statusRes.ok) {
           setLoadError("Conversation Balance is temporarily unavailable.");
         }
@@ -112,31 +95,36 @@ export default function BillingSettings() {
     }
   }, []);
 
-  const activePlan = planDetails(subscription?.plan ?? null);
-  const hasSubscription = Boolean(subscription?.plan && subscription?.current_period_end);
-  const zeroMonthly = activePlan.monthly <= 0;
-  const monthlyPrice = zeroMonthly ? "$0" : `$${activePlan.monthly}/mo`;
-  const invoiceTotal = `$${activePlan.monthly}.00`;
-  const planStatus = subscription?.status?.replace(/_/g, " ") || (hasSubscription ? "active" : "personal");
-  const balanceFill =
-    balanceUsd !== null && balanceUsd > 0 ? Math.min(100, Math.round((balanceUsd / 500) * 100)) : 0;
+  const plan = useMemo(
+    () =>
+      STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ??
+      STRIPE_PLANS.find((item) => item.id === "personal")!,
+    [subscription?.plan_id],
+  );
+  const paidPlan = isPaidPlan(subscription?.plan_id);
+  const hasSubscription = Boolean(paidPlan && subscription?.has_subscription);
+  const planStatus = subscription?.status?.replace(/_/g, " ") || "free builder";
+  const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
-  const personalVoiceRate = publishedVoiceRates()[0]?.rateUsd ?? 0.2;
 
   async function addBalance(amountUsd: number) {
+    if (!paidPlan) {
+      setActionError("Choose Starter, Starter Plus, Pro, or Business before adding Conversation Balance.");
+      return;
+    }
     setTopUpBusy(amountUsd);
     setActionError(null);
     try {
-      const res = await authFetch("/api/conversation-balance/checkout", {
+      const response = await authFetch("/api/conversation-balance/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount_usd: amountUsd }),
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.url) throw new Error(data?.error || "Could not start checkout.");
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.url) throw new Error(data?.error || "Could not start checkout.");
       window.location.href = data.url;
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not start checkout.");
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not start checkout.");
       setTopUpBusy(null);
     }
   }
@@ -145,12 +133,12 @@ export default function BillingSettings() {
     setPortalBusy(true);
     setActionError(null);
     try {
-      const res = await authFetch("/api/billing/portal", { method: "POST" });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.url) throw new Error(data?.error || "Could not open billing portal.");
+      const response = await authFetch("/api/billing/portal", { method: "POST" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.url) throw new Error(data?.error || "Could not open billing portal.");
       window.location.href = data.url;
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Could not open billing portal.");
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Could not open billing portal.");
       setPortalBusy(false);
     }
   }
@@ -160,21 +148,21 @@ export default function BillingSettings() {
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
 
-        {loadError && (
+        {loadError ? (
           <div
             className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
             role="alert"
           >
             {loadError}
           </div>
-        )}
+        ) : null}
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 Current plan
-              </h2>
+              </p>
               {loading ? (
                 <div className="mt-4 space-y-3" aria-busy="true">
                   <Skeleton shape="text" className="h-10 w-56" />
@@ -183,141 +171,162 @@ export default function BillingSettings() {
               ) : (
                 <>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <h2 className="font-[var(--wireline-font-family-display)] text-[clamp(1.85rem,1.45rem+1.8vw,2.65rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
-                      {subscription?.plan_name || activePlan.name}
-                    </h2>
+                    <h1 className="font-[var(--wireline-font-family-display)] text-[clamp(1.85rem,1.45rem+1.8vw,2.65rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
+                      {subscription?.plan_name || plan.name}
+                    </h1>
                     <Badge variant={planStatus === "active" ? "success" : "outline"}>
                       {planStatus}
                     </Badge>
                   </div>
-                  <p className="mt-3 max-w-[64ch] text-sm leading-6 text-muted-foreground">
-                    {zeroMonthly
-                      ? "Founder access is active. Conversation Balance still controls live usage."
-                      : activePlan.features}
+                  <p className="mt-3 max-w-[72ch] text-sm leading-6 text-muted-foreground">
+                    {paidPlan
+                      ? `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}, up to ${plan.included_phone_numbers} on-demand production number${plan.included_phone_numbers === 1 ? "" : "s"}, and ${plan.voice_minutes_monthly.toLocaleString()} pooled live-call minutes each month. Lead Hunt and connected email workflows are available; variable SMS, enrichment, and extra voice usage draw from prepaid balance.`
+                      : "Build, train, and privately simulate one draft agent. Choose a paid plan before provisioning a production number or running paid provider actions."}
                   </p>
                 </>
               )}
             </div>
+
             {!loading ? (
-              <div className="rounded-xl border border-border bg-card px-4 py-3 lg:min-w-40">
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  Monthly
-                </p>
-                <p className="mt-1 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
-                  {monthlyPrice}
-                </p>
+              <div className="flex flex-wrap gap-2">
+                {!paidPlan ? (
+                  <Button asChild disableAnimations>
+                    <Link to="/pricing">Choose a live plan</Link>
+                  </Button>
+                ) : null}
+                {hasSubscription ? (
+                  <Button
+                    type="button"
+                    disableAnimations
+                    variant="secondary"
+                    onClick={() => void openBillingPortal()}
+                    disabled={portalBusy}
+                    className="inline-flex gap-2"
+                  >
+                    {portalBusy ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <ExternalLink className="size-4" aria-hidden="true" />
+                    )}
+                    Manage in Stripe
+                  </Button>
+                ) : null}
               </div>
             ) : null}
           </div>
-
-          {hasSubscription ? (
-            <Button
-              type="button"
-              disableAnimations
-              variant="secondary"
-              onClick={() => void openBillingPortal()}
-              disabled={portalBusy}
-              className="mt-5 inline-flex gap-2"
-            >
-              {portalBusy ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <ExternalLink className="size-4" aria-hidden="true" />
-              )}
-              Manage subscription
-            </Button>
-          ) : null}
         </section>
 
+        {paidPlan ? <UsageMeter onUpgrade={() => (window.location.href = "/pricing")} /> : null}
+
         <section className="grid gap-4 lg:grid-cols-2">
-          <article className="wl-paper wl-paper-elevated flex min-h-[168px] flex-col p-5">
-            <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              Conversation Balance
-            </h2>
+          <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  Conversation Balance
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Prepaid funding for additional voice, SMS segments, provider-backed enrichment, and other variable channel work.
+                </p>
+              </div>
+              <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
+            </div>
+
             {loading ? (
-              <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
+              <div className="mt-6 flex items-center gap-2 text-muted-foreground" aria-busy="true">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 <span className="text-sm">Loading balance…</span>
               </div>
             ) : (
               <>
-                <p className="wl-display-3 mt-auto pt-4">{formatUsd(balanceUsd)}</p>
-                {balanceUsd !== null && balanceUsd <= 0 ? (
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Add balance before your first live call — usage draws down as conversations run.
-                  </p>
+                <p className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}>
+                  {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {!paidPlan
+                    ? "Conversation Balance becomes available after a live plan is active."
+                    : balanceDue > 0
+                      ? "A previous active call finished normally after coverage ran out. Restore this amount before another paid provider action."
+                      : "Included plan capacity is used first. Additional variable usage draws only from this balance—never an automatic postpaid overage invoice."}
+                </p>
+
+                {paidPlan ? (
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
+                      const minutes =
+                        balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ?? 0;
+                      return (
+                        <Button
+                          key={amount}
+                          type="button"
+                          disableAnimations
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void addBalance(amount)}
+                          disabled={topUpBusy !== null}
+                          className="gap-1.5"
+                          title={minutes > 0 ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate` : undefined}
+                        >
+                          {topUpBusy === amount ? (
+                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                          ) : (
+                            <Plus className="size-3.5" aria-hidden="true" />
+                          )}
+                          ${amount}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Voice draws at ${personalVoiceRate.toFixed(2)}/min from balance — top-ups below
-                    show approximate minutes.
-                  </p>
+                  <Button asChild variant="outline" size="sm" className="mt-5 self-start">
+                    <Link to="/pricing">Compare live plans</Link>
+                  </Button>
                 )}
-                <div className="mt-5 h-2 rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${balanceFill}%` }}
-                  />
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
-                    const minutes =
-                      balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ?? 0;
-                    return (
-                      <Button
-                        key={amount}
-                        type="button"
-                        disableAnimations
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void addBalance(amount)}
-                        disabled={topUpBusy !== null}
-                        className="gap-1.5"
-                        title={
-                          minutes > 0 ? `≈ ${minutes.toLocaleString()} voice minutes` : undefined
-                        }
-                      >
-                        {topUpBusy === amount ? (
-                          <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                        ) : (
-                          <Plus className="size-3.5" aria-hidden="true" />
-                        )}
-                        ${amount}
-                      </Button>
-                    );
-                  })}
-                </div>
               </>
             )}
           </article>
-          <article className="wl-paper wl-paper-elevated flex min-h-[168px] flex-col p-5">
-            <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              Next invoice
-            </h2>
+
+          <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Subscription
+            </p>
             {loading ? (
-              <div className="mt-4 flex items-center gap-2 text-muted-foreground" aria-busy="true">
+              <div className="mt-6 flex items-center gap-2 text-muted-foreground" aria-busy="true">
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                <span className="text-sm">Loading billing…</span>
+                <span className="text-sm">Loading subscription…</span>
               </div>
             ) : hasSubscription ? (
               <>
-                <p className="wl-display-3 mt-auto pt-4">
-                  {zeroMonthly ? "No charge" : invoiceTotal}
+                <p className="mt-6 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
+                  Renews {formatDate(subscription?.current_period_end)}
                 </p>
-                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                  {zeroMonthly ? "Included through" : "Due"} {formatInvoiceDate(subscription?.current_period_end ?? null)}
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                  Stripe is the source of truth for your renewal amount, billing interval, payment method, invoices, cancellation, discounts, and tax details.
                 </p>
+                <Button
+                  type="button"
+                  disableAnimations
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void openBillingPortal()}
+                  disabled={portalBusy}
+                  className="mt-5 self-start gap-2"
+                >
+                  <ExternalLink className="size-3.5" aria-hidden="true" />
+                  View invoices and payment method
+                </Button>
               </>
             ) : (
               <>
-                <p className="mt-auto pt-4 text-sm leading-6 text-muted-foreground">
-                  No subscription invoice on Personal — Conversation Balance funds live work as you go.
+                <p className="mt-6 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
+                  No recurring invoice
                 </p>
-                <Link
-                  to="/pricing"
-                  className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline"
-                >
-                  Compare paid plans
-                </Link>
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                  Free Builder creates no production telephony or recurring subscription cost. Activate only when an agent is trained and ready for live work.
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-5 self-start">
+                  <Link to="/pricing">View Founder Early Access plans</Link>
+                </Button>
               </>
             )}
           </article>
@@ -328,44 +337,6 @@ export default function BillingSettings() {
             {actionError}
           </p>
         ) : null}
-
-        <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            Recent invoices
-          </h2>
-          {loading ? (
-            <div className="mt-4 grid gap-2" aria-busy="true">
-              {Array.from({ length: 2 }, (_, index) => (
-                <Skeleton key={index} shape="text" className="h-12 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : subscription?.current_period_end ? (
-            <div className="mt-4 grid gap-2">
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-muted/35 px-4 py-3">
-                <p className="text-sm font-medium text-foreground">
-                  {formatInvoiceDate(subscription.current_period_end)}
-                </p>
-                <p className="text-sm font-semibold text-foreground">
-                  {zeroMonthly ? "No charge" : invoiceTotal}
-                </p>
-                <Badge variant="outline">
-                  {(subscription.status || "active").replace(/_/g, " ")}
-                </Badge>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center">
-              <p className="text-sm font-medium text-foreground">No invoices yet</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Personal runs on Conversation Balance. Team and Business add a monthly subscription
-                with invoices here.
-              </p>
-              <Button asChild variant="outline" size="sm" className="mt-4">
-                <Link to="/pricing">View plans</Link>
-              </Button>
-            </div>
-          )}
-        </section>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

@@ -14,7 +14,7 @@ export default function UsageMeter({
   onUpgrade,
 }: {
   compact?: boolean;
-  /** When provided, approaching/over states surface a one-click upgrade CTA. */
+  /** When provided, approaching/extra-usage states surface a one-click upgrade CTA. */
   onUpgrade?: () => void;
 }) {
   const [snap, setSnap] = useState<WorkspaceUsageResponse | null>(null);
@@ -54,27 +54,34 @@ export default function UsageMeter({
     );
   }
 
-  if (!snap || !snap.plan_id) {
-    return null; // no active plan — nothing to display
+  if (!snap || !snap.plan_id || snap.plan_id === "personal") {
+    return null;
   }
 
   const used = snap.voice_minutes_used;
   const included = snap.voice_minutes_included;
   const pct = included > 0 ? Math.min(100, Math.round((used / included) * 100)) : 0;
-  const isOver = snap.overage_minutes > 0;
-  const isWarn = !isOver && pct >= 80;
-  const usageState = isOver ? "over" : isWarn ? "warn" : "ok";
+  const hasExtraUsage = snap.overage_minutes > 0;
+  const isWarn = !hasExtraUsage && pct >= 80;
+  const credit = snap.credit_balance_usd ?? 0;
+  const completionDue = snap.completion_grace_due_usd ?? Math.max(0, -credit);
+  const isBlocked = snap.live_voice_blocked || completionDue > 0;
+  const usageState = isBlocked ? "over" : hasExtraUsage || isWarn ? "warn" : "ok";
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const credit = snap.credit_balance_usd ?? 0;
   const lowCredit = credit > 0 && credit < 5;
+  const compactTitle = isBlocked
+    ? completionDue > 0
+      ? `New live calls paused — restore $${completionDue.toFixed(2)} after the previous call finished normally.`
+      : "New live calls paused — add Conversation Balance or wait for the monthly reset."
+    : `${used} of ${included} included voice minutes used — resets ${resetLabel}`;
 
   if (compact) {
     return (
       <div
         className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 wl-micro-badge font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
         data-usage-state={usageState}
-        title={`${used} of ${included} voice minutes used this month — resets ${resetLabel}`}
+        title={compactTitle}
       >
         <span className="w-2 h-2 rounded-full animate-pulse wl-accent-dot" data-circular />
         <span className="text-foreground/55 font-semibold tracking-wider">VOICE</span>
@@ -118,54 +125,64 @@ export default function UsageMeter({
         </div>
       </div>
 
-      {/* Premium SHADCN Progress bar with custom styling */}
       <div className="relative">
         <Progress
           value={pct}
           className="h-2.5 bg-white/5 shadow-inner wl-accent-progress-glow"
           indicatorClassName={cn(
             "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            isOver ? "bg-rose-500" : isWarn ? "bg-amber-500" : "bg-brand",
+            isBlocked ? "bg-rose-500" : hasExtraUsage || isWarn ? "bg-amber-500" : "bg-brand",
           )}
         />
       </div>
 
-      {isOver && (
+      {isBlocked && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
           <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed">
             <span className="text-rose-400 font-semibold wl-label mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
-              Overage
+              New calls paused
             </span>
-            <span className="text-rose-400 font-bold">
-              {snap.overage_minutes.toLocaleString()} min over plan
+            <span className="text-foreground/85">
+              {completionDue > 0
+                ? `The previous call finished normally and used $${completionDue.toFixed(2)} of completion grace. Restore Conversation Balance before starting another live call.`
+                : "Your included minutes are used and Conversation Balance cannot cover another attempt. Add balance or wait for the monthly reset."}
             </span>
-            <span className="text-muted/80 ml-1">
-              {`— billed at $${snap.overage_per_min_usd.toFixed(2)}/min (`}
-              <span className="text-foreground font-semibold">
-                {snap.stripe_metered
-                  ? `≈ $${snap.overage_cost_usd.toFixed(2)} this period`
-                  : "metered billing pending Stripe setup"}
-              </span>
-              {")"}
+            <span className="block text-foreground/55 mt-1">
+              Wireline never cuts off an active call because billing coverage changes mid-conversation.
             </span>
           </div>
         </div>
       )}
 
-      {isWarn && !isOver && (
+      {!isBlocked && hasExtraUsage && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-md bg-amber-500/8 border border-amber-500/20">
+          <Wallet className="w-4 h-4 mt-0.5 text-amber-500 shrink-0" />
+          <div className="text-[var(--wireline-typography-overline-size)] leading-relaxed">
+            <span className="text-amber-500 font-semibold">
+              {snap.overage_minutes.toLocaleString()} extra minute
+              {snap.overage_minutes === 1 ? "" : "s"}
+            </span>
+            <span className="text-foreground/65 ml-1">
+              covered by Conversation Balance at ${snap.overage_per_min_usd.toFixed(2)}/min. No
+              automatic invoice overage.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {isWarn && !isBlocked && (
         <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[var(--wireline-typography-overline-size)] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Approaching your {included.toLocaleString()}-minute plan — upgrading adds headroom; past
-            it, overage bills at ${snap.overage_per_min_usd.toFixed(2)}/min.
+            Approaching your {included.toLocaleString()} included minutes. After that, new calls use
+            Conversation Balance at ${snap.overage_per_min_usd.toFixed(2)}/min—never an automatic
+            overage invoice.
           </span>
         </div>
       )}
 
-      {/* Primary path when usage runs hot: upgrade for more included minutes
-          (cheaper than recurring overage/top-ups). Credits stay the safety net. */}
-      {(isWarn || isOver) && onUpgrade && (
+      {(isWarn || hasExtraUsage || isBlocked) && onUpgrade && (
         <Button
           type="button"
           variant="ghost"
@@ -178,15 +195,22 @@ export default function UsageMeter({
         </Button>
       )}
 
-      {/* Prepaid credits — relevant when the Account Holder holds a balance or is in
-          overage, where credits absorb the cost before Stripe meters it. */}
-      {(credit > 0 || isOver) && (
+      {(credit !== 0 || hasExtraUsage || isBlocked) && (
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">
           <span className="flex items-center gap-2 wl-label text-foreground/55 font-medium">
             <Wallet className="w-3.5 h-3.5" />
-            Prepaid credits
+            Conversation Balance
           </span>
-          {credit > 0 ? (
+          {completionDue > 0 ? (
+            <span className="text-right leading-tight">
+              <span className="tabular-nums font-bold text-[var(--wireline-typography-body-size)] text-rose-400">
+                ${completionDue.toFixed(2)} due
+              </span>
+              <span className="block wl-label text-foreground/55 font-medium">
+                restore before another live call
+              </span>
+            </span>
+          ) : credit > 0 ? (
             <span className="text-right leading-tight">
               <span
                 className={cn(
@@ -197,16 +221,12 @@ export default function UsageMeter({
                 ${credit.toFixed(2)}
               </span>
               <span className="block wl-label text-foreground/55 font-medium">
-                {isOver
-                  ? "auto-applied to overage"
-                  : lowCredit
-                    ? "running low — top up below"
-                    : "covers overage first"}
+                {lowCredit ? "running low — top up below" : "available for controlled extra usage"}
               </span>
             </span>
           ) : (
             <span className="wl-label text-amber-500 font-semibold text-right">
-              Add credits below to cover overage
+              Add balance before extra live usage
             </span>
           )}
         </div>

@@ -4,8 +4,12 @@ import {
   Building2,
   Check,
   CircleDollarSign,
+  Crosshair,
+  Mail,
+  MessageSquareText,
   PhoneCall,
   ShieldCheck,
+  Sparkles,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -14,227 +18,144 @@ import MarketingHero from "../components/marketing/MarketingHero";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 import { STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
-import {
-  conversationBalanceMinuteEstimates,
-  publishedVoiceRates,
-} from "../lib/voice-pricing-display";
 
 const planById = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
   StripePlanId,
   (typeof STRIPE_PLANS)[number]
 >;
 
-const PRICING_TIERS = [
+const PAID_TIERS = [
   {
-    id: "personal",
-    name: "Personal",
-    eyebrow: "For one person",
-    price: "$0",
-    period: "to create",
-    tagline: "Start the line before billing starts.",
+    plan: planById.starter,
+    publicName: "Starter",
+    eyebrow: "Try one live lane",
+    tagline: "A real agent at a price almost any owner can test.",
     detail:
-      "Build and train one AI profit agent for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
-    features: [
-      "1 active profit agent",
-      "1 phone line when live",
-      "All templates unlocked",
-      "Conversation Balance funds usage",
-    ],
-    cta: "Start with Personal",
-    ctaPath: "/signup?plan=personal",
-    icon: WalletCards,
+      "Launch one tightly focused agent for inbound coverage, follow-up, appointment setting, or lead qualification without committing to a larger operating plan.",
+    cta: "Start for $9",
+    ctaPath: "/signup?plan=starter",
+    icon: Sparkles,
     featured: false,
+    badge: "Lowest-cost live plan",
   },
   {
-    id: "team",
-    name: "Team",
-    eyebrow: "For a small team",
-    price: `$${planById.team.price_usd_monthly}`,
-    period: "mo",
-    tagline: "Shared capacity for a focused lane.",
+    plan: planById.team,
+    publicName: "Starter Plus",
+    eyebrow: "More room for one agent",
+    tagline: "The strongest one-agent launch plan.",
     detail:
-      "Several profit agents, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
-    features: [
-      `${planById.team.max_agents} active profit agents`,
-      `${planById.team.included_phone_numbers} phone lines included`,
-      `Extra employees at $${planById.team.extra_agent_price_usd}/mo`,
-      "Routing, approvals, and team inbox",
-    ],
-    cta: "Start Team",
+      "Keep one agent, but add substantially more voice capacity plus the full Lead Hunt, enrichment, inbox, email, and SMS workflow surface.",
+    cta: "Choose Starter Plus",
     ctaPath: "/signup?plan=team",
+    icon: Crosshair,
+    featured: true,
+    badge: "Best founder value",
+  },
+  {
+    plan: planById.business,
+    publicName: "Pro",
+    eyebrow: "For a growing operation",
+    tagline: "Five specialized agents, one supervised workspace.",
+    detail:
+      "Run separate agents for inbound conversion, outbound follow-up, lead revival, scheduling, support, or front-desk work with shared routing and approvals.",
+    cta: "Go Pro",
+    ctaPath: "/signup?plan=business",
     icon: Users,
     featured: false,
+    badge: "Multi-agent",
   },
   {
-    id: "business",
-    name: "Business",
-    eyebrow: "Best operating tier",
-    price: `$${planById.business.price_usd_monthly}`,
-    period: "mo",
-    tagline: "Front desk, revenue, and support coverage.",
+    plan: planById.enterprise,
+    publicName: "Business",
+    eyebrow: "For serious operators",
+    tagline: "A complete AI communications workforce.",
     detail:
-      "The serious business tier: more profit agents, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
-    features: [
-      `${planById.business.max_agents} active profit agents`,
-      `${planById.business.included_phone_numbers} phone lines included`,
-      `Extra employees at $${planById.business.extra_agent_price_usd}/mo`,
-      "CRM sync, analytics, roles, approvals",
-    ],
+      "Deploy up to fifteen purpose-built agents across sales, service, operations, recovery, support, and multiple business lines with stronger governance and analytics.",
     cta: "Start Business",
-    ctaPath: "/signup?plan=business",
+    ctaPath: "/signup?plan=enterprise",
     icon: Building2,
-    featured: true,
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    eyebrow: "For scale",
-    price: "Custom",
-    period: "annual",
-    tagline: "Governed rollouts and custom telephony.",
-    detail:
-      "Annual committed usage, SSO, audit support, BYO SIP, security review, and rollout planning for larger teams.",
-    features: [
-      "Custom employee and line capacity",
-      "SSO, audit, and policy controls",
-      "Custom integrations and telephony",
-      "Implementation and launch support",
-    ],
-    cta: "Talk to Wireline",
-    ctaPath: "/contact?topic=enterprise",
-    icon: ShieldCheck,
     featured: false,
+    badge: "High capacity",
   },
 ] as const;
 
-type PricingTier = (typeof PRICING_TIERS)[number];
-
-const COMMERCIAL_RULES = [
-  ["Build", "Templates, voices, and setup are unlocked before billing."],
-  ["Fund", "Conversation Balance pays for calls, texts, and provider-backed actions."],
-  ["Scale", "Team and Business add agents, lines, approvals, routing, and reliability."],
-] as const;
-
-const BUYER_ASSURANCES = [
-  {
-    icon: Check,
-    label: "Build first",
-    detail: "Create and train before a live line or paid plan is required.",
-  },
-  {
-    icon: CircleDollarSign,
-    label: "Predict spend",
-    detail: "Conversation Balance and published rates keep live work budgetable.",
-  },
+const CHANNEL_RULES = [
   {
     icon: PhoneCall,
-    label: "Go live deliberately",
-    detail: "Provision numbers only when the agent is ready for real conversations.",
+    title: "Voice",
+    body: "Included pooled minutes are used first. Additional completed usage draws only from prepaid Conversation Balance. Active calls finish normally; the next call pauses if coverage is depleted.",
   },
   {
-    icon: ShieldCheck,
-    label: "Operational controls",
-    detail: "Plans add approvals, roles, analytics, compliance, and support posture.",
-  },
-] as const;
-
-const BUYER_DECISION_ROWS = [
-  {
-    choice: "Usage-based API minutes plus model and line economics",
-    risk: "Great for engineers, but the buyer still has to assemble UX, logs, routing, billing, QA, and support.",
-    wireline:
-      "A packaged phone operation: build, train, launch, improve, review, and bill from one product surface.",
+    icon: MessageSquareText,
+    title: "SMS",
+    body: "Carrier and messaging API usage draws from Conversation Balance by segment. This protects both sides from unlimited-message economics and keeps campaign spend visible.",
   },
   {
-    choice: "Generic call bot tools",
-    risk: "Easy to demo, often messy once teams need approvals, handoffs, CRM context, and spend controls.",
-    wireline:
-      "Team and Business capacity with numbers, approvals, inbox, analytics, and Conversation Balance.",
+    icon: Mail,
+    title: "Email",
+    body: "Connected Gmail, Outlook, Yahoo, iCloud, or customer email infrastructure retains its provider limits and reputation controls. Platform-funded sending or enrichment can draw from prepaid balance.",
   },
   {
-    choice: "Human answering services",
-    risk: "Useful coverage, but context, consistency, reporting, and follow-up often fragment across vendors.",
-    wireline:
-      "A trained agent that keeps scripts, outcomes, transcripts, routing, and coaching in the workspace.",
-  },
-  {
-    choice: "Avatar/video tools",
-    risk: "Presentation alone does not run the phone operation or maintain the business workflow behind it.",
-    wireline:
-      "Voice-first operations with an optional presenter layer for higher-trust business moments.",
+    icon: Crosshair,
+    title: "Lead Hunt",
+    body: "Available on every paid plan. Wireline can research a precise niche, build tailored prospect criteria, enrich connected data, and hand qualified targets to sales agents. Paid data-provider work is prepaid or customer-connected.",
   },
 ] as const;
 
 const FAQ = [
   [
-    "Does Personal require a subscription?",
-    "No. Personal is free to create and train. Live calls, texts, and follow-up are funded through Conversation Balance.",
+    "Why are there two Starter plans?",
+    "Starter is the lowest-risk way to put one agent live. Starter Plus keeps the same one-agent limit but supplies much more monthly voice capacity and the fuller lead-hunting and multichannel workflow experience.",
   ],
   [
-    "What is Conversation Balance?",
-    "Prepaid Stripe credit for real voice work and provider-backed actions. It keeps personal usage flexible and gives teams a clear operating wallet.",
+    "Does every agent automatically create a phone-number cost?",
+    "No. Plans provide number slots, but Wireline provisions production numbers when they are actually needed. Unused agent capacity does not need to create unnecessary carrier spend.",
   ],
   [
-    "What makes Business different from Team?",
-    "Business is the operating tier: more agents, more phone lines, CRM sync, analytics, role-aware controls, and approvals for a real front desk or revenue lane.",
+    "Is Lead Hunt included?",
+    "Lead Hunt access is included with every paid plan. Research and qualification can use Wireline intelligence, connected customer sources, or prepaid provider-backed data and enrichment.",
   ],
   [
-    "Can Wireline provision phone numbers?",
-    "Yes. Dedicated numbers are included by plan, and extra agent or line capacity can be added as the account grows.",
+    "What happens when included voice minutes run out?",
+    "New live work uses prepaid Conversation Balance. Wireline does not silently add a postpaid metered line item. You can add balance, enable an auto-refill rule, wait for renewal, or upgrade.",
+  ],
+  [
+    "Can Wireline send unlimited email or SMS?",
+    "No responsible communications platform should promise uncontrolled outreach. Email follows the connected provider's limits and reputation policies. SMS and provider-funded actions are metered through prepaid balance, with consent and compliance controls remaining authoritative.",
+  ],
+  [
+    "What is the Scale plan?",
+    "Scale is a custom committed-usage agreement for organizations needing 25 or more agents, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs.",
   ],
 ] as const;
 
-const VOICE_RATES = publishedVoiceRates();
-const BALANCE_MINUTE_ESTIMATES = conversationBalanceMinuteEstimates();
-const PRICING_HERO_ITEMS = [
-  "Build before billing",
-  "Fund live work",
-  "Add capacity",
-  "Control spend",
+const assurances = [
+  { icon: Check, label: "Build free", detail: "Train and simulate one private draft agent before paying." },
+  { icon: CircleDollarSign, label: "No surprise overages", detail: "Variable provider usage is prepaid, not silently invoiced." },
+  { icon: Crosshair, label: "Lead Hunt on paid plans", detail: "Research, qualify, enrich, then hand prospects to sales agents." },
+  { icon: ShieldCheck, label: "Controlled execution", detail: "Approvals, consent, spend controls, logs, and outcomes remain visible." },
 ] as const;
 
-function offerForPlan(plan: PricingTier) {
-  const numericPrice = Number(plan.price.replace("$", ""));
-  return {
-    "@type": "Offer",
-    name: `Wireline ${plan.name}`,
-    url: `https://trywireline.com${plan.ctaPath}`,
-    price: Number.isFinite(numericPrice) ? numericPrice : undefined,
-    priceCurrency: Number.isFinite(numericPrice) ? "USD" : undefined,
-    availability: "https://schema.org/InStock",
-    description: plan.detail,
-  };
-}
-
-const PRICING_JSON_LD = {
+const pricingJsonLd = {
   "@context": "https://schema.org",
-  "@graph": [
+  "@type": "OfferCatalog",
+  name: "Wireline founder pricing",
+  url: "https://trywireline.com/pricing",
+  itemListElement: [
     {
-      "@type": "WebPage",
-      "@id": "https://trywireline.com/pricing#webpage",
-      url: "https://trywireline.com/pricing",
-      name: "Wireline pricing",
-      description:
-        "Wireline pricing for Personal, Team, Business, and Enterprise voice agents with Conversation Balance for live work.",
+      "@type": "Offer",
+      name: "Wireline Free Builder",
+      price: 0,
+      priceCurrency: "USD",
+      description: "Build, train, and privately simulate one AI communications agent.",
     },
-    {
-      "@type": "OfferCatalog",
-      "@id": "https://trywireline.com/pricing#plans",
-      name: "Wireline pricing plans",
-      itemListElement: PRICING_TIERS.map(offerForPlan),
-    },
-    {
-      "@type": "FAQPage",
-      "@id": "https://trywireline.com/pricing#faq",
-      mainEntity: FAQ.map(([question, answer]) => ({
-        "@type": "Question",
-        name: question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: answer,
-        },
-      })),
-    },
+    ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
+      "@type": "Offer",
+      name: `Wireline ${publicName}`,
+      price: plan.price_usd_monthly,
+      priceCurrency: "USD",
+      description: detail,
+    })),
   ],
 };
 
@@ -242,369 +163,224 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline - Personal, team, business, and enterprise AI profit agents"
-        description="Build and train a personal AI profit agent for free, fund live work with Conversation Balance, or move into Team and Business capacity when Wireline becomes an operating lane."
+        title="Pricing | Wireline — Build free, go live from $9/month"
+        description="Build an AI communications agent free, launch from $9/month, and scale across voice, text, email, and tailored lead hunting with prepaid usage controls."
         path="/pricing"
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(PRICING_JSON_LD) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
       />
       <PrecisionPublicHeader />
 
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
-          eyebrow="Pricing"
-          title="Start with one profit agent. Scale into a phone operation."
-          description="Personal is balance-led. Team and Business add operating capacity: employees, numbers, routing, approvals, integrations, support, and reliability."
-          primaryAction={{ label: "Build your first employee", to: "/signup" }}
-          secondaryAction={{ label: "Compare plans", to: "#tiers", tone: "secondary" }}
-          proof={BUYER_ASSURANCES.map(({ label }) => label)}
-          visualEyebrow="Commercial model"
-          visualTitle="Create first. Fund live work. Scale when ready."
-          visualBody="Pricing stays clean: plan capacity pays for the business layer; Conversation Balance funds calls, texts, and provider-backed actions."
-          visualItems={PRICING_HERO_ITEMS}
+          eyebrow="Founder Early Access"
+          title="Build free. Go live from $9. Scale when the work proves itself."
+          description="Choose the smallest useful plan today, then expand agent capacity as your leads and communication volume grow. Voice, SMS, email, and provider-backed lead data stay economically controlled through included capacity, connected providers, and prepaid Conversation Balance."
+          primaryAction={{ label: "Build your first agent", to: "/signup?plan=personal" }}
+          secondaryAction={{ label: "Compare every plan", to: "#plans", tone: "secondary" }}
+          proof={assurances.map(({ label }) => label)}
+          visualEyebrow="One operating model"
+          visualTitle="Subscription capacity plus controlled channel usage."
+          visualBody="Agent slots are generous because software capacity is inexpensive. Phone numbers, calls, texts, enrichment, and platform-funded delivery are provisioned or funded only when used."
+          visualItems={["Voice", "Text", "Email", "Lead Hunt"]}
         />
 
-        <section id="tiers" className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail mx-auto grid max-w-[1360px] gap-4 lg:grid-cols-4 lg:items-stretch">
-            {PRICING_TIERS.map((plan) => {
-              const Icon = plan.icon;
-              return (
+        <section id="plans" className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail mx-auto max-w-[1500px]">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="wl-stitch-label">Plans for different stages</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                Start narrow. Add specialists when demand earns them.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-muted-foreground">
+                Every paid plan can hunt leads and operate across connected channels. Higher tiers primarily buy more simultaneous agent roles, number slots, voice capacity, collaboration, analytics, and governance.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <article className="rounded-[28px] border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="wl-stitch-label">Build before billing</p>
+                    <h3 className="mt-2 text-2xl font-semibold">Free Builder</h3>
+                  </div>
+                  <WalletCards className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <div className="mt-6 flex items-end gap-2">
+                  <span className="text-4xl font-semibold tracking-[-0.04em]">$0</span>
+                  <span className="pb-1 text-sm text-muted-foreground">forever</span>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                  Build, train, connect knowledge, and privately simulate one draft agent. Production numbers and paid provider actions remain locked until activation.
+                </p>
+                <ul className="mt-6 space-y-3 text-sm">
+                  {planById.personal.features.map((feature) => (
+                    <li key={feature} className="flex gap-3">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/signup?plan=personal"
+                  className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-muted"
+                >
+                  Build free <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </article>
+
+              {PAID_TIERS.map(({ plan, publicName, eyebrow, tagline, detail, cta, ctaPath, icon: Icon, featured, badge }) => (
                 <article
                   key={plan.id}
-                  className={`relative flex min-h-[520px] flex-col rounded-[var(--wireline-radius-xl)] border p-6 transition-all sm:p-7 ${
-                    plan.featured
-                      ? "wl-featured-wire marketing-ink-panel border-primary shadow-[var(--wireline-elevation-lg)]"
-                      : "border-border bg-card hover:-translate-y-px hover:shadow-[var(--wireline-elevation-md)]"
+                  className={`relative rounded-[28px] border p-6 shadow-sm ${
+                    featured ? "border-foreground bg-foreground text-background" : "border-border bg-card"
                   }`}
                 >
-                  {plan.featured ? (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-3.5 py-1 wl-eyebrow text-primary-foreground shadow-[var(--wireline-elevation-sm)]">
-                      Most useful
-                    </span>
-                  ) : null}
-
-                  <div className="mb-8 flex items-center justify-between gap-4">
-                    <span
-                      className={`wl-eyebrow ${
-                        plan.featured ? "text-[rgba(247,246,243,.62)]" : "text-primary"
-                      }`}
-                    >
-                      {plan.eyebrow}
-                    </span>
-                    <span
-                      className={`grid size-10 place-items-center rounded-[var(--wireline-radius-md)] border ${
-                        plan.featured
-                          ? "border-white/10 bg-white/10 text-[var(--wireline-color-text-primary)]"
-                          : "border-border bg-muted text-primary"
-                      }`}
-                    >
-                      <Icon size={17} aria-hidden="true" />
-                    </span>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className={`wl-stitch-label ${featured ? "text-background/70" : ""}`}>{eyebrow}</p>
+                      <h3 className="mt-2 text-2xl font-semibold">{publicName}</h3>
+                    </div>
+                    <Icon className="h-6 w-6" aria-hidden="true" />
                   </div>
-
-                  <h2
-                    className="text-[2rem] leading-none tracking-[-0.025em]"
-                    style={{
-                      fontFamily:
-                        "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                      fontWeight: 400,
-                    }}
-                  >
-                    {plan.name}
-                  </h2>
-                  <p
-                    className={`mt-2 text-sm leading-6 ${
-                      plan.featured ? "text-[rgba(247,246,243,.68)]" : "text-muted-foreground"
-                    }`}
-                  >
-                    {plan.tagline}
+                  <p className={`mt-3 text-sm font-semibold ${featured ? "text-background" : "text-foreground"}`}>
+                    {tagline}
                   </p>
-
-                  <div className="mt-8 flex items-end gap-2">
-                    <span
-                      className="text-[clamp(2.7rem,5vw,4.2rem)] leading-none tracking-[-0.04em]"
-                      style={{
-                        fontFamily:
-                          "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                        fontWeight: 400,
-                      }}
-                    >
-                      {plan.price}
-                    </span>
-                    <span
-                      className={`pb-2 text-sm ${
-                        plan.featured ? "text-[rgba(247,246,243,.58)]" : "text-muted-foreground"
-                      }`}
-                    >
-                      {plan.period === "mo" ? "/mo" : plan.period}
-                    </span>
+                  <div className="mt-5 flex items-end gap-2">
+                    <span className="text-4xl font-semibold tracking-[-0.04em]">${plan.price_usd_monthly}</span>
+                    <span className={`pb-1 text-sm ${featured ? "text-background/70" : "text-muted-foreground"}`}>/month</span>
                   </div>
-
-                  <p
-                    className={`mt-6 min-h-[96px] text-sm leading-6 ${
-                      plan.featured ? "text-[rgba(247,246,243,.72)]" : "text-muted-foreground"
-                    }`}
-                  >
-                    {plan.detail}
+                  <p className={`mt-2 text-xs ${featured ? "text-background/70" : "text-muted-foreground"}`}>
+                    ${plan.price_usd_annual}/year · two months free
                   </p>
-
-                  <ul className="mt-7 flex-1 space-y-3">
+                  <p className={`mt-4 text-sm leading-6 ${featured ? "text-background/75" : "text-muted-foreground"}`}>
+                    {detail}
+                  </p>
+                  <ul className="mt-6 space-y-3 text-sm">
                     {plan.features.map((feature) => (
-                      <li
-                        key={feature}
-                        className={`flex items-start gap-2.5 text-sm leading-6 ${
-                          plan.featured ? "text-[rgba(247,246,243,.9)]" : "text-foreground"
-                        }`}
-                      >
-                        <Check
-                          size={15}
-                          className="mt-0.5 shrink-0 text-primary"
-                          strokeWidth={2.5}
-                        />
+                      <li key={feature} className="flex gap-3">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                         <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-
                   <Link
-                    to={plan.ctaPath}
-                    className={`mt-8 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[var(--wireline-radius-md)] px-5 text-sm font-semibold transition active:scale-[.985] ${
-                      plan.featured
-                        ? "bg-[var(--wireline-color-text-primary)] text-[var(--wireline-color-canvas-default)] hover:opacity-90"
-                        : "marketing-btn-primary"
+                    to={ctaPath}
+                    className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+                      featured
+                        ? "bg-background text-foreground hover:bg-background/90"
+                        : "bg-foreground text-background hover:bg-foreground/90"
                     }`}
                   >
-                    {plan.cta}
-                    <ArrowRight size={14} />
+                    {cta} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        <section
-          id="voice-rates"
-          className="border-y border-border bg-muted/30 px-5 py-12 sm:px-8 lg:px-10"
-        >
-          <div className="wl-public-rail mx-auto max-w-5xl">
-            <p className="wl-overline text-primary">Voice economics</p>
-            <h2
-              className="mt-3 max-w-2xl text-balance text-[clamp(1.75rem,3.5vw,2.75rem)] leading-[1.08] tracking-[-0.03em]"
-              style={{
-                fontFamily:
-                  "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                fontWeight: 400,
-              }}
-            >
-              Clear per-minute rates — no surprise math after the call.
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Many phone stacks split platform, carrier, model, and add-on costs across separate
-              invoices. Wireline publishes one voice rate per funding path so you can budget before
-              going live.
-            </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {VOICE_RATES.map((row) => (
-                <div
-                  key={row.label}
-                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-card p-5"
-                >
-                  <p className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
-                    ${row.rateUsd.toFixed(2)}
-                    <span className="text-base font-medium text-muted-foreground">/min</span>
+                  <p className={`mt-3 text-center text-xs ${featured ? "text-background/60" : "text-muted-foreground"}`}>
+                    {badge}
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-foreground">{row.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{row.detail}</p>
-                </div>
+                </article>
               ))}
-            </div>
-            <div className="mt-6 rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5">
-              <p className="text-sm font-semibold text-foreground">Conversation Balance examples</p>
-              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                {BALANCE_MINUTE_ESTIMATES.map(({ amountUsd, minutes }) => (
-                  <li
-                    key={amountUsd}
-                    className="flex items-center justify-between gap-3 text-sm text-muted-foreground"
-                  >
-                    <span>${amountUsd} top-up</span>
-                    <span className="font-medium tabular-nums text-foreground">
-                      ≈ {minutes.toLocaleString()} min
-                    </span>
-                  </li>
-                ))}
-              </ul>
+
+              <article className="rounded-[28px] border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="wl-stitch-label">25+ agents or custom needs</p>
+                    <h3 className="mt-2 text-2xl font-semibold">Scale & Enterprise</h3>
+                  </div>
+                  <ShieldCheck className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <div className="mt-6 text-4xl font-semibold tracking-[-0.04em]">Custom</div>
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                  Committed usage, negotiated channel economics, advanced governance, SSO, custom integrations, implementation support, security review, retention controls, and SLAs.
+                </p>
+                <ul className="mt-6 space-y-3 text-sm">
+                  {["25+ live agent capacity", "Committed voice, SMS, email, and data economics", "Custom telephony and integrations", "Security, rollout, and support plan"].map((feature) => (
+                    <li key={feature} className="flex gap-3">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/contact?topic=enterprise"
+                  className="mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-muted"
+                >
+                  Design a scale plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </article>
             </div>
           </div>
         </section>
 
-        <section className="border-y border-border bg-card/55 px-5 py-12 sm:px-8 lg:px-10">
-          <div className="wl-public-rail mx-auto grid max-w-6xl gap-8 lg:grid-cols-[.75fr_1fr] lg:items-center">
-            <div>
-              <p className="wl-overline text-primary">Commercial model</p>
-              <h2
-                className="mt-3 text-balance text-[clamp(2rem,4vw,3.5rem)] leading-[1.04] tracking-[-0.03em]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                }}
-              >
-                Balance pays for live work. Plans add the business layer.
+        <section className="border-y border-border bg-muted/35 px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+          <div className="wl-public-rail mx-auto max-w-[1400px]">
+            <div className="max-w-3xl">
+              <p className="wl-stitch-label">Channel economics</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                Clear limits where real vendor costs exist.
               </h2>
+              <p className="mt-4 text-base leading-7 text-muted-foreground">
+                Wireline does not punish users for creating useful specialized agents. It protects margin—and customer budgets—at the actual cost boundaries: numbers, calls, message segments, delivery infrastructure, enrichment, and external data.
+              </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {COMMERCIAL_RULES.map(([label, body]) => (
-                <div
-                  key={label}
-                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
-                >
-                  <p className="wl-eyebrow text-primary">{label}</p>
+            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (
+                <article key={title} className="rounded-3xl border border-border bg-card p-6">
+                  <Icon className="h-6 w-6" aria-hidden="true" />
+                  <h3 className="mt-5 text-lg font-semibold">{title}</h3>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
-                </div>
+                </article>
               ))}
             </div>
           </div>
         </section>
 
         <section className="px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail mx-auto grid max-w-5xl gap-5 lg:grid-cols-[.9fr_1.1fr] lg:items-stretch">
-            <div className="rounded-[var(--wireline-radius-xl)] border border-border bg-card p-7">
-              <p className="wl-overline text-primary">Phone numbers</p>
-              <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-4xl font-normal leading-tight tracking-[-0.03em]">
-                Numbers should feel easy to claim.
+          <div className="wl-public-rail mx-auto grid max-w-[1300px] gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+            <div>
+              <p className="wl-stitch-label">Questions before launch</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                Predictable enough for owners. Flexible enough to grow.
               </h2>
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                Wireline can provision dedicated numbers during setup, attach them to an agent, and
-                make the account feel operational immediately.
+              <p className="mt-4 text-base leading-7 text-muted-foreground">
+                Subscription revenue funds the operating platform and agent capacity. Prepaid usage funds the variable vendor work. That separation keeps the offer affordable without creating hidden bills or unsustainable unlimited promises.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                [
-                  "Included lines",
-                  "Team and Business include dedicated phone numbers so you never wire a carrier yourself.",
-                ],
-                [
-                  "Expansion",
-                  "Extra agents and additional line capacity can become clean add-ons instead of hidden usage surprises.",
-                ],
-                [
-                  "Retention",
-                  "Once a number, voice, playbook, transcripts, and outcomes live in Wireline, the account has a real operating asset.",
-                ],
-                [
-                  "Trust",
-                  "Clear billing language matters: platform plan for capacity, Conversation Balance for live work.",
-                ],
-              ].map(([title, body]) => (
-                <div
-                  key={title}
-                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
-                >
-                  <PhoneCall size={16} className="text-primary" aria-hidden="true" />
-                  <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-y border-border bg-card/40 px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail mx-auto max-w-6xl">
-            <div className="max-w-2xl">
-              <p className="wl-overline text-primary">Buying posture</p>
-              <h2
-                className="mt-3 text-balance text-[clamp(2rem,4vw,3.25rem)] leading-[1.06] tracking-[-0.03em]"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                }}
-              >
-                More than a bot. More focused than a toolkit.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
-                The winning wedge is not more feature noise. It is the cleanest way for a buyer to
-                build a profit agent, train its rules, launch the number and tools, then improve the
-                operation with visibility and spend control.
-              </p>
-            </div>
-            <div className="mt-10 grid gap-3 md:grid-cols-2">
-              {BUYER_DECISION_ROWS.map((row) => (
-                <article
-                  key={row.choice}
-                  className="rounded-[var(--wireline-radius-lg)] border border-border bg-background p-5"
-                >
-                  <p className="wl-eyebrow text-primary">{row.choice}</p>
-                  <p className="mt-4 text-sm leading-6 text-muted-foreground">{row.risk}</p>
-                  <p className="mt-4 border-t border-border pt-4 text-sm font-medium leading-6 text-foreground">
-                    {row.wireline}
-                  </p>
-                </article>
-              ))}
-            </div>
-            <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-              Pricing claims on public competitor pages change often. This page keeps Wireline's
-              durable positioning tied to the tier cards above plus{" "}
-              <span className="text-foreground">docs/business-usage-pricing-decision.md</span>.
-            </p>
-          </div>
-        </section>
-
-        <section className="border-t border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail mx-auto max-w-3xl">
-            <div className="text-center">
-              <p className="wl-overline">Questions</p>
-              <h2
-                className="mt-3 text-balance leading-[1.08] tracking-[-0.025em] text-foreground"
-                style={{
-                  fontFamily:
-                    "var(--wireline-font-family-display), 'Instrument Serif', Georgia, serif",
-                  fontWeight: 400,
-                  fontSize: "clamp(1.6rem, 3vw, 2.25rem)",
-                }}
-              >
-                Straight answers before you wire the first line.
-              </h2>
-            </div>
-            <div className="mt-10 space-y-3">
+            <div className="space-y-3">
               {FAQ.map(([question, answer]) => (
-                <details key={question} className="group wl-stitch-card overflow-hidden rounded-xl">
-                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
-                    <span>{question}</span>
-                    <span
-                      aria-hidden="true"
-                      className="shrink-0 text-lg text-muted-foreground transition-transform group-open:rotate-45"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">
-                    {answer}
-                  </p>
+                <details key={question} className="group rounded-2xl border border-border bg-card p-5">
+                  <summary className="cursor-pointer list-none pr-8 text-sm font-semibold">{question}</summary>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{answer}</p>
                 </details>
               ))}
             </div>
+          </div>
+        </section>
 
-            <div className="mt-12 flex flex-col items-center gap-5 text-center">
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <ShieldCheck size={15} className="text-primary" />
-                Stripe-secured checkout, prepaid balance, and customer portal management.
-              </p>
+        <section className="px-5 pb-16 sm:px-8 sm:pb-24 lg:px-10">
+          <div className="wl-public-rail mx-auto max-w-[1200px] rounded-[32px] border border-border bg-foreground p-8 text-background sm:p-12">
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="wl-stitch-label text-background/65">Founder Early Access</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                  Build the agent first. Let real demand choose the plan.
+                </h2>
+                <p className="mt-4 max-w-2xl text-base leading-7 text-background/70">
+                  Start with a private build, launch one useful lane for $9, or select the capacity your business already needs. Upgrade when agents are producing enough work to justify it.
+                </p>
+              </div>
               <Link
-                to="/signup"
-                className="marketing-btn-primary min-h-12 px-8 text-sm font-semibold tracking-[.05em]"
+                to="/signup?plan=personal"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-background px-6 text-sm font-semibold text-foreground transition hover:bg-background/90"
               >
-                Start with one agent <ArrowRight size={14} />
+                Build free <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
           </div>
         </section>
       </main>
+
       <MarketingFooter />
     </div>
   );

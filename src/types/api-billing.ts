@@ -56,6 +56,8 @@ export interface ClientPlan {
   price_usd_monthly: number;
   price_usd_annual: number;
   max_agents: number;
+  voice_minutes_monthly: number;
+  overage_per_min_usd: number;
   included_phone_numbers: number;
   extra_agent_price_usd: number | null;
   features: string[];
@@ -63,12 +65,7 @@ export interface ClientPlan {
   annual_configured: boolean;
   contact_sales: boolean;
   public: boolean;
-  pricing_model: "capacity_plus_conversation_balance";
-}
-
-export interface BillingPlansResponse {
-  plans: ClientPlan[];
-  stripe_configured: boolean;
+  pricing_model: "included_minutes_plus_prepaid_balance";
 }
 
 /** GET /api/billing/usage — mirrors WorkspaceUsageSnapshot */
@@ -84,8 +81,12 @@ export interface WorkspaceUsageResponse {
   overage_cost_usd: number;
   period_key: string;
   reset_at: string;
-  stripe_metered: boolean;
+  stripe_metered: false;
   credit_balance_usd: number;
+  completion_grace_due_usd: number;
+  live_voice_blocked: boolean;
+  current_call_policy: "finish_current_block_next";
+  extra_usage_funding: "conversation_balance";
   ai_spend_usd: number;
   ai_spend_limit_usd: number;
   ai_spend_pct: number;

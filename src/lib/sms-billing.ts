@@ -1,14 +1,14 @@
 /**
- * SMS usage billing — Conversation Balance at a fixed segment rate.
+ * SMS usage billing — Runtime Balance at a fixed segment rate.
  */
 import { debitForVoiceUsage } from "./credit-wallet";
 import { log } from "./server-context";
 
-/** Customer-facing SMS rate (Twilio ~$0.008 + margin). */
+/** Customer-facing SMS rate (carrier cost plus operating margin). */
 export const SMS_COST_PER_SEGMENT_USD = 0.02;
 
 /**
- * Debit Conversation Balance for outbound SMS. Idempotent per message sid.
+ * Debit Runtime Balance for outbound SMS. Idempotent per message SID.
  * Returns USD debited (0 if insufficient balance or on error).
  */
 export async function billSmsMessage(

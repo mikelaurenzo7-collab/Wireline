@@ -1,48 +1,36 @@
-/**
- * Buyer-facing voice rate clarity — effective $/min by plan and Conversation Balance.
- */
+/** Buyer-facing extra-usage rate clarity for founder early access. */
 import { CONVERSATION_BALANCE_PRESETS_USD } from "./conversation-balance";
 import { STRIPE_PLANS, VOICE_VARIABLE_COST_PER_MIN_USD, type StripePlanId } from "./plan-catalog";
 
 export type VoiceRateRow = {
-  planId: StripePlanId | "balance";
+  planId: StripePlanId;
   label: string;
   rateUsd: number;
+  includedMinutes: number;
   detail: string;
 };
 
 export function voiceRateForPlan(planId: StripePlanId): number {
   const plan = STRIPE_PLANS.find((item) => item.id === planId);
-  return plan?.overage_per_min_usd ?? STRIPE_PLANS[0].overage_per_min_usd;
+  return plan?.overage_per_min_usd ?? 0.2;
 }
 
-/** Published voice rates — Personal uses Conversation Balance; paid tiers use metered overage. */
 export function publishedVoiceRates(): VoiceRateRow[] {
-  const personal = STRIPE_PLANS.find((item) => item.id === "personal")!;
-  const rows: VoiceRateRow[] = [
-    {
-      planId: "balance",
-      label: "Conversation Balance",
-      rateUsd: personal.overage_per_min_usd,
-      detail:
-        "Personal and top-up funding: live PSTN minutes draw from prepaid balance at this rate.",
-    },
-  ];
-  for (const id of ["team", "business"] as const) {
+  return (["starter", "team", "business"] as const).map((id) => {
     const plan = STRIPE_PLANS.find((item) => item.id === id)!;
-    rows.push({
+    return {
       planId: id,
-      label: plan.name,
+      label: plan.name.replace("Wireline ", ""),
       rateUsd: plan.overage_per_min_usd,
-      detail: `Live PSTN minutes at $${plan.overage_per_min_usd.toFixed(2)}/min — Conversation Balance or metered billing.`,
-    });
-  }
-  return rows;
+      includedMinutes: plan.voice_minutes_monthly,
+      detail: `${plan.voice_minutes_monthly.toLocaleString()} minutes included monthly. Extra live usage draws from prepaid Conversation Balance at $${plan.overage_per_min_usd.toFixed(2)}/min.`,
+    };
+  });
 }
 
 export function estimateVoiceMinutesFromBalance(
   balanceUsd: number,
-  ratePerMin = voiceRateForPlan("personal"),
+  ratePerMin = voiceRateForPlan("starter"),
 ): number {
   if (balanceUsd <= 0 || ratePerMin <= 0) return 0;
   return Math.floor(balanceUsd / ratePerMin);
@@ -51,14 +39,14 @@ export function estimateVoiceMinutesFromBalance(
 export function formatVoiceMinutesEstimate(balanceUsd: number): string {
   const minutes = estimateVoiceMinutesFromBalance(balanceUsd);
   if (minutes <= 0) return "—";
-  return `≈ ${minutes.toLocaleString()} min at current voice rate`;
+  return `≈ ${minutes.toLocaleString()} extra min at Starter rate`;
 }
 
 export function conversationBalanceMinuteEstimates(): Array<{
   amountUsd: number;
   minutes: number;
 }> {
-  const rate = voiceRateForPlan("personal");
+  const rate = voiceRateForPlan("starter");
   return CONVERSATION_BALANCE_PRESETS_USD.map((amountUsd) => ({
     amountUsd,
     minutes: estimateVoiceMinutesFromBalance(amountUsd, rate),

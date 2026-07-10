@@ -4,7 +4,14 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { VOICE_VARIABLE_COST_PER_MIN_USD, planById } from "./plan-catalog";
+import {
+  PAYMENT_PROCESSING_FIXED_USD,
+  PAYMENT_PROCESSING_RATE,
+  PHONE_NUMBER_COST_MONTHLY_USD,
+  VOICE_VARIABLE_COST_PER_MIN_USD,
+  planById,
+  type StripePlan,
+} from "./plan-catalog";
 import { getVoiceUsageSnapshot } from "./voice-usage";
 import { getBudgetSnapshot } from "./spend-guards";
 
@@ -31,6 +38,19 @@ export type TenantEconomics = {
 export function computeGrossMarginPct(revenuePerMin: number, cogsPerMin: number): number | null {
   if (!Number.isFinite(revenuePerMin) || revenuePerMin <= 0) return null;
   return Math.round(((revenuePerMin - cogsPerMin) / revenuePerMin) * 1000) / 10;
+}
+
+export function computePlanFullUtilizationMarginPct(plan: StripePlan): number | null {
+  if (!Number.isFinite(plan.price_usd_monthly) || plan.price_usd_monthly <= 0) return null;
+  const paymentCost =
+    plan.price_usd_monthly * PAYMENT_PROCESSING_RATE + PAYMENT_PROCESSING_FIXED_USD;
+  const voiceCost = plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD;
+  const numberCost = plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD;
+  // Treat every included Runtime Allowance dollar as fully consumed COGS. This
+  // intentionally understates margin because most optional actions cost less
+  // than their customer-facing reserve.
+  const totalCost = voiceCost + numberCost + plan.runtime_allowance_usd_monthly + paymentCost;
+  return Math.round(((plan.price_usd_monthly - totalCost) / plan.price_usd_monthly) * 1000) / 10;
 }
 
 export async function getTenantEconomics(userId: string): Promise<TenantEconomics> {
@@ -76,9 +96,9 @@ export async function listAtRiskTenants(limit = 5): Promise<TenantEconomics[]> {
     .where(eq(schema.quotaUsage.dimension, "voice_minutes_monthly"))
     .limit(200);
 
-  const uniqueIds = [...new Set(rows.map((r) => r.userId))];
+  const uniqueIds = [...new Set(rows.map((row) => row.userId))];
   const economics = await Promise.all(uniqueIds.map((id) => getTenantEconomics(id)));
-  return economics.filter((e) => e.at_risk).slice(0, limit);
+  return economics.filter((economy) => economy.at_risk).slice(0, limit);
 }
 
 export async function countAtRiskTenants(): Promise<number> {
@@ -88,29 +108,56 @@ export async function countAtRiskTenants(): Promise<number> {
     .where(eq(schema.quotaUsage.dimension, "voice_minutes_monthly"))
     .limit(500);
 
-  const uniqueIds = [...new Set(rows.map((r) => r.userId))];
+  const uniqueIds = [...new Set(rows.map((row) => row.userId))];
   let count = 0;
   for (const id of uniqueIds) {
-    const econ = await getTenantEconomics(id);
-    if (econ.at_risk) count++;
+    const economy = await getTenantEconomics(id);
+    if (economy.at_risk) count++;
   }
   return count;
 }
 
 export function assertPlanMarginFloors(): { ok: boolean; violations: string[] } {
-  const floors: Record<string, number> = {
-    personal: 28,
+  const overageFloors: Record<string, number> = {
+    starter: 35,
+    team: 30,
+    business: 25,
+    enterprise: 20,
+  };
+  const includedFloors: Record<string, number> = {
+    starter: 25,
     team: 20,
-    business: 20,
+    business: 18,
+    enterprise: 15,
   };
   const violations: string[] = [];
-  for (const [id, floor] of Object.entries(floors)) {
+
+  for (const id of Object.keys(overageFloors)) {
     const plan = planById(id);
-    if (!plan) continue;
-    const margin = computeGrossMarginPct(plan.overage_per_min_usd, VOICE_VARIABLE_COST_PER_MIN_USD);
-    if (margin != null && margin < floor) {
-      violations.push(`${id}: overage margin ${margin}% < floor ${floor}%`);
+    if (!plan) {
+      violations.push(`${id}: plan missing from canonical catalog`);
+      continue;
+    }
+
+    const overageMargin = computeGrossMarginPct(
+      plan.overage_per_min_usd,
+      VOICE_VARIABLE_COST_PER_MIN_USD,
+    );
+    const overageFloor = overageFloors[id];
+    if (overageMargin == null || overageMargin < overageFloor) {
+      violations.push(
+        `${id}: overage margin ${overageMargin ?? "n/a"}% < floor ${overageFloor}%`,
+      );
+    }
+
+    const includedMargin = computePlanFullUtilizationMarginPct(plan);
+    const includedFloor = includedFloors[id];
+    if (includedMargin == null || includedMargin < includedFloor) {
+      violations.push(
+        `${id}: full-utilization contribution ${includedMargin ?? "n/a"}% < floor ${includedFloor}%`,
+      );
     }
   }
+
   return { ok: violations.length === 0, violations };
 }

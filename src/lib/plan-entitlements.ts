@@ -1,6 +1,6 @@
 /**
- * Plan entitlements — single place for tier capabilities (OpenRouter, AI spend caps).
- * Stripe list prices stay in plan-catalog.ts; this module owns runtime gates.
+ * Plan entitlements — single place for runtime tier capabilities.
+ * Stripe list prices and included minutes live in plan-catalog.ts.
  */
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
@@ -14,26 +14,28 @@ export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "enterprise";
 
 const OPENROUTER_PLANS = new Set<StripePlanId>(["business", "enterprise"]);
 
-/** Map wireline_subscriptions.plan → quota tier. */
+/** Map wireline_subscriptions.plan → runtime quota tier. */
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
   switch (planId) {
     case "enterprise":
     case "scale":
     case "custom":
-      return "enterprise" as PlanTier;
+      return "enterprise";
     case "business":
-    case "starter":
     case "pro":
     case "business-growth":
-      return "business" as PlanTier;
+      return "business";
     case "team":
+    case "shared":
+      return "team";
+    case "starter":
     case "business-starter":
     case "business-lite":
     case "lite":
     case "personal-plus":
-      return "team" as PlanTier;
+      return "personal";
     case "personal":
-      return "personal" as PlanTier;
+      return "free";
     default:
       return "free";
   }
@@ -48,7 +50,6 @@ export function openRouterAllowedForPlanId(planId: string | null | undefined): b
   return openRouterAllowedForTier(subscriptionPlanToTier(planId));
 }
 
-/** Apply OWNER_EMAIL / OWNER_EMAILS override before tier gates. */
 export function effectivePlanIdForEntitlements(
   planId: string | null | undefined,
   email?: string | null,
@@ -72,15 +73,14 @@ export async function getEffectiveSubscriptionPlanId(
   return effectivePlanIdForEntitlements(planId, email);
 }
 
-/** Default monthly AI spend hard-cap (USD) seeded on subscribe when no custom budget exists. */
 export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
   switch (tier) {
     case "personal":
-      return 15;
+      return 20;
     case "team":
-      return 45;
+      return 50;
     case "business":
-      return 75;
+      return 125;
     case "enterprise":
       return 500;
     default:
@@ -88,17 +88,17 @@ export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
   }
 }
 
-/** Daily voice-minute burst cap — independent of billing (no included-minute pools). */
+/** Daily burst caps are guardrails, not included-minute promises. */
 const VOICE_BURST_DAILY: Record<PlanTier, number> = {
-  free: 10,
-  personal: 10,
-  team: 60,
-  business: 144,
-  enterprise: 360,
+  free: 0,
+  personal: 30,
+  team: 120,
+  business: 300,
+  enterprise: 1_000,
 };
 
 export function voiceMinutesDailyQuotaForTier(tier: PlanTier): number {
-  return VOICE_BURST_DAILY[tier] ?? 10;
+  return VOICE_BURST_DAILY[tier] ?? 0;
 }
 
 export async function getSubscriptionPlanId(userId: string): Promise<string | null> {

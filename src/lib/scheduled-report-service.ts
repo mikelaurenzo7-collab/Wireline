@@ -1,0 +1,243 @@
+import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+
+import * as schema from "../db/schema";
+import { enqueue } from "./job-queue";
+import { generateAndStorePostCallArtifact } from "./openai-post-call-artifact";
+import {
+  getPostCallOutputPreferences,
+  type PostCallArtifactDestination,
+  type PostCallArtifactFormat,
+  type PostCallOutputPreferences,
+  type ScheduledReportFrequency,
+} from "./post-call-output-preferences";
+import { drizzle } from "./server-context";
+
+export interface ScheduledReportJobPayload extends Record<string, unknown> {
+  userId: string;
+  scheduleVersion: number;
+  frequency: Exclude<ScheduledReportFrequency, "off">;
+  format: PostCallArtifactFormat;
+  destination: PostCallArtifactDestination;
+  scheduledFor: string;
+}
+
+function parseUtcTime(value: string): { hour: number; minute: number } {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value);
+  return match ? { hour: Number(match[1]), minute: Number(match[2]) } : { hour: 13, minute: 0 };
+}
+
+export function nextScheduledReportAt(
+  preferences: PostCallOutputPreferences,
+  from = new Date(),
+): Date | null {
+  if (
+    preferences.scheduled_report_frequency === "off" ||
+    !preferences.scheduled_report_destination
+  ) {
+    return null;
+  }
+  const { hour, minute } = parseUtcTime(preferences.scheduled_report_send_at_utc);
+  const next = new Date(from);
+  next.setUTCSeconds(0, 0);
+  next.setUTCHours(hour, minute, 0, 0);
+
+  if (preferences.scheduled_report_frequency === "daily") {
+    if (next.getTime() <= from.getTime()) next.setUTCDate(next.getUTCDate() + 1);
+    return next;
+  }
+
+  const target = preferences.scheduled_report_weekday;
+  let days = (target - next.getUTCDay() + 7) % 7;
+  if (days === 0 && next.getTime() <= from.getTime()) days = 7;
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+export async function ensureNextScheduledReport(
+  userId: string,
+  preferences: PostCallOutputPreferences,
+  from = new Date(),
+): Promise<string | null> {
+  const runAt = nextScheduledReportAt(preferences, from);
+  const destination = preferences.scheduled_report_destination;
+  const frequency = preferences.scheduled_report_frequency;
+  if (!runAt || !destination || frequency === "off") return null;
+
+  const [existing] = await drizzle
+    .select({ id: schema.jobs.id })
+    .from(schema.jobs)
+    .where(
+      and(
+        eq(schema.jobs.userId, userId),
+        eq(schema.jobs.type, "scheduled_report"),
+        eq(schema.jobs.status, "pending"),
+        sql`${schema.jobs.payload}->>'scheduleVersion' = ${String(preferences.scheduled_report_version)}`,
+      ),
+    )
+    .limit(1);
+  if (existing?.id) return String(existing.id);
+
+  const result = await enqueue(drizzle, {
+    userId,
+    type: "scheduled_report",
+    runAt,
+    maxAttempts: 3,
+    payload: {
+      userId,
+      scheduleVersion: preferences.scheduled_report_version,
+      frequency,
+      format: preferences.scheduled_report_format,
+      destination,
+      scheduledFor: runAt.toISOString(),
+    } satisfies ScheduledReportJobPayload,
+  });
+  if (!result.ok) throw new Error(result.error || "Failed to schedule report.");
+  return result.jobId || null;
+}
+
+function periodStart(frequency: "daily" | "weekly", end: Date): Date {
+  return new Date(end.getTime() - (frequency === "daily" ? 24 : 7 * 24) * 60 * 60 * 1000);
+}
+
+export async function generateScheduledOperatingReport(payload: ScheduledReportJobPayload) {
+  const preferences = await getPostCallOutputPreferences(payload.userId);
+  if (
+    preferences.scheduled_report_frequency === "off" ||
+    preferences.scheduled_report_version !== payload.scheduleVersion ||
+    preferences.scheduled_report_frequency !== payload.frequency ||
+    preferences.scheduled_report_format !== payload.format ||
+    preferences.scheduled_report_destination !== payload.destination
+  ) {
+    return { skipped: true, reason: "schedule_changed" } as const;
+  }
+
+  const end = new Date(payload.scheduledFor);
+  const safeEnd = Number.isNaN(end.getTime()) ? new Date() : end;
+  const start = periodStart(payload.frequency, safeEnd);
+
+  // Schedule the next occurrence before doing external work. A transient OpenAI
+  // or connector outage can fail this report without silently stopping all future reports.
+  await ensureNextScheduledReport(payload.userId, preferences, new Date(safeEnd.getTime() + 60_000));
+
+  const calls = await drizzle
+    .select({
+      createdAt: schema.callLogs.createdAt,
+      agentId: schema.callLogs.agentId,
+      direction: schema.callLogs.direction,
+      customerNumber: schema.callLogs.customerNumber,
+      durationSeconds: schema.callLogs.durationSeconds,
+      summary: schema.callLogs.summary,
+      outcomeTag: schema.callLogs.outcomeTag,
+      leadScore: schema.callLogs.leadScore,
+      sentiment: schema.callLogs.sentiment,
+      intentLabel: schema.callLogs.intentLabel,
+      campaignSource: schema.callLogs.campaignSource,
+      qaScore: schema.callLogs.qaScore,
+    })
+    .from(schema.callLogs)
+    .where(
+      and(
+        eq(schema.callLogs.userId, payload.userId),
+        gte(schema.callLogs.createdAt, start),
+        lt(schema.callLogs.createdAt, safeEnd),
+      ),
+    )
+    .orderBy(desc(schema.callLogs.createdAt))
+    .limit(250);
+
+  const [appointments, openTasks] = await Promise.all([
+    drizzle
+      .select({ id: schema.appointments.id, status: schema.appointments.status })
+      .from(schema.appointments)
+      .where(
+        and(
+          eq(schema.appointments.userId, payload.userId),
+          gte(schema.appointments.createdAt, start),
+          lt(schema.appointments.createdAt, safeEnd),
+        ),
+      ),
+    drizzle
+      .select({
+        description: schema.followUpTasks.description,
+        priority: schema.followUpTasks.priority,
+        dueDate: schema.followUpTasks.dueDate,
+      })
+      .from(schema.followUpTasks)
+      .where(
+        and(
+          eq(schema.followUpTasks.userId, payload.userId),
+          eq(schema.followUpTasks.status, "pending"),
+        ),
+      )
+      .orderBy(desc(schema.followUpTasks.createdAt))
+      .limit(30),
+  ]);
+
+  const minutes = Math.round(
+    calls.reduce((sum, call) => sum + (call.durationSeconds || 0), 0) / 60,
+  );
+  const outcomes = calls.reduce<Record<string, number>>((acc, call) => {
+    const key = call.outcomeTag || "unclassified";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const qualified = (outcomes.qualified || 0) + (outcomes.booked || 0);
+  const qaScores = calls
+    .map((call) => call.qaScore)
+    .filter((value): value is number => value != null);
+  const averageQa = qaScores.length
+    ? Math.round(qaScores.reduce((sum, value) => sum + value, 0) / qaScores.length)
+    : null;
+  const periodLabel = `${start.toISOString().slice(0, 10)} through ${safeEnd
+    .toISOString()
+    .slice(0, 10)}`;
+  const title = `${payload.frequency === "daily" ? "Daily" : "Weekly"} Agent Performance Report`;
+  const summary = JSON.stringify(
+    {
+      period: periodLabel,
+      calls: calls.length,
+      voice_minutes: minutes,
+      outcomes,
+      booked_or_qualified: qualified,
+      appointments_created: appointments.length,
+      open_follow_up_tasks: openTasks.length,
+      average_qa_score: averageQa,
+      instruction:
+        "Explain what happened, what moved revenue or service outcomes, what needs attention, and the three highest-value next actions.",
+    },
+    null,
+    2,
+  );
+  const supporting = JSON.stringify(
+    {
+      calls: calls.slice(0, 100),
+      open_tasks: openTasks,
+    },
+    null,
+    2,
+  );
+
+  const artifact = await generateAndStorePostCallArtifact({
+    userId: payload.userId,
+    callLogId: `scheduled:${payload.scheduleVersion}:${payload.scheduledFor}`,
+    outcomeTag: "operating-report",
+    summary,
+    transcript: supporting,
+    format: payload.format,
+    destination: payload.destination,
+    purpose: "operating_report",
+    reportTitle: title,
+    periodLabel,
+  });
+
+  return {
+    skipped: false,
+    title,
+    period: periodLabel,
+    calls: calls.length,
+    externalUrl: artifact.externalUrl,
+    fileName: artifact.fileName,
+    destination: artifact.provider,
+    openaiResponseId: artifact.openaiResponseId,
+  } as const;
+}

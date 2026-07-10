@@ -17,14 +17,10 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import type { AuthenticatedRequest } from "../types/auth";
 import { getErrorMessage } from "../lib/server-utils";
+import { planById } from "../lib/plan-catalog";
 
 const router = express.Router();
 
-/**
- * Public account-holder view of the prepaid wallet. The wallet remains web-only
- * for purchase so native clients do not accidentally trigger in-app purchase
- * obligations; they may consume this read model later.
- */
 router.get(
   "/api/conversation-balance",
   authenticateUser,
@@ -52,9 +48,8 @@ router.get(
 );
 
 /**
- * Create a one-time Stripe Checkout session for a Conversation Balance top-up.
- * Existing billing-routes webhook handling claims this payment by the purpose
- * metadata and writes an idempotent ledger credit after Stripe confirms paid.
+ * One-time prepaid top-up. A live paid plan is required because Conversation
+ * Balance is controlled overflow, not a back door around Starter activation.
  */
 router.post(
   "/api/conversation-balance/checkout",
@@ -73,10 +68,28 @@ router.post(
       }
 
       const [subscription] = await drizzle
-        .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
+        .select({
+          stripeCustomerId: schema.subscriptions.stripeCustomerId,
+          plan: schema.subscriptions.plan,
+          status: schema.subscriptions.status,
+        })
         .from(schema.subscriptions)
         .where(eq(schema.subscriptions.userId, req.user.id))
         .limit(1);
+
+      const plan = planById(subscription?.plan);
+      const activePaidPlan =
+        !!plan &&
+        !["personal", "enterprise"].includes(plan.id) &&
+        ["active", "trialing"].includes(subscription?.status || "");
+      if (!activePaidPlan) {
+        return res.status(402).json({
+          code: "LIVE_PLAN_REQUIRED",
+          error:
+            "Choose Starter, Team, or Business before adding Conversation Balance. Paid plans include live-call minutes first.",
+          recovery_path: "/settings/billing",
+        });
+      }
 
       let customerId = subscription?.stripeCustomerId || null;
       if (!customerId) {
@@ -86,12 +99,9 @@ router.post(
         });
         customerId = customer.id;
         await drizzle
-          .insert(schema.subscriptions)
-          .values({ userId: req.user.id, stripeCustomerId: customerId, updatedAt: new Date() })
-          .onConflictDoUpdate({
-            target: schema.subscriptions.userId,
-            set: { stripeCustomerId: customerId, updatedAt: new Date() },
-          });
+          .update(schema.subscriptions)
+          .set({ stripeCustomerId: customerId, updatedAt: new Date() })
+          .where(eq(schema.subscriptions.userId, req.user.id));
       }
 
       const appUrl = resolveCanonicalAppUrl();
@@ -104,9 +114,12 @@ router.post(
 
       const creditMeta = {
         wireline_user_id: req.user.id,
+        wireline_plan: plan.id,
         purpose: "credit_topup",
         credit_usd: String(amountUsd),
+        overage_policy: "prepaid_balance_only",
       };
+
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         customer: customerId,
@@ -118,13 +131,13 @@ router.post(
               unit_amount: Math.round(amountUsd * 100),
               product_data: {
                 name: "Wireline Conversation Balance",
-                description: `$${amountUsd} prepaid balance for Wireline live work`,
+                description: `$${amountUsd} prepaid balance for extra calls, texts, and live work`,
               },
             },
           },
         ],
-        success_url: `${appUrl.url}/billing?balance=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${appUrl.url}/billing?balance=canceled`,
+        success_url: `${appUrl.url}/settings/billing?balance=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl.url}/settings/billing?balance=canceled`,
         payment_intent_data: { metadata: creditMeta },
         metadata: creditMeta,
       });
@@ -136,7 +149,7 @@ router.post(
           customerId,
           amountCents: Math.round(amountUsd * 100),
           ip: req.ip,
-          metadata: { product: "conversation_balance" },
+          metadata: { product: "conversation_balance", plan: plan.id },
         })
         .catch((err) =>
           log.warn("conversation balance checkout audit failed", { error: getErrorMessage(err) }),

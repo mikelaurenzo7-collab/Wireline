@@ -9,15 +9,17 @@ import VoiceGallery from "../components/voice/VoiceGallery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import AgentPresenceVoiceBridge from "../components/AgentPresenceVoiceBridge";
 import WirelineLiveVoiceProfile from "../components/WirelineLiveVoiceProfile";
+import ReportingPreferences from "../components/training/ReportingPreferences";
 import { useAgents } from "../contexts/AgentsContext";
 
-type TrainingTabId = "knowledge" | "voice" | "flows" | "simulator";
+type TrainingTabId = "knowledge" | "voice" | "flows" | "simulator" | "reports";
 
 const trainingTabs: Array<{ id: TrainingTabId; label: string }> = [
   { id: "knowledge", label: "Knowledge" },
   { id: "voice", label: "Voice" },
   { id: "flows", label: "Flows" },
   { id: "simulator", label: "Simulator" },
+  { id: "reports", label: "Reports" },
 ];
 
 function EmptyTraining() {
@@ -149,7 +151,7 @@ export default function KnowledgePage() {
             <div>
               <WorkspacePageIntro title="Training" />
               <p className="mt-1 text-sm text-muted-foreground">
-                Next action: add one source, then test the agent in Simulator.
+                Train behavior, test the live agent, and choose how Wireline reports its work.
               </p>
             </div>
             <WorkspaceTabStrip
@@ -163,7 +165,7 @@ export default function KnowledgePage() {
               className="mb-0 w-full border-b-0 pb-0 sm:w-auto"
             />
           </div>
-          {populated ? (
+          {populated && activeTab !== "reports" ? (
             <div className="mb-2 flex justify-end sm:-mt-2">
               <NativeSelect
                 value={agentId}
@@ -202,6 +204,7 @@ export default function KnowledgePage() {
               agentRole={activeAgent.role}
             />
           ) : null}
+          {activeTab === "reports" ? <ReportingPreferences /> : null}
         </WorkspacePageFrame>
       )}
     </WorkspaceShell>

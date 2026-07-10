@@ -14,6 +14,7 @@ import voicesRouter from "../routes/voices-routes";
 import pronunciationRouter from "../routes/pronunciation-routes";
 import elevenlabsWebhookRouter from "../routes/webhooks-elevenlabs-routes";
 import billingRouter from "../routes/billing-routes";
+import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
 import subscriptionCheckoutGuardRouter from "../routes/subscription-checkout-guard-routes";
 import conversationBalanceRouter from "../routes/conversation-balance-routes";
 import spendControlRouter from "../routes/spend-control-routes";
@@ -22,6 +23,7 @@ import emailOutcomeRouter from "../routes/email-outcome-routes";
 import emailSyncRouter from "../routes/email-sync-routes";
 import accountRouter from "../routes/account-routes";
 import settingsRouter from "../routes/settings-routes";
+import postCallOutputRouter from "../routes/post-call-output-routes";
 import carrierRouter from "../routes/carrier-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
@@ -82,18 +84,21 @@ export function registerApiRoutes(app: Express): void {
   app.use(elevenlabsWebhookRouter);
   app.use(accountRouter);
   app.use(settingsRouter);
+  app.use(postCallOutputRouter);
   app.use(carrierRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);
   // Audit/AI-spend ledger: /api/audit/summary(/events/stats/export), plus a
   // legacy /api/spend/budget GET that's intentionally shadowed by
   // spendControlRouter's real handler above (registration order matters --
-  // this router must stay mounted after spendControlRouter). Powers the
-  // AdminSettings AI Usage panel and Insights' AISpendView/VoiceLatencyView.
+  // this router must stay mounted after spendControlRouter).
   app.use(auditRouter);
   app.use(conversationBalanceRouter);
   app.use(emailOutcomeRouter);
   app.use(emailSyncRouter);
+  // Founder catalog checkout must precede legacy guards/routes. It resolves
+  // immutable Stripe lookup keys and never attaches postpaid metered overage.
+  app.use(launchBillingCheckoutRouter);
   app.use(subscriptionCheckoutGuardRouter);
   app.use("/api", billingRouter);
   app.use(emailRouter);

@@ -27,9 +27,13 @@ export interface WorkspaceUsageSnapshot {
   overage_cost_usd: number;
   period_key: string;
   reset_at: string;
-  stripe_metered: boolean;
-  /** Prepaid wallet balance — absorbs voice overage before Stripe metering. */
+  stripe_metered: false;
+  /** Prepaid Conversation Balance. A negative value is completion grace due. */
   credit_balance_usd: number;
+  completion_grace_due_usd: number;
+  live_voice_blocked: boolean;
+  current_call_policy: "finish_current_block_next";
+  extra_usage_funding: "conversation_balance";
   ai_spend_usd: number;
   ai_spend_limit_usd: number;
   ai_spend_pct: number;
@@ -50,7 +54,7 @@ function pct(used: number, limit: number): number {
 }
 
 export async function getWorkspaceUsageSnapshot(userId: string): Promise<WorkspaceUsageSnapshot> {
-  // These four reads are independent — fetch them together to save round-trips.
+  // These reads are independent — fetch them together to save round-trips.
   const [voice, snap, { profile }, tokenUsed, creditBalanceUsd] = await Promise.all([
     getVoiceUsageSnapshot(userId),
     getBudgetSnapshot(userId),
@@ -75,6 +79,14 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
   const voicePct = pct(voice.voice_minutes_used, voice.voice_minutes_included);
   const aiPct = pct(aiSpend, aiLimit);
   const tokenPct = pct(tokenUsed, tokenLimit);
+  const creditBalanceRounded = Number(creditBalanceUsd.toFixed(2));
+  const completionGraceDueUsd = Math.max(0, Number((-creditBalanceRounded).toFixed(2)));
+  const enterpriseContract = plan?.id === "enterprise";
+  const freeBuilder = !plan || plan.id === "personal";
+  const insufficientForNextAttempt =
+    voice.voice_minutes_remaining < 1 && creditBalanceRounded < voice.overage_per_min_usd;
+  const liveVoiceBlocked =
+    freeBuilder || (!enterpriseContract && (completionGraceDueUsd > 0 || insufficientForNextAttempt));
 
   return {
     plan_id: voice.plan_id,
@@ -88,8 +100,12 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     overage_cost_usd: voice.overage_cost_usd,
     period_key: voice.period_key,
     reset_at: voice.reset_at,
-    stripe_metered: voice.stripe_metered,
-    credit_balance_usd: Number(creditBalanceUsd.toFixed(2)),
+    stripe_metered: false,
+    credit_balance_usd: creditBalanceRounded,
+    completion_grace_due_usd: completionGraceDueUsd,
+    live_voice_blocked: liveVoiceBlocked,
+    current_call_policy: "finish_current_block_next",
+    extra_usage_funding: "conversation_balance",
     ai_spend_usd: Number(aiSpend.toFixed(4)),
     ai_spend_limit_usd: aiLimit,
     ai_spend_pct: aiPct,

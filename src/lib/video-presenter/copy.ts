@@ -1,10 +1,6 @@
-/**
- * Wireline-tailored copy for the video presenter feature.
- * Customer surfaces never mention vendor names (HeyGen, LiveAvatar, etc.).
- */
-import type { AgentVideoPresenterConfig } from "./types";
-import type { VideoPresenterConsentStatus } from "./types";
+import type { AgentVideoPresenterConfig, VideoPresenterConsentStatus } from "./types";
 
+/** Customer-facing copy never exposes the underlying video provider. */
 export function videoPresenterStatusMessage(
   presenter: AgentVideoPresenterConfig,
   platformConfigured: boolean,
@@ -19,9 +15,7 @@ export function videoPresenterStatusMessage(
     }
     return "Use the built-in face now. Pick a catalog presenter below, then add live video when you want photoreal streaming.";
   }
-  if (!platformConfigured) {
-    return "Live video add-on is not available on this workspace yet.";
-  }
+  if (!platformConfigured) return "Live video add-on is not available on this workspace yet.";
   if (presenter.avatarSource === "agent" && presenter.status === "ready") {
     return "Live video add-on is on for this agent. The Wireline face remains the always-on fallback.";
   }
@@ -48,9 +42,7 @@ export function videoPresenterPreviewHint(
   platformConfigured: boolean,
 ): string {
   if (presenter.status === "disabled" || presenter.provider === "synthetic") {
-    if (presenter.chosenAvatarId) {
-      return "Face is saved. Enable live video to preview the stream here.";
-    }
+    if (presenter.chosenAvatarId) return "Face is saved. Enable live video to preview the stream here.";
     return "Pick a catalog face below, then enable live video to preview streaming.";
   }
   if (presenter.status === "ready" && platformConfigured) {
@@ -66,7 +58,7 @@ export function videoPresenterPreviewHint(
 }
 
 export function liveVideoAddonPitch(): string {
-  return "Photoreal on-screen presenter for your website and video slot — billed as an add-on. Your agent voice stays on Wireline; this is visual only.";
+  return "Photoreal on-screen presenter for your website and video slot — billed as an add-on. Your agent voice stays on Wireline; this is visual only. Selecting Add live video confirms that you chose this catalog presenter and authorize Wireline to render it for this agent.";
 }
 
 /** Shown on the live-video add-on card — sets metering expectations without vendor jargon. */
@@ -75,9 +67,7 @@ export function liveVideoMeteringNote(): string {
 }
 
 export function presenterCustomizationMessage(presenter: AgentVideoPresenterConfig): string | null {
-  if (presenter.chosenAvatarId) {
-    return "Custom for this agent";
-  }
+  if (presenter.chosenAvatarId) return "Custom for this agent";
   if (presenter.avatarSource === "workspace_default") {
     return "Workspace default — pick a catalog face to make this agent yours.";
   }

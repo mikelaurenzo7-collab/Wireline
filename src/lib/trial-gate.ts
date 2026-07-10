@@ -2,11 +2,10 @@
 /**
  * Subscription gate for routes that spend money on live telephony.
  *
- * Create → Train stays free: `POST /api/agents` is not gated here. New accounts
- * start in `pending_activation` until Conversation Balance top-up or a paid plan
- * clears the row. While pending, wiring numbers and placing calls return 402.
- *
- * Legacy `trialing` tenants remain supported until their existing window ends.
+ * Create → Train stays free. New accounts begin in `pending_activation` until
+ * Stripe confirms Starter, Team, Business, or a governed Enterprise contract.
+ * Provider-spending actions fail closed whenever entitlement state cannot be
+ * verified; read-only and draft-building surfaces remain available.
  */
 
 import type { Request, Response, NextFunction } from "express";
@@ -33,12 +32,29 @@ type SubscriptionGateCode =
   | "TRIAL_EXPIRED"
   | "TRIAL_LIMIT_HIT"
   | "SUBSCRIPTION_REQUIRED"
-  | "EMAIL_UNVERIFIED";
+  | "EMAIL_UNVERIFIED"
+  | "BILLING_STATE_UNAVAILABLE";
+
+type TrialStatus =
+  | "pending_activation"
+  | "trialing"
+  | "trial_expired"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "unknown";
+
+interface TrialCheck {
+  status: TrialStatus;
+  trialEndsAt: Date | null;
+  trialOutboundCount: number;
+  daysLeft: number | null;
+  lookupFailed: boolean;
+}
 
 /**
- * Historical name retained because password and OAuth signup paths already
- * import it. New users no longer receive a trial: their settings row is
- * explicitly marked pending_activation until Stripe confirms a paid plan.
+ * Historical name retained because password and OAuth signup paths import it.
+ * New users no longer receive a trial.
  */
 export async function startTrialForUser(
   userId: string,
@@ -61,10 +77,10 @@ export async function startTrialForUser(
         acquisitionCampaign: attribution.utmCampaign || null,
       })
       .onConflictDoNothing();
-  } catch (err: any) {
-    log.warn("startTrialForUser activation setup failed (continuing)", {
+  } catch (error: any) {
+    log.warn("startTrialForUser activation setup failed (continuing signup)", {
       userId,
-      error: err?.message ?? String(err),
+      error: error?.message ?? String(error),
     });
   }
 }
@@ -115,33 +131,18 @@ export async function saveSignupAttribution(
         target: schema.settings.userId,
         set: attributionValues,
       });
-  } catch (err: unknown) {
+  } catch (error: unknown) {
     log.warn("saveSignupAttribution failed (non-fatal)", {
       userId,
-      error: err instanceof Error ? err.message : String(err),
+      error: error instanceof Error ? error.message : String(error),
     });
   }
 }
 
-interface TrialCheck {
-  ok: boolean;
-  status:
-    | "pending_activation"
-    | "trialing"
-    | "trial_expired"
-    | "active"
-    | "past_due"
-    | "canceled"
-    | "unknown";
-  trialEndsAt: Date | null;
-  trialOutboundCount: number;
-  daysLeft: number | null;
-}
-
 /**
- * Legacy accounts without a settings row remain active so an activation-policy
- * launch cannot accidentally lock out existing customers. New accounts always
- * get the pending_activation row during signup.
+ * Existing accounts without a settings row remain active for migration safety.
+ * A failed query is different: live provider spend must stop until state can be
+ * verified, so lookup failures are surfaced to the gate.
  */
 async function getTrialState(userId: string): Promise<TrialCheck> {
   try {
@@ -157,11 +158,11 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
 
     if (!row) {
       return {
-        ok: true,
         status: "active",
         trialEndsAt: null,
         trialOutboundCount: 0,
         daysLeft: null,
+        lookupFailed: false,
       };
     }
 
@@ -174,202 +175,216 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
           : null;
     const daysLeft = endsAt ? Math.max(0, Math.ceil((endsAt.getTime() - now) / 86_400_000)) : null;
 
-    let effectiveStatus = row.status as TrialCheck["status"];
-    if (effectiveStatus === "trialing" && endsAt && endsAt.getTime() < now) {
-      effectiveStatus = "trial_expired";
-    }
+    let status = (row.status || "unknown") as TrialStatus;
+    if (status === "trialing" && endsAt && endsAt.getTime() < now) status = "trial_expired";
 
     return {
-      ok: effectiveStatus === "trialing" || effectiveStatus === "active",
-      status: effectiveStatus,
+      status,
       trialEndsAt: endsAt,
       trialOutboundCount: row.trialOutboundCount ?? 0,
       daysLeft,
+      lookupFailed: false,
     };
-  } catch (err: any) {
-    log.warn("subscription gate state lookup failed — allowing request through", {
+  } catch (error: any) {
+    log.error("subscription gate state lookup failed — blocking provider spend", {
       userId,
-      error: err?.message ?? String(err),
+      error: error?.message ?? String(error),
     });
     return {
-      ok: true,
       status: "unknown",
       trialEndsAt: null,
       trialOutboundCount: 0,
       daysLeft: null,
+      lookupFailed: true,
     };
   }
 }
 
-function trialBlock(
+function block(
   res: Response,
+  status: 402 | 503,
   code: SubscriptionGateCode,
   reason: string,
-  detail: Record<string, unknown>,
+  detail: Record<string, unknown> = {},
 ) {
-  return res.status(402).json({ error: reason, code, ...detail });
+  return res.status(status).json({ error: reason, code, ...detail });
 }
 
-/**
- * Look up whether the caller has confirmed their email. Existing users are
- * backfilled by migration; transient DB failures fail open so they do not
- * block a paying customer.
- */
-async function isEmailVerified(userId: string): Promise<boolean> {
+async function getEmailVerificationState(
+  userId: string,
+): Promise<{ verified: boolean; lookupFailed: boolean }> {
   try {
     const [row] = await drizzle
       .select({ verifiedAt: schema.users.emailVerifiedAt })
       .from(schema.users)
       .where(eq(schema.users.id, userId))
       .limit(1);
-    return !!row?.verifiedAt;
-  } catch (err: any) {
-    log.warn("isEmailVerified check failed — allowing request through", {
+    return { verified: Boolean(row?.verifiedAt), lookupFailed: false };
+  } catch (error: any) {
+    log.error("email verification lookup failed — blocking provider spend", {
       userId,
-      error: err?.message ?? String(err),
+      error: error?.message ?? String(error),
     });
-    return true;
+    return { verified: false, lookupFailed: true };
   }
 }
 
-/**
- * Block live-work spend (number wiring, outbound dial) until the account is
- * verified and activated. Agent draft creation uses plan entitlements instead.
- */
-export async function enforceLiveWorkActivation(req: Request, res: Response, next: NextFunction) {
+async function verifyLiveWorkAccount(req: Request, res: Response): Promise<TrialCheck | null> {
   const userId = (req as any)?.user?.id as string | undefined;
-  if (!userId) return next();
-  if (isOwnerEmail((req as any)?.user?.email)) return next();
+  if (!userId || isOwnerEmail((req as any)?.user?.email)) {
+    return {
+      status: "active",
+      trialEndsAt: null,
+      trialOutboundCount: 0,
+      daysLeft: null,
+      lookupFailed: false,
+    };
+  }
 
-  if (!(await isEmailVerified(userId))) {
-    return trialBlock(
+  const email = await getEmailVerificationState(userId);
+  if (email.lookupFailed) {
+    block(
       res,
+      503,
+      "BILLING_STATE_UNAVAILABLE",
+      "Wireline could not verify live-work access. No provider action was started; try again shortly.",
+      { retryable: true },
+    );
+    return null;
+  }
+  if (!email.verified) {
+    block(
+      res,
+      402,
       "EMAIL_UNVERIFIED",
       "Verify your email to continue — check your inbox for a link from Wireline.",
-      {},
     );
+    return null;
   }
 
-  const t = await getTrialState(userId);
-
-  if (t.status === "pending_activation") {
-    return trialBlock(
+  const state = await getTrialState(userId);
+  if (state.lookupFailed) {
+    block(
       res,
+      503,
+      "BILLING_STATE_UNAVAILABLE",
+      "Wireline could not verify subscription access. No provider action was started; try again shortly.",
+      { retryable: true },
+    );
+    return null;
+  }
+
+  if (state.status === "pending_activation") {
+    block(
+      res,
+      402,
       "ACTIVATION_REQUIRED",
-      "Fund live work or choose shared capacity before wiring a number or placing calls.",
-      {},
+      "Choose Starter, Team, or Business before wiring a production number or starting live work.",
+      { recovery_path: "/settings/billing" },
     );
+    return null;
   }
-  if (t.status === "trial_expired" || t.status === "canceled") {
-    return trialBlock(res, "TRIAL_EXPIRED", "Your trial has ended — pick a plan to continue.", {
-      trial_ended_at: t.trialEndsAt?.toISOString() ?? null,
+  if (state.status === "trial_expired" || state.status === "canceled") {
+    block(res, 402, "TRIAL_EXPIRED", "Your live access has ended — choose a plan to continue.", {
+      trial_ended_at: state.trialEndsAt?.toISOString() ?? null,
+      recovery_path: "/settings/billing",
     });
+    return null;
   }
-  if (t.status === "past_due") {
-    return trialBlock(
+  if (state.status === "past_due") {
+    block(
       res,
+      402,
       "SUBSCRIPTION_REQUIRED",
-      "Your subscription is past due — update payment to continue.",
-      {},
+      "Your subscription is past due — update payment before starting another live action.",
+      { recovery_path: "/settings/billing" },
     );
+    return null;
+  }
+  if (state.status === "unknown") {
+    block(
+      res,
+      503,
+      "BILLING_STATE_UNAVAILABLE",
+      "Wireline could not confirm live-work access. No provider action was started; try again shortly.",
+      { retryable: true },
+    );
+    return null;
   }
 
+  return state;
+}
+
+/** Block number wiring and other provider-spending live actions until verified. */
+export async function enforceLiveWorkActivation(req: Request, res: Response, next: NextFunction) {
+  const state = await verifyLiveWorkAccount(req, res);
+  if (!state) return;
   next();
 }
 
 /** @deprecated Use enforceLiveWorkActivation — retained for external imports. */
 export const enforceTrialAgentCap = enforceLiveWorkActivation;
 
-/**
- * Block paid outbound dialing until the account is verified and activated.
- * Legacy trial counters are only incremented for existing trial tenants.
- */
+/** Block outbound dialing until verified and activated. */
 export async function enforceTrialOutboundCap(req: Request, res: Response, next: NextFunction) {
+  const state = await verifyLiveWorkAccount(req, res);
+  if (!state) return;
+
   const userId = (req as any)?.user?.id as string | undefined;
-  if (!userId) return next();
-  if (isOwnerEmail((req as any)?.user?.email)) return next();
-
-  if (!(await isEmailVerified(userId))) {
-    return trialBlock(
-      res,
-      "EMAIL_UNVERIFIED",
-      "Verify your email to keep dialing — check your inbox for a link from Wireline.",
-      {},
-    );
-  }
-
-  const t = await getTrialState(userId);
-
-  if (t.status === "pending_activation") {
-    return trialBlock(
-      res,
-      "ACTIVATION_REQUIRED",
-      "Fund live work or choose shared capacity before placing a call.",
-      {},
-    );
-  }
-  if (t.status === "trial_expired" || t.status === "canceled") {
-    return trialBlock(res, "TRIAL_EXPIRED", "Your trial has ended — pick a plan to keep dialing.", {
-      trial_ended_at: t.trialEndsAt?.toISOString() ?? null,
-    });
-  }
-  if (t.status === "past_due") {
-    return trialBlock(
-      res,
-      "SUBSCRIPTION_REQUIRED",
-      "Your subscription is past due — update payment to keep dialing.",
-      {},
-    );
-  }
-
-  if (t.status === "trialing") {
-    if (t.trialOutboundCount >= TRIAL_MAX_OUTBOUND) {
-      return trialBlock(
+  if (state.status === "trialing" && userId) {
+    if (state.trialOutboundCount >= TRIAL_MAX_OUTBOUND) {
+      block(
         res,
+        402,
         "TRIAL_LIMIT_HIT",
-        `Trial accounts are capped at ${TRIAL_MAX_OUTBOUND} outbound calls. Upgrade to keep dialing.`,
+        `Legacy trial accounts are capped at ${TRIAL_MAX_OUTBOUND} outbound calls. Upgrade to keep dialing.`,
         {
           limit: TRIAL_MAX_OUTBOUND,
-          current: t.trialOutboundCount,
-          days_left: t.daysLeft,
+          current: state.trialOutboundCount,
+          days_left: state.daysLeft,
+          recovery_path: "/settings/billing",
         },
       );
+      return;
     }
     try {
       await drizzle
         .update(schema.settings)
         .set({ trialOutboundCount: sql`${schema.settings.trialOutboundCount} + 1` })
         .where(eq(schema.settings.userId, userId));
-    } catch (err: any) {
-      log.warn("trialOutboundCount increment failed — allowing", {
+    } catch (error: any) {
+      log.error("trial outbound reservation failed — blocking dial", {
         userId,
-        error: err?.message ?? String(err),
+        error: error?.message ?? String(error),
       });
+      block(
+        res,
+        503,
+        "BILLING_STATE_UNAVAILABLE",
+        "Wireline could not reserve this live call. No provider call was started; try again shortly.",
+        { retryable: true },
+      );
+      return;
     }
   }
 
   next();
 }
 
-/**
- * Legacy maintenance sweep for accounts that were already trialing before
- * paid activation became the default. New accounts never enter this flow.
- */
+/** Legacy maintenance sweep for pre-activation trial accounts. */
 export async function sweepExpiredTrials(): Promise<number> {
   try {
-    const res = await drizzle
+    const result = await drizzle
       .update(schema.settings)
       .set({ subscriptionStatus: "trial_expired", updatedAt: new Date() })
       .where(
         sql`${schema.settings.subscriptionStatus} = 'trialing' AND ${schema.settings.trialEndsAt} < now()`,
       );
-    const updated = (res as any)?.rowCount ?? 0;
-    if (updated > 0) {
-      log.info("Trial sweep flipped tenants to trial_expired", { count: updated });
-    }
+    const updated = (result as any)?.rowCount ?? 0;
+    if (updated > 0) log.info("Trial sweep flipped tenants to trial_expired", { count: updated });
     return updated;
-  } catch (err: any) {
-    log.error("sweepExpiredTrials failed", { error: err?.message ?? String(err) });
+  } catch (error: any) {
+    log.error("sweepExpiredTrials failed", { error: error?.message ?? String(error) });
     return 0;
   }
 }

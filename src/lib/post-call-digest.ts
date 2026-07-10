@@ -1,39 +1,38 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
- * Post-call digest — what fires after every Vapi call ends.
+ * Post-call operating system — what fires after every completed Vapi call.
  *
- * Triggered by vapi-webhook-queue's end-of-call-report handler. We:
- *   1. Classify the outcome (book / qualify / followup / dnc / unreachable
- *      / info) and write `outcome_tag` back to wireline_call_logs.
- *   2. Denormalize the campaign attribution from the dialed phone number
- *      into the call log so /insights queries stay single-table.
- *   3. Auto-log the call to a connected CRM (HubSpot / Salesforce) via
- *      CRMService — silently no-ops when no CRM is connected.
- *   4. If the tenant has a connected Gmail/Outlook account, send a 3-line
- *      digest email to themselves so they get post-call awareness without
- *      logging in. Best-effort — never throws back into the webhook queue.
+ * Mandatory internal work:
+ *   1. Classify and persist the outcome and campaign attribution.
+ *   2. Write one idempotent structured post-call note tied to the call log.
+ *   3. Update outbound lead state, activation, CRM, QA, learning, and action extraction.
  *
- * The point of this file: turn "the call ended" into "I know exactly what
- * happened and what I should do about it" — without making the Account Holder
- * open the dashboard.
+ * User-controlled external work:
+ *   4. Append the structured result to a selected Google Sheet / Excel workbook.
+ *   5. Queue a polished artifact only when the Account Holder explicitly enabled it.
+ *   6. Send owner digest and optional CSAT when configured.
+ *
+ * Raw files are not retained here. Optional artifact jobs must write the generated
+ * file to the tenant's selected connected destination and retain only metadata/linkage.
  */
 
-import { drizzle, log } from "./server-context";
-import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
-import { CRMService } from "./crm-service";
-import { requiresSalesApprovalForIntegration } from "./sales-integration-policy";
-import { executeAction } from "./action-engine";
-import { IntegrationService } from "./integrations";
-import { sanitizePhone } from "./vapi-helpers";
-import { enqueue } from "./job-queue";
+import { and, eq } from "drizzle-orm";
+
 import { BRAND } from "../constants/brand-colors";
+import * as schema from "../db/schema";
+import { executeAction } from "./action-engine";
+import { CRMService } from "./crm-service";
+import { IntegrationService } from "./integrations";
+import { enqueue } from "./job-queue";
+import {
+  getPostCallOutputPreferences,
+  shouldGeneratePostCallArtifact,
+  type PostCallOutputPreferences,
+} from "./post-call-output-preferences";
+import { requiresSalesApprovalForIntegration } from "./sales-integration-policy";
+import { drizzle, log } from "./server-context";
+import { sanitizePhone } from "./vapi-helpers";
 
-/**
- * Heuristic outcome classifier — turns a free-text Vapi summary +
- * sentiment + intent label into one of 7 buckets used everywhere
- * downstream (Insights breakdown, digest email subject, pipeline stage).
- */
 export type CallOutcomeTag =
   | "booked"
   | "qualified"
@@ -48,7 +47,6 @@ export function classifyCallOutcome(input: {
   sentiment?: string | null;
   intentLabel?: string | null;
   durationSeconds?: number | null;
-  /** Vapi disconnect reason — e.g. silence-timed-out, customer-ended-call */
   endedReason?: string | null;
 }): CallOutcomeTag {
   const ended = (input.endedReason || "").toLowerCase();
@@ -73,10 +71,6 @@ export function classifyCallOutcome(input: {
   return "other";
 }
 
-/**
- * Best-effort lookup of the campaign label associated with the dialed
- * phone number. Returns null if the number isn't tagged.
- */
 async function resolveCampaignSource(
   userId: string,
   dialedNumber: string | null | undefined,
@@ -116,14 +110,175 @@ interface CallContext {
   vapiCallId?: string | null;
 }
 
-/**
- * The single entry point — call this from the end-of-call-report handler
- * with the freshly-stored call log. Returns the outcome tag so the
- * caller can also update related rows (lead status, etc.).
- */
+async function ensureStructuredPostCallNote(
+  ctx: CallContext,
+  outcomeTag: CallOutcomeTag,
+  campaignSource: string | null,
+): Promise<boolean> {
+  const sourceId = String(ctx.callLogId);
+  try {
+    const [existing] = await drizzle
+      .select({ id: schema.followUpTasks.id })
+      .from(schema.followUpTasks)
+      .where(
+        and(
+          eq(schema.followUpTasks.userId, ctx.userId),
+          eq(schema.followUpTasks.sourceType, "call_log"),
+          eq(schema.followUpTasks.sourceId, sourceId),
+          eq(schema.followUpTasks.taskType, "post_call_note"),
+        ),
+      )
+      .limit(1);
+    if (existing) return true;
+
+    const nextAction = nextActionFromOutcome(outcomeTag);
+    await drizzle.insert(schema.followUpTasks).values({
+      userId: ctx.userId,
+      agentId: ctx.agentId || null,
+      sourceType: "call_log",
+      sourceId,
+      targetChannel: "internal",
+      taskType: "post_call_note",
+      status: "completed",
+      priority: outcomeTag === "qualified" || outcomeTag === "booked" ? "high" : "medium",
+      description: `${outcomeTag.toUpperCase()} · ${ctx.customerName || ctx.customerNumber || "Caller"}`,
+      resolutionNotes: ctx.summary || "No provider summary was captured.",
+      customerInfo: {
+        name: ctx.customerName || null,
+        phone: ctx.customerNumber || null,
+      },
+      payload: {
+        outcome: outcomeTag,
+        summary: ctx.summary || null,
+        next_action: nextAction,
+        sentiment: ctx.sentiment || null,
+        intent: ctx.intentLabel || null,
+        campaign_source: campaignSource,
+        direction: ctx.direction || null,
+        duration_seconds: ctx.durationSeconds || 0,
+        provider_call_id: ctx.vapiCallId || null,
+        transcript_available: Boolean(ctx.transcript),
+      },
+    });
+    return true;
+  } catch (err: any) {
+    log.warn("post-call digest: structured note write failed", {
+      userId: ctx.userId,
+      callLogId: sourceId,
+      error: err?.message,
+    });
+    return false;
+  }
+}
+
+function spreadsheetDetails(
+  ctx: CallContext,
+  outcomeTag: CallOutcomeTag,
+  campaignSource: string | null,
+): string {
+  return [
+    ctx.summary || "No summary captured.",
+    `Next: ${nextActionFromOutcome(outcomeTag)}`,
+    ctx.sentiment ? `Sentiment: ${ctx.sentiment}` : null,
+    ctx.intentLabel ? `Intent: ${ctx.intentLabel}` : null,
+    campaignSource ? `Campaign: ${campaignSource}` : null,
+  ]
+    .filter(Boolean)
+    .join(" | ");
+}
+
+async function writeSelectedSpreadsheetOutputs(
+  ctx: CallContext,
+  outcomeTag: CallOutcomeTag,
+  campaignSource: string | null,
+  preferences: PostCallOutputPreferences,
+): Promise<string[]> {
+  const destination = preferences.spreadsheet_destination;
+  if (destination === "none") return [];
+
+  const caller = ctx.customerName || ctx.customerNumber || "Unknown caller";
+  const details = spreadsheetDetails(ctx, outcomeTag, campaignSource);
+  const durationMinutes = Math.max(1, Math.ceil((ctx.durationSeconds || 0) / 60));
+  const written: string[] = [];
+
+  if (destination === "google_sheets" || destination === "both") {
+    try {
+      const { logToGoogleSheets } = await import("./google-sheets-service");
+      if (
+        await logToGoogleSheets({
+          userId: ctx.userId,
+          caller,
+          outcome: outcomeTag,
+          details,
+          agentName: ctx.agentName || undefined,
+          durationMinutes,
+        })
+      ) {
+        written.push("google_sheets");
+      }
+    } catch (err: any) {
+      log.warn("post-call digest: Google Sheets export failed", { error: err?.message });
+    }
+  }
+
+  if (destination === "microsoft_excel" || destination === "both") {
+    try {
+      const { logToExcel } = await import("./microsoft-graph-service");
+      if (await logToExcel({ userId: ctx.userId, caller, outcome: outcomeTag, details })) {
+        written.push("microsoft_excel");
+      }
+    } catch (err: any) {
+      log.warn("post-call digest: Microsoft Excel export failed", { error: err?.message });
+    }
+  }
+
+  return written;
+}
+
+async function queueSelectedArtifact(
+  ctx: CallContext,
+  outcomeTag: CallOutcomeTag,
+  campaignSource: string | null,
+  preferences: PostCallOutputPreferences,
+): Promise<boolean> {
+  if (!shouldGeneratePostCallArtifact(preferences, outcomeTag)) return false;
+  try {
+    await enqueue(drizzle, {
+      userId: ctx.userId,
+      type: "post_call_artifact",
+      payload: {
+        userId: ctx.userId,
+        callLogId: String(ctx.callLogId),
+        providerCallId: ctx.vapiCallId || null,
+        agentId: ctx.agentId || null,
+        agentName: ctx.agentName || null,
+        customerName: ctx.customerName || null,
+        customerNumber: ctx.customerNumber || null,
+        direction: ctx.direction || null,
+        durationSeconds: ctx.durationSeconds || 0,
+        outcomeTag,
+        summary: ctx.summary || null,
+        transcript: ctx.transcript || null,
+        sentiment: ctx.sentiment || null,
+        intentLabel: ctx.intentLabel || null,
+        campaignSource,
+        format: preferences.artifact_format,
+        destination: preferences.artifact_destination,
+      },
+    });
+    return true;
+  } catch (err: any) {
+    log.warn("post-call digest: artifact enqueue failed", { error: err?.message });
+    return false;
+  }
+}
+
 export async function runPostCallDigest(ctx: CallContext): Promise<{
   outcomeTag: string;
   campaignSource: string | null;
+  noteRecorded: boolean;
+  spreadsheetDestinations: string[];
+  artifactQueued: boolean;
   crmLogged: boolean;
   emailSent: boolean;
   csatSent: boolean;
@@ -137,8 +292,6 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
   });
   const campaignSource = await resolveCampaignSource(ctx.userId, ctx.dialedNumber);
 
-  // Safe-parse the callLogId. The digest is fire-and-forget from the
-  // webhook handler, so a parse failure must not throw — log + bail.
   let callLogIdBig: bigint;
   try {
     callLogIdBig = BigInt(ctx.callLogId as any);
@@ -146,10 +299,18 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: unparseable callLogId — skipping", {
       callLogId: String(ctx.callLogId),
     });
-    return { outcomeTag, campaignSource, crmLogged: false, emailSent: false, csatSent: false };
+    return {
+      outcomeTag,
+      campaignSource,
+      noteRecorded: false,
+      spreadsheetDestinations: [],
+      artifactQueued: false,
+      crmLogged: false,
+      emailSent: false,
+      csatSent: false,
+    };
   }
 
-  // 1. Write outcome + campaign back to the call log
   try {
     await drizzle
       .update(schema.callLogs)
@@ -159,7 +320,35 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: callLog update failed", { error: err?.message });
   }
 
-  // 1a. Update outbound lead status on call end
+  const noteRecorded = await ensureStructuredPostCallNote(ctx, outcomeTag, campaignSource);
+
+  let outputPreferences: PostCallOutputPreferences;
+  try {
+    outputPreferences = await getPostCallOutputPreferences(ctx.userId);
+  } catch (err: any) {
+    log.warn("post-call digest: output preferences unavailable", { error: err?.message });
+    outputPreferences = {
+      internal_record_enabled: true,
+      spreadsheet_destination: "none",
+      artifact_mode: "off",
+      artifact_format: "pdf",
+      artifact_destination: null,
+    };
+  }
+
+  const spreadsheetDestinations = await writeSelectedSpreadsheetOutputs(
+    ctx,
+    outcomeTag,
+    campaignSource,
+    outputPreferences,
+  );
+  const artifactQueued = await queueSelectedArtifact(
+    ctx,
+    outcomeTag,
+    campaignSource,
+    outputPreferences,
+  );
+
   if (ctx.direction === "outbound") {
     try {
       const { updateLeadStatusOnCallEnd } = await import("./outbound-call-tracking");
@@ -174,7 +363,6 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     }
   }
 
-  // 1b. Activation — first useful production call (idempotent per tenant).
   try {
     const { maybeRecordTenantActivation } = await import("./tenant-activation");
     await maybeRecordTenantActivation({
@@ -199,7 +387,6 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: activation check failed", { error: err?.message });
   }
 
-  // 2. CRM log — approval-gated for sales agents by default
   let crmLogged = false;
   let crmQueuedForApproval = false;
   try {
@@ -269,7 +456,6 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: CRM log failed", { error: err?.message });
   }
 
-  // 3. Digest email — best effort, never blocks
   let emailSent = false;
   try {
     const integ = new IntegrationService(ctx.userId);
@@ -281,8 +467,6 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       crmLogged,
       crmQueuedForApproval,
     });
-    // Send to the Account Holder's own connected mailbox address (first one we find).
-    // If they have no mailbox connected we skip — log only.
     const accountHolderEmail = await pickAccountHolderEmail(ctx.userId);
     if (accountHolderEmail) {
       emailSent = await integ.sendEmail({ to: accountHolderEmail, subject, body });
@@ -291,10 +475,6 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: email send failed", { error: err?.message });
   }
 
-  // 4. Auto-QA — enqueue a background scoring job; the handler stores the
-  // breakdown and chains adaptive_optimization (Claude-generated lesson →
-  // wireline_agent_lessons) on low scores. Fire-and-forget; the agent
-  // gets smarter without anyone clicking anything.
   try {
     await enqueue(drizzle, {
       userId: ctx.userId,
@@ -305,8 +485,6 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: auto_qa_score enqueue failed", { error: err?.message });
   }
 
-  // 5. Post-call CSAT SMS — opt-in, best effort.
-  //    Only fires for real conversations (>30s, not voicemail/DNC).
   let csatSent = false;
   try {
     if (
@@ -328,17 +506,29 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     log.warn("post-call digest: CSAT SMS failed", { error: err?.message });
   }
 
-  log.info("Post-call digest completed", {
+  log.info("Post-call operating system completed", {
     userId: ctx.userId,
     callLogId: String(ctx.callLogId),
     outcomeTag,
     campaignSource,
+    noteRecorded,
+    spreadsheetDestinations,
+    artifactQueued,
     crmLogged,
     emailSent,
     csatSent,
   });
 
-  return { outcomeTag, campaignSource, crmLogged, emailSent, csatSent };
+  return {
+    outcomeTag,
+    campaignSource,
+    noteRecorded,
+    spreadsheetDestinations,
+    artifactQueued,
+    crmLogged,
+    emailSent,
+    csatSent,
+  };
 }
 
 async function pickAccountHolderEmail(userId: string): Promise<string | null> {
@@ -355,11 +545,18 @@ async function pickAccountHolderEmail(userId: string): Promise<string | null> {
 }
 
 function crmDigestStatusLine(crmLogged: boolean, crmQueuedForApproval: boolean): string {
-  if (crmLogged) return "✅ Logged to your CRM.";
-  if (crmQueuedForApproval) {
-    return "📋 CRM note queued for approval in your Approval Inbox.";
-  }
-  return "ℹ︎ No CRM connected — connect HubSpot or Salesforce in /integrations to auto-log.";
+  if (crmLogged) return "Logged to your CRM.";
+  if (crmQueuedForApproval) return "CRM note queued for approval in your Approval Inbox.";
+  return "No CRM connected — connect HubSpot or Salesforce to auto-log.";
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function renderDigestEmail(d: {
@@ -377,34 +574,36 @@ function renderDigestEmail(d: {
 }): string {
   const dur = Math.round((d.durationSeconds || 0) / 60);
   const next = nextActionFromOutcome(d.outcomeTag);
+  const identity = `${d.outcomeTag.toUpperCase()} — ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`;
+  const metadata = `${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`;
   return [
-    `<div style="font-family: -apple-system, system-ui, sans-serif; max-width: 560px; line-height: 1.55; color: #1a1a1a;">`,
+    `<div style="font-family:-apple-system,system-ui,sans-serif;max-width:560px;line-height:1.55;color:#1a1a1a;">`,
     `<p style="font-size:11px;text-transform:uppercase;letter-spacing:.3em;color:${BRAND.colors.primary};margin:0 0 4px;">Wireline · Post-call digest</p>`,
-    `<h2 style="margin:0 0 8px;font-size:22px;font-style:italic;font-weight:500;">${d.outcomeTag.toUpperCase()} — ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}</h2>`,
-    `<p style="margin:0 0 16px;font-size:13px;color:#666;">${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: <strong>${d.campaignSource}</strong>` : ""}</p>`,
-    `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
-    `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${next}</p>`,
-    `<p style="margin:0 0 16px;font-size:12px;color:#666;">${crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false)}</p>`,
+    `<h2 style="margin:0 0 8px;font-size:22px;font-style:italic;font-weight:500;">${escapeHtml(identity)}</h2>`,
+    `<p style="margin:0 0 16px;font-size:13px;color:#666;">${escapeHtml(metadata)}</p>`,
+    `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${escapeHtml(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
+    `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${escapeHtml(next)}</p>`,
+    `<p style="margin:0 0 16px;font-size:12px;color:#666;">${escapeHtml(crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false))}</p>`,
     `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="https://trywireline.com/phone?tab=logs" style="color:${BRAND.colors.primary};text-decoration:none;">in Wireline →</a></p>`,
     `</div>`,
   ].join("");
 }
 
-function nextActionFromOutcome(tag: string): string {
+export function nextActionFromOutcome(tag: string): string {
   switch (tag) {
     case "booked":
-      return "Confirmation sent — calendar invite landed. Review the prep notes before the meeting.";
+      return "Verify the calendar confirmation, attach prep notes, and assign the meeting owner.";
     case "qualified":
-      return "Move to your closer or schedule a demo within 48 hours while interest is hot.";
+      return "Route to the closer or schedule a demo within 48 hours while intent is current.";
     case "followup":
-      return "Callback scheduled — Wireline will dial again at the agreed time.";
+      return "Create or confirm the promised callback and preserve the reason and timing.";
     case "dnc":
-      return "Added to your DNC list automatically. No further outreach to this number.";
+      return "Confirm the number is suppressed from all future outreach.";
     case "unreachable":
-      return "Retry queued. Voicemail dropped if enabled.";
+      return "Review retry policy and voicemail settings before another attempt.";
     case "info":
-      return "Training gap captured — review and add it from your agent's Training tab in Studio.";
+      return "Review the unanswered question and add verified guidance to the agent's Training tab.";
     default:
-      return "Review the full transcript in Phone > Call History and label the outcome if you want this in funnel reporting.";
+      return "Review the transcript, confirm the outcome, and assign any required follow-up.";
   }
 }
