@@ -1,21 +1,19 @@
 /**
- * Conversation Balance is Wireline's customer-facing prepaid live-work wallet.
+ * Conversation Balance is Wireline's prepaid live-work safety wallet.
  *
- * Personal users build and test for free. Before they turn an agent loose
- * on a live workflow, they add a small balance. Business workspaces use the
- * same balance alongside their platform subscription. This module owns the
- * product contract and prevents UI, checkout, and server limits from drifting.
+ * Paid plans include monthly live-call minutes. Conversation Balance covers
+ * extra calls, texts, and heavier usage without automatic overage invoices.
  */
-
-export const CONVERSATION_BALANCE_MIN_USD = 5;
+export const CONVERSATION_BALANCE_MIN_USD = 10;
 export const CONVERSATION_BALANCE_MAX_USD = 1_000;
-export const CONVERSATION_BALANCE_PRESETS_USD = [5, 10, 25, 50] as const;
+export const CONVERSATION_BALANCE_PRESETS_USD = [10, 25, 50, 100] as const;
 
 export const CONVERSATION_BALANCE_COPY = {
   title: "Conversation Balance",
-  subtitle: "Start free. Add balance when you are ready to run calls, texts, and follow-up.",
+  subtitle:
+    "Your plan includes monthly live-call minutes. Add prepaid balance only when you need extra calls, texts, or heavier usage.",
   reassurance:
-    "No subscription for personal use. No automatic reload. You decide when to add more.",
+    "No automatic overages or auto-refill by default. Live usage pauses when included minutes and balance are depleted.",
 } as const;
 
 export function isConversationBalanceAmount(amountUsd: number): boolean {
