@@ -28,7 +28,8 @@ describe("account-type navigation lens", () => {
     const paths = accountSidebarItems("business").map((item) => item.path);
     expect(paths).toContain("/insights");
     expect(paths).toContain("/approvals");
-    expect(paths).toContain("/apps");
+    // Apps moved out of top-level Operate into Settings tabs (simplified IA).
+    expect(paths).not.toContain("/apps");
   });
 
   it("gates route availability for personal accounts", () => {

@@ -9,6 +9,7 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
+import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy";
 import { signupHrefForWedge } from "../lib/signup-intent";
 
 export type VerticalKey =
@@ -505,7 +506,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Won't prospects know it's AI?",
-        a: "Wireline agents are configured around your disclosure policy, consent rules, and call purpose. When disclosure is required or enabled, it is logged automatically. The goal is not to trick prospects — it is to reach them quickly, qualify clearly, and move real opportunities forward.",
+        a: TRUST_DISCLOSURE_FAQ,
       },
       {
         q: "How does it handle gatekeepers?",

@@ -30,9 +30,7 @@ describe("safe-area spacing ownership", () => {
   it("preserves the authored header, form, loading, and tool padding", () => {
     expect(read("src/pages/Features.tsx")).toContain('className="pt-16"');
     expect(read("src/pages/Pricing.tsx")).toContain('className="pt-16"');
-    expect(read("src/pages/About.tsx")).toContain(
-      'mainClassName="!px-0 pb-0 pt-20 sm:pt-24"',
-    );
+    expect(read("src/pages/About.tsx")).toContain('mainClassName="!px-0 pb-0 pt-16"');
     expect(read("src/components/AuthPortal.tsx")).toContain(
       "wl-auth-form-panel flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12",
     );

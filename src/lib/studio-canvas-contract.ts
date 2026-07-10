@@ -39,9 +39,12 @@ export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
     { id: "studio-route", pattern: /path="\/studio"/ },
-    // Retired /agents directory page redirects into Overview, where the
-    // roster lives as part of the dashboard (per migration plan).
-    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/overview"/ },
+    // Retired /agents directory page redirects into Studio, which owns the
+    // roster under the agent-first IA.
+    {
+      id: "agents-redirect",
+      pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/,
+    },
   ],
   studioHome: [
     { id: "dedicated-studio-shell", pattern: /StudioPageShell/ },
@@ -66,7 +69,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   navigation: [
     { id: "studio-route", pattern: /target === "\/studio"/ },
     { id: "studio-label", pattern: /label: "Studio"/ },
-    { id: "apps-route", pattern: /href: "\/apps"/ },
+    { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
     { id: "breadcrumb", pattern: /Studio breadcrumb|Studio context|Assistant breadcrumb/ },

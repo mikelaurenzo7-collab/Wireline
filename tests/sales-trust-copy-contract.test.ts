@@ -59,7 +59,10 @@ describe("sales trust copy contract", () => {
     expect(wedges).toContain("Revenue Recovery Phone Agents");
     expect(wedges).toContain("speed-to-lead");
     expect(wedges).toContain("Approved actions sync");
-    expect(wedges).toContain(TRUST_DISCLOSURE_FAQ);
+    // The sales wedge answers disclosure with the canonical constant so the
+    // copy can never drift from product-copy's trust posture again.
+    expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
+    expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
   });
 
   it("keeps WireAgentLanding customer-facing without internal meta", () => {
