@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   AGENT_DIRECTION_MODES,
   AGENT_NUMBER_PROMISE,
+  BRAND_SYSTEM,
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
@@ -14,23 +15,28 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
-    // CEO-first positioning must make the default feel like one capable operator,
+    // CEO-first positioning must make the default feel like one capable phone employee,
     // not a menu of departments the customer needs to configure before value.
-    expect(MARKETING_VOICE.headline).toBe("One agent to run the front office.");
+    expect(BRAND_SYSTEM.northStar).toBe("AI phone employees for the work that grows your business.");
+    expect(BRAND_SYSTEM.proofLoop).toEqual(["Build", "Train", "Launch", "Improve"]);
+    expect(BRAND_SYSTEM.toneRules).toContain("Lead with business outcomes before AI mechanics.");
+    expect(MARKETING_VOICE.headline).toBe(BRAND_SYSTEM.northStar);
+    expect(MARKETING_VOICE.subline).toContain("trained operator");
     expect(MARKETING_VOICE.subline).toContain("answers");
     expect(MARKETING_VOICE.subline).toContain("researches");
     expect(MARKETING_VOICE.subline).toContain("revives stale leads");
-    expect(MARKETING_VOICE.subline).toContain("reports the outcome");
-    expect(MARKETING_VOICE.subline).toContain("included number for every included agent");
-    expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Operate"]);
+    expect(MARKETING_VOICE.subline).toContain("reports every outcome");
+    expect(MARKETING_VOICE.subline).toContain("included number");
+    expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Improve"]);
 
-    expect(OUTBOUND_WEDGE.headline).toBe("An AI operating agent that actually calls.");
-    expect(OUTBOUND_WEDGE.subline).toContain("answer");
-    expect(OUTBOUND_WEDGE.subline).toContain("research");
-    expect(OUTBOUND_WEDGE.subline).toContain("book");
-    expect(OUTBOUND_WEDGE.subline).toContain("without commission");
+    expect(OUTBOUND_WEDGE.headline).toBe("AI phone employees for growth work.");
+    expect(OUTBOUND_WEDGE.subline).toContain("answers");
+    expect(OUTBOUND_WEDGE.subline).toContain("researches");
+    expect(OUTBOUND_WEDGE.subline).toContain("books");
+    expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
+    expect(OUTBOUND_WEDGE.subline).toContain("included number");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every included Wireline operating agent");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every included Wireline phone employee");
     expect(AGENT_NUMBER_PROMISE).toContain("included number");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual([
@@ -70,11 +76,6 @@ describe("product voice cohesion", () => {
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
-    expect(landing).toContain("Build your Wireline CEO");
-    expect(landing).toContain("Brief the outcome");
-    expect(landing).toContain("One operator. One included number. Every outcome logged.");
-    expect(landing).not.toContain("Wire your AI employee");
-    expect(landing).not.toContain("Pick the role");
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
