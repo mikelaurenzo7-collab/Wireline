@@ -29,6 +29,12 @@ function flatten(
   return output;
 }
 
+const pxNumber = (value: string | number) => String(value).match(/^(\d+(?:\.\d+)?)px$/)?.[1];
+const camel = (path: string) =>
+  path
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_, char: string) => char.toUpperCase())
+    .replace(/^[A-Z]/, (char) => char.toLowerCase());
+
 describe("Wireline design token pipeline", () => {
   it("keeps DTCG source, generated CSS, and TypeScript values synchronized", () => {
     const tokenSource = JSON.parse(source("design-tokens/wireline.tokens.json")) as TokenGroup;
@@ -74,7 +80,7 @@ describe("Wireline design token pipeline", () => {
     const tokenSource = JSON.parse(source("design-tokens/wireline.tokens.json")) as TokenGroup;
     const values = flatten(tokenSource);
     const pressScale = values["motion.press"];
-    const liftPx = String(values["motion.lift"]).match(/^(\d+(?:\.\d+)?)px$/)?.[1];
+    const liftPx = pxNumber(values["motion.lift"]);
 
     expect(pressScale).toBe(0.985);
     expect(liftPx).toBe("1");
@@ -94,6 +100,50 @@ describe("Wireline design token pipeline", () => {
     // false positives from `0.985` or the pressHighlight color channel.
     expect(iosTokens).not.toMatch(/pressScale: CGFloat = 0\.98\b/);
     expect(kotlinTokens).not.toMatch(/pressScale = 0\.98f\b/);
+  });
+
+  it("keeps native typography and touch metrics synchronized with the token source", () => {
+    const tokenSource = JSON.parse(source("design-tokens/wireline.tokens.json")) as TokenGroup;
+    const values = flatten(tokenSource);
+    const iosTokens = source("ios/Wireline/Theme/WirelineDesignTokens.generated.swift");
+    const iosSharedTokens = source("ios/WirelineShared/WirelineDesignTokens.generated.swift");
+    const kotlinTokens = source(
+      "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
+    );
+    const metricPaths = [
+      "interaction.target.minimum",
+      "interaction.target.comfortable",
+      "interaction.target.primary",
+      "typography.display.size",
+      "typography.display.lineHeight",
+      "typography.h1.size",
+      "typography.h1.lineHeight",
+      "typography.h2.size",
+      "typography.h2.lineHeight",
+      "typography.h3.size",
+      "typography.h3.lineHeight",
+      "typography.body.size",
+      "typography.body.lineHeight",
+      "typography.bodyStrong.size",
+      "typography.bodyStrong.lineHeight",
+      "typography.caption.size",
+      "typography.caption.lineHeight",
+      "typography.overline.size",
+      "typography.overline.lineHeight",
+    ];
+
+    for (const path of metricPaths) {
+      const metricName = camel(path);
+      const px = pxNumber(values[path]);
+      expect(px, `${path} should be a px token`).toBeTruthy();
+      expect(iosTokens).toContain(`public static let ${metricName}: CGFloat = ${px}`);
+      expect(iosSharedTokens).toContain(`public static let ${metricName}: CGFloat = ${px}`);
+      expect(kotlinTokens).toContain(`val ${metricName} = ${px}.dp`);
+    }
+
+    expect(values["interaction.target.minimum"]).toBe("40px");
+    expect(iosTokens).not.toContain("interactionTargetMinimum: CGFloat = 24");
+    expect(kotlinTokens).not.toContain("interactionTargetMinimum = 24.dp");
   });
 
   it("ships the new surface.raised and elevation.raised tokens to every surface", () => {
@@ -120,5 +170,13 @@ describe("Wireline design token pipeline", () => {
     expect(indexCss).toContain("--color-rose-600: var(--wireline-color-status-error)");
     expect(indexCss).toContain("--color-amber-500: var(--wireline-color-status-warning)");
     expect(indexCss).toContain("--color-amber-600: var(--wireline-color-status-warning)");
+  });
+
+  it("keeps the global hardening layer scoped to intentional UI surfaces", () => {
+    const hardeningCss = source("src/styles/system-hardening.css");
+    expect(hardeningCss).toContain(":is(.marketing-surface, .prose, .wl-copy");
+    expect(hardeningCss).toContain(".wl-compact-control");
+    expect(hardeningCss).not.toContain("p,\nli,\ndd,\ndt,\nsummary,");
+    expect(hardeningCss).not.toContain("button,\n[role=\"button\"],\na[role=\"button\"],\ninput,");
   });
 });
