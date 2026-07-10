@@ -5,16 +5,18 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
-  it("keeps static and runtime fallback metadata aligned to the Wire-your-agent story", () => {
+  it("keeps static and runtime fallback metadata aligned to the AI phone employee story", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline — Wire your agent.");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "Wireline - Wire your agent"');
-    expect(staticHead).toContain("personal call delegation, sales, support, scheduling");
-    expect(staticHead).toContain("outbound, inbound, or hybrid phone agents");
-    expect(runtimeMeta).toContain("personal call delegation, sales, support, scheduling");
-    expect(runtimeMeta).toContain("outbound, inbound, or hybrid phone agents");
+    expect(staticHead).toContain("Wireline — AI phone employees that turn calls into sales.");
+    expect(runtimeMeta).toContain(
+      'const DEFAULT_TITLE = "Wireline - AI phone employees that turn calls into sales"',
+    );
+    expect(staticHead).toContain("AI phone employees that answer calls, qualify leads");
+    expect(staticHead).toContain("book appointments, follow up, collect, route");
+    expect(runtimeMeta).toContain("AI phone employees that answer calls, qualify leads");
+    expect(runtimeMeta).toContain("book appointments, follow up, collect, route");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
 
