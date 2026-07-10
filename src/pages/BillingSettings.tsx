@@ -17,8 +17,6 @@ type SubscriptionState = BillingStatusResponse["subscription"];
 
 type ConversationBalanceResponse = {
   balance_usd: number;
-  presets_usd?: number[];
-  stripe_configured?: boolean;
 };
 
 function formatUsd(value: number | null) {
@@ -39,7 +37,7 @@ function formatDate(value: string | null | undefined) {
 }
 
 function isPaidPlan(planId: string | null | undefined) {
-  return Boolean(planId && planId !== "personal" && planId !== "enterprise");
+  return Boolean(planId && planId !== "personal");
 }
 
 export default function BillingSettings() {
@@ -103,28 +101,27 @@ export default function BillingSettings() {
       STRIPE_PLANS.find((item) => item.id === "personal")!,
     [subscription?.plan_id],
   );
-  const planStatus = subscription?.status?.replace(/_/g, " ") || "free builder";
   const paidPlan = isPaidPlan(subscription?.plan_id);
   const hasSubscription = Boolean(paidPlan && subscription?.has_subscription);
+  const planStatus = subscription?.status?.replace(/_/g, " ") || "free builder";
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
-  const topUpPresets = CONVERSATION_BALANCE_PRESETS_USD;
 
   async function addBalance(amountUsd: number) {
     if (!paidPlan) {
-      setActionError("Choose Starter, Team, or Business before adding Conversation Balance.");
+      setActionError("Choose Starter, Starter Plus, Pro, or Business before adding Conversation Balance.");
       return;
     }
     setTopUpBusy(amountUsd);
     setActionError(null);
     try {
-      const res = await authFetch("/api/conversation-balance/checkout", {
+      const response = await authFetch("/api/conversation-balance/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount_usd: amountUsd }),
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.url) throw new Error(data?.error || "Could not start checkout.");
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.url) throw new Error(data?.error || "Could not start checkout.");
       window.location.href = data.url;
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Could not start checkout.");
@@ -136,9 +133,9 @@ export default function BillingSettings() {
     setPortalBusy(true);
     setActionError(null);
     try {
-      const res = await authFetch("/api/billing/portal", { method: "POST" });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.url) throw new Error(data?.error || "Could not open billing portal.");
+      const response = await authFetch("/api/billing/portal", { method: "POST" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.url) throw new Error(data?.error || "Could not open billing portal.");
       window.location.href = data.url;
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Could not open billing portal.");
@@ -181,10 +178,10 @@ export default function BillingSettings() {
                       {planStatus}
                     </Badge>
                   </div>
-                  <p className="mt-3 max-w-[68ch] text-sm leading-6 text-muted-foreground">
+                  <p className="mt-3 max-w-[72ch] text-sm leading-6 text-muted-foreground">
                     {paidPlan
-                      ? `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}, ${plan.included_phone_numbers} included number${plan.included_phone_numbers === 1 ? "" : "s"}, and ${plan.voice_minutes_monthly.toLocaleString()} pooled live-call minutes each month.`
-                      : "Build, train, and privately simulate one draft agent. Choose a paid plan before provisioning a production number or placing live calls."}
+                      ? `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}, up to ${plan.included_phone_numbers} on-demand production number${plan.included_phone_numbers === 1 ? "" : "s"}, and ${plan.voice_minutes_monthly.toLocaleString()} pooled live-call minutes each month. Lead Hunt and connected email workflows are available; variable SMS, enrichment, and extra voice usage draw from prepaid balance.`
+                      : "Build, train, and privately simulate one draft agent. Choose a paid plan before provisioning a production number or running paid provider actions."}
                   </p>
                 </>
               )}
@@ -222,14 +219,14 @@ export default function BillingSettings() {
         {paidPlan ? <UsageMeter onUpgrade={() => (window.location.href = "/pricing")} /> : null}
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <article className="wl-paper wl-paper-elevated flex min-h-[230px] flex-col p-5 sm:p-6">
+          <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   Conversation Balance
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Controlled prepaid funding for usage beyond your included monthly minutes.
+                  Prepaid funding for additional voice, SMS segments, provider-backed enrichment, and other variable channel work.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
@@ -242,22 +239,20 @@ export default function BillingSettings() {
               </div>
             ) : (
               <>
-                <p
-                  className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}
-                >
+                <p className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}>
                   {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {!paidPlan
-                    ? "Conversation Balance becomes available after Starter, Team, or Business is active."
+                    ? "Conversation Balance becomes available after a live plan is active."
                     : balanceDue > 0
-                      ? "Your previous call finished normally after prepaid coverage ran out. Restore this amount before another live call."
-                      : "Included plan minutes are used first. Extra live usage draws only from this balance—never an automatic overage invoice."}
+                      ? "A previous active call finished normally after coverage ran out. Restore this amount before another paid provider action."
+                      : "Included plan capacity is used first. Additional variable usage draws only from this balance—never an automatic postpaid overage invoice."}
                 </p>
 
                 {paidPlan ? (
                   <div className="mt-5 flex flex-wrap gap-2">
-                    {topUpPresets.map((amount) => {
+                    {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
                       const minutes =
                         balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ?? 0;
                       return (
@@ -270,7 +265,7 @@ export default function BillingSettings() {
                           onClick={() => void addBalance(amount)}
                           disabled={topUpBusy !== null}
                           className="gap-1.5"
-                          title={minutes > 0 ? `≈ ${minutes.toLocaleString()} extra Starter minutes` : undefined}
+                          title={minutes > 0 ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate` : undefined}
                         >
                           {topUpBusy === amount ? (
                             <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -291,7 +286,7 @@ export default function BillingSettings() {
             )}
           </article>
 
-          <article className="wl-paper wl-paper-elevated flex min-h-[230px] flex-col p-5 sm:p-6">
+          <article className="wl-paper wl-paper-elevated flex min-h-[250px] flex-col p-5 sm:p-6">
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Subscription
             </p>
@@ -306,8 +301,7 @@ export default function BillingSettings() {
                   Renews {formatDate(subscription?.current_period_end)}
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Stripe is the source of truth for your exact renewal amount, billing interval, payment
-                  method, invoices, cancellation, and tax details.
+                  Stripe is the source of truth for your renewal amount, billing interval, payment method, invoices, cancellation, discounts, and tax details.
                 </p>
                 <Button
                   type="button"
@@ -325,11 +319,10 @@ export default function BillingSettings() {
             ) : (
               <>
                 <p className="mt-6 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
-                  No paid subscription
+                  No recurring invoice
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Free Builder has no recurring invoice and no production telephony cost. Activate only
-                  when the agent is trained and ready for live conversations.
+                  Free Builder creates no production telephony or recurring subscription cost. Activate only when an agent is trained and ready for live work.
                 </p>
                 <Button asChild variant="outline" size="sm" className="mt-5 self-start">
                   <Link to="/pricing">View Founder Early Access plans</Link>
