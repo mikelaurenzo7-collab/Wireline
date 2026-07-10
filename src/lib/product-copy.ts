@@ -3,82 +3,95 @@
 export const AGENT_DIRECTION_MODES = {
   outbound: {
     label: "Outbound",
-    eyebrow: "AI phone employees · sales follow-up",
-    loop: ["Leads", "Qualify", "Book", "Log"],
-    promise: "Qualifies leads, books the next step, and returns proof.",
+    eyebrow: "AI profit agents · outbound growth",
+    loop: ["List", "Pitch", "Call", "Profit"],
+    promise: "Calls warm lists, books the next step, and logs proof of profit movement.",
   },
   inbound: {
     label: "Inbound",
-    eyebrow: "AI phone employees · front desk",
-    loop: ["Answer", "Route", "Schedule", "Log"],
-    promise: "Answers live demand and routes the right next step.",
+    eyebrow: "AI profit agents · demand capture",
+    loop: ["Answer", "Qualify", "Book", "Log"],
+    promise: "Answers live demand before it leaks and routes the profitable next step.",
   },
   hybrid: {
     label: "Hybrid",
-    eyebrow: "AI phone employees · revenue desk",
+    eyebrow: "AI profit agents · follow-through desk",
     loop: ["Answer", "Act", "Follow up", "Sync"],
-    promise: "Handles both sides of the workflow when calls need follow-through.",
+    promise: "Handles both sides of the workflow when profit needs follow-through.",
   },
 } as const;
 
+export const PROFIT_AGENT_NUMBER_PROMISE =
+  "Every included Wireline agent comes with an included number, so each profit role has a real line to call from and receive callbacks." as const;
+
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
-  headline: "AI phone employees for the work that grows your business.",
+  headline: "AI profit agents that actually call.",
   subline:
-    "Wireline gives businesses AI phone employees for lead response, appointment booking, sales follow-up, collections, intake, recruiting, and support overflow — trained on the playbook, connected to the number, and measured by outcomes.",
-  lanes: ["Lead response", "Appointments", "Sales follow-up", "Collections", "Intake", "Support"],
+    "Wireline gives every business profit agents with included numbers — built to book appointments, revive leads, promote offers, recover opportunities, follow up, and log every outcome without commission.",
+  lanes: [
+    "Appointment setting",
+    "Lead revival",
+    "Offer promotion",
+    "Quote follow-up",
+    "Payment recovery",
+    "Inbound conversion",
+  ],
   loop: AGENT_DIRECTION_MODES.outbound.loop,
-  proof: ["Answers", "Qualifies", "Books", "Follows up", "Collects", "Reports"],
-  differentiator: "Wireline turns phone work into sales, appointments, follow-up, and proof.",
-  beforeStrip: "Sales follow-up without commission. Every lead gets a next step and every result is logged.",
+  proof: ["Calls", "Books", "Revives", "Promotes", "Recovers", "Reports"],
+  differentiator:
+    "Wireline turns phone work into booked appointments, revived leads, recovered dollars, and proof.",
+  beforeStrip:
+    "Your best salesperson, without the commission. Every agent gets an included number and every result is logged.",
 } as const;
 
 export const MARKETING_VOICE = {
-  eyebrow: "AI phone employees for sales, scheduling, intake, and support",
-  headline: "AI phone employees that turn calls into sales.",
+  eyebrow: "AI profit agents for appointments, lead revival, promotions, and follow-up",
+  headline: "AI profit agents that actually call.",
   subline:
-    "Answer more calls, qualify more leads, book more appointments, follow up faster, and see every result — without adding payroll.",
-  proof: ["Build", "Train", "Launch", "Improve"],
+    "Book more appointments, revive stale leads, promote offers, recover missed opportunities, and see every result — with an included number for every included agent.",
+  proof: ["Build", "Train", "Launch", "Profit"],
   extensionLead:
-    "Command your AI phone employee from any page. Wireline calls, answers, follows up, books the next step, and logs the outcome while you stay focused.",
+    "Command your AI profit agent from any page. Wireline calls, answers, follows up, books the next step, and logs the outcome while you stay focused.",
   differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "AI phone employees · business phone work",
-  proof: ["Qualifies leads", "Books appointments", "Logs outcomes"],
-  differentiator: "Wireline keeps revenue phone work moving in either direction.",
+  eyebrow: "AI profit agents · business phone growth",
+  proof: ["Books appointments", "Revives leads", "Logs outcomes"],
+  differentiator: "Wireline keeps profit-producing phone work moving in either direction.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Build an AI phone employee.",
-  runHeadline: "Your phone work is covered.",
+  createHeadline: "Build an AI profit agent.",
+  runHeadline: "Your profit calls are covered.",
   emptyCue: "Brief it. Train it. Launch it on the line.",
-  commandPrompts: ["Qualify leads", "Book appointments", "Review outcomes"],
-  directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your phone employee"}...`,
+  commandPrompts: ["Book appointments", "Revive leads", "Review outcomes"],
+  directAgent: (name?: string | null) => `Ask anything about ${name?.trim() || "your profit agent"}...`,
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "AI phone employee coverage",
+  eyebrow: "AI profit-agent coverage",
   tagline: "Outbound-first. Inbound-capable. Hybrid when needed.",
-  short: "AI phone employees for sales, scheduling, intake, support, collections, and follow-up.",
-  hero: "Calls into outcomes.",
+  short:
+    "AI profit agents for appointment setting, lead revival, promotions, follow-up, inbound conversion, and recovery.",
+  hero: "Calls into profit.",
 } as const;
 
 export const PRODUCT_POSTURE = {
   personal: {
-    badge: "Personal employee",
+    badge: "Personal profit agent",
     badgeShort: "Personal",
-    createCta: "Build personal employee",
-    emptyTitle: "Personal phone employee.",
+    createCta: "Build personal profit agent",
+    emptyTitle: "Personal profit agent.",
     emptyBody: "Your calls. Your rules. Your outcomes.",
   },
   business: {
-    badge: "AI phone employee",
+    badge: "AI profit agent",
     badgeShort: "Business",
-    createCta: "Build phone employee",
-    emptyTitle: "AI phone employee.",
+    createCta: "Build profit agent",
+    emptyTitle: "AI profit agent.",
     emptyBody: "Leads in. Calls handled. Outcomes out.",
   },
 } as const;
