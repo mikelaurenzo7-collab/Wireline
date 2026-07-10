@@ -129,14 +129,14 @@ mustInclude(
 mustInclude(
   "index.html",
   staticHead,
-  /Wireline — Wire your agent\./,
+  /Wireline — AI phone employees that turn calls into sales\./,
   "static metadata must use current positioning",
 );
 mustInclude(
   "index.html",
   staticHead,
-  /trained voice agents that answer, route, book, follow up/i,
-  "static metadata must describe the Letterpress landing promise",
+  /AI phone employees that answer calls, qualify leads, book appointments, follow up/i,
+  "static metadata must describe the current landing promise",
 );
 mustExcludeTerms(
   "index.html",
@@ -148,14 +148,14 @@ mustExcludeTerms(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /WIRE YOUR[\s\S]*AGENT/,
-  "OG image must use the Letterpress landing promise",
+  /AI PHONE[\s\S]*EMPLOYEES/,
+  "OG image must use the current landing promise",
 );
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Answer\. Route\. Book\. Follow up\. Text the outcome\./,
-  "OG image must reinforce the phone-agent promise",
+  /Answer\. Qualify\. Book\. Follow up\. Log every result\./,
+  "OG image must reinforce the phone-employee promise",
 );
 mustExcludeTerms(
   "public/og-image.svg",

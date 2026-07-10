@@ -490,8 +490,8 @@ mustInclude("public/og-image.svg", ogImage, /fill="#0A0A0E"/, "OG image must use
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /WIRE YOUR[\s\S]*AGENT[\s\S]*Personal · sales · support · call centers/,
-  "OG image must match the Letterpress landing promise",
+  /AI PHONE[\s\S]*EMPLOYEES[\s\S]*Sales · scheduling · intake · support/,
+  "OG image must match the AI phone employee landing promise",
 );
 mustExclude(
   "public/og-image.svg",
@@ -788,7 +788,7 @@ mustInclude(
 mustInclude(
   "apps/browser-extension/panel/index.html",
   extensionPanel,
-  /Command your agent from any page\. Wireline calls, answers, follows up, and logs the outcome while you stay focused\./,
+  /Command your AI phone employee from any page\. Wireline calls, answers, follows up, books the next step, and logs the outcome while you stay focused\./,
   "extension hero must match shared marketing voice",
 );
 mustInclude(
@@ -800,19 +800,19 @@ mustInclude(
 mustInclude(
   "index.html",
   indexHtml,
-  /Wireline — Wire your agent\./,
+  /Wireline — AI phone employees that turn calls into sales\./,
   "static metadata title must match the current landing promise",
 );
 mustInclude(
   "src/pages/LandingPage.tsx",
   landingPage,
-  /Wireline \| Wire your agent/,
+  /Wireline \| AI phone employees that turn calls into sales/,
   "runtime landing metadata title must match the current landing promise",
 );
 mustInclude(
   "src/lib/page-meta.tsx",
   pageMeta,
-  /Wireline - Wire your agent/,
+  /Wireline - AI phone employees that turn calls into sales/,
   "default metadata title must match the current landing promise",
 );
 mustExclude(
@@ -1136,6 +1136,18 @@ mustInclude(
   authPortal,
   /preferredPlanId:\s*nextMode === "business" \? "business" : "personal"/,
   "signup workspace choice must persist as preferred plan intent",
+);
+mustInclude(
+  "src/components/AuthPortal.tsx",
+  authPortal,
+  /WirelineMark[\s\S]*Build[\s\S]*Launch[\s\S]*Improve/,
+  "account entry must use the canonical mark and current product loop",
+);
+mustExclude(
+  "src/components/AuthPortal.tsx",
+  authPortal,
+  /wl-auth-brand-badge">W</,
+  "account entry must not revive the retired boxed W",
 );
 mustInclude(
   "src/lib/auth-redirect.ts",

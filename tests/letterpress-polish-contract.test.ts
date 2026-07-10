@@ -311,6 +311,13 @@ describe("Wireline Letterpress polish layer", () => {
     expect(auth).toMatch(/var\(--wireline-color-glow-wire\)/);
   });
 
+  it("keeps the desktop auth brand story visible while the form scrolls", () => {
+    const auth = read("src/styles/precision-auth.css");
+    expect(auth).toMatch(
+      /@media \(min-width: 900px\)[\s\S]*\.wl-auth-brand-panel[\s\S]*position: sticky[\s\S]*height: 100dvh/,
+    );
+  });
+
   it("removes the raw rose palette from AuthPortal error and success notices", () => {
     const portal = read("src/components/AuthPortal.tsx");
     const statusNotice = read("src/components/molecules/StatusNotice.tsx");

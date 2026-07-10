@@ -92,11 +92,11 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline — Wire your agent.");
-    expect(head).toContain("personal call delegation, sales, support, scheduling");
-    expect(head).toContain("outbound, inbound, or hybrid phone agents");
-    expect(ogImage).toMatch(/WIRE YOUR[\s\S]*AGENT/);
-    expect(ogImage).toContain("Answer. Route. Book. Follow up. Text the outcome.");
+    expect(head).toContain("Wireline — AI phone employees that turn calls into sales.");
+    expect(head).toContain("AI phone employees that answer calls, qualify leads");
+    expect(head).toContain("book appointments, follow up, collect, route");
+    expect(ogImage).toMatch(/AI PHONE[\s\S]*EMPLOYEES/);
+    expect(ogImage).toContain("Answer. Qualify. Book. Follow up. Log every result.");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });

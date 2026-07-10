@@ -204,6 +204,18 @@
   letter-spacing: 0.08em;
 }
 
+/* Keep the brand story fully composed while the taller form column scrolls.
+   Desktop account entry should never crop the operating loop at laptop heights. */
+@media (min-width: 900px) {
+  .wl-auth-brand-panel {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100dvh;
+    min-height: 0;
+  }
+}
+
 /* ── Responsive: collapse to single column on small screens ─── */
 @media (max-width: 899px) {
   .wl-stitch-auth-shell {

@@ -8,18 +8,44 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
-    expect(MARKETING_VOICE.headline).toBe("Wire your agent.");
-    expect(MARKETING_VOICE.subline).toContain("phone agent");
-    expect(MARKETING_VOICE.subline).toContain("outbound");
-    expect(MARKETING_VOICE.subline).toContain("inbound");
-    expect(MARKETING_VOICE.subline).toContain("hybrid");
-    expect(MARKETING_VOICE.proof).toEqual(["Create", "Train", "Wire", "Run"]);
+    expect(MARKETING_VOICE.headline).toBe("AI phone employees that turn calls into sales.");
+    expect(MARKETING_VOICE.subline).toContain("qualify more leads");
+    expect(MARKETING_VOICE.subline).toContain("book more appointments");
+    expect(MARKETING_VOICE.subline).toContain("without adding payroll");
+    expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Improve"]);
 
-    expect(OUTBOUND_WEDGE.headline).toBe("Outbound agents that actually call.");
-    expect(OUTBOUND_WEDGE.subline).toContain("inbound or hybrid roles");
-    expect(OUTBOUND_WEDGE.loop).toEqual(["List", "Script", "Dial", "Log"]);
-    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Route", "Answer", "Resolve", "Log"]);
+    expect(OUTBOUND_WEDGE.headline).toBe(
+      "AI phone employees for the work that grows your business.",
+    );
+    expect(OUTBOUND_WEDGE.subline).toContain("lead response");
+    expect(OUTBOUND_WEDGE.subline).toContain("support overflow");
+    expect(OUTBOUND_WEDGE.loop).toEqual(["Leads", "Qualify", "Book", "Log"]);
+    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Route", "Schedule", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow up", "Sync"]);
+  });
+
+  it("keeps the canonical operating loop across public buying surfaces", () => {
+    const features = read("src/pages/Features.tsx");
+    const pricing = read("src/pages/Pricing.tsx");
+    const authPortal = read("src/components/AuthPortal.tsx");
+
+    for (const surface of [features, authPortal]) {
+      expect(surface).toContain("Build");
+      expect(surface).toContain("Train");
+      expect(surface).toContain("Launch");
+      expect(surface).toContain("Improve");
+    }
+
+    expect(features).toContain("Build → Train → Launch → Improve");
+    expect(features).not.toContain("Create → Train → Wire → Run");
+    expect(pricing).toContain("build, train, launch, improve");
+    expect(pricing).not.toContain("create, train, wire, run");
+    expect(pricing).toContain(
+      "Extra employees at " + "$" + "${planById.team.extra_agent_price_usd}/mo",
+    );
+    expect(pricing).toContain(
+      "Extra employees at " + "$" + "${planById.business.extra_agent_price_usd}/mo",
+    );
   });
 
   it("wires landing and workroom surfaces to shared voice constants", () => {
@@ -34,9 +60,9 @@ describe("product voice cohesion", () => {
 
   it("keeps public landing examples broad across outbound, inbound, and hybrid buyers", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("Sales SDR");
-    expect(landing).toContain("Billing recovery");
-    expect(landing).toContain("Re-engagement");
+    expect(landing).toContain("Lead response");
+    expect(landing).toContain("Quote follow-up");
+    expect(landing).toContain("Appointment setting");
     expect(landing).toContain("Front desk");
     expect(landing).toContain("Lead qualifier");
     expect(landing).toContain("Support triage");

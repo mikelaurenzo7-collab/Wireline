@@ -36,7 +36,7 @@ const SCANNED_FILES = [
 describe("sales trust copy contract", () => {
   it("exports canonical trust disclosure FAQ in product-copy", () => {
     expect(TRUST_DISCLOSURE_FAQ).toContain("disclosure policy");
-    expect(TRUST_DISCLOSURE_FAQ).toContain("not to trick prospects");
+    expect(TRUST_DISCLOSURE_FAQ).toContain("logged automatically");
   });
 
   it("forbids prohibited trust and performance claims in public marketing surfaces", () => {

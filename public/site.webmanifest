@@ -1,7 +1,7 @@
 {
-  "name": "Wireline - Wire your agent",
+  "name": "Wireline - AI phone employees",
   "short_name": "Wireline",
-  "description": "Trained voice agents for personal call delegation, sales, support, scheduling, call-center coverage, and vertical templates.",
+  "description": "Wireline builds AI phone employees that answer calls, qualify leads, book appointments, follow up, collect, route, and report back with every result.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",

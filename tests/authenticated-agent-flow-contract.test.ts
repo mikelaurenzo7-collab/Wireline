@@ -12,10 +12,18 @@ describe("authenticated agent flow", () => {
     const authRedirect = read("src/lib/auth-redirect.ts");
     const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
     const appShell = read("src/components/layout/AppShell.tsx");
+    const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
     expect(authPortal).toContain(
       'preferredPlanId: nextMode === "business" ? "business" : "personal"',
     );
+    expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
+    expect(authPortal).toContain('["Build", "Role and result"]');
+    expect(authPortal).toContain('["Launch", "Number and tools"]');
+    expect(authPortal).toContain('["Improve", "Outcomes and coaching"]');
+    expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
+    expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
+    expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
     expect(authRedirect).toContain(
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
@@ -58,7 +66,7 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("~3 minutes to your first agent");
     expect(createDialog).toContain("VoicePickerField");
     expect(createDialog).toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Wire an agent."');
+    expect(productCopy).toContain('createHeadline: "Build an AI phone employee."');
     expect(productCopy).toContain('emptyCue: "Brief it. Train it.');
 
     expect(mobileUtilities).toContain('pathname === "/studio"');

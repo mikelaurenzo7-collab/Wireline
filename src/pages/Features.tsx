@@ -23,9 +23,9 @@ import { PageMeta } from "../lib/page-meta";
 
 const OPERATING_LOOP = [
   {
-    step: "Create",
-    title: "Name the job",
-    body: "Pick the agent, audience, call lane, success criteria, and approval posture.",
+    step: "Build",
+    title: "Define the job",
+    body: "Choose the employee, role, audience, call lane, success criteria, and approval posture.",
   },
   {
     step: "Train",
@@ -33,14 +33,14 @@ const OPERATING_LOOP = [
     body: "Set voice, objections, routing, escalation, handoff notes, and what a good outcome means.",
   },
   {
-    step: "Wire",
-    title: "Connect the line",
-    body: "Provision or attach the number, connect tools, set balance, and define when it can act.",
+    step: "Launch",
+    title: "Connect the operation",
+    body: "Provision or attach the number, connect tools, fund live work, and define when it can act.",
   },
   {
-    step: "Run",
-    title: "Complete the work",
-    body: "Answer, call, text, follow up, summarize, and leave the record where the team needs it.",
+    step: "Improve",
+    title: "Coach the work",
+    body: "Review outcomes, transcripts, follow-up, and coaching signals so every next conversation gets better.",
   },
 ] as const;
 
@@ -106,8 +106,8 @@ export default function Features() {
   return (
     <div className="marketing-surface min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Features | Wireline voice agents"
-        description="Create, train, wire, and run voice agents for calls, SMS, scheduling, handoffs, integrations, and follow-up."
+        title="Features | Wireline AI phone employees"
+        description="Build, train, launch, and improve AI phone employees for calls, SMS, scheduling, handoffs, integrations, and follow-up."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -119,15 +119,15 @@ export default function Features() {
               Everything your agent needs to finish the call.
             </h1>
             <p className="wl-public-copy mt-5">
-              Wireline keeps the product simple: create the agent, train the workflow, wire the
-              number and tools, then run the work with a clean record behind it.
+              Wireline keeps the product simple: build the employee, train the workflow, launch the
+              number and tools, then improve the work from every recorded outcome.
             </p>
             <div className="marketing-hero__actions mt-8">
               <Link
                 to="/signup"
                 className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
-                Wire agent
+                Build an employee
               </Link>
               <Link
                 to="/showcase"
@@ -142,7 +142,7 @@ export default function Features() {
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="wl-overline text-primary">Create → Train → Wire → Run</p>
+              <p className="wl-overline text-primary">Build → Train → Launch → Improve</p>
               <h2 className="wl-public-section-heading mt-3">
                 One operating loop across every feature.
               </h2>
@@ -264,7 +264,7 @@ export default function Features() {
 
         <section className="px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail text-center">
-            <p className="wl-overline text-primary">Create -&gt; Train -&gt; Run</p>
+            <p className="wl-overline text-primary">Build -&gt; Train -&gt; Launch -&gt; Improve</p>
             <h2 className="wl-public-section-heading mt-3">
               Your training. Your playbook. Every channel.
             </h2>
@@ -273,7 +273,7 @@ export default function Features() {
                 to="/signup"
                 className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
               >
-                Wire agent
+                Build an employee
               </Link>
               <Link
                 to="/pricing"

@@ -32,9 +32,9 @@ const PRICING_TIERS = [
     period: "to create",
     tagline: "Start the line before billing starts.",
     detail:
-      "Build and train one agent for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
+      "Build and train one AI phone employee for free. When it starts answering real calls, texts, or follow-up, live work draws from prepaid Conversation Balance.",
     features: [
-      "1 active agent",
+      "1 active phone employee",
       "1 phone line when live",
       "All templates unlocked",
       "Conversation Balance funds usage",
@@ -52,11 +52,11 @@ const PRICING_TIERS = [
     period: "mo",
     tagline: "Shared capacity for a focused lane.",
     detail:
-      "Several agents, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
+      "Several phone employees, connected numbers, shared inbox control, routing, and approvals for a team that needs one clean operating surface.",
     features: [
-      `${planById.team.max_agents} active agents`,
+      `${planById.team.max_agents} active phone employees`,
       `${planById.team.included_phone_numbers} phone lines included`,
-      `Extra agents at $${planById.team.extra_agent_price_usd}/mo`,
+      `Extra employees at $${planById.team.extra_agent_price_usd}/mo`,
       "Routing, approvals, and team inbox",
     ],
     cta: "Start Team",
@@ -72,11 +72,11 @@ const PRICING_TIERS = [
     period: "mo",
     tagline: "Front desk, revenue, and support coverage.",
     detail:
-      "The serious business tier: more agents, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
+      "The serious business tier: more phone employees, more lines, CRM sync, analytics, roles, and approvals across inbound, outbound, and follow-up.",
     features: [
-      `${planById.business.max_agents} active agents`,
+      `${planById.business.max_agents} active phone employees`,
       `${planById.business.included_phone_numbers} phone lines included`,
-      `Extra agents at $${planById.business.extra_agent_price_usd}/mo`,
+      `Extra employees at $${planById.business.extra_agent_price_usd}/mo`,
       "CRM sync, analytics, roles, approvals",
     ],
     cta: "Start Business",
@@ -94,7 +94,7 @@ const PRICING_TIERS = [
     detail:
       "Annual committed usage, SSO, audit support, BYO SIP, security review, and rollout planning for larger teams.",
     features: [
-      "Custom agent and line capacity",
+      "Custom employee and line capacity",
       "SSO, audit, and policy controls",
       "Custom integrations and telephony",
       "Implementation and launch support",
@@ -109,7 +109,7 @@ const PRICING_TIERS = [
 type PricingTier = (typeof PRICING_TIERS)[number];
 
 const COMMERCIAL_RULES = [
-  ["Create", "Templates, voices, and setup are unlocked before billing."],
+  ["Build", "Templates, voices, and setup are unlocked before billing."],
   ["Fund", "Conversation Balance pays for calls, texts, and provider-backed actions."],
   ["Scale", "Team and Business add agents, lines, approvals, routing, and reliability."],
 ] as const;
@@ -142,7 +142,7 @@ const BUYER_DECISION_ROWS = [
     choice: "Usage-based API minutes plus model and line economics",
     risk: "Great for engineers, but the buyer still has to assemble UX, logs, routing, billing, QA, and support.",
     wireline:
-      "A packaged phone operation: create, train, wire, run, review, and bill from one product surface.",
+      "A packaged phone operation: build, train, launch, improve, review, and bill from one product surface.",
   },
   {
     choice: "Generic call bot tools",
@@ -235,8 +235,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Pricing | Wireline - Personal, team, business, and enterprise phone agents"
-        description="Create and train a personal phone agent for free, fund live work with Conversation Balance, or move into Team and Business capacity when Wireline becomes an operating lane."
+        title="Pricing | Wireline - Personal, team, business, and enterprise AI phone employees"
+        description="Build and train a personal AI phone employee for free, fund live work with Conversation Balance, or move into Team and Business capacity when Wireline becomes an operating lane."
         path="/pricing"
       />
       <script
@@ -258,10 +258,10 @@ export default function Pricing() {
                 fontSize: "clamp(2.7rem, 6vw, 5.6rem)",
               }}
             >
-              Start with one agent. Scale when it becomes the phone operation.
+              Start with one phone employee. Scale into a phone operation.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Personal is balance-led. Team and Business sell operating capacity: agents, numbers,
+              Personal is balance-led. Team and Business add operating capacity: employees, numbers,
               routing, approvals, integrations, support, and reliability.
             </p>
             <div className="mx-auto mt-8 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -281,7 +281,7 @@ export default function Pricing() {
                 to="/signup"
                 className="marketing-btn-primary min-h-12 px-6 text-sm font-semibold"
               >
-                Start free agent <ArrowRight size={14} />
+                Build your first employee <ArrowRight size={14} />
               </Link>
               <a
                 href="#tiers"
@@ -556,8 +556,8 @@ export default function Pricing() {
               </h2>
               <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
                 The winning wedge is not more feature noise. It is the cleanest way for a buyer to
-                create an agent, train its rules, wire the number and tools, then run the phone
-                operation with visibility and spend control.
+                build a phone employee, train its rules, launch the number and tools, then improve
+                the operation with visibility and spend control.
               </p>
             </div>
             <div className="mt-10 grid gap-3 md:grid-cols-2">
