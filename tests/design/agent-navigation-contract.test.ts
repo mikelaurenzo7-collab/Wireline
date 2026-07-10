@@ -95,10 +95,12 @@ describe("agent navigation contract", () => {
     expect(appsPage).toMatch(/Wireline Command/);
     expect(appsPage).not.toMatch(/One assistant system|Same assistants|New assistant/);
     expect(pricingPage).toMatch(/STRIPE_PLANS/);
-    expect(pricingPage).toMatch(/Personal[\s\S]*Team[\s\S]*Business[\s\S]*Enterprise/);
+    for (const tier of ["Free Builder", "Starter Plus", "Pro", "Business"]) {
+      expect(pricingPage).toContain(tier);
+    }
     expect(pricingPage).toMatch(/Conversation Balance/);
-    expect(pricingPage).toMatch(/Balance pays for live work\. Plans add the business layer\./);
-    expect(pricingPage).not.toMatch(/Starter|Try 7 days free/);
+    expect(pricingPage).toMatch(/Founder Early Access/);
+    expect(pricingPage).not.toMatch(/Try 7 days free/);
   });
 
   it("keeps Wire as the customer-facing wiring surface while preserving routes", () => {
@@ -138,8 +140,10 @@ describe("agent navigation contract", () => {
     expect(settingsPage).toMatch(/Profile/);
     expect(settingsPage).toMatch(/Security/);
     expect(billingPage).toMatch(/Current plan/);
-    expect(billingPage).toMatch(/monthlyPrice/);
-    expect(billingPage).toMatch(/invoiceTotal/);
+    // Billing intentionally defers renewal amount and invoices to Stripe
+    // (the customer portal) rather than computing/caching a price locally.
+    expect(billingPage).toMatch(/Stripe is the source of truth for your renewal amount/);
+    expect(billingPage).toMatch(/View invoices and payment method/);
     expect(teamPage).toMatch(/Members/);
     expect([connectionsPage, settingsPage, billingPage, teamPage].join("\n")).not.toMatch(
       /assistant|Assistant|Assistants|Pro —|500 min|Sarah Connor|Miles Dyson|Kyle Reese|John Connor/,

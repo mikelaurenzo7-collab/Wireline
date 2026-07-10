@@ -45,14 +45,12 @@ describe("product voice cohesion", () => {
 
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
-    expect(pricing).toContain("build, train, launch, improve");
+    // Pricing no longer walks the operating loop by name (it leads with tier
+    // cards and channel economics instead) but must never revert to the
+    // retired phrasing, and per-agent add-on pricing is formally retired
+    // (plansForClient() always returns extra_agent_price_usd: null now).
     expect(pricing).not.toContain("create, train, wire, run");
-    expect(pricing).toContain(
-      "Extra employees at " + "$" + "${planById.team.extra_agent_price_usd}/mo",
-    );
-    expect(pricing).toContain(
-      "Extra employees at " + "$" + "${planById.business.extra_agent_price_usd}/mo",
-    );
+    expect(pricing).not.toContain("Extra employees at");
   });
 
   it("wires landing and workroom surfaces to shared voice constants", () => {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Twilio posts evolving form payloads. */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { and, eq, or } from "drizzle-orm";
 
@@ -44,77 +43,68 @@ async function tenantForSender(toValue: string): Promise<string | null> {
  * OptOutType is present. Persist the state, then stop before the legacy route
  * emits a second confirmation message.
  */
-router.post(
-  "/api/twilio-webhook/sms",
-  async (req: Request, res: Response, next: NextFunction) => {
-    const optOutType = String(req.body?.OptOutType || "").toUpperCase();
-    if (!optOutType) return next();
-    if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send(emptyTwiml());
+router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next: NextFunction) => {
+  const optOutType = String(req.body?.OptOutType || "").toUpperCase();
+  if (!optOutType) return next();
+  if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send(emptyTwiml());
 
-    const userId = await tenantForSender(String(req.body?.To || ""));
-    const customerNumber = sanitizePhone(
-      String(req.body?.From || "").replace(/^whatsapp:/i, ""),
-    );
-    if (!userId || !customerNumber) return res.status(200).send(emptyTwiml());
+  const userId = await tenantForSender(String(req.body?.To || ""));
+  const customerNumber = sanitizePhone(String(req.body?.From || "").replace(/^whatsapp:/i, ""));
+  if (!userId || !customerNumber) return res.status(200).send(emptyTwiml());
 
-    return tenantStore.run(userId, async () => {
-      try {
-        if (optOutType === "STOP") {
-          await drizzle
-            .insert(schema.dncList)
-            .values({
-              userId,
-              phone: customerNumber,
-              phoneRaw: String(req.body?.From || ""),
-              reason: "opt-out",
-              source: "twilio_advanced_opt_out",
-            })
-            .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
-        } else if (optOutType === "START") {
-          // START reverses only the SMS suppression that Twilio created. It must
-          // never remove a manual, federal, voice, legal, or other workspace DNC.
-          await drizzle
-            .delete(schema.dncList)
-            .where(
-              and(
-                eq(schema.dncList.userId, userId),
-                eq(schema.dncList.phone, customerNumber),
-                eq(schema.dncList.source, "twilio_advanced_opt_out"),
-                eq(schema.dncList.reason, "opt-out"),
-              ),
-            );
-        }
-
-        await drizzle.insert(schema.consentLog).values({
-          userId,
-          customerNumber,
-          event:
-            optOutType === "STOP"
-              ? "sms_opt_out"
-              : optOutType === "START"
-                ? "sms_opt_in"
-                : "sms_help",
-          rule: "twilio_advanced_opt_out",
-          ruleVersion: "v1",
-          state:
-            optOutType === "STOP"
-              ? "opted_out"
-              : optOutType === "START"
-                ? "opted_in"
-                : "unchanged",
-        });
-      } catch (error) {
-        log.error("Twilio Advanced Opt-Out persistence failed", {
-          userId,
-          optOutType,
-          error: getErrorMessage(error),
-        });
+  return tenantStore.run(userId, async () => {
+    try {
+      if (optOutType === "STOP") {
+        await drizzle
+          .insert(schema.dncList)
+          .values({
+            userId,
+            phone: customerNumber,
+            phoneRaw: String(req.body?.From || ""),
+            reason: "opt-out",
+            source: "twilio_advanced_opt_out",
+          })
+          .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
+      } else if (optOutType === "START") {
+        // START reverses only the SMS suppression that Twilio created. It must
+        // never remove a manual, federal, voice, legal, or other workspace DNC.
+        await drizzle
+          .delete(schema.dncList)
+          .where(
+            and(
+              eq(schema.dncList.userId, userId),
+              eq(schema.dncList.phone, customerNumber),
+              eq(schema.dncList.source, "twilio_advanced_opt_out"),
+              eq(schema.dncList.reason, "opt-out"),
+            ),
+          );
       }
-      res.setHeader("Content-Type", "text/xml");
-      return res.status(200).send(emptyTwiml());
-    });
-  },
-);
+
+      await drizzle.insert(schema.consentLog).values({
+        userId,
+        customerNumber,
+        event:
+          optOutType === "STOP"
+            ? "sms_opt_out"
+            : optOutType === "START"
+              ? "sms_opt_in"
+              : "sms_help",
+        rule: "twilio_advanced_opt_out",
+        ruleVersion: "v1",
+        state:
+          optOutType === "STOP" ? "opted_out" : optOutType === "START" ? "opted_in" : "unchanged",
+      });
+    } catch (error) {
+      log.error("Twilio Advanced Opt-Out persistence failed", {
+        userId,
+        optOutType,
+        error: getErrorMessage(error),
+      });
+    }
+    res.setHeader("Content-Type", "text/xml");
+    return res.status(200).send(emptyTwiml());
+  });
+});
 
 /** Delivery/read/failure telemetry for SMS and future private-beta channels. */
 router.post("/api/twilio-webhook/message-status", async (req: Request, res: Response) => {

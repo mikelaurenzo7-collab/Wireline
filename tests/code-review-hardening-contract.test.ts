@@ -35,7 +35,7 @@ describe("code review hardening contracts", () => {
   });
 
   it("deduplicates inbound Twilio SMS by MessageSid before thread writes", () => {
-    const twilio = read("src/routes/twilio-webhook.ts");
+    const twilio = read("src/routes/twilio-webhook-base.ts");
     expect(twilio).toContain("schema.smsMessages.twilioSid");
     expect(twilio).toContain("tenantStore.run(tenantUserId");
   });

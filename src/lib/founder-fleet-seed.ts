@@ -153,7 +153,7 @@ export const EXPECTED_FOUNDER_FLEET_AGENT_COUNT =
 
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
-    "Wireline Personal uses Conversation Balance for live work; Team, Business, and Enterprise sell shared operating capacity.",
+    "Free Builder creates and trains for free; Starter, Starter Plus, Pro, and Business unlock guaranteed live-voice minutes plus Conversation Balance for anything beyond that.",
     "Operators configure agents via Create, Training, Wire or Integrations, and Studio.",
     "Escalations route to the configured phone/email; use escalate_to_human when risk is high.",
   ],

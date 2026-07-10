@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { isBalanceFundedVoicePlan } from "../src/lib/voice-billing-policy";
 
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
@@ -68,62 +67,62 @@ describe("billing proof contract", () => {
     expect(billingRoutes).toContain("await reverseCredit(userId");
   });
 
-  it("blocks insufficient live pay-as-you-go voice work with a clear recovery path", () => {
+  it("blocks depleted live voice coverage with a clear recovery path", () => {
     const guard = read("src/lib/voice-wallet-guard.ts");
     const spendControl = read("src/lib/voice-spend-control.ts");
 
-    expect(guard).toContain('code: "INSUFFICIENT_BALANCE"');
+    expect(guard).toContain('code: "VOICE_COVERAGE_DEPLETED"');
     expect(guard).toContain('recovery_path: "/settings/billing"');
     expect(guard).toContain("required_usd");
     expect(spendControl).toContain("assertVoiceWalletSolvent");
   });
 
-  it("treats Personal voice usage as balance-funded even when a subscription row exists", () => {
-    const usage = read("src/lib/voice-usage.ts");
+  it("keeps Personal locked out of live voice with zero included minutes", () => {
+    const catalog = read("src/lib/plan-catalog.ts");
     const guard = read("src/lib/voice-wallet-guard.ts");
 
-    expect(isBalanceFundedVoicePlan(null)).toBe(true);
-    expect(isBalanceFundedVoicePlan("personal")).toBe(true);
-    expect(isBalanceFundedVoicePlan("team")).toBe(false);
-    expect(isBalanceFundedVoicePlan("business")).toBe(false);
-    expect(usage).toContain("isBalanceFundedVoicePlan(planId)");
-    expect(guard).toContain("isBalanceFundedVoicePlan(planId)");
-    expect(usage).toContain("const included = 0");
+    expect(catalog).toContain('id: "personal"');
+    expect(guard).toContain('planId !== "personal"');
+    expect(guard).toContain('code: "LIVE_PLAN_REQUIRED"');
   });
 
-  it("reconciles usage events against plan, balance, and Stripe meter state", () => {
+  it("reconciles voice usage against plan, included minutes, and completion grace", () => {
     const usage = read("src/lib/voice-usage.ts");
-    const stripeHelpers = read("src/lib/stripe-helpers.ts");
+    const grace = read("src/lib/voice-completion-grace.ts");
 
-    expect(usage).toContain("Math.ceil(durationSeconds / 60)");
+    expect(usage).toContain("Math.ceil(safeSeconds / 60)");
     expect(usage).toContain("schema.quotaUsage");
     expect(usage).toContain('planById(planId ?? "personal")');
-    expect(usage).toContain("debitForVoiceUsage(userId, overageCostUsd, vapiCallId)");
-    expect(usage).toContain("debitForOverage(userId, overageCostUsd, vapiCallId)");
-    expect(usage).toContain("emitVoiceMinuteOverageEvent");
-    expect(stripeHelpers).toContain("identifier: `voice_overage_${opts.vapiCallId}`");
+    expect(usage).toContain("chargeCompletedVoiceUsage");
+    expect(usage).toContain("No Stripe meter event is emitted");
+    expect(grace).toContain("reverseCredit");
+    expect(grace).toContain("idempotencyKey: `voice_completion:${opts.providerCallId}`");
   });
 
-  it("grants welcome subscription credit on first Team/Business subscribe", () => {
+  it("grants a recurring Runtime Allowance credit when a paid subscription syncs", () => {
     const welcome = read("src/lib/subscription-welcome-credit.ts");
     const stripeHelpers = read("src/lib/stripe-helpers.ts");
-    expect(welcome).toContain("WELCOME_SUBSCRIPTION_CREDIT_USD = 10");
-    expect(stripeHelpers).toContain("grantWelcomeSubscriptionCredit");
+    expect(welcome).toContain("runtime_allowance_usd_monthly");
+    expect(welcome).toContain("subscription_runtime_allowance");
+    expect(stripeHelpers).toContain(
+      "grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval)",
+    );
   });
 
-  it("bills SMS segments from Conversation Balance", () => {
+  it("bills SMS segments from Conversation Balance via a prepaid reservation", () => {
     const sms = read("src/lib/sms-billing.ts");
     const twilio = read("src/lib/twilio-service.ts");
     expect(sms).toContain("SMS_COST_PER_SEGMENT_USD = 0.02");
     expect(sms).toContain("billSmsMessage");
-    expect(twilio).toContain("billSmsMessage(userId, message.sid, segments)");
+    expect(twilio).toContain("reserveRuntimeUsage");
+    expect(twilio).toContain("adjustMessagingReservation");
     expect(twilio).toContain("message.numSegments");
   });
 
-  it("grants welcome credit once per user not per subscription", () => {
+  it("keeps the Runtime Allowance grant idempotent per billing period", () => {
     const welcome = read("src/lib/subscription-welcome-credit.ts");
-    expect(welcome).toContain('type: "welcome_subscription"');
-    expect(welcome).toContain("id: userId");
+    expect(welcome).toContain('entryKind: "grant"');
+    expect(welcome).toContain("id: billingPeriodReference");
   });
 
   it("links the canonical billing runbook from the docs index", () => {

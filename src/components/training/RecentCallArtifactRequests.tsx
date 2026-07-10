@@ -100,7 +100,8 @@ export default function RecentCallArtifactRequests() {
         setCalls(nextCalls);
       })
       .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Could not load recent calls.");
+        if (active)
+          setError(cause instanceof Error ? cause.message : "Could not load recent calls.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -121,12 +122,13 @@ export default function RecentCallArtifactRequests() {
     window.addEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
     const preferencesRefreshTimer = window.setInterval(refreshPreferences, 5_000);
 
+    const timers = polling.current;
     return () => {
       active = false;
       window.removeEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
       window.clearInterval(preferencesRefreshTimer);
-      for (const timer of polling.current.values()) window.clearTimeout(timer);
-      polling.current.clear();
+      for (const timer of timers.values()) window.clearTimeout(timer);
+      timers.clear();
     };
   }, []);
 
@@ -198,14 +200,11 @@ export default function RecentCallArtifactRequests() {
       [callId]: { jobId: "", status: "pending" },
     }));
     try {
-      const response = await authFetch(
-        `/api/call-logs/${encodeURIComponent(callId)}/artifact`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        },
-      );
+      const response = await authFetch(`/api/call-logs/${encodeURIComponent(callId)}/artifact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
       const body = (await response.json()) as { job_id?: string; error?: string };
       if (!response.ok || !body.job_id) {
         throw new Error(body.error || "Could not queue the requested file.");

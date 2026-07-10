@@ -183,7 +183,7 @@ export default function AgentPresenceLivePreview({
           payload?.message ||
           payload?.error ||
           (response.status === 402
-            ? "Upgrade to Wireline Team or higher to add live video."
+            ? "Upgrade to Starter Plus or higher to add live video."
             : "Live video could not be enabled.");
         throw new Error(message);
       }

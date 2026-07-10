@@ -38,7 +38,7 @@ describe("authenticated agent flow", () => {
     const carrierRoutes = read("src/routes/carrier-routes.ts");
 
     expect(trialGate).toContain("enforceLiveWorkActivation");
-    expect(trialGate).toContain("POST /api/agents` is not gated here");
+    expect(trialGate).toContain("other provider-spending live actions until verified");
     expect(agentRoutes).not.toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');

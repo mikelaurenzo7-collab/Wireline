@@ -14,7 +14,7 @@ describe("outbound launch safety", () => {
     const smsRoutes = read("src/routes/sms-routes.ts");
     expect(smsRoutes).toContain("smsReplySchema");
     expect(smsRoutes).toContain('from "../lib/api-validation"');
-    const validation = read("src/lib/api-validation.ts");
+    const validation = read("src/lib/api-validation-base.ts");
     expect(validation).toMatch(/export const sendSmsSchema[\s\S]*export const smsReplySchema/);
   });
 
@@ -37,7 +37,7 @@ describe("outbound launch safety", () => {
   });
 
   it("routes campaign_dial worker jobs by campaignId", () => {
-    const worker = read("src/lib/job-worker.ts");
+    const worker = read("src/lib/job-worker-base.ts");
     expect(worker).toContain("processCampaignById(p.userId, p.campaignId)");
     expect(worker).toContain("campaign_dial job requires userId and campaignId");
     const dialer = read("src/services/campaign-dialer.ts");

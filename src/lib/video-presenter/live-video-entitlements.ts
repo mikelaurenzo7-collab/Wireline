@@ -80,7 +80,7 @@ export async function resolveLiveVideoEntitlement(
   } else if (!billingEntitled) {
     reason = onPaidPlan
       ? "Activate your subscription to unlock live video."
-      : "Subscribe to the live video add-on ($19/mo) or upgrade to Wireline Team to stream photoreal presenters.";
+      : "Subscribe to the live video add-on ($19/mo) or upgrade to Starter Plus to stream photoreal presenters.";
   }
 
   const checkoutAvailable = Boolean(
