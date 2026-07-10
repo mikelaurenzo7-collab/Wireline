@@ -5,18 +5,17 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
-  it("keeps static and runtime fallback metadata aligned to the AI phone employee story", () => {
+  it("keeps static and runtime fallback metadata aligned to the AI profit agent story", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline — AI phone employees that turn calls into sales.");
-    expect(runtimeMeta).toContain(
-      'const DEFAULT_TITLE = "Wireline - AI phone employees that turn calls into sales"',
-    );
-    expect(staticHead).toContain("AI phone employees that answer calls, qualify leads");
-    expect(staticHead).toContain("book appointments, follow up, collect, route");
-    expect(runtimeMeta).toContain("AI phone employees that answer calls, qualify leads");
-    expect(runtimeMeta).toContain("book appointments, follow up, collect, route");
+    expect(staticHead).toContain("Wireline — AI profit agents that actually call.");
+    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "Wireline - AI profit agents that actually call"');
+    expect(staticHead).toContain("AI profit agents with included numbers");
+    expect(staticHead).toContain("book appointments, revive leads, promote offers");
+    expect(runtimeMeta).toContain("AI profit agents with included numbers");
+    expect(runtimeMeta).toContain("book appointments, revive leads, promote offers");
+    expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
 
@@ -35,10 +34,12 @@ describe("marketing metadata contract", () => {
 
     expect(catalog).toContain('id: "team"');
     expect(catalog).toContain("price_usd_monthly: 29");
+    expect(catalog).toContain("included_phone_numbers: 4");
     expect(catalog).toContain('id: "business"');
     expect(catalog).toContain("price_usd_monthly: 59");
+    expect(catalog).toContain("included_phone_numbers: 8");
 
-    expect(pricing).toContain("Build and train one agent for free");
+    expect(pricing).toContain("Build and train one AI phone employee for free");
     expect(contact).toContain(
       "Create and train for free. Team starts at $29/mo; Business at $59/mo.",
     );
