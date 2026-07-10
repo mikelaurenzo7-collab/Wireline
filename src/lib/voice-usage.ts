@@ -6,6 +6,7 @@
  * - Every completed live-call attempt consumes at least one minute, including
  *   rejected, busy, voicemail, and zero-second outbound attempts.
  * - Paid plans consume their monthly included pool first.
+ * - Paid extra-agent add-ons increase both agent capacity and included minutes.
  * - Usage beyond the included pool is finalized against Conversation Balance.
  * - A live call is never terminated for billing. If the call exceeds available
  *   prepaid coverage, completion grace records the amount due and the next live
@@ -49,6 +50,17 @@ export function billableVoiceMinutes(durationSeconds: number): number {
   return Math.max(1, Math.ceil(safeSeconds / 60));
 }
 
+function includedVoiceMinutes(planId: string | null | undefined, extraAgents: number | null | undefined): {
+  plan: ReturnType<typeof planById>;
+  included: number;
+} {
+  const plan = planById(planId ?? "personal");
+  const safeExtraAgents = Math.max(0, Number(extraAgents ?? 0));
+  const baseIncluded = Math.max(0, plan?.voice_minutes_monthly ?? 0);
+  const extraIncluded = safeExtraAgents * Math.max(0, plan?.extra_agent_voice_minutes_monthly ?? 0);
+  return { plan, included: baseIncluded + extraIncluded };
+}
+
 export async function trackVoiceMinutes(opts: {
   userId: string;
   durationSeconds: number;
@@ -86,17 +98,17 @@ export async function trackVoiceMinutes(opts: {
     const newUsed = Number(upsertRows[0]?.used ?? minutes);
     const previousUsed = Math.max(0, newUsed - minutes);
 
-    const [sub] = await drizzle
-      .select({ plan: schema.subscriptions.plan })
-      .from(schema.subscriptions)
-      .where(eq(schema.subscriptions.userId, userId))
+    const [billing] = await drizzle
+      .select({ plan: schema.subscriptions.plan, extraAgents: schema.settings.extraAgents })
+      .from(schema.settings)
+      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+      .where(eq(schema.settings.userId, userId))
       .limit(1);
 
-    const planId = sub?.plan ?? null;
-    const plan = planById(planId ?? "personal");
+    const planId = billing?.plan ?? null;
+    const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
     if (!plan) return;
 
-    const included = Math.max(0, plan.voice_minutes_monthly);
     const previousOverage = Math.max(0, previousUsed - included);
     const newOverageTotal = Math.max(0, newUsed - included);
     const incrementalOverageMinutes = Math.max(0, newOverageTotal - previousOverage);
@@ -139,7 +151,7 @@ export async function trackVoiceMinutes(opts: {
 export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageSnapshot> {
   const periodKey = monthlyPeriodKey();
 
-  const [[usageRow], [sub]] = await Promise.all([
+  const [[usageRow], [billing]] = await Promise.all([
     drizzle
       .select({ used: schema.quotaUsage.used })
       .from(schema.quotaUsage)
@@ -152,16 +164,16 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
       )
       .limit(1),
     drizzle
-      .select({ plan: schema.subscriptions.plan })
-      .from(schema.subscriptions)
-      .where(eq(schema.subscriptions.userId, userId))
+      .select({ plan: schema.subscriptions.plan, extraAgents: schema.settings.extraAgents })
+      .from(schema.settings)
+      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+      .where(eq(schema.settings.userId, userId))
       .limit(1),
   ]);
 
   const used = Number(usageRow?.used ?? 0);
-  const planId = sub?.plan ?? null;
-  const plan = planById(planId ?? "personal");
-  const included = Math.max(0, plan?.voice_minutes_monthly ?? 0);
+  const planId = billing?.plan ?? null;
+  const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
   const overage = Math.max(0, used - included);
   const overageRate = plan?.overage_per_min_usd ?? 0.2;
 
