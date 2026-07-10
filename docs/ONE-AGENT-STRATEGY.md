@@ -23,28 +23,6 @@ Role-specific agents still matter, but they should be framed as optional special
 - Works for teams: specialists can be added later once volume proves where the business needs separation.
 - Works for personal plans: the same operating model becomes a privacy-first personal assistant.
 
-## Commercial model
-
-The pricing story should reinforce the product story:
-
-- Start with one Wireline CEO.
-- Let customers add specialists when they know where volume is real.
-- When they pay for another live agent, they should also get more voice capacity.
-
-Founder decision: the extra-agent add-on is a capacity bundle, not a seat-only tax.
-
-```bash
-STRIPE_EXTRA_AGENT_PRICE_ID=price_1TrnEvJohDtfy3IkjBi7VOCP
-```
-
-That Stripe price is $15/month and includes:
-
-- 1 additional live agent
-- 1 additional production-number slot
-- 50 additional guaranteed live-voice minutes each month
-
-This keeps the upsell honest and launch-friendly: customers feel more operating capacity immediately.
-
 ## Live public intelligence
 
 Agents now have a provider-agnostic fresh-public-research path:
@@ -61,6 +39,19 @@ Use cases:
 - regulatory or policy updates
 - “what changed recently?” caller questions
 
+## Pricing capacity rule
+
+Extra paid agents are not seat-only upsells.
+
+The launch add-on is:
+
+- $15/month
+- 1 additional live agent
+- 1 additional production-number slot
+- 50 additional guaranteed live-voice minutes each month
+
+Runtime must treat that as real capacity: Stripe subscription sync mirrors extra-agent quantity into local settings, agent creation uses the increased cap, and voice usage counts the additional included minutes before charging Conversation Balance.
+
 ## Implemented in this branch
 
 - Canonical `ceo` role added to the role API.
@@ -70,7 +61,9 @@ Use cases:
 - CEO capability defaults set to the full operating toolbox.
 - Fresh public research service added with Perplexity-first and Gemini fallback behavior.
 - Agent grounding handler now uses the fresh-public-research service.
-- Extra-agent pricing now includes +50 guaranteed voice minutes and one number slot per paid added agent.
+- Static SEO/social metadata now leads with Wireline CEO/front-office positioning.
+- Stripe extra-agent add-on created and documented.
+- Extra-agent quantity syncs from Stripe to local agent and voice-minute capacity.
 
 ## Metrics goal
 
@@ -78,7 +71,7 @@ Use cases:
 
 ## Next
 
-1. Update launch copy to lead with “Wireline CEO.”
-2. Make onboarding ask for the business outcome first, then permissions.
-3. Add a first-run “what should I handle?” checklist that configures CEO scope without making the user choose departments.
-4. Track role adoption: CEO vs specialist first agent, first-call completion, second-agent creation rate, and paid extra-agent attach rate.
+1. Verify Vercel production envs exactly match the launch checklist.
+2. Run one founder signup → free build → paid checkout → first live test call flow.
+3. Validate extra-agent quantity in Stripe increases `extra_agents`, deployable agent cap, and included voice minutes.
+4. Track role adoption: CEO vs specialist first agent, first-call completion, and second-agent creation rate.
