@@ -1,4 +1,4 @@
-/** Stripe-backed launch plan catalog. Public plan ids are canonical. */
+/** Stripe-backed launch plan catalog. Public plan ids remain canonical. */
 
 /**
  * Conservative blended variable voice reserve used for pricing guardrails.
@@ -9,7 +9,7 @@ export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 
-export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07";
+export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v2";
 
 export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
 
@@ -25,6 +25,8 @@ export type StripePlan = {
   features: string[];
   priceIdEnv: string;
   annualPriceIdEnv: string;
+  fallbackPriceId?: string;
+  fallbackAnnualPriceId?: string;
   lookupKeyMonthly?: string;
   lookupKeyAnnual?: string;
   extra_agent_price_usd?: number;
@@ -46,22 +48,23 @@ const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
   "free-builder": "personal",
   starter: "starter",
   solo: "starter",
+  "starter-9": "starter",
   "business-starter": "starter",
   businessstarter: "starter",
-  "personal-plus": "starter",
-  plus: "starter",
-  lite: "starter",
-  "business-lite": "starter",
-  businesslite: "starter",
   team: "team",
+  plus: "team",
+  "starter-plus": "team",
+  starterplus: "team",
   shared: "team",
-  pro: "business",
   business: "business",
+  pro: "business",
   "business-growth": "business",
   businessgrowth: "business",
-  scale: "enterprise",
   enterprise: "enterprise",
+  growth: "enterprise",
+  "business-plus": "enterprise",
   custom: "enterprise",
+  scale: "enterprise",
 };
 
 const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
@@ -75,10 +78,11 @@ const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
 /**
  * Founder Early Access commercial contract:
  * - Free Builder creates, trains, and privately simulates one draft agent.
- * - Paid tiers include production agents, one dedicated number per included agent,
- *   and a sustainable monthly pooled live-minute allowance.
- * - Every completed live-call attempt consumes at least one included minute.
- * - After the included pool is exhausted, prepaid Conversation Balance is used.
+ * - Paid tiers include live agent capacity and on-demand number slots.
+ * - Included voice capacity is deliberately conservative and profitable at full use.
+ * - Lead Hunt is available on every paid plan. Connected customer data/mail providers
+ *   retain their own limits; provider-funded enrichment, SMS, and extra voice consume
+ *   prepaid Conversation Balance.
  * - There is no automatic postpaid metered overage line item.
  * - Active calls finish normally; depleted coverage blocks only the next live action.
  */
@@ -90,101 +94,119 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_annual: 0,
     max_agents: 1,
     voice_minutes_monthly: 0,
-    overage_per_min_usd: 0.2,
+    overage_per_min_usd: 0.25,
     included_phone_numbers: 0,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
-    public: false,
+    public: true,
     features: [
-      "One private draft profit agent",
-      "Agent setup, training, and private simulation",
-      "No production number or live outbound calling until activation",
+      "1 private draft AI communications agent",
+      "Agent setup, training, knowledge, and private simulation",
+      "No production number or paid provider action until activation",
     ],
   },
   {
     id: "starter",
     name: "Wireline Starter",
-    price_usd_monthly: 19,
-    price_usd_annual: 190,
+    price_usd_monthly: 9,
+    price_usd_annual: 90,
     max_agents: 1,
-    voice_minutes_monthly: 75,
-    overage_per_min_usd: 0.2,
+    voice_minutes_monthly: 20,
+    overage_per_min_usd: 0.25,
     included_phone_numbers: 1,
-    priceIdEnv: "STRIPE_STARTER_PRICE_ID",
-    annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
-    lookupKeyMonthly: "starter_monthly_founder_2026_07",
-    lookupKeyAnnual: "starter_annual_founder_2026_07",
+    priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
+    annualPriceIdEnv: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
+    fallbackPriceId: "price_1TraB4JohDtfy3IkKFF3zI5C",
+    fallbackAnnualPriceId: "price_1TraBAJohDtfy3IkgLxLqDVI",
+    lookupKeyMonthly: "starter_monthly_founder_2026_07_v2",
+    lookupKeyAnnual: "starter_annual_founder_2026_07_v2",
     features: [
-      "1 live AI profit agent",
-      "1 included production number",
-      "75 pooled live-call minutes each month",
-      "Call logs, outcomes, and private simulation",
-      "Conversation Balance for controlled extra usage",
+      "1 live AI communications agent",
+      "1 production-number slot, provisioned when needed",
+      "20 pooled live-call minutes each month",
+      "Lead Hunt workspace access",
+      "Connected email workflows and conversation inbox",
+      "Prepaid Conversation Balance for SMS, enrichment, and extra voice",
       "No automatic overages",
     ],
   },
   {
     id: "team",
-    name: "Wireline Team",
-    price_usd_monthly: 59,
-    price_usd_annual: 590,
-    max_agents: 4,
-    voice_minutes_monthly: 300,
-    overage_per_min_usd: 0.18,
-    included_phone_numbers: 4,
-    priceIdEnv: "STRIPE_TEAM_PRICE_ID",
-    annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
-    lookupKeyMonthly: "team_monthly_founder_2026_07",
-    lookupKeyAnnual: "team_annual_founder_2026_07",
+    name: "Wireline Starter Plus",
+    price_usd_monthly: 19,
+    price_usd_annual: 190,
+    max_agents: 1,
+    voice_minutes_monthly: 75,
+    overage_per_min_usd: 0.22,
+    included_phone_numbers: 1,
+    priceIdEnv: "STRIPE_STARTER_PRICE_ID",
+    annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
+    fallbackPriceId: "price_1TrZ9AJohDtfy3Ika0bPG5Dc",
+    fallbackAnnualPriceId: "price_1TrZ9GJohDtfy3IkUxOJscJZ",
+    lookupKeyMonthly: "team_monthly_founder_2026_07_v2",
+    lookupKeyAnnual: "team_annual_founder_2026_07_v2",
     features: [
-      "4 live AI profit agents",
-      "4 included production numbers",
-      "300 pooled live-call minutes each month",
-      "Shared inbox, routing, approvals, and team visibility",
-      "Conversation Balance for controlled extra usage",
+      "1 live AI communications agent",
+      "1 production-number slot, provisioned when needed",
+      "75 pooled live-call minutes each month",
+      "Full Lead Hunt, enrichment, and niche-research workflows",
+      "Connected email and SMS automation",
+      "Shared conversation inbox, outcomes, and private simulation",
+      "Prepaid Conversation Balance for controlled extra usage",
       "No automatic overages",
     ],
   },
   {
     id: "business",
-    name: "Wireline Business",
-    price_usd_monthly: 149,
-    price_usd_annual: 1490,
-    max_agents: 8,
-    voice_minutes_monthly: 700,
-    overage_per_min_usd: 0.16,
-    included_phone_numbers: 8,
-    priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
-    annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
-    lookupKeyMonthly: "business_monthly_founder_2026_07",
-    lookupKeyAnnual: "business_annual_founder_2026_07",
+    name: "Wireline Pro",
+    price_usd_monthly: 59,
+    price_usd_annual: 590,
+    max_agents: 5,
+    voice_minutes_monthly: 250,
+    overage_per_min_usd: 0.19,
+    included_phone_numbers: 5,
+    priceIdEnv: "STRIPE_TEAM_PRICE_ID",
+    annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
+    fallbackPriceId: "price_1TrZ9RJohDtfy3Ik9Q4QFABQ",
+    fallbackAnnualPriceId: "price_1TrZ9XJohDtfy3Ikp1RQzxrj",
+    lookupKeyMonthly: "business_monthly_founder_2026_07_v2",
+    lookupKeyAnnual: "business_annual_founder_2026_07_v2",
     features: [
-      "8 live AI profit agents",
-      "8 included production numbers",
-      "700 pooled live-call minutes each month",
-      "Analytics, CRM controls, role-aware policies, and approvals",
-      "Priority support posture",
-      "Conversation Balance for controlled extra usage",
+      "Up to 5 live AI communications agents",
+      "Up to 5 production-number slots, provisioned when needed",
+      "250 pooled live-call minutes each month",
+      "Lead Hunt campaigns, enrichment, and tailored niche research",
+      "Shared inbox, routing, approvals, and team visibility",
+      "Connected email and SMS automation",
+      "Prepaid Conversation Balance for controlled extra usage",
       "No automatic overages",
     ],
   },
   {
     id: "enterprise",
-    name: "Wireline Enterprise",
-    price_usd_monthly: 0,
-    price_usd_annual: 0,
-    max_agents: 999,
-    voice_minutes_monthly: 0,
-    overage_per_min_usd: 0,
-    included_phone_numbers: 0,
-    priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
-    annualPriceIdEnv: "STRIPE_ENTERPRISE_ANNUAL_PRICE_ID",
-    public: true,
+    name: "Wireline Business",
+    price_usd_monthly: 149,
+    price_usd_annual: 1490,
+    max_agents: 15,
+    voice_minutes_monthly: 650,
+    overage_per_min_usd: 0.17,
+    included_phone_numbers: 15,
+    priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
+    annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
+    fallbackPriceId: "price_1TrZ9gJohDtfy3Ik7zHhg92a",
+    fallbackAnnualPriceId: "price_1TrZ9pJohDtfy3Ik0zUieFvi",
+    lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v2",
+    lookupKeyAnnual: "enterprise_annual_founder_2026_07_v2",
     features: [
-      "Committed usage and rollout planning",
-      "SSO, audit support, and governed policy controls",
-      "Custom integrations, telephony, retention, and SLAs",
-      "Implementation and launch support",
+      "Up to 15 live AI communications agents",
+      "Up to 15 production-number slots, provisioned when needed",
+      "650 pooled live-call minutes each month",
+      "Lead Hunt, enrichment, analytics, and CRM controls",
+      "Role-aware policies, routing, approvals, and team visibility",
+      "Connected email and SMS automation",
+      "Priority support posture",
+      "Prepaid Conversation Balance for controlled extra usage",
+      "No automatic overages",
     ],
   },
 ];
@@ -195,13 +217,23 @@ export function canonicalPlanId(id: string | null | undefined): StripePlanId | n
   return PLAN_ID_ALIASES[cleaned] || null;
 }
 
+function configuredPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
+  const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
+  const fallback = interval === "year" ? plan.fallbackAnnualPriceId : plan.fallbackPriceId;
+  return process.env[envKey] || fallback || null;
+}
+
+export function planPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
+  return configuredPriceId(plan, interval);
+}
+
 export function planByPriceId(priceId: string | null | undefined): StripePlan | null {
   if (!priceId) return null;
   return (
     STRIPE_PLANS.find(
       (plan) =>
-        process.env[plan.priceIdEnv] === priceId ||
-        process.env[plan.annualPriceIdEnv] === priceId ||
+        configuredPriceId(plan, "month") === priceId ||
+        configuredPriceId(plan, "year") === priceId ||
         (plan.extraAgentPriceIdEnv ? process.env[plan.extraAgentPriceIdEnv] === priceId : false) ||
         (plan.overagePriceIdEnv ? process.env[plan.overagePriceIdEnv] === priceId : false),
     ) || null
@@ -241,7 +273,7 @@ export function planLookupKey(plan: StripePlan, interval: "month" | "year"): str
   return interval === "year" ? plan.lookupKeyAnnual || null : plan.lookupKeyMonthly || null;
 }
 
-/** Public API catalog for self-serve paid plans plus contact-sales Enterprise. */
+/** Public API catalog for Free Builder and all self-serve founder plans. */
 export function plansForClient() {
   return STRIPE_PLANS.filter((plan) => plan.public !== false).map((plan) => ({
     id: plan.id,
@@ -254,15 +286,10 @@ export function plansForClient() {
     included_phone_numbers: plan.included_phone_numbers,
     extra_agent_price_usd: null,
     features: plan.features,
-    configured:
-      plan.price_usd_monthly === 0 ||
-      !!process.env[plan.priceIdEnv] ||
-      (!!process.env.STRIPE_SECRET_KEY && !!plan.lookupKeyMonthly),
-    annual_configured:
-      plan.price_usd_annual === 0 ||
-      !!process.env[plan.annualPriceIdEnv] ||
-      (!!process.env.STRIPE_SECRET_KEY && !!plan.lookupKeyAnnual),
-    contact_sales: plan.price_usd_monthly === 0,
+    configured: plan.id === "personal" || !!configuredPriceId(plan, "month"),
+    annual_configured: plan.id === "personal" || !!configuredPriceId(plan, "year"),
+    contact_sales: false,
+    is_free: plan.id === "personal",
     public: true,
     pricing_model: "included_minutes_plus_prepaid_balance" as const,
   }));
