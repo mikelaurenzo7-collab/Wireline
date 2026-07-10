@@ -1,6 +1,85 @@
-import { z, ZodError, type ZodSchema } from "zod";
+/**
+ * API Input Validation
+ * ---------------------------------------------------------------------------
+ * Zod-based input validation for API routes with helpful error messages
+ * and automatic response formatting.
+ */
+
+import { z, ZodSchema, ZodError } from "zod";
 import type { Request, Response, NextFunction } from "express";
 
+/**
+ * Validation middleware factory
+ * Creates Express middleware that validates request body against a Zod schema
+ */
+export function validateBody<T extends ZodSchema>(schema: T) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.body);
+
+    if (!result.success) {
+      const errors = formatZodError(result.error);
+      const firstMessage = errors[0]?.message;
+      res.status(400).json({
+        error: firstMessage || "Invalid request body",
+        code: "VALIDATION_ERROR",
+        details: errors,
+      });
+      return;
+    }
+
+    // Replace req.body with parsed/validated data
+    req.body = result.data;
+    next();
+  };
+}
+
+/**
+ * Validate request query parameters
+ */
+export function validateQuery<T extends ZodSchema>(schema: T) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.query);
+
+    if (!result.success) {
+      const errors = formatZodError(result.error);
+      res.status(400).json({
+        error: "Invalid query parameters",
+        code: "VALIDATION_ERROR",
+        details: errors,
+      });
+      return;
+    }
+
+    req.query = result.data as typeof req.query;
+    next();
+  };
+}
+
+/**
+ * Validate request parameters (URL path params)
+ */
+export function validateParams<T extends ZodSchema>(schema: T) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.params);
+
+    if (!result.success) {
+      const errors = formatZodError(result.error);
+      res.status(400).json({
+        error: "Invalid URL parameters",
+        code: "VALIDATION_ERROR",
+        details: errors,
+      });
+      return;
+    }
+
+    req.params = result.data as typeof req.params;
+    next();
+  };
+}
+
+/**
+ * Format Zod error into a user-friendly object
+ */
 function formatZodError(error: ZodError): Array<{ field: string; message: string }> {
   return error.issues.map((issue) => ({
     field: issue.path.join("."),
@@ -8,61 +87,24 @@ function formatZodError(error: ZodError): Array<{ field: string; message: string
   }));
 }
 
-export function validateBody<T extends ZodSchema>(schema: T) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      const errors = formatZodError(result.error);
-      res.status(400).json({
-        error: errors[0]?.message || "Invalid request body",
-        code: "VALIDATION_ERROR",
-        details: errors,
-      });
-      return;
-    }
-    req.body = result.data;
-    next();
-  };
-}
+// ============================================================================
+// Common Validation Schemas
+// ============================================================================
 
-export function validateQuery<T extends ZodSchema>(schema: T) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const result = schema.safeParse(req.query);
-    if (!result.success) {
-      res.status(400).json({
-        error: "Invalid query parameters",
-        code: "VALIDATION_ERROR",
-        details: formatZodError(result.error),
-      });
-      return;
-    }
-    req.query = result.data as typeof req.query;
-    next();
-  };
-}
-
-export function validateParams<T extends ZodSchema>(schema: T) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const result = schema.safeParse(req.params);
-    if (!result.success) {
-      res.status(400).json({
-        error: "Invalid URL parameters",
-        code: "VALIDATION_ERROR",
-        details: formatZodError(result.error),
-      });
-      return;
-    }
-    req.params = result.data as typeof req.params;
-    next();
-  };
-}
-
+/**
+ * Email validation with helpful error message
+ */
 export const emailSchema = z
   .string()
   .min(1, "Email is required")
   .email("Please enter a valid email address")
-  .transform((value) => value.toLowerCase().trim());
+  .transform((v) => v.toLowerCase().trim());
 
+/**
+ * Password validation
+ * - Min 8 characters
+ * - At least one uppercase, one lowercase, one number
+ */
 export const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
@@ -70,23 +112,37 @@ export const passwordSchema = z
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[0-9]/, "Password must contain at least one number");
 
+/**
+ * UUID validation
+ */
 export const uuidSchema = z
   .string()
   .uuid("Invalid ID format")
-  .transform((value) => value.toLowerCase());
+  .transform((v) => v.toLowerCase());
 
+/**
+ * Phone number validation (E.164 format)
+ */
 export const phoneSchema = z
   .string()
   .regex(/^\+[1-9]\d{1,14}$/, "Phone number must be in E.164 format (e.g., +14155551234)");
 
+/**
+ * URL validation with protocols
+ */
 export const urlSchema = z
   .string()
   .url("Invalid URL format")
   .regex(/^https?:\/\//, "URL must start with http:// or https://");
 
+/**
+ * Non-empty string validation
+ */
 export const nonEmptyString = z.string().min(1, "This field is required").trim();
 
-const canonicalPlanSchema = z.enum(["personal", "starter", "team", "business", "enterprise"]);
+// ============================================================================
+// Auth Route Schemas
+// ============================================================================
 
 export const signinSchema = z.object({
   email: emailSchema,
@@ -97,7 +153,7 @@ export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(100).optional(),
-  preferredPlanId: canonicalPlanSchema.optional(),
+  preferredPlanId: z.enum(["personal", "team", "business", "enterprise"]).optional(),
   signupWedge: z
     .enum([
       "home-services",
@@ -125,18 +181,13 @@ export const signupIntentSchema = signupSchema
     utmCampaign: true,
   })
   .refine(
-    (value) =>
-      !!(
-        value.preferredPlanId ||
-        value.signupWedge ||
-        value.utmSource ||
-        value.utmMedium ||
-        value.utmCampaign
-      ),
+    (v) => !!(v.preferredPlanId || v.signupWedge || v.utmSource || v.utmMedium || v.utmCampaign),
     "At least one signup-intent field is required",
   );
 
-export const forgotPasswordSchema = z.object({ email: emailSchema });
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
 
 export const resetPasswordSchema = z
   .object({
@@ -144,8 +195,8 @@ export const resetPasswordSchema = z
     password: passwordSchema.optional(),
     new_password: passwordSchema.optional(),
   })
-  .transform((value, ctx) => {
-    const password = value.password || value.new_password;
+  .transform((v, ctx) => {
+    const password = v.password || v.new_password;
     if (!password) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -154,14 +205,21 @@ export const resetPasswordSchema = z
       });
       return z.NEVER;
     }
-    return { token: value.token, password };
+    return { token: v.token, password };
   });
+
+// ============================================================================
+// Agent Route Schemas
+// ============================================================================
 
 export const createAgentSchema = z.object({
   name: z.string().min(1, "Agent name is required").max(100),
   role: z.string().min(1, "Role is required").max(200),
   vibe: z.enum(["warm", "playful", "authoritative"]).default("warm"),
   firstMessage: z.string().max(500).optional(),
+  // Account Holder-authored prompt that replaces the auto-composed base
+  // identity. Capped well under the runtime prompt clamp so the dynamic
+  // blocks + guardrails appended at call time still fit.
   systemPromptOverride: z.string().max(8000).optional(),
   knowledgeBase: z.array(z.string()).optional(),
   enabledTools: z.array(z.string()).optional(),
@@ -173,11 +231,16 @@ export const updateAgentSchema = z.object({
   role: z.string().min(1).max(200).optional(),
   vibe: z.enum(["warm", "playful", "authoritative"]).optional(),
   firstMessage: z.string().max(500).optional(),
+  // Nullable so the UI can reset back to the auto-composed prompt.
   systemPromptOverride: z.string().max(8000).nullable().optional(),
   knowledgeBase: z.array(z.string()).optional(),
   enabledTools: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
 });
+
+// ============================================================================
+// Campaign Route Schemas
+// ============================================================================
 
 export const createCampaignSchema = z.object({
   name: z.string().min(1, "Campaign name is required").max(200),
@@ -205,6 +268,10 @@ export const addLeadSchema = z.object({
   customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
+// ============================================================================
+// Webhook Route Schemas
+// ============================================================================
+
 export const createWebhookSchema = z.object({
   url: urlSchema,
   events: z.array(z.string().min(1)).min(1, "At least one event is required"),
@@ -220,8 +287,12 @@ export const updateWebhookSchema = z.object({
   active: z.boolean().optional(),
 });
 
+// ============================================================================
+// Billing Route Schemas
+// ============================================================================
+
 export const createSubscriptionSchema = z.object({
-  planId: z.enum(["starter", "team", "business", "enterprise"]),
+  planId: z.enum(["team", "business", "enterprise"]),
   extraAgents: z.number().int().min(0).max(100).default(0),
 });
 
@@ -229,10 +300,18 @@ export const updatePaymentMethodSchema = z.object({
   paymentMethodId: z.string().min(1, "Payment method ID is required"),
 });
 
+// ============================================================================
+// Team Route Schemas
+// ============================================================================
+
 export const inviteTeamMemberSchema = z.object({
   email: emailSchema,
   role: z.enum(["admin", "member", "viewer"]).default("member"),
 });
+
+// ============================================================================
+// Knowledge Route Schemas
+// ============================================================================
 
 export const addKnowledgeSchema = z.object({
   content: z.string().min(1, "Content is required").max(10000),
@@ -243,11 +322,19 @@ export const updateKnowledgeSchema = z.object({
   content: z.string().min(1, "Content is required").max(10000),
 });
 
+// ============================================================================
+// Goal Route Schemas
+// ============================================================================
+
 export const createGoalSchema = z.object({
   metric: z.string().min(1, "Metric is required"),
   target: z.number().int().min(1, "Target must be at least 1"),
   label: z.string().max(200).optional(),
 });
+
+// ============================================================================
+// SMS Route Schemas
+// ============================================================================
 
 export const sendSmsSchema = z.object({
   to: phoneSchema,
@@ -255,11 +342,18 @@ export const sendSmsSchema = z.object({
   agentId: z.string().optional(),
 });
 
+/** Inbox thread reply body — used by POST /api/sms/threads/:id/reply. */
 export const smsReplySchema = z.object({
   body: z.string().min(1, "body is required").max(1600),
 });
 
-export const applyRoleSchema = z.object({ role: z.string().min(1, "Role is required") });
+// ============================================================================
+// Agent Config Schemas (apply-role, manual entry)
+// ============================================================================
+
+export const applyRoleSchema = z.object({
+  role: z.string().min(1, "Role is required"),
+});
 
 export const agentManualEntrySchema = z.object({
   type: z.enum(["personality", "directive", "knowledge"]),
@@ -267,12 +361,20 @@ export const agentManualEntrySchema = z.object({
   overrideId: z.string().optional(),
 });
 
+// ============================================================================
+// Spend Budget Schema
+// ============================================================================
+
 export const spendBudgetSchema = z.object({
   monthly_limit_usd: z.number().min(0).default(0),
   warn_threshold_pct: z.number().int().min(1).max(99).default(80),
   hard_cap: z.boolean().default(false),
   enabled: z.boolean().default(true),
 });
+
+// ============================================================================
+// Cadence Route Schemas
+// ============================================================================
 
 export const createCadenceSchema = z.object({
   name: z.string().min(1, "Name is required").max(200),
@@ -290,6 +392,10 @@ export const updateCadenceSchema = z.object({
   active: z.boolean().optional(),
 });
 
+// ============================================================================
+// Intake Route Schemas
+// ============================================================================
+
 export const createIntakeKeySchema = z.object({
   name: z.string().min(1, "Name is required").max(80),
   default_agent_id: z.string().optional().nullable(),
@@ -303,11 +409,19 @@ export const updateIntakeKeySchema = z.object({
   auto_dial: z.boolean().optional(),
 });
 
+// ============================================================================
+// Pronunciation Route Schemas
+// ============================================================================
+
 export const pronunciationEntrySchema = z.object({
   word: z.string().min(1, "Word is required").max(100),
   pronunciation: z.string().min(1, "Pronunciation is required").max(200),
   agentId: z.string().optional(),
 });
+
+// ============================================================================
+// Assistants Task Schemas
+// ============================================================================
 
 export const updateFollowUpTaskSchema = z.object({
   status: z.enum(["pending", "open", "in_progress", "completed", "done", "cancelled"]).optional(),
@@ -319,6 +433,10 @@ export const updateFollowUpTaskSchema = z.object({
   payload: z.record(z.string(), z.unknown()).optional(),
 });
 
+// ============================================================================
+// Tier-2 route schemas (carrier, email, director, workspace)
+// ============================================================================
+
 export const phoneNumberCreateSchema = z.object({
   phone_number: z.string().min(3).max(32),
   vapi_number_id: z.string().max(120).optional(),
@@ -329,10 +447,11 @@ export const phoneNumberPatchSchema = z
     agent_id: z.string().max(120).optional().nullable(),
     campaign_label: z.string().max(200).optional().nullable(),
   })
-  .refine((value) => value.agent_id !== undefined || value.campaign_label !== undefined, {
+  .refine((data) => data.agent_id !== undefined || data.campaign_label !== undefined, {
     message: "Nothing to update — pass agent_id or campaign_label.",
   });
 
+/** POST /api/phone-numbers/provision — buy or assign a tenant line (onboarding + self-serve). */
 export const phoneNumberProvisionSchema = z.object({
   agent_id: z.string().min(1).max(120).optional(),
   area_code: z
@@ -351,14 +470,22 @@ export const emailInboxSyncSchema = z.object({
   sinceIso: z.string().datetime().optional(),
 });
 
+/** iCloud Mail — app-specific password connect (no Apple OAuth). */
 export const icloudMailConnectSchema = z.object({
   email_address: z.string().email().max(320),
   app_password: z.string().min(4).max(128),
 });
 
+/** Director composer model pin — must survive validateBody (unknown keys are stripped). */
 export const directorChatModelSelectionSchema = z.discriminatedUnion("provider", [
-  z.object({ provider: z.literal("wireline"), tier: z.enum(["auto", "sonnet", "opus"]) }),
-  z.object({ provider: z.literal("openrouter"), modelId: z.string().min(1).max(128) }),
+  z.object({
+    provider: z.literal("wireline"),
+    tier: z.enum(["auto", "sonnet", "opus"]),
+  }),
+  z.object({
+    provider: z.literal("openrouter"),
+    modelId: z.string().min(1).max(128),
+  }),
 ]);
 
 export const directorStitchOptionsSchema = z.object({
@@ -379,7 +506,7 @@ export const directorMessageSchema = z
     threadKey: directorThreadKeySchema.optional(),
     approval: z.record(z.string(), z.unknown()).optional(),
   })
-  .refine((value) => Boolean(value.content?.trim()) || value.approval, {
+  .refine((data) => Boolean(data.content?.trim()) || data.approval, {
     message: "Message content required",
   });
 
@@ -415,7 +542,10 @@ export const directorProposalResolveSchema = z.object({
 });
 
 export const pdfUploadSchema = z.object({
-  pdfBase64: z.string().min(1).max(40 * 1024 * 1024),
+  pdfBase64: z
+    .string()
+    .min(1)
+    .max(40 * 1024 * 1024),
   fileName: z.string().max(255).optional(),
 });
 
@@ -425,7 +555,10 @@ export const designProfilePatchSchema = z.object({
 });
 
 export const designProfileAssetUploadSchema = z.object({
-  fileBase64: z.string().min(1).max(3 * 1024 * 1024),
+  fileBase64: z
+    .string()
+    .min(1)
+    .max(3 * 1024 * 1024),
   fileName: z.string().min(1).max(255),
   mimeType: z.string().max(128).optional(),
   role: z.enum(["logo", "font", "css", "reference"]).optional(),
@@ -441,7 +574,7 @@ export const designExportPreviewSchema = z
     conceptId: z.string().max(64).optional(),
     promptSummary: z.string().max(2000).optional(),
   })
-  .refine((value) => Boolean(value.htmlArtifactId || value.imageArtifactId), {
+  .refine((data) => Boolean(data.htmlArtifactId || data.imageArtifactId), {
     message: "At least one artifact id (htmlArtifactId or imageArtifactId) is required",
   });
 
@@ -471,10 +604,22 @@ export const directorChatModelPatchSchema = z.object({
   selection: z.record(z.string(), z.unknown()),
 });
 
+// ============================================================================
+// Validation Helpers
+// ============================================================================
+
+/**
+ * Sanitize string input to prevent XSS
+ */
 export function sanitizeString(input: string): string {
-  return input.replace(/[<>]/g, "").trim();
+  return input
+    .replace(/[<>]/g, "") // Remove angle brackets
+    .trim();
 }
 
+/**
+ * Validate and sanitize an object of string values
+ */
 export function sanitizeStrings<T extends Record<string, unknown>>(
   obj: T,
   keys: Array<keyof T>,
