@@ -1,7 +1,7 @@
 /**
- * Launch readiness — capability report. Voice is deliberately independent from
- * core platform readiness so its providers can be enabled without blocking AI,
- * inbox, text, email, or billing workflows.
+ * Launch readiness — capability report for the product Wireline actually sells.
+ * Voice and a working number are guaranteed, while email, SMS, and artifacts are
+ * optional connected capabilities.
  */
 import { getIntegrationsStatus } from "./integrations-registry";
 import { validateEnv } from "./env-validator";
@@ -31,7 +31,7 @@ function levelFromBlockers(blockers: string[]): ReadinessLevel {
 }
 function envPresent(name: string): boolean {
   const value = process.env[name];
-  return typeof value === "string" && value.length > 0;
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 export function evaluateLaunchReadiness(): LaunchReadinessReport {
@@ -40,19 +40,13 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const envValidation = validateEnv();
 
   const voiceBlockers: string[] = [];
+  if (byId.get("openai")?.status !== "configured") voiceBlockers.push("OPENAI_API_KEY");
   if (byId.get("vapi")?.status !== "configured") voiceBlockers.push("VAPI_PRIVATE_KEY");
   if (!envPresent("VAPI_WEBHOOK_SECRET")) voiceBlockers.push("VAPI_WEBHOOK_SECRET");
-  if (byId.get("elevenlabs")?.status !== "configured") voiceBlockers.push("ELEVENLABS_API_KEY");
 
   const billingBlockers: string[] = [];
   if (byId.get("stripe")?.status !== "configured") billingBlockers.push("STRIPE_SECRET_KEY");
   else if (!envPresent("STRIPE_WEBHOOK_SECRET")) billingBlockers.push("STRIPE_WEBHOOK_SECRET");
-  if (
-    process.env.BILLING_ENFORCE_METER === "true" &&
-    !envPresent("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME")
-  ) {
-    billingBlockers.push("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME");
-  }
   const marginCheck = assertPlanMarginFloors();
   if (!marginCheck.ok) billingBlockers.push(...marginCheck.violations);
 
@@ -83,19 +77,19 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
     {
       id: "voice_ready",
-      label: "Voice stack",
+      label: "Guaranteed voice stack",
       level: levelFromBlockers(voiceBlockers),
       blockers: voiceBlockers,
     },
     {
       id: "email_ready",
-      label: "Email",
+      label: "Optional platform email",
       level: levelFromBlockers(emailBlockers),
       blockers: emailBlockers,
     },
     {
       id: "oauth_ready",
-      label: "OAuth sign-in",
+      label: "Optional Google/Microsoft connections",
       level: levelFromBlockers(oauthBlockers),
       blockers: oauthBlockers,
     },
@@ -107,8 +101,12 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
   ];
 
-  // Voice is surfaced as an operational capability, not a core launch gate.
-  const launch_blockers = [...coreBlockers, ...billingBlockers, ...complianceBlockers];
+  const launch_blockers = [
+    ...coreBlockers,
+    ...billingBlockers,
+    ...voiceBlockers,
+    ...complianceBlockers,
+  ];
   const readyCount = capabilities.filter((capability) => capability.level === "ready").length;
 
   return {
@@ -122,15 +120,17 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
 }
 
 export function isVoiceLaunchBlocked(): boolean {
-  // Retained for route compatibility. Voice never blocks the core application.
-  return false;
+  const voice = evaluateLaunchReadiness().capabilities.find(
+    (capability) => capability.id === "voice_ready",
+  );
+  return voice?.level !== "ready";
 }
 
 export function launchBlockResponse() {
   const report = evaluateLaunchReadiness();
   return {
     code: "LAUNCH_NOT_READY",
-    error: "Core platform or billing is not launch-ready.",
+    error: "Wireline voice, billing, compliance, or core infrastructure is not launch-ready.",
     launch_blockers: report.launch_blockers,
     capabilities: report.capabilities,
   };
