@@ -49,6 +49,7 @@ import {
   clearOAuthBridgeStateCookie,
 } from "../lib/oauth-bridge-cookie";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
+import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
 
 const router = Router();
 
@@ -335,7 +336,7 @@ async function bridgeRedirect(
   req?: Request,
 ): Promise<string> {
   if (errorMessage) {
-    return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent(errorMessage)}`;
+    return `${baseUrl}/auth/oauth-complete?error=${encodeURIComponent(sanitizeOAuthSignInError(errorMessage))}`;
   }
   const bridgeState = req ? readOAuthBridgeStateCookie(req) : undefined;
   if (!bridgeState) {
@@ -382,7 +383,7 @@ router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Respons
     if (err instanceof AppError) throw err;
     const message = err instanceof Error ? err.message : "Google sign-in failed to start.";
     log.error("auth oauth google: /url failed", { error: message });
-    throw AppError.fromHttpStatus(500, `Google sign-in failed to start: ${message}`);
+    throw AppError.fromHttpStatus(500, "Google sign-in failed to start.");
   }
 });
 
@@ -453,7 +454,7 @@ router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Resp
     if (err instanceof AppError) throw err;
     const message = err instanceof Error ? err.message : "Microsoft sign-in failed to start.";
     log.error("auth oauth microsoft: /url failed", { error: message });
-    throw AppError.fromHttpStatus(500, `Microsoft sign-in failed to start: ${message}`);
+    throw AppError.fromHttpStatus(500, "Microsoft sign-in failed to start.");
   }
 });
 
@@ -551,7 +552,7 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
     if (err instanceof AppError) throw err;
     const message = err instanceof Error ? err.message : "Yahoo sign-in failed to start.";
     log.error("auth oauth yahoo: /url failed", { error: message });
-    throw AppError.fromHttpStatus(500, `Yahoo sign-in failed to start: ${message}`);
+    throw AppError.fromHttpStatus(500, "Yahoo sign-in failed to start.");
   }
 });
 
