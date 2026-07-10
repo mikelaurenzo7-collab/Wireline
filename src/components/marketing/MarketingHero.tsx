@@ -54,12 +54,12 @@ export default function MarketingHero({
     <section
       className={cn(
         "marketing-hero border-b border-border px-5 sm:px-8 lg:px-10",
-        compact ? "py-12 sm:py-16 lg:py-18" : "py-14 sm:py-20 lg:py-24",
+        compact ? "py-12 sm:py-16 lg:py-20" : "py-14 sm:py-20 lg:py-24",
         className,
       )}
     >
       <div className="wl-public-rail grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,.72fr)] lg:items-center">
-        <div className="max-w-[58rem] text-left">
+        <div className="max-w-[60rem] text-left">
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 shadow-[var(--wireline-elevation-sm)]">
             <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
             <span className="wl-eyebrow wl-eyebrow--wired min-w-0 truncate text-muted-foreground">
@@ -67,7 +67,7 @@ export default function MarketingHero({
             </span>
           </div>
 
-          <h1 className="mt-6 max-w-[15ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(3.2rem,7.2vw,7rem)] font-normal uppercase leading-[.88] tracking-[-.07em] text-foreground md:max-w-[17ch] lg:max-w-[15.5ch]">
+          <h1 className="mt-6 max-w-[18ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(3rem,6.4vw,6.4rem)] font-normal uppercase leading-[.9] tracking-[-.068em] text-foreground md:max-w-[21ch] lg:max-w-[18.5ch]">
             {title}
           </h1>
 
@@ -103,7 +103,10 @@ export default function MarketingHero({
                   key={item}
                   className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-card px-3 text-[13px] font-semibold text-muted-foreground"
                 >
-                  <span className="marketing-proof-chip grid h-[18px] w-[18px] place-items-center" aria-hidden="true">
+                  <span
+                    className="marketing-proof-chip grid h-[18px] w-[18px] place-items-center"
+                    aria-hidden="true"
+                  >
                     ✓
                   </span>
                   {item}
@@ -113,7 +116,10 @@ export default function MarketingHero({
           ) : null}
         </div>
 
-        <aside className="wl-paper relative overflow-hidden rounded-[22px] p-5 sm:p-6 lg:p-7" aria-label="Wireline operating preview">
+        <aside
+          className="wl-paper relative overflow-hidden rounded-[22px] p-5 sm:p-6 lg:p-7"
+          aria-label="Wireline operating preview"
+        >
           <div
             className="pointer-events-none absolute inset-0 opacity-70"
             aria-hidden="true"
