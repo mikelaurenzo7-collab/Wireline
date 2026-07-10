@@ -16,6 +16,7 @@ import {
 
 import { useAuth } from "../contexts/AuthContext";
 import { StatusNotice } from "./molecules";
+import WirelineMark from "./brand/WirelineMark";
 import { PageMeta } from "../lib/page-meta";
 import {
   captureSignupIntentFromLocation,
@@ -236,18 +237,18 @@ const AUTH_BRAND = {
   signin: {
     label: "Welcome back",
     headline: "Back on the line.",
-    body: "Your agents, call history, and follow-ups are waiting.",
+    body: "Your phone employees, call history, and follow-ups are waiting.",
   },
   signup: {
     personal: {
       label: "Personal",
       headline: "Wire your agent.",
-      body: "Train one phone agent, put it on a real line, and get the outcome back.",
+      body: "Build one AI phone employee, launch it on a real line, and see every result.",
     },
     business: {
       label: "Business",
       headline: "Call work, handled.",
-      body: "Outbound, inbound, or hybrid agents — trained on your playbook, supervised from one workspace.",
+      body: "Outbound, inbound, or hybrid phone employees — trained on your playbook and supervised from one workspace.",
     },
   },
 } as const;
@@ -270,7 +271,9 @@ function AuthBrandPanel({
       <div className="wl-auth-brand-glow" />
       <div className="wl-auth-brand-top">
         <Link to="/" className="wl-auth-brand-mark" tabIndex={-1}>
-          <span className="wl-auth-brand-badge">W</span>
+          <span className="wl-auth-brand-badge">
+            <WirelineMark className="h-4 w-6" strokeWidth={10} />
+          </span>
           <span className="wl-auth-brand-word">Wireline</span>
         </Link>
       </div>
@@ -281,10 +284,10 @@ function AuthBrandPanel({
       </div>
       <div className="wl-auth-brand-grid">
         {[
-          ["Create", "Role and goal"],
+          ["Build", "Role and result"],
           ["Train", "Voice and rules"],
-          ["Wire", "Number and tools"],
-          ["Run", "Calls and outcomes"],
+          ["Launch", "Number and tools"],
+          ["Improve", "Outcomes and coaching"],
         ].map(([name, sub]) => (
           <div key={name} className="wl-auth-brand-grid-cell">
             <div className="wl-auth-brand-grid-name">{name}</div>
@@ -314,7 +317,9 @@ function AuthShell({
       >
         <div className="w-full max-w-[440px]">
           <Link to="/" className="wl-auth-mobile-mark">
-            <span className="wl-auth-brand-badge">W</span>
+            <span className="wl-auth-brand-badge">
+              <WirelineMark className="h-4 w-6" strokeWidth={10} />
+            </span>
             <span>Wireline</span>
           </Link>
           <div className="wl-stitch-auth-card rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
@@ -348,13 +353,13 @@ function WorkspaceSelector({
     {
       id: "personal",
       title: "Personal",
-      text: "One private agent for calls, texts, and follow-up on your terms.",
+      text: "One private phone employee for calls, texts, and follow-up on your terms.",
       icon: <User className="h-4 w-4" />,
     },
     {
       id: "business",
       title: "Business",
-      text: "Shared capacity for several agents, training, integrations, approvals, and analytics.",
+      text: "A shared phone operation with multiple employees, numbers, approvals, integrations, and analytics.",
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
@@ -589,7 +594,7 @@ export default function AuthPortal() {
   const pageDescription = isReset
     ? "Enter your email and Wireline will send a secure password reset link."
     : isSignUp
-      ? "Create your Wireline account and set up your first agent."
+      ? "Create your Wireline account and build your first AI phone employee."
       : "Sign in to your Wireline account.";
 
   const headerActive = isSignUp ? "signup" : "signin";
