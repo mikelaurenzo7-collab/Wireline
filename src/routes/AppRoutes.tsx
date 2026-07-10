@@ -54,7 +54,7 @@ export default function AppRoutes() {
         <Route path="/studio/handoff" element={<BrowserHandoffBridge />} />
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
-        <Route path="/agents" element={<Navigate to="/overview" replace />} />
+        <Route path="/agents" element={<Navigate to="/studio" replace />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 
