@@ -72,16 +72,18 @@ export default function ComplianceCenter() {
     }
   }
 
+  const recentEvents = summary?.recent_consent_events || [];
+
   return (
     <div className="grid gap-4">
-      <section className="wl-paper wl-paper-elevated p-5">
+      <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="wl-eyebrow wl-eyebrow--muted">Compliance Center</p>
             <h2 className="mt-1 text-base font-semibold text-foreground">
               Prove what happened on every call
             </h2>
-            <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
               Wireline helps you prove who was called, why they were callable, what was disclosed,
               and what action was taken.
             </p>
@@ -149,41 +151,49 @@ export default function ComplianceCenter() {
         </div>
       </section>
 
-      <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
-        <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Recent disclosure and consent events (rule version {summary?.consent_rule_version || "—"}
-          ).
-        </p>
-        <div className="mt-3 grid gap-2">
-          {(summary?.recent_consent_events || []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No consent events logged yet.</p>
-          ) : (
-            summary?.recent_consent_events.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium">{entry.event}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
-                  </span>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,.9fr)]">
+        <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Recent disclosure and consent events (rule version {summary?.consent_rule_version || "—"}).
+              </p>
+            </div>
+            <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              {recentEvents.length} shown
+            </span>
+          </div>
+          <div className="mt-3 grid max-h-[360px] gap-2 overflow-y-auto pr-1">
+            {recentEvents.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No consent events logged yet.</p>
+            ) : (
+              recentEvents.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-medium">{entry.event}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
+                    {entry.customer_number || "Unknown number"}
+                    {entry.state ? ` · ${entry.state}` : ""}
+                    {entry.call_id ? ` · call ${entry.call_id}` : ""}
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {entry.customer_number || "Unknown number"}
-                  {entry.state ? ` · ${entry.state}` : ""}
-                  {entry.call_id ? ` · call ${entry.call_id}` : ""}
-                </p>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+              ))
+            )}
+          </div>
+        </section>
 
-      <section className="wl-paper wl-paper-elevated p-4">
-        <DncManager />
-      </section>
+        <section className="wl-paper wl-paper-elevated p-4">
+          <DncManager />
+        </section>
+      </div>
     </div>
   );
 }
