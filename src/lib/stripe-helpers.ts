@@ -6,6 +6,7 @@ import { getErrorMessage } from "./server-utils";
 import {
   STRIPE_PLANS,
   planById,
+  planExtraAgentPriceId,
   planLookupKey,
   planPriceId,
   type StripePlan,
@@ -75,6 +76,20 @@ function basePlanByStripePrice(price: Stripe.Price | null | undefined): StripePl
   return null;
 }
 
+function isExtraAgentPrice(price: Stripe.Price | null | undefined): boolean {
+  if (!price) return false;
+  if (price.metadata?.wireline_addon_id === "extra_agent") return true;
+  if (price.lookup_key === "extra_agent_monthly_founder_2026_07_v3") return true;
+  return STRIPE_PLANS.some((plan) => planExtraAgentPriceId(plan) === price.id);
+}
+
+function extraAgentQuantityFromSubscription(sub: Stripe.Subscription): number {
+  return sub.items.data.reduce((total, item) => {
+    if (!isExtraAgentPrice(item.price)) return total;
+    return total + Math.max(0, item.quantity ?? 0);
+  }, 0);
+}
+
 /**
  * Compatibility no-op retained for callers that still reconcile completed
  * voice usage. The runtime ledger is the billing source of truth; Stripe meter
@@ -124,6 +139,9 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     sub.items?.data
       ?.map((item) => basePlanByStripePrice(item.price))
       .find((candidate): candidate is StripePlan => !!candidate) ?? null;
+  const extraAgents = extraAgentQuantityFromSubscription(sub);
+  const baseMaxAgents = plan?.max_agents ?? 1;
+  const effectiveMaxAgents = baseMaxAgents + extraAgents;
   const stripeStatus = sub.status;
 
   const localStatus =
@@ -168,14 +186,16 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       id: userId,
       userId,
       subscriptionStatus: localStatus,
-      maxAgents: plan?.max_agents ?? 1,
+      maxAgents: effectiveMaxAgents,
+      extraAgents,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
       target: [schema.settings.userId],
       set: {
         subscriptionStatus: localStatus,
-        maxAgents: plan?.max_agents ?? 1,
+        maxAgents: effectiveMaxAgents,
+        extraAgents,
         updatedAt: new Date(),
       },
     });
@@ -187,7 +207,8 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
 
   dispatchWebhook(userId, "subscription.changed", {
     plan: plan?.id ?? null,
-    voice_number_slots_cap: plan?.max_agents ?? null,
+    voice_number_slots_cap: effectiveMaxAgents,
+    included_extra_agents: extraAgents,
     status: stripeStatus,
     legacy_status: localStatus,
     cancel_at_period_end: !!sub.cancel_at_period_end,
@@ -232,6 +253,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
         stripe_status: stripeStatus,
         legacy_status: localStatus,
         cancel_at_period_end: !!sub.cancel_at_period_end,
+        extra_agents: extraAgents,
       },
     })
     .catch(() => {});
