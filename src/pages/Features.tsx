@@ -129,7 +129,7 @@ export default function Features() {
           proof={FEATURE_HERO_PROOF}
           visualEyebrow="Feature stack"
           visualTitle="One structure. Every lane."
-          visualBody="The public pages now share one calmer hero pattern: sharp promise on the left, operational proof on the right."
+          visualBody="Conversation control, phone operation, scheduling, approvals, training, and outcome review stay inside one Build -> Train -> Wire -> Run flow."
           visualItems={FEATURE_HERO_ITEMS}
         />
 
