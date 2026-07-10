@@ -8,7 +8,6 @@ import {
   Mail,
   MessageSquareText,
   PhoneCall,
-  Play,
   Puzzle,
   ShieldCheck,
   ShoppingBag,
@@ -17,8 +16,9 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
-import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import MarketingFooter from "../components/marketing/MarketingFooter";
+import MarketingHero from "../components/marketing/MarketingHero";
+import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
 
 const OPERATING_LOOP = [
@@ -102,6 +102,14 @@ const USE_CASES = [
   { title: "Custom workflow", icon: Workflow },
 ] as const;
 
+const FEATURE_HERO_PROOF = ["Build", "Train", "Wire", "Run"] as const;
+const FEATURE_HERO_ITEMS = [
+  "Conversation control",
+  "Phone operation",
+  "Scheduling and handoff",
+  "Outcome review",
+] as const;
+
 export default function Features() {
   return (
     <div className="marketing-surface min-h-screen bg-background text-foreground">
@@ -112,32 +120,18 @@ export default function Features() {
       />
       <PrecisionPublicHeader />
       <main id="main-content" className="pt-16" tabIndex={-1}>
-        <section className="border-b border-border px-5 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div className="wl-public-rail text-center">
-            <p className="wl-overline text-primary">Features</p>
-            <h1 className="mx-auto mt-4 max-w-[18ch] font-[var(--wireline-font-display)] text-[clamp(42px,6.2vw,76px)] font-normal leading-[.98] tracking-[-.06em] text-foreground [text-wrap:balance]">
-              Everything your agent needs to finish the call.
-            </h1>
-            <p className="wl-public-copy mt-6">
-              Wireline keeps the product simple: build the employee, train the workflow, launch the
-              number and tools, then improve the work from every recorded outcome.
-            </p>
-            <div className="marketing-hero__actions mt-8">
-              <Link
-                to="/signup"
-                className="marketing-btn-primary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
-              >
-                Build an employee
-              </Link>
-              <Link
-                to="/showcase"
-                className="marketing-btn-secondary px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
-              >
-                <Play size={15} aria-hidden="true" /> Hear a demo
-              </Link>
-            </div>
-          </div>
-        </section>
+        <MarketingHero
+          eyebrow="Features"
+          title="Everything your phone employee needs to finish the call."
+          description="Build the employee, train the workflow, wire the number and tools, then improve every next conversation from one recorded outcome."
+          primaryAction={{ label: "Build an employee", to: "/signup" }}
+          secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
+          proof={FEATURE_HERO_PROOF}
+          visualEyebrow="Feature stack"
+          visualTitle="One structure. Every lane."
+          visualBody="The public pages now share one calmer hero pattern: sharp promise on the left, operational proof on the right."
+          visualItems={FEATURE_HERO_ITEMS}
+        />
 
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail">
