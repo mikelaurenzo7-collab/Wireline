@@ -4,7 +4,33 @@ import { ShadButton } from "../../ui/shadcn/ShadButton";
 import { authFetch } from "../../../lib/api";
 import { Field, FormShell, ResultCard, TextArea, TextInput, ErrCard, RunButton } from "../shared";
 
-export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?: boolean }) {
+interface AgentWireInitial {
+  goal?: string;
+  companyName?: string;
+  industry?: string;
+  websiteUrl?: string;
+  voicePreference?: string;
+}
+
+interface ForgedAgentDesign {
+  name: string;
+  archetype: string;
+  first_message: string;
+  suggested_voice_tone?: string;
+  personality_block: string;
+  directives: { priority: number; content: string }[];
+  seed_knowledge: string[];
+  success_metrics?: string[];
+  reasoning?: string;
+}
+
+export function AgentWireForm({
+  initial,
+  disabled,
+}: {
+  initial?: AgentWireInitial;
+  disabled?: boolean;
+}) {
   const [goal, setGoal] = useState(initial?.goal || "");
   const [companyName, setCompanyName] = useState(initial?.companyName || "");
   const [industry, setIndustry] = useState(initial?.industry || "");
@@ -12,7 +38,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
   const [voicePref, setVoicePref] = useState(initial?.voicePreference || "");
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [design, setDesign] = useState<any>(null);
+  const [design, setDesign] = useState<ForgedAgentDesign | null>(null);
   const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -26,13 +52,19 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
       const r = await authFetch("/api/claude/forge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goal, companyName, industry, websiteUrl, voicePreference: voicePref }),
+        body: JSON.stringify({
+          goal,
+          companyName,
+          industry,
+          websiteUrl,
+          voicePreference: voicePref,
+        }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       setDesign(data.design);
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -51,8 +83,8 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       setCreatedAgentId(data.agentId);
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setCreating(false);
     }
@@ -83,11 +115,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
           <TextInput value={websiteUrl} onChange={setWebsiteUrl} placeholder="https://acme.co" />
         </Field>
         <Field label="Voice (optional)">
-          <TextInput
-            value={voicePref}
-            onChange={setVoicePref}
-            placeholder="Warm, clear, calm"
-          />
+          <TextInput value={voicePref} onChange={setVoicePref} placeholder="Warm, clear, calm" />
         </Field>
       </div>
       <RunButton onClick={run} loading={loading} disabled={disabled || !goal} label="Draft agent" />
@@ -122,7 +150,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
           </ResultCard>
           <ResultCard title="Rules">
             <ul className="space-y-2">
-              {design.directives.map((d: any, i: number) => (
+              {design.directives.map((d, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="shrink-0 px-2 py-0.5 rounded-full wl-label bg-brand/15 text-brand border border-brand/30">
                     P{d.priority}
@@ -139,7 +167,7 @@ export function AgentWireForm({ initial, disabled }: { initial?: any; disabled?:
               ))}
             </ul>
           </ResultCard>
-          {design.success_metrics?.length > 0 && (
+          {design.success_metrics && design.success_metrics.length > 0 && (
             <ResultCard title="Goals">
               <ul className="list-disc list-inside wl-text-success/90 space-y-1">
                 {design.success_metrics.map((m: string, i: number) => (
