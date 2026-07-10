@@ -41,10 +41,10 @@ describe("product voice cohesion", () => {
     expect(pricing).toContain("build, train, launch, improve");
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).toContain(
-      "Extra employees at " + "\\" + "$" + "${planById.team.extra_agent_price_usd}/mo",
+      "Extra employees at " + "$" + "${planById.team.extra_agent_price_usd}/mo",
     );
     expect(pricing).toContain(
-      "Extra employees at " + "\\" + "$" + "${planById.business.extra_agent_price_usd}/mo",
+      "Extra employees at " + "$" + "${planById.business.extra_agent_price_usd}/mo",
     );
   });
 
