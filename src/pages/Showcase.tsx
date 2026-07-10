@@ -54,42 +54,22 @@ export default function Showcase() {
         }
       />
 
-      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,.85fr)]">
-          <section className="wl-stitch-card p-2">
-            <div className="flex min-h-[300px] flex-col items-center justify-between border border-border bg-muted/30 p-6 text-center sm:p-8">
-              <div>
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Volume2 className="h-4 w-4 text-primary" />
-                  Live browser preview
-                </div>
-                <h2 className="wl-stitch-display mt-5 text-balance">Talk to an agent.</h2>
-                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                  Your microphone turns on only after you start.
-                </p>
-              </div>
-              <div className="mt-10">
-                <BrowserCallWidget agentName={primaryDemo.name} buttonLabel="Start live demo" />
-              </div>
-            </div>
-          </section>
-
-          <aside className="wl-stitch-card p-6 sm:p-8">
-            <p className="wl-stitch-label">What happens</p>
-            <ol className="mt-6 space-y-5">
-              {STEPS.map((step, index) => (
-                <li className="flex items-center gap-4" key={step}>
-                  <span className="grid h-7 w-7 flex-none place-items-center rounded bg-muted text-xs font-semibold text-primary">
-                    {index + 1}
-                  </span>
-                  <strong className="text-sm font-semibold text-foreground">{step}</strong>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-9 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">
-              In Studio, you shape the job, voice, and handoff.
-            </p>
-          </aside>
+      <section className="border-b border-border px-5 py-12 sm:px-8 sm:py-16 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="wl-stitch-eyebrow">What happens</p>
+            <h2 className="wl-stitch-display mt-3 text-balance">Three steps. No maze.</h2>
+          </div>
+          <ol className="mt-9 grid gap-3 sm:grid-cols-3">
+            {STEPS.map((step, index) => (
+              <li key={step} className="wl-stitch-card p-6 text-center">
+                <span className="mx-auto grid h-9 w-9 place-items-center rounded bg-muted font-mono text-xs font-semibold text-primary">
+                  0{index + 1}
+                </span>
+                <strong className="mt-5 block text-sm font-semibold text-foreground">{step}</strong>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
