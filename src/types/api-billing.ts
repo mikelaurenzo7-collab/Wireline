@@ -60,6 +60,9 @@ export interface ClientPlan {
   overage_per_min_usd: number;
   included_phone_numbers: number;
   extra_agent_price_usd: number | null;
+  extra_agent_voice_minutes_monthly: number;
+  extra_agent_included_phone_numbers: number;
+  extra_agent_configured: boolean;
   features: string[];
   configured: boolean;
   annual_configured: boolean;
