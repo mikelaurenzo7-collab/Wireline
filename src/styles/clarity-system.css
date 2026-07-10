@@ -185,3 +185,400 @@
 .marketing-ink-panel__soft {
   color: var(--wireline-color-text-secondary);
 }
+
+.marketing-proof-chip {
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--wireline-color-action-primary-container);
+  color: var(--wireline-color-action-primary-default);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.marketing-live-dot {
+  background: var(--wireline-color-status-success);
+}
+
+.marketing-tag-success {
+  border-radius: 9999px;
+  background: var(--wireline-color-action-primary-container);
+  padding: 0.3125rem 0.625rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-workspace-page {
+  margin-inline: auto;
+}
+
+.wl-workspace-page-intro {
+  margin-inline: auto;
+  max-width: 40rem;
+}
+
+.wl-workspace-page-intro .wl-display-3 {
+  text-wrap: balance;
+}
+
+.wl-workspace-page .wl-section-label {
+  text-align: center;
+  width: 100%;
+}
+
+.wl-settings-tabs,
+.wl-workspace-tabs {
+  justify-content: center;
+}
+
+.wl-workspace-header {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wl-workspace-header-actions,
+.wl-workspace-header-actions > *,
+.wl-workspace-header-actions :is(.studio-primary-button, .studio-secondary-button) {
+  width: auto;
+}
+
+.wl-workspace-header-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.wl-workspace-header-primary-action {
+  display: flex;
+  min-width: 0;
+}
+
+.wl-workspace-content-inner {
+  padding-bottom: 0.25rem;
+}
+
+.wl-overview {
+  gap: clamp(1rem, 0.8rem + 0.5vw, 1.5rem);
+}
+
+.wl-overview-hero {
+  min-height: 17.5rem;
+}
+
+.wl-overview-hero-copy {
+  max-width: 32rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.wl-overview-shortcut {
+  min-height: 10.5rem;
+  justify-content: space-between;
+}
+
+.wl-overview-shortcut .wl-card-title {
+  font-size: 1.0625rem;
+}
+
+.wl-overview-roster-card {
+  min-height: 10.75rem;
+}
+
+.wl-overview-roster-card .wl-card-title {
+  margin-top: 1.125rem;
+}
+
+/* Overview flow upgrades: clean card feedback, centered, short purposeful */
+.wl-overview-shortcut,
+.wl-overview-roster-card {
+  position: relative;
+}
+
+.wl-overview-shortcut::after,
+.wl-overview-roster-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 0%, transparent);
+  transition: box-shadow 0.2s ease;
+  pointer-events: none;
+}
+
+.wl-overview-shortcut:hover::after,
+.wl-overview-roster-card:hover::after {
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 18%, transparent);
+}
+
+/* A11y & responsive polish for all upgraded auth flows: use tokens, min targets, clean focus */
+.wl-flow-card,
+.wl-status-card,
+.wl-overview-shortcut,
+.wl-overview-roster-card,
+.studio-card a,
+.studio-card button {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .wl-flow-card,
+  .wl-overview-shortcut,
+  .wl-overview-roster-card {
+    min-height: 128px;
+  }
+}
+
+:focus-visible {
+  outline-color: var(--wireline-color-action-primary-default);
+}
+
+/* Enforce centered titles/headers for authenticated workspace surfaces (Overview, Studio, Training).
+ * Wireline Letterpress: centered, concise, purposeful. Tokens only. */
+.wl-centered-header,
+.wl-workspace-shell .wl-section-title,
+.wl-workspace-shell .studio-kicker + h2,
+.wl-workspace-shell header > div > h1,
+.wl-workspace-shell .wl-overview-hero > div > h2,
+.studio-card > div > h2,
+.wl-studio-operations header > div,
+.wl-studio-operations .studio-card > div:first-child {
+  text-align: center;
+}
+
+.wl-centered-header .wl-kicker,
+.studio-kicker {
+  display: block;
+  text-align: center;
+  margin-inline: auto;
+}
+
+.wl-flow-card,
+.wl-status-card {
+  text-align: center;
+}
+
+.wl-transition-shell {
+  min-height: 100dvh;
+  padding: clamp(1rem, 3vw, 2rem);
+  background:
+    radial-gradient(
+      circle at top center,
+      color-mix(in srgb, var(--wireline-color-action-primary-container) 14%, transparent),
+      transparent 22rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(
+        in srgb,
+        var(--wireline-color-surface-subtle) 70%,
+        var(--wireline-color-canvas-default)
+      ),
+      var(--wireline-color-canvas-default) 24rem
+    );
+}
+
+.wl-transition-rail {
+  width: min(100%, 40rem);
+  margin: 0 auto;
+  min-height: calc(100dvh - clamp(2rem, 6vw, 4rem));
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+}
+
+.wl-transition-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.wl-transition-mark {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+}
+
+.wl-transition-panel {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1.5rem, 1.15rem + 1vw, 2rem);
+  box-shadow: var(--wireline-elevation-card);
+}
+
+.wl-transition-copy {
+  display: grid;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.wl-transition-copy .wl-section-title {
+  font-size: clamp(1.6rem, 1.35rem + 0.8vw, 2.2rem);
+}
+
+.wl-transition-description {
+  max-width: 34rem;
+  margin: 0 auto;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.wl-transition-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--wireline-color-border-default);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-subtle) 78%,
+    var(--wireline-color-surface-default)
+  );
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.wl-transition-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.wl-transition-detail {
+  display: grid;
+  gap: 0.325rem;
+  min-width: 0;
+  padding: 0.875rem 0.95rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+  text-align: left;
+}
+
+.wl-transition-detail dt {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-transition-detail dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.wl-transition-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .marketing-channel-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .marketing-footer-rail {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: start;
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .wl-workspace-main {
+    padding-inline: 1rem;
+  }
+
+  .wl-workspace-header {
+    flex-direction: row;
+    min-height: 4rem;
+    gap: 0.75rem;
+    padding-block: 0.625rem;
+  }
+
+  .wl-workspace-header > div:first-child {
+    gap: 0.5rem;
+  }
+
+  .wl-workspace-header .wl-app-page-title {
+    font-size: 1.25rem;
+    line-height: 1.1;
+  }
+
+  .wl-workspace-header .wl-overline {
+    font-size: 0.5625rem;
+  }
+
+  .wl-workspace-header-actions > :first-child {
+    display: none;
+  }
+
+  .wl-workspace-header-primary-action > * {
+    min-height: 2.25rem;
+    padding-inline: 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .wl-transition-rail {
+    min-height: calc(100dvh - 2rem);
+  }
+
+  .wl-transition-details {
+    grid-template-columns: 1fr;
+  }
+
+  .wl-transition-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-hero__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .marketing-hero__actions > a {
+    width: 100%;
+  }
+
+  .marketing-hero-proof {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-hero-proof span {
+    min-height: 3rem;
+    justify-content: center;
+    padding-inline: 0.75rem;
+  }
+
+  .marketing-hero-proof span:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .marketing-hero-proof span:nth-child(n + 3) {
+    border-top: 1px solid var(--wireline-color-border-default);
+  }
+
+  .marketing-demo-surface {
+    align-items: stretch;
+  }
+}
