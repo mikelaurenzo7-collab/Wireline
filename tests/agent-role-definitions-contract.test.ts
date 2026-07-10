@@ -25,11 +25,13 @@ describe("agent role definitions contract", () => {
   it("rejects unknown roles for create payloads", () => {
     expect(validateAgentRoleForCreate("not_a_real_role")).toMatch(/Unknown agent role/);
     expect(validateAgentRoleForCreate("sales")).toBeNull();
+    expect(validateAgentRoleForCreate("ceo")).toBeNull();
   });
 
-  it("accepts legacy appointment_scheduler alias on create", () => {
+  it("accepts legacy aliases on create", () => {
     expect(validateAgentRoleForCreate("appointment_scheduler")).toBeNull();
     expect(canonicalizeAgentRoleForCreate("appointment_scheduler")).toBe("scheduler");
+    expect(canonicalizeAgentRoleForCreate("general_manager")).toBe("ceo");
   });
 
   it("keeps web and mobile routes on the shared module", () => {
@@ -43,9 +45,9 @@ describe("agent role definitions contract", () => {
   });
 
   it("aligns create default and archetype resolution", () => {
-    expect(AGENT_CREATE_DEFAULT_ROLE_ID).toBe("scheduler");
-    expect(resolveAgentRoleArchetype("scheduler")).toBe("Appointment Scheduler");
-    expect(resolveAgentRoleArchetype("appointment_scheduler")).toBe("Appointment Scheduler");
+    expect(AGENT_CREATE_DEFAULT_ROLE_ID).toBe("ceo");
+    expect(resolveAgentRoleArchetype("ceo")).toBe("Business Operating Agent");
+    expect(resolveAgentRoleArchetype("general_manager")).toBe("Business Operating Agent");
     expect(listAgentRolesForApi().length).toBe(AGENT_ROLE_DEFINITIONS.length);
   });
 });
