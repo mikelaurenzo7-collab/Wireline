@@ -6,9 +6,11 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import AgentPresenterStage from "../components/marketing/AgentPresenterStage";
+import MarketingHero from "../components/marketing/MarketingHero";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
 const STEPS = ["Start", "Ask normally", "Get the result"] as const;
+const SHOWCASE_HERO_PROOF = ["Live browser preview", "Demo lines", "Private by default"] as const;
 
 export default function Showcase() {
   const primaryDemo = LANDING_PUBLIC_DEMO_AGENTS[0];
@@ -17,25 +19,43 @@ export default function Showcase() {
   }, []);
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Try Wireline"
         description="Hear the AI agent your customers will meet first, then build an agent for voice, email, and text."
         path="/showcase"
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="mx-auto max-w-3xl">
-          <p className="wl-stitch-eyebrow">Try Wireline</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            Hear the agent your customer meets first.
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
-            A live example. Real conversation.
-          </p>
-        </div>
+      <MarketingHero
+        eyebrow="Try Wireline"
+        title="Hear the agent your customer meets first."
+        description="A live example of the voice-first operation: start the preview, ask normally, and see how a trained agent turns the conversation into a result."
+        primaryAction={{ label: "Create agent", to: "/signup" }}
+        secondaryAction={{ label: "Call a demo line", to: "#demo-lines", tone: "secondary" }}
+        proof={SHOWCASE_HERO_PROOF}
+        visual={
+          <div className="flex min-h-[22rem] flex-col justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Volume2 className="h-4 w-4 text-primary" />
+                Live browser preview
+              </div>
+              <h2 className="mt-5 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.4vw,3.35rem)] font-normal leading-[.98] tracking-[-.045em] text-foreground">
+                Talk to an agent.
+              </h2>
+              <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                Your microphone turns on only after you start.
+              </p>
+            </div>
+            <div className="mt-8 rounded-[16px] border border-border bg-background/70 p-4">
+              <BrowserCallWidget agentName={primaryDemo.name} buttonLabel="Start live demo" />
+            </div>
+          </div>
+        }
+      />
 
-        <div className="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,.85fr)]">
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,.85fr)]">
           <section className="wl-stitch-card p-2">
             <div className="flex min-h-[300px] flex-col items-center justify-between border border-border bg-muted/30 p-6 text-center sm:p-8">
               <div>
@@ -77,7 +97,7 @@ export default function Showcase() {
         <AgentPresenterStage />
       </section>
 
-      <section className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
+      <section id="demo-lines" className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
         <div className="mx-auto grid max-w-6xl gap-10 lg:items-end">
           <div className="mx-auto max-w-2xl text-center">
             <p className="wl-stitch-eyebrow">More examples</p>
