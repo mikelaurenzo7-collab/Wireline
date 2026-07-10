@@ -54,6 +54,18 @@ mustInclude(
   /Create\s*(?:->|→)\s*Train\s*(?:->|→)\s*Run/,
   "must describe the current product model",
 );
+mustInclude(
+  "README.md",
+  rootReadme,
+  /profit agent/i,
+  "must describe the current profit-agent wedge",
+);
+mustInclude(
+  "README.md",
+  rootReadme,
+  /included number/i,
+  "must describe the included-number promise",
+);
 mustExcludeTerms(
   "README.md",
   rootReadme,
@@ -68,6 +80,18 @@ mustInclude(
   "docs index must describe the current product model",
 );
 mustInclude("docs/README.md", docsReadme, /Agents/, "docs index must use agent language");
+mustInclude(
+  "docs/README.md",
+  docsReadme,
+  /profit agents/i,
+  "docs index must describe the current profit-agent wedge",
+);
+mustInclude(
+  "docs/README.md",
+  docsReadme,
+  /included number/i,
+  "docs index must describe the included-number promise",
+);
 mustInclude(
   "docs/README.md",
   docsReadme,
@@ -129,13 +153,13 @@ mustInclude(
 mustInclude(
   "index.html",
   staticHead,
-  /Wireline — AI phone employees that turn calls into sales\./,
+  /Wireline — AI profit agents that actually call\./,
   "static metadata must use current positioning",
 );
 mustInclude(
   "index.html",
   staticHead,
-  /AI phone employees that answer calls, qualify leads, book appointments, follow up/i,
+  /AI profit agents with included numbers.*book appointments, revive leads, promote offers/i,
   "static metadata must describe the current landing promise",
 );
 mustExcludeTerms(
@@ -148,14 +172,14 @@ mustExcludeTerms(
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /AI PHONE[\s\S]*EMPLOYEES/,
+  /AI PROFIT[\s\S]*AGENTS/,
   "OG image must use the current landing promise",
 );
 mustInclude(
   "public/og-image.svg",
   ogImage,
-  /Answer\. Qualify\. Book\. Follow up\. Log every result\./,
-  "OG image must reinforce the phone-employee promise",
+  /Book\. Revive\. Promote\. Follow up\. Log every result\./,
+  "OG image must reinforce the profit-agent promise",
 );
 mustExcludeTerms(
   "public/og-image.svg",
