@@ -13,6 +13,16 @@ describe("video presenter integration", () => {
     expect(identity).toContain('providerPreference: VideoPresenterProviderId = "synthetic"');
   });
 
+  it("treats synthetic avatars as app identity badges, not video presenters", () => {
+    const identity = source("src/lib/agent-identity.ts");
+    expect(identity).toContain('surfaceLabel: "Identity badge"');
+    expect(identity).toContain('headline: "Agent identity badge"');
+    expect(identity).toContain("Not a video presenter");
+    const face = source("src/components/AgentFace.tsx");
+    expect(face).toContain("deterministic in-app identity badge");
+    expect(face).toContain('aria-label={title || "Agent identity badge"}');
+  });
+
   it("starts LiveAvatar LITE sessions on the server", () => {
     const service = source("src/lib/video-presenter/liveavatar-service.ts");
     expect(service).toContain('mode: "LITE"');
@@ -27,7 +37,7 @@ describe("video presenter integration", () => {
     expect(live).toContain("repeatAudio");
   });
 
-  it("seeds business agents with synthetic presenter until live video add-on is enabled", () => {
+  it("seeds business agents with synthetic identity until live video add-on is enabled", () => {
     const routes = source("src/routes/agent-routes-v2.ts");
     expect(routes).toContain("businessAgentVideoPresenterDefaults");
     const defaults = source("src/lib/video-presenter/liveavatar-service.ts");
@@ -64,10 +74,13 @@ describe("video presenter integration", () => {
     expect(routes).toContain("listPublicAvatars");
   });
 
-  it("keeps catalog face picks included before live video add-on", () => {
-    const preview = source("src/components/AgentPresenceLivePreview.tsx");
-    expect(preview).toContain("platformConfigured && presenter");
+  it("pauses catalog presenter pickers until the curated Presence Catalog is ready", () => {
+    const fastStart = source("src/components/create-agent/CreateAgentCatalogFacePicker.tsx");
+    expect(fastStart).toContain("Agent identity badge");
+    expect(fastStart).toContain("not a video presenter");
+    expect(fastStart).not.toContain("avatars.map");
     const picker = source("src/components/AgentPresenceAvatarPicker.tsx");
+    expect(picker).toContain("Presence catalog paused");
     expect(picker).not.toContain('provider: "liveavatar"');
     const resolve = source("src/lib/video-presenter/resolve-agent-presenter.ts");
     expect(resolve).toContain("chosenAvatarId");
@@ -114,11 +127,5 @@ describe("video presenter integration", () => {
     const calls = source("src/components/CallLogsClaude.tsx");
     expect(calls).toContain("usePresenceSignals");
     expect(calls).not.toContain("setInterval(loadPresence");
-  });
-
-  it("shows the full catalog in Fast Start face picker", () => {
-    const picker = source("src/components/create-agent/CreateAgentCatalogFacePicker.tsx");
-    expect(picker).toContain("avatars.map");
-    expect(picker).not.toContain("avatars.slice(0, 12)");
   });
 });
