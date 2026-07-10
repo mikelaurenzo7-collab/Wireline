@@ -37,10 +37,12 @@ describe("live-call billing continuity contract", () => {
     expect(grace).toContain('entryKind: "burn"');
   });
 
-  it("allows active Enterprise contracts while keeping Free Builder simulation-only", () => {
+  it("requires prepaid coverage on every public paid plan", () => {
     const wallet = read("src/lib/voice-wallet-guard.ts");
-    expect(wallet).toContain('const enterpriseContract = liveVoiceEnabled && planId === "enterprise"');
+    const workspace = read("src/lib/workspace-usage-snapshot.ts");
     expect(wallet).toContain('const liveVoiceEnabled = activeSubscription && planId !== "personal"');
-    expect(wallet).not.toContain('planId !== "enterprise"');
+    expect(wallet).not.toContain("enterpriseContract");
+    expect(workspace).not.toContain("enterpriseContract");
+    expect(wallet).toContain("includedRemaining >= MIN_BILLABLE_MINUTES_BUFFER || balance >= requiredUsd");
   });
 });
