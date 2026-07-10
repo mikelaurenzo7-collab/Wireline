@@ -12,6 +12,7 @@ import {
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
+import MarketingHero from "../components/marketing/MarketingHero";
 
 const SOLUTIONS = {
   sales: {
@@ -83,7 +84,6 @@ export default function SolutionsPage() {
   const { wedge = "support" } = useParams<{ wedge: string }>();
   const key = (wedge in SOLUTIONS ? wedge : "support") as SolutionKey;
   const page = SOLUTIONS[key];
-  const Icon = page.icon;
 
   return (
     <MarketingPageFrame mainClassName="!px-0 !pb-0 !pt-16">
@@ -93,37 +93,29 @@ export default function SolutionsPage() {
         path={`/solutions/${key}`}
       />
 
-      <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
-        <div className="wl-measure wl-marketing-center mx-auto">
-          <div className="mx-auto max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
-              <Icon size={14} className="text-primary" />
-              <span className="wl-overline text-foreground">{page.eyebrow}</span>
-            </div>
-            <h1 className="wl-page-title mx-auto mt-6 max-w-[13ch] text-balance">{page.title}</h1>
-            <p className="mt-6 max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground sm:text-[var(--wireline-typography-h3-size)] sm:leading-8">
-              Custom voice agents shaped around your voice, playbook, and processes.
+      <MarketingHero
+        eyebrow={page.eyebrow}
+        title={page.title}
+        description={page.description}
+        primaryAction={{ to: page.primary.href, label: page.primary.label }}
+        secondaryAction={{ to: page.secondary.href, label: page.secondary.label, tone: "secondary" }}
+        proof={page.sequence.map(([title]) => title)}
+        visual={
+          <div>
+            <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">Live preview</p>
+            <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-normal leading-[.98] tracking-[-.045em] text-foreground">
+              Hear this lane before you build it.
+            </h2>
+            <p className="mt-4 text-[15px] leading-7 text-muted-foreground">
+              The hero stays consistent. The right rail changes only to show the useful action for
+              this page.
             </p>
-            <div className="marketing-hero__actions mt-8">
-              <Link
-                to={page.primary.href}
-                className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
-              >
-                {page.primary.label} <ArrowRight size={15} />
-              </Link>
-              <Link
-                to={page.secondary.href}
-                className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
-              >
-                {page.secondary.label}
-              </Link>
-            </div>
-            <div className="mx-auto mt-8 max-w-md">
+            <div className="mt-7 rounded-[16px] border border-border bg-background/70 p-4">
               <BrowserCallWidget agentName={key === "sales" ? "Sales Agent" : "Front Desk"} />
             </div>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="wl-marketing-center mx-auto max-w-2xl">
