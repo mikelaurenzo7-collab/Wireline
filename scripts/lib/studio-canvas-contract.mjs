@@ -44,8 +44,8 @@ export const STUDIO_CANVAS_FORBIDDEN = {
 export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
     { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
-    // Retired /agents page redirects into Overview (roster is part of dashboard).
-    { id: "agents-redirect", pattern: /path="\/agents"[\s\S]*to="\/overview"/ },
+    // Retired /agents page redirects into Studio (agent-first IA owns the roster).
+    { id: "agents-redirect", pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/ },
   ],
   studioHome: [
     { id: "dedicated-shell", pattern: /StudioPageShell/ },
@@ -64,7 +64,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   navigation: [
     { id: "studio-label", pattern: /label: "Studio"/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
-    { id: "apps-route", pattern: /\/apps/ },
+    { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
     { id: "breadcrumb", pattern: /Studio breadcrumb|Studio context|Assistant breadcrumb/ },
