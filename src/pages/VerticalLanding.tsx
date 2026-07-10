@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Phone, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import MarketingHero from "../components/marketing/MarketingHero";
 import { type VerticalKey, type VerticalConfig, WEDGES } from "../data/vertical-wedges";
 
 function isExternalHref(href: string): boolean {
@@ -63,8 +64,17 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const isPersonal = slug === "personal";
   if (!cfg) return null;
 
-  const primaryLabel = isPersonal ? "Create agent" : "Build call coverage";
-  const secondaryLabel = isPersonal ? "Hear demo" : cfg.secondaryCta.label;
+  const heroProof = isPersonal
+    ? ["Your voice", "Clear outcomes", "Private by default"]
+    : ["Answers", "Books", "Reports"];
+  const heroItems = cfg.pains
+    .slice(0, 4)
+    .map((pain) => (isPersonal ? PERSONAL_PAIN_TITLES[pain.title] || pain.title : pain.title));
+  const heroDescription = isPersonal ? "Offload the calls that follow you around." : cfg.subhead;
+  const heroVisualTitle = isPersonal ? "Calls off your plate." : cfg.statValue;
+  const heroVisualBody = isPersonal
+    ? "Text what you need. Wireline calls, handles the back-and-forth, and reports back with the result."
+    : cfg.statLabel;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -92,7 +102,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   };
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16 sm:pt-20">
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -100,55 +110,18 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         structuredData={structuredData}
       />
 
-      <section className="mx-auto max-w-7xl px-5 pb-14 pt-10 text-center sm:px-8 sm:pb-16 sm:pt-14 lg:px-10 lg:pt-16">
-        <div className="mx-auto flex max-w-4xl flex-col items-center">
-          <p className="wl-stitch-eyebrow">{isPersonal ? "Personal call help" : cfg.eyebrow}</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">{cfg.headline}</h1>
-          <p className="mt-5 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            {isPersonal
-              ? "Offload the calls that follow you around."
-              : "Every important call gets a clear next step."}
-          </p>
-          <div className="mt-7 flex w-full max-w-lg flex-col justify-center gap-3 sm:flex-row">
-            <CtaLink
-              href={cfg.primaryCta.href}
-              className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
-            >
-              {primaryLabel} <ArrowRight className="h-4 w-4" />
-            </CtaLink>
-            <CtaLink
-              href={cfg.secondaryCta.href}
-              className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
-            >
-              <Phone className="h-4 w-4" /> {secondaryLabel}
-            </CtaLink>
-          </div>
-          <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />
-              Your voice
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />
-              Clear outcomes
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-border bg-card px-5 py-7 sm:px-8 sm:py-10">
-        <div className="mx-auto grid max-w-4xl justify-items-center gap-4 text-center">
-          <div className="wl-stitch-stat-box w-fit font-mono text-[var(--wireline-typography-caption-size)] text-muted-foreground">
-            <span className="wl-stitch-status-dot" aria-hidden />
-            <strong className="text-foreground">{cfg.statValue}</strong>
-          </div>
-          <p className="max-w-2xl text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-            {isPersonal
-              ? "Text what you need. It calls, handles the back-and-forth, and reports back."
-              : cfg.statLabel}
-          </p>
-        </div>
-      </section>
+      <MarketingHero
+        eyebrow={isPersonal ? "Personal call help" : cfg.eyebrow}
+        title={cfg.headline}
+        description={heroDescription}
+        primaryAction={{ label: cfg.primaryCta.label, to: cfg.primaryCta.href }}
+        secondaryAction={{ label: cfg.secondaryCta.label, to: cfg.secondaryCta.href, tone: "secondary" }}
+        proof={heroProof}
+        visualEyebrow={isPersonal ? "Personal call desk" : "Vertical playbook"}
+        visualTitle={heroVisualTitle}
+        visualBody={heroVisualBody}
+        visualItems={heroItems}
+      />
 
       <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
@@ -260,7 +233,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 href={cfg.primaryCta.href}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[var(--wireline-color-text-primary)] px-5 text-sm font-semibold text-[var(--wireline-color-canvas-default)]"
               >
-                {primaryLabel} <ArrowRight className="h-4 w-4" />
+                {cfg.primaryCta.label} <ArrowRight className="h-4 w-4" />
               </CtaLink>
             </div>
           </div>
