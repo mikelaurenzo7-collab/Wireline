@@ -120,6 +120,14 @@ export async function getPostCallOutputPreferences(
   return postCallPreferencesFromRoot(row?.preferences);
 }
 
+const SCHEDULE_FIELDS = [
+  "scheduled_report_frequency",
+  "scheduled_report_format",
+  "scheduled_report_destination",
+  "scheduled_report_send_at_utc",
+  "scheduled_report_weekday",
+] as const satisfies readonly (keyof PostCallOutputPreferences)[];
+
 export async function savePostCallOutputPreferences(
   userId: string,
   patch: Partial<PostCallOutputPreferences>,
@@ -135,20 +143,16 @@ export async function savePostCallOutputPreferences(
       ? { ...(row.preferences as Record<string, unknown>) }
       : {};
   const current = postCallPreferencesFromRoot(root);
-  const scheduleChanged = [
-    "scheduled_report_frequency",
-    "scheduled_report_format",
-    "scheduled_report_destination",
-    "scheduled_report_send_at_utc",
-    "scheduled_report_weekday",
-  ].some((key) => Object.prototype.hasOwnProperty.call(patch, key));
-  const next = normalizePostCallOutputPreferences({
-    ...current,
-    ...patch,
+  const candidate = normalizePostCallOutputPreferences({ ...current, ...patch });
+  const scheduleChanged = SCHEDULE_FIELDS.some(
+    (key) => Object.prototype.hasOwnProperty.call(patch, key) && candidate[key] !== current[key],
+  );
+  const next: PostCallOutputPreferences = {
+    ...candidate,
     scheduled_report_version: scheduleChanged
       ? current.scheduled_report_version + 1
       : current.scheduled_report_version,
-  });
+  };
   root.post_call_outputs = next;
 
   await drizzle
