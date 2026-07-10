@@ -16,7 +16,7 @@ import { useIsDesktop } from "../hooks/useMediaQuery";
 function StudioLoadingState() {
   return (
     <main
-      className="flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6 safe-area-insets"
+      className="flex min-h-[55vh] flex-col bg-background px-4 py-8 sm:px-6"
       aria-busy="true"
       aria-label="Loading Studio"
     >
