@@ -4,7 +4,7 @@ export const INLINE_SCRIPT_HASHES = [
   "'sha256-3Z3f8c52musA1bws65NjZG2DaDDUbBisRU8i4FLei1w='",
   "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
   "'sha256-DVH1TrP34UqNunth7OtSpEQeORp9fBY4cJ1c8J3vaN8='",
-  "'sha256-dQ+3qvCyhNd/sBislFx0rWBeMOycvCOvAYDGtr2NSzU='",
+  "'sha256-sqe9D9QNwiWFG72xnw/1SU6CbG5K1yqh3Cig/oDQi7s='",
   "'sha256-GJwYp8YufG+6xkaiHhDxVmkYefD2PB2mK7qfpjtIHe4='",
 ] as const;
 
