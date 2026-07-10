@@ -79,7 +79,7 @@ This keeps the upsell honest: if the customer pays for another agent, they also 
 
 ## Launch env checklist
 
-The connected Vercel tool in this chat can inspect deployments and logs but does not expose an env-var write action. Before production launch, verify these are present in Vercel for Production and Preview:
+Before production launch, verify these are present in Vercel for Production and Preview:
 
 ```bash
 STRIPE_STARTER_9_PRICE_ID=price_1TraB4JohDtfy3IkKFF3zI5C
