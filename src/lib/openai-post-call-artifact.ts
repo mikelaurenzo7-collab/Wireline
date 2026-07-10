@@ -50,8 +50,13 @@ export interface GeneratedPostCallArtifact extends ConnectedArtifactUpload {
   openaiResponseId: string | null;
 }
 
+// eslint-disable-next-line no-control-regex -- strips null bytes before persisting generated text.
+const NULL_BYTE_PATTERN = /\u0000/g;
+
 function bounded(value: string | null | undefined, max: number): string {
-  const text = String(value || "").replace(/\u0000/g, "").trim();
+  const text = String(value || "")
+    .replace(NULL_BYTE_PATTERN, "")
+    .trim();
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
@@ -192,7 +197,9 @@ export async function generateAndStorePostCallArtifact(
     error?: { message?: string };
   };
   if (!response.ok) {
-    throw new Error(payload.error?.message || `OpenAI artifact request failed (${response.status})`);
+    throw new Error(
+      payload.error?.message || `OpenAI artifact request failed (${response.status})`,
+    );
   }
 
   const generatedFiles = citations(payload);

@@ -22,6 +22,9 @@ export async function enqueue(db: QueueDb, opts: EnqueueOptions): Promise<base.E
   return base.enqueue(db, opts as base.EnqueueOptions);
 }
 
+// Drizzle returns camelCase rows that don't structurally match the legacy snake_case JobRow shape
+// (callers already defensively read both forms, e.g. job-worker.ts's jobOwnerId()).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see explanation above.
 async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<any | null> {
   return db.transaction(async (tx) => {
     const clauses = [eq(schema.jobs.status, "failed"), lte(schema.jobs.runAt, new Date())];
@@ -51,6 +54,7 @@ async function claimLegacyFailed(db: QueueDb, typeFilter?: JobType[]): Promise<a
 }
 
 /** New work is claimed first; rows stranded by the former retry bug are reclaimed afterward. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimLegacyFailed above.
 export async function claimJob(db: QueueDb, typeFilter?: JobType[]): Promise<any | null> {
   const pending = await base.claimJob(db, typeFilter as base.JobType[] | undefined);
   return pending || claimLegacyFailed(db, typeFilter);
@@ -60,6 +64,7 @@ export async function claimJobById(
   db: QueueDb,
   jobId: string,
   userId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see claimLegacyFailed above.
 ): Promise<any | null> {
   const pending = await base.claimJobById(db, jobId, userId);
   if (pending) return pending;

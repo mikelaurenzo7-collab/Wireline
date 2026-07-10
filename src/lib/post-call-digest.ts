@@ -25,6 +25,7 @@ import { CRMService } from "./crm-service";
 import { IntegrationService } from "./integrations";
 import { enqueue } from "./job-queue";
 import {
+  DEFAULT_POST_CALL_OUTPUT_PREFERENCES,
   getPostCallOutputPreferences,
   shouldGeneratePostCallArtifact,
   type PostCallOutputPreferences,
@@ -241,7 +242,7 @@ async function queueSelectedArtifact(
   campaignSource: string | null,
   preferences: PostCallOutputPreferences,
 ): Promise<boolean> {
-  if (!shouldGeneratePostCallArtifact(preferences, outcomeTag)) return false;
+  if (!shouldGeneratePostCallArtifact(preferences)) return false;
   try {
     await enqueue(drizzle, {
       userId: ctx.userId,
@@ -327,13 +328,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     outputPreferences = await getPostCallOutputPreferences(ctx.userId);
   } catch (err: any) {
     log.warn("post-call digest: output preferences unavailable", { error: err?.message });
-    outputPreferences = {
-      internal_record_enabled: true,
-      spreadsheet_destination: "none",
-      artifact_mode: "off",
-      artifact_format: "pdf",
-      artifact_destination: null,
-    };
+    outputPreferences = { ...DEFAULT_POST_CALL_OUTPUT_PREFERENCES };
   }
 
   const spreadsheetDestinations = await writeSelectedSpreadsheetOutputs(
@@ -555,7 +550,7 @@ function escapeHtml(value: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
+    .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
 

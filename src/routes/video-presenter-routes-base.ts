@@ -49,7 +49,7 @@ function throwLiveVideoBillingError(
     402,
     "LIVE_VIDEO_UPGRADE_REQUIRED",
     entitlement.reason ||
-      "Subscribe to the live video add-on or upgrade to Wireline Team to stream photoreal presenters.",
+      "Subscribe to the live video add-on or upgrade to Starter Plus to stream photoreal presenters.",
     { plan_id: entitlement.planId },
   );
 }

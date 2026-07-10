@@ -65,7 +65,13 @@ export interface ClientPlan {
   annual_configured: boolean;
   contact_sales: boolean;
   public: boolean;
-  pricing_model: "included_minutes_plus_prepaid_balance";
+  pricing_model: "guaranteed_voice_plus_flexible_runtime";
+}
+
+/** GET /api/billing/plans response envelope */
+export interface BillingPlansResponse {
+  plans: ClientPlan[];
+  stripe_configured: boolean;
 }
 
 /** GET /api/billing/usage — mirrors WorkspaceUsageSnapshot */

@@ -38,7 +38,7 @@ describe("authenticated agent flow", () => {
     const carrierRoutes = read("src/routes/carrier-routes.ts");
 
     expect(trialGate).toContain("enforceLiveWorkActivation");
-    expect(trialGate).toContain("POST /api/agents` is not gated here");
+    expect(trialGate).toContain("other provider-spending live actions until verified");
     expect(agentRoutes).not.toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain("enforceLiveWorkActivation");
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
@@ -66,7 +66,7 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("~3 minutes to your first agent");
     expect(createDialog).toContain("VoicePickerField");
     expect(createDialog).toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Build an AI profit agent."');
+    expect(productCopy).toContain('createHeadline: "Build an AI employee."');
     expect(productCopy).toContain('emptyCue: "Brief it. Train it.');
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
@@ -129,7 +129,7 @@ describe("authenticated agent flow", () => {
   });
 
   it("routes presenter lip-sync samples through HeyGen speech", () => {
-    const routes = read("src/routes/video-presenter-routes.ts");
+    const routes = read("src/routes/video-presenter-routes-base.ts");
     const heygen = read("src/lib/video-presenter/heygen-voice-service.ts");
     const preview = read("src/components/AgentPresenceLivePreview.tsx");
     const decode = read("src/lib/voice/decode-browser-audio.ts");

@@ -26,7 +26,8 @@ describe("Wireline product documentation contract", () => {
     expect(readme).toContain("Wireline Command");
     expect(readme).toContain("Wireline Letterpress design system");
     expect(readme).toContain("Create -> Train -> Run");
-    expect(readme).toContain("profit agents");
+    expect(readme).toContain("AI employees");
+    expect(readme).toContain("profit-moving");
     expect(readme).toContain("included number");
     expectNoTerms(readme, retiredProductTerms);
   });
@@ -35,7 +36,8 @@ describe("Wireline product documentation contract", () => {
     const readme = read("docs/README.md");
     expect(readme).toContain("Create -> Train -> Run");
     expect(readme).toContain("Agents");
-    expect(readme).toContain("profit agents");
+    expect(readme).toContain("AI employees");
+    expect(readme).toContain("AI sales agents");
     expect(readme).toContain("included number");
     expect(readme).toContain("Training");
     expect(readme).toContain("Wireline Command");
@@ -96,10 +98,10 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline — AI profit agents that actually call.");
-    expect(head).toContain("AI profit agents with included numbers");
+    expect(head).toContain("Wireline — Wire your AI employee.");
+    expect(head).toContain("AI employees with included numbers");
     expect(head).toContain("book appointments, revive leads, promote offers");
-    expect(ogImage).toMatch(/AI PROFIT[\s\S]*AGENTS/);
+    expect(ogImage).toMatch(/WIRE YOUR[\s\S]*AI EMPLOYEE/);
     expect(ogImage).toContain("Book. Revive. Promote. Follow up. Log every result.");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);

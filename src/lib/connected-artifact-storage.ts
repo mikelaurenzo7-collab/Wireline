@@ -38,16 +38,16 @@ async function connectionFor(
     })
     .from(schema.crmConnections)
     .where(
-      and(
-        eq(schema.crmConnections.userId, userId),
-        eq(schema.crmConnections.provider, provider),
-      ),
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, provider)),
     )
     .limit(1);
   return row || null;
 }
 
-async function refreshGoogle(connection: ProviderConnection, refreshToken: string): Promise<string> {
+async function refreshGoogle(
+  connection: ProviderConnection,
+  refreshToken: string,
+): Promise<string> {
   const response = await fetchWithTimeout(
     "https://oauth2.googleapis.com/token",
     {
@@ -146,6 +146,7 @@ async function accessTokenFor(
 
 function safeFileName(value: string): string {
   const cleaned = value
+    // eslint-disable-next-line no-control-regex -- strips filesystem-illegal and control characters for a cross-platform-safe filename.
     .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-")
     .replace(/\s+/g, " ")
     .trim();

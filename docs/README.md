@@ -1,6 +1,6 @@
 # Wireline Documentation
 
-Wireline's durable documentation follows the active product model. The customer-facing product loop is **Create -> Train -> Run**; the operational surface adds Wire between Train and Run for numbers, integrations, routing, approvals, billing, and launch controls (**Create -> Train -> Wire -> Run**). The current go-to-market wedge is **AI profit agents**: outbound-first call agents that book appointments, revive leads, promote offers, recover opportunities, follow up, and log outcomes. The product still supports outbound, inbound, and hybrid modes. This index is the canonical map for repo docs; dated plans and one-off research files are historical unless promoted here.
+Wireline's durable documentation follows the active product model. The customer-facing product loop is **Create -> Train -> Run**; the operational surface adds Wire between Train and Run for numbers, integrations, routing, approvals, billing, and launch controls (**Create -> Train -> Wire -> Run**). The current go-to-market wedge is **AI employees** (hero: “Wire your AI employee”; the outbound lane markets AI sales agents): outbound-first call agents that book appointments, revive leads, promote offers, recover opportunities, follow up, and log outcomes. The product still supports outbound, inbound, and hybrid modes. This index is the canonical map for repo docs; dated plans and one-off research files are historical unless promoted here.
 
 ## Active product surface
 
@@ -24,12 +24,12 @@ Wireline's durable documentation follows the active product model. The customer-
 - Wire owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
 - Every included agent should include one dedicated number so the role feels like a real, reachable operating asset before extra line capacity is sold.
 - Studio is the workroom; Overview is the calm command center.
-- The marketable wedge is AI profit agents: outbound-first call roles that book appointments, revive leads, promote offers, recover opportunities, follow up, and log proof.
+- The marketable wedge is AI employees, with AI sales agents as the outbound lane: outbound-first call roles that book appointments, revive leads, promote offers, recover opportunities, follow up, and log proof.
 - Inbound and hybrid are first-class selectable modes, not lesser fallbacks.
 - Avoid authenticated page descriptions unless the user is reviewing history, coaching, analytics, exports, or past actions.
 - Use labels, tabs, icons, state, and clear next actions instead of prose paragraphs.
 - Phone / Call History and Analytics may explain history, coaching, exports, and insights.
-- User-facing language is `Agents`, `Profit agents`, `Training`, `Wire`, `Studio`, `outbound`, `inbound`, `hybrid`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `included number`, `presenter`, and `live video add-on`.
+- User-facing language is `Agents`, `AI employees`, `Training`, `Wire`, `Studio`, `outbound`, `inbound`, `hybrid`, `calls`, `texts`, `follow-up`, `Conversation Balance`, `included number`, `presenter`, and `live video add-on`.
 - Customer-facing video-presenter surfaces must not mention vendor names such as HeyGen or LiveAvatar.
 - Wireline Command is the browser surface name; do not restore retired extension names.
 - The design system is Wireline Letterpress / Wireline Clear System, on the Aurora palette. Product chrome uses electric-violet action, a cool obsidian (dark) or cool near-white (light) canvas, ink text, a platinum-silver wire accent, and restrained status colors.
@@ -44,7 +44,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md) | Current codebase/repo health-pass findings, actions, and next priorities. |
 | [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md) | **Active** — source-of-truth triage for excluded/unmounted surfaces and their rebuild/delete targets. |
 | [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | **Active** — whole-product showcase matrix across web, API, native, browser, ChatGPT, voice, video, integrations, trust, and margin. |
-| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | **Active** — profit-agent wedge with outbound, inbound, and hybrid call modes, demo path, and pricing implications. |
+| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | **Active** — AI-employee wedge (sales agents outbound) with outbound, inbound, and hybrid call modes, demo path, and pricing implications. |
 | [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md) | **Active** — guided call-plan setup doctrine: ask, teach, capture, check, then launch. |
 | [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion. |
 | [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | **Active** — customer-facing trust, compliance, and proof posture without overclaiming. |

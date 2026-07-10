@@ -251,7 +251,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
         Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
         Text("WIRELINE", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
-        Text("AI profit agents for appointments, lead revival, promotions, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text("AI employees for appointments, lead revival, promotions, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Spacer(Modifier.height(12.dp))
@@ -293,7 +293,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
             }
         }
         state.me?.let { me ->
-            item { AssistantCard { Text(me.account.businessName ?: me.user.fullName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} - ${state.agents.size} profit agents", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
+            item { AssistantCard { Text(me.account.businessName ?: me.user.fullName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${me.account.planName} - ${state.agents.size} AI employees", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) } }
         }
         item {
             AssistantCard {
@@ -331,13 +331,13 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
 @Composable
 private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCreate: () -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("AI profit agents", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Appointment setting, lead revival, promotions, recovery, support, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create agent", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
+        item { Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("AI employees", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("Appointment setting, lead revival, promotions, recovery, support, and follow-up.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2) }; TextButton(onClick = onCreate) { Icon(Icons.Default.Add, contentDescription = "Create agent", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("New") } } }
         if (agents.isEmpty()) {
             item {
               AssistantCard {
-                Text("No profit agents yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
+                Text("No AI employees yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
                 Spacer(Modifier.height(4.dp))
-                Text("Build your first AI profit agent for appointments, lead revival, follow-up, or support. One workspace, every outcome logged.", color = Brand.Text2, style = MaterialTheme.typography.bodySmall)
+                Text("Build your first AI employee for appointments, lead revival, follow-up, or support. One workspace, every outcome logged.", color = Brand.Text2, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create agent") }
               }
@@ -347,7 +347,7 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
                 AssistantCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Medallion(Icons.Default.PhoneInTalk, size = 40.dp)
-                        Column(Modifier.weight(1f)) { Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(if (agent.isBusinessAgent == true) "Business profit agent" else agent.role?.replace("_", " ")?.replace("assistant", "agent") ?: "Personal profit agent", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
+                        Column(Modifier.weight(1f)) { Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text(if (agent.isBusinessAgent == true) "Business AI employee" else agent.role?.replace("_", " ")?.replace("assistant", "agent") ?: "Personal AI employee", style = MaterialTheme.typography.bodySmall, color = Brand.Text2) }
                         Text("Ready", style = MaterialTheme.typography.labelSmall, color = Brand.Success)
                     }
                 }
@@ -369,7 +369,7 @@ private fun CreateAgentSheet(state: WirelineUiState, onCreate: (String, String, 
             FilterChip(selected = !isBusinessAgent, onClick = { isBusinessAgent = false }, label = { Text("Personal") }, modifier = Modifier.weight(1f))
             FilterChip(selected = isBusinessAgent, onClick = { isBusinessAgent = true; if (role == "scheduler") role = "receptionist" }, label = { Text("Business") }, modifier = Modifier.weight(1f))
         }
-        Text(if (isBusinessAgent) "New business profit agent" else "New personal profit agent", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+        Text(if (isBusinessAgent) "New business AI employee" else "New personal AI employee", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
         Text(if (isBusinessAgent) "Name the agent and describe the profit result it should own. Refine policies from Command next." else "Name the help you want. You can add knowledge, actions, and voice from Command next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, placeholder = { Text("Casey") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Text("What should it handle?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)

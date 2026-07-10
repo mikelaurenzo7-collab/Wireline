@@ -100,7 +100,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline Personal starts with one active agent and Conversation Balance, while Team and Business sell shared operating capacity. The agent actually books jobs instead of just taking messages.",
+        a: "Most after hours answering services charge one to two dollars per minute or two to four hundred dollars per month per business. Wireline plans start at $9/mo with guaranteed voice minutes included, plus Conversation Balance for anything beyond that. The agent actually books jobs instead of just taking messages.",
       },
     ],
   },
@@ -269,7 +269,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does it work for a single agent or full brokerage?",
-        a: "Both. Solo operators can start with Personal: one Wireline number, one active agent, and Conversation Balance. Brokerages use Team, Business, or Enterprise capacity to assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
+        a: "Both. Solo agents can start on Starter: one Wireline number, one active agent, and guaranteed voice minutes plus Conversation Balance for overflow. Brokerages use Starter Plus, Pro, or Business capacity to assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
       },
       {
         q: "How does it qualify the buyer?",
@@ -286,7 +286,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
     metaDescription:
-      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Personal live work runs through Conversation Balance.",
+      "Personal AI phone agent for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $9/mo, with Conversation Balance covering anything beyond your included minutes.",
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:
@@ -337,7 +337,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from just having a friend or family member call for me?",
-        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Personal live work is funded through Conversation Balance instead of a subscription. Privacy: nobody in your life needs to know you avoid these calls.",
+        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Your plan includes guaranteed live-voice minutes, with Conversation Balance covering anything beyond that. Privacy: nobody in your life needs to know you avoid these calls.",
       },
       {
         q: "What can't it do?",
@@ -400,7 +400,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it compare to a 24/7 answering service?",
-        a: "Most answering services charge $400-1,200/month plus per-call fees and just take messages. Wireline agents qualify the lead, book the renewal review, and email you a producer-ready intake, with Personal funded through Conversation Balance and teams covered by shared capacity.",
+        a: "Most answering services charge $400-1,200/month plus per-call fees and just take messages. Wireline agents qualify the lead, book the renewal review, and email you a producer-ready intake, with guaranteed voice minutes on every plan and Conversation Balance covering anything beyond that.",
       },
     ],
   },
@@ -447,7 +447,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will it integrate with Resy / OpenTable / Tock?",
-        a: 'Yes - connects via the platform API to read availability and write reservations. Caller hears "I have 7pm or 8:15pm - which works?" using your real floor map, not an estimate. Core integrations are available in Team and Business; custom reservation policy belongs in Enterprise.',
+        a: 'Yes - connects via the platform API to read availability and write reservations. Caller hears "I have 7pm or 8:15pm - which works?" using your real floor map, not an estimate. Core integrations are available on Starter Plus and above; custom reservation policy is available on Business.',
       },
       {
         q: "Can it handle dietary restrictions + allergens correctly?",
@@ -466,7 +466,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   sales: {
     slug: "sales",
-    metaTitle: "Wireline for Sales Teams — Revenue Recovery Phone Agents",
+    metaTitle: "Wireline for Sales Teams — Profit Recovery Phone Agents",
     metaDescription:
       "Compliance-first phone agents for sales teams. Speed-to-lead, quote follow-up, warm reactivation, and governed outbound queues with approved CRM actions.",
     eyebrow: "For Sales Teams",

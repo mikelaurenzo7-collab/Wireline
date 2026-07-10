@@ -31,7 +31,7 @@ describe("voice catalog", () => {
     expect(read("src/lib/video-presenter/heygen-voice-service.ts")).toContain(
       "resolveAvatarDefaultVoice",
     );
-    expect(read("src/routes/video-presenter-routes.ts")).toContain("matched-voice");
+    expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
     expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
       "matched-voice",
     );

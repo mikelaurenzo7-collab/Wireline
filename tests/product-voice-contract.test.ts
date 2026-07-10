@@ -3,9 +3,9 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   AGENT_DIRECTION_MODES,
+  AGENT_NUMBER_PROMISE,
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
-  PROFIT_AGENT_NUMBER_PROMISE,
 } from "../src/lib/product-copy";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
@@ -14,19 +14,23 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
-    expect(MARKETING_VOICE.headline).toBe("AI profit agents that actually call.");
-    expect(MARKETING_VOICE.subline).toContain("Book more appointments");
-    expect(MARKETING_VOICE.subline).toContain("revive stale leads");
+    // Hero leads with the welcoming AI-employee framing; "profit" stays the
+    // preferred vocabulary (over "revenue") and the outbound wedge still
+    // markets sales agents explicitly.
+    expect(MARKETING_VOICE.headline).toBe("Wire your AI employee.");
+    expect(MARKETING_VOICE.subline).toContain("books appointments");
+    expect(MARKETING_VOICE.subline).toContain("revives stale leads");
+    expect(MARKETING_VOICE.subline).toContain("reports the profit");
     expect(MARKETING_VOICE.subline).toContain("included number for every included agent");
     expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Profit"]);
 
-    expect(OUTBOUND_WEDGE.headline).toBe("AI profit agents that actually call.");
+    expect(OUTBOUND_WEDGE.headline).toBe("AI sales agents that actually call.");
     expect(OUTBOUND_WEDGE.subline).toContain("book appointments");
     expect(OUTBOUND_WEDGE.subline).toContain("promote offers");
     expect(OUTBOUND_WEDGE.subline).toContain("without commission");
     expect(OUTBOUND_WEDGE.loop).toEqual(["List", "Pitch", "Call", "Profit"]);
-    expect(PROFIT_AGENT_NUMBER_PROMISE).toContain("Every included Wireline agent");
-    expect(PROFIT_AGENT_NUMBER_PROMISE).toContain("included number");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every included Wireline agent");
+    expect(AGENT_NUMBER_PROMISE).toContain("included number");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Book", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow up", "Sync"]);
   });
@@ -45,14 +49,12 @@ describe("product voice cohesion", () => {
 
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
-    expect(pricing).toContain("build, train, launch, improve");
+    // Pricing no longer walks the operating loop by name (it leads with tier
+    // cards and channel economics instead) but must never revert to the
+    // retired phrasing, and per-agent add-on pricing is formally retired
+    // (plansForClient() always returns extra_agent_price_usd: null now).
     expect(pricing).not.toContain("create, train, wire, run");
-    expect(pricing).toContain(
-      "Extra employees at " + "$" + "${planById.team.extra_agent_price_usd}/mo",
-    );
-    expect(pricing).toContain(
-      "Extra employees at " + "$" + "${planById.business.extra_agent_price_usd}/mo",
-    );
+    expect(pricing).not.toContain("Extra employees at");
   });
 
   it("wires landing and workroom surfaces to shared voice constants", () => {
@@ -73,7 +75,7 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("Front desk");
     expect(landing).toContain("Lead qualifier");
     expect(landing).toContain("Support triage");
-    expect(landing).toContain("Revenue desk");
+    expect(landing).toContain("Sales desk");
     expect(landing).toContain("Collections desk");
     expect(landing).toContain("Appointment desk");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
@@ -84,21 +86,26 @@ describe("product voice cohesion", () => {
   it("keeps the free-number promise backed by included capacity", () => {
     const catalog = read("src/lib/plan-catalog.ts");
     const billing = read("src/pages/BillingSettings.tsx");
-    expect(catalog).toContain("Every included agent includes one dedicated number");
-    expect(catalog).toContain("max_agents: 4");
-    expect(catalog).toContain("included_phone_numbers: 4");
-    expect(catalog).toContain("max_agents: 8");
-    expect(catalog).toContain("included_phone_numbers: 8");
-    expect(catalog).toContain("One active profit agent with one included number");
+    expect(catalog).toContain(
+      "Every paid tier guarantees live voice capacity and an on-demand number slot",
+    );
+    expect(catalog).toContain("max_agents: 1");
+    expect(catalog).toContain("included_phone_numbers: 1");
+    expect(catalog).toContain("max_agents: 5");
+    expect(catalog).toContain("included_phone_numbers: 5");
     expect(billing).toContain("plan.included_phone_numbers");
   });
 
   it("keeps included number capacity mathematically aligned to included agents", () => {
-    const publicCapacityPlans = STRIPE_PLANS.filter((plan) => plan.id !== "enterprise");
+    // Personal (Free Builder) is pre-activation by design: no production number
+    // until the Account Holder pays. Every paid tier still guarantees one
+    // included number per included agent.
+    const publicCapacityPlans = STRIPE_PLANS.filter(
+      (plan) => plan.id !== "enterprise" && plan.id !== "personal",
+    );
 
     for (const plan of publicCapacityPlans) {
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
-      expect(plan.voice_minutes_monthly, plan.id).toBe(0);
     }
   });
 

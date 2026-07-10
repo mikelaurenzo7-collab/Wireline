@@ -33,7 +33,7 @@ export async function reserveRuntimeUsage(input: {
   const amount = cents(input.amountUsd);
   if (!(amount > 0)) return { reserved: true, alreadyReserved: false, balanceUsd: 0 };
 
-  return drizzle.transaction(async (tx: any) => {
+  return drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`);
 
     const idempotencyKey = `runtime_usage:${input.referenceId}`;

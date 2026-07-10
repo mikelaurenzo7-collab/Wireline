@@ -11,8 +11,8 @@ const read = (relativePath: string) => readFileSync(resolve(root, relativePath),
  */
 describe("orchestration spine contract", () => {
   it("keeps job worker wired to action engine and cadence processing", () => {
-    const worker = read("src/lib/job-worker.ts");
-    const queue = read("src/lib/job-queue.ts");
+    const worker = read("src/lib/job-worker-base.ts");
+    const queue = read("src/lib/job-queue-base.ts");
 
     expect(worker).toContain('from "./action-engine"');
     expect(worker).toContain("executeAction");

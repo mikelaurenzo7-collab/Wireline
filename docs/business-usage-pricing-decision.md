@@ -2,16 +2,39 @@
 
 Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
 
+**Status:** the "Target commercial structure," "Pricing lock," and "Exact applied Stripe writes"
+sections below are a historical record of the Jun/early-Jul 2026 zero-included-minutes catalog. As
+of 2026-07-10 the live catalog is the **Founder Early Access** model (5 tiers with guaranteed
+included voice minutes and a recurring monthly Runtime Allowance, replacing the one-time welcome
+credit). Duplicating prices in this doc is exactly why it drifted stale before —
+**`src/lib/plan-catalog.ts` is the single source of truth** for plan ids, prices, included voice
+minutes, Runtime Allowance, overage rates, and Stripe price/lookup-key resolution. Treat the
+numbers below as historical unless just re-verified against that file and the live Stripe catalog.
+
 ## Product model
 
 Wireline sells operating capacity, not template access.
 
-- All templates are unlocked.
-- Personal starts with free build and Training, then funds live work through Conversation Balance.
-- Team, Business, and Enterprise add shared operating capacity, routing, governance, and deeper integration controls.
+- All templates are unlocked; Personal ("Free Builder") creates, trains, and privately simulates one draft agent at $0.
+- Every paid tier (Starter, Starter Plus, Pro, Business) guarantees live voice capacity and an on-demand number slot — see `voice_minutes_monthly` per plan in `plan-catalog.ts`.
+- Optional SMS, platform AI/research, enrichment, and business-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit.
 - Live work should always reconcile through a durable ledger instead of vague "unlimited" promises.
 
-## Target commercial structure
+## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)
+
+| Plan id | Product name | Monthly / Annual | Included voice minutes | Runtime Allowance | Max agents |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `personal` | Wireline Free Builder | $0 | 0 | $0 | 1 |
+| `starter` | Wireline Starter | $9 / $90 | 20 | $0.50/mo | 1 |
+| `team` | Wireline Starter Plus | $19 / $190 | 75 | $2/mo | 1 |
+| `business` | Wireline Pro | $59 / $590 | 250 | $6/mo | 5 |
+| `enterprise` | Wireline Business | $149 / $1,490 | 650 | $15/mo | 15 |
+
+Overage beyond included voice minutes ranges $0.25/min (Starter) down to $0.17/min (top tier) — see
+`overage_per_min_usd` per plan. SMS outbound segments still bill Conversation Balance at
+**$0.02/segment** (`SMS_COST_PER_SEGMENT_USD` in `src/lib/sms-billing.ts`, unchanged by this pivot).
+
+## Target commercial structure (historical — see status note above)
 
 | Offer                | Commercial role                                     | Billing expectation                                                             |
 | -------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -21,7 +44,7 @@ Wireline sells operating capacity, not template access.
 | Enterprise           | Governed rollout, SSO, policy, audit, BYO telephony | Annual committed usage and contract terms                                       |
 | Conversation Balance | One-time funding                                    | Web checkout only; customer-controlled top-ups                                  |
 
-## Live Stripe audit snapshot
+## Live Stripe audit snapshot (historical — see status note above)
 
 - Active subscriptions: `0`
 - Active payment links: `0`
@@ -36,7 +59,7 @@ Current active products after reconciliation:
 - `Wireline Personal`
 - `Wireline Team`
 
-## Exact applied Stripe writes
+## Exact applied Stripe writes (historical — see status note above)
 
 Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
 
@@ -77,7 +100,7 @@ Applied on the live Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
 - First Team/Business subscription grants **$10** welcome Conversation Balance (idempotent ledger grant).
 - SMS outbound segments bill Conversation Balance at **$0.02/segment**.
 
-## Pricing lock (Jul 2026)
+## Pricing lock (Jul 2026) (historical — superseded by Founder Early Access above)
 
 | Offer | Platform | Voice | Extra agent |
 | --- | ---: | ---: | ---: |

@@ -237,18 +237,18 @@ const AUTH_BRAND = {
   signin: {
     label: "Welcome back",
     headline: "Back on the line.",
-    body: "Your profit agents, call history, and follow-ups are waiting.",
+    body: "Your AI employees, call history, and follow-ups are waiting.",
   },
   signup: {
     personal: {
       label: "Personal",
-      headline: "Wire your agent.",
-      body: "Build one AI profit agent, launch it on a real line, and see every result.",
+      headline: "Wire your AI employee.",
+      body: "Build one AI employee, launch it on a real line, and see every result.",
     },
     business: {
       label: "Business",
       headline: "Call work, handled.",
-      body: "Outbound, inbound, or hybrid profit agents — trained on your playbook and supervised from one workspace.",
+      body: "Outbound, inbound, or hybrid AI employees — trained on your playbook and supervised from one workspace.",
     },
   },
 } as const;
@@ -353,7 +353,7 @@ function WorkspaceSelector({
     {
       id: "personal",
       title: "Personal",
-      text: "One private profit agent for calls, texts, and follow-up on your terms.",
+      text: "One private AI employee for calls, texts, and follow-up on your terms.",
       icon: <User className="h-4 w-4" />,
     },
     {
@@ -594,7 +594,7 @@ export default function AuthPortal() {
   const pageDescription = isReset
     ? "Enter your email and Wireline will send a secure password reset link."
     : isSignUp
-      ? "Create your Wireline account and build your first AI profit agent."
+      ? "Create your Wireline account and build your first AI employee."
       : "Sign in to your Wireline account.";
 
   const headerActive = isSignUp ? "signup" : "signin";

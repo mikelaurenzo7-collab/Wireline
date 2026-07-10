@@ -2,7 +2,15 @@
 
 Status: **Operator checklist** for launch integrity after the Jul 2026 pricing lock. Last MCP cross-check: **2026-07-10**.
 
-## Pricing lock (code)
+**Superseded pricing note (2026-07-10, later same day):** the "Pricing lock (code)" and "Live Stripe
+proof" checklist below documents the zero-included-minutes Team/Business catalog that was live
+earlier on 2026-07-10. The catalog has since moved to the **Founder Early Access** model (Personal
+Free/Starter $9/Starter Plus $19/Pro $59/Business $149, each with guaranteed included voice minutes
+and a recurring Runtime Allowance — see `src/lib/plan-catalog.ts`, which is the source of truth).
+The operational hygiene items below (webhook alignment, env parity, retired-price cleanup) are still
+live concerns; only the specific dollar amounts and "zero included minutes" framing are stale.
+
+## Pricing lock (code) — historical, see superseded-pricing note above
 
 - [x] `plan-catalog.ts`: Personal $0.18/min; Team/Business $0.16/min; extra agents $8/$10; `voice_minutes_monthly: 0`
 - [x] `voice-usage.ts`: `included = 0` for all tiers
@@ -43,10 +51,13 @@ Active expected prices observed:
 - Conversation Balance `$5`, `$10`, `$25`, `$50`
 - Live Video add-on monthly
 
-Open cleanup candidate: Stripe search still surfaces active zero-dollar `Retired catalog anchor` prices. They are not referenced by source, but they should not be exposed through public checkout or pricing UX. Before a broad public checkout push, run and verify:
+Cleanup done (2026-07-10, same-day follow-up): the 5 zero-dollar `Retired catalog anchor` prices
+(`price_1TqN1mJohDtfy3IkTjDzVXRs`, `price_1TqN1lJohDtfy3IkRkWRbXbu`, `price_1TqN1kJohDtfy3IkEcVbD9BJ`,
+`price_1TqN1kJohDtfy3Ikt0rTqd6Y`, `price_1TqN1jJohDtfy3Iky9h9DO8z`) were set `active: false` directly via
+the Stripe API (they were not referenced by source and carried `wireline_not_for_sale: true` metadata
+already). Still worth running once for full parity confirmation:
 
 ```bash
-npm run stripe:deactivate-retired-defaults
 npm run stripe:catalog:check
 npm run stripe:verify-vercel-parity
 ```

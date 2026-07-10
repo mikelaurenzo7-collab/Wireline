@@ -21,7 +21,9 @@ describe("PR 729 hardening contract", () => {
     expect(handler).toBeGreaterThan(-1);
     expect(staleCheck).toBeGreaterThan(handler);
     expect(reportReservation).toBeGreaterThan(staleCheck);
-    expect(worker).toContain('persistJobResult(job.id, { skipped: true, reason: "schedule_changed" })');
+    expect(worker).toContain(
+      'persistJobResult(job.id, { skipped: true, reason: "schedule_changed" })',
+    );
   });
 
   it("requires the durable job owner to match the report payload tenant", () => {
@@ -34,7 +36,7 @@ describe("PR 729 hardening contract", () => {
   it("reserves Twilio spend before submitting to the carrier", () => {
     const twilio = read("src/lib/twilio-service.ts");
     expect(twilio.indexOf("reserveRuntimeUsage({")).toBeLessThan(
-      twilio.indexOf("client.messages.create(payload)"),
+      twilio.indexOf("client.messages.create(payload as any)"),
     );
     expect(twilio).toContain('provider: "twilio"');
     expect(twilio).not.toContain("getCreditBalanceUsd");
@@ -44,11 +46,11 @@ describe("PR 729 hardening contract", () => {
   it("keeps a chosen agent sender associated with its Messaging Service", () => {
     const twilio = read("src/lib/twilio-service.ts");
     const serviceBlock = twilio.slice(
-      twilio.indexOf('} else if (settings.messagingServiceSid) {'),
+      twilio.indexOf("} else if (settings.messagingServiceSid) {"),
       twilio.indexOf("const reservationReference"),
     );
-    expect(serviceBlock).toContain('payload.messagingServiceSid = settings.messagingServiceSid;');
-    expect(serviceBlock).toContain('if (agentSender) payload.from = cleanPhone(agentSender);');
+    expect(serviceBlock).toContain("payload.messagingServiceSid = settings.messagingServiceSid;");
+    expect(serviceBlock).toContain("if (agentSender) payload.from = cleanPhone(agentSender);");
   });
 
   it("limits START to reversing only Twilio-created SMS opt-outs", () => {

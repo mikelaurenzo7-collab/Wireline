@@ -29,7 +29,7 @@ describe("native command center surfaces", () => {
     expect(app).toContain('Screen("recaps", "Calls")');
     expect(app).toContain("COMMAND CENTER");
     expect(app).toContain(
-      "AI profit agents for appointments, lead revival, promotions, and follow-up.",
+      "AI employees for appointments, lead revival, promotions, and follow-up.",
     );
     expect(app).not.toMatch(/phone employees?/i);
     expect(setup).toContain("Use mobile for fast approvals and core call workflows.");

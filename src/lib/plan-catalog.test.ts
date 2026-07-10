@@ -8,14 +8,11 @@ import {
 } from "./plan-catalog";
 
 const STRIPE_PLAN_ENV_KEYS = [
-  "STRIPE_BUSINESS_STARTER_PRICE_ID",
-  "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID",
-  "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID",
-  "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID",
-  "STRIPE_PRO_PRICE_ID",
-  "STRIPE_PRO_ANNUAL_PRICE_ID",
-  "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
-  "STRIPE_PRO_OVERAGE_PRICE_ID",
+  "STRIPE_PERSONAL_PRICE_ID",
+  "STRIPE_STARTER_9_PRICE_ID",
+  "STRIPE_STARTER_PRICE_ID",
+  "STRIPE_TEAM_PRICE_ID",
+  "STRIPE_BUSINESS_PRICE_ID",
 ] as const;
 
 afterEach(() => {
@@ -23,38 +20,36 @@ afterEach(() => {
 });
 
 describe("plan-catalog", () => {
-  it("keeps Personal hidden behind the Conversation Balance model", () => {
+  it("keeps Personal as the public $0 Free Builder tier", () => {
     const personal = planById("personal");
-    expect(personal?.name).toBe("Wireline Personal");
-    expect(personal?.public).toBe(false);
+    expect(personal?.name).toBe("Wireline Free Builder");
+    expect(personal?.public).toBe(true);
     expect(personal?.price_usd_monthly).toBe(0);
   });
 
-  it("maps the shared-capacity tiers to Team, Business, and Enterprise", () => {
-    expect(planById("business-starter")?.name).toBe("Wireline Team");
-    expect(planById("team")?.name).toBe("Wireline Team");
-    expect(planById("starter")?.name).toBe("Wireline Business");
-    expect(planById("business")?.name).toBe("Wireline Business");
-    expect(planById("scale")?.name).toBe("Wireline Enterprise");
-    expect(planById("enterprise")?.name).toBe("Wireline Enterprise");
+  it("maps the Founder Early Access tiers to their public names", () => {
+    expect(planById("starter")?.name).toBe("Wireline Starter");
+    expect(planById("team")?.name).toBe("Wireline Starter Plus");
+    expect(planById("business")?.name).toBe("Wireline Pro");
+    expect(planById("enterprise")?.name).toBe("Wireline Business");
   });
 
   it("keeps the canonical Stripe plan identifiers aligned to the commercial model", () => {
-    expect(STRIPE_PLANS).toHaveLength(4);
+    expect(STRIPE_PLANS).toHaveLength(5);
     expect(STRIPE_PLANS.map((plan) => plan.id)).toEqual([
       "personal",
+      "starter",
       "team",
       "business",
       "enterprise",
     ]);
-    expect(planById("personal-plus")?.id).toBe("team");
   });
 
-  it("keeps Enterprise as a contact-sales plan", () => {
-    const scale = planById("scale");
-    expect(scale?.name).toBe("Wireline Enterprise");
-    expect(scale?.price_usd_monthly).toBe(0);
-    expect(scale?.max_agents).toBe(999);
+  it("keeps Enterprise the top self-serve capacity tier", () => {
+    const enterprise = planById("enterprise");
+    expect(enterprise?.name).toBe("Wireline Business");
+    expect(enterprise?.price_usd_monthly).toBe(149);
+    expect(enterprise?.max_agents).toBe(15);
   });
 
   it("keeps paid plans positive and overage above variable voice cost", () => {
@@ -64,25 +59,25 @@ describe("plan-catalog", () => {
     }
   });
 
-  it("locks canonical voice and capacity rates (Jul 2026)", () => {
-    expect(planById("personal")?.overage_per_min_usd).toBe(0.18);
-    expect(planById("team")?.overage_per_min_usd).toBe(0.16);
-    expect(planById("business")?.overage_per_min_usd).toBe(0.16);
-    expect(planById("team")?.extra_agent_price_usd).toBe(8);
-    expect(planById("business")?.extra_agent_price_usd).toBe(10);
-    expect(planById("team")?.voice_minutes_monthly).toBe(0);
-    expect(planById("business")?.voice_minutes_monthly).toBe(0);
+  it("locks canonical Founder Early Access voice and capacity rates", () => {
+    expect(planById("starter")?.voice_minutes_monthly).toBe(20);
+    expect(planById("team")?.voice_minutes_monthly).toBe(75);
+    expect(planById("business")?.voice_minutes_monthly).toBe(250);
+    expect(planById("enterprise")?.voice_minutes_monthly).toBe(650);
+    expect(planById("team")?.overage_per_min_usd).toBe(0.22);
+    expect(planById("business")?.overage_per_min_usd).toBe(0.19);
+    expect(planById("enterprise")?.overage_per_min_usd).toBe(0.17);
   });
 
-  it("keeps env price id fallback for older local catalog entries", () => {
-    process.env.STRIPE_PRO_PRICE_ID = "price_env_business";
+  it("keeps env price id fallback for launch catalog entries", () => {
+    process.env.STRIPE_TEAM_PRICE_ID = "price_env_business";
 
     expect(planByPriceId("price_env_business")?.id).toBe("business");
     expect(planByStripePrice({ id: "price_env_business" })?.id).toBe("business");
   });
 
   it("resolves from canonical Stripe price metadata before env ids", () => {
-    process.env.STRIPE_PRO_PRICE_ID = "price_same_id_but_env_business";
+    process.env.STRIPE_TEAM_PRICE_ID = "price_same_id_but_env_business";
 
     expect(
       planByStripePrice({
@@ -96,20 +91,20 @@ describe("plan-catalog", () => {
     expect(
       planByStripePrice({
         id: "price_not_in_env",
-        metadata: { wireline_price_key: "business_voice_overage" },
+        metadata: { wireline_price_key: "business_monthly_founder_2026_07_v2" },
       })?.id,
     ).toBe("business");
 
     expect(
       planByStripePrice({
         id: "price_not_in_env",
-        metadata: { wireline_price_key: "team_extra_agent" },
+        metadata: { wireline_price_key: "team_annual_founder_2026_07_v2" },
       })?.id,
     ).toBe("team");
   });
 
   it("uses lookup keys as a compatibility fallback", () => {
-    expect(planByStripePrice({ lookup_key: "team_monthly" })?.id).toBe("team");
+    expect(planByStripePrice({ lookup_key: "team_monthly_founder_2026_07_v2" })?.id).toBe("team");
   });
 
   it("ignores non-plan catalog entries instead of fabricating entitlements", () => {

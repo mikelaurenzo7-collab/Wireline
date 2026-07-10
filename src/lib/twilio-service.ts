@@ -394,7 +394,7 @@ export async function sendTenantMessage(
   }
 
   try {
-    const message = await client.messages.create(payload);
+    const message = await client.messages.create(payload as any);
     if (channel === "sms") {
       const actualSegments = Math.max(1, Number(message.numSegments) || segments);
       const actualCost = money(SMS_COST_PER_SEGMENT_USD * actualSegments);

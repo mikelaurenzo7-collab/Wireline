@@ -5,7 +5,7 @@ import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
 const PUBLIC_DESCRIPTION =
-  "Wireline builds AI profit agents with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.";
+  "Wireline builds AI employees with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -22,19 +22,21 @@ export default function LandingPage() {
     description: PUBLIC_DESCRIPTION,
     offers: {
       "@type": "OfferCatalog",
-      name: "Wireline AI profit agent plans",
-      itemListElement: ["Personal", "Team", "Business", "Enterprise"].map((name) => ({
-        "@type": "Offer",
-        name,
-        url: "https://trywireline.com/pricing",
-      })),
+      name: "Wireline AI employee plans",
+      itemListElement: ["Free Builder", "Starter", "Starter Plus", "Pro", "Business"].map(
+        (name) => ({
+          "@type": "Offer",
+          name,
+          url: "https://trywireline.com/pricing",
+        }),
+      ),
     },
   };
 
   return (
     <>
       <PageMeta
-        title="Wireline | AI profit agents that actually call"
+        title="Wireline | Wire your AI employee"
         description={PUBLIC_DESCRIPTION}
         image="/og-image.png"
       />

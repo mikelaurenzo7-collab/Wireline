@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- durable job payloads are stored as Postgres jsonb. */
 import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
@@ -68,7 +67,9 @@ async function hasPersistedResult(jobId: string): Promise<boolean> {
     .from(schema.jobs)
     .where(eq(schema.jobs.id, jobId))
     .limit(1);
-  return Boolean(row?.result && typeof row.result === "object" && Object.keys(row.result).length > 0);
+  return Boolean(
+    row?.result && typeof row.result === "object" && Object.keys(row.result).length > 0,
+  );
 }
 
 async function withRuntimeReservation<T>(

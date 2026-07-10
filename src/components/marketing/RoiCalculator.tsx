@@ -246,7 +246,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
               }
             >
               <p className="wl-label-muted leading-none mb-1">
-                Net annual savings (after Wireline Business)
+                Net annual savings (after the Pro plan)
               </p>
               <p className="font-display italic text-3xl leading-none text-foreground">
                 {fmtUsd(Math.max(0, results.netAnnual))}
@@ -279,8 +279,8 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
 
         <p className="mt-3 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
           Assumes Wireline recovers 82% of missed conversations. Coverage math uses $22/hr for
-          comparable admin time. Wireline Business tier billed at $59/mo. Create and train for free;
-          live work uses Conversation Balance.
+          comparable admin time. Pro tier billed at $59/mo. Create and train for free; live work
+          uses Conversation Balance.
         </p>
       </div>
     </motion.section>
