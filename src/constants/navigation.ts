@@ -6,7 +6,6 @@ import {
   GraduationCap,
   Home,
   Inbox,
-  LayoutGrid,
   MoreHorizontal,
   Phone,
   Settings,
@@ -45,8 +44,9 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     label: "Overview",
     shortLabel: "Home",
     icon: Home,
-    matches: ["/overview", "/agents"],
+    matches: ["/overview"],
   },
+  { href: "/studio", label: "Studio", icon: Bot, matches: ["/studio", "/agents"] },
   {
     href: "/knowledge",
     label: "Training",
@@ -59,10 +59,9 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
 
 export const OPERATE_NAV: ShellNavItem[] = [
   { href: "/phone", label: "Phone", icon: Phone },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
   { href: "/insights", label: "Insights", icon: BarChart3 },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/apps", label: "Apps", icon: LayoutGrid },
   { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
 ];
 
@@ -72,7 +71,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
     label: "Overview",
     shortLabel: "Home",
     icon: Home,
-    matches: ["/overview", "/agents"],
+    matches: ["/overview"],
   },
   { href: "/studio", label: "Studio", icon: Bot, matches: ["/studio", "/agents"] },
   { href: "/phone", label: "Phone", icon: Phone },
@@ -91,7 +90,6 @@ export const MOBILE_MORE_NAV: ShellNavItem[] = [
   { href: "/connections", label: "Wire", icon: Workflow, matches: ["/connections", "/actions"] },
   { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
   { href: "/insights", label: "Insights", icon: BarChart3 },
-  { href: "/apps", label: "Apps", icon: LayoutGrid },
   { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
 ];
 
