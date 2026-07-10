@@ -1,30 +1,32 @@
-# Wireline CEO Launch Checklist
+# Wireline Best-Employee Launch Checklist
 
 ## Positioning
 
-Lead with **Wireline CEO** as the default product promise.
+Lead with **the best employee you've ever had, for next to nothing** as the default product promise.
 
 Primary copy:
 
-> One agent that answers, sells, books, follows up, researches, and keeps the business moving.
+> The best employee you've ever had, for next to nothing.
 
 Secondary copy:
 
-> Start with your Wireline CEO. Add specialist agents only when volume proves you need them.
+> One trained AI employee that answers, sells, markets, books, follows up, researches, and keeps the work moving - with your rules, your approvals, and every outcome logged.
 
 Avoid leading with:
 
+- "AI CEO"
+- "Wireline CEO"
 - "pick a role"
 - "configure your bot"
 - "AI employee lanes"
-- any copy that makes the customer feel like they need to design an org chart before getting value
+- any copy that makes the owner feel replaced, challenged, or forced to design an org chart before getting value
 
 ## Who it serves
 
-- Solopreneurs: one operating agent instead of a fake department tree.
-- Small teams: a front-office operator that can later split into specialists.
-- Personal plans: a privacy-first chief of staff for calls, reminders, scheduling, vendors, and follow-up.
-- Agencies / multi-location businesses: CEO first, specialists later by line of business or location.
+- Solopreneurs: one best employee instead of a fake department tree.
+- Small teams: a right-hand operator that can later split into specialists.
+- Personal plans: a privacy-first assistant for calls, reminders, scheduling, vendors, and follow-up.
+- Agencies / multi-location businesses: one all-purpose employee first, specialists later by line of business or location.
 
 ## Onboarding rule
 
@@ -37,18 +39,18 @@ Ask:
 3. What should it never do without approval?
 4. Where should it send outcomes?
 
-Then create the CEO agent with broad capabilities and tighten from permissions.
+Then create the broad default operator with explicit owner controls and tighten from permissions.
 
 ## Public marketing surfaces to align
 
-- Landing hero: "One agent to run the front office."
-- CTA: "Build your Wireline CEO."
-- Visual loop: Brief → Train → Launch → Operate.
+- Landing hero: "The best employee you've ever had, for next to nothing."
+- CTA: "Build your best employee."
+- Visual loop: Brief -> Train -> Launch -> Prove.
 - Proof words: Researches, calls, answers, books, follows up, reports.
-- Pricing: one included operating agent and included number, not a menu of departments.
-- Template gallery: CEO / Operating Agent first; specialists below it.
-- Empty states: "Your front office is covered" rather than "pick a role."
-- Static HTML/SEO metadata: Wireline CEO / one front-office operating agent, not the old "AI employee" headline.
+- Pricing: one included live AI employee and included number, not a menu of departments.
+- Template gallery: Best Employee / Wireline Operator first; specialists below it.
+- Empty states: "Your right-hand operator is live" rather than "pick a role."
+- Static HTML/SEO metadata: best employee / AI phone employee, not CEO-first language.
 
 ## Pricing decision
 
@@ -101,7 +103,7 @@ Do not paste populated secrets into GitHub or docs. Only Vercel project env shou
 
 ## Permission model
 
-CEO gets the broad operating toolbox by default, but execution is still constrained by:
+The default operator gets the broad operating toolbox by default, but execution is still constrained by:
 
 - tenant OAuth connections
 - platform env flags
@@ -144,26 +146,26 @@ Keep specialist roles, but position them as second-step scaling:
 - Marketing: campaigns and re-engagement.
 - Personal Assistant: personal-only posture.
 
-The default should always feel like: "start with CEO, split later if needed."
+The default should always feel like: "start with one best employee, split later if needed."
 
 ## QA gates before merge
 
 - Typecheck role definitions and agent constants.
-- Validate creating an agent without `role` persists `ceo`.
-- Validate `/api/agents/roles` and `/api/mobile/agents/roles` include `Wireline CEO` first.
-- Validate CEO agent with no explicit `enabledTools` gets the full tool catalog, then filters by connected integrations.
+- Validate creating an agent without `role` persists `ceo` internally for compatibility.
+- Validate `/api/agents/roles` and `/api/mobile/agents/roles` show `Wireline Operator` for the broad default role.
+- Validate the broad default agent with no explicit `enabledTools` gets the full tool catalog, then filters by connected integrations.
 - Validate `gemini_ground` still works as the compatible Vapi tool name when only `PERPLEXITY_API_KEY` is set.
 - Validate fallback to Gemini when Perplexity is missing, times out, or returns a non-2xx response.
 - Validate personal-plan copy does not accidentally use CRM / pipeline language.
 - Validate extra-agent subscription quantity raises both deployable agent cap and included voice minutes.
 - Validate the extra-agent price never overwrites the base subscription plan during Stripe webhook sync.
-- Validate `/pricing`, `/api/billing/plans`, and the app shell metadata all show CEO-first/capacity-bundle language.
+- Validate `/pricing`, `/api/billing/plans`, and the app shell metadata all show best-employee/capacity-bundle language.
 
 ## Success metrics
 
 - First successful test call within 5 minutes.
-- % of users creating CEO as first agent.
-- % of CEO users enabling at least one live channel.
+- % of users creating the default broad operator first.
+- % of broad-operator users enabling at least one live channel.
 - First-week handled conversations.
 - Second-agent creation rate by role.
 - Escalation rate and owner-interruption reduction.
