@@ -466,7 +466,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   sales: {
     slug: "sales",
-    metaTitle: "Wireline for Sales Teams — Revenue Recovery Phone Agents",
+    metaTitle: "Wireline for Sales Teams — Profit Recovery Phone Agents",
     metaDescription:
       "Compliance-first phone agents for sales teams. Speed-to-lead, quote follow-up, warm reactivation, and governed outbound queues with approved CRM actions.",
     eyebrow: "For Sales Teams",

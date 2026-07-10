@@ -54,9 +54,9 @@ describe("sales trust copy contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps sales wedge copy aligned with revenue-recovery positioning", () => {
+  it("keeps sales wedge copy aligned with profit-recovery positioning", () => {
     const wedges = read("src/data/vertical-wedges.ts");
-    expect(wedges).toContain("Revenue Recovery Phone Agents");
+    expect(wedges).toContain("Profit Recovery Phone Agents");
     expect(wedges).toContain("speed-to-lead");
     expect(wedges).toContain("Approved actions sync");
     // The sales wedge answers disclosure with the canonical constant so the

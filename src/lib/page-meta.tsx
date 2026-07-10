@@ -12,9 +12,9 @@ interface PageMetaProps {
 const BRAND_SUFFIX = " - Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "Wireline - AI profit agents that actually call";
+const DEFAULT_TITLE = "Wireline - Wire your AI employee";
 const DEFAULT_DESCRIPTION =
-  "Wireline builds AI profit agents with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.";
+  "Wireline builds AI employees with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;

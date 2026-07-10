@@ -114,15 +114,15 @@ export default function Features() {
   return (
     <div className="marketing-surface min-h-screen bg-background text-foreground">
       <PageMeta
-        title="Features | Wireline AI profit agents"
-        description="Build, train, launch, and improve AI profit agents for calls, SMS, scheduling, handoffs, integrations, and follow-up."
+        title="Features | Wireline AI employees"
+        description="Build, train, launch, and improve AI employees for calls, SMS, scheduling, handoffs, integrations, and follow-up."
         path="/features"
       />
       <PrecisionPublicHeader />
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Features"
-          title="Everything your profit agent needs to finish the call."
+          title="Everything your AI employee needs to finish the call."
           description="Build the employee, train the workflow, wire the number and tools, then improve every next conversation from one recorded outcome."
           primaryAction={{ label: "Build an employee", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}

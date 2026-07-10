@@ -1,17 +1,17 @@
 # Wireline
 
-Wireline is the agent operating layer for AI profit agents — profit-moving calls, texts, follow-up, browser context, email, and integrations. One trained fleet of profit agents can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+Wireline is the agent operating layer for AI employees — profit-moving calls, texts, follow-up, browser context, email, and integrations. One trained fleet of AI employees can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
 The current product doctrine is simple. The customer-facing product loop is **Create -> Train -> Run**; operationally, Wire sits between Train and Run:
 
-1. **Create** a focused profit agent quickly.
+1. **Create** a focused AI employee quickly.
 2. **Train** it deeply with facts, sources, policies, voice, tone, tools, and workflows.
 3. **Wire** it to an included number, integrations, routing, approvals, and billing controls.
 4. **Run** it in Studio, where calls, texts, follow-up, approvals, handoffs, and review happen.
 
 ## Key capabilities
 
-- **Profit agents**: Customizable voice, SMS, email, and follow-up agents for appointments, lead revival, promotions, recovery, inbound conversion, and support overflow.
+- **AI employees**: Customizable voice, SMS, email, and follow-up agents for appointments, lead revival, promotions, recovery, inbound conversion, and support overflow.
 - **Included numbers**: Every included agent gets an included number so the role can call out, receive callbacks, and become a reachable operating asset.
 - **Create -> Train -> Wire -> Run**: Short intake, first-class Training, deliberate wiring, and a chat-first Studio workroom.
 - **Voice**: Production calls through approved telephony and voice providers, with authenticated realtime test paths for low-latency validation.

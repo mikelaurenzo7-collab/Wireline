@@ -434,9 +434,9 @@ function PlanPicker({
           Choose operating capacity
         </h3>
         <p className="text-[var(--wireline-typography-caption-size)] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          {PRODUCT_VERSATILITY.short} Start free, activate Personal with Conversation Balance, or
-          move into shared capacity when you need routing, numbers, approvals, and team operations.
-          Stripe-secured. Cancel anytime.
+          {PRODUCT_VERSATILITY.short} Build free, go live from $9/mo with guaranteed voice minutes,
+          and move into shared capacity when you need routing, numbers, approvals, and team
+          operations. Stripe-secured. Cancel anytime.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">

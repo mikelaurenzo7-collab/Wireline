@@ -1,24 +1,52 @@
 {
-  "name": "Wireline - AI profit agents",
+  "name": "Wireline - AI employees",
   "short_name": "Wireline",
-  "description": "Wireline builds AI profit agents with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.",
+  "description": "Wireline builds AI employees with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "any",
   "theme_color": "#0A0A0E",
   "background_color": "#0A0A0E",
   "lang": "en-US",
-  "categories": ["productivity", "utilities", "communications"],
+  "categories": [
+    "productivity",
+    "utilities",
+    "communications"
+  ],
   "icons": [
-    { "src": "/wireline-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "/wireline-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Studio", "short_name": "Studio", "description": "Open the chat-first workroom", "url": "/studio" },
-    { "name": "Agents", "short_name": "Agents", "description": "See your agents", "url": "/agents" },
-    { "name": "Training", "short_name": "Training", "description": "Add facts, sources, rules, and tone", "url": "/knowledge" }
+    {
+      "name": "Studio",
+      "short_name": "Studio",
+      "description": "Open the chat-first workroom",
+      "url": "/studio"
+    },
+    {
+      "name": "Agents",
+      "short_name": "Agents",
+      "description": "See your agents",
+      "url": "/agents"
+    },
+    {
+      "name": "Training",
+      "short_name": "Training",
+      "description": "Add facts, sources, rules, and tone",
+      "url": "/knowledge"
+    }
   ],
   "prefer_related_applications": false
 }
