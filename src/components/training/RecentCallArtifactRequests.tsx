@@ -9,13 +9,13 @@ import { StatusNotice } from "../molecules";
 type ArtifactFormat = "pdf" | "docx" | "pptx" | "xlsx";
 type ArtifactDestination = "google_drive" | "onedrive";
 
-type PreferencesResponse = {
-  preferences?: {
-    artifact_mode: "off" | "manual";
-    artifact_format: ArtifactFormat;
-    artifact_destination: ArtifactDestination | null;
-  };
+type ArtifactPreferences = {
+  artifact_mode: "off" | "manual";
+  artifact_format: ArtifactFormat;
+  artifact_destination: ArtifactDestination | null;
 };
+
+type PreferencesResponse = { preferences?: ArtifactPreferences };
 
 type Call = {
   id: string;
@@ -43,6 +43,8 @@ type RequestState = {
   fileName?: string;
 };
 
+export const REPORT_PREFERENCES_SAVED_EVENT = "wireline:report-preferences-saved";
+
 const FORMAT_LABELS: Record<ArtifactFormat, string> = {
   pdf: "PDF",
   docx: "Word",
@@ -67,8 +69,15 @@ function callTime(value: string | null | undefined): string {
       }).format(date);
 }
 
+async function fetchArtifactPreferences(): Promise<ArtifactPreferences | null> {
+  const response = await authFetch("/api/post-call-output-preferences");
+  const body = (await response.json()) as PreferencesResponse & { error?: string };
+  if (!response.ok) throw new Error(body.error || "Could not load report defaults.");
+  return body.preferences || null;
+}
+
 export default function RecentCallArtifactRequests() {
-  const [preferences, setPreferences] = useState<PreferencesResponse["preferences"] | null>(null);
+  const [preferences, setPreferences] = useState<ArtifactPreferences | null>(null);
   const [calls, setCalls] = useState<Call[]>([]);
   const [requests, setRequests] = useState<Record<string, RequestState>>({});
   const [loading, setLoading] = useState(true);
@@ -78,11 +87,7 @@ export default function RecentCallArtifactRequests() {
   useEffect(() => {
     let active = true;
     void Promise.all([
-      authFetch("/api/post-call-output-preferences").then(async (response) => {
-        const body = (await response.json()) as PreferencesResponse & { error?: string };
-        if (!response.ok) throw new Error(body.error || "Could not load report defaults.");
-        return body.preferences || null;
-      }),
+      fetchArtifactPreferences(),
       authFetch("/api/calls?limit=12").then(async (response) => {
         const body = (await response.json()) as { calls?: Call[]; error?: string };
         if (!response.ok) throw new Error(body.error || "Could not load recent calls.");
@@ -101,8 +106,23 @@ export default function RecentCallArtifactRequests() {
         if (active) setLoading(false);
       });
 
+    const onPreferencesSaved = (event: Event) => {
+      const detail = (event as CustomEvent<ArtifactPreferences | undefined>).detail;
+      if (detail) {
+        setPreferences(detail);
+        return;
+      }
+      void fetchArtifactPreferences()
+        .then((next) => {
+          if (active) setPreferences(next);
+        })
+        .catch(() => undefined);
+    };
+    window.addEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
+
     return () => {
       active = false;
+      window.removeEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
       for (const timer of polling.current.values()) window.clearTimeout(timer);
       polling.current.clear();
     };
@@ -115,6 +135,7 @@ export default function RecentCallArtifactRequests() {
 
   async function pollJob(callId: string, jobId: string, attempt = 0): Promise<void> {
     if (attempt >= 100) {
+      polling.current.delete(callId);
       setRequests((current) => ({
         ...current,
         [callId]: {
@@ -144,10 +165,15 @@ export default function RecentCallArtifactRequests() {
         },
       }));
       if (job.status === "pending" || job.status === "running") {
+        const prior = polling.current.get(callId);
+        if (prior) window.clearTimeout(prior);
         const timer = window.setTimeout(() => void pollJob(callId, jobId, attempt + 1), 3_000);
         polling.current.set(callId, timer);
+      } else {
+        polling.current.delete(callId);
       }
     } catch (cause) {
+      polling.current.delete(callId);
       setRequests((current) => ({
         ...current,
         [callId]: {
@@ -161,7 +187,10 @@ export default function RecentCallArtifactRequests() {
   }
 
   async function requestFile(callId: string): Promise<void> {
-    if (!enabled || !preferences || requests[callId]?.status === "pending") return;
+    const currentStatus = requests[callId]?.status;
+    if (!enabled || !preferences || currentStatus === "pending" || currentStatus === "running") {
+      return;
+    }
     setRequests((current) => ({
       ...current,
       [callId]: { jobId: "", status: "pending" },
@@ -179,11 +208,20 @@ export default function RecentCallArtifactRequests() {
       if (!response.ok || !body.job_id) {
         throw new Error(body.error || "Could not queue the requested file.");
       }
+      const jobId = body.job_id;
       setRequests((current) => ({
         ...current,
-        [callId]: { jobId: body.job_id!, status: "pending" },
+        [callId]: { jobId, status: "pending" },
       }));
-      void pollJob(callId, body.job_id);
+
+      // Serverless workers otherwise wait for the periodic queue sweep. Start this
+      // owned job immediately, but do not block the interface while OpenAI and the
+      // connected storage provider finish. Polling remains the source of UI truth.
+      void authFetch(`/api/jobs/${encodeURIComponent(jobId)}/run`, {
+        method: "POST",
+        timeoutMs: 540_000,
+      }).catch(() => undefined);
+      void pollJob(callId, jobId);
     } catch (cause) {
       setRequests((current) => ({
         ...current,
