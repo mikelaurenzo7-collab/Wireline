@@ -62,21 +62,44 @@ h4,
 .wl-public-section-heading,
 .wl-stitch-marketing-hero {
   font-family: var(--wireline-font-family-display);
-  font-weight: 700;
-  letter-spacing: -0.04em;
   text-wrap: balance;
 }
 
-p,
-li,
-dd,
-dt,
-summary,
+.wl-display-1,
+.wl-page-title,
+.wl-stitch-marketing-hero,
+.marketing-hero h1 {
+  font-weight: var(--wireline-typography-display-weight);
+  letter-spacing: var(--wireline-typography-display-letterSpacing);
+}
+
+.wl-display-2,
+.wl-public-section-heading,
+.wl-section-title {
+  font-weight: var(--wireline-typography-h1-weight);
+  letter-spacing: var(--wireline-typography-h1-letterSpacing);
+}
+
+.wl-display-3,
+.wl-app-page-title {
+  font-weight: var(--wireline-typography-h2-weight);
+  letter-spacing: var(--wireline-typography-h2-letterSpacing);
+}
+
+.wl-display-4,
+.wl-card-title {
+  font-weight: var(--wireline-typography-h3-weight);
+  letter-spacing: var(--wireline-typography-h3-letterSpacing);
+}
+
+:is(.marketing-surface, .prose, .wl-copy, .wl-public-copy, .wl-page-copy, .wl-route-copy, .wl-overview-hero-copy)
+  :where(p, li, dd, dt, summary),
 .wl-body,
 .wl-lead,
 .wl-public-copy,
 .wl-page-copy,
-.wl-route-copy {
+.wl-route-copy,
+.wl-overview-hero-copy {
   max-width: 72ch;
   line-height: 1.62;
 }
@@ -97,8 +120,8 @@ small,
 .studio-kicker,
 .text-eyebrow {
   font-family: var(--wireline-font-family-mono);
-  font-weight: 700;
-  letter-spacing: 0.105em;
+  font-weight: var(--wireline-typography-overline-weight);
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
 }
 
 .wl-public-rail,
@@ -118,7 +141,6 @@ small,
 
 .marketing-hero h1 {
   max-width: 18.75ch;
-  font-weight: 700;
   line-height: 0.92;
   letter-spacing: -0.055em;
 }
@@ -138,13 +160,18 @@ small,
 
 .marketing-btn-primary,
 .marketing-btn-secondary,
-button,
-[role="button"],
 a[role="button"],
-input,
+button:not(.wl-compact-control):not([data-compact="true"]),
+[role="button"]:not(.wl-compact-control):not([data-compact="true"]),
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   min-height: var(--wireline-interaction-target-comfortable, 44px);
+}
+
+.wl-compact-control,
+[data-compact="true"] {
+  min-height: var(--wireline-interaction-target-minimum, 40px);
 }
 
 a,
