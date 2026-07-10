@@ -12,6 +12,7 @@ describe("authenticated agent flow", () => {
     const authRedirect = read("src/lib/auth-redirect.ts");
     const onboardingFlow = read("src/pages/OnboardingFlow.tsx");
     const appShell = read("src/components/layout/AppShell.tsx");
+    const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
     expect(authPortal).toContain(
       'preferredPlanId: nextMode === "business" ? "business" : "personal"',
@@ -21,6 +22,8 @@ describe("authenticated agent flow", () => {
     expect(authPortal).toContain('["Launch", "Number and tools"]');
     expect(authPortal).toContain('["Improve", "Outcomes and coaching"]');
     expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
+    expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
+    expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
     expect(authRedirect).toContain(
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
