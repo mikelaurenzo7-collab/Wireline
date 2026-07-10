@@ -71,12 +71,16 @@ router.post(
             })
             .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
         } else if (optOutType === "START") {
+          // START reverses only the SMS suppression that Twilio created. It must
+          // never remove a manual, federal, voice, legal, or other workspace DNC.
           await drizzle
             .delete(schema.dncList)
             .where(
               and(
                 eq(schema.dncList.userId, userId),
                 eq(schema.dncList.phone, customerNumber),
+                eq(schema.dncList.source, "twilio_advanced_opt_out"),
+                eq(schema.dncList.reason, "opt-out"),
               ),
             );
         }
