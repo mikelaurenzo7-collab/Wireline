@@ -10,6 +10,7 @@ import {
 import { drizzle, fetchWithTimeout } from "./server-context";
 
 export type PostCallArtifactFormat = "pdf" | "docx" | "pptx" | "xlsx";
+export type BusinessArtifactPurpose = "call_report" | "operating_report";
 
 const MIME_BY_FORMAT: Record<PostCallArtifactFormat, string> = {
   pdf: "application/pdf",
@@ -40,6 +41,9 @@ export interface PostCallArtifactInput {
   campaignSource?: string | null;
   format: PostCallArtifactFormat;
   destination: ConnectedArtifactDestination;
+  purpose?: BusinessArtifactPurpose;
+  reportTitle?: string | null;
+  periodLabel?: string | null;
 }
 
 export interface GeneratedPostCallArtifact extends ConnectedArtifactUpload {
@@ -51,45 +55,72 @@ function bounded(value: string | null | undefined, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
-function fileName(input: PostCallArtifactInput): string {
-  const date = new Date().toISOString().slice(0, 10);
-  const customer = bounded(input.customerName || input.customerNumber, 48)
-    .replace(/[^a-z0-9]+/gi, "-")
-    .replace(/^-|-$/g, "") || "customer";
-  return `Wireline-${date}-${customer}-${input.outcomeTag}.${input.format}`;
+function slug(value: string | null | undefined, fallback: string): string {
+  return (
+    bounded(value, 64)
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "") || fallback
+  );
 }
 
-function promptFor(input: PostCallArtifactInput, brand: Record<string, string | null>): string {
-  const formatDirection: Record<PostCallArtifactFormat, string> = {
+function fileName(input: PostCallArtifactInput): string {
+  const date = new Date().toISOString().slice(0, 10);
+  if (input.purpose === "operating_report") {
+    return `Wireline-${date}-${slug(input.reportTitle, "Operating-Report")}.${input.format}`;
+  }
+  return `Wireline-${date}-${slug(input.customerName || input.customerNumber, "customer")}-${input.outcomeTag}.${input.format}`;
+}
+
+function formatDirection(input: PostCallArtifactInput): string {
+  if (input.purpose === "operating_report") {
+    const byFormat: Record<PostCallArtifactFormat, string> = {
+      pdf: "Create a polished executive PDF operating report with KPI cards, outcome analysis, risks, wins, and a prioritized action plan.",
+      docx: "Create an editable executive Word operating report with KPI tables, findings, risks, wins, and a prioritized action plan.",
+      pptx: "Create a polished 6-9 slide executive PowerPoint covering performance, outcomes, trends, risks, opportunities, and next actions.",
+      xlsx: "Create a polished Excel workbook with Executive Summary, Calls, Outcomes, and Action Plan sheets, formatted headers, filters, and useful charts.",
+    };
+    return byFormat[input.format];
+  }
+  const byFormat: Record<PostCallArtifactFormat, string> = {
     pdf: "Create a polished client-ready PDF report with strong hierarchy and an action checklist.",
     docx: "Create an editable polished Word report with headings, callouts, tables, and an action checklist.",
     pptx: "Create a polished 5-7 slide PowerPoint covering the call, opportunity, commitments, risks, and next actions.",
     xlsx: "Create a polished Excel workbook with Summary and Action Plan sheets, formatted headers, filters, and practical column widths.",
   };
+  return byFormat[input.format];
+}
+
+function promptFor(input: PostCallArtifactInput, brand: Record<string, string | null>): string {
+  const evidence =
+    input.purpose === "operating_report"
+      ? {
+          report_title: input.reportTitle || "Wireline operating report",
+          period: input.periodLabel || null,
+          executive_summary_and_data: bounded(input.summary, 12_000) || null,
+          supporting_records: bounded(input.transcript, 28_000) || null,
+        }
+      : {
+          agent: input.agentName || null,
+          customer: input.customerName || input.customerNumber || null,
+          direction: input.direction || null,
+          duration_seconds: input.durationSeconds || 0,
+          outcome: input.outcomeTag,
+          sentiment: input.sentiment || null,
+          intent: input.intentLabel || null,
+          campaign: input.campaignSource || null,
+          summary: bounded(input.summary, 5_000) || null,
+          transcript: bounded(input.transcript, 18_000) || null,
+        };
+
   return [
     `Use the python tool to create exactly one native .${input.format} file named ${fileName(input)}.`,
-    formatDirection[input.format],
+    formatDirection(input),
     "The native file is required; do not substitute Markdown or plain text.",
-    "Use only the call evidence supplied below. Clearly distinguish facts from recommendations.",
+    "Use only the supplied evidence. Clearly distinguish measured facts from recommendations and do not invent revenue or outcomes.",
     `Brand name: ${bounded(brand.brandName || brand.businessName, 100) || "Wireline customer"}.`,
     brand.primaryColor ? `Preferred accent: ${bounded(brand.primaryColor, 30)}.` : "",
-    JSON.stringify(
-      {
-        agent: input.agentName || null,
-        customer: input.customerName || input.customerNumber || null,
-        direction: input.direction || null,
-        duration_seconds: input.durationSeconds || 0,
-        outcome: input.outcomeTag,
-        sentiment: input.sentiment || null,
-        intent: input.intentLabel || null,
-        campaign: input.campaignSource || null,
-        summary: bounded(input.summary, 5_000) || null,
-        transcript: bounded(input.transcript, 18_000) || null,
-      },
-      null,
-      2,
-    ),
-    "Inspect the generated file before finishing and fix obvious overflow, clipping, missing sections, or unreadable formatting.",
+    JSON.stringify(evidence, null, 2),
+    "Inspect the generated file before finishing and fix obvious overflow, clipping, missing sections, broken formulas, or unreadable formatting.",
     `Cite the generated ${fileName(input)} file in the final response.`,
   ]
     .filter(Boolean)
