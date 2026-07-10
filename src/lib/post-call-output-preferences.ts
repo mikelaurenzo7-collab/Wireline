@@ -12,7 +12,8 @@ export const POST_CALL_SPREADSHEET_DESTINATIONS = [
 export type PostCallSpreadsheetDestination =
   (typeof POST_CALL_SPREADSHEET_DESTINATIONS)[number];
 
-export const POST_CALL_ARTIFACT_MODES = ["off", "manual", "booked_or_qualified", "always"] as const;
+/** Special files are generated only when the Account Holder asks for one. */
+export const POST_CALL_ARTIFACT_MODES = ["off", "manual"] as const;
 export type PostCallArtifactMode = (typeof POST_CALL_ARTIFACT_MODES)[number];
 
 export const POST_CALL_ARTIFACT_FORMATS = ["pdf", "docx", "pptx", "xlsx"] as const;
@@ -21,6 +22,9 @@ export type PostCallArtifactFormat = (typeof POST_CALL_ARTIFACT_FORMATS)[number]
 export const POST_CALL_ARTIFACT_DESTINATIONS = ["google_drive", "onedrive"] as const;
 export type PostCallArtifactDestination = (typeof POST_CALL_ARTIFACT_DESTINATIONS)[number];
 
+export const SCHEDULED_REPORT_FREQUENCIES = ["off", "daily", "weekly"] as const;
+export type ScheduledReportFrequency = (typeof SCHEDULED_REPORT_FREQUENCIES)[number];
+
 export interface PostCallOutputPreferences {
   /** Structured call record is always written inside Wireline and cannot be disabled. */
   internal_record_enabled: true;
@@ -28,24 +32,47 @@ export interface PostCallOutputPreferences {
   artifact_mode: PostCallArtifactMode;
   artifact_format: PostCallArtifactFormat;
   artifact_destination: PostCallArtifactDestination | null;
+  scheduled_report_frequency: ScheduledReportFrequency;
+  scheduled_report_format: PostCallArtifactFormat;
+  scheduled_report_destination: PostCallArtifactDestination | null;
+  /** UTC HH:MM. UI converts from local time before saving. */
+  scheduled_report_send_at_utc: string;
+  /** 0=Sunday ... 6=Saturday. Used only for weekly reports. */
+  scheduled_report_weekday: number;
+  scheduled_report_version: number;
 }
 
 export const DEFAULT_POST_CALL_OUTPUT_PREFERENCES: PostCallOutputPreferences = {
   internal_record_enabled: true,
   spreadsheet_destination: "none",
-  artifact_mode: "off",
+  artifact_mode: "manual",
   artifact_format: "pdf",
   artifact_destination: null,
+  scheduled_report_frequency: "off",
+  scheduled_report_format: "pdf",
+  scheduled_report_destination: null,
+  scheduled_report_send_at_utc: "13:00",
+  scheduled_report_weekday: 1,
+  scheduled_report_version: 0,
 };
 
 function oneOf<T extends readonly string[]>(value: unknown, values: T): T[number] | null {
   return typeof value === "string" && values.includes(value) ? (value as T[number]) : null;
 }
 
+function validTime(value: unknown): string {
+  if (typeof value !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+    return DEFAULT_POST_CALL_OUTPUT_PREFERENCES.scheduled_report_send_at_utc;
+  }
+  return value;
+}
+
 export function normalizePostCallOutputPreferences(
   value: unknown,
 ): PostCallOutputPreferences {
   const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const weekday = Number(record.scheduled_report_weekday);
+  const version = Number(record.scheduled_report_version);
   return {
     internal_record_enabled: true,
     spreadsheet_destination:
@@ -59,6 +86,21 @@ export function normalizePostCallOutputPreferences(
       DEFAULT_POST_CALL_OUTPUT_PREFERENCES.artifact_format,
     artifact_destination:
       oneOf(record.artifact_destination, POST_CALL_ARTIFACT_DESTINATIONS) ?? null,
+    scheduled_report_frequency:
+      oneOf(record.scheduled_report_frequency, SCHEDULED_REPORT_FREQUENCIES) ??
+      DEFAULT_POST_CALL_OUTPUT_PREFERENCES.scheduled_report_frequency,
+    scheduled_report_format:
+      oneOf(record.scheduled_report_format, POST_CALL_ARTIFACT_FORMATS) ??
+      DEFAULT_POST_CALL_OUTPUT_PREFERENCES.scheduled_report_format,
+    scheduled_report_destination:
+      oneOf(record.scheduled_report_destination, POST_CALL_ARTIFACT_DESTINATIONS) ?? null,
+    scheduled_report_send_at_utc: validTime(record.scheduled_report_send_at_utc),
+    scheduled_report_weekday:
+      Number.isInteger(weekday) && weekday >= 0 && weekday <= 6
+        ? weekday
+        : DEFAULT_POST_CALL_OUTPUT_PREFERENCES.scheduled_report_weekday,
+    scheduled_report_version:
+      Number.isInteger(version) && version >= 0 ? version : 0,
   };
 }
 
@@ -93,7 +135,20 @@ export async function savePostCallOutputPreferences(
       ? { ...(row.preferences as Record<string, unknown>) }
       : {};
   const current = postCallPreferencesFromRoot(root);
-  const next = normalizePostCallOutputPreferences({ ...current, ...patch });
+  const scheduleChanged = [
+    "scheduled_report_frequency",
+    "scheduled_report_format",
+    "scheduled_report_destination",
+    "scheduled_report_send_at_utc",
+    "scheduled_report_weekday",
+  ].some((key) => Object.prototype.hasOwnProperty.call(patch, key));
+  const next = normalizePostCallOutputPreferences({
+    ...current,
+    ...patch,
+    scheduled_report_version: scheduleChanged
+      ? current.scheduled_report_version + 1
+      : current.scheduled_report_version,
+  });
   root.post_call_outputs = next;
 
   await drizzle
@@ -111,15 +166,7 @@ export async function savePostCallOutputPreferences(
   return next;
 }
 
-export function shouldGeneratePostCallArtifact(
-  preferences: PostCallOutputPreferences,
-  outcomeTag: string,
-): boolean {
-  if (!preferences.artifact_destination || preferences.artifact_mode === "off") return false;
-  if (preferences.artifact_mode === "always") return true;
-  if (preferences.artifact_mode === "booked_or_qualified") {
-    return outcomeTag === "booked" || outcomeTag === "qualified";
-  }
-  // Manual means the Account Holder must request a file from the call record.
+/** Per-call native files are never automatic; the Account Holder requests each one. */
+export function shouldGeneratePostCallArtifact(_preferences: PostCallOutputPreferences): boolean {
   return false;
 }
