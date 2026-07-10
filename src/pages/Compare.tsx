@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import MarketingHero from "../components/marketing/MarketingHero";
 
 const DIFFERENCES = [
   {
@@ -78,40 +79,35 @@ const TABLE_ROWS = [
   ],
 ] as const;
 
+const COMPARE_HERO_PROOF = ["Make the call", "Keep the result", "Improve the next one"] as const;
+const COMPARE_HERO_ITEMS = [
+  "Make routine calls",
+  "Hold the context",
+  "Return the next step",
+  "Log the outcome",
+] as const;
+
 export default function Compare() {
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Why Wireline"
         description="Wireline handles routine phone conversations around your voice, priorities, and playbook, then returns a clear outcome."
         path="/compare"
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="mx-auto max-w-3xl">
-          <p className="wl-stitch-eyebrow">Why Wireline</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            Less phone tag. More of your day.
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-8 text-muted-foreground">
-            Make the call. Keep the result.
-          </p>
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link
-              to="/pricing"
-              className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
-            >
-              Start free <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/showcase"
-              className="marketing-btn-secondary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
-            >
-              Hear an agent
-            </Link>
-          </div>
-        </div>
-      </section>
+      <MarketingHero
+        eyebrow="Why Wireline"
+        title="Less phone tag. More of your day."
+        description="Make the call, keep the result, and stop turning routine phone work into another project."
+        primaryAction={{ label: "Start free", to: "/pricing" }}
+        secondaryAction={{ label: "Hear an agent", to: "/showcase", tone: "secondary" }}
+        proof={COMPARE_HERO_PROOF}
+        visualEyebrow="The difference"
+        visualTitle="A call should end with an answer."
+        visualBody="Wireline keeps the hard parts together: context, timing, conversation, outcome, and follow-up."
+        visualItems={COMPARE_HERO_ITEMS}
+      />
 
       <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
