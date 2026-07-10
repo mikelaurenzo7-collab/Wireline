@@ -76,5 +76,14 @@ describe("PR 729 hardening contract", () => {
     const requests = read("src/components/training/RecentCallArtifactRequests.tsx");
     expect(training).toContain("<RecentCallArtifactRequests />");
     expect(requests).toContain("/api/call-logs/${encodeURIComponent(callId)}/artifact");
+    expect(requests).toContain("/api/jobs/${encodeURIComponent(jobId)}/run");
+  });
+
+  it("derives the default provider-spend envelope from funded catalog capacity", () => {
+    const entitlements = read("src/lib/plan-entitlements.ts");
+    expect(entitlements).toContain("plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD");
+    expect(entitlements).toContain("plan.runtime_allowance_usd_monthly");
+    expect(entitlements).not.toContain("return 500");
+    expect(entitlements).not.toContain("return 125");
   });
 });
