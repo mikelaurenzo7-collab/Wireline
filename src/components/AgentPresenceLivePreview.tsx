@@ -171,7 +171,11 @@ export default function AgentPresenceLivePreview({
     try {
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(agentId)}/video-presenter/enable`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ consentAcknowledged: true }),
+        },
       );
       const payload = await response.json();
       if (!response.ok) {
