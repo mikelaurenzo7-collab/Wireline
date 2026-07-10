@@ -40,8 +40,8 @@ export async function handleEnrichmentToolCall(
         };
       }
 
-      const { groundedSearch } = await import("../../lib/gemini-brain");
-      const grounded = await groundedSearch(query);
+      const { freshPublicResearch } = await import("../../lib/fresh-public-research");
+      const grounded = await freshPublicResearch(query);
       const sourceTail =
         grounded.sources.length > 0
           ? ` (sources: ${grounded.sources
