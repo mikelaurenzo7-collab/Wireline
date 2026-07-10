@@ -7,15 +7,10 @@
  *
  * Transport selection:
  *   - If RESEND_API_KEY is set → POST to https://api.resend.com/emails.
- *   - Otherwise → log.warn the rendered link so dev/support can copy it
- *     out of runtime logs while production email transport is wired up.
- *     This is the documented stop-gap from the launch plan; the password
- *     reset flow stays usable in pre-launch tenants without a transport.
+ *   - Otherwise → fail closed and report delivery as unavailable.
  *
- * NEVER log raw email bodies in production. The reset URL contains the
- * single-use token; treat it like a credential. The dev fallback emits
- * it intentionally so a single-tenant ops console can recover, but it
- * MUST NOT ship to a multi-tenant production with Resend unconfigured.
+ * NEVER log raw email bodies or reset URLs. A reset URL is a bearer
+ * credential; anyone who can read it can take over the account.
  */
 
 import { log } from "./server-context";
@@ -158,18 +153,10 @@ export async function sendPasswordResetEmail(opts: PasswordResetEmailOpts): Prom
     return await sendViaResend({ to: opts.to, subject, html, text });
   }
 
-  // Dev/no-transport fallback: log.warn so the URL is recoverable from
-  // runtime logs. Only acceptable for single-tenant pre-launch ops.
-  log.warn(
-    "Password reset email transport not configured (RESEND_API_KEY missing). " +
-      "Emitting URL to runtime log so support can deliver it manually.",
-    {
-      to: opts.to,
-      resetUrl: opts.resetUrl,
-      expiresAt: opts.expiresAt.toISOString(),
-    },
-  );
-  return { ok: true, provider: "log-fallback" };
+  // Fail closed. The reset URL is a bearer credential and must never
+  // be copied into runtime logs, even as a development fallback.
+  log.error("Password reset email unavailable: RESEND_API_KEY missing");
+  return { ok: false, provider: "no-transport", error: "RESEND_API_KEY not set" };
 }
 
 /**
