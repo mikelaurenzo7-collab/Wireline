@@ -9,6 +9,17 @@
   --wl-app-rail: 88rem;
 }
 
+@media (min-width: 1024px) {
+  .wl-workspace-shell > .grid {
+    grid-template-columns: 224px minmax(0, 1fr);
+  }
+
+  .wl-workspace-shell aside[aria-label="Workspace navigation"] {
+    width: 224px;
+    padding-inline: 0.75rem;
+  }
+}
+
 .wl-ui-caps .wl-workspace-content-inner,
 .wl-ui-caps .wl-route-content,
 .wl-ui-caps .wl-page-content {
