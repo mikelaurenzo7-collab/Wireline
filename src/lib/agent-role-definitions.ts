@@ -2,6 +2,7 @@ import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
 
 /** Canonical agent role ids — keys of server personality templates plus explicit custom. */
 export const AGENT_ROLE_IDS = [
+  "ceo",
   "sales",
   "customer_service",
   "scheduler",
@@ -17,14 +18,17 @@ export const AGENT_ROLE_IDS = [
 export type AgentRoleId = (typeof AGENT_ROLE_IDS)[number];
 
 /** Runtime fallback when an agent row has no role. */
-export const DEFAULT_AGENT_ROLE_ID: AgentRoleId = "customer_service";
+export const DEFAULT_AGENT_ROLE_ID: AgentRoleId = "ceo";
 
 /** Default role when create payloads omit `role` (web + mobile). */
-export const AGENT_CREATE_DEFAULT_ROLE_ID: AgentRoleId = "scheduler";
+export const AGENT_CREATE_DEFAULT_ROLE_ID: AgentRoleId = "ceo";
 
 /** Legacy ids accepted on read / archetype resolution only — not for new creates. */
 const LEGACY_ROLE_ALIASES: Record<string, AgentRoleId> = {
   appointment_scheduler: "scheduler",
+  director: "ceo",
+  general_manager: "ceo",
+  operator: "ceo",
 };
 
 export type AgentRoleDefinition = {
@@ -35,6 +39,11 @@ export type AgentRoleDefinition = {
 };
 
 const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
+  ceo: {
+    label: "Wireline CEO",
+    archetype: "Business Operating Agent",
+    description: "Runs the front office across calls, sales, support, scheduling, marketing, finance, and personal admin",
+  },
   sales: {
     label: "Sales",
     archetype: "Sales Representative",
