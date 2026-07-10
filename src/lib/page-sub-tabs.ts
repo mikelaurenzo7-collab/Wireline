@@ -59,10 +59,10 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     ariaLabel: "Insights categories",
     layoutIdPrefix: "insights-group",
     tabs: [
-      { id: "performance", label: "Perf", icon: BarChart3 },
-      { id: "reliability", label: "Uptime", icon: ShieldAlert },
+      { id: "performance", label: "Performance", icon: BarChart3 },
+      { id: "reliability", label: "Reliability", icon: ShieldAlert },
       { id: "quality", label: "Quality", icon: Star },
-      { id: "revenue", label: "Rev", icon: Receipt },
+      { id: "revenue", label: "Revenue", icon: Receipt },
     ],
   },
   {
@@ -162,17 +162,37 @@ export function resolveInsightsSecondaryTabs(groupId: string): AppPageSubTab[] {
     .filter((tab): tab is AppPageSubTab => Boolean(tab));
 }
 
+export function resolveAllInsightsSecondaryTabs(): AppPageSubTab[] {
+  const seen = new Set<string>();
+  return OPS_INSIGHTS_GROUPS.flatMap((group) => group.tabs)
+    .map((id) => INSIGHTS_VIEW_TABS[id])
+    .filter((tab): tab is AppPageSubTab => {
+      if (!tab || seen.has(tab.id)) return false;
+      seen.add(tab.id);
+      return true;
+    });
+}
+
+export function resolveInsightsGroupForView(viewId: string | null): string | null {
+  if (!viewId) return null;
+  const group = OPS_INSIGHTS_GROUPS.find((candidate) =>
+    (candidate.tabs as readonly string[]).includes(viewId),
+  );
+  return group?.id ?? null;
+}
+
 export function resolveAppPageSecondaryRoute(
   pathname: string,
   primaryTabId: string,
 ): Omit<AppPageSecondaryTabRoute, "whenPrimaryTab"> | null {
   if (pathname === "/insights") {
-    const tabs = resolveInsightsSecondaryTabs(primaryTabId);
-    if (tabs.length === 0) return null;
+    const allTabs = resolveAllInsightsSecondaryTabs();
+    const primaryTabs = resolveInsightsSecondaryTabs(primaryTabId);
+    if (allTabs.length === 0) return null;
     return {
       pathname,
-      tabs,
-      defaultView: tabs[0]!.id,
+      tabs: allTabs,
+      defaultView: primaryTabs[0]?.id ?? allTabs[0]!.id,
       ariaLabel: "Insights views",
       layoutIdPrefix: "insights-view",
     };
