@@ -3,7 +3,7 @@ import { drizzle, log, auditLogger } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
-import { planByStripePrice, type StripePlan } from "./plan-catalog";
+import { planByStripePrice, planPriceId, type StripePlan } from "./plan-catalog";
 import { dispatchWebhook } from "./webhook-helpers";
 import { invalidateDashboard } from "./dashboard-cache";
 import { grantWelcomeSubscriptionCredit } from "./subscription-welcome-credit";
@@ -19,69 +19,38 @@ export function stripeAvailable(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
 }
 
-/** True when meter event name + tier overage price are configured for invoicing. */
-export function voiceOverageBillingConfigured(plan: StripePlan): boolean {
-  if (!process.env.STRIPE_VOICE_OVERAGE_METER_EVENT_NAME) return false;
-  if (!plan.overagePriceIdEnv) return false;
-  return !!process.env[plan.overagePriceIdEnv];
+/**
+ * Postpaid metered overage is intentionally retired. Variable voice, SMS,
+ * enrichment, and other provider-funded work must be covered by prepaid
+ * Conversation Balance instead of appearing as an unexpected invoice item.
+ */
+export function voiceOverageBillingConfigured(_plan: StripePlan): boolean {
+  return false;
 }
 
-/**
- * Checkout line items: flat subscription price + optional metered voice-overage price.
- * Overage price is monthly metered even when the base plan is annual.
- */
+/** Checkout contains exactly one licensed subscription price. */
 export function subscriptionCheckoutLineItems(
   plan: StripePlan,
   interval: "month" | "year",
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  const priceEnvKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
-  const priceId = process.env[priceEnvKey];
-  if (!priceId) return [];
-
-  const items: Stripe.Checkout.SessionCreateParams.LineItem[] = [{ price: priceId, quantity: 1 }];
-
-  if (voiceOverageBillingConfigured(plan)) {
-    const overagePriceId = process.env[plan.overagePriceIdEnv!];
-    if (overagePriceId) {
-      items.push({ price: overagePriceId });
-    }
-  }
-
-  return items;
+  const priceId = planPriceId(plan, interval);
+  return priceId ? [{ price: priceId, quantity: 1 }] : [];
 }
 
 /**
- * Emit a Stripe Meter Event for voice-minute overage. NO-OP unless both
- * STRIPE_SECRET_KEY and STRIPE_VOICE_OVERAGE_METER_EVENT_NAME are set —
- * lets us ship usage tracking + visible UI before configuring the Stripe
- * Meter + metered Price in the dashboard.
- *
- * Stripe setup (automated via scripts/setup-stripe-catalog.mjs):
- *   1. Billing → Meters → voice_minutes_overage (SUM aggregation)
- *   2. Per-tier metered prices at each plan's overage_per_min_usd
- *   3. Checkout attaches flat + overage prices on new subscriptions
- *   4. STRIPE_VOICE_OVERAGE_METER_EVENT_NAME=voice_minutes_overage
+ * Compatibility no-op retained for callers that still reconcile completed
+ * voice usage. The wallet ledger is the billing source of truth; Stripe meter
+ * events must never be emitted under the prepaid founder model.
  */
-export async function emitVoiceMinuteOverageEvent(opts: {
+export async function emitVoiceMinuteOverageEvent(_opts: {
   customerId: string;
   minutes: number;
-  /** Stable per-call id — used as the Stripe meter idempotency key. */
   vapiCallId: string;
 }): Promise<void> {
-  const eventName = process.env.STRIPE_VOICE_OVERAGE_METER_EVENT_NAME;
-  if (!eventName || !stripeAvailable() || opts.minutes <= 0) return;
-
-  await stripe.billing.meterEvents.create({
-    event_name: eventName,
-    payload: {
-      stripe_customer_id: opts.customerId,
-      value: String(opts.minutes),
-    },
-    identifier: `voice_overage_${opts.vapiCallId}`,
-  });
+  return;
 }
 
-/** Sync a Stripe subscription into wireline_subscriptions + wireline_settings (plan, max_agents, status gates). */
+/** Sync a Stripe subscription into wireline_subscriptions + wireline_settings. */
 export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
@@ -100,7 +69,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const plan =
     sub.items?.data
       ?.map((item) => planByStripePrice(item.price))
-      .find((p): p is StripePlan => !!p) ?? null;
+      .find((candidate): candidate is StripePlan => !!candidate) ?? null;
   const stripeStatus = sub.status;
 
   const localStatus =
@@ -117,7 +86,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   await drizzle
     .insert(schema.subscriptions)
     .values({
-      userId: userId,
+      userId,
       stripeCustomerId: customerId,
       stripeSubscriptionId: sub.id,
       plan: plan?.id ?? null,
@@ -142,9 +111,8 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   await drizzle
     .insert(schema.settings)
     .values({
-      // settings.id is a text PK with no default; the convention is id = userId.
       id: userId,
-      userId: userId,
+      userId,
       subscriptionStatus: localStatus,
       maxAgents: plan?.max_agents ?? 1,
       updatedAt: new Date(),
@@ -171,8 +139,11 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
     cancel_at_period_end: !!sub.cancel_at_period_end,
     current_period_end: currentPeriodEndIso,
     at: new Date().toISOString(),
-  }).catch((e: unknown) =>
-    log.warn("subscription.changed webhook dispatch failed", { userId, error: getErrorMessage(e) }),
+  }).catch((error: unknown) =>
+    log.warn("subscription.changed webhook dispatch failed", {
+      userId,
+      error: getErrorMessage(error),
+    }),
   );
 
   const billingAction: "subscription_created" | "subscription_updated" | "subscription_cancelled" =
@@ -183,8 +154,11 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
         : "subscription_updated";
 
   if (billingAction === "subscription_created" && plan?.id) {
-    await grantWelcomeSubscriptionCredit(userId, sub.id, plan.id).catch((e: unknown) =>
-      log.warn("welcome subscription credit failed", { userId, error: getErrorMessage(e) }),
+    await grantWelcomeSubscriptionCredit(userId, sub.id, plan.id).catch((error: unknown) =>
+      log.warn("welcome subscription credit failed", {
+        userId,
+        error: getErrorMessage(error),
+      }),
     );
   }
 
