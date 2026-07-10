@@ -168,7 +168,7 @@ export default function WireAgentLanding() {
 
         <section className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p className="marketing-ink-panel__soft text-[18px] font-[var(--wireline-font-family-display)]">
-            Your best salesperson, without the commission. {" "}
+            Your best salesperson, without the commission.{" "}
             <span className="text-[var(--wireline-color-text-primary)]">
               Every included agent gets an included number.
             </span>
@@ -189,12 +189,17 @@ export default function WireAgentLanding() {
               {HERO_LOOP.map((step, index) => (
                 <article
                   key={step}
-                  className="wl-wire-step p-7 text-center transition-colors hover:bg-muted/40"
+                  className={`wl-wire-step p-7 text-center transition-colors hover:bg-muted/40 ${
+                    index === HERO_LOOP.length - 1 ? "wl-wire-step--settled" : ""
+                  }`}
                 >
-                  <div className="mx-auto mb-6 grid h-10 w-10 place-items-center rounded-full border border-border bg-background font-mono text-[12px] font-bold text-primary">
-                    {String(index + 1).padStart(2, "0")}
+                  <div className="wl-wire-step__marker mb-5">
+                    <span className="wl-wire-step__node" aria-hidden="true" />
                   </div>
-                  <h3 className="wl-display-4">{step}</h3>
+                  <span className="block font-mono text-[11px] font-semibold uppercase tracking-[.12em] text-primary">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="wl-display-4 mt-2">{step}</h3>
                   <p className="mt-3 text-[13px] leading-[1.6] text-muted-foreground">
                     {LOOP_COPY[index]}
                   </p>
@@ -349,10 +354,12 @@ export default function WireAgentLanding() {
                 }}
               />
               <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[17ch]">Launch the first profit agent.</h2>
+                <h2 className="wl-display-2 mx-auto max-w-[17ch]">
+                  Launch the first profit agent.
+                </h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[520px] text-[16px] leading-[1.6]">
-                  Stand up one trained role, claim its included number, and see the outcome after the
-                  first real conversation.
+                  Stand up one trained role, claim its included number, and see the outcome after
+                  the first real conversation.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
