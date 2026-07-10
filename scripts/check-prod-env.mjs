@@ -10,8 +10,40 @@
 //
 // Exit codes:
 //   0 - all required vars present, recommended vars present
-//   1 - missing required vars
-//   2 - missing recommended vars and PRODUCTION_CHECK=1
+//   1 - missing/invalid required vars
+//   2 - missing/invalid recommended vars and PRODUCTION_CHECK=1
+
+const postgresProtocols = new Set(["postgres:", "postgresql:"]);
+const localDatabaseHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+const ipv4Re = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+
+function isLikelyResolvableDatabaseHost(hostname) {
+  const host = String(hostname || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\[/, "")
+    .replace(/\]$/, "");
+  if (!host) return false;
+  if (localDatabaseHosts.has(host)) return true;
+  if (ipv4Re.test(host)) return true;
+  if (host.includes(":")) return true;
+  return host.includes(".");
+}
+
+function isPostgresConnectionString(value) {
+  if (!String(value || "").trim()) return false;
+  try {
+    const url = new URL(String(value).trim());
+    return (
+      postgresProtocols.has(url.protocol) &&
+      Boolean(url.hostname) &&
+      isLikelyResolvableDatabaseHost(url.hostname) &&
+      Boolean(url.pathname && url.pathname !== "/")
+    );
+  } catch {
+    return false;
+  }
+}
 
 const required = [
   [
@@ -99,12 +131,36 @@ const optional = [
   ["HEYGEN_API_KEY", "Legacy alias for LIVEAVATAR_API_KEY"],
 ];
 
+const formatHints = new Map([
+  ["POSTGRES_URL", "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)"],
+  ["DATABASE_POOL_URL", "postgresql://user:pass@pooler-host:6543/db"],
+]);
+
+function configuredValue([key, _description, value]) {
+  return value ?? process.env[key];
+}
+
+function isValidEnvValue(key, value) {
+  if (!value) return true;
+  if (key === "POSTGRES_URL" || key === "DATABASE_POOL_URL") {
+    return isPostgresConnectionString(value);
+  }
+  return true;
+}
+
+function invalid(vars) {
+  return vars.filter((entry) => {
+    const value = configuredValue(entry);
+    return Boolean(value) && !isValidEnvValue(entry[0], value);
+  });
+}
+
 const jwtSecretConflict =
   process.env.INTERNAL_JWT_SECRET &&
   process.env.SUPABASE_JWT_SECRET &&
   process.env.INTERNAL_JWT_SECRET !== process.env.SUPABASE_JWT_SECRET;
 
-const missing = (vars) => vars.filter(([k, _d, value]) => !(value ?? process.env[k]));
+const missing = (vars) => vars.filter((entry) => !configuredValue(entry));
 
 const missingRequired = jwtSecretConflict
   ? [
@@ -117,13 +173,20 @@ const missingRequired = jwtSecretConflict
   : missing(required);
 const missingRecommended = missing(recommended);
 const missingOptional = missing(optional);
+const invalidRequired = invalid(required);
+const invalidRecommended = invalid(recommended);
 
 const banner = (s) => `\n${"-".repeat(64)}\n  ${s}\n${"-".repeat(64)}`;
 
 console.log(banner("Wireline - production env check"));
 
-if (missingRequired.length === 0 && missingRecommended.length === 0) {
-  console.log("OK: all required and recommended env vars are set.\n");
+if (
+  missingRequired.length === 0 &&
+  invalidRequired.length === 0 &&
+  missingRecommended.length === 0 &&
+  invalidRecommended.length === 0
+) {
+  console.log("OK: all required and recommended env vars are set and shaped correctly.\n");
   if (missingOptional.length) {
     console.log("  Optional (informational only):");
     missingOptional.forEach(([k, d]) => console.log(`    - ${k} - ${d}`));
@@ -136,9 +199,25 @@ if (missingRequired.length) {
   missingRequired.forEach(([k, d]) => console.log(`    - ${k}\n      ${d}`));
 }
 
+if (invalidRequired.length) {
+  console.log("\nINVALID REQUIRED env vars (deploy will fail):\n");
+  invalidRequired.forEach(([k, d]) => {
+    const hint = formatHints.get(k);
+    console.log(`    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`);
+  });
+}
+
 if (missingRecommended.length) {
   console.log("\nMISSING RECOMMENDED env vars (features will be degraded):\n");
   missingRecommended.forEach(([k, d]) => console.log(`    - ${k}\n      ${d}`));
+}
+
+if (invalidRecommended.length) {
+  console.log("\nINVALID RECOMMENDED env vars (features will be degraded or ignored):\n");
+  invalidRecommended.forEach(([k, d]) => {
+    const hint = formatHints.get(k);
+    console.log(`    - ${k}\n      ${d}${hint ? `\n      Expected: ${hint}` : ""}`);
+  });
 }
 
 if (missingOptional.length) {
@@ -148,6 +227,8 @@ if (missingOptional.length) {
 
 console.log("");
 
-if (missingRequired.length) process.exit(1);
-if (process.env.PRODUCTION_CHECK === "1" && missingRecommended.length) process.exit(2);
+if (missingRequired.length || invalidRequired.length) process.exit(1);
+if (process.env.PRODUCTION_CHECK === "1" && (missingRecommended.length || invalidRecommended.length)) {
+  process.exit(2);
+}
 process.exit(0);
