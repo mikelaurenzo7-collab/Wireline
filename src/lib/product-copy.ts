@@ -1,5 +1,18 @@
 /** Shared product voice for public marketing, workspace copy, and audience positioning. */
 
+export const BRAND_SYSTEM = {
+  northStar: "AI phone employees for the work that grows your business.",
+  productNoun: "AI phone employee",
+  defaultRole: "Wireline CEO",
+  proofLoop: ["Build", "Train", "Launch", "Improve"],
+  toneRules: [
+    "Lead with business outcomes before AI mechanics.",
+    "Use one capable operator as the default mental model.",
+    "Treat specialists as expansion, not setup homework.",
+    "Show logged proof after every call, handoff, and follow-up.",
+  ],
+} as const;
+
 export const AGENT_DIRECTION_MODES = {
   outbound: {
     label: "Outbound",
@@ -17,18 +30,18 @@ export const AGENT_DIRECTION_MODES = {
     label: "Hybrid",
     eyebrow: "Wireline CEO · operating desk",
     loop: ["Answer", "Research", "Follow up", "Sync"],
-    promise: "Handles both sides of the workflow when sales, service, scheduling, and follow-through belong together.",
+    promise: "Keeps sales, service, scheduling, and follow-through in one visible operating loop.",
   },
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every included Wireline operating agent comes with an included number at no extra line fee, so your CEO can call out, receive callbacks, and own the handoff." as const;
+  "Every included Wireline phone employee comes with an included number at no extra line fee, so your operator can call out, receive callbacks, and own the handoff." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
-  headline: "An AI operating agent that actually calls.",
+  headline: "AI phone employees for growth work.",
   subline:
-    "Wireline CEO gives every business one capable operator with an included number — built to answer, research, book, revive leads, follow up, and log every outcome without commission.",
+    "Start with one Wireline CEO: it answers, researches, calls, books, revives stale leads, follows up, and logs proof — with an included number before you add headcount.",
   lanes: [
     "Appointment setting",
     "Lead revival",
@@ -40,19 +53,19 @@ export const OUTBOUND_WEDGE = {
   loop: AGENT_DIRECTION_MODES.outbound.loop,
   proof: ["Researches", "Calls", "Answers", "Books", "Follows up", "Reports"],
   differentiator:
-    "Wireline turns repetitive phone work into booked appointments, revived leads, handled callbacks, recovered opportunities, and proof.",
+    "Wireline turns repetitive phone work into booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
   beforeStrip:
-    "Start with one Wireline CEO. It researches, answers, calls, books, follows up, and logs proof — every included agent gets an included number at no extra line fee.",
+    "Build one Wireline CEO, train it on the business, launch it on the line, then improve from the logged outcomes. Specialists come later when volume proves the need.",
 } as const;
 
 export const MARKETING_VOICE = {
-  eyebrow: "Wireline CEO for calls, sales, scheduling, support, and follow-up",
-  headline: "One agent to run the front office.",
+  eyebrow: "AI phone employees for calls, sales, scheduling, support, and follow-up",
+  headline: BRAND_SYSTEM.northStar,
   subline:
-    "Wireline CEO answers, researches, calls, books appointments, revives stale leads, follows up, and reports the outcome behind every conversation — with an included number for every included agent.",
-  proof: ["Brief", "Train", "Launch", "Operate"],
+    "Wireline turns a business phone line into a trained operator that answers, researches, calls, books appointments, revives stale leads, follows up, and reports every outcome — starting with one Wireline CEO and an included number.",
+  proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
-    "Command your Wireline CEO from any page. It researches, calls, answers, follows up, books the next step, and logs the outcome while you stay focused.",
+    "Command your Wireline CEO from any page. It researches, calls, answers, follows up, books the next step, and logs proof while you stay focused.",
   differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 
