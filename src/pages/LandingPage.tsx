@@ -5,7 +5,7 @@ import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
 const PUBLIC_DESCRIPTION =
-  "Wireline builds AI phone employees that answer calls, qualify leads, book appointments, follow up, collect, route, and report back with every result.";
+  "Wireline builds AI profit agents with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function LandingPage() {
     description: PUBLIC_DESCRIPTION,
     offers: {
       "@type": "OfferCatalog",
-      name: "Wireline AI phone employee plans",
+      name: "Wireline AI profit agent plans",
       itemListElement: ["Personal", "Team", "Business", "Enterprise"].map((name) => ({
         "@type": "Offer",
         name,
@@ -34,7 +34,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | AI phone employees that turn calls into sales"
+        title="Wireline | AI profit agents that actually call"
         description={PUBLIC_DESCRIPTION}
         image="/og-image.png"
       />
