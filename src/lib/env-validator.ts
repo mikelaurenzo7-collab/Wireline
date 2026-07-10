@@ -33,6 +33,7 @@ const isHex32 = (value: string) => /^[a-f0-9]{64}$/i.test(value);
 const isStripe = (value: string) => /^sk_(test|live)_/.test(value);
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const isE164 = (value: string) => /^\+[1-9]\d{6,14}$/.test(value);
+const isPositiveNumber = (value: string) => Number.isFinite(Number(value)) && Number(value) > 0;
 
 const isCommaSeparatedEmails = (value: string) =>
   !value || value.split(",").every((entry) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.trim()));
@@ -83,6 +84,28 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     required: false,
     description: "Gemini fallback and grounded search",
     validate: nonEmpty,
+  },
+  {
+    name: "PERPLEXITY_API_KEY",
+    group: "ai",
+    required: false,
+    description: "Perplexity-first live public research for Wireline CEO agents",
+    validate: nonEmpty,
+  },
+  {
+    name: "PERPLEXITY_MODEL",
+    group: "ai",
+    required: false,
+    description: "Optional Perplexity live-research model override",
+    validate: nonEmpty,
+  },
+  {
+    name: "LIVE_RESEARCH_TIMEOUT_MS",
+    group: "ai",
+    required: false,
+    description: "Timeout budget for live public research calls",
+    validate: isPositiveNumber,
+    formatHint: "milliseconds, e.g. 8000",
   },
   {
     name: "OPENROUTER_API_KEY",
@@ -344,7 +367,10 @@ export function validateEnv(): EnvValidationResult {
 
   const gateway =
     process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
-  const fallback = process.env.OPENAI_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim();
+  const fallback =
+    process.env.OPENAI_API_KEY?.trim() ||
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.PERPLEXITY_API_KEY?.trim();
   if (!gateway && !fallback) {
     result.valid = false;
     byGroup.ai.invalid++;
@@ -358,25 +384,19 @@ export function validateEnv(): EnvValidationResult {
 }
 
 export const getEnvByGroup = (group: EnvGroup) =>
-  ENV_REGISTRY.filter((entry) => entry.group === group);
-export function logEnvValidation(verbose = false) {
-  const result = validateEnv();
-  if (result.valid) log.info("Environment validation passed", { groups: result.byGroup });
-  else
-    log.warn("Environment validation has missing or invalid settings", {
-      errors: result.errors.map((error) => error.var),
-      ...(verbose ? { byGroup: result.byGroup } : {}),
+  ENV_REGISTRY.filter((config) => config.group === group);
+
+export function logEnvValidation(result: EnvValidationResult) {
+  if (!result.valid) {
+    log.error("Environment validation failed", {
+      errors: result.errors,
+      warnings: result.warnings,
+      summary: result.byGroup,
     });
-  return result;
-}
-export function generateSetupChecklist(): string[] {
-  const result = validateEnv();
-  return [
-    "# Wireline Environment Setup Checklist",
-    "",
-    ...result.errors.map(
-      (error) =>
-        `- ${error.var}: ${error.message}${error.formatHint ? ` (${error.formatHint})` : ""}`,
-    ),
-  ];
+  } else if (result.warnings.length) {
+    log.warn("Environment validation warnings", {
+      warnings: result.warnings,
+      summary: result.byGroup,
+    });
+  }
 }
