@@ -4,11 +4,11 @@
 **Audience:** Product, design, engineering  
 **Related:** [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md), `src/lib/video-presenter/`, `src/lib/agent-identity.ts`
 
-Wireline’s differentiation is **trusted AI employee presence**: a real line, a role, a voice, governed actions, proof of outcomes, and—only when it materially helps—a polished on-screen presenter for demos, recaps, explainers, content, kiosks, and onboarding.
+Wireline’s differentiation is **trusted AI employee presence**: a real line, a role, a voice, governed actions, proof of outcomes, and—only when it materially helps—a polished on-screen presenter for demos, recaps, explainers, content, kiosks, onboarding, and customer-facing media.
 
-**Launch decision:** the current deterministic synthetic/SVG face system is no longer a flagship customer-facing identity experience. It may remain as a hidden fallback for resilience, but it should not be promoted as the product’s face layer until Wireline has a flawless premium catalog.
+**Launch decision:** keep deterministic Wireline avatars, but only as **in-app identity badges**. They are useful for recognizing agents while using the product—Studio, training, analytics, call logs, mobile surfaces, and fallback states. They are **not** video presenters and should not be marketed as the product’s future face layer.
 
-Customer surfaces must never name vendors. Operators see **Professional Presence**, **Character Presence**, **Custom Presence**, **Live Presence**, **catalog presenter**, or **fallback identity**. Providers stay implementation details.
+Customer surfaces must never name vendors. Operators may see **Identity badge**, **Professional Presence**, **Character Presence**, **Custom Presence**, **Live Presence**, **catalog presenter**, or **fallback identity**. Providers stay implementation details.
 
 ---
 
@@ -16,7 +16,14 @@ Customer surfaces must never name vendors. Operators see **Professional Presence
 
 No one buys a video agent because it has a face. They buy video when a watched, shared, embedded, explained, or remembered output improves the outcome.
 
-Use presence for:
+Use app avatars for:
+
+1. Quick recognition of agents in Studio, training, analytics, and call logs.
+2. Compact visual anchors in mobile/browser UI.
+3. Safe fallback when video presence is unavailable.
+4. Internal continuity while the premium catalog is being built.
+
+Use premium video presence for:
 
 1. Async sales, onboarding, proposal, quote, and post-call videos.
 2. Product demos and screen explainers.
@@ -33,10 +40,10 @@ Do **not** make live video calls the default product center. Voice and phone rem
 | Layer | Provider (internal) | Customer experience |
 | --- | --- | --- |
 | Voice + LLM + PSTN | Vapi, ElevenLabs, xAI | Wireline Phone, Voice library, Live |
-| On-screen video | LiveAvatar (HeyGen) LITE mode | Catalog presenter + live lip-sync in Studio |
-| Presenter-matched voice | HeyGen speech API | Lip-sync aligned preview |
+| In-app avatar | Wireline SVG | Identity badge across app, training, analytics, and logs |
+| On-screen video | LiveAvatar (HeyGen) LITE mode | Paused/limited until curated catalog is launch-quality |
+| Presenter-matched voice | HeyGen speech API | Retained internally for future lip-sync aligned preview |
 | PSTN with presenter voice | Falls back to ElevenLabs | Disclosed in voice picker + Studio banner |
-| Synthetic SVG face | Wireline fallback | Hidden fallback only; do not sell as premium identity |
 
 Architecture: Wireline owns brains, telephony, permissions, consent, and outcomes; video vendors render approved presence assets. This split is correct — do not route PSTN audio through avatar vendors and do not build an in-house neural renderer before PMF.
 
@@ -46,7 +53,7 @@ Architecture: Wireline owns brains, telephony, permissions, consent, and outcome
 
 ### Tier 1 — Licensed provider catalog presenters
 
-Fastest path to non-amateur human faces.
+Fastest path to non-amateur human faces, but only if aggressively curated.
 
 Use for:
 
@@ -59,10 +66,11 @@ Use for:
 
 Rules:
 
-- Curate aggressively; do not expose a messy vendor dump.
+- Do not expose a messy vendor dump.
 - Hide provider names in customer UI.
-- Every card needs role fit, voice fit, style, and preview asset.
+- Every card needs role fit, voice fit, style, preview asset, rights status, and approved use cases.
 - Human-looking presenters must be premium enough to increase trust; otherwise do not show them.
+- Until that bar is met, keep the picker paused and use app avatars only as identity badges.
 
 ### Tier 2 — Wireline-owned professional presenter pack
 
@@ -138,7 +146,17 @@ Use for:
 
 ## Product catalog model
 
-Replace “avatar picker” with **Presence Picker**.
+Keep **Agent identity badges** separate from the future **Presence Picker**.
+
+### Agent identity badge
+
+- Always available.
+- Deterministic per agent.
+- Used inside the app only.
+- Helps users distinguish agents while building, training, reviewing analytics, and scanning call logs.
+- Not sold as a face clone, presenter, or human-like media output.
+
+### Future Presence Picker
 
 Tabs:
 
@@ -191,24 +209,26 @@ Synthesia, HeyGen classic video, Runway — scripted renders, not sub-second tur
 
 ## Product tiers
 
-### Free / Starter — no promoted face layer
+### Free / Starter — app identity badge
 
 - Voice-first agent setup.
-- Wireline face may appear only as a small fallback or neutral placeholder.
+- Deterministic identity badge for navigation and recognition.
 - No synthetic face marketing.
+- No implied human/video presenter.
 
-### Starter Plus / Pro — Professional Presence
+### Starter Plus / Pro — future Professional Presence
 
-- Curated catalog presenters for async videos, demos, and guided onboarding.
+- Curated catalog presenters for async videos, demos, guided onboarding, and customer-facing content.
 - Optional live preview where useful.
 - No vendor names.
+- Do not expose until the catalog is visually excellent.
 
 ### Business — Custom Presence
 
-- “Your approved presence on the line” request flow.
+- “Your approved presence” request flow.
 - Consent Vault required.
 - Human review before going live.
-- Deliverable: approved custom presenter tied to role, voice, phone line, and permissions.
+- Deliverable: approved custom presenter tied to role, voice, phone line, permissions, and allowed use cases.
 
 ### Enterprise — BYO replica + policy
 
@@ -221,23 +241,26 @@ Synthesia, HeyGen classic video, Runway — scripted renders, not sub-second tur
 
 ## Implementation backlog
 
-1. **Demote synthetic faces** — remove amateur deterministic faces from prominent customer UX; retain only hidden fallback internals.
-2. **Presence Picker** — replace “avatar picker” language with Professional / Characters / Custom tabs.
-3. **Catalog abstraction** — `presence_catalog` model with preview asset, style, role fit, voice fit, provider metadata, consent requirements.
-4. **Provider catalog curation** — list only approved high-quality human presenters.
-5. **Character pack** — commission or generate a cohesive ET / futurist character set for playful brands and content.
-6. **Consent Vault** — required before named-person clone or customer-uploaded likeness.
-7. **Async video outputs** — post-call recap, proposal walkthrough, onboarding welcome, FAQ/social short.
-8. **Conversation-to-content loop** — mine calls for recurring questions and turn them into YouTube/Shorts/Reels scripts and videos.
-9. **Failover** — video unavailable → voice/text/fallback identity with no broken WebRTC.
-10. **Pricing** — Professional Presence included in higher plans; Custom Presence as setup fee or Business add-on.
-11. **Funnel events** — `presence_picker_opened`, `professional_presence_selected`, `character_presence_selected`, `custom_presence_requested`, `presence_video_generated`, `clone_approved`.
+1. **Keep avatars as app identifiers** — maintain deterministic badges for Studio, training, analytics, call logs, and mobile/browser surfaces.
+2. **Remove presenter framing from app avatars** — no “face to your agent,” “photoreal,” “presenter catalog,” or video implication for the current SVG badges.
+3. **Pause catalog pickers** — retain backend/provider abstractions, but hide/hold low-confidence catalog selection until the curated catalog is excellent.
+4. **Presence Picker** — future Professional / Characters / Custom tabs, separate from app identity badges.
+5. **Catalog abstraction** — `presence_catalog` model with preview asset, style, role fit, voice fit, provider metadata, rights/consent requirements, and approved use cases.
+6. **Provider catalog curation** — list only approved high-quality human presenters.
+7. **Character pack** — commission or generate a cohesive ET / futurist character set for playful brands and content.
+8. **Consent Vault** — required before named-person clone or customer-uploaded likeness.
+9. **Async video outputs** — post-call recap, proposal walkthrough, onboarding welcome, FAQ/social short.
+10. **Conversation-to-content loop** — mine calls for recurring questions and turn them into YouTube/Shorts/Reels scripts and videos.
+11. **Failover** — video unavailable → voice/text/identity badge with no broken WebRTC.
+12. **Pricing** — Professional Presence included in higher plans; Custom Presence as setup fee or Business add-on.
+13. **Funnel events** — `presence_picker_opened`, `professional_presence_selected`, `character_presence_selected`, `custom_presence_requested`, `presence_video_generated`, `clone_approved`.
 
 ---
 
 ## Anti-patterns
 
-- Promoting current synthetic faces as the product’s identity layer.
+- Promoting current SVG avatars as video presenters.
+- Removing app avatars entirely and making agent-heavy screens harder to scan.
 - Mixing cheap cartoons with serious humans in one undifferentiated grid.
 - Letting users casually clone a real person without a consent artifact.
 - Making live video calls the core product when most users only need watched/shared video outputs.
@@ -251,7 +274,7 @@ Synthesia, HeyGen classic video, Runway — scripted renders, not sub-second tur
 
 Until the premium catalog exists, Wireline should say:
 
-> Voice-first AI employees are live today. Professional video presence is being curated for demos, recaps, explainers, content, and custom approved likenesses.
+> Voice-first AI employees are live today. App avatars help you recognize agents while you train, review, and operate them. Professional video presence is being curated for demos, recaps, explainers, content, and custom approved likenesses.
 
 This protects trust while preserving the strategic path to a high-quality Presence Catalog.
 
