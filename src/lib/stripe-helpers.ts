@@ -6,7 +6,10 @@ import { getErrorMessage } from "./server-utils";
 import { planByStripePrice, planPriceId, type StripePlan } from "./plan-catalog";
 import { dispatchWebhook } from "./webhook-helpers";
 import { invalidateDashboard } from "./dashboard-cache";
-import { grantWelcomeSubscriptionCredit } from "./subscription-welcome-credit";
+import {
+  grantSubscriptionRuntimeAllowance,
+  type SubscriptionBillingInterval,
+} from "./subscription-welcome-credit";
 
 export const STRIPE_API_VERSION = "2026-04-22.dahlia" as Stripe.LatestApiVersion;
 
@@ -22,7 +25,7 @@ export function stripeAvailable(): boolean {
 /**
  * Postpaid metered overage is intentionally retired. Variable voice, SMS,
  * enrichment, and other provider-funded work must be covered by prepaid
- * Conversation Balance instead of appearing as an unexpected invoice item.
+ * Runtime Balance instead of appearing as an unexpected invoice item.
  */
 export function voiceOverageBillingConfigured(_plan: StripePlan): boolean {
   return false;
@@ -39,7 +42,7 @@ export function subscriptionCheckoutLineItems(
 
 /**
  * Compatibility no-op retained for callers that still reconcile completed
- * voice usage. The wallet ledger is the billing source of truth; Stripe meter
+ * voice usage. The runtime ledger is the billing source of truth; Stripe meter
  * events must never be emitted under the prepaid founder model.
  */
 export async function emitVoiceMinuteOverageEvent(_opts: {
@@ -48,6 +51,22 @@ export async function emitVoiceMinuteOverageEvent(_opts: {
   vapiCallId: string;
 }): Promise<void> {
   return;
+}
+
+function subscriptionBillingInterval(sub: Stripe.Subscription): SubscriptionBillingInterval {
+  return sub.items.data.some((item) => item.price.recurring?.interval === "year")
+    ? "year"
+    : "month";
+}
+
+/**
+ * Stable period reference for the included Runtime Allowance ledger grant.
+ * Stripe can replay subscription webhooks; the ledger's idempotency key ensures
+ * one grant per subscription billing period even when sync runs repeatedly.
+ */
+function subscriptionPeriodReference(sub: Stripe.Subscription): string {
+  const periodStart = sub.current_period_start || sub.billing_cycle_anchor || sub.created;
+  return `${sub.id}:${periodStart}`;
 }
 
 /** Sync a Stripe subscription into wireline_subscriptions + wireline_settings. */
@@ -153,12 +172,18 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
         ? "subscription_created"
         : "subscription_updated";
 
-  if (billingAction === "subscription_created" && plan?.id) {
-    await grantWelcomeSubscriptionCredit(userId, sub.id, plan.id).catch((error: unknown) =>
-      log.warn("welcome subscription credit failed", {
-        userId,
-        error: getErrorMessage(error),
-      }),
+  if ((stripeStatus === "active" || stripeStatus === "trialing") && plan?.id) {
+    const interval = subscriptionBillingInterval(sub);
+    const periodReference = subscriptionPeriodReference(sub);
+    await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval).catch(
+      (error: unknown) =>
+        log.warn("subscription runtime allowance grant failed", {
+          userId,
+          planId: plan.id,
+          interval,
+          periodReference,
+          error: getErrorMessage(error),
+        }),
     );
   }
 
