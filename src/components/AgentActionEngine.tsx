@@ -4,7 +4,12 @@ import { Save, Blocks, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
-import { AGENT_TOOL_CATALOG, type AgentToolName, getRoleToolSet } from "../lib/agent-capabilities";
+import {
+  AGENT_TOOL_CATALOG,
+  type AgentToolName,
+  getDefaultAgentTools,
+  getRoleToolSet,
+} from "../lib/agent-capabilities";
 import { resolveTenantToolIntegrationStatus } from "../lib/tenant-tool-integration-status";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -23,7 +28,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
     reconnect_microsoft_calendar: false,
   });
   const [emailProviders, setEmailProviders] = useState<string[]>([]);
-  const [, setAgentRole] = useState<string>("customer_service");
+  const [, setAgentRole] = useState<string>("ceo");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -66,12 +71,14 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           const agentData = await agentRes.json();
           const me = (agentData.agents || []).find((a: any) => a.id === agentId);
           if (me) {
-            setAgentRole(me.role || "customer_service");
-            // If they haven't explicitly set tools, it falls back to the role defaults
+            const role = me.role || "ceo";
+            setAgentRole(role);
+            // If they haven't explicitly set tools, CEO gets the full operating toolbox;
+            // narrower specialist roles keep their compact role defaults.
             if (me.enabledTools && Array.isArray(me.enabledTools)) {
               setEnabledTools(me.enabledTools);
             } else {
-              setEnabledTools(getRoleToolSet(me.role));
+              setEnabledTools(role === "ceo" ? getDefaultAgentTools() : getRoleToolSet(role));
             }
           }
         }
