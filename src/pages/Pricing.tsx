@@ -245,7 +245,7 @@ export default function Pricing() {
       />
       <PrecisionPublicHeader />
 
-      <main id="main-content" className="pt-16 safe-area-insets" tabIndex={-1}>
+      <main id="main-content" className="pt-16" tabIndex={-1}>
         <section className="border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail text-center">
             <p className="wl-overline text-primary">Pricing</p>
