@@ -70,6 +70,11 @@ describe("product voice cohesion", () => {
     const extension = read("apps/browser-extension/panel/index.html");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
+    expect(landing).toContain("Build your Wireline CEO");
+    expect(landing).toContain("Brief the outcome");
+    expect(landing).toContain("One operator. One included number. Every outcome logged.");
+    expect(landing).not.toContain("Wire your AI employee");
+    expect(landing).not.toContain("Pick the role");
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
   });
