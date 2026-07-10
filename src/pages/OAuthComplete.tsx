@@ -11,6 +11,7 @@ import { getStoredSignupIntent, syncSignupIntent } from "../lib/signup-intent";
 import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
+import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
 
 export default function OAuthComplete() {
   const { signIn } = useAuth();
@@ -26,7 +27,7 @@ export default function OAuthComplete() {
     const params = new URLSearchParams(location.search);
     const errorParam = params.get("error");
     if (errorParam) {
-      setError(errorParam);
+      setError(sanitizeOAuthSignInError(errorParam));
       return;
     }
     const code = params.get("code");

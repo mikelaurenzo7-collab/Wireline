@@ -1,4 +1,7 @@
-export { log, IS_PROD } from "./server-logger";
+import { log, IS_PROD } from "./server-logger";
+import { resolveDatabaseConnection } from "./database-connection";
+
+export { log, IS_PROD };
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import pkg from "pg";
@@ -24,8 +27,15 @@ export async function fetchWithTimeout(
   }
 }
 
+const databaseConnection = resolveDatabaseConnection();
+if (databaseConnection.ignoredInvalidPoolUrl) {
+  log.warn("Ignoring invalid DATABASE_POOL_URL; using validated POSTGRES_URL fallback", {
+    selected: databaseConnection.source,
+  });
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_POOL_URL || process.env.POSTGRES_URL,
+  connectionString: databaseConnection.connectionString,
   // Serverless: avoid eager min connections per instance (Supabase pooler ~100 cap).
   max: 5,
   min: 0,
