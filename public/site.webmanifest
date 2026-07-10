@@ -18,7 +18,7 @@
   "shortcuts": [
     { "name": "Studio", "short_name": "Studio", "description": "Open the chat-first workroom", "url": "/studio" },
     { "name": "Agents", "short_name": "Agents", "description": "See your agents", "url": "/agents" },
-    { "name": "Training", "short_name": "Training", "description": "Add facts, sources, rules, and tone", "url": "/training" }
+    { "name": "Training", "short_name": "Training", "description": "Add facts, sources, rules, and tone", "url": "/knowledge" }
   ],
   "prefer_related_applications": false
 }

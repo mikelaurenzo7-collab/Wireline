@@ -121,7 +121,8 @@ describe("product voice cohesion", () => {
     const footer = read("src/components/marketing/MarketingFooter.tsx");
 
     expect(app).toContain('path="/for/*" element={<Navigate to="/for/personal" replace />}');
-    expect(precisionHeader).toContain('to: "/for/personal"');
+    expect(precisionHeader).toContain('to: "/solutions/support"');
+    expect(precisionHeader).toContain('path.startsWith("/for/")');
     expect(publicHeader).toContain('to: "/for/personal", label: "Use cases"');
     expect(footer).toContain('to: "/for/personal", label: "Personal"');
     expect(publicHeader).not.toContain('label: "Home services"');
@@ -177,8 +178,10 @@ describe("product voice cohesion", () => {
       blueprint.indexOf('label: "Home services"'),
     );
     expect(blueprint).toContain('aria-label="Use case"');
-    expect(wireForm).toContain("qualifies sales calls");
-    expect(wireForm).toContain("Use case or industry");
+    expect(wireForm).toContain(
+      "Call warm leads, qualify interest, book the next step, and log the outcome.",
+    );
+    expect(wireForm).toContain('label="Use case"');
     expect(documentForm).toContain("Sales and support agent");
     expect(urlForm).toContain("answers FAQs, routes requests");
     expect(chatgptSubmission).toContain("personal call delegation, sales, support, scheduling");

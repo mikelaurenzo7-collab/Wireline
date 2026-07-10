@@ -1,6 +1,6 @@
 # Wireline
 
-Wireline is the agent operating layer for profit-moving calls, texts, follow-up, browser context, email, and integrations. One trained agent fleet can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+Wireline is the agent operating layer for AI profit agents — profit-moving calls, texts, follow-up, browser context, email, and integrations. One trained fleet of profit agents can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
 The current product doctrine is simple. The customer-facing product loop is **Create -> Train -> Run**; operationally, Wire sits between Train and Run:
 
