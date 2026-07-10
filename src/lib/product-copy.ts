@@ -5,13 +5,13 @@ export const AGENT_DIRECTION_MODES = {
     label: "Outbound",
     eyebrow: "AI profit agents · outbound growth",
     loop: ["List", "Pitch", "Call", "Profit"],
-    promise: "Calls warm lists, books the next step, and logs proof of profit movement.",
+    promise: "Calls warm lists, books the next step, and logs proof that the work moved forward.",
   },
   inbound: {
     label: "Inbound",
     eyebrow: "AI profit agents · demand capture",
     loop: ["Answer", "Qualify", "Book", "Log"],
-    promise: "Answers live demand before it leaks and routes the profitable next step.",
+    promise: "Answers live demand before it leaks and routes the valuable next step.",
   },
   hybrid: {
     label: "Hybrid",
@@ -22,7 +22,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const PROFIT_AGENT_NUMBER_PROMISE =
-  "Every included Wireline agent comes with an included number, so each profit role has a real line to call from and receive callbacks." as const;
+  "Every included Wireline agent comes with an included number at no extra line fee, so each profit role has a real line to call from and receive callbacks." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -40,9 +40,9 @@ export const OUTBOUND_WEDGE = {
   loop: AGENT_DIRECTION_MODES.outbound.loop,
   proof: ["Calls", "Books", "Revives", "Promotes", "Recovers", "Reports"],
   differentiator:
-    "Wireline turns phone work into booked appointments, revived leads, recovered dollars, and proof.",
+    "Wireline turns repetitive phone work into booked appointments, revived leads, recovered opportunities, and proof.",
   beforeStrip:
-    "Your best salesperson, without the commission. Every agent gets an included number and every result is logged.",
+    "Your best salesperson, without the commission. Every included agent gets an included number at no extra line fee and every result is logged.",
 } as const;
 
 export const MARKETING_VOICE = {
@@ -59,7 +59,7 @@ export const MARKETING_VOICE = {
 export const BUSINESS_MARKETING_VOICE = {
   eyebrow: "AI profit agents · business phone growth",
   proof: ["Books appointments", "Revives leads", "Logs outcomes"],
-  differentiator: "Wireline keeps profit-producing phone work moving in either direction.",
+  differentiator: "Wireline keeps profit-focused phone work moving in either direction.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
@@ -76,7 +76,7 @@ export const PRODUCT_VERSATILITY = {
   tagline: "Outbound-first. Inbound-capable. Hybrid when needed.",
   short:
     "AI profit agents for appointment setting, lead revival, promotions, follow-up, inbound conversion, and recovery.",
-  hero: "Calls into profit.",
+  hero: "Calls that move profit.",
 } as const;
 
 export const PRODUCT_POSTURE = {
