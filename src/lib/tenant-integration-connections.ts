@@ -106,7 +106,7 @@ export function filterToolsByTenantConnections(
     if (CRM_TOOL_NAMES.has(name)) return conn.salesforce || conn.hubspot;
     if (name === "enrich_lead") return platform.apollo;
     if (name === "send_contract") return platform.docusign;
-    if (name === "gemini_ground") return platform.gemini;
+    if (name === "gemini_ground") return platform.liveResearch;
     return true;
   });
 }

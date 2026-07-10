@@ -358,8 +358,11 @@ const browser = await chromium.launch({
     : {}),
   // Chromium does not read HTTPS_PROXY from the environment on its own —
   // sandboxes that route outbound HTTPS through an agent proxy need it wired
-  // through explicitly or every navigation hangs until timeout.
-  ...(proxyServer ? { proxy: { server: proxyServer } } : {}),
+  // through explicitly or every navigation hangs until timeout. Local targets
+  // must bypass the proxy or agent proxies refuse the loopback CONNECT.
+  ...(proxyServer
+    ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,<-loopback>" } }
+    : {}),
 });
 const issues = [];
 let authenticatedStorageState = null;

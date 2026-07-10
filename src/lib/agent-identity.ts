@@ -1,10 +1,10 @@
 /**
  * Agent identity policy.
  *
- * This is the provider-agnostic identity layer that sits under the rendered
- * SVG face today and the live video presenter slot next. The UI should speak
- * in Wireline terms; providers such as HeyGen, Tavus, D-ID, or an internal
- * renderer stay implementation details behind this catalog.
+ * This is the provider-agnostic identity layer that gives every agent a stable
+ * in-app avatar for recognition across Studio, training, analytics, call logs,
+ * and mobile surfaces. These deterministic SVG badges are not video presenters;
+ * polished human/character Presence remains a separate, curated catalog layer.
  */
 export type Skin = { base: string; shade: string };
 export type Ground = [string, string];
@@ -185,14 +185,14 @@ export const VIDEO_PRESENTER_PROVIDERS: Record<
   },
   synthetic: {
     label: "Wireline SVG",
-    surfaceLabel: "Wireline face",
+    surfaceLabel: "Identity badge",
     supportsLive: false,
     consentRequired: false,
     fallback: "agent_face",
   },
 };
 
-// Stable FNV-1a string hash → deterministic face selection.
+// Stable FNV-1a string hash → deterministic in-app badge selection.
 export function stableAgentHash(seed: string): number {
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
@@ -250,10 +250,9 @@ export function buildAgentIdentityPreview(input: {
     video: {
       providerPreference,
       status: "not_configured",
-      headline: "Wireline face",
-      description: input.isBusinessAgent
-        ? "Deterministic Wireline face on every surface. Live video is an optional add-on."
-        : "Deterministic face now; live video stays off for personal agents by default.",
+      headline: "Agent identity badge",
+      description:
+        "Stable in-app avatar for recognition in Studio, training, analytics, and call logs. Not a video presenter.",
       consentRequired: provider.consentRequired,
       fallback: provider.fallback,
     },

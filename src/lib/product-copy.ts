@@ -1,34 +1,47 @@
 /** Shared product voice for public marketing, workspace copy, and audience positioning. */
 
+export const BRAND_SYSTEM = {
+  northStar: "AI phone employees for the work that grows your business.",
+  productNoun: "AI phone employee",
+  defaultRole: "Wireline CEO",
+  proofLoop: ["Build", "Train", "Launch", "Improve"],
+  toneRules: [
+    "Lead with business outcomes before AI mechanics.",
+    "Use one capable operator as the default mental model.",
+    "Treat specialists as expansion, not setup homework.",
+    "Show logged proof after every call, handoff, and follow-up.",
+  ],
+} as const;
+
 export const AGENT_DIRECTION_MODES = {
   outbound: {
     label: "Outbound",
-    eyebrow: "AI sales agents · outbound growth",
-    loop: ["List", "Pitch", "Call", "Profit"],
-    promise: "Calls warm lists, books the next step, and logs proof that the work moved forward.",
+    eyebrow: "Wireline CEO · outbound growth",
+    loop: ["Research", "Call", "Book", "Log"],
+    promise: "Researches the lead, calls with context, books the next step, and logs proof that the work moved forward.",
   },
   inbound: {
     label: "Inbound",
-    eyebrow: "AI employees · demand capture",
-    loop: ["Answer", "Qualify", "Book", "Log"],
-    promise: "Answers live demand before it leaks and routes the valuable next step.",
+    eyebrow: "Wireline CEO · demand capture",
+    loop: ["Answer", "Qualify", "Act", "Log"],
+    promise: "Answers live demand before it leaks, handles the first pass, and routes only what truly needs a person.",
   },
   hybrid: {
     label: "Hybrid",
-    eyebrow: "AI employees · follow-through desk",
-    loop: ["Answer", "Act", "Follow up", "Sync"],
-    promise: "Handles both sides of the workflow when profit needs follow-through.",
+    eyebrow: "Wireline CEO · operating desk",
+    loop: ["Answer", "Research", "Follow up", "Sync"],
+    promise: "Keeps sales, service, scheduling, and follow-through in one visible operating loop.",
   },
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every included Wireline agent comes with an included number at no extra line fee, so each AI employee has a real line to call from and receive callbacks." as const;
+  "Every included Wireline phone employee comes with an included number at no extra line fee, so your operator can call out, receive callbacks, and own the handoff." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
-  headline: "AI sales agents that actually call.",
+  headline: "AI phone employees for growth work.",
   subline:
-    "Wireline gives every business sales agents with included numbers — built to book appointments, revive leads, promote offers, recover opportunities, follow up, and log every outcome without commission.",
+    "Start with one Wireline CEO: it answers, researches, calls, books, revives stale leads, follows up, and logs proof — with an included number before you add headcount.",
   lanes: [
     "Appointment setting",
     "Lead revival",
@@ -38,66 +51,67 @@ export const OUTBOUND_WEDGE = {
     "Inbound conversion",
   ],
   loop: AGENT_DIRECTION_MODES.outbound.loop,
-  proof: ["Calls", "Books", "Revives", "Promotes", "Recovers", "Reports"],
+  proof: ["Researches", "Calls", "Answers", "Books", "Follows up", "Reports"],
   differentiator:
-    "Wireline turns repetitive phone work into booked appointments, revived leads, recovered opportunities, and proof.",
+    "Wireline turns repetitive phone work into booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
   beforeStrip:
-    "Your best salesperson, without the commission. Every included agent gets an included number at no extra line fee and every result is logged.",
+    "Build one Wireline CEO, train it on the business, launch it on the line, then improve from the logged outcomes. Specialists come later when volume proves the need.",
 } as const;
 
 export const MARKETING_VOICE = {
-  eyebrow: "AI employees for appointments, lead revival, promotions, and follow-up",
-  headline: "Wire your AI employee.",
+  eyebrow: "AI phone employees for calls, sales, scheduling, support, and follow-up",
+  headline: BRAND_SYSTEM.northStar,
   subline:
-    "It calls, answers, books appointments, revives stale leads, follows up, and reports the profit behind every conversation — with an included number for every included agent.",
-  proof: ["Build", "Train", "Launch", "Profit"],
+    "Wireline turns a business phone line into a trained operator that answers, researches, calls, books appointments, revives stale leads, follows up, and reports every outcome — starting with one Wireline CEO and an included number.",
+  proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
-    "Command your AI employee from any page. Wireline calls, answers, follows up, books the next step, and logs the outcome while you stay focused.",
+    "Command your Wireline CEO from any page. It researches, calls, answers, follows up, books the next step, and logs proof while you stay focused.",
   differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "AI employees · business phone growth",
-  proof: ["Books appointments", "Revives leads", "Logs outcomes"],
+  eyebrow: "Wireline CEO · business phone operations",
+  proof: ["Answers demand", "Books appointments", "Logs outcomes"],
   differentiator: "Wireline keeps profit-focused phone work moving in either direction.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Build an AI employee.",
-  runHeadline: "Your profit calls are covered.",
+  createHeadline: "Build your Wireline CEO.",
+  runHeadline: "Your front office is covered.",
   emptyCue: "Brief it. Train it. Launch it on the line.",
-  commandPrompts: ["Book appointments", "Revive leads", "Review outcomes"],
+  commandPrompts: ["Answer calls", "Book appointments", "Revive leads", "Review outcomes"],
   directAgent: (name?: string | null) =>
-    `Ask anything about ${name?.trim() || "your AI employee"}...`,
+    `Ask anything about ${name?.trim() || "your Wireline CEO"}...`,
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "AI employee coverage",
-  tagline: "Outbound-first. Inbound-capable. Hybrid when needed.",
+  eyebrow: "AI operating coverage",
+  tagline: "CEO first. Specialists when needed.",
   short:
-    "AI employees for appointment setting, lead revival, promotions, follow-up, inbound conversion, and recovery.",
-  hero: "Calls that move profit.",
+    "One operating agent for appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
+  hero: "One operator for the work that keeps moving.",
 } as const;
 
 export const PRODUCT_POSTURE = {
   personal: {
-    badge: "Personal AI employee",
+    badge: "Personal Wireline CEO",
     badgeShort: "Personal",
-    createCta: "Build personal AI employee",
-    emptyTitle: "Personal AI employee.",
+    createCta: "Build personal Wireline CEO",
+    emptyTitle: "Personal Wireline CEO.",
     emptyBody: "Your calls. Your rules. Your outcomes.",
   },
   business: {
-    badge: "AI employee",
+    badge: "Wireline CEO",
     badgeShort: "Business",
-    createCta: "Build AI employee",
-    emptyTitle: "AI employee.",
+    createCta: "Build Wireline CEO",
+    emptyTitle: "Wireline CEO.",
     emptyBody: "Leads in. Calls handled. Outcomes out.",
   },
 } as const;
 
 export function formatAgentRoleLabel(role?: string | null): string {
+  if (role === "ceo") return "Wireline CEO";
   return (role || "agent").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 

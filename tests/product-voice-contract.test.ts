@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   AGENT_DIRECTION_MODES,
   AGENT_NUMBER_PROMISE,
+  BRAND_SYSTEM,
   MARKETING_VOICE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
@@ -14,25 +15,36 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
-    // Hero leads with the welcoming AI-employee framing; "profit" stays the
-    // preferred vocabulary (over "revenue") and the outbound wedge still
-    // markets sales agents explicitly.
-    expect(MARKETING_VOICE.headline).toBe("Wire your AI employee.");
-    expect(MARKETING_VOICE.subline).toContain("books appointments");
+    // CEO-first positioning must make the default feel like one capable phone employee,
+    // not a menu of departments the customer needs to configure before value.
+    expect(BRAND_SYSTEM.northStar).toBe("AI phone employees for the work that grows your business.");
+    expect(BRAND_SYSTEM.proofLoop).toEqual(["Build", "Train", "Launch", "Improve"]);
+    expect(BRAND_SYSTEM.toneRules).toContain("Lead with business outcomes before AI mechanics.");
+    expect(MARKETING_VOICE.headline).toBe(BRAND_SYSTEM.northStar);
+    expect(MARKETING_VOICE.subline).toContain("trained operator");
+    expect(MARKETING_VOICE.subline).toContain("answers");
+    expect(MARKETING_VOICE.subline).toContain("researches");
     expect(MARKETING_VOICE.subline).toContain("revives stale leads");
-    expect(MARKETING_VOICE.subline).toContain("reports the profit");
-    expect(MARKETING_VOICE.subline).toContain("included number for every included agent");
-    expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Profit"]);
+    expect(MARKETING_VOICE.subline).toContain("reports every outcome");
+    expect(MARKETING_VOICE.subline).toContain("included number");
+    expect(MARKETING_VOICE.proof).toEqual(["Build", "Train", "Launch", "Improve"]);
 
-    expect(OUTBOUND_WEDGE.headline).toBe("AI sales agents that actually call.");
-    expect(OUTBOUND_WEDGE.subline).toContain("book appointments");
-    expect(OUTBOUND_WEDGE.subline).toContain("promote offers");
-    expect(OUTBOUND_WEDGE.subline).toContain("without commission");
-    expect(OUTBOUND_WEDGE.loop).toEqual(["List", "Pitch", "Call", "Profit"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every included Wireline agent");
+    expect(OUTBOUND_WEDGE.headline).toBe("AI phone employees for growth work.");
+    expect(OUTBOUND_WEDGE.subline).toContain("answers");
+    expect(OUTBOUND_WEDGE.subline).toContain("researches");
+    expect(OUTBOUND_WEDGE.subline).toContain("books");
+    expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
+    expect(OUTBOUND_WEDGE.subline).toContain("included number");
+    expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
+    expect(AGENT_NUMBER_PROMISE).toContain("Every included Wireline phone employee");
     expect(AGENT_NUMBER_PROMISE).toContain("included number");
-    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Book", "Log"]);
-    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow up", "Sync"]);
+    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
+    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual([
+      "Answer",
+      "Research",
+      "Follow up",
+      "Sync",
+    ]);
   });
 
   it("keeps the canonical operating loop across public buying surfaces", () => {
@@ -49,12 +61,13 @@ describe("product voice cohesion", () => {
 
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
-    // Pricing no longer walks the operating loop by name (it leads with tier
-    // cards and channel economics instead) but must never revert to the
-    // retired phrasing, and per-agent add-on pricing is formally retired
-    // (plansForClient() always returns extra_agent_price_usd: null now).
+    // Pricing should not revive the old generic employee upsell. Extra agents are
+    // now a capacity add-on: a paid agent plus more guaranteed voice minutes.
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
+    const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
+    expect(starterPlus?.extra_agent_price_usd).toBe(15);
+    expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
   it("wires landing and workroom surfaces to shared voice constants", () => {
@@ -89,6 +102,7 @@ describe("product voice cohesion", () => {
     expect(catalog).toContain(
       "Every paid tier guarantees live voice capacity and an on-demand number slot",
     );
+    expect(catalog).toContain("Paid extra-agent add-ons increase both agent count");
     expect(catalog).toContain("max_agents: 1");
     expect(catalog).toContain("included_phone_numbers: 1");
     expect(catalog).toContain("max_agents: 5");

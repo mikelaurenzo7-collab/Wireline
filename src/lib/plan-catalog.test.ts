@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
   STRIPE_PLANS,
   VOICE_VARIABLE_COST_PER_MIN_USD,
   planById,
@@ -69,6 +70,14 @@ describe("plan-catalog", () => {
     expect(planById("enterprise")?.overage_per_min_usd).toBe(0.17);
   });
 
+  it("keeps paid extra-agent add-ons as capacity bundles", () => {
+    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+      expect(plan.extra_agent_price_usd, plan.id).toBe(15);
+      expect(plan.extra_agent_voice_minutes_monthly, plan.id).toBe(50);
+      expect(plan.extra_agent_included_phone_numbers, plan.id).toBe(1);
+    }
+  });
+
   it("keeps env price id fallback for launch catalog entries", () => {
     process.env.STRIPE_TEAM_PRICE_ID = "price_env_business";
 
@@ -105,6 +114,14 @@ describe("plan-catalog", () => {
 
   it("uses lookup keys as a compatibility fallback", () => {
     expect(planByStripePrice({ lookup_key: "team_monthly_founder_2026_07_v2" })?.id).toBe("team");
+  });
+
+  it("documents extra-agent prices as add-ons, not standalone base-plan purchases", () => {
+    // The shared add-on price is intentionally present on paid plan objects so
+    // UIs can display it and billing code can match Stripe subscription items.
+    // Subscription sync identifies the base plan from the base price item only.
+    expect(EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID).toBe("price_1TrnEvJohDtfy3IkjBi7VOCP");
+    expect(STRIPE_PLANS.filter((plan) => plan.extraAgentFallbackPriceId)).toHaveLength(4);
   });
 
   it("ignores non-plan catalog entries instead of fabricating entitlements", () => {

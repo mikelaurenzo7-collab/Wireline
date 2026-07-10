@@ -1,13 +1,10 @@
 /**
- * AgentFace — every Wireline agent gets a face.
+ * AgentFace — deterministic in-app identity badge.
  *
- * A tasteful, deterministic character avatar derived from the agent's
- * identity, so the same agent always wears the same face across the studio,
- * overview, call logs, browser widget, and video-presenter fallback.
- *
- * The palette and provider-agnostic presenter policy live in
- * `lib/agent-identity` so a customer-selected face or live video provider can
- * override this SVG without changing every surface that renders an agent.
+ * This SVG is intentionally only a stable recognition marker for the product
+ * UI: Studio, training, analytics, call logs, browser widget, and resilient
+ * fallbacks. It is not a video presenter and should not be sold as the future
+ * human/character Presence Catalog.
  */
 import { useId } from "react";
 
@@ -69,7 +66,7 @@ export default function AgentFace({
   title,
 }: {
   seed: string;
-  /** Reserved: a stored customer-selected face overrides the deterministic default. */
+  /** Reserved: a stored in-app badge seed overrides the deterministic default. */
   faceId?: string | null;
   size?: number;
   speaking?: boolean;
@@ -86,7 +83,7 @@ export default function AgentFace({
       height={size}
       className={`wl-agent-face${speaking ? " wl-agent-face--speaking" : ""}${className ? ` ${className}` : ""}`}
       role="img"
-      aria-label={title || "Agent face"}
+      aria-label={title || "Agent identity badge"}
     >
       <defs>
         <linearGradient id={`g-${uid}`} x1="0" y1="0" x2="0" y2="1">

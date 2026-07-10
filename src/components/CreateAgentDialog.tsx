@@ -240,7 +240,7 @@ export default function CreateAgentDialog({
         if (!faceResponse.ok) {
           postCreateWarning =
             postCreateWarning ??
-            "Presenter face could not be saved — pick one under Agent presence in Studio.";
+            "Presenter pick could not be saved — the in-app identity badge remains active.";
         }
       }
 
@@ -479,12 +479,13 @@ export default function CreateAgentDialog({
             </>
           ) : (
             <>
-              <p className={WL_APP_CLASSES.wiredEyebrow}>Step 2 · Voice, face, and line</p>
+              <p className={WL_APP_CLASSES.wiredEyebrow}>Step 2 · Voice, badge, and line</p>
               <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,3.5vw,2.25rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-                Sound and presence
+                Sound and identity
               </h3>
               <p className="mt-3 text-sm text-muted-foreground">
-                Pick how {previewName} answers — you can change everything later in Studio.
+                Pick how {previewName} answers. The avatar is only an app identifier; video
+                presenters return when the curated Presence Catalog is ready.
               </p>
 
               <div
@@ -526,68 +527,61 @@ export default function CreateAgentDialog({
                     ))}
                   </div>
                 </div>
-                <label
-                  className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-[var(--radius-lg)] border px-3 py-2 text-left transition-colors ${provisionNumber ? "border-primary/35 bg-accent" : "border-border bg-card hover:bg-muted"}`}
+                <button
+                  type="button"
+                  onClick={() => setProvisionNumber((current) => !current)}
+                  className={`flex items-center gap-2 rounded-[12px] border px-3 py-2 text-left text-xs transition-colors ${provisionNumber ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:border-primary/30"}`}
+                  aria-pressed={provisionNumber}
                 >
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={provisionNumber}
-                    onChange={(event) => setProvisionNumber(event.target.checked)}
-                  />
-                  <Phone size={15} aria-hidden="true" className="text-primary" />
-                  <span className="min-w-0">
-                    <span className="block text-xs font-semibold text-foreground">
-                      Provision Wireline number
-                    </span>
-                    <span className="block text-[10px] font-normal leading-4 text-muted-foreground">
-                      Dedicated line after create
-                    </span>
-                  </span>
-                  <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground">
-                    {provisionNumber ? "Now" : "Later"}
-                  </span>
-                </label>
+                  <Phone size={14} aria-hidden="true" />
+                  {provisionNumber ? "Number requested" : "Provision a number"}
+                </button>
               </div>
+
+              <StatusNotice
+                tone="info"
+                title="Launch safely"
+                className="mt-4"
+                actions={null}
+              >
+                You can train first, then claim a number and test the line before customers reach it.
+              </StatusNotice>
             </>
           )}
 
-          {error ? <StatusNotice tone="destructive" className="mt-4" title={error} /> : null}
+          {error ? (
+            <StatusNotice tone="danger" title="Fast Start issue" className="mt-5" actions={null}>
+              {error}
+            </StatusNotice>
+          ) : null}
         </div>
 
-        <div className="sticky bottom-0 z-10 flex shrink-0 items-center justify-end gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4">
-          {step === 2 ? (
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={creating}
-              onClick={() => {
-                setError("");
-                setStep(1);
-              }}
-            >
-              Back
-            </Button>
-          ) : null}
-          {step === 1 ? (
-            <Button
-              type="button"
-              disabled={creating}
-              className="min-w-[140px] justify-center"
-              onClick={continueToVoice}
-            >
-              Continue →
-            </Button>
-          ) : (
-            <Button type="submit" disabled={creating} className="min-w-[140px] justify-center">
-              {creating ? (
-                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+        <div className="shrink-0 border-t border-border px-6 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              {step === 1
+                ? "Brief first. Sound, badge, and line next."
+                : "Creates, trains, and opens Studio."}
+            </p>
+            <div className="flex gap-2 sm:justify-end">
+              {step === 2 ? (
+                <Button type="button" variant="ghost" onClick={() => setStep(1)} disabled={creating}>
+                  Back
+                </Button>
+              ) : null}
+              {step === 1 ? (
+                <Button type="button" onClick={continueToVoice} className="gap-2">
+                  <WandSparkles size={15} aria-hidden="true" />
+                  Continue
+                </Button>
               ) : (
-                <WandSparkles aria-hidden="true" size={16} />
+                <Button type="submit" disabled={creating} className="gap-2">
+                  {creating ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+                  Create agent
+                </Button>
               )}
-              Create agent
-            </Button>
-          )}
+            </div>
+          </div>
         </div>
       </form>
     </div>

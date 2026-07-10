@@ -11,6 +11,12 @@ export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v3";
 
+export const EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY = 15;
+export const EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY = 50;
+export const EXTRA_AGENT_ADDON_PHONE_NUMBERS = 1;
+export const EXTRA_AGENT_ADDON_PRICE_ENV = "STRIPE_EXTRA_AGENT_PRICE_ID";
+export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1TrnEvJohDtfy3IkjBi7VOCP";
+
 export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
 
 export type StripePlan = {
@@ -35,7 +41,10 @@ export type StripePlan = {
   lookupKeyMonthly?: string;
   lookupKeyAnnual?: string;
   extra_agent_price_usd?: number;
+  extra_agent_voice_minutes_monthly?: number;
+  extra_agent_included_phone_numbers?: number;
   extraAgentPriceIdEnv?: string;
+  extraAgentFallbackPriceId?: string;
   overagePriceIdEnv?: string;
   public?: boolean;
 };
@@ -80,10 +89,22 @@ const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
   enterprise: "enterprise",
 };
 
+const PAID_EXTRA_AGENT_ADDON = {
+  extra_agent_price_usd: EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
+  extra_agent_voice_minutes_monthly: EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY,
+  extra_agent_included_phone_numbers: EXTRA_AGENT_ADDON_PHONE_NUMBERS,
+  extraAgentPriceIdEnv: EXTRA_AGENT_ADDON_PRICE_ENV,
+  extraAgentFallbackPriceId: EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID,
+} satisfies Partial<StripePlan>;
+
+const EXTRA_AGENT_FEATURE =
+  "+$15/mo per additional live agent adds 50 guaranteed voice minutes and 1 number slot";
+
 /**
  * Founder Early Access commercial contract:
  * - Free Builder creates, trains, and privately simulates one draft agent.
  * - Every paid tier guarantees live voice capacity and an on-demand number slot.
+ * - Paid extra-agent add-ons increase both agent count and included voice capacity.
  * - Voice is the primary pricing driver because it is the only mandatory, high-variable-cost channel.
  * - Optional SMS, platform AI/research, enrichment, and business-artifact generation use a
  *   smaller flexible monthly Runtime Allowance included in the same subscription.
@@ -127,10 +148,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     fallbackAnnualPriceId: "price_1TraBAJohDtfy3IkgLxLqDVI",
     lookupKeyMonthly: "starter_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "starter_annual_founder_2026_07_v2",
+    ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "1 live AI communications agent",
       "1 production-number slot, provisioned when needed",
       "20 guaranteed live-voice minutes each month",
+      EXTRA_AGENT_FEATURE,
       "$0.50 monthly flexible Runtime Allowance",
       "Lead Hunt access and connected email workflows",
       "Automatic post-call summary, outcome, note, and next action",
@@ -153,10 +176,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     fallbackAnnualPriceId: "price_1TrZ9GJohDtfy3IkUxOJscJZ",
     lookupKeyMonthly: "team_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "team_annual_founder_2026_07_v2",
+    ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "1 live AI communications agent",
       "1 production-number slot, provisioned when needed",
       "75 guaranteed live-voice minutes each month",
+      EXTRA_AGENT_FEATURE,
       "$2 monthly flexible Runtime Allowance",
       "Full Lead Hunt, enrichment, niche research, email, and SMS workflows",
       "Branded recap and report artifact workflow",
@@ -180,10 +205,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     fallbackAnnualPriceId: "price_1TrZ9XJohDtfy3Ikp1RQzxrj",
     lookupKeyMonthly: "business_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "business_annual_founder_2026_07_v2",
+    ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "Up to 5 live AI communications agents",
       "Up to 5 production-number slots, provisioned when needed",
       "250 guaranteed live-voice minutes each month",
+      EXTRA_AGENT_FEATURE,
       "$6 monthly flexible Runtime Allowance",
       "Lead Hunt campaigns, enrichment, niche research, routing, and approvals",
       "Connected calendar, CRM, email, SMS, contracts, and commerce actions",
@@ -208,10 +235,12 @@ export const STRIPE_PLANS: StripePlan[] = [
     fallbackAnnualPriceId: "price_1TrZ9pJohDtfy3Ik0zUieFvi",
     lookupKeyMonthly: "enterprise_monthly_founder_2026_07_v2",
     lookupKeyAnnual: "enterprise_annual_founder_2026_07_v2",
+    ...PAID_EXTRA_AGENT_ADDON,
     features: [
       "Up to 15 live AI communications agents",
       "Up to 15 production-number slots, provisioned when needed",
       "650 guaranteed live-voice minutes each month",
+      EXTRA_AGENT_FEATURE,
       "$15 monthly flexible Runtime Allowance",
       "Lead Hunt, enrichment, analytics, CRM controls, routing, and approvals",
       "Connected calendar, email, SMS, contracts, payments, and commerce actions",
@@ -234,8 +263,17 @@ function configuredPriceId(plan: StripePlan, interval: "month" | "year"): string
   return process.env[envKey] || fallback || null;
 }
 
+function configuredExtraAgentPriceId(plan: StripePlan): string | null {
+  const envPrice = plan.extraAgentPriceIdEnv ? process.env[plan.extraAgentPriceIdEnv] : null;
+  return envPrice || plan.extraAgentFallbackPriceId || null;
+}
+
 export function planPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
   return configuredPriceId(plan, interval);
+}
+
+export function planExtraAgentPriceId(plan: StripePlan): string | null {
+  return configuredExtraAgentPriceId(plan);
 }
 
 export function planByPriceId(priceId: string | null | undefined): StripePlan | null {
@@ -245,7 +283,7 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
       (plan) =>
         configuredPriceId(plan, "month") === priceId ||
         configuredPriceId(plan, "year") === priceId ||
-        (plan.extraAgentPriceIdEnv ? process.env[plan.extraAgentPriceIdEnv] === priceId : false) ||
+        configuredExtraAgentPriceId(plan) === priceId ||
         (plan.overagePriceIdEnv ? process.env[plan.overagePriceIdEnv] === priceId : false),
     ) || null
   );
@@ -296,7 +334,10 @@ export function plansForClient() {
     runtime_allowance_usd_monthly: plan.runtime_allowance_usd_monthly,
     overage_per_min_usd: plan.overage_per_min_usd,
     included_phone_numbers: plan.included_phone_numbers,
-    extra_agent_price_usd: null,
+    extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
+    extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
+    extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
+    extra_agent_configured: !!configuredExtraAgentPriceId(plan),
     features: plan.features,
     configured: plan.id === "personal" || !!configuredPriceId(plan, "month"),
     annual_configured: plan.id === "personal" || !!configuredPriceId(plan, "year"),

@@ -3,7 +3,14 @@ import { drizzle, log, auditLogger } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
-import { planByStripePrice, planPriceId, type StripePlan } from "./plan-catalog";
+import {
+  STRIPE_PLANS,
+  planById,
+  planExtraAgentPriceId,
+  planLookupKey,
+  planPriceId,
+  type StripePlan,
+} from "./plan-catalog";
 import { dispatchWebhook } from "./webhook-helpers";
 import { invalidateDashboard } from "./dashboard-cache";
 import {
@@ -31,13 +38,56 @@ export function voiceOverageBillingConfigured(_plan: StripePlan): boolean {
   return false;
 }
 
-/** Checkout contains exactly one licensed subscription price. */
+/** Checkout contains exactly one licensed base-plan subscription price. */
 export function subscriptionCheckoutLineItems(
   plan: StripePlan,
   interval: "month" | "year",
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
   const priceId = planPriceId(plan, interval);
   return priceId ? [{ price: priceId, quantity: 1 }] : [];
+}
+
+/**
+ * Resolve only true base-plan prices. Add-on prices can share a subscription
+ * with the base plan, but must never overwrite wireline_subscriptions.plan.
+ */
+function basePlanByStripePrice(price: Stripe.Price | null | undefined): StripePlan | null {
+  if (!price) return null;
+
+  const metadataPlan = planById(price.metadata?.wireline_plan_id);
+  if (metadataPlan) return metadataPlan;
+
+  const lookupKey = price.lookup_key?.trim() || null;
+  if (lookupKey) {
+    const lookupMatch = STRIPE_PLANS.find(
+      (plan) => planLookupKey(plan, "month") === lookupKey || planLookupKey(plan, "year") === lookupKey,
+    );
+    if (lookupMatch) return lookupMatch;
+  }
+
+  if (price.id) {
+    return (
+      STRIPE_PLANS.find(
+        (plan) => planPriceId(plan, "month") === price.id || planPriceId(plan, "year") === price.id,
+      ) || null
+    );
+  }
+
+  return null;
+}
+
+function isExtraAgentPrice(price: Stripe.Price | null | undefined): boolean {
+  if (!price) return false;
+  if (price.metadata?.wireline_addon_id === "extra_agent") return true;
+  if (price.lookup_key === "extra_agent_monthly_founder_2026_07_v3") return true;
+  return STRIPE_PLANS.some((plan) => planExtraAgentPriceId(plan) === price.id);
+}
+
+function extraAgentQuantityFromSubscription(sub: Stripe.Subscription): number {
+  return sub.items.data.reduce((total, item) => {
+    if (!isExtraAgentPrice(item.price)) return total;
+    return total + Math.max(0, item.quantity ?? 0);
+  }, 0);
 }
 
 /**
@@ -87,8 +137,11 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   const userId = existing.userId;
   const plan =
     sub.items?.data
-      ?.map((item) => planByStripePrice(item.price))
+      ?.map((item) => basePlanByStripePrice(item.price))
       .find((candidate): candidate is StripePlan => !!candidate) ?? null;
+  const extraAgents = extraAgentQuantityFromSubscription(sub);
+  const baseMaxAgents = plan?.max_agents ?? 1;
+  const effectiveMaxAgents = baseMaxAgents + extraAgents;
   const stripeStatus = sub.status;
 
   const localStatus =
@@ -133,14 +186,16 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
       id: userId,
       userId,
       subscriptionStatus: localStatus,
-      maxAgents: plan?.max_agents ?? 1,
+      maxAgents: effectiveMaxAgents,
+      extraAgents,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
       target: [schema.settings.userId],
       set: {
         subscriptionStatus: localStatus,
-        maxAgents: plan?.max_agents ?? 1,
+        maxAgents: effectiveMaxAgents,
+        extraAgents,
         updatedAt: new Date(),
       },
     });
@@ -152,7 +207,8 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
 
   dispatchWebhook(userId, "subscription.changed", {
     plan: plan?.id ?? null,
-    voice_number_slots_cap: plan?.max_agents ?? null,
+    voice_number_slots_cap: effectiveMaxAgents,
+    included_extra_agents: extraAgents,
     status: stripeStatus,
     legacy_status: localStatus,
     cancel_at_period_end: !!sub.cancel_at_period_end,
@@ -197,6 +253,7 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
         stripe_status: stripeStatus,
         legacy_status: localStatus,
         cancel_at_period_end: !!sub.cancel_at_period_end,
+        extra_agents: extraAgents,
       },
     })
     .catch(() => {});
