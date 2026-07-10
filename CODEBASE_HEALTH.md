@@ -95,6 +95,7 @@ Use customer-facing language consistently:
 
 Run the narrowest sufficient check while developing, then the full gate before merge.
 
+- `npm run check-prod-env` — required/recommended production environment shape, including deploy-safe Postgres URL host validation.
 - `npm run verify` — design check, source-control hygiene, route registry, docs index, design-token parity, Stripe catalog contract, production build, and bundled-server import smoke.
 - `npm run verify:full` — type check, server lint, design/source-control/route/docs/token checks, Stripe catalog contract, authz, bootstrap, CSP, tests, build, and smoke.
 - `npm run verify:contracts` — product voice, metadata, event taxonomy, and static contracts.
@@ -103,6 +104,16 @@ Run the narrowest sufficient check while developing, then the full gate before m
 - Review Vercel runtime errors after each deployment.
 
 ## Recent health actions
+
+### 2026-07-10 repo-wide ops cleanup
+
+- Cross-checked GitHub, Stripe, Supabase, and Vercel before changing source.
+- Hardened database URL selection and production env checks against single-label database hosts such as `base`, which Vercel runtime logs had surfaced as `getaddrinfo ENOTFOUND base` during a signup attempt.
+- Added regression coverage for valid pooler selection, malformed pooler fallback, and invalid production database host rejection.
+- Refreshed README verification guidance so environment shape checks are explicit before deploy.
+- Revalidated Supabase: project `ogenlhodmwvyacvnrsnj` is active healthy; RLS is enabled on listed app tables; the remaining security advisor is Supabase Auth leaked-password protection, which is not the active custom-auth control; unused-index lints remain evidence-gated, not automatic deletion targets.
+- Revalidated Stripe: the active catalog includes Personal, Team, Business, Enterprise, Conversation Balance, and Live Video products; zero-dollar `Retired catalog anchor` prices are not referenced by source and remain an ops cleanup candidate before broad public checkout.
+- Revalidated Vercel: latest `wireline` production deployment is READY; runtime errors were clear over the last 30 minutes at the time of this pass.
 
 - Audited authenticated route and chrome surfaces; removed stale redirect-only client routes for pulse/fleet/ops/training/chat/actions/nexus/wires and deleted unmounted legacy shell components while preserving only defensive `/agents`, `/call-logs`, and `/logs` redirects.
 
