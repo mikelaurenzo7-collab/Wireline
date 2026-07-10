@@ -82,7 +82,7 @@ describe("agent navigation contract", () => {
     expect(createDialog).toMatch(/Provision Wireline number/);
     expect(createDialog).toMatch(/\/studio\?agent=/);
     expect(createDialog).not.toMatch(/\/training\?agent=|\/knowledge\?agent=/);
-    expect(productCopy).toMatch(/Brief it\. Train it\. Put it on the line\./);
+    expect(productCopy).toMatch(/Brief it\. Train it\. Launch it on the line\./);
   });
 
   it("translates the Zip handoff into current control-surface and pricing language", () => {
