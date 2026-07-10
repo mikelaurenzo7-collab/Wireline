@@ -41,6 +41,14 @@
   text-wrap: balance;
 }
 
+.wl-stitch-marketing-hero {
+  max-width: 22ch;
+  font-size: clamp(2.35rem, 1.45rem + 3.4vw, 4.35rem);
+  letter-spacing: -0.04em;
+  line-height: 0.99;
+  text-wrap: balance;
+}
+
 /* .marketing-hero background lives in wireline-signature.css. */
 
 .marketing-hero__content {
