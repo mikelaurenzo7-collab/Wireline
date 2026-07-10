@@ -107,8 +107,8 @@ export default function SolutionsPage() {
               Hear this lane before you build it.
             </h2>
             <p className="mt-4 text-[15px] leading-7 text-muted-foreground">
-              The hero stays consistent. The right rail changes only to show the useful action for
-              this page.
+              Preview the call lane, then build it with your voice, playbook, and handoff rules when
+              ready.
             </p>
             <div className="mt-7 rounded-[16px] border border-border bg-background/70 p-4">
               <BrowserCallWidget agentName={key === "sales" ? "Sales Agent" : "Front Desk"} />
