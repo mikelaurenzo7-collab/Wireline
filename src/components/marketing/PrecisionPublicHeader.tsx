@@ -8,9 +8,9 @@ import SkipToContentLink from "../layout/SkipToContentLink";
 
 const links = [
   {
-    to: "/for/personal",
-    label: "Use cases",
-    active: (path: string) => path.startsWith("/for/") || path.startsWith("/solutions/"),
+    to: "/solutions/support",
+    label: "Solutions",
+    active: (path: string) => path.startsWith("/solutions/") || path.startsWith("/for/"),
   },
   { to: "/features", label: "Features", active: (path: string) => path === "/features" },
   { to: "/pricing", label: "Pricing", active: (path: string) => path === "/pricing" },
