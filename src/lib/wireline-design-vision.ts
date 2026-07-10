@@ -14,7 +14,7 @@ export const WIRELINE_DESIGN_VISION = {
     "Silver is the wire — it carries the signal, never decorates.",
     "One voice module, one composer dock, one elevation language.",
     "Centered marketing storytelling; left/task-first authenticated work.",
-    "Instrument Serif carries big ideas; DM Sans carries work; Space Mono carries labels.",
+    "Inter Tight carries big ideas; Inter carries work; IBM Plex Mono carries labels.",
     "No decorative green, orange, or off-palette marketing hues.",
     "44px minimum for primary touch targets; 2px focus-visible rings, 4px halo optional.",
     "Letterpress depth: inset highlights on surfaces, restrained glow only on active affordances.",
