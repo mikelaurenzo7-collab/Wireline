@@ -57,6 +57,9 @@ function AppRouter() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/showcase" element={<Showcase />} />
         <Route path="/compare" element={<Compare />} />
+        <Route path="/solutions" element={<Navigate to="/solutions/support" replace />} />
+        <Route path="/use-cases" element={<Navigate to="/solutions/support" replace />} />
+        <Route path="/use-cases/*" element={<Navigate to="/solutions/support" replace />} />
         <Route path="/solutions/:wedge" element={<SolutionsPage />} />
         <Route path="/for/personal" element={<VerticalLanding slug="personal" />} />
         <Route path="/for/home-services" element={<VerticalLanding slug="home-services" />} />
