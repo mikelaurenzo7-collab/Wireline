@@ -45,6 +45,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.wl-ui-caps :where(h1, h2, h3, h4, h5, h6),
 h1,
 h2,
 h3,
