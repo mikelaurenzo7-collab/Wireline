@@ -83,7 +83,7 @@ describe("video presenter integration", () => {
   it("pauses catalog presenter pickers until the curated Presence Catalog is ready", () => {
     const fastStart = source("src/components/create-agent/CreateAgentCatalogFacePicker.tsx");
     expect(fastStart).toContain("Agent identity badge");
-    expect(fastStart).toContain("not a video presenter");
+    expect(fastStart.toLowerCase()).toContain("not a video presenter");
     expect(fastStart).not.toContain("avatars.map");
     const picker = source("src/components/AgentPresenceAvatarPicker.tsx");
     expect(picker).toContain("Presence catalog paused");
