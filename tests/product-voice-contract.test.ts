@@ -7,6 +7,7 @@ import {
   OUTBOUND_WEDGE,
   PROFIT_AGENT_NUMBER_PROMISE,
 } from "../src/lib/product-copy";
+import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -90,6 +91,27 @@ describe("product voice cohesion", () => {
     expect(catalog).toContain("included_phone_numbers: 8");
     expect(catalog).toContain("One active profit agent with one included number");
     expect(billing).toContain("plan.included_phone_numbers");
+  });
+
+  it("keeps included number capacity mathematically aligned to included agents", () => {
+    const publicCapacityPlans = STRIPE_PLANS.filter((plan) => plan.id !== "enterprise");
+
+    for (const plan of publicCapacityPlans) {
+      expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
+      expect(plan.voice_minutes_monthly, plan.id).toBe(0);
+    }
+  });
+
+  it("keeps provisioning and entitlement code wired to catalog-backed line slots", () => {
+    const entitlements = read("src/lib/phone-line-entitlements.ts");
+    const provisioning = read("src/lib/phone-provisioning.ts");
+
+    expect(entitlements).toContain("return tier.included_phone_numbers");
+    expect(provisioning).toContain("existing >= plan.included_phone_numbers");
+    expect(provisioning).toContain("findAgentPhoneLine(userId, opts.agentId)");
+    expect(provisioning).toContain("purchaseTwilioLocalNumber");
+    expect(provisioning).toContain("importTwilioNumberToVapi");
+    expect(provisioning).toContain("provisionVapiNumber");
   });
 
   it("keeps public entry paths broad instead of defaulting to home services", () => {
