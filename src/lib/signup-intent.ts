@@ -1,6 +1,6 @@
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
-export const SIGNUP_PLAN_IDS = ["personal", "team", "business", "enterprise"] as const;
+export const SIGNUP_PLAN_IDS = ["personal", "starter", "team", "business", "enterprise"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const SIGNUP_WEDGE_KEYS = [
@@ -85,17 +85,19 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
 const PLAN_SET = new Set<string>(SIGNUP_PLAN_IDS);
 const WEDGE_SET = new Set<string>(SIGNUP_WEDGE_KEYS);
 const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
-  plus: "team",
-  personal_plus: "team",
-  personalplus: "team",
+  free: "personal",
+  builder: "personal",
+  free_builder: "personal",
+  plus: "starter",
+  personal_plus: "starter",
+  personalplus: "starter",
+  lite: "starter",
+  business_lite: "starter",
+  businesslite: "starter",
+  business_starter: "starter",
+  businessstarter: "starter",
   shared: "team",
-  lite: "team",
-  business_lite: "team",
-  businesslite: "team",
-  business_starter: "team",
-  businessstarter: "team",
   pro: "business",
-  starter: "business",
   business_starter_plus: "business",
   business_growth: "business",
   businessgrowth: "business",
