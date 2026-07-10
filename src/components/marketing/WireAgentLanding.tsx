@@ -27,12 +27,12 @@ type ModeDetail = {
 
 const HERO_LOOP = MARKETING_VOICE.proof;
 
-const AUDIENCES = ["Appointments", "Lead revival", "Promotions", "Recovery"] as const;
+const AUDIENCES = ["Sales", "Marketing", "Support", "Admin"] as const;
 const HERO_VISUAL_ITEMS = [
   "Brief the outcome",
   "Train the truth",
-  "Claim the number",
-  "Log the result",
+  "Give it a number",
+  "See the proof",
 ] as const;
 
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
@@ -43,36 +43,36 @@ const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
 
 const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
   outbound: {
-    eyebrow: "Sales calls",
+    eyebrow: "Sales and growth",
     title: "Your best salesperson, without the commission.",
-    lead: "Call warm lists, revive old leads, promote offers, follow up on quotes, book appointments, and log profit-moving outcomes with one operating agent.",
+    lead: "Call warm lists, revive old leads, promote offers, follow up on quotes, book appointments, and log profit-moving outcomes with one tireless employee.",
     bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
-    cta: "Build your Wireline CEO",
+    cta: "Build your best employee",
     ctaPath: "/signup?plan=business&mode=outbound",
   },
   inbound: {
-    eyebrow: "Demand capture",
+    eyebrow: "Front desk and support",
     title: "Answer demand before profit leaks.",
-    lead: "Handle front desk calls, inbound lead qualification, scheduling, callbacks, overflow, and after-hours coverage with a reachable Wireline CEO number.",
+    lead: "Handle front desk calls, inbound lead qualification, scheduling, callbacks, overflow, and after-hours coverage with a reachable Wireline number.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
-    cta: "Build your Wireline CEO",
+    cta: "Build your best employee",
     ctaPath: "/signup?plan=business&mode=inbound",
   },
   hybrid: {
-    eyebrow: "Operating desk",
-    title: "Answer, call back, and keep profit moving.",
-    lead: "When callbacks, outbound follow-up, scheduling, recovery, and CRM updates belong in one workflow, Wireline CEO owns the handoff.",
+    eyebrow: "Right-hand operator",
+    title: "The employee who does the follow-through.",
+    lead: "When sales, marketing, callbacks, scheduling, recovery, and CRM updates belong in one workflow, Wireline owns the busywork and shows you the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
-    cta: "Build your Wireline CEO",
+    cta: "Build your best employee",
     ctaPath: "/signup?plan=business&mode=hybrid",
   },
 };
 
 const LOOP_COPY = [
-  "Brief the first outcome, audience, limits, and business result.",
-  "Train the offer, objections, rules, approvals, and handoff logic.",
+  "Tell it the outcome, audience, limits, and rules.",
+  "Add the offer, voice, objections, approvals, and handoff logic.",
   "Launch the included number, tools, inbox, routing, and spend controls.",
-  "Operate: call, book, revive, recover, follow up, log outcomes, and improve the next run.",
+  "Let it answer, call, sell, market, book, recover, follow up, and log what happened.",
 ] as const;
 
 const planCatalog = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan])) as Record<
@@ -85,7 +85,7 @@ const PLAN_PREVIEW = [
     name: "Free Builder",
     price: "$0",
     period: "to create",
-    body: "Build and train your Wireline CEO privately. Activate any paid plan when you're ready to go live.",
+    body: "Build and train your first Wireline employee privately. Activate any paid plan when you're ready to put it to work.",
     cta: "Start free",
     ctaPath: "/signup?plan=personal",
   },
@@ -93,7 +93,7 @@ const PLAN_PREVIEW = [
     name: "Starter Plus",
     price: `$${planCatalog.team.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.team.max_agents} operating agent and ${planCatalog.team.included_phone_numbers} included number, plus ${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.`,
+    body: `${planCatalog.team.max_agents} live AI employee and ${planCatalog.team.included_phone_numbers} included number, plus ${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.`,
     cta: "Start Starter Plus",
     ctaPath: "/signup?plan=team",
   },
@@ -101,7 +101,7 @@ const PLAN_PREVIEW = [
     name: "Pro",
     price: `$${planCatalog.business.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.business.max_agents} operating agents and ${planCatalog.business.included_phone_numbers} included numbers with CRM sync, analytics, roles, and oversight.`,
+    body: `${planCatalog.business.max_agents} live AI employees and ${planCatalog.business.included_phone_numbers} included numbers with CRM sync, analytics, roles, and oversight.`,
     cta: "Go Pro",
     ctaPath: "/signup?plan=business",
   },
@@ -157,20 +157,20 @@ export default function WireAgentLanding() {
           eyebrow={MARKETING_VOICE.eyebrow}
           title={MARKETING_VOICE.headline}
           description={MARKETING_VOICE.subline}
-          primaryAction={{ label: "Build your Wireline CEO", to: "/signup" }}
+          primaryAction={{ label: "Build your best employee", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={AUDIENCES}
-          visualEyebrow="Brief -> Train -> Launch -> Operate"
-          visualTitle="One number. One operator. Every outcome logged."
-          visualBody="Brief the first business result, train Wireline CEO on your truth, give it an included line, then review exactly what moved after every conversation."
+          visualEyebrow="Brief -> Train -> Launch -> Prove"
+          visualTitle="One number. One employee. Every outcome logged."
+          visualBody="Tell Wireline what you want done, train it on your rules, give it an included line, then review exactly what moved after every conversation."
           visualItems={HERO_VISUAL_ITEMS}
         />
 
         <section className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
           <p className="marketing-ink-panel__soft text-[18px] font-[var(--wireline-font-family-display)]">
-            One operator. One included number. Every outcome logged.{" "}
+            Salesperson. Marketer. Front desk. Follow-up machine. {" "}
             <span className="text-[var(--wireline-color-text-primary)]">
-              Start with Wireline CEO, then add specialists only when volume proves it.
+              Start with one best employee, then add specialists only when volume proves it.
             </span>
           </p>
         </section>
@@ -179,9 +179,9 @@ export default function WireAgentLanding() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">How it works</p>
-              <h2 className="wl-display-2 mt-4">Four steps from brief to operating calls.</h2>
+              <h2 className="wl-display-2 mt-4">Four steps from idea to employee.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Build your Wireline CEO, train the business truth, launch the included number, then
+                Build one AI employee, train the business truth, launch the included number, then
                 improve from a clean record behind every conversation.
               </p>
             </div>
@@ -212,11 +212,11 @@ export default function WireAgentLanding() {
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:items-start">
             <div>
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Wireline CEO lanes</p>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">Work lanes</p>
               <h2 className="wl-display-2 mt-4">Choose the outcome. Wireline gives it a line.</h2>
               <p className="mt-4 max-w-[34rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Outbound, inbound, or hybrid — same product. You choose the first business result;
-                Wireline handles the number, handoff, record, and balance. {AGENT_NUMBER_PROMISE}
+                Sales, service, or all-purpose follow-through — same product. You choose the first
+                business result; Wireline handles the number, handoff, record, and balance. {AGENT_NUMBER_PROMISE}
               </p>
               <div
                 className="wl-segmented mt-7"
@@ -299,8 +299,7 @@ export default function WireAgentLanding() {
               <h2 className="wl-display-2 mt-4">Create first. Fund live work. Scale when ready.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
                 Free Builder starts free. Every paid plan guarantees live voice minutes. Higher
-                tiers add operating-agent capacity, included numbers, controls, and shared
-                operations.
+                tiers add employee capacity, included numbers, controls, and shared operations.
               </p>
             </div>
             <div className="mx-auto grid max-w-[960px] gap-5 sm:grid-cols-3">
@@ -355,17 +354,17 @@ export default function WireAgentLanding() {
                 }}
               />
               <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[17ch]">Build your first Wireline CEO.</h2>
+                <h2 className="wl-display-2 mx-auto max-w-[17ch]">Build your best employee.</h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[520px] text-[16px] leading-[1.6]">
-                  Stand up one trained operating agent, claim its included number, and see the
-                  outcome after the first real conversation.
+                  Stand up one trained AI employee, claim its included number, and see the outcome
+                  after the first real conversation.
                 </p>
                 <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                   <Link
                     to="/signup"
                     className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--wireline-color-text-primary)] px-7 py-3 text-[15px] font-semibold text-[var(--wireline-color-canvas-default)] transition-all hover:-translate-y-px hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-text-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] sm:w-auto"
                   >
-                    Build your Wireline CEO
+                    Build your best employee
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                   <Link
