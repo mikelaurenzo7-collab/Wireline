@@ -42,7 +42,7 @@ export type AgentRoleDefinition = {
 
 const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
   ceo: {
-    label: "Wireline Operator",
+    label: "Best Employee",
     archetype: "All-Purpose AI Employee",
     description:
       "Handles sales, marketing, front desk, support, scheduling, follow-up, recovery, and personal admin under owner-controlled rules",
