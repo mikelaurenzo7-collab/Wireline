@@ -27,6 +27,8 @@ export async function reserveRuntimeUsage(input: {
   referenceId: string;
   reason: string;
   metadata?: Record<string, unknown>;
+  provider?: string;
+  source?: string;
 }): Promise<{ reserved: boolean; alreadyReserved: boolean; balanceUsd: number }> {
   const amount = cents(input.amountUsd);
   if (!(amount > 0)) return { reserved: true, alreadyReserved: false, balanceUsd: 0 };
@@ -68,8 +70,8 @@ export async function reserveRuntimeUsage(input: {
       refType: "runtime_usage",
       refId: input.referenceId,
       idempotencyKey,
-      source: "wireline",
-      provider: "openai",
+      source: input.source || "wireline",
+      provider: input.provider || "openai",
       metadata: {
         ...(input.metadata || {}),
         reserved_usd: amount,
@@ -86,14 +88,16 @@ export async function refundRuntimeUsage(input: {
   referenceId: string;
   reason: string;
   metadata?: Record<string, unknown>;
+  provider?: string;
+  source?: string;
 }): Promise<void> {
   try {
     await addCredit(input.userId, cents(input.amountUsd), "runtime_usage_refund", {
       type: "runtime_usage_refund",
       id: input.referenceId,
       entryKind: "refund",
-      source: "wireline",
-      provider: "openai",
+      source: input.source || "wireline",
+      provider: input.provider || "openai",
       customerReason: input.reason,
       metadata: input.metadata,
     });
