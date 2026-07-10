@@ -23,6 +23,12 @@ describe("video presenter integration", () => {
     expect(face).toContain('aria-label={title || "Agent identity badge"}');
   });
 
+  it("keeps Fast Start copy honest about app-only avatars", () => {
+    const dialog = source("src/components/CreateAgentDialog.tsx");
+    expect(dialog).toContain("Step 2 · Voice, badge, and line");
+    expect(dialog).toContain("The avatar is only an app identifier");
+  });
+
   it("starts LiveAvatar LITE sessions on the server", () => {
     const service = source("src/lib/video-presenter/liveavatar-service.ts");
     expect(service).toContain('mode: "LITE"');
