@@ -214,9 +214,7 @@ export async function generateAndStorePostCallArtifact(
   const stored = await uploadArtifactToConnectedStorage({
     userId: input.userId,
     destination: input.destination,
-    fileName: citation.filename?.toLowerCase().endsWith(suffix)
-      ? citation.filename
-      : fileName(input),
+    fileName: fileName(input),
     mimeType: MIME_BY_FORMAT[input.format],
     bytes,
   });
