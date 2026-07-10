@@ -1,376 +1,351 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
-import twilio from "twilio";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Twilio API responses are vendor-defined. */
+import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
 
-import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
-import { getErrorMessage } from "./server-utils";
-import { getCreditBalanceUsd } from "./credit-wallet";
+import { debitForVoiceUsage, getCreditBalanceUsd } from "./credit-wallet";
+import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
 import { SMS_COST_PER_SEGMENT_USD, billSmsMessage } from "./sms-billing";
+import { drizzle, log } from "./server-context";
+import { getErrorMessage } from "./server-utils";
+import {
+  getTwilioClient,
+  isTwilioConfigured,
+  lookupTenantPhoneNumber,
+  type TwilioMessageChannel,
+  type TwilioSendResult,
+} from "./twilio-service-base";
 
-export type TwilioMessageChannel = "sms" | "whatsapp";
+export * from "./twilio-service-base";
 
-interface TwilioTenantSettings {
-  messagingEnabled: boolean;
+const GSM_BASIC = new Set(
+  Array.from(
+    "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà",
+  ),
+);
+const GSM_EXTENSION = new Set(Array.from("^{}\\[~]|€"));
+
+interface MessagingSettings {
+  enabled: boolean;
   lookupEnabled: boolean;
-  managerAlertsEnabled: boolean;
   messagingServiceSid: string | null;
   smsFromNumber: string | null;
   whatsappFromNumber: string | null;
-  managerAlertNumber: string | null;
 }
 
-export interface TwilioLookupResult {
-  ok: boolean;
-  configured: boolean;
-  enabled: boolean;
-  reason?: string;
-  phoneNumber?: string;
-  valid?: boolean;
-  lineType?: string | null;
-  carrierName?: string | null;
-  countryCode?: string | null;
-}
-
-export interface TwilioSendResult {
-  ok: boolean;
-  configured: boolean;
-  enabled: boolean;
-  reason?: string;
-  sid?: string;
-  status?: string | null;
-  to?: string;
-  channel?: TwilioMessageChannel;
-}
-
-let cachedClient: ReturnType<typeof twilio> | null | undefined;
-
-function env(name: string): string {
-  return typeof process.env[name] === "string" ? process.env[name]!.trim() : "";
-}
-
-export function getTwilioClient() {
-  if (cachedClient !== undefined) return cachedClient;
-
-  const accountSid = env("TWILIO_ACCOUNT_SID");
-  const authToken = env("TWILIO_AUTH_TOKEN");
-  if (!accountSid || !authToken) {
-    cachedClient = null;
-    return cachedClient;
-  }
-
-  cachedClient = twilio(accountSid, authToken);
-  return cachedClient;
-}
-
-export function isTwilioConfigured(): boolean {
-  return !!getTwilioClient();
-}
-
-function cleanPhone(raw: string | undefined | null): string {
-  const cleaned = String(raw || "").replace(/[^0-9+]/g, "");
+function cleanPhone(raw: string | null | undefined): string {
+  const input = String(raw || "").replace(/^whatsapp:/i, "");
+  const cleaned = input.replace(/[^0-9+]/g, "");
   if (!cleaned) return "";
-  if (!cleaned.startsWith("+")) return cleaned;
-  return `+${cleaned.slice(1).replace(/\+/g, "")}`;
+  return cleaned.startsWith("+") ? `+${cleaned.slice(1).replace(/\+/g, "")}` : cleaned;
 }
 
-function formatMessageAddress(raw: string, channel: TwilioMessageChannel): string {
-  const phone = cleanPhone(raw);
-  if (!phone) return "";
+function address(phone: string, channel: TwilioMessageChannel): string {
   return channel === "whatsapp" ? `whatsapp:${phone}` : phone;
 }
 
-async function getTenantSettings(userId: string): Promise<TwilioTenantSettings> {
+function appUrl(): string {
+  return (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+}
+
+function boundedValidityPeriod(): number {
+  const configured = Number(process.env.TWILIO_MESSAGE_VALIDITY_SECONDS || 3600);
+  if (!Number.isFinite(configured)) return 3600;
+  return Math.max(60, Math.min(36_000, Math.floor(configured)));
+}
+
+/** Conservative pre-send segment estimate. Smart Encoding can lower the final Twilio count. */
+export function estimateSmsSegments(body: string): number {
+  let gsmUnits = 0;
+  let gsm = true;
+  for (const character of Array.from(body)) {
+    if (GSM_BASIC.has(character)) gsmUnits += 1;
+    else if (GSM_EXTENSION.has(character)) gsmUnits += 2;
+    else {
+      gsm = false;
+      break;
+    }
+  }
+  if (gsm) return gsmUnits <= 160 ? 1 : Math.ceil(gsmUnits / 153);
+  const unicodeUnits = body.length;
+  return unicodeUnits <= 70 ? 1 : Math.ceil(unicodeUnits / 67);
+}
+
+async function settingsFor(userId: string): Promise<MessagingSettings> {
   const [row] = await drizzle
     .select({
-      twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
-      twilioLookupEnabled: schema.settings.twilioLookupEnabled,
-      twilioManagerAlertsEnabled: schema.settings.twilioManagerAlertsEnabled,
-      twilioMessagingServiceSid: schema.settings.twilioMessagingServiceSid,
-      twilioSmsFromNumber: schema.settings.twilioSmsFromNumber,
-      twilioWhatsappFromNumber: schema.settings.twilioWhatsappFromNumber,
-      twilioManagerAlertNumber: schema.settings.twilioManagerAlertNumber,
+      enabled: schema.settings.twilioMessagingEnabled,
+      lookupEnabled: schema.settings.twilioLookupEnabled,
+      messagingServiceSid: schema.settings.twilioMessagingServiceSid,
+      smsFromNumber: schema.settings.twilioSmsFromNumber,
+      whatsappFromNumber: schema.settings.twilioWhatsappFromNumber,
     })
     .from(schema.settings)
     .where(eq(schema.settings.userId, userId))
     .limit(1);
-
   return {
-    messagingEnabled: !!row?.twilioMessagingEnabled,
-    lookupEnabled: !!row?.twilioLookupEnabled,
-    managerAlertsEnabled: !!row?.twilioManagerAlertsEnabled,
-    messagingServiceSid: row?.twilioMessagingServiceSid || null,
-    smsFromNumber: row?.twilioSmsFromNumber || null,
-    whatsappFromNumber: row?.twilioWhatsappFromNumber || null,
-    managerAlertNumber: row?.twilioManagerAlertNumber || null,
+    enabled: !!row?.enabled,
+    lookupEnabled: !!row?.lookupEnabled,
+    messagingServiceSid: row?.messagingServiceSid || null,
+    smsFromNumber: row?.smsFromNumber || null,
+    whatsappFromNumber: row?.whatsappFromNumber || null,
   };
 }
 
-async function fetchPhoneLookup(phone: string): Promise<TwilioLookupResult> {
-  const client = getTwilioClient();
-  if (!client) {
-    return {
-      ok: false,
-      configured: false,
-      enabled: false,
-      reason: "Twilio credentials are not configured on this deployment.",
-    };
-  }
+async function existingThread(userId: string, customerNumber: string) {
+  const [thread] = await drizzle
+    .select({ id: schema.smsThreads.id, agentId: schema.smsThreads.agentId })
+    .from(schema.smsThreads)
+    .where(
+      and(
+        eq(schema.smsThreads.userId, userId),
+        eq(schema.smsThreads.customerNumber, customerNumber),
+      ),
+    )
+    .limit(1);
+  return thread || null;
+}
 
+async function blockedByDnc(userId: string, phone: string): Promise<boolean> {
+  const [row] = await drizzle
+    .select({ phone: schema.dncList.phone })
+    .from(schema.dncList)
+    .where(and(eq(schema.dncList.userId, userId), eq(schema.dncList.phone, phone)))
+    .limit(1);
+  return !!row;
+}
+
+function whatsappCustomerRate(): number | null {
+  if (process.env.WIRELINE_WHATSAPP_PRIVATE_BETA !== "true") return null;
+  const rate = Number(process.env.WIRELINE_WHATSAPP_CUSTOMER_RATE_USD || "");
+  return Number.isFinite(rate) && rate > 0 ? Math.round(rate * 100) / 100 : null;
+}
+
+async function persistOutbound(input: {
+  userId: string;
+  customerNumber: string;
+  body: string;
+  sid: string;
+  agentId?: string;
+}) {
   try {
-    const response = await client.lookups.v2
-      .phoneNumbers(cleanPhone(phone))
-      .fetch({ fields: "line_type_intelligence" });
-
-    const lineType = (response as any).lineTypeIntelligence?.type ?? null;
-    const carrierName = (response as any).lineTypeIntelligence?.carrierName ?? null;
-
-    return {
-      ok: true,
-      configured: true,
-      enabled: true,
-      phoneNumber: response.phoneNumber || cleanPhone(phone),
-      valid: response.valid ?? true,
-      lineType,
-      carrierName,
-      countryCode: response.countryCode || null,
-    };
+    const current = await existingThread(input.userId, input.customerNumber);
+    let threadId = current?.id;
+    if (current) {
+      await drizzle
+        .update(schema.smsThreads)
+        .set({
+          lastMessageAt: new Date(),
+          status: "open",
+          ...(input.agentId && !current.agentId ? { agentId: input.agentId } : {}),
+        })
+        .where(eq(schema.smsThreads.id, current.id));
+    } else {
+      const [created] = await drizzle
+        .insert(schema.smsThreads)
+        .values({
+          userId: input.userId,
+          customerNumber: input.customerNumber,
+          agentId: input.agentId || null,
+          unreadCount: 0,
+        })
+        .returning({ id: schema.smsThreads.id });
+      threadId = created?.id;
+    }
+    if (threadId) {
+      await drizzle.insert(schema.smsMessages).values({
+        userId: input.userId,
+        threadId,
+        direction: "out",
+        body: input.body,
+        twilioSid: input.sid,
+        agentId: input.agentId || null,
+      });
+    }
   } catch (error) {
-    log.warn("Twilio lookup failed", { error: getErrorMessage(error) });
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Twilio Lookup request failed.",
-    };
+    log.warn("Twilio outbound thread persistence failed", { error: getErrorMessage(error) });
   }
 }
 
-export async function lookupTenantPhoneNumber(
-  userId: string,
-  phone: string,
-): Promise<TwilioLookupResult> {
-  const settings = await getTenantSettings(userId);
-
-  if (!settings.lookupEnabled) {
-    return {
-      ok: false,
-      configured: isTwilioConfigured(),
-      enabled: false,
-      reason: "Phone intelligence is disabled for this workspace.",
-    };
-  }
-
-  return fetchPhoneLookup(phone);
-}
-
-async function buildMessagePayload(
-  userId: string,
-  params: { to: string; body: string; channel: TwilioMessageChannel; agentId?: string },
-  options?: { ignoreMessagingToggle?: boolean; settings?: TwilioTenantSettings },
-): Promise<{ payload?: Record<string, string>; result?: TwilioSendResult }> {
-  const settings = options?.settings || (await getTenantSettings(userId));
-
-  if (!options?.ignoreMessagingToggle && !settings.messagingEnabled) {
-    return {
-      result: {
-        ok: false,
-        configured: isTwilioConfigured(),
-        enabled: false,
-        reason: "Twilio messaging is disabled for this workspace.",
-      },
-    };
-  }
-
-  const client = getTwilioClient();
-  if (!client) {
-    return {
-      result: {
-        ok: false,
-        configured: false,
-        enabled: true,
-        reason: "Twilio credentials are not configured on this deployment.",
-      },
-    };
-  }
-
-  if (params.channel === "sms" && settings.lookupEnabled) {
-    const lookup = await fetchPhoneLookup(params.to);
-    if (!lookup.ok) {
-      return {
-        result: {
-          ok: false,
-          configured: lookup.configured,
-          enabled: true,
-          reason: lookup.reason || "Phone validation failed before sending SMS.",
-        },
-      };
-    }
-    if (lookup.valid === false) {
-      return {
-        result: {
-          ok: false,
-          configured: true,
-          enabled: true,
-          reason: "The destination number did not pass Twilio validation.",
-        },
-      };
-    }
-    if ((lookup.lineType || "").toLowerCase() === "landline") {
-      return {
-        result: {
-          ok: false,
-          configured: true,
-          enabled: true,
-          reason: "The destination appears to be a landline, so SMS was not sent.",
-        },
-      };
-    }
-  }
-
-  const payload: Record<string, string> = {
-    to: formatMessageAddress(params.to, params.channel),
-    body: params.body,
-  };
-
-  let sender = params.channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
-
-  if (params.channel === "sms" && params.agentId) {
-    const { resolveAgentSmsFromNumber } = await import("./agent-phone-lines");
-    const agentLine = await resolveAgentSmsFromNumber(userId, params.agentId);
-    if (agentLine) sender = agentLine;
-  }
-
-  if (sender) {
-    payload.from = formatMessageAddress(sender, params.channel);
-  }
-  if (settings.messagingServiceSid) {
-    payload.messagingServiceSid = settings.messagingServiceSid;
-  }
-
-  if (!payload.to) {
-    return {
-      result: {
-        ok: false,
-        configured: true,
-        enabled: true,
-        reason: "A destination number is required.",
-      },
-    };
-  }
-
-  if (!payload.from && !payload.messagingServiceSid) {
-    return {
-      result: {
-        ok: false,
-        configured: true,
-        enabled: true,
-        reason: "Configure a Twilio sender or Messaging Service SID first.",
-      },
-    };
-  }
-
-  return { payload };
-}
-
+/**
+ * Profit-safe outbound SMS/WhatsApp boundary.
+ * - honors DNC for both channels
+ * - estimates the complete SMS segment cost before sending
+ * - preserves agent-specific sender identity
+ * - validates new SMS contacts once instead of paying Lookup on every reply
+ * - attaches a signed delivery-status callback and stale-message validity period
+ * - keeps WhatsApp private-beta until a configured customer rate covers variable fees
+ */
 export async function sendTenantMessage(
   userId: string,
   params: { to: string; body: string; channel?: TwilioMessageChannel; agentId?: string },
 ): Promise<TwilioSendResult> {
   const channel = params.channel || "sms";
-  const client = getTwilioClient();
-  const prepared = await buildMessagePayload(userId, {
-    to: params.to,
-    body: params.body,
-    channel,
-  });
-
-  if (prepared.result) return prepared.result;
-  if (!client || !prepared.payload) {
+  const phone = cleanPhone(params.to);
+  const body = String(params.body || "").trim();
+  if (!phone || !body) {
     return {
       ok: false,
-      configured: false,
+      configured: isTwilioConfigured(),
       enabled: false,
-      reason: "Twilio messaging is unavailable.",
+      reason: "A destination and message body are required.",
+      channel,
     };
   }
 
-  if (channel === "sms") {
-    const smsBalance = await getCreditBalanceUsd(userId);
-    if (smsBalance < SMS_COST_PER_SEGMENT_USD) {
+  const [settings, thread, dncBlocked] = await Promise.all([
+    settingsFor(userId),
+    existingThread(userId, phone),
+    blockedByDnc(userId, phone),
+  ]);
+  if (!settings.enabled) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: "Twilio messaging is disabled for this workspace.",
+      channel,
+    };
+  }
+  if (dncBlocked) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: true,
+      reason: "This contact has opted out of messaging.",
+      channel,
+    };
+  }
+
+  const client = getTwilioClient();
+  if (!client) {
+    return {
+      ok: false,
+      configured: false,
+      enabled: true,
+      reason: "Twilio credentials are not configured on this deployment.",
+      channel,
+    };
+  }
+
+  if (channel === "sms" && settings.lookupEnabled && !thread) {
+    const lookup = await lookupTenantPhoneNumber(userId, phone);
+    if (!lookup.ok || lookup.valid === false) {
+      return {
+        ok: false,
+        configured: lookup.configured,
+        enabled: true,
+        reason: lookup.reason || "The destination number did not pass phone validation.",
+        channel,
+      };
+    }
+    if ((lookup.lineType || "").toLowerCase() === "landline") {
       return {
         ok: false,
         configured: true,
         enabled: true,
-        reason:
-          "Add Conversation Balance before sending SMS. Outbound texts bill at $0.02 per segment.",
+        reason: "The destination is a landline, so SMS was not sent.",
+        channel,
       };
     }
   }
 
-  try {
-    const message = await client.messages.create(prepared.payload as any);
+  const segments = channel === "sms" ? estimateSmsSegments(body) : 1;
+  const whatsappRate = channel === "whatsapp" ? whatsappCustomerRate() : null;
+  if (channel === "whatsapp" && whatsappRate == null) {
+    return {
+      ok: false,
+      configured: true,
+      enabled: false,
+      reason:
+        "WhatsApp is available only through the priced private beta after a sender and approved templates are configured.",
+      channel,
+    };
+  }
+  const requiredBalance =
+    channel === "sms"
+      ? Math.round(SMS_COST_PER_SEGMENT_USD * segments * 100) / 100
+      : whatsappRate || 0;
+  const balance = await getCreditBalanceUsd(userId);
+  if (balance < requiredBalance) {
+    return {
+      ok: false,
+      configured: true,
+      enabled: true,
+      reason: `Add Runtime Balance before sending. This message requires at least $${requiredBalance.toFixed(2)}.`,
+      channel,
+    };
+  }
 
-    if (channel === "sms" && message.sid) {
-      const segments = Math.max(1, Number(message.numSegments) || 1);
-      const billed = await billSmsMessage(userId, message.sid, segments);
-      const expected = Math.round(SMS_COST_PER_SEGMENT_USD * segments * 100) / 100;
+  let sender = channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
+  if (channel === "sms" && params.agentId) {
+    sender = (await resolveAgentSmsFromNumber(userId, params.agentId)) || sender;
+  }
+  if (!sender && !settings.messagingServiceSid) {
+    return {
+      ok: false,
+      configured: true,
+      enabled: true,
+      reason: "Configure a Twilio sender or Messaging Service before sending.",
+      channel,
+    };
+  }
+  if (channel === "whatsapp" && !sender) {
+    return {
+      ok: false,
+      configured: true,
+      enabled: true,
+      reason: "Configure a WhatsApp-enabled sender before sending.",
+      channel,
+    };
+  }
+
+  const payload: Record<string, any> = {
+    to: address(phone, channel),
+    body,
+    statusCallback: `${appUrl()}/api/twilio-webhook/message-status`,
+    validityPeriod: boundedValidityPeriod(),
+  };
+  if (sender) payload.from = address(cleanPhone(sender), channel);
+  if (settings.messagingServiceSid) payload.messagingServiceSid = settings.messagingServiceSid;
+
+  try {
+    const message = await client.messages.create(payload);
+    if (channel === "sms") {
+      const actualSegments = Math.max(1, Number(message.numSegments) || segments);
+      const billed = await billSmsMessage(userId, message.sid, actualSegments);
+      const expected = Math.round(SMS_COST_PER_SEGMENT_USD * actualSegments * 100) / 100;
       if (billed < expected) {
-        log.warn("sms segment billing incomplete after send", {
+        log.error("SMS delivered without a complete Runtime Balance debit", {
           userId,
-          messageSid: message.sid,
-          segments,
-          billed,
+          sid: message.sid,
           expected,
+          billed,
+        });
+      }
+    } else if (whatsappRate) {
+      const debited = await debitForVoiceUsage(
+        userId,
+        whatsappRate,
+        `whatsapp_${message.sid || randomUUID()}`,
+      );
+      if (debited < whatsappRate) {
+        log.error("WhatsApp message delivered without a complete Runtime Balance debit", {
+          userId,
+          sid: message.sid,
+          expected: whatsappRate,
+          debited,
         });
       }
     }
 
-    // Mirror the outbound message into the SMS inbox so account holders see
-    // the full two-way history alongside replies. Idempotent thread
-    // upsert keyed by (user_id, customer_number). Wrapped in its own
-    // try/catch so a transient DB issue can never block the actual SMS
-    // send return value.
-    try {
-      const recipient = String(prepared.payload.to || params.to || "");
-      if (recipient) {
-        const [existingThread] = await drizzle
-          .select({ id: schema.smsThreads.id })
-          .from(schema.smsThreads)
-          .where(
-            and(
-              eq(schema.smsThreads.userId, userId),
-              eq(schema.smsThreads.customerNumber, recipient),
-            ),
-          )
-          .limit(1);
-        let threadId: string | undefined;
-        if (existingThread) {
-          threadId = existingThread.id as unknown as string;
-          await drizzle
-            .update(schema.smsThreads)
-            .set({ lastMessageAt: new Date(), status: "open" })
-            .where(eq(schema.smsThreads.id, existingThread.id));
-        } else {
-          const [created] = await drizzle
-            .insert(schema.smsThreads)
-            .values({ userId, customerNumber: recipient, unreadCount: 0 })
-            .returning({ id: schema.smsThreads.id });
-          threadId = created?.id as unknown as string;
-        }
-        if (threadId) {
-          await drizzle.insert(schema.smsMessages).values({
-            userId,
-            threadId,
-            direction: "out",
-            body: params.body,
-            twilioSid: message.sid,
-          });
-        }
-      }
-    } catch (e: any) {
-      log.warn("Outbound SMS thread persist skipped", { error: e?.message });
-    }
+    await persistOutbound({
+      userId,
+      customerNumber: phone,
+      body,
+      sid: message.sid,
+      agentId: params.agentId,
+    });
 
     return {
       ok: true,
@@ -378,148 +353,22 @@ export async function sendTenantMessage(
       enabled: true,
       sid: message.sid,
       status: message.status ?? null,
-      to: message.to || prepared.payload.to,
+      to: message.to || payload.to,
       channel,
     };
   } catch (error) {
-    log.warn("Twilio message send failed", { error: getErrorMessage(error), channel });
+    log.warn("Twilio message send failed", {
+      userId,
+      channel,
+      segments,
+      error: getErrorMessage(error),
+    });
     return {
       ok: false,
       configured: true,
       enabled: true,
       reason: "Twilio rejected the message send request.",
       channel,
-    };
-  }
-}
-
-export async function sendManagerAlert(
-  userId: string,
-  params: { title: string; message: string; callId?: string },
-): Promise<TwilioSendResult> {
-  const settings = await getTenantSettings(userId);
-  if (!settings.managerAlertsEnabled || !settings.managerAlertNumber) {
-    return {
-      ok: false,
-      configured: isTwilioConfigured(),
-      enabled: false,
-      reason: "Manager SMS alerts are disabled for this workspace.",
-    };
-  }
-
-  const body = [params.title, params.message, params.callId ? `Call ID: ${params.callId}` : null]
-    .filter(Boolean)
-    .join("\n");
-
-  const client = getTwilioClient();
-  const prepared = await buildMessagePayload(
-    userId,
-    {
-      to: settings.managerAlertNumber,
-      body,
-      channel: "sms",
-    },
-    { ignoreMessagingToggle: true, settings },
-  );
-
-  if (prepared.result) return prepared.result;
-  if (!client || !prepared.payload) {
-    return {
-      ok: false,
-      configured: false,
-      enabled: false,
-      reason: "Twilio manager alerting is unavailable.",
-    };
-  }
-
-  try {
-    const message = await client.messages.create(prepared.payload as any);
-    return {
-      ok: true,
-      configured: true,
-      enabled: true,
-      sid: message.sid,
-      status: message.status ?? null,
-      to: message.to || prepared.payload.to,
-      channel: "sms",
-    };
-  } catch (error) {
-    log.warn("Twilio manager alert failed", { error: getErrorMessage(error) });
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Twilio rejected the manager alert message.",
-      channel: "sms",
-    };
-  }
-}
-
-/**
- * Send an SMS alert to an EXPLICITLY supplied destination phone — used
- * by the per-agent escalation override path. Bypasses
- * `managerAlertsEnabled` (the per-agent override IS the Account Holder's
- * opt-in) but still respects all carrier guardrails (DNC, business
- * hours, etc.) via buildMessagePayload's `ignoreMessagingToggle: true`
- * flag, mirroring sendManagerAlert.
- */
-export async function sendDirectAlert(
-  userId: string,
-  destinationPhone: string,
-  params: { title: string; message: string; callId?: string },
-): Promise<TwilioSendResult> {
-  // Basic input sanity. The UI validator already enforces > 7 chars +
-  // E.164-ish, but the boundary here is the network — be defensive.
-  const to = (destinationPhone || "").trim();
-  if (!to || to.length < 7) {
-    return {
-      ok: false,
-      configured: isTwilioConfigured(),
-      enabled: false,
-      reason: "Per-agent escalation phone is missing or too short.",
-    };
-  }
-
-  const body = [params.title, params.message, params.callId ? `Call ID: ${params.callId}` : null]
-    .filter(Boolean)
-    .join("\n");
-
-  const client = getTwilioClient();
-  const prepared = await buildMessagePayload(
-    userId,
-    { to, body, channel: "sms" },
-    { ignoreMessagingToggle: true },
-  );
-
-  if (prepared.result) return prepared.result;
-  if (!client || !prepared.payload) {
-    return {
-      ok: false,
-      configured: false,
-      enabled: false,
-      reason: "Twilio direct alerting is unavailable.",
-    };
-  }
-
-  try {
-    const message = await client.messages.create(prepared.payload as any);
-    return {
-      ok: true,
-      configured: true,
-      enabled: true,
-      sid: message.sid,
-      status: message.status ?? null,
-      to: message.to || prepared.payload.to,
-      channel: "sms",
-    };
-  } catch (error) {
-    log.warn("Twilio per-agent escalation alert failed", { error: getErrorMessage(error) });
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Twilio rejected the per-agent escalation message.",
-      channel: "sms",
     };
   }
 }
