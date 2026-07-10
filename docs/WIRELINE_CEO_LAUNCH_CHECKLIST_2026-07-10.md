@@ -48,6 +48,7 @@ Then create the CEO agent with broad capabilities and tighten from permissions.
 - Pricing: one included operating agent and included number, not a menu of departments.
 - Template gallery: CEO / Operating Agent first; specialists below it.
 - Empty states: "Your front office is covered" rather than "pick a role."
+- Static HTML/SEO metadata: Wireline CEO / one front-office operating agent, not the old "AI employee" headline.
 
 ## Pricing decision
 
@@ -67,7 +68,36 @@ Stripe object configured:
 STRIPE_EXTRA_AGENT_PRICE_ID=price_1TrnEvJohDtfy3IkjBi7VOCP
 ```
 
+Runtime rule:
+
+- Stripe subscription sync reads extra-agent item quantity and mirrors it to `wireline_settings.extra_agents`.
+- Agent creation cap = plan included agents + paid extra-agent quantity.
+- Monthly included voice minutes = plan included minutes + 50 minutes per paid extra agent.
+- Add-on prices must never overwrite `wireline_subscriptions.plan`; base plan comes only from base plan price metadata / lookup keys / configured base plan price ids.
+
 This keeps the upsell honest: if the customer pays for another agent, they also get more minutes to use that agent.
+
+## Launch env checklist
+
+The connected Vercel tool in this chat can inspect deployments and logs but does not expose an env-var write action. Before production launch, verify these are present in Vercel for Production and Preview:
+
+```bash
+STRIPE_STARTER_9_PRICE_ID=price_1TraB4JohDtfy3IkKFF3zI5C
+STRIPE_STARTER_9_ANNUAL_PRICE_ID=price_1TraBAJohDtfy3IkgLxLqDVI
+STRIPE_STARTER_PRICE_ID=price_1TrZ9AJohDtfy3Ika0bPG5Dc
+STRIPE_STARTER_ANNUAL_PRICE_ID=price_1TrZ9GJohDtfy3IkUxOJscJZ
+STRIPE_TEAM_PRICE_ID=price_1TrZ9RJohDtfy3Ik9Q4QFABQ
+STRIPE_TEAM_ANNUAL_PRICE_ID=price_1TrZ9XJohDtfy3Ikp1RQzxrj
+STRIPE_BUSINESS_PRICE_ID=price_1TrZ9gJohDtfy3Ik7zHhg92a
+STRIPE_BUSINESS_ANNUAL_PRICE_ID=price_1TrZ9pJohDtfy3Ik0zUieFvi
+STRIPE_EXTRA_AGENT_PRICE_ID=price_1TrnEvJohDtfy3IkjBi7VOCP
+PERPLEXITY_API_KEY=...
+PERPLEXITY_MODEL=sonar
+LIVE_RESEARCH_TIMEOUT_MS=8000
+GEMINI_API_KEY=...
+```
+
+Do not paste populated secrets into GitHub or docs. Only Vercel project env should contain real secret values.
 
 ## Permission model
 
@@ -124,8 +154,10 @@ The default should always feel like: "start with CEO, split later if needed."
 - Validate CEO agent with no explicit `enabledTools` gets the full tool catalog, then filters by connected integrations.
 - Validate `gemini_ground` still works as the compatible Vapi tool name when only `PERPLEXITY_API_KEY` is set.
 - Validate fallback to Gemini when Perplexity is missing, times out, or returns a non-2xx response.
-- Validate paid extra-agent checkout adds both an agent slot and 50 additional guaranteed voice minutes.
 - Validate personal-plan copy does not accidentally use CRM / pipeline language.
+- Validate extra-agent subscription quantity raises both deployable agent cap and included voice minutes.
+- Validate the extra-agent price never overwrites the base subscription plan during Stripe webhook sync.
+- Validate `/pricing`, `/api/billing/plans`, and the app shell metadata all show CEO-first/capacity-bundle language.
 
 ## Success metrics
 
@@ -134,5 +166,4 @@ The default should always feel like: "start with CEO, split later if needed."
 - % of CEO users enabling at least one live channel.
 - First-week handled conversations.
 - Second-agent creation rate by role.
-- Paid extra-agent attach rate and minutes consumed per add-on.
 - Escalation rate and owner-interruption reduction.
