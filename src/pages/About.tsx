@@ -3,6 +3,7 @@ import { ArrowRight, Check, Mail, ShieldCheck } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import MarketingHero from "../components/marketing/MarketingHero";
 
 const PRINCIPLES = [
   {
@@ -19,26 +20,34 @@ const PRINCIPLES = [
   },
 ] as const;
 
+const ABOUT_HERO_ITEMS = [
+  "Your training",
+  "Your voice",
+  "Your playbook",
+  "Your outcomes",
+] as const;
+
 export default function About() {
   return (
-    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="About Wireline | AI Agents for Calls and Follow-up"
         description="Wireline is a customizable agent platform built for calls, texts, follow-up, browser context, email, and integrations."
         path="/about"
       />
 
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 text-center sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="mx-auto max-w-3xl">
-          <p className="wl-stitch-eyebrow">About Wireline</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            Custom agents for your business calls and workflows.
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            Build custom agents with your Training, your voice, and your exact processes.
-          </p>
-        </div>
-      </section>
+      <MarketingHero
+        eyebrow="About Wireline"
+        title="Custom agents for your business calls and workflows."
+        description="Build custom agents with your Training, your voice, and your exact processes — then keep every call, handoff, and follow-up accountable."
+        primaryAction={{ label: "Get started now", to: "/pricing" }}
+        secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
+        proof={ABOUT_HERO_ITEMS}
+        visualEyebrow="Product posture"
+        visualTitle="Useful, trained, accountable."
+        visualBody="Wireline is built for businesses that need calls answered, leads qualified, appointments booked, and outcomes logged without losing control."
+        visualItems={ABOUT_HERO_ITEMS}
+      />
 
       <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
         <div className="mx-auto grid max-w-6xl overflow-hidden border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
