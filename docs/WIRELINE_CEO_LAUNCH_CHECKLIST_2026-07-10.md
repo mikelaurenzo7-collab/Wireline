@@ -12,6 +12,13 @@ Secondary copy:
 
 > Start with your Wireline CEO. Add specialist agents only when volume proves you need them.
 
+Avoid leading with:
+
+- "pick a role"
+- "configure your bot"
+- "AI employee lanes"
+- any copy that makes the customer feel like they need to design an org chart before getting value
+
 ## Who it serves
 
 - Solopreneurs: one operating agent instead of a fake department tree.
@@ -32,6 +39,16 @@ Ask:
 
 Then create the CEO agent with broad capabilities and tighten from permissions.
 
+## Public marketing surfaces to align
+
+- Landing hero: "One agent to run the front office."
+- CTA: "Build your Wireline CEO."
+- Visual loop: Brief → Train → Launch → Operate.
+- Proof words: Researches, calls, answers, books, follows up, reports.
+- Pricing: one included operating agent and included number, not a menu of departments.
+- Template gallery: CEO / Operating Agent first; specialists below it.
+- Empty states: "Your front office is covered" rather than "pick a role."
+
 ## Permission model
 
 CEO gets the broad operating toolbox by default, but execution is still constrained by:
@@ -46,6 +63,15 @@ CEO gets the broad operating toolbox by default, but execution is still constrai
 ## Live research rollout
 
 Configure `PERPLEXITY_API_KEY` in Vercel to enable Perplexity-first live public research. Keep `GEMINI_API_KEY` configured as fallback.
+
+Recommended env:
+
+```bash
+PERPLEXITY_API_KEY=...
+PERPLEXITY_MODEL=sonar
+LIVE_RESEARCH_TIMEOUT_MS=8000
+GEMINI_API_KEY=...
+```
 
 Use live research for:
 
@@ -67,6 +93,18 @@ Keep specialist roles, but position them as second-step scaling:
 - Receptionist: front-desk-heavy businesses.
 - Marketing: campaigns and re-engagement.
 - Personal Assistant: personal-only posture.
+
+The default should always feel like: "start with CEO, split later if needed."
+
+## QA gates before merge
+
+- Typecheck role definitions and agent constants.
+- Validate creating an agent without `role` persists `ceo`.
+- Validate `/api/agents/roles` and `/api/mobile/agents/roles` include `Wireline CEO` first.
+- Validate CEO agent with no explicit `enabledTools` gets the full tool catalog, then filters by connected integrations.
+- Validate `gemini_ground` still works as the compatible Vapi tool name when only `PERPLEXITY_API_KEY` is set.
+- Validate fallback to Gemini when Perplexity is missing, times out, or returns a non-2xx response.
+- Validate personal-plan copy does not accidentally use CRM / pipeline language.
 
 ## Success metrics
 
