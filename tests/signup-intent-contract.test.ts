@@ -19,14 +19,25 @@ describe("signup intent contract", () => {
 
   it("normalizes stale stored signup intent before it affects onboarding or attribution", () => {
     expect(
-      sanitizeSignupIntent({ preferredPlanId: "starter-plus" as never, capturedAt: "2026-07-10T00:00:00.000Z" })
-        ?.preferredPlanId,
+      sanitizeSignupIntent({
+        preferredPlanId: "starter-plus" as never,
+        capturedAt: "2026-07-10T00:00:00.000Z",
+      })?.preferredPlanId,
     ).toBe("team");
+
     expect(
-      sanitizeSignupIntent({ preferredPlanId: "plus" as never, capturedAt: "2026-07-10T00:00:00.000Z" })
-        ?.preferredPlanId,
+      sanitizeSignupIntent({
+        preferredPlanId: "plus" as never,
+        capturedAt: "2026-07-10T00:00:00.000Z",
+      })?.preferredPlanId,
     ).toBe("team");
-    expect(sanitizeSignupIntent({ preferredPlanId: "unknown" as never, capturedAt: "x" })).toBeNull();
+
+    expect(
+      sanitizeSignupIntent({
+        preferredPlanId: "unknown" as never,
+        capturedAt: "x",
+      }),
+    ).toBeNull();
   });
 
   it("lets vertical intent choose the plan when the URL did not specify one", () => {
