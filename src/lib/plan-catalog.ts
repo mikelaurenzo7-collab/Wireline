@@ -2,9 +2,12 @@
 
 /**
  * Conservative blended variable voice reserve used for pricing guardrails.
- * This includes carrier, voice runtime, model, and operational variance.
+ * Includes carrier, voice runtime, model, and operational variance.
  */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
+export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
+export const PAYMENT_PROCESSING_RATE = 0.029;
+export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 
 export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07";
 
@@ -73,10 +76,11 @@ const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
  * Founder Early Access commercial contract:
  * - Free Builder creates, trains, and privately simulates one draft agent.
  * - Paid tiers include production agents, one dedicated number per included agent,
- *   and a monthly pooled live-minute allowance.
+ *   and a sustainable monthly pooled live-minute allowance.
  * - Every completed live-call attempt consumes at least one included minute.
  * - After the included pool is exhausted, prepaid Conversation Balance is used.
  * - There is no automatic postpaid metered overage line item.
+ * - Active calls finish normally; depleted coverage blocks only the next live action.
  */
 export const STRIPE_PLANS: StripePlan[] = [
   {
@@ -103,7 +107,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 19,
     price_usd_annual: 190,
     max_agents: 1,
-    voice_minutes_monthly: 100,
+    voice_minutes_monthly: 75,
     overage_per_min_usd: 0.2,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
@@ -113,7 +117,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "1 live AI profit agent",
       "1 included production number",
-      "100 pooled live-call minutes each month",
+      "75 pooled live-call minutes each month",
       "Call logs, outcomes, and private simulation",
       "Conversation Balance for controlled extra usage",
       "No automatic overages",
@@ -125,7 +129,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 59,
     price_usd_annual: 590,
     max_agents: 4,
-    voice_minutes_monthly: 400,
+    voice_minutes_monthly: 300,
     overage_per_min_usd: 0.18,
     included_phone_numbers: 4,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
@@ -135,7 +139,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "4 live AI profit agents",
       "4 included production numbers",
-      "400 pooled live-call minutes each month",
+      "300 pooled live-call minutes each month",
       "Shared inbox, routing, approvals, and team visibility",
       "Conversation Balance for controlled extra usage",
       "No automatic overages",
@@ -147,7 +151,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     price_usd_monthly: 149,
     price_usd_annual: 1490,
     max_agents: 8,
-    voice_minutes_monthly: 1200,
+    voice_minutes_monthly: 700,
     overage_per_min_usd: 0.16,
     included_phone_numbers: 8,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
@@ -157,7 +161,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "8 live AI profit agents",
       "8 included production numbers",
-      "1,200 pooled live-call minutes each month",
+      "700 pooled live-call minutes each month",
       "Analytics, CRM controls, role-aware policies, and approvals",
       "Priority support posture",
       "Conversation Balance for controlled extra usage",
