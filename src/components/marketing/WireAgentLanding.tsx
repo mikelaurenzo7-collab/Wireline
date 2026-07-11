@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import MarketingFooter from "./MarketingFooter";
 import MarketingHero from "./MarketingHero";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import RoiCalculator from "./RoiCalculator";
 import TrustSignals from "./TrustSignals";
 import {
   AGENT_DIRECTION_MODES,
@@ -319,12 +318,6 @@ export default function WireAgentLanding() {
                 Compare every plan <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </div>
-          </div>
-        </section>
-
-        <section className="px-5 py-4 sm:px-8 lg:px-10">
-          <div className="wl-public-rail">
-            <RoiCalculator />
           </div>
         </section>
 

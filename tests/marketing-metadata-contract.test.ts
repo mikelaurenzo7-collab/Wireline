@@ -26,10 +26,9 @@ describe("marketing metadata contract", () => {
     expect(staticHead).not.toMatch(/"@type"\s*:\s*"Offer"/);
   });
 
-  it("keeps public pricing, contact, and ROI copy aligned to the active catalog", () => {
+  it("keeps public pricing and contact copy aligned to the active catalog", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const contact = read("src/components/ContactPage.tsx");
-    const roi = read("src/components/marketing/RoiCalculator.tsx");
     const catalog = read("src/lib/plan-catalog.ts");
 
     expect(catalog).toContain('id: "team"');
@@ -45,10 +44,8 @@ describe("marketing metadata contract", () => {
     );
     expect(contact).toContain('searchParams.get("intent") ?? searchParams.get("topic")');
     expect(contact).toContain("Preferred callback");
-    expect(roi).toContain("Net annual savings (after the Pro plan)");
-    expect(roi).toContain("Pro tier billed at $59/mo");
 
-    for (const source of [pricing, contact, roi]) {
+    for (const source of [pricing, contact]) {
       expect(source).not.toContain("Personal starts at $9");
       expect(source).not.toContain("Business coverage starts at $99");
       expect(source).not.toContain("Wireline Pro");
