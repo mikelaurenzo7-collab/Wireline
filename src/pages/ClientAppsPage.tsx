@@ -10,38 +10,39 @@ import {
 import { Badge, Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const clientSurfaces = [
   {
     icon: MonitorDown,
     title: "Wireline Command",
-    status: "Browser extension",
-    statusVariant: "success" as const,
-    action: "Install guide",
+    status: CLIENT_SURFACE_POSTURE.browser.status,
+    statusVariant: "info" as const,
+    action: CLIENT_SURFACE_POSTURE.browser.action,
     href: "mailto:support@trywireline.com?subject=Wireline%20Command%20install%20guide",
   },
   {
     icon: Smartphone,
     title: "iPhone",
-    status: "Early access",
-    statusVariant: "info" as const,
-    action: "TestFlight",
-    href: "mailto:support@trywireline.com?subject=Wireline%20for%20iPhone%20early%20access",
+    status: CLIENT_SURFACE_POSTURE.ios.status,
+    statusVariant: "outline" as const,
+    action: CLIENT_SURFACE_POSTURE.ios.action,
+    href: "mailto:support@trywireline.com?subject=Wireline%20for%20iPhone%20waitlist",
   },
   {
     icon: TabletSmartphone,
     title: "Android",
-    status: "Early access",
+    status: CLIENT_SURFACE_POSTURE.android.status,
     statusVariant: "info" as const,
-    action: "Internal testing",
-    href: "mailto:support@trywireline.com?subject=Wireline%20for%20Android%20early%20access",
+    action: CLIENT_SURFACE_POSTURE.android.action,
+    href: "mailto:support@trywireline.com?subject=Wireline%20for%20Android%20internal%20beta",
   },
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    status: "Live",
-    statusVariant: "success" as const,
-    action: "MCP endpoint",
+    status: CLIENT_SURFACE_POSTURE.chatgpt.status,
+    statusVariant: "info" as const,
+    action: CLIENT_SURFACE_POSTURE.chatgpt.action,
     href: "https://trywireline.com/mcp",
   },
   {
@@ -58,10 +59,7 @@ export default function ClientAppsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
-        <WorkspacePageIntro title="Apps" align="start" />
-        <p className="-mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
-          Install Wireline on every surface your team uses — browser, phone, and AI assistants.
-        </p>
+        <WorkspacePageIntro title="Apps" description={CLIENT_SURFACE_POSTURE.summary} />
         <section
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
           aria-label="Wireline apps and companion surfaces"

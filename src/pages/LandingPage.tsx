@@ -36,7 +36,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Wire → Work → Win"
+        title="Wireline — Wire → Work → Win"
         description={PUBLIC_DESCRIPTION}
         image="/og-image.png"
       />
