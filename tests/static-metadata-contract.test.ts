@@ -44,7 +44,8 @@ describe("static marketing metadata", () => {
     expect(ogImage).toContain("PAID PLAN NUMBER INCLUDED");
     expect(ogImage).toContain("One trained employee. One shared memory.");
     expect(ogImage).toContain("Conversation handled. Work completed.");
-    expect(ogImage).toContain("VOICE · SMS · EMAIL · FREE NUMBER · OUTCOMES · CONTROL");
+    expect(ogImage).toContain("VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL");
+    expect(ogImage).not.toContain("FREE NUMBER");
     expect(ogImage).not.toContain("YOUR NEXT AI EMPLOYEE");
   });
 
