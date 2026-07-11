@@ -1,4 +1,6 @@
-export const COMPANY_IDENTITY_VERSION = 1 as const;
+import { createHash } from "node:crypto";
+
+export const COMPANY_IDENTITY_VERSION = 2 as const;
 
 export const COMPANY_IDENTITY_CHANNELS = ["voice", "sms", "email"] as const;
 export type CompanyIdentityChannel = (typeof COMPANY_IDENTITY_CHANNELS)[number];
@@ -87,9 +89,13 @@ export function readCompanyIdentityPreferences(value: unknown): CompanyIdentityP
       ? (raw.providerStatus as Record<string, unknown>)
       : {};
   const requestedChannels = Array.isArray(raw.requestedChannels)
-    ? raw.requestedChannels.filter((channel): channel is CompanyIdentityChannel =>
-        COMPANY_IDENTITY_CHANNELS.includes(channel as CompanyIdentityChannel),
-      )
+    ? [
+        ...new Set(
+          raw.requestedChannels.filter((channel): channel is CompanyIdentityChannel =>
+            COMPANY_IDENTITY_CHANNELS.includes(channel as CompanyIdentityChannel),
+          ),
+        ),
+      ]
     : defaults.requestedChannels;
 
   return {
@@ -98,7 +104,9 @@ export function readCompanyIdentityPreferences(value: unknown): CompanyIdentityP
     website: nullableString(raw.website),
     supportEmail: nullableString(raw.supportEmail),
     defaultCallReason: nullableString(raw.defaultCallReason),
-    requestedChannels: requestedChannels.length ? requestedChannels : defaults.requestedChannels,
+    // An explicitly empty or corrupt stored selection must fail closed. It must
+    // never silently broaden review scope back to all channels.
+    requestedChannels,
     reviewRequestedAt: nullableString(raw.reviewRequestedAt),
     reviewFingerprint: nullableString(raw.reviewFingerprint),
     providerStatus: {
@@ -133,9 +141,11 @@ export function buildCompanyIdentityProfile(args: {
 }
 
 /**
- * Fingerprints the facts a carrier, messaging provider, or email provider
- * actually reviews. Requested channel selection is deliberately excluded so
- * adding Email later does not erase an already-approved Voice identity.
+ * Hashes the facts a carrier, messaging provider, or email provider actually
+ * reviews. Requested channel selection is deliberately excluded so adding
+ * Email later does not erase an already-approved Voice identity. Only the
+ * digest is persisted; the normalized profile is not duplicated as a
+ * misleading raw "fingerprint" inside preferences.
  */
 export function companyIdentityFingerprint(value: {
   businessName: string | null;
@@ -147,7 +157,7 @@ export function companyIdentityFingerprint(value: {
   defaultCallReason: string | null;
   phoneNumber: string | null;
 }): string {
-  return JSON.stringify({
+  const normalized = JSON.stringify({
     businessName: nullableString(value.businessName),
     brandName: nullableString(value.brandName),
     logoUrl: nullableString(value.logoUrl),
@@ -157,6 +167,7 @@ export function companyIdentityFingerprint(value: {
     defaultCallReason: nullableString(value.defaultCallReason),
     phoneNumber: nullableString(value.phoneNumber),
   });
+  return createHash("sha256").update(normalized).digest("hex");
 }
 
 function supportEmailMatchesWebsite(website: string | null, supportEmail: string | null): boolean {
