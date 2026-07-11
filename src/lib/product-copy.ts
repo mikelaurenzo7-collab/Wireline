@@ -11,6 +11,7 @@ export const BRAND_SYSTEM = {
     "Make the default feel like the owner's best employee, not another executive title.",
     "Keep the owner in control: guardrails, approvals, spend, handoffs, and escalation stay explicit.",
     "Present calling, texting, and email as channels of one trained employee, not three required employees.",
+    "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
     "Treat specialists as expansion, not setup homework.",
     "Show logged proof after every call, text, email, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the employee.",
@@ -42,7 +43,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every included AI employee comes with an included Wireline number at no extra line fee, so it can call out, receive callbacks, text follow-ups, and own the handoff under your direction." as const;
+  "Every paid AI employee includes a Wireline number at no extra line fee, so it can call out, receive callbacks, text follow-ups, and own the handoff under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -67,10 +68,10 @@ export const OUTBOUND_WEDGE = {
 
 export const MARKETING_VOICE = {
   eyebrow: null,
-  headline: "Your next AI employee calls, texts, and emails.",
+  headline: "Your AI Voice Employee Calls, Texts, Emails—and Gets Work Done.",
   subline:
-    "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
-  channelProof: ["Voice agent", "Text / SMS agent", "Email agent", "One shared memory"],
+    "Every paid plan includes a Wireline number at no extra line fee. Train one employee to answer, sell, support, book, follow up, update your systems, and log every outcome across every customer conversation.",
+  channelProof: ["Voice calls", "Text / SMS", "Email", "Number included"],
   spine: BRAND_SYSTEM.brandSpine,
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
