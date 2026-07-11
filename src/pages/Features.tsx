@@ -90,10 +90,7 @@ const INTEGRATION_STATES = [
   ["Not connected", "Show what it will access before the user approves."],
   ["Connected", "Confirm the tool, permissions, and most recent sync."],
   ["Degraded", "Explain what broke and how to recover without mystery."],
-  [
-    "Useful outcome",
-    "Surface the latest booked meeting, update, ticket, or payment event.",
-  ],
+  ["Useful outcome", "Surface the latest booked meeting, update, ticket, or payment event."],
 ] as const;
 
 const USE_CASES = [
@@ -119,7 +116,7 @@ export default function Features() {
         <MarketingHero
           eyebrow="Features"
           title="Everything your AI employee needs to finish the call."
-          description="Build the employee, teach the playbook, launch the number and tools, then improve every conversation from the recorded outcome."
+          description="Build the employee, teach it your playbook, put it live on a real number, and sharpen it with every recorded call."
           primaryAction={{ label: "Build an employee", to: "/signup" }}
           secondaryAction={{
             label: "Hear a demo",
@@ -132,19 +129,14 @@ export default function Features() {
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="wl-overline text-primary">
-                Build → Train → Launch → Improve
-              </p>
+              <p className="wl-overline text-primary">Build → Train → Launch → Improve</p>
               <h2 className="wl-public-section-heading mt-3">
                 One operating loop across every feature.
               </h2>
             </div>
             <div className="grid overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card sm:grid-cols-4 sm:divide-x sm:divide-border">
               {OPERATING_LOOP.map(({ step, title, body }, index) => (
-                <article
-                  key={step}
-                  className="p-6 text-center transition-colors hover:bg-muted/40"
-                >
+                <article key={step} className="p-6 text-center transition-colors hover:bg-muted/40">
                   <span className="mx-auto grid h-10 w-10 place-items-center rounded-full border border-border bg-background font-mono text-[12px] font-bold text-primary">
                     {String(index + 1).padStart(2, "0")}
                   </span>
@@ -152,9 +144,7 @@ export default function Features() {
                   <h3 className="mt-2 text-[1rem] font-semibold tracking-[-.015em] text-foreground">
                     {title}
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {body}
-                  </p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
                 </article>
               ))}
             </div>
@@ -171,12 +161,7 @@ export default function Features() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
-                <FeatureCard
-                  key={title}
-                  icon={Icon}
-                  title={title}
-                  body={body}
-                />
+                <FeatureCard key={title} icon={Icon} title={title} body={body} />
               ))}
             </div>
           </div>
@@ -185,19 +170,14 @@ export default function Features() {
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail">
             <div className="mx-auto max-w-3xl text-center">
-              <Workflow
-                size={22}
-                className="mx-auto text-primary"
-                aria-hidden="true"
-              />
+              <Workflow size={22} className="mx-auto text-primary" aria-hidden="true" />
               <p className="wl-overline mt-5 text-primary">Integrations</p>
               <h2 className="wl-public-section-heading mt-3">
                 Connect tools only when they improve the outcome.
               </h2>
               <p className="wl-public-copy mx-auto mt-5">
-                Calendars, CRMs, email, payments, and commerce systems should
-                never be decorative logos. Each connection needs permission
-                clarity, status, and a useful recent result.
+                Calendars, CRMs, email, payments, and commerce systems should never be decorative
+                logos. Each connection needs permission clarity, status, and a useful recent result.
               </p>
             </div>
             <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-2">
@@ -207,9 +187,7 @@ export default function Features() {
                   className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-center"
                 >
                   <p className="wl-overline text-primary">{title}</p>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    {body}
-                  </p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
                 </article>
               ))}
             </div>
@@ -224,8 +202,8 @@ export default function Features() {
                 Approved context, not manual cleanup.
               </h2>
               <p className="wl-public-copy mt-5">
-                Wireline can read and write to the systems that already run the
-                business after the user approves the connection.
+                Wireline can read and write to the systems that already run the business after the
+                user approves the connection.
               </p>
             </div>
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -237,12 +215,8 @@ export default function Features() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/5 text-primary">
                     <Icon size={18} aria-hidden="true" />
                   </div>
-                  <span className="text-sm font-semibold text-foreground">
-                    {label}
-                  </span>
-                  <span className="wl-overline text-muted-foreground">
-                    {status}
-                  </span>
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                  <span className="wl-overline text-muted-foreground">{status}</span>
                 </div>
               ))}
             </div>
@@ -277,9 +251,7 @@ export default function Features() {
 
         <section className="px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="wl-public-rail text-center">
-            <p className="wl-overline text-primary">
-              Build -&gt; Train -&gt; Launch -&gt; Improve
-            </p>
+            <p className="wl-overline text-primary">Build -&gt; Train -&gt; Launch -&gt; Improve</p>
             <h2 className="wl-public-section-heading mt-3">
               Your training. Your playbook. Every channel.
             </h2>

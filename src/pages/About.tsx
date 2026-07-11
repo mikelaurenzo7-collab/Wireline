@@ -20,12 +20,7 @@ const PRINCIPLES = [
   },
 ] as const;
 
-const ABOUT_HERO_ITEMS = [
-  "Your training",
-  "Your voice",
-  "Your playbook",
-  "Your outcomes",
-] as const;
+const ABOUT_HERO_ITEMS = ["Your training", "Your voice", "Your playbook", "Your outcomes"] as const;
 
 export default function About() {
   return (
@@ -38,8 +33,8 @@ export default function About() {
 
       <MarketingHero
         eyebrow="About Wireline"
-        title="Custom agents for your business calls and workflows."
-        description="Build custom agents with your Training, your voice, and your exact processes — then keep every call, handoff, and follow-up accountable."
+        title="Agents that run your calls exactly like you would."
+        description="Train them on your business, your voice, and your playbook — then hold every call, handoff, and follow-up to the standard you'd set yourself."
         primaryAction={{ label: "Get started now", to: "/pricing" }}
         secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
         proof={ABOUT_HERO_ITEMS}

@@ -130,10 +130,26 @@ const FAQ = [
 ] as const;
 
 const assurances = [
-  { icon: Check, label: "Build free", detail: "Train and simulate one private draft agent before paying." },
-  { icon: CircleDollarSign, label: "No surprise overages", detail: "Variable provider usage is prepaid, not silently invoiced." },
-  { icon: Crosshair, label: "Lead Hunt on paid plans", detail: "Research, qualify, enrich, then hand prospects to sales agents." },
-  { icon: ShieldCheck, label: "Controlled execution", detail: "Approvals, consent, spend controls, logs, and outcomes remain visible." },
+  {
+    icon: Check,
+    label: "Build free",
+    detail: "Train and simulate one private draft agent before paying.",
+  },
+  {
+    icon: CircleDollarSign,
+    label: "No surprise overages",
+    detail: "Variable provider usage is prepaid, not silently invoiced.",
+  },
+  {
+    icon: Crosshair,
+    label: "Lead Hunt on paid plans",
+    detail: "Research, qualify, enrich, then hand prospects to sales agents.",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Controlled execution",
+    detail: "Approvals, consent, spend controls, logs, and outcomes remain visible.",
+  },
 ] as const;
 
 const pricingJsonLd = {
@@ -176,8 +192,8 @@ export default function Pricing() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Founder Early Access"
-          title="Build free. Go live from $9. Scale when the work proves itself."
-          description="Choose the smallest useful plan today, then expand agent capacity as your leads and communication volume grow. Voice, SMS, email, and provider-backed lead data stay economically controlled through included capacity, connected providers, and prepaid Conversation Balance."
+          title="Build free. Launch for $9. Scale when it pays for itself."
+          description="Pick the smallest plan that does real work today. Every call, text, and email runs on included usage plus prepaid Conversation Balance — the bill never surprises you, and you scale only when the results earn it."
           primaryAction={{ label: "Build your first agent", to: "/signup?plan=personal" }}
           secondaryAction={{ label: "Compare every plan", to: "#plans", tone: "secondary" }}
           proof={assurances.map(({ label }) => label)}
@@ -191,7 +207,9 @@ export default function Pricing() {
                 Start narrow. Add specialists when demand earns them.
               </h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">
-                Every paid plan can hunt leads and operate across connected channels. Higher tiers primarily buy more simultaneous agent roles, number slots, voice capacity, collaboration, analytics, and governance.
+                Every paid plan can hunt leads and operate across connected channels. Higher tiers
+                primarily buy more simultaneous agent roles, number slots, voice capacity,
+                collaboration, analytics, and governance.
               </p>
             </div>
 
@@ -209,7 +227,8 @@ export default function Pricing() {
                   <span className="pb-1 text-sm text-muted-foreground">forever</span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Build, train, connect knowledge, and privately simulate one draft agent. Production numbers and paid provider actions remain locked until activation.
+                  Build, train, connect knowledge, and privately simulate one draft agent.
+                  Production numbers and paid provider actions remain locked until activation.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
                   {planById.personal.features.map((feature) => (
@@ -227,56 +246,87 @@ export default function Pricing() {
                 </Link>
               </article>
 
-              {PAID_TIERS.map(({ plan, publicName, eyebrow, tagline, detail, cta, ctaPath, icon: Icon, featured, badge }) => (
-                <article
-                  key={plan.id}
-                  className={`relative rounded-[28px] border p-6 text-center shadow-sm ${
-                    featured ? "border-foreground bg-foreground text-background" : "border-border bg-card"
-                  }`}
-                >
-                  <div className="flex flex-col items-center justify-center gap-3 text-center">
-                    <div>
-                      <p className={`wl-stitch-label ${featured ? "text-background/70" : ""}`}>{eyebrow}</p>
-                      <h3 className="mt-2 text-2xl font-semibold">{publicName}</h3>
-                    </div>
-                    <Icon className="h-6 w-6" aria-hidden="true" />
-                  </div>
-                  <p className={`mt-3 text-sm font-semibold ${featured ? "text-background" : "text-foreground"}`}>
-                    {tagline}
-                  </p>
-                  <div className="mt-5 flex items-end justify-center gap-2">
-                    <span className="text-4xl font-semibold tracking-[-0.04em]">${plan.price_usd_monthly}</span>
-                    <span className={`pb-1 text-sm ${featured ? "text-background/70" : "text-muted-foreground"}`}>/month</span>
-                  </div>
-                  <p className={`mt-2 text-xs ${featured ? "text-background/70" : "text-muted-foreground"}`}>
-                    ${plan.price_usd_annual}/year · two months free
-                  </p>
-                  <p className={`mt-4 text-sm leading-6 ${featured ? "text-background/75" : "text-muted-foreground"}`}>
-                    {detail}
-                  </p>
-                  <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex gap-3">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    to={ctaPath}
-                    className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+              {PAID_TIERS.map(
+                ({
+                  plan,
+                  publicName,
+                  eyebrow,
+                  tagline,
+                  detail,
+                  cta,
+                  ctaPath,
+                  icon: Icon,
+                  featured,
+                  badge,
+                }) => (
+                  <article
+                    key={plan.id}
+                    className={`relative rounded-[28px] border p-6 text-center shadow-sm ${
                       featured
-                        ? "bg-background text-foreground hover:bg-background/90"
-                        : "bg-foreground text-background hover:bg-foreground/90"
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border bg-card"
                     }`}
                   >
-                    {cta} <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                  <p className={`mt-3 text-center text-xs ${featured ? "text-background/60" : "text-muted-foreground"}`}>
-                    {badge}
-                  </p>
-                </article>
-              ))}
+                    <div className="flex flex-col items-center justify-center gap-3 text-center">
+                      <div>
+                        <p className={`wl-stitch-label ${featured ? "text-background/70" : ""}`}>
+                          {eyebrow}
+                        </p>
+                        <h3 className="mt-2 text-2xl font-semibold">{publicName}</h3>
+                      </div>
+                      <Icon className="h-6 w-6" aria-hidden="true" />
+                    </div>
+                    <p
+                      className={`mt-3 text-sm font-semibold ${featured ? "text-background" : "text-foreground"}`}
+                    >
+                      {tagline}
+                    </p>
+                    <div className="mt-5 flex items-end justify-center gap-2">
+                      <span className="text-4xl font-semibold tracking-[-0.04em]">
+                        ${plan.price_usd_monthly}
+                      </span>
+                      <span
+                        className={`pb-1 text-sm ${featured ? "text-background/70" : "text-muted-foreground"}`}
+                      >
+                        /month
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-2 text-xs ${featured ? "text-background/70" : "text-muted-foreground"}`}
+                    >
+                      ${plan.price_usd_annual}/year · two months free
+                    </p>
+                    <p
+                      className={`mt-4 text-sm leading-6 ${featured ? "text-background/75" : "text-muted-foreground"}`}
+                    >
+                      {detail}
+                    </p>
+                    <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex gap-3">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to={ctaPath}
+                      className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
+                        featured
+                          ? "bg-background text-foreground hover:bg-background/90"
+                          : "bg-foreground text-background hover:bg-foreground/90"
+                      }`}
+                    >
+                      {cta} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                    <p
+                      className={`mt-3 text-center text-xs ${featured ? "text-background/60" : "text-muted-foreground"}`}
+                    >
+                      {badge}
+                    </p>
+                  </article>
+                ),
+              )}
 
               <article className="rounded-[28px] border border-border bg-card p-6 text-center shadow-sm">
                 <div className="flex flex-col items-center justify-center gap-3 text-center">
@@ -288,10 +338,17 @@ export default function Pricing() {
                 </div>
                 <div className="mt-6 text-4xl font-semibold tracking-[-0.04em]">Custom</div>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Committed usage, negotiated channel economics, advanced governance, SSO, custom integrations, implementation support, security review, retention controls, and SLAs.
+                  Committed usage, negotiated channel economics, advanced governance, SSO, custom
+                  integrations, implementation support, security review, retention controls, and
+                  SLAs.
                 </p>
                 <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm">
-                  {["25+ live agent capacity", "Committed voice, SMS, email, and data economics", "Custom telephony and integrations", "Security, rollout, and support plan"].map((feature) => (
+                  {[
+                    "25+ live agent capacity",
+                    "Committed voice, SMS, email, and data economics",
+                    "Custom telephony and integrations",
+                    "Security, rollout, and support plan",
+                  ].map((feature) => (
                     <li key={feature} className="flex gap-3">
                       <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                       <span>{feature}</span>
@@ -317,12 +374,17 @@ export default function Pricing() {
                 Clear limits where real vendor costs exist.
               </h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">
-                Wireline does not punish users for creating useful specialized agents. It protects margin—and customer budgets—at the actual cost boundaries: numbers, calls, message segments, delivery infrastructure, enrichment, and external data.
+                Wireline does not punish users for creating useful specialized agents. It protects
+                margin—and customer budgets—at the actual cost boundaries: numbers, calls, message
+                segments, delivery infrastructure, enrichment, and external data.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {CHANNEL_RULES.map(({ icon: Icon, title, body }) => (
-                <article key={title} className="rounded-3xl border border-border bg-card p-6 text-center">
+                <article
+                  key={title}
+                  className="rounded-3xl border border-border bg-card p-6 text-center"
+                >
                   <Icon className="mx-auto h-6 w-6" aria-hidden="true" />
                   <h3 className="mt-5 text-lg font-semibold">{title}</h3>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>
@@ -369,7 +431,9 @@ export default function Pricing() {
                   Build the agent first. Let real demand choose the plan.
                 </h2>
                 <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-background/70">
-                  Start with a private build, launch one useful lane for $9, or select the capacity your business already needs. Upgrade when agents are producing enough work to justify it.
+                  Start with a private build, launch one useful lane for $9, or select the capacity
+                  your business already needs. Upgrade when agents are producing enough work to
+                  justify it.
                 </p>
               </div>
               <Link
