@@ -47,7 +47,7 @@ type WorkspacePageIntroProps = {
   title: string;
   description?: string;
   action?: ReactNode;
-  /** Start-aligned operate header (default) or centered marketing-like empty. */
+  /** Start-aligned product header (default) or centered status/empty-state header. */
   align?: "center" | "start";
 };
 
@@ -59,22 +59,35 @@ export function WorkspacePageIntro({
   align = "start",
 }: WorkspacePageIntroProps) {
   const start = align === "start";
+
   return (
     <header
+      data-align={align}
       className={cn(
-        "wl-workspace-page-intro flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4",
-        !start && "mx-auto max-w-prose items-center text-center sm:flex-col",
+        "wl-workspace-page-intro flex w-full flex-col gap-3",
+        start
+          ? "items-start text-left sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+          : "mx-auto max-w-prose items-center text-center sm:flex-col",
       )}
     >
       <div className={cn("min-w-0", start ? "flex-1" : "w-full")}>
-        <h1 className={cn("wl-display-3", !start && "text-center")}>{title}</h1>
+        <h1 className={cn("wl-display-3 break-words text-balance", !start && "text-center")}>
+          {title}
+        </h1>
         {description ? (
-          <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
+          <p
+            className={cn(
+              "mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground",
+              !start && "mx-auto text-center",
+            )}
+          >
             {description}
           </p>
         ) : null}
       </div>
-      {action ? <div className="w-full shrink-0 sm:w-auto">{action}</div> : null}
+      {action ? (
+        <div className={cn("shrink-0", start ? "w-full sm:w-auto" : "w-full")}>{action}</div>
+      ) : null}
     </header>
   );
 }
@@ -91,7 +104,7 @@ export function WorkspaceOperateIntro({ title, tabs, action }: WorkspaceOperateI
     <header className="wl-operate-surface shrink-0 border-b border-border/60 pb-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="wl-display-3">{title}</h1>
+          <h1 className="wl-display-3 break-words text-balance">{title}</h1>
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
