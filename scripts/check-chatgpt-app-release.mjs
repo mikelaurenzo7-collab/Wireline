@@ -14,12 +14,15 @@ try {
 }
 
 const accountWidgetUri = "ui://widget/wireline-agent-draft-v2.html";
-const expectedTools = new Set([
-  "create_agent_draft",
-  "get_agent_draft",
-  "update_agent_draft",
-  "start_private_voice_simulation",
-  "list_wireline_agents",
+const expectedAnnotations = new Map([
+  ["create_agent_draft", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
+  ["get_agent_draft", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
+  ["update_agent_draft", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
+  [
+    "start_private_voice_simulation",
+    { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
+  ],
+  ["list_wireline_agents", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
 ]);
 
 function assert(condition, message) {
@@ -34,7 +37,7 @@ async function request(path, init = {}) {
   });
   const contentType = response.headers.get("content-type") || "";
   const body = contentType.includes("application/json") ? await response.json() : await response.text();
-  return { response, body };
+  return { response, body, contentType };
 }
 
 async function jsonRpc(method, params = {}, id = method) {
@@ -49,6 +52,16 @@ async function jsonRpc(method, params = {}, id = method) {
   assert(body.result, `${method}: MCP result is missing.`);
   return { response, result: body.result };
 }
+
+const icon = await request("/wireline-chatgpt-app-icon.svg", { headers: { Accept: "image/svg+xml" } });
+assert(icon.response.status === 200, "Dedicated ChatGPT app icon must return HTTP 200.");
+assert(icon.contentType.includes("image/svg+xml"), "Dedicated ChatGPT app icon must be served as SVG.");
+assert(typeof icon.body === "string" && icon.body.includes("<title id=\"title\">Wireline</title>"), "Dedicated ChatGPT app icon is malformed.");
+
+const privacy = await request("/chatgpt-app-privacy.html", { headers: { Accept: "text/html" } });
+assert(privacy.response.status === 200, "ChatGPT app privacy notice must return HTTP 200.");
+assert(typeof privacy.body === "string" && privacy.body.includes("Information returned to ChatGPT"), "Privacy notice must disclose information returned to ChatGPT.");
+assert(privacy.body.includes("not included in the model-visible conversation"), "Privacy notice must distinguish widget-only simulation credentials.");
 
 const protectedResource = await request("/.well-known/oauth-protected-resource");
 assert(protectedResource.response.status === 200, "Protected-resource discovery must return HTTP 200.");
@@ -89,10 +102,19 @@ const initialized = await jsonRpc("initialize", {
 assert(initialized.result.serverInfo?.name === "wireline-chatgpt", "MCP server identity is not Wireline ChatGPT.");
 
 const tools = await jsonRpc("tools/list");
-const toolNames = new Set((tools.result.tools || []).map((tool) => tool?.name));
-for (const name of expectedTools) assert(toolNames.has(name), `MCP tool missing: ${name}.`);
-for (const tool of tools.result.tools || []) {
+const liveTools = tools.result.tools || [];
+const liveToolNames = new Set(liveTools.map((tool) => tool?.name));
+for (const name of expectedAnnotations.keys()) assert(liveToolNames.has(name), `MCP tool missing: ${name}.`);
+assert(liveTools.length === expectedAnnotations.size, `Expected ${expectedAnnotations.size} MCP tools, received ${liveTools.length}.`);
+for (const tool of liveTools) {
   assert(Array.isArray(tool.securitySchemes) && tool.securitySchemes.length > 0, `${tool.name}: OAuth security scheme is missing.`);
+  assert(tool.outputSchema && typeof tool.outputSchema === "object", `${tool.name}: outputSchema is missing.`);
+  const expected = expectedAnnotations.get(tool.name);
+  assert(expected, `Unexpected MCP tool exposed: ${tool.name}.`);
+  for (const [key, value] of Object.entries(expected)) {
+    assert(typeof tool.annotations?.[key] === "boolean", `${tool.name}: ${key} must be an explicit boolean.`);
+    assert(tool.annotations[key] === value, `${tool.name}: ${key} must be ${value}.`);
+  }
 }
 
 const resources = await jsonRpc("resources/list");
