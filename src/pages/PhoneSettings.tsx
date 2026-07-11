@@ -132,7 +132,7 @@ export default function PhoneSettings() {
           ) : null}
         </section>
 
-        <CompanyIdentityPack />
+        <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <section className="studio-card p-5 sm:p-6">
