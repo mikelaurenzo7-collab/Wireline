@@ -7,6 +7,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("voice authorization security contract", () => {
   const routes = read("src/routes/voices-routes.ts");
   const library = read("src/components/admin/VoiceLibraryPanel.tsx");
+  const presenterVoices = read("src/lib/video-presenter/heygen-voice-service.ts");
 
   it("keeps private and generated provider voices out of public surfaces", () => {
     expect(routes).toContain('.filter((v) => v.category === "premade")');
@@ -14,6 +15,14 @@ describe("voice authorization security contract", () => {
     expect(routes).toContain("publicPreviewRateLimiter");
     expect(routes).toContain("assertTrustedElevenLabsPreviewUrl");
     expect(routes).not.toContain('filter((v) => v.category !== "cloned")');
+  });
+
+  it("resolves presenter voices only through the provider public catalog", () => {
+    expect(presenterVoices).toContain('type: "public"');
+    expect(presenterVoices).toContain("await listPresenterVoices()");
+    expect(presenterVoices).toContain("Enforce the same public-catalog boundary before paid synthesis");
+    expect(presenterVoices).not.toContain("/v3/voices/${encodeURIComponent(normalized)}");
+    expect(presenterVoices).toContain('throw AppError.fromHttpStatus(404, "Presenter voice not found.")');
   });
 
   it("records versioned authorization evidence without retaining source audio", () => {
