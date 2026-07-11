@@ -8,6 +8,7 @@ import {
   canRequestCompanyIdentityReview,
   companyIdentityFingerprint,
   defaultCompanyIdentityPreferences,
+  readCompanyIdentityPreferences,
 } from "../src/lib/company-identity";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -59,6 +60,14 @@ describe("company identity pack", () => {
     ).toBe(false);
   });
 
+  it("fails closed instead of broadening an empty or corrupt channel selection", () => {
+    const empty = readCompanyIdentityPreferences({ requestedChannels: [] });
+    const corrupt = readCompanyIdentityPreferences({ requestedChannels: ["unsupported"] });
+
+    expect(empty.requestedChannels).toEqual([]);
+    expect(corrupt.requestedChannels).toEqual([]);
+  });
+
   it("requires the email identity to use the company website domain", () => {
     const profile = buildCompanyIdentityProfile({
       settings: { businessName: "Acme", brandName: "Acme", brandLogoUrl: null },
@@ -75,7 +84,7 @@ describe("company identity pack", () => {
     expect(readiness.email.missing).toContain("support email on the company domain");
   });
 
-  it("binds external review state to the exact identity and dedicated number", () => {
+  it("binds review state to a privacy-minimized digest of the identity and number", () => {
     const base = {
       businessName: "Acme LLC",
       brandName: "Acme",
@@ -96,11 +105,14 @@ describe("company identity pack", () => {
       phoneNumber: "+13125550999",
     });
 
+    expect(first).toMatch(/^[a-f0-9]{64}$/);
+    expect(first).not.toContain(base.supportEmail);
+    expect(first).not.toContain(base.phoneNumber);
     expect(first).not.toBe(renamed);
     expect(first).not.toBe(renumbered);
   });
 
-  it("protects the authenticated review workflow and audit trail", () => {
+  it("protects and serializes the authenticated review workflow", () => {
     const routes = read("src/routes/company-identity-routes.ts");
     const identity = read("src/lib/company-identity.ts");
     const guard = read("src/routes/user-preference-guard-routes.ts");
@@ -111,19 +123,30 @@ describe("company identity pack", () => {
     expect(routes).toContain('"/api/company-identity/review-request"');
     expect(routes.match(/authenticateUser/g)?.length).toBeGreaterThanOrEqual(3);
     expect(routes).toContain("company_identity.review_requested");
+    expect(routes).toContain("company_identity.review_invalidated");
     expect(routes).toContain("reviewFingerprint: current.currentFingerprint");
-    expect(routes).toContain("staleReviewState");
     expect(routes).toContain("already_requested: true");
     expect(routes).toContain("IDENTITY_REVIEW_REQUIRES_CHANGES");
     expect(routes).toContain('if (providerStatus[channel] === "not_requested")');
-    expect(routes).toContain("profileFingerprintSha256");
-    expect(routes).toContain('createHash("sha256")');
+    expect(routes).toContain('throw AppError.fromHttpStatus(400, "Select at least one identity channel.")');
+    expect(routes).toContain("pg_advisory_xact_lock");
+    expect(routes).toContain("wireline_settings WHERE user_id");
+    expect(routes).toContain("wireline_user_preferences WHERE user_id");
+    expect(routes).toContain("FOR UPDATE");
+    expect(routes).toContain("profileFingerprintSha256: current.currentFingerprint");
     expect(routes).not.toContain("profileFingerprint: current.currentFingerprint");
     expect(routes).toContain("phoneNumber: current.phoneNumber");
+    expect(routes).toContain("desc(schema.phoneNumbers.id)");
     expect(routes).toContain("channelSelectionChanged");
+    expect(identity).toContain('createHash("sha256")');
+    expect(identity).toContain("must fail closed");
     expect(identity).toContain("Requested channel selection is deliberately excluded");
     expect(routes).toContain("final display follow supported Wireline workflows");
     expect(routes).not.toContain('providerStatus[channel] = "approved"');
+
+    expect(guard).toContain("Canonical preference writer");
+    expect(guard).toContain("pg_advisory_xact_lock");
+    expect(guard).toContain("FOR UPDATE");
     expect(guard).toContain("requestedEnvelope.company_identity = currentEnvelope.company_identity");
     expect(guard).toContain("delete requestedEnvelope.company_identity");
     expect(registry).toContain(
