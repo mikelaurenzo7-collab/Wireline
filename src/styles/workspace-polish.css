@@ -51,8 +51,40 @@
 .wl-workspace-main :where(input, textarea, select) {
   min-height: 44px;
   color: var(--wireline-color-text-primary);
-  background: color-mix(in srgb, var(--wireline-color-surface-default) 80%, black 20%);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 82%,
+    var(--wireline-color-canvas-default)
+  );
   border-color: color-mix(in srgb, var(--wireline-color-border-default) 76%, transparent);
+}
+
+/* The desktop rail must remain usable on short laptops and browser windows.
+ * Tailwind's shell class intentionally clips horizontal overflow; this layer
+ * restores vertical access without introducing a second page scroll owner. */
+@media (min-width: 1024px) {
+  .wl-workspace-shell > div > aside[aria-label="Workspace navigation"] {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 760px) {
+  .wl-workspace-shell > div > aside[aria-label="Workspace navigation"] {
+    padding-block: 0.875rem;
+  }
+
+  .wl-workspace-shell .wl-rail-link {
+    min-height: 40px;
+    padding-block: 0.375rem;
+  }
+
+  .wl-workspace-shell .wl-rail-agent-link {
+    min-height: 38px;
+  }
 }
 
 @media (max-width: 1023px) {
@@ -92,6 +124,24 @@
 
   .wl-action-cluster > * {
     flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 479px) {
+  .wl-workspace-page .wl-data-row--framed {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .wl-workspace-page .wl-data-row--framed .wl-data-row__trailing {
+    width: 100%;
+    justify-content: flex-end;
+    padding-inline-start: 2.75rem;
+  }
+
+  .wl-workspace-page .wl-data-row--framed .wl-data-row__trailing > :where(a, button) {
+    width: 100%;
     justify-content: center;
   }
 }
