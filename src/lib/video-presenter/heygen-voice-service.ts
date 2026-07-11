@@ -2,7 +2,12 @@
  * HeyGen presenter voices — public catalog + avatar default voice matching.
  *
  * LiveAvatar handles faces; HeyGen v3 Voices API supplies lip-sync-aligned
- * voice IDs and preview_audio_url samples for the create flow.
+ * public voice IDs and preview_audio_url samples for the create flow.
+ *
+ * Security invariant: callers may resolve only voices returned by the
+ * provider's `type=public` catalog. Exact-ID provider lookups are intentionally
+ * forbidden because the shared provider account may also contain private or
+ * generated voices that do not belong in a cross-tenant catalog.
  */
 import { AppError } from "../api-error";
 import { fetchWithTimeout, log } from "../server-context";
@@ -57,10 +62,6 @@ type PresenterVoiceApiRow = {
   language?: string;
   gender?: string;
   preview_audio_url?: string | null;
-};
-
-type HeyGenVoiceResponse = {
-  data?: PresenterVoiceApiRow;
 };
 
 type HeyGenLookResponse = {
@@ -156,22 +157,18 @@ export async function listPresenterVoices(): Promise<PresenterVoice[]> {
   return collected;
 }
 
-export async function getPresenterVoice(voiceId: string): Promise<PresenterVoice | null> {
+/** Resolve a presenter voice only when it belongs to the public provider catalog. */
+export async function getPresenterVoice(voiceId: string): Promise<PresenterVoice> {
   const normalized = voiceId.trim();
-  if (!normalized) return null;
-
-  const cached = voiceCache?.voices.find((voice) => voice.id === normalized);
-  if (cached) return cached;
-
-  try {
-    const payload = await heygenFetch<HeyGenVoiceResponse>(
-      `/v3/voices/${encodeURIComponent(normalized)}`,
-    );
-    return payload.data ? mapVoiceRow(payload.data) : null;
-  } catch (error) {
-    if (error instanceof AppError && error.statusCode === 404) return null;
-    throw error;
+  if (!normalized) {
+    throw AppError.fromHttpStatus(404, "Presenter voice not found.");
   }
+
+  const voice = (await listPresenterVoices()).find((candidate) => candidate.id === normalized);
+  if (!voice) {
+    throw AppError.fromHttpStatus(404, "Presenter voice not found.");
+  }
+  return voice;
 }
 
 type HeyGenSpeechResponse = {
@@ -197,6 +194,9 @@ export async function generatePresenterSpeech(args: {
     throw AppError.fromHttpStatus(400, "Sample text is required.");
   }
 
+  // Enforce the same public-catalog boundary before paid synthesis.
+  await getPresenterVoice(voiceId);
+
   const payload = await heygenFetch<HeyGenSpeechResponse>("/v3/voices/speech", {
     method: "POST",
     body: JSON.stringify({
@@ -221,7 +221,7 @@ export async function generatePresenterSpeech(args: {
 }
 
 /**
- * Resolve the default HeyGen voice paired with a catalog avatar / look id.
+ * Resolve the default public voice paired with a catalog avatar / look id.
  * LiveAvatar avatar ids map to HeyGen look ids in the same ecosystem.
  */
 export async function resolveAvatarDefaultVoice(
@@ -237,7 +237,7 @@ export async function resolveAvatarDefaultVoice(
     const voiceId = payload.data?.default_voice_id?.trim();
     if (!voiceId) return null;
     const voice = await getPresenterVoice(voiceId);
-    return { voiceId, name: voice?.name ?? payload.data?.name };
+    return { voiceId, name: voice.name };
   } catch (error) {
     if (error instanceof AppError && (error.statusCode === 404 || error.statusCode === 400)) {
       return null;
