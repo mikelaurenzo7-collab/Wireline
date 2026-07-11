@@ -1,7 +1,7 @@
 import { Router, type NextFunction, type Response } from "express";
 
-import { SettingsSchema } from "../../contracts/api-types";
 import * as schema from "../db/schema";
+import { AppError } from "../lib/api-error";
 import { isOwnerEmail } from "../lib/auth-service";
 import { runCompanyIdentityMutation } from "../lib/company-identity-mutation";
 import { log } from "../lib/server-context";
@@ -10,7 +10,44 @@ import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
-const IDENTITY_SETTING_KEYS = ["business_name", "brand_name", "brand_logo_url"] as const;
+const IDENTITY_SETTING_KEYS = [
+  "business_name",
+  "brand_name",
+  "brand_logo_url",
+  "businessName",
+  "brandName",
+  "brandLogoUrl",
+] as const;
+
+function hasOwn(value: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function identityText(
+  value: unknown,
+  field: string,
+  maxLength: number,
+): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (typeof value !== "string") {
+    throw AppError.fromHttpStatus(400, `${field} must be text.`);
+  }
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (normalized.length > maxLength) {
+    throw AppError.fromHttpStatus(400, `${field} must be ${maxLength} characters or fewer.`);
+  }
+  return normalized;
+}
+
+function aliasedValue(
+  body: Record<string, unknown>,
+  snakeKey: string,
+  camelKey: string,
+): unknown {
+  return hasOwn(body, snakeKey) ? body[snakeKey] : body[camelKey];
+}
 
 /**
  * Branding fields remain available through the generic settings API for older
@@ -30,38 +67,44 @@ router.use(
       return;
     }
 
-    const body = req.body ?? {};
-    const hasIdentityField = IDENTITY_SETTING_KEYS.some((key) =>
-      Object.prototype.hasOwnProperty.call(body, key),
-    );
+    const body =
+      req.body && typeof req.body === "object" && !Array.isArray(req.body)
+        ? (req.body as Record<string, unknown>)
+        : {};
+    const hasIdentityField = IDENTITY_SETTING_KEYS.some((key) => hasOwn(body, key));
     if (!hasIdentityField) {
       next();
       return;
     }
 
-    const parsed = SettingsSchema.partial().safeParse(body);
-    if (!parsed.success) {
-      // The canonical settings route owns the public validation response.
-      next();
-      return;
-    }
-
-    const identityUpdate: {
-      businessName?: string | null;
-      brandName?: string | null;
-      brandLogoUrl?: string | null;
-    } = {};
-    if (Object.prototype.hasOwnProperty.call(body, "business_name")) {
-      identityUpdate.businessName = parsed.data.business_name ?? null;
-    }
-    if (Object.prototype.hasOwnProperty.call(body, "brand_name")) {
-      identityUpdate.brandName = parsed.data.brand_name ?? null;
-    }
-    if (Object.prototype.hasOwnProperty.call(body, "brand_logo_url")) {
-      identityUpdate.brandLogoUrl = parsed.data.brand_logo_url ?? null;
-    }
-
     try {
+      const identityUpdate: {
+        businessName?: string | null;
+        brandName?: string | null;
+        brandLogoUrl?: string | null;
+      } = {};
+      if (hasOwn(body, "business_name") || hasOwn(body, "businessName")) {
+        identityUpdate.businessName = identityText(
+          aliasedValue(body, "business_name", "businessName"),
+          "Business name",
+          200,
+        );
+      }
+      if (hasOwn(body, "brand_name") || hasOwn(body, "brandName")) {
+        identityUpdate.brandName = identityText(
+          aliasedValue(body, "brand_name", "brandName"),
+          "Brand name",
+          200,
+        );
+      }
+      if (hasOwn(body, "brand_logo_url") || hasOwn(body, "brandLogoUrl")) {
+        identityUpdate.brandLogoUrl = identityText(
+          aliasedValue(body, "brand_logo_url", "brandLogoUrl"),
+          "Brand logo URL",
+          500,
+        );
+      }
+
       await runCompanyIdentityMutation(req.user.id, "branding_changed", async (tx) => {
         await tx
           .insert(schema.settings)
@@ -83,6 +126,10 @@ router.use(
       req.body = downstreamBody;
       next();
     } catch (error) {
+      if (error instanceof AppError) {
+        next(error);
+        return;
+      }
       log.error("company identity branding guard failed", {
         userId: req.user.id,
         error: getErrorMessage(error),
