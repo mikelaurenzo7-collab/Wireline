@@ -91,9 +91,9 @@ const PLAN_PREVIEW = [
   },
   {
     name: "Starter",
-    price: \`$\${planCatalog.starter.price_usd_monthly}\`,
+    price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
-    body: \`$\${planCatalog.starter.max_agents} live AI employee and $\${planCatalog.starter.included_phone_numbers} included number, plus $\${planCatalog.starter.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.\`,
+    body: `${planCatalog.starter.max_agents} live AI employee and ${planCatalog.starter.included_phone_numbers} included number, plus ${planCatalog.starter.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.`,
     cta: "Start for $9",
     ctaPath: "/signup?plan=starter",
   },
