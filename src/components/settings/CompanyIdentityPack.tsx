@@ -47,6 +47,9 @@ type IdentityResponse = {
     }
   >;
   review_eligible: boolean;
+  review_state_invalidated?: boolean;
+  profile_changed?: boolean;
+  message?: string;
   guarantee: string;
 };
 
@@ -88,6 +91,20 @@ function formFromIdentity(identity: IdentityResponse): IdentityForm {
       ? identity.profile.requested_channels
       : [...CHANNELS],
   };
+}
+
+function formFingerprint(form: IdentityForm): string {
+  return JSON.stringify({
+    ...form,
+    business_name: form.business_name.trim(),
+    brand_name: form.brand_name.trim(),
+    logo_url: form.logo_url.trim(),
+    caller_id_name: form.caller_id_name.trim(),
+    website: form.website.trim(),
+    support_email: form.support_email.trim().toLowerCase(),
+    default_call_reason: form.default_call_reason.trim(),
+    requested_channels: [...form.requested_channels].sort(),
+  });
 }
 
 function providerStatusLabel(status: ProviderStatus): string {
@@ -204,6 +221,11 @@ export default function CompanyIdentityPack() {
       if (!response.ok || !body) throw new Error("Company identity is unavailable.");
       setIdentity(body);
       setForm(formFromIdentity(body));
+      if (body.review_state_invalidated) {
+        setMessage(
+          "A company identity field changed after the prior review request, so Wireline reset the stale provider state.",
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Company identity is unavailable.");
     } finally {
@@ -215,7 +237,11 @@ export default function CompanyIdentityPack() {
     void loadIdentity();
   }, []);
 
-  const selectedChannelCount = useMemo(() => form.requested_channels.length, [form.requested_channels]);
+  const selectedChannelCount = form.requested_channels.length;
+  const isDirty = useMemo(() => {
+    if (!identity) return false;
+    return formFingerprint(form) !== formFingerprint(formFromIdentity(identity));
+  }, [form, identity]);
 
   function updateField(field: keyof Omit<IdentityForm, "requested_channels">, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -231,7 +257,7 @@ export default function CompanyIdentityPack() {
   }
 
   async function saveIdentity() {
-    if (saving) return;
+    if (saving || !isDirty) return;
     setSaving(true);
     setMessage(null);
     setError(null);
@@ -241,11 +267,20 @@ export default function CompanyIdentityPack() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Could not save company identity.");
-      setIdentity(body as IdentityResponse);
-      setForm(formFromIdentity(body as IdentityResponse));
-      setMessage("Company identity saved. Provider review states were reset for the updated profile.");
+      const body = (await response.json().catch(() => ({}))) as Partial<IdentityResponse> & {
+        error?: string;
+      };
+      if (!response.ok || !body.profile) {
+        throw new Error(body.error || "Could not save company identity.");
+      }
+      const saved = body as IdentityResponse;
+      setIdentity(saved);
+      setForm(formFromIdentity(saved));
+      setMessage(
+        saved.profile_changed
+          ? "Company identity saved. Prior review states were reset because the verified profile changed."
+          : "Company identity saved. Existing review state was preserved.",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save company identity.");
     } finally {
@@ -254,7 +289,7 @@ export default function CompanyIdentityPack() {
   }
 
   async function requestReview() {
-    if (requesting) return;
+    if (requesting || isDirty) return;
     setRequesting(true);
     setMessage(null);
     setError(null);
@@ -262,11 +297,16 @@ export default function CompanyIdentityPack() {
       const response = await authFetch("/api/company-identity/review-request", {
         method: "POST",
       });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Could not request verification review.");
-      setIdentity(body as IdentityResponse);
-      setForm(formFromIdentity(body as IdentityResponse));
-      setMessage(body?.message || "Verification review requested.");
+      const body = (await response.json().catch(() => ({}))) as Partial<IdentityResponse> & {
+        error?: string;
+      };
+      if (!response.ok || !body.profile) {
+        throw new Error(body.error || "Could not request verification review.");
+      }
+      const reviewed = body as IdentityResponse;
+      setIdentity(reviewed);
+      setForm(formFromIdentity(reviewed));
+      setMessage(reviewed.message || "Verification review requested.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not request verification review.");
     } finally {
@@ -379,6 +419,9 @@ export default function CompanyIdentityPack() {
                   placeholder="support@example.com"
                   autoComplete="email"
                 />
+                <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
+                  Email identity review requires this address to match the company website domain.
+                </span>
               </label>
               <label className="text-xs font-medium text-foreground">
                 Logo URL
@@ -431,22 +474,29 @@ export default function CompanyIdentityPack() {
             </fieldset>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button type="button" onClick={saveIdentity} disabled={saving || selectedChannelCount === 0}>
+              <Button
+                type="button"
+                onClick={saveIdentity}
+                disabled={saving || selectedChannelCount === 0 || !isDirty}
+              >
                 {saving ? "Saving…" : "Save identity"}
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={requestReview}
-                disabled={requesting || !identity.review_eligible}
+                disabled={requesting || !identity.review_eligible || isDirty}
               >
                 {requesting ? "Requesting…" : "Request verification review"}
               </Button>
             </div>
-            {!identity.review_eligible ? (
+            {isDirty ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Save the profile and complete every selected channel requirement before requesting
-                verification review.
+                Save these changes before requesting verification review.
+              </p>
+            ) : !identity.review_eligible ? (
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                Complete every selected channel requirement before requesting verification review.
               </p>
             ) : null}
           </div>
