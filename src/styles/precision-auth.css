@@ -1,78 +1,44 @@
-/* Account entry surface — two-panel auth.
- * Left: deep console brand panel with a silver paper wash. Right: clean form. */
+/* Account entry — one centered task across desktop, tablet, and phone. */
 .wl-stitch-auth-shell {
   display: grid;
-  grid-template-columns: minmax(380px, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100dvh;
   background: var(--wireline-color-canvas-default);
 }
 
-/* ── Left brand panel ───────────────────────────────────────── */
-.wl-auth-brand-panel {
+.wl-auth-form-panel {
   position: relative;
-  overflow: hidden;
   isolation: isolate;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(
+        in srgb,
+        var(--wireline-color-action-primary-container) 8%,
+        transparent
+      ),
+      transparent 32rem
+    ),
+    var(--wireline-color-canvas-default);
+}
+
+.wl-auth-entry-mark {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 2.25rem;
-  padding: clamp(2rem, 3.5vw, 3.25rem);
-  /* Deep console brand panel — dark in BOTH themes so the silver wash and
-     violet mark carry the brand. Pin the semantic tokens locally (Aurora dark
-     values from tokens.generated.css) so every descendant — headline, grid
-     cells, badge, wash — resolves against a dark canvas even when the page
-     renders in light mode. Dark mode is byte-identical: these are its own
-     generated values. */
-  --wireline-color-canvas-default: #0A0A0E;
-  --wireline-color-surface-default: #141319;
-  --wireline-color-text-primary: #F5F4F8;
-  --wireline-color-text-secondary: #B6B1C6;
-  --wireline-color-text-tertiary: #8B87A0;
-  --wireline-color-border-default: #262430;
-  --wireline-color-action-primary-default: #A78BFA;
-  --wireline-color-action-secondary-default: #C7CCD6;
-  background: color-mix(in srgb, #0A0A0E 62%, #000);
-  color: var(--wireline-color-text-primary);
-  border-right: 1px solid var(--wireline-color-border-default);
-  animation: fadeIn 0.5s ease-out both;
-}
-
-/* Silver paper wash — tucked in the brand panel corner so it never bleeds
-   across the center seam into the form column. */
-.wl-auth-brand-glow {
-  position: absolute;
-  bottom: -18%;
-  left: -22%;
-  width: min(440px, 72%);
-  height: min(440px, 72%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--wireline-color-action-secondary-default) 16%, transparent),
-    transparent 68%
-  );
-  pointer-events: none;
-}
-
-.wl-auth-brand-top,
-.wl-auth-brand-copy,
-.wl-auth-brand-grid {
-  position: relative;
-}
-
-.wl-auth-brand-mark {
-  display: inline-flex;
   align-items: center;
-  gap: 0.625rem;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-display);
+  font-size: 1.375rem;
   text-decoration: none;
-  color: inherit;
 }
 
 .wl-auth-brand-badge {
   display: grid;
-  place-items: center;
   width: 32px;
   height: 32px;
+  place-items: center;
   border-radius: 8px;
   background: var(--wireline-color-action-primary-default);
   color: #fff;
@@ -81,93 +47,10 @@
   font-weight: 700;
 }
 
-.wl-auth-brand-word {
-  font-family: var(--wireline-font-display);
-  font-size: 22px;
-  letter-spacing: -0.01em;
-}
-
-.wl-auth-brand-copy {
-  max-width: 29rem;
-}
-
-.wl-auth-brand-label {
-  font-family: var(--wireline-font-mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--wireline-color-text-secondary);
-  margin-bottom: 1.25rem;
-}
-
-.wl-auth-brand-headline {
-  font-family: var(--wireline-font-display);
-  font-size: clamp(2.35rem, 1.55rem + 2.4vw, 3.45rem);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-  font-weight: 400;
-  margin-bottom: 1.25rem;
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-auth-brand-body {
-  font-size: 15px;
-  line-height: 1.65;
-  color: var(--wireline-color-text-secondary);
-}
-
-.wl-auth-brand-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  border: 1px solid color-mix(in srgb, #fff 6%, transparent);
-  background: color-mix(in srgb, #fff 6%, transparent);
-}
-
-.wl-auth-brand-grid-cell {
-  background: var(--wireline-color-surface-default);
-  padding: 1rem;
-  text-align: center;
-}
-
-.wl-auth-brand-grid-name {
-  font-family: var(--wireline-font-display);
-  font-size: 18px;
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-auth-brand-grid-sub {
-  font-family: var(--wireline-font-mono);
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--wireline-color-text-tertiary);
-  margin-top: 4px;
-}
-
-/* ── Right form panel ───────────────────────────────────────── */
-.wl-auth-form-panel {
-  position: relative;
-  isolation: isolate;
-  background: var(--wireline-color-canvas-default);
-}
-
-.wl-auth-mobile-mark {
-  display: none;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  font-family: var(--wireline-font-display);
-  font-size: 1.375rem;
-  color: var(--wireline-color-text-primary);
-  text-decoration: none;
-}
-
 .wl-stitch-auth-card {
   padding: clamp(1.5rem, 1.25rem + 1vw, 2.25rem);
-  border-radius: var(--radius-xl);
   border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
   background: var(--wireline-color-surface-default);
   box-shadow: var(--wireline-elevation-md);
 }
@@ -178,24 +61,23 @@
   font-size: 0.9375rem;
 }
 
-/* Visible focus for every keyboard-reachable auth control. The auth surface
-   historically had no visible focus indicator on OAuth buttons, tab toggles,
-   the workspace selector, the password show/hide, and the submit button. */
+/* Every keyboard-reachable account control has a visible tokenized focus state. */
 .wl-stitch-oauth-btn:focus-visible,
 .wl-stitch-auth-card button:focus-visible,
 .wl-stitch-auth-card [role="tab"]:focus-visible,
 .wl-stitch-auth-card a:focus-visible {
-  outline: var(--wireline-interaction-focus-width) solid var(--wireline-color-focus-default);
-  outline-offset: var(--wireline-interaction-focus-offset);
-  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-primary);
   border-radius: var(--radius-md);
+  outline: var(--wireline-interaction-focus-width) solid
+    var(--wireline-color-focus-default);
+  outline-offset: var(--wireline-interaction-focus-offset);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth)
+    var(--wireline-color-glow-primary);
 }
 
-/* Workspace selector buttons keep a silver halo on focus so the choice is
-   legible against the dark brand panel wash. */
 .wl-stitch-auth-card button[type="button"]:focus-visible {
   outline-color: var(--wireline-color-focus-wire);
-  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth) var(--wireline-color-glow-wire);
+  box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth)
+    var(--wireline-color-glow-wire);
 }
 
 .wl-stitch-auth-divider {
@@ -204,36 +86,12 @@
   letter-spacing: 0.08em;
 }
 
-/* Keep the brand story fully composed while the taller form column scrolls.
-   Desktop account entry should never crop the operating loop at laptop heights. */
-@media (min-width: 900px) {
-  .wl-auth-brand-panel {
-    position: sticky;
-    top: 0;
-    align-self: start;
-    height: 100dvh;
-    min-height: 0;
-  }
-}
-
-/* ── Responsive: collapse to single column on small screens ─── */
-@media (max-width: 899px) {
-  .wl-stitch-auth-shell {
-    grid-template-columns: 1fr;
-  }
-  .wl-auth-brand-panel {
-    display: none;
-  }
-  .wl-auth-mobile-mark {
-    display: flex;
-  }
-}
-
 @media (max-width: 639px) {
   .wl-auth-form-panel {
     align-items: flex-start;
-    padding: 2rem 1rem;
+    padding: 1.25rem 1rem 2rem;
   }
+
   .wl-stitch-auth-card {
     padding: 1.25rem;
   }
