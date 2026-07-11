@@ -75,7 +75,7 @@ describe("company identity pack", () => {
     expect(readiness.email.missing).toContain("support email on the company domain");
   });
 
-  it("binds external review state to the exact saved identity profile", () => {
+  it("binds external review state to the exact identity and dedicated number", () => {
     const base = {
       businessName: "Acme LLC",
       brandName: "Acme",
@@ -84,28 +84,25 @@ describe("company identity pack", () => {
       website: "https://example.com/",
       supportEmail: "support@example.com",
       defaultCallReason: "Scheduling",
-      requestedChannels: ["voice", "sms"] as const,
+      phoneNumber: "+13125550123",
     };
-    const first = companyIdentityFingerprint({
-      ...base,
-      requestedChannels: [...base.requestedChannels],
-    });
-    const reordered = companyIdentityFingerprint({
-      ...base,
-      requestedChannels: ["sms", "voice"],
-    });
+    const first = companyIdentityFingerprint(base);
     const renamed = companyIdentityFingerprint({
       ...base,
       brandName: "Acme Home Services",
-      requestedChannels: [...base.requestedChannels],
+    });
+    const renumbered = companyIdentityFingerprint({
+      ...base,
+      phoneNumber: "+13125550999",
     });
 
-    expect(first).toBe(reordered);
     expect(first).not.toBe(renamed);
+    expect(first).not.toBe(renumbered);
   });
 
   it("protects the authenticated review workflow and audit trail", () => {
     const routes = read("src/routes/company-identity-routes.ts");
+    const identity = read("src/lib/company-identity.ts");
     const guard = read("src/routes/user-preference-guard-routes.ts");
     const registry = read("src/server/register-api-routes.ts");
 
@@ -122,7 +119,10 @@ describe("company identity pack", () => {
     expect(routes).toContain("profileFingerprintSha256");
     expect(routes).toContain('createHash("sha256")');
     expect(routes).not.toContain("profileFingerprint: current.currentFingerprint");
-    expect(routes).toContain("approval and display coverage are not guaranteed");
+    expect(routes).toContain("phoneNumber: current.phoneNumber");
+    expect(routes).toContain("channelSelectionChanged");
+    expect(identity).toContain("Requested channel selection is deliberately excluded");
+    expect(routes).toContain("final display follow supported Wireline workflows");
     expect(routes).not.toContain('providerStatus[channel] = "approved"');
     expect(guard).toContain("requestedEnvelope.company_identity = currentEnvelope.company_identity");
     expect(guard).toContain("delete requestedEnvelope.company_identity");
