@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Router, type Response } from "express";
 import { desc, eq } from "drizzle-orm";
 
@@ -105,6 +106,10 @@ function fingerprintProfile(profile: {
   return companyIdentityFingerprint(profile);
 }
 
+function fingerprintDigest(fingerprint: string): string {
+  return createHash("sha256").update(fingerprint).digest("hex");
+}
+
 async function loadIdentityState(userId: string) {
   const [[settingsRow], [preferencesRow], [phoneRow]] = await Promise.all([
     drizzle
@@ -131,7 +136,10 @@ async function loadIdentityState(userId: string) {
 
   const envelope = asPreferenceEnvelope(preferencesRow?.preferences);
   const storedPreferences = readCompanyIdentityPreferences(envelope.company_identity);
-  const storedProfile = buildCompanyIdentityProfile({ settings: settingsRow, preferences: storedPreferences });
+  const storedProfile = buildCompanyIdentityProfile({
+    settings: settingsRow,
+    preferences: storedPreferences,
+  });
   const currentFingerprint = fingerprintProfile(storedProfile);
   const hasReviewState =
     Boolean(storedPreferences.reviewRequestedAt) ||
@@ -367,10 +375,36 @@ router.post(
         });
       }
 
+      const selectedStatuses = current.profile.requestedChannels.map(
+        (channel) => current.preferences.providerStatus[channel],
+      );
+      const reviewMatchesCurrentProfile =
+        current.preferences.reviewFingerprint === current.currentFingerprint;
+      if (reviewMatchesCurrentProfile && selectedStatuses.includes("rejected")) {
+        return res.status(409).json({
+          code: "IDENTITY_REVIEW_REQUIRES_CHANGES",
+          error: "Update the rejected company identity details before requesting another review.",
+          ...publicPayload(current),
+        });
+      }
+      if (
+        reviewMatchesCurrentProfile &&
+        selectedStatuses.every((status) => status !== "not_requested")
+      ) {
+        return res.status(200).json({
+          ok: true,
+          already_requested: true,
+          message: "The current company identity is already submitted or has a provider decision.",
+          ...publicPayload(current),
+        });
+      }
+
       const requestedAt = new Date().toISOString();
       const providerStatus = { ...current.preferences.providerStatus };
       for (const channel of current.profile.requestedChannels) {
-        providerStatus[channel] = "review_requested";
+        if (providerStatus[channel] === "not_requested") {
+          providerStatus[channel] = "review_requested";
+        }
       }
       const nextPreferences: CompanyIdentityPreferences = {
         ...current.preferences,
@@ -406,7 +440,7 @@ router.post(
             hasNumber: Boolean(current.phoneNumber),
             hasLogo: Boolean(current.profile.logoUrl),
             requestedAt,
-            profileFingerprint: current.currentFingerprint,
+            profileFingerprintSha256: fingerprintDigest(current.currentFingerprint),
           },
         });
       });
