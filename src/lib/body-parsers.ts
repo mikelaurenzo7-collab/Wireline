@@ -14,7 +14,12 @@
  * Mount order in server.ts:
  *
  *   installWebhookBodyParsers(app);            // raw / urlencoded for vendors
- *   app.use(express.json({ limit: "1mb" }));   // everything else
+ *   app.use(assertSameOrigin);                  // reject unsafe mutations first
+ *   app.use(express.json({ limit: "6mb" }));   // ordinary application JSON
+ *
+ * The 6 MB Express ceiling is not a media-upload allowance. Vercel Functions
+ * enforce a lower platform request ceiling, so browser media flows must stay
+ * below that limit or upload directly to object storage.
  *
  * Adding a new webhook? Register its parser here, not inline at the
  * route, so the ordering invariant stays visible in one place.
@@ -32,7 +37,7 @@ type ExpressApp = ReturnType<typeof express>;
  * the path level (so siblings of the same router that *do* expect
  * JSON still get JSON downstream).
  *
- * `type: "*\u002F*"` is intentional — vendors occasionally POST with
+ * `type: "*\/*"` is intentional — vendors occasionally POST with
  * `application/x-www-form-urlencoded` or no `Content-Type` at all,
  * and we want the raw bytes regardless.
  */
