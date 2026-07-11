@@ -17,6 +17,17 @@ describe("static marketing metadata", () => {
     expect(index).not.toContain("Your phone, finally answering for you.");
   });
 
+  it("keeps the runtime hero readable and metadata-aligned", () => {
+    const hero = read("src/components/marketing/MarketingHero.tsx");
+    const landing = read("src/pages/LandingPage.tsx");
+
+    expect(hero).toContain('title === MARKETING_VOICE.headline');
+    expect(hero).toContain('aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}');
+    expect(hero).toContain("whitespace-nowrap text-[clamp(1.6rem,8.1vw,5.65rem)]");
+    expect(landing).toContain('title="Wireline — Wire → Work → Win"');
+    expect(landing).not.toContain('title="Wireline | Wire → Work → Win"');
+  });
+
   it("keeps the OG image aligned with Wire Work Win", () => {
     const ogImage = read("public/og-image.svg");
 
