@@ -65,10 +65,11 @@ export const OUTBOUND_WEDGE = {
 } as const;
 
 export const MARKETING_VOICE = {
-  eyebrow: "AI employees for sales, marketing, calls, scheduling, support, and follow-up",
+  eyebrow: null,
   headline: BRAND_SYSTEM.brandSpine.join(" → "),
   subline: "Voice AI employee for real conversations.",
-  proof: BRAND_SYSTEM.brandSpine,
+  spine: BRAND_SYSTEM.brandSpine,
+  proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
     "Command your AI employee from any page. It researches, calls, answers, follows up, books the next step, and logs proof while you stay focused.",
   differentiator: OUTBOUND_WEDGE.differentiator,
