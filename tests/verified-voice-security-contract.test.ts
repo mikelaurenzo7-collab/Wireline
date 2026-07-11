@@ -34,6 +34,13 @@ describe("voice authorization security contract", () => {
     expect(library).not.toContain("verified voice");
   });
 
+  it("keeps browser uploads beneath the deployed function payload ceiling", () => {
+    expect(library).toContain("MAX_CLONE_UPLOAD_BYTES = 3 * 1024 * 1024");
+    expect(library).toContain("cloneFile.size > MAX_CLONE_UPLOAD_BYTES");
+    expect(library).toContain("compressed sample under 3 MB");
+    expect(library).not.toContain("under 25 MB");
+  });
+
   it("enforces authenticated spend limits across serverless replicas", () => {
     expect(routes).toContain("MAX_CLONE_REQUESTS_PER_WINDOW = 5");
     expect(routes).toContain("voice.clone.requested");
