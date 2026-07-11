@@ -9,6 +9,7 @@
 .wl-auth-form-panel {
   position: relative;
   isolation: isolate;
+  align-items: safe center;
   background:
     radial-gradient(
       circle at 50% 0%,
