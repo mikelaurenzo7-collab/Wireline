@@ -1,94 +1,79 @@
-# P0 Billing Ops Note — 2026-07-08
+# P0 Billing Ops Note — 2026-07-10
 
-Status: **Operator checklist** for launch integrity after the Jul 2026 pricing lock. Last MCP cross-check: **2026-07-10**.
+Status: **Founder Early Access catalog reconciled in live Stripe; code hardening is in review.**
 
-**Superseded pricing note (2026-07-10, later same day):** the "Pricing lock (code)" and "Live Stripe
-proof" checklist below documents the zero-included-minutes Team/Business catalog that was live
-earlier on 2026-07-10. The catalog has since moved to the **Founder Early Access** model (Personal
-Free/Starter $9/Starter Plus $19/Pro $59/Business $149, each with guaranteed included voice minutes
-and a recurring Runtime Allowance — see `src/lib/plan-catalog.ts`, which is the source of truth).
-The operational hygiene items below (webhook alignment, env parity, retired-price cleanup) are still
-live concerns; only the specific dollar amounts and "zero included minutes" framing are stale.
+This note is the current launch source for billing operations. Historical billing decisions remain in their original documents for audit context, but the active catalog is defined by:
 
-## Pricing lock (code) — historical, see superseded-pricing note above
+- `src/lib/plan-catalog.ts` — product-facing entitlements and prices
+- `scripts/lib/stripe-founder-catalog.mjs` — canonical Stripe product/price manifest
+- `scripts/setup-stripe-catalog.mjs` — idempotent live reconciler
+- `scripts/audit-stripe-catalog-live.mjs` — live dependency and parity audit
 
-- [x] `plan-catalog.ts`: Personal $0.18/min; Team/Business $0.16/min; extra agents $8/$10; `voice_minutes_monthly: 0`
-- [x] `voice-usage.ts`: `included = 0` for all tiers
-- [x] `setup-stripe-catalog.mjs`: Team/Business overage 16¢; extra agents 800/1000 cents
-- [x] Welcome $10 Conversation Balance on first Team/Business subscribe (`subscription-welcome-credit.ts`)
-- [x] SMS segments bill Conversation Balance at $0.02 (`sms-billing.ts` + `twilio-service.ts`)
-- [x] Run `node scripts/setup-stripe-catalog.mjs` against live Stripe when `STRIPE_SECRET_KEY` is set
-- [x] Rotate `STRIPE_PRO_OVERAGE_PRICE_ID` + extra-agent price ids in Vercel (`price_1Tr4KFJohDtfy3Ik70mvNu8Y` Business overage 16¢)
+## Founder catalog lock
 
-## Live Stripe proof (manual)
+| Plan | Monthly | Annual | Billing model |
+| --- | ---: | ---: | --- |
+| Free Builder | $0 | — | No Stripe product |
+| Starter | $9 | $90 | Fixed subscription |
+| Starter Plus | $19 | $190 | Fixed subscription |
+| Pro | $59 | $590 | Fixed subscription |
+| Business | $149 | $1,490 | Fixed subscription |
+| Scale & Enterprise | Custom | Custom | Sales-assisted |
 
-Run after deploy with live keys:
+Add-ons:
 
-1. Sign up → `/settings/billing` → Conversation Balance top-up ($5 test)
-2. `checkout.session.completed` credits ledger once (retry → duplicate, no double credit)
-3. Team checkout → subscription row + `max_agents` sync + welcome $10 grant once
-4. Customer Portal cancel-at-period-end → `GET /api/billing/status` shows flag
-5. Voice minute → balance burn or Stripe meter `voice_minutes_overage` when balance empty
-6. `npm run stripe:catalog:check` green
+- Extra Agent + 50 Minutes: $15/month
+- Live Video: $19/month
+- Conversation Balance: prepaid $5, $10, $25, or $50
 
-## Stripe MCP cross-check — 2026-07-10
+Voice usage is not postpaid or metered in this launch catalog. Included Runtime Allowance and prepaid Conversation Balance are the supported model.
+
+## Live Stripe reconciliation — verified 2026-07-10
 
 Account: Wireline (`acct_1TXb0SJohDtfy3Ik`).
 
-Active products observed:
+- 8 active products match the Founder manifest.
+- 14 canonical active prices match the expected amounts, intervals, products, and lookup keys.
+- 1 additional active $9 price remains attached to an archived duplicate Starter product because Stripe requires an active default price on that archived product. It is not sellable through an active product and is treated as an audit warning, not a parity failure.
+- The duplicate Starter product was archived.
+- 8 superseded Team/Business/overage/add-on prices were deactivated.
+- No active, trialing, past-due, or incomplete subscriptions were found.
+- No active Payment Links were found.
+- Checkout-session enumeration is unavailable to the connected Stripe key; recheck open sessions in Stripe Dashboard before any future destructive catalog cleanup.
 
-- Wireline Personal
-- Wireline Team
-- Wireline Business
-- Wireline Enterprise
-- Conversation Balance
-- Wireline Live Video
+Do not delete Stripe products or prices. Archive products and deactivate prices only after dependency checks.
 
-Active expected prices observed:
+## Required prelaunch proof
 
-- Team monthly/annual, Team extra-agent, Team voice overage
-- Business monthly/annual, Business extra-agent, Business voice overage
-- Conversation Balance `$5`, `$10`, `$25`, `$50`
-- Live Video add-on monthly
-
-Cleanup done (2026-07-10, same-day follow-up): the 5 zero-dollar `Retired catalog anchor` prices
-(`price_1TqN1mJohDtfy3IkTjDzVXRs`, `price_1TqN1lJohDtfy3IkRkWRbXbu`, `price_1TqN1kJohDtfy3IkEcVbD9BJ`,
-`price_1TqN1kJohDtfy3Ikt0rTqd6Y`, `price_1TqN1jJohDtfy3Iky9h9DO8z`) were set `active: false` directly via
-the Stripe API (they were not referenced by source and carried `wireline_not_for_sale: true` metadata
-already). Still worth running once for full parity confirmation:
+Run from a clean checkout with the live Vercel environment:
 
 ```bash
 npm run stripe:catalog:check
 npm run stripe:verify-vercel-parity
+node scripts/run-stripe-audit-from-vercel.mjs
 ```
 
-Do not delete or rewrite historical billing docs solely because they mention retired price ids; keep the operational truth here and in `docs/business-usage-pricing-decision.md`.
+Then verify in a non-production test workspace:
 
-## Env hygiene
+1. Free signup creates no Stripe subscription.
+2. Starter checkout shows $9/month and returns to the authenticated billing surface.
+3. The webhook persists the subscription and entitlement state once when replayed.
+4. Customer Portal cancellation appears in `GET /api/billing/status`.
+5. A $5 Conversation Balance checkout credits the ledger once when the event is replayed.
+6. Included Runtime Allowance is consumed before prepaid Conversation Balance.
+7. Extra Agent and Live Video use the canonical recurring prices.
 
-- [x] `STRIPE_VOICE_OVERAGE_METER_EVENT_NAME=voice_minutes_overage` — confirmed in Vercel prod/preview/dev
-- [x] All 9 launch `STRIPE_*_PRICE_ID` vars match `scripts/.stripe-env.generated.json` on prod/preview/dev (`npm run stripe:verify-vercel-parity`)
-- [x] Stale duplicate launch prices deactivated (`npm run stripe:deactivate-stale-launch`)
-- [x] Live catalog audit green (`node scripts/run-stripe-audit-from-vercel.mjs`)
-- [x] Production redeploy after env sync: `dpl_FeCUbQHUFeGuGU9cUBxMFhZkwbAN` (2026-07-08)
-- [x] Production env shape must include deploy-safe DB URLs: `npm run check-prod-env` now rejects single-label Postgres hosts such as `base` before deploy.
-- No `CLERK_*` references in runtime code (custom JWT auth canonical)
-- Migration `0082_phone_voice_routing.sql` targets `wireline_agents`
+## Environment hygiene
 
-## Claim honesty
+- Keep all canonical `STRIPE_*_PRICE_ID` values identical across Vercel Production, Preview, and Development.
+- Keep webhook signing secrets environment-specific.
+- Never expose `STRIPE_SECRET_KEY` or webhook secrets to client bundles.
+- Redeploy after changing price IDs or webhook configuration.
+- Run the live audit before and after any catalog mutation.
 
-- Marketing/pricing: no “included minutes” language; platform fee vs $/min vs capacity only
-- Trust Center: no SOC2/HIPAA claims before evidence collection post-traction
-- `docs/PRODUCT_SHOWCASE_MATRIX.md` remains source for Live vs Planned integrations
+## Current deployment evidence
 
-## Pass/fail
+- Production baseline: **READY** `dpl_BbPxQuFVNKEqWBdkupcEqgYkwTHZ` on `main` (`ae6eeb71f8376f46f4ec263ab59bf998011ff8fc`).
+- Launch hardening preview: branch `agent/web-launch-funnel-hardening`; require a final READY build and browser proof before merge.
 
-| Check | Result |
-| --- | --- |
-| Pricing code + tests | Run `npm run test:run` on billing/voice/plan tests |
-| Stripe catalog contract | `npm run stripe:catalog:check` — **PASS** |
-| Stripe live audit | `node scripts/run-stripe-audit-from-vercel.mjs` — **PASS** (0 findings) |
-| Vercel env parity | `npm run stripe:verify-vercel-parity` — **PASS** |
-| Production deploy | **READY** `dpl_CdxKLQM7AZ65NZKcrb39YtSL5g1t` → trywireline.com as of the 2026-07-10 MCP check |
-
-_Refresh this note after each live billing proof run._
+_Refresh this note after every live catalog change or end-to-end billing proof._
