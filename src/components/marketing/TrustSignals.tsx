@@ -95,11 +95,11 @@ export default function TrustSignals() {
       aria-labelledby="trust-heading"
       data-testid="trust-signals"
     >
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-4 flex items-center justify-center gap-2 text-center">
         <span className="hero-accent-line bg-primary" />
         <h2
           id="trust-heading"
-          className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.5em] text-muted/70 font-semibold"
+          className="max-w-3xl text-center text-[var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.2em] text-muted/70"
         >
           Built for teams that can't afford to miss the conversation
         </h2>
@@ -154,7 +154,7 @@ export default function TrustSignals() {
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-muted/70">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/70">
         <a
           href="/status"
           className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
