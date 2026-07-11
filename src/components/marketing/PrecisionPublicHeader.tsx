@@ -40,7 +40,7 @@ export default function PrecisionPublicHeader() {
             <span>Wireline</span>
           </Link>
           <nav
-            className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-6 md:flex"
+            className="absolute left-1/2 top-0 hidden h-full -translate-x-1/2 items-center gap-6 lg:flex"
             aria-label="Site"
           >
             {links.map((link) => {
@@ -57,7 +57,7 @@ export default function PrecisionPublicHeader() {
               );
             })}
           </nav>
-          <div className="ml-auto hidden items-center gap-5 md:flex">
+          <div className="ml-auto hidden items-center gap-5 lg:flex">
             <Link
               to="/signin"
               className="text-[var(--wireline-typography-caption-size)] font-medium text-foreground transition-colors hover:text-primary"
@@ -74,7 +74,7 @@ export default function PrecisionPublicHeader() {
           <DialogTrigger asChild>
             <button
               type="button"
-              className={`${mobileControlClassName} md:hidden`}
+              className={`${mobileControlClassName} lg:hidden`}
               aria-label={open ? "Close navigation" : "Open navigation"}
               aria-expanded={open}
               aria-controls="wireline-mobile-navigation"
