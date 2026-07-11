@@ -9,7 +9,7 @@ export const BRAND_SYSTEM = {
   toneRules: [
     "Lead with business outcomes before AI mechanics.",
     "Make the default feel like the owner's best employee, not another executive title.",
-    "Keep the owner in control: rules, approvals, spend, handoffs, and escalation stay explicit.",
+    "Keep the owner in control: guardrails, approvals, spend, handoffs, and escalation stay explicit.",
     "Treat specialists as expansion, not setup homework.",
     "Show logged proof after every call, handoff, campaign, and follow-up.",
     "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the employee.",
@@ -36,12 +36,12 @@ export const AGENT_DIRECTION_MODES = {
     eyebrow: "Best employee · right-hand employee",
     loop: ["Answer", "Sell", "Follow up", "Sync"],
     promise:
-      "Keeps sales, marketing, service, scheduling, and follow-through in one visible operating loop under the owner's rules.",
+      "Keeps sales, marketing, service, scheduling, and follow-through in one visible operating loop under the owner's direction.",
   },
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every included AI employee comes with an included Wireline number at no extra line fee, so it can call out, receive callbacks, and own the handoff under your rules." as const;
+  "Every included AI employee comes with an included Wireline number at no extra line fee, so it can call out, receive callbacks, and own the handoff under your direction." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
@@ -75,6 +75,27 @@ export const MARKETING_VOICE = {
   differentiator: OUTBOUND_WEDGE.differentiator,
 } as const;
 
+export const CLIENT_SURFACE_POSTURE = {
+  summary:
+    "Web is the canonical runtime. Browser Command and ChatGPT are early-access companions. Android remains in internal beta; iPhone follows device QA and signing.",
+  browser: {
+    status: "Early access",
+    action: "Install guide",
+  },
+  chatgpt: {
+    status: "Early access",
+    action: "Open MCP",
+  },
+  android: {
+    status: "Internal beta",
+    action: "Internal testing",
+  },
+  ios: {
+    status: "Planned",
+    action: "Join waitlist",
+  },
+} as const;
+
 export const BUSINESS_MARKETING_VOICE = {
   eyebrow: "Best employee · business phone operations",
   proof: ["Answers demand", "Books appointments", "Logs outcomes"],
@@ -105,7 +126,7 @@ export const PRODUCT_POSTURE = {
     badgeShort: "Personal",
     createCta: "Build personal employee",
     emptyTitle: "Your best employee.",
-    emptyBody: "Your calls. Your rules. Your outcomes.",
+    emptyBody: "Your calls. Your direction. Your outcomes.",
   },
   business: {
     badge: "Best employee",
