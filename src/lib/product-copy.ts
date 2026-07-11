@@ -68,10 +68,10 @@ export const OUTBOUND_WEDGE = {
 
 export const MARKETING_VOICE = {
   eyebrow: null,
-  headline: "Your AI Voice Employee Calls, Texts, Emails—and Gets Work Done.",
+  headline: "Your next AI employee calls, texts, and emails.",
   subline:
-    "Every paid plan includes a Wireline number at no extra line fee. Train one employee to answer, sell, support, book, follow up, update your systems, and log every outcome across every customer conversation.",
-  channelProof: ["Voice calls", "Text / SMS", "Email", "Number included"],
+    "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
+  channelProof: ["Voice agent", "Text / SMS agent", "Email agent", "One shared memory"],
   spine: BRAND_SYSTEM.brandSpine,
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
