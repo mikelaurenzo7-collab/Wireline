@@ -5,7 +5,9 @@ import {
   AGENT_DIRECTION_MODES,
   AGENT_NUMBER_PROMISE,
   BRAND_SYSTEM,
+  EMPLOYEE_CHANNELS,
   MARKETING_VOICE,
+  ONE_EMPLOYEE_CHANNEL_PROMISE,
   OUTBOUND_WEDGE,
 } from "../src/lib/product-copy";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
@@ -14,12 +16,11 @@ import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("product voice cohesion", () => {
-  it("keeps marketing hero strings and call direction modes in one shared module", () => {
-    // Customer-facing positioning must feel like the owner's best employee,
-    // not a threatening executive title or a menu of departments to configure.
+  it("keeps the AI employee and multichannel promise in one shared module", () => {
     expect(BRAND_SYSTEM.northStar).toBe(
       "The best employee you've ever had, for next to nothing.",
     );
+    expect(BRAND_SYSTEM.productNoun).toBe("AI employee");
     expect(BRAND_SYSTEM.defaultRole).toBe("Your best employee");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Wire", "Work", "Win"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
@@ -27,22 +28,42 @@ describe("product voice cohesion", () => {
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Make the default feel like the owner's best employee, not another executive title.",
     );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Present voice, email, and text/SMS as capabilities of one employee, not three required employees.",
+    );
+
+    expect(EMPLOYEE_CHANNELS).toEqual(["Voice", "Email", "Text / SMS"]);
+    expect(ONE_EMPLOYEE_CHANNEL_PROMISE).toContain("One AI employee");
+    expect(ONE_EMPLOYEE_CHANNEL_PROMISE).toContain("voice, email, and text/SMS");
+    expect(ONE_EMPLOYEE_CHANNEL_PROMISE).toContain("same business knowledge");
+    expect(ONE_EMPLOYEE_CHANNEL_PROMISE).toContain("rules, approvals, memory");
+
     expect(MARKETING_VOICE.eyebrow).toBeNull();
     expect(MARKETING_VOICE.headline).toBe("Wire → Work → Win");
-    expect(MARKETING_VOICE.subline).toBe("Voice AI employee for real conversations.");
+    expect(MARKETING_VOICE.subline).toBe(
+      "One AI employee for voice, email, and text/SMS conversations.",
+    );
+    expect(MARKETING_VOICE.channelHeadline).toBe(
+      "Voice agent. Email agent. Text/SMS agent. One AI employee.",
+    );
+    expect(MARKETING_VOICE.channelPromise).toBe(ONE_EMPLOYEE_CHANNEL_PROMISE);
+    expect(MARKETING_VOICE.channels).toEqual(EMPLOYEE_CHANNELS);
     expect(MARKETING_VOICE.spine).toEqual(BRAND_SYSTEM.brandSpine);
     expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);
 
     expect(OUTBOUND_WEDGE.headline).toBe("Your best employee for growth work.");
-    expect(OUTBOUND_WEDGE.subline).toContain("answers");
+    expect(OUTBOUND_WEDGE.subline).toContain("one all-in-one AI employee");
+    expect(OUTBOUND_WEDGE.subline).toContain("calls");
+    expect(OUTBOUND_WEDGE.subline).toContain("emails");
+    expect(OUTBOUND_WEDGE.subline).toContain("texts");
     expect(OUTBOUND_WEDGE.subline).toContain("researches");
     expect(OUTBOUND_WEDGE.subline).toContain("sells");
     expect(OUTBOUND_WEDGE.subline).toContain("markets");
     expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
-    expect(OUTBOUND_WEDGE.subline).toContain("included number");
-    expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
+    expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Reach", "Book", "Log"]);
     expect(AGENT_NUMBER_PROMISE).toContain("Every included AI employee");
-    expect(AGENT_NUMBER_PROMISE).toContain("included number");
+    expect(AGENT_NUMBER_PROMISE).toContain("included Wireline number");
+    expect(AGENT_NUMBER_PROMISE).toContain("same employee");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Sell", "Follow up", "Sync"]);
   });
@@ -61,8 +82,6 @@ describe("product voice cohesion", () => {
 
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
-    // Pricing should not revive the old generic employee upsell. Extra agents are
-    // now a capacity add-on: a paid agent plus more guaranteed voice minutes.
     expect(pricing).not.toContain("create, train, wire, run");
     expect(pricing).not.toContain("Extra employees at");
     const starterPlus = STRIPE_PLANS.find((plan) => plan.id === "team");
@@ -114,13 +133,9 @@ describe("product voice cohesion", () => {
   });
 
   it("keeps included number capacity mathematically aligned to included agents", () => {
-    // Personal (Free Builder) is pre-activation by design: no production number
-    // until the Account Holder pays. Every paid tier still guarantees one
-    // included number per included agent.
     const publicCapacityPlans = STRIPE_PLANS.filter(
       (plan) => plan.id !== "enterprise" && plan.id !== "personal",
     );
-
     for (const plan of publicCapacityPlans) {
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
     }
@@ -129,7 +144,6 @@ describe("product voice cohesion", () => {
   it("keeps provisioning and entitlement code wired to catalog-backed line slots", () => {
     const entitlements = read("src/lib/phone-line-entitlements.ts");
     const provisioning = read("src/lib/phone-provisioning.ts");
-
     expect(entitlements).toContain("return tier.included_phone_numbers");
     expect(provisioning).toContain("existing >= plan.included_phone_numbers");
     expect(provisioning).toContain("findAgentPhoneLine(userId, opts.agentId)");
@@ -155,34 +169,12 @@ describe("product voice cohesion", () => {
 
   it("keeps every public top-level surface session-optional", () => {
     const publicPaths = [
-      "/",
-      "/features",
-      "/pricing",
-      "/compare",
-      "/about",
-      "/support",
-      "/contact",
-      "/showcase",
-      "/developers",
-      "/blog",
-      "/blog/founder-note",
-      "/status",
-      "/changelog",
-      "/security",
-      "/trust",
-      "/trust/medical",
-      "/privacy",
-      "/terms",
-      "/for/personal",
-      "/solutions/call-centers",
-      "/signin",
-      "/signup",
-      "/get-started",
-      "/reset-password",
-      "/oauth-complete",
-      "/auth/oauth-complete",
+      "/", "/features", "/pricing", "/compare", "/about", "/support", "/contact",
+      "/showcase", "/developers", "/blog", "/blog/founder-note", "/status",
+      "/changelog", "/security", "/trust", "/trust/medical", "/privacy", "/terms",
+      "/for/personal", "/solutions/call-centers", "/signin", "/signup", "/get-started",
+      "/reset-password", "/oauth-complete", "/auth/oauth-complete",
     ];
-
     for (const path of publicPaths) {
       expect(isSessionOptionalPublicPath(path), path).toBe(true);
     }
@@ -220,32 +212,21 @@ describe("product voice cohesion", () => {
 
   it("keeps authenticated page map intentional", () => {
     const routes = read("src/routes/AppRoutes.tsx");
-    expect(routes).toContain('path="/overview"');
-    expect(routes).toContain('path="/studio"');
-    expect(routes).toContain('path="/templates"');
-    expect(routes).toContain('path="/knowledge"');
-    expect(routes).toContain('path="/connections"');
-    expect(routes).toContain('path="/call-logs"');
-    expect(routes).toContain('path="/logs"');
-    expect(routes).toContain('to="/phone?tab=logs"');
-    expect(routes).toContain('path="/phone"');
-    expect(routes).toContain("AuthNotFound");
-    expect(routes).toContain('path="/inbox"');
-    expect(routes).toContain('path="/apps"');
-    expect(routes).toContain('path="/settings"');
-    expect(routes).toContain('path="/admin"');
-    expect(routes).toContain("RouteFallback");
-    expect(routes).toContain('path="/connections/salesforce"');
-    expect(routes).not.toContain('path="/actions"');
-    expect(routes).not.toContain('path="/actions/salesforce"');
-    expect(routes).not.toContain('path="/dashboard"');
-    expect(routes).not.toContain('path="/pulse"');
-    expect(routes).not.toContain('path="/fleet"');
-    expect(routes).not.toContain('path="/ops"');
-    expect(routes).not.toContain('path="/training"');
-    expect(routes).not.toContain('path="/chat"');
-    expect(routes).not.toContain('path="/nexus"');
-    expect(routes).not.toContain('path="/wires"');
+    for (const expected of [
+      'path="/overview"', 'path="/studio"', 'path="/templates"', 'path="/knowledge"',
+      'path="/connections"', 'path="/call-logs"', 'path="/logs"', 'to="/phone?tab=logs"',
+      'path="/phone"', 'path="/inbox"', 'path="/apps"', 'path="/settings"',
+      'path="/admin"', 'path="/connections/salesforce"', "AuthNotFound", "RouteFallback",
+    ]) {
+      expect(routes).toContain(expected);
+    }
+    for (const retired of [
+      'path="/actions"', 'path="/actions/salesforce"', 'path="/dashboard"', 'path="/pulse"',
+      'path="/fleet"', 'path="/ops"', 'path="/training"', 'path="/chat"',
+      'path="/nexus"', 'path="/wires"',
+    ]) {
+      expect(routes).not.toContain(retired);
+    }
   });
 
   it("keeps top-level workspace pages mounted to the current surfaces", () => {
