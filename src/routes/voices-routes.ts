@@ -87,6 +87,14 @@ const curatedPreviewRateLimiter = createIpRateLimiter({
   message: { error: "Preview limit reached. Try again in a minute." },
 });
 
+/** Public premade catalog resolution also touches the provider API. */
+const publicPreviewRateLimiter = createIpRateLimiter({
+  bucket: "api:voice-public-preview",
+  windowMs: 60_000,
+  max: 60,
+  message: { error: "Preview limit reached. Try again in a minute." },
+});
+
 function normalizeCloneMimeType(value: unknown): string {
   if (typeof value !== "string") {
     throw AppError.fromHttpStatus(400, "Audio type is required.");
@@ -99,6 +107,22 @@ function normalizeCloneMimeType(value: unknown): string {
     );
   }
   return normalized;
+}
+
+function assertTrustedElevenLabsPreviewUrl(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw AppError.fromHttpStatus(502, "Voice preview URL is invalid.");
+  }
+
+  const trustedHost =
+    url.hostname === "storage.googleapis.com" || url.hostname.endsWith(".elevenlabs.io");
+  if (url.protocol !== "https:" || !trustedHost) {
+    throw AppError.fromHttpStatus(502, "Voice preview URL is not trusted.");
+  }
+  return url.toString();
 }
 
 function decodeCloneAudio(value: unknown): { bytes: Buffer; base64: string } {
@@ -219,11 +243,6 @@ async function recordVoiceCloneOutcome(args: {
 // GET /api/voices — merged catalog.
 router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // Always include the user's own cloned voices from our DB
-    // (single source of truth for "what this tenant owns").
-    // Graceful fallback: if the table doesn't exist yet (migration
-    // hasn't been run on this environment), treat as empty list so
-    // the ElevenLabs catalog still loads.
     let ownClones: Array<{ voiceId: string; name: string; previewUrl: string | null }> = [];
     try {
       const rows = await drizzle
@@ -237,9 +256,6 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
         .orderBy(desc(schema.clonedVoices.createdAt));
       ownClones = rows;
     } catch (e: any) {
-      // 42P01 = undefined_table in Postgres. Surface a clear log line
-      // so the Account Holder knows to apply the checked cloned-voices
-      // migration, but don't break the catalog response.
       if (e?.code === "42P01" || /does not exist/i.test(e?.message || "")) {
         log.warn(
           "wireline_cloned_voices table missing - apply the checked cloned-voices migration",
@@ -249,8 +265,6 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       }
     }
 
-    // Hit ElevenLabs only if configured. If not, return the cloned
-    // rows alone — UI gracefully shows just user's clones.
     let catalog: ElevenLabsVoice[] = [];
     if (elevenLabsConfigured()) {
       try {
@@ -263,7 +277,6 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       }
     }
 
-    // Merge: cloned voices come first, then premade catalog.
     const ownVoiceIds = new Set(ownClones.map((c) => c.voiceId));
     const merged = [
       ...ownClones.map((c) => ({
@@ -275,7 +288,7 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       })),
       ...catalog
         .filter((v) => !ownVoiceIds.has(v.voice_id))
-        .filter((v) => v.category === "premade") // never expose another tenant's private/generated voices
+        .filter((v) => v.category === "premade")
         .map((v) => ({
           voice_id: v.voice_id,
           name: v.name,
@@ -319,7 +332,6 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
   }
 });
 
-// GET /api/voices/curated/preview — Wireline Live + Phone timbre samples (MP3 stream).
 router.get(
   "/api/voices/curated/preview",
   curatedPreviewRateLimiter,
@@ -344,7 +356,6 @@ router.get(
   },
 );
 
-// GET /api/voices/presenter/:id/preview — HeyGen presenter voice sample (redirect).
 router.get("/api/voices/presenter/:id/preview", async (req: Request, res: Response) => {
   try {
     if (!presenterVoicesConfigured()) {
@@ -363,46 +374,45 @@ router.get("/api/voices/presenter/:id/preview", async (req: Request, res: Respon
   }
 });
 
-// GET /api/voices/:id/preview — public preview for provider-premade voices only.
-// Tenant clones and generated/private voices are returned only by authenticated
-// catalog responses. Do not weaken this category check: voice IDs are identifiers,
-// not authorization.
-router.get("/api/voices/:id/preview", async (req: Request, res: Response) => {
-  try {
-    const voiceId = req.params.id;
-    if (!elevenLabsConfigured()) {
-      throw AppError.fromHttpStatus(503, "Voice previews unavailable.");
-    }
+router.get(
+  "/api/voices/:id/preview",
+  publicPreviewRateLimiter,
+  async (req: Request, res: Response) => {
     try {
-      const voice = await getVoice(voiceId);
-      if (voice.category !== "premade") {
-        log.warn("blocked non-premade public voice preview", {
-          voiceId,
-          category: voice.category ?? "unknown",
-        });
+      const voiceId = req.params.id;
+      if (!elevenLabsConfigured()) {
+        throw AppError.fromHttpStatus(503, "Voice previews unavailable.");
+      }
+      try {
+        const voice = await getVoice(voiceId);
+        if (voice.category !== "premade") {
+          log.warn("blocked non-premade public voice preview", {
+            voiceId,
+            category: voice.category ?? "unknown",
+          });
+          throw AppError.fromHttpStatus(404, "Voice not found.");
+        }
+
+        const previewUrl = voice.preview_url ?? null;
+        if (!previewUrl) {
+          throw AppError.fromHttpStatus(404, "No preview available for this voice.");
+        }
+
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        res.redirect(302, assertTrustedElevenLabsPreviewUrl(previewUrl));
+      } catch (e) {
+        if (e instanceof AppError) throw e;
+        log.warn("voice preview lookup failed", { error: getErrorMessage(e), voiceId });
         throw AppError.fromHttpStatus(404, "Voice not found.");
       }
-
-      const previewUrl = voice.preview_url ?? null;
-      if (!previewUrl) {
-        throw AppError.fromHttpStatus(404, "No preview available for this voice.");
-      }
-
-      res.setHeader("Cache-Control", "public, max-age=86400");
-      res.redirect(302, previewUrl);
     } catch (e) {
       if (e instanceof AppError) throw e;
-      log.warn("voice preview lookup failed", { error: getErrorMessage(e), voiceId });
-      throw AppError.fromHttpStatus(404, "Voice not found.");
+      log.error("voice preview failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Preview failed");
     }
-  } catch (e) {
-    if (e instanceof AppError) throw e;
-    log.error("voice preview failed", { error: getErrorMessage(e) });
-    throw AppError.fromHttpStatus(500, "Preview failed");
-  }
-});
+  },
+);
 
-// POST /api/voices/clone — instant clone from a single audio sample.
 router.post(
   "/api/voices/clone",
   authenticateUser,
@@ -436,11 +446,11 @@ router.post(
             "Consent required. Confirm you are the speaker or have documented authorization before submitting.",
         });
       }
-      if (
-        consent_statement_version !== undefined &&
-        consent_statement_version !== VOICE_CLONE_CONSENT_VERSION
-      ) {
-        throw AppError.fromHttpStatus(400, "Voice consent statement is out of date. Refresh and retry.");
+      if (consent_statement_version !== VOICE_CLONE_CONSENT_VERSION) {
+        throw AppError.fromHttpStatus(
+          400,
+          "Voice authorization statement is missing or out of date. Refresh and retry.",
+        );
       }
 
       const cloneMimeType = normalizeCloneMimeType(audioMimeType);
@@ -460,9 +470,6 @@ router.post(
         intendedUse,
       });
 
-      // Voice isolator pre-clean: strip background noise from the sample before
-      // cloning. The source sample is held only in request memory and is never
-      // persisted by Wireline. If isolation fails, the validated original is used.
       let providerAudioBase64 = decodedAudio.base64;
       let providerMimeType = cloneMimeType;
       if (req.body?.skip_isolation !== true) {
@@ -533,7 +540,7 @@ router.post(
           name: voiceName,
           preview_url: cloned.preview_url ?? null,
           owned_by_user: true,
-          consent_verified: true,
+          consent_recorded: true,
         },
       });
     } catch (e) {
@@ -555,15 +562,12 @@ router.post(
   },
 );
 
-// DELETE /api/voices/:id — remove a cloned voice (tenant-scoped).
 router.delete(
   "/api/voices/:id",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const voiceId = req.params.id;
-      // Only allow deleting voices THIS tenant owns. Premade catalog
-      // is read-only.
       const [own] = await drizzle
         .select()
         .from(schema.clonedVoices)
@@ -581,12 +585,24 @@ router.delete(
           await elDeleteVoice(voiceId);
         } catch (e) {
           if (e instanceof AppError) throw e;
-          log.warn("ElevenLabs delete failed — removing local row anyway", {
+          log.error("ElevenLabs delete failed — preserving local ownership for retry", {
+            userId: req.user.id,
             voiceId,
             error: getErrorMessage(e),
           });
+          await recordVoiceCloneOutcome({
+            userId: req.user.id,
+            voiceId,
+            outcome: "failed",
+            errorClass: "ProviderDeletionError",
+          });
+          throw AppError.fromHttpStatus(
+            502,
+            "Voice deletion is temporarily unavailable. The voice remains private and owned by this workspace.",
+          );
         }
       }
+
       await drizzle
         .delete(schema.clonedVoices)
         .where(
