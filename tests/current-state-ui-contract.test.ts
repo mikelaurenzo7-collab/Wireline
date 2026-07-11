@@ -32,6 +32,25 @@ describe("current-state UI contract", () => {
     expect(apps).not.toContain('action: "TestFlight"');
   });
 
+  it("keeps public conversion routes on the selected launch plan", () => {
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const auth = read("src/components/AuthPortal.tsx");
+
+    expect(landing).toContain('name: "Starter"');
+    expect(landing).toContain("planCatalog.starter.price_usd_monthly");
+    expect(landing).toContain('/signup?plan=starter&mode=outbound');
+    expect(landing).toContain('/signup?plan=starter&mode=inbound');
+    expect(landing).toContain('/signup?plan=starter&mode=hybrid');
+
+    expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
+    expect(auth).toContain('starter: "Starter · $9/month"');
+    expect(auth).toContain('team: "Starter Plus · $19/month"');
+    expect(auth).toContain('business: "Pro · $59/month"');
+    expect(auth).toContain('enterprise: "Business · $149/month"');
+    expect(auth).toContain(': "starter";');
+    expect(auth).not.toContain('nextMode === "business" ? "business" : "personal"');
+  });
+
   it("uses direction and guardrails for product control without weakening legal consent copy", () => {
     const copy = read("src/lib/product-copy.ts");
 
