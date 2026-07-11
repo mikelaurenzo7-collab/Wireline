@@ -134,7 +134,7 @@ export default function VoiceLibraryPanel() {
       });
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Clone failed.");
-      toastSuccess("Verified voice ready", "You can now assign it to your agents.");
+      toastSuccess("Authorized voice ready", "You can now assign it to your agents.");
       resetClone();
       await loadVoices();
     } catch (error) {
@@ -151,7 +151,8 @@ export default function VoiceLibraryPanel() {
       const response = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Delete failed.");
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Delete failed.");
       toastSuccess("Voice deleted", "Its Wireline authorization has been revoked.");
       await loadVoices();
     } catch (error) {
@@ -193,7 +194,7 @@ export default function VoiceLibraryPanel() {
         >
           <Mic className="h-5 w-5 text-brand" />
           <span className="text-[var(--wireline-typography-caption-size)] font-medium text-brand">
-            Create a verified Wireline voice
+            Create an authorized Wireline voice
           </span>
         </ShadButton>
       ) : (
@@ -211,9 +212,9 @@ export default function VoiceLibraryPanel() {
           <div className="flex items-start gap-2.5 rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
             <p className="text-[var(--wireline-typography-overline-size)] leading-relaxed text-foreground/75">
-              <span className="font-medium text-foreground">Verified voice policy.</span> Wireline
-              stores a consent record and a one-way fingerprint of this sample. The source audio is
-              not stored in Wireline's database.
+              <span className="font-medium text-foreground">Voice authorization policy.</span>{" "}
+              Wireline stores a consent record and a one-way fingerprint of this sample. The source
+              audio is not stored in Wireline's database.
             </p>
           </div>
           <label className="block">
@@ -268,7 +269,7 @@ export default function VoiceLibraryPanel() {
               ) : (
                 <UploadCloud className="h-3.5 w-3.5" />
               )}
-              {cloning ? "Creating…" : "Create verified voice"}
+              {cloning ? "Creating…" : "Create authorized voice"}
             </ShadButton>
             <ShadButton
               type="button"
