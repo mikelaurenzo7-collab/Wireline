@@ -1,29 +1,28 @@
+import { createHash, randomUUID } from "node:crypto";
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * /api/voices — voice catalog + cloning surface.
  *
  * GET    /api/voices                   — list catalog + this user's clones
- * GET    /api/voices/:id/preview       — proxy ElevenLabs preview MP3
- * POST   /api/voices/clone             — instant clone from audio sample
- * DELETE /api/voices/:id               — remove a cloned voice
+ * GET    /api/voices/:id/preview       — proxy public premade ElevenLabs preview MP3
+ * POST   /api/voices/clone             — instant clone from an authorized audio sample
+ * DELETE /api/voices/:id               — remove a cloned voice from provider + tenant catalog
  *
- * Cost discipline: instant cloning is ~$10/clone on ElevenLabs. We
- * rate-limit /clone to 5 per 24h per user via an in-memory bucket
- * (same pattern as the support ticket rate limiter) so a bot can't
- * drain the credit.
+ * Cost discipline: cloning is a spend-sensitive operation. The route requires
+ * authenticated, per-user distributed rate limiting and refuses production
+ * traffic when that control is unavailable.
  *
- * Privacy: each clone uploads someone's voice sample. The /clone
- * route requires an explicit consent flag in the body
- * (`consent_given: true`) — Account Holder must confirm they have
- * permission to clone this voice. Logged for the record.
+ * Privacy: every clone requires an explicit consent basis. Before audio leaves
+ * Wireline, the attestation, sample digest, request context, and consent-policy
+ * version are durably written to the existing audit log.
  */
-import { Router, type Request, type Response } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
-import { log, drizzle } from "../lib/server-context";
+import { auditLogger, log, drizzle } from "../lib/server-context";
+import { distributedLimiterStatus, rateLimit } from "../lib/rate-limit";
 import { getErrorMessage } from "../lib/server-utils";
 import * as schema from "../db/schema";
 import {
@@ -47,14 +46,118 @@ import {
 
 const router = Router();
 
-const cloneRateLimiter = createIpRateLimiter({
-  bucket: "api:voice-clone",
-  windowMs: 24 * 60 * 60_000, // 24h
-  max: 5,
-  message: { error: "Clone limit reached. Try again tomorrow." },
-});
+const VOICE_CLONE_WINDOW_MS = 24 * 60 * 60_000;
+const VOICE_CLONE_MAX = 5;
+const VOICE_CONSENT_VERSION = "wireline_voice_consent_v1";
+const MAX_VOICE_SAMPLE_BYTES = 25 * 1024 * 1024;
+const MIN_VOICE_SAMPLE_BYTES = 1_000;
+const ALLOWED_VOICE_SAMPLE_MIME_TYPES = new Set([
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/m4a",
+  "audio/x-m4a",
+  "audio/ogg",
+  "application/ogg",
+]);
 
-/** Public curated previews call ElevenLabs TTS — cap per IP to prevent abuse. */
+type VoiceConsentBasis = "self" | "authorized_third_party";
+
+function isVoiceConsentBasis(value: unknown): value is VoiceConsentBasis {
+  return value === "self" || value === "authorized_third_party";
+}
+
+function decodeVoiceSample(audioBase64: unknown, audioMimeType: unknown) {
+  if (typeof audioBase64 !== "string") {
+    throw AppError.fromHttpStatus(400, "Audio sample required (30–90 seconds recommended).");
+  }
+  const mimeType = typeof audioMimeType === "string" ? audioMimeType.trim().toLowerCase() : "";
+  if (!ALLOWED_VOICE_SAMPLE_MIME_TYPES.has(mimeType)) {
+    throw AppError.fromHttpStatus(400, "Use an MP3, WAV, M4A, MP4, or OGG audio sample.");
+  }
+
+  const compact = audioBase64.replace(/\s/g, "");
+  if (!compact || !/^[A-Za-z0-9+/]+={0,2}$/.test(compact)) {
+    throw AppError.fromHttpStatus(400, "Audio sample is not valid base64 data.");
+  }
+  const bytes = Buffer.from(compact, "base64");
+  if (bytes.length < MIN_VOICE_SAMPLE_BYTES) {
+    throw AppError.fromHttpStatus(400, "Audio sample is too short (30–90 seconds recommended).");
+  }
+  if (bytes.length > MAX_VOICE_SAMPLE_BYTES) {
+    throw AppError.fromHttpStatus(413, "Audio sample too large (maximum 25 MB).");
+  }
+
+  return {
+    bytes,
+    base64: bytes.toString("base64"),
+    mimeType,
+  };
+}
+
+async function cloneRateLimiter(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const userId = (req as AuthenticatedRequest).user?.id;
+  if (!userId) {
+    res.status(401).json({ code: "UNAUTHORIZED", error: "Authentication required." });
+    return;
+  }
+
+  const status = distributedLimiterStatus();
+  if (!status.ok) {
+    res.status(503).json({ code: status.code, error: status.reason });
+    return;
+  }
+
+  try {
+    const result = await rateLimit(userId, {
+      bucket: "api:voice-clone",
+      windowMs: VOICE_CLONE_WINDOW_MS,
+      max: VOICE_CLONE_MAX,
+      failClosedOnError: true,
+    });
+    res.set("RateLimit-Limit", String(VOICE_CLONE_MAX));
+    res.set("RateLimit-Remaining", String(result.remaining));
+    res.set("RateLimit-Reset", String(Math.ceil((Date.now() + result.resetMs) / 1000)));
+    if (!result.allowed) {
+      res.set("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+      res.status(429).json({
+        code: "VOICE_CLONE_LIMIT",
+        error: "Voice creation limit reached. Try again after the rate-limit window resets.",
+      });
+      return;
+    }
+    next();
+  } catch (error) {
+    log.error("voice clone rate limiter unavailable", { error: getErrorMessage(error), userId });
+    res.status(503).json({
+      code: "RATE_LIMITER_ERROR",
+      error: "Voice creation is temporarily unavailable because cost controls could not be verified.",
+    });
+  }
+}
+
+async function recordVoiceAudit(
+  req: AuthenticatedRequest,
+  eventName: string,
+  metadata: Record<string, unknown>,
+) {
+  return await auditLogger.logDataModification("product.event", {
+    userId: req.user.id,
+    resource: "voice_identity",
+    ip: req.ip,
+    metadata: {
+      event_name: eventName,
+      request_id: req.headers["x-request-id"] || undefined,
+      user_agent: req.get("user-agent")?.slice(0, 256),
+      ...metadata,
+    },
+  });
+}
+
+/** Public curated previews may call metered providers — cap per IP to prevent abuse. */
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 const curatedPreviewRateLimiter = createIpRateLimiter({
   bucket: "api:voice-curated-preview",
   windowMs: 60_000,
@@ -65,11 +168,6 @@ const curatedPreviewRateLimiter = createIpRateLimiter({
 // GET /api/voices — merged catalog.
 router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // Always include the user's own cloned voices from our DB
-    // (single source of truth for "what this tenant owns").
-    // Graceful fallback: if the table doesn't exist yet (migration
-    // hasn't been run on this environment), treat as empty list so
-    // the ElevenLabs catalog still loads.
     let ownClones: Array<{ voiceId: string; name: string; previewUrl: string | null }> = [];
     try {
       const rows = await drizzle
@@ -83,9 +181,6 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
         .orderBy(desc(schema.clonedVoices.createdAt));
       ownClones = rows;
     } catch (e: any) {
-      // 42P01 = undefined_table in Postgres. Surface a clear log line
-      // so the Account Holder knows to apply the checked cloned-voices
-      // migration, but don't break the catalog response.
       if (e?.code === "42P01" || /does not exist/i.test(e?.message || "")) {
         log.warn(
           "wireline_cloned_voices table missing - apply the checked cloned-voices migration",
@@ -95,8 +190,6 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       }
     }
 
-    // Hit ElevenLabs only if configured. If not, return the cloned
-    // rows alone — UI gracefully shows just user's clones.
     let catalog: ElevenLabsVoice[] = [];
     if (elevenLabsConfigured()) {
       try {
@@ -109,7 +202,6 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       }
     }
 
-    // Merge: cloned voices come first, then premade catalog.
     const ownVoiceIds = new Set(ownClones.map((c) => c.voiceId));
     const merged = [
       ...ownClones.map((c) => ({
@@ -121,7 +213,7 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       })),
       ...catalog
         .filter((v) => !ownVoiceIds.has(v.voice_id))
-        .filter((v) => v.category !== "cloned") // cloned voices we don't own → hide
+        .filter((v) => v.category !== "cloned")
         .map((v) => ({
           voice_id: v.voice_id,
           name: v.name,
@@ -209,16 +301,7 @@ router.get("/api/voices/presenter/:id/preview", async (req: Request, res: Respon
   }
 });
 
-// GET /api/voices/:id/preview — proxy the ElevenLabs preview MP3.
-// PUBLIC (no auth) so the home-page hero widget + the public Showcase
-// + the public Pricing page can all play voice samples without a
-// session. The preview URLs are already public on ElevenLabs's CDN;
-// we're just resolving voiceId → URL server-side to keep the API
-// key + voice-id catalog one layer removed from browser code.
-//
-// Cloned-voice previews (per-tenant) are NOT exposed here — they
-// require an authenticated session and live on the authed route
-// below. This endpoint only returns previews for premade voices.
+// GET /api/voices/:id/preview — public preview for vendor-designated premade voices only.
 router.get("/api/voices/:id/preview", async (req: Request, res: Response) => {
   try {
     const voiceId = req.params.id;
@@ -227,13 +310,15 @@ router.get("/api/voices/:id/preview", async (req: Request, res: Response) => {
     }
     try {
       const { getVoice } = await import("../lib/elevenlabs-client");
-      const v = await getVoice(voiceId);
-      const previewUrl = v.preview_url ?? null;
+      const voice = await getVoice(voiceId);
+      if (voice.category !== "premade") {
+        throw AppError.fromHttpStatus(404, "Voice not found.");
+      }
+      const previewUrl = voice.preview_url ?? null;
       if (!previewUrl) {
         throw AppError.fromHttpStatus(404, "No preview available for this voice.");
       }
-      // 302 redirect to the public preview URL — simpler than streaming
-      // the MP3 through our server (saves bandwidth + cold-start cost).
+      res.setHeader("Cache-Control", "public, max-age=86400");
       res.redirect(302, previewUrl);
     } catch (e) {
       if (e instanceof AppError) throw e;
@@ -247,7 +332,7 @@ router.get("/api/voices/:id/preview", async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/voices/clone — instant clone from a single audio sample.
+// POST /api/voices/clone — instant clone from one explicitly authorized audio sample.
 router.post(
   "/api/voices/clone",
   authenticateUser,
@@ -257,49 +342,57 @@ router.post(
       if (!elevenLabsConfigured()) {
         return res.status(503).json({
           code: "SERVICE_UNAVAILABLE",
-          error:
-            "Voice cloning isn't configured. The owner needs to set ELEVENLABS_API_KEY in environment variables.",
-        });
-      }
-      const { name, audioBase64, audioMimeType, consent_given } = req.body ?? {};
-      if (typeof name !== "string" || name.trim().length < 2 || name.length > 80) {
-        throw AppError.fromHttpStatus(400, "Voice name must be 2-80 characters.");
-      }
-      if (typeof audioBase64 !== "string" || audioBase64.length < 1000) {
-        throw AppError.fromHttpStatus(400, "Audio sample required (≥30 sec recommended).");
-      }
-      // Hard size ceiling to avoid abuse — instant clones work great
-      // on 30-90s samples (typical 1-5 MB) so 25MB is plenty of headroom.
-      if (audioBase64.length > 35 * 1024 * 1024) {
-        throw AppError.fromHttpStatus(413, "Audio sample too large (max ~25MB).");
-      }
-      if (consent_given !== true) {
-        return res.status(400).json({
-          code: "BAD_REQUEST",
-          error:
-            "Consent required. Confirm you have permission to clone this voice before submitting.",
+          error: "Voice creation is not configured for this workspace.",
         });
       }
 
-      // Voice isolator pre-clean: strip background noise from the
-      // sample before sending to the clone endpoint. Account Holders record
-      // on phones with kids in the background; isolator gets us
-      // studio-quality input from a real-world one. Optional via
-      // `skip_isolation: true` in body (for ops who pre-cleaned
-      // their audio themselves). Falls back gracefully — if isolation
-      // fails, we use the original audio.
-      let cloneAudioBase64 = audioBase64;
-      let cloneMimeType: string | undefined =
-        typeof audioMimeType === "string" ? audioMimeType : undefined;
+      const { name, audioBase64, audioMimeType, consent_given, consent_basis } = req.body ?? {};
+      if (typeof name !== "string" || name.trim().length < 2 || name.length > 80) {
+        throw AppError.fromHttpStatus(400, "Voice name must be 2–80 characters.");
+      }
+      if (consent_given !== true || !isVoiceConsentBasis(consent_basis)) {
+        return res.status(400).json({
+          code: "VOICE_CONSENT_REQUIRED",
+          error: "Select who owns the voice and confirm you are authorized to create it.",
+        });
+      }
+
+      const sample = decodeVoiceSample(audioBase64, audioMimeType);
+      const consentEvidenceId = randomUUID();
+      const sampleSha256 = createHash("sha256").update(sample.bytes).digest("hex");
+      const consentAudit = await recordVoiceAudit(req, "voice_clone_consent_attested", {
+        evidence_id: consentEvidenceId,
+        consent_version: VOICE_CONSENT_VERSION,
+        consent_basis,
+        attestation: "authorized_voice_use",
+        provider: "elevenlabs",
+        original_mime_type: sample.mimeType,
+        sample_size_bytes: sample.bytes.length,
+        sample_sha256: sampleSha256,
+      });
+      if (!consentAudit.success) {
+        log.error("voice clone consent audit unavailable", {
+          userId: req.user.id,
+          evidenceId: consentEvidenceId,
+          error: consentAudit.error,
+        });
+        return res.status(503).json({
+          code: "VOICE_CONSENT_AUDIT_UNAVAILABLE",
+          error: "Voice creation is temporarily unavailable because consent evidence could not be recorded.",
+        });
+      }
+
+      let cloneAudioBase64 = sample.base64;
+      let cloneMimeType = sample.mimeType;
       if (req.body?.skip_isolation !== true) {
         try {
-          const isolated = await isolateVoice(audioBase64, cloneMimeType);
+          const isolated = await isolateVoice(sample.base64, sample.mimeType);
           cloneAudioBase64 = Buffer.from(isolated).toString("base64");
-          cloneMimeType = "audio/mpeg"; // isolator returns MP3
+          cloneMimeType = "audio/mpeg";
           log.info("voice clone — isolation succeeded", {
             userId: req.user.id,
-            in_size: audioBase64.length,
-            out_size: cloneAudioBase64.length,
+            in_size: sample.bytes.length,
+            out_size: isolated.byteLength,
           });
         } catch (e) {
           if (e instanceof AppError) throw e;
@@ -313,21 +406,54 @@ router.post(
         name: name.trim(),
         audioBase64: cloneAudioBase64,
         audioMimeType: cloneMimeType,
-        description: `Cloned by Wireline tenant ${req.user.id} on ${new Date().toISOString()}`,
+        description: `Wireline consent evidence ${consentEvidenceId}`,
       });
 
-      await drizzle
-        .insert(schema.clonedVoices)
-        .values({
-          voiceId: cloned.voice_id,
-          userId: req.user.id,
-          name: name.trim(),
-          status: "completed",
-          previewUrl: cloned.preview_url ?? null,
-        })
-        .onConflictDoNothing();
+      try {
+        await drizzle
+          .insert(schema.clonedVoices)
+          .values({
+            voiceId: cloned.voice_id,
+            userId: req.user.id,
+            name: name.trim(),
+            status: "completed",
+            previewUrl: cloned.preview_url ?? null,
+          })
+          .onConflictDoNothing();
+      } catch (databaseError) {
+        try {
+          await elDeleteVoice(cloned.voice_id);
+        } catch (cleanupError) {
+          log.error("voice clone compensation failed", {
+            voiceId: cloned.voice_id,
+            databaseError: getErrorMessage(databaseError),
+            cleanupError: getErrorMessage(cleanupError),
+          });
+        }
+        throw databaseError;
+      }
 
-      log.info("voice cloned", { userId: req.user.id, voiceId: cloned.voice_id });
+      const createdAudit = await recordVoiceAudit(req, "voice_clone_created", {
+        evidence_id: consentEvidenceId,
+        consent_version: VOICE_CONSENT_VERSION,
+        consent_basis,
+        provider: "elevenlabs",
+        voice_id: cloned.voice_id,
+      });
+      if (!createdAudit.success) {
+        log.error("voice clone creation audit failed after consent was preserved", {
+          userId: req.user.id,
+          voiceId: cloned.voice_id,
+          evidenceId: consentEvidenceId,
+          error: createdAudit.error,
+        });
+      }
+
+      log.info("voice cloned", {
+        userId: req.user.id,
+        voiceId: cloned.voice_id,
+        evidenceId: consentEvidenceId,
+      });
       res.json({
         voice: {
           voice_id: cloned.voice_id,
@@ -335,27 +461,26 @@ router.post(
           preview_url: cloned.preview_url ?? null,
           owned_by_user: true,
         },
+        consent_evidence_id: consentEvidenceId,
       });
     } catch (e) {
       if (e instanceof AppError) throw e;
-      log.error("voice clone failed", { error: getErrorMessage(e) });
+      log.error("voice clone failed", { error: getErrorMessage(e), userId: req.user.id });
       res.status(500).json({
-        code: "INTERNAL_ERROR",
-        error: getErrorMessage(e),
+        code: "VOICE_CLONE_FAILED",
+        error: "Voice creation failed. Try again or contact support if the problem continues.",
       });
     }
   },
 );
 
-// DELETE /api/voices/:id — remove a cloned voice (tenant-scoped).
+// DELETE /api/voices/:id — remove a cloned voice (tenant-scoped, provider-first).
 router.delete(
   "/api/voices/:id",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const voiceId = req.params.id;
-      // Only allow deleting voices THIS tenant owns. Premade catalog
-      // is read-only.
       const [own] = await drizzle
         .select()
         .from(schema.clonedVoices)
@@ -368,17 +493,32 @@ router.delete(
         .limit(1);
       if (!own) throw AppError.fromHttpStatus(404, "Voice not found in your library.");
 
-      if (elevenLabsConfigured()) {
-        try {
-          await elDeleteVoice(voiceId);
-        } catch (e) {
-          if (e instanceof AppError) throw e;
-          log.warn("ElevenLabs delete failed — removing local row anyway", {
-            voiceId,
-            error: getErrorMessage(e),
-          });
-        }
+      if (!elevenLabsConfigured()) {
+        return res.status(503).json({
+          code: "VOICE_PROVIDER_UNAVAILABLE",
+          error: "Voice deletion is temporarily unavailable. The voice remains tracked and can be retried safely.",
+        });
       }
+
+      try {
+        await elDeleteVoice(voiceId);
+      } catch (e) {
+        log.error("voice provider delete failed — retaining local ownership record", {
+          userId: req.user.id,
+          voiceId,
+          error: getErrorMessage(e),
+        });
+        await recordVoiceAudit(req, "voice_clone_delete_failed", {
+          provider: "elevenlabs",
+          voice_id: voiceId,
+          provider_error: getErrorMessage(e).slice(0, 500),
+        });
+        return res.status(502).json({
+          code: "VOICE_PROVIDER_DELETE_FAILED",
+          error: "The provider did not confirm deletion. Wireline kept the voice record so deletion can be retried safely.",
+        });
+      }
+
       await drizzle
         .delete(schema.clonedVoices)
         .where(
@@ -387,6 +527,18 @@ router.delete(
             eq(schema.clonedVoices.userId, req.user.id),
           ),
         );
+
+      const deletedAudit = await recordVoiceAudit(req, "voice_clone_deleted", {
+        provider: "elevenlabs",
+        voice_id: voiceId,
+      });
+      if (!deletedAudit.success) {
+        log.error("voice clone deletion audit failed", {
+          userId: req.user.id,
+          voiceId,
+          error: deletedAudit.error,
+        });
+      }
 
       res.json({ ok: true });
     } catch (e) {
