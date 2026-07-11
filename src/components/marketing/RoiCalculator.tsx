@@ -149,7 +149,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
       data-testid="roi-calculator"
     >
       <div className="rounded-md border border-primary/12 bg-card p-4 sm:p-5 shadow-[var(--wireline-elevation-sm)]">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="mb-3 flex items-center justify-center gap-2 text-center">
           <span className="hero-accent-line bg-primary" />
           <h2
             id="roi-heading"
@@ -159,11 +159,11 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
             Your numbers, our math
           </h2>
         </div>
-        <p className="font-display italic text-[var(--wireline-typography-h3-size)] sm:text-2xl leading-tight text-foreground mb-4">
+        <p className="mx-auto mb-4 max-w-3xl text-center font-display text-[var(--wireline-typography-h3-size)] italic leading-tight text-foreground sm:text-2xl">
           See what Wireline pays back across personal, sales, support, and service workflows.
         </p>
 
-        <div className="flex flex-wrap gap-1.5 mb-4" aria-label="ROI presets">
+        <div className="mb-4 flex flex-wrap items-center justify-center gap-1.5" aria-label="ROI presets">
           <span className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.25em] text-muted/70 mr-1 leading-none self-center">
             Pick yours →
           </span>
@@ -277,7 +277,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           </div>
         </div>
 
-        <p className="mt-3 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
+        <p className="mx-auto mt-3 max-w-4xl text-center text-[var(--wireline-typography-overline-size)] uppercase leading-relaxed tracking-[0.16em] text-muted/45">
           Assumes Wireline recovers 82% of missed conversations. Coverage math uses $22/hr for
           comparable admin time. Pro tier billed at $59/mo. Create and train for free; live work
           uses Conversation Balance.
