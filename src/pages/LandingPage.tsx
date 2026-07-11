@@ -36,7 +36,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline — Your next AI employee calls, texts & emails"
+        title="Wireline — Your AI Voice Employee Calls, Texts & Emails"
         description={PUBLIC_DESCRIPTION}
         image="/og-image.png"
       />
