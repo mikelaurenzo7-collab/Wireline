@@ -6,13 +6,13 @@
     "subtitle": "Build phone agents",
     "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI phone-agent drafts from ChatGPT. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
     "category": "BUSINESS",
-    "logo_url": "https://trywireline.com/wireline-icon.svg",
+    "logo_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
     "website_url": "https://trywireline.com",
     "contact_email": "support@trywireline.com",
     "privacy_policy_url": "https://trywireline.com/chatgpt-app-privacy.html"
   },
   "oauth": {
-    "client_url": "https://chatgpt.com/oauth/wireline/client.json",
+    "client_url": "https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json",
     "authorization_url": "https://trywireline.com/mcp/oauth/authorize",
     "token_url": "https://trywireline.com/mcp/oauth/token",
     "scope": "agents.read agents.write demo.voice",
@@ -57,12 +57,12 @@
     },
     "start_private_voice_simulation": {
       "annotations": {
-        "readOnlyHint": true,
+        "readOnlyHint": false,
         "openWorldHint": false,
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Creates a short-lived tool-free simulation credential and does not persist draft changes.",
+        "read_only_justification": "Creates a short-lived tool-free simulation credential without changing the saved agent draft.",
         "open_world_justification": "Does not place calls, send messages, access business systems, or modify public internet state.",
         "destructive_justification": "Does not delete, overwrite, charge, revoke access, or perform an irreversible action."
       }

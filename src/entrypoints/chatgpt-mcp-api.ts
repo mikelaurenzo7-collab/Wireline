@@ -8,6 +8,39 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 
+// Normalize submission-critical metadata at the public MCP boundary. A private
+// voice simulation creates a short-lived session credential, so it is not a
+// read-only operation even though it never changes the saved agent draft.
+app.use((req, res, next) => {
+  const sendJson = res.json.bind(res);
+  res.json = ((body: unknown) => {
+    if (req.method === "POST" && req.path === "/mcp" && body && typeof body === "object") {
+      const result = (body as { result?: unknown }).result;
+      if (result && typeof result === "object") {
+        const tools = (result as { tools?: unknown }).tools;
+        if (Array.isArray(tools)) {
+          const simulation = tools.find(
+            (tool): tool is { name: string; annotations?: Record<string, unknown> } =>
+              Boolean(tool) &&
+              typeof tool === "object" &&
+              (tool as { name?: unknown }).name === "start_private_voice_simulation",
+          );
+          if (simulation) {
+            simulation.annotations = {
+              ...(simulation.annotations || {}),
+              readOnlyHint: false,
+              openWorldHint: false,
+              destructiveHint: false,
+            };
+          }
+        }
+      }
+    }
+    return sendJson(body);
+  }) as typeof res.json;
+  next();
+});
+
 // Account-bound tools own the production /mcp transport. The legacy router
 // remains mounted for OAuth discovery, consent, token exchange, and a safe
 // compatibility fallback while connected clients refresh tool descriptors.
