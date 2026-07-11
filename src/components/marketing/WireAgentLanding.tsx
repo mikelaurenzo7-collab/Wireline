@@ -7,11 +7,7 @@ import MarketingHero from "./MarketingHero";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import RoiCalculator from "./RoiCalculator";
 import TrustSignals from "./TrustSignals";
-import {
-  AGENT_DIRECTION_MODES,
-  AGENT_NUMBER_PROMISE,
-  MARKETING_VOICE,
-} from "../../lib/product-copy";
+import { AGENT_DIRECTION_MODES, MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS, type StripePlanId } from "../../lib/plan-catalog";
 
 type AgentMode = "outbound" | "inbound" | "hybrid";
@@ -28,13 +24,6 @@ type ModeDetail = {
 const HERO_LOOP = MARKETING_VOICE.proof;
 
 const AUDIENCES = ["Appointments", "Lead revival", "Promotions", "Recovery"] as const;
-const HERO_VISUAL_ITEMS = [
-  "Pick the role",
-  "Train the pitch",
-  "Claim the number",
-  "Log the outcome",
-] as const;
-
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
   { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
   { key: "inbound", label: AGENT_DIRECTION_MODES.inbound.label },
@@ -160,20 +149,7 @@ export default function WireAgentLanding() {
           primaryAction={{ label: "Wire your AI employee", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={AUDIENCES}
-          visualEyebrow="List -> Pitch -> Call -> Profit"
-          visualTitle="One number. One role. One outcome record."
-          visualBody="Pick the job, train the pitch, give your AI employee its line, then review exactly what moved after every conversation."
-          visualItems={HERO_VISUAL_ITEMS}
         />
-
-        <section className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
-          <p className="marketing-ink-panel__soft text-[18px] font-[var(--wireline-font-family-display)]">
-            Your best salesperson, without the commission.{" "}
-            <span className="text-[var(--wireline-color-text-primary)]">
-              Every included agent gets an included number.
-            </span>
-          </p>
-        </section>
 
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
@@ -210,16 +186,18 @@ export default function WireAgentLanding() {
         </section>
 
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:items-start">
-            <div>
+          <div className="wl-public-rail">
+            <div className="mx-auto max-w-3xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">AI employee lanes</p>
-              <h2 className="wl-display-2 mt-4">Pick the job. Wireline gives it a line.</h2>
-              <p className="mt-4 max-w-[34rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Outbound, inbound, or hybrid — same product. You choose the profit result; Wireline
-                handles the number, handoff, record, and balance. {AGENT_NUMBER_PROMISE}
+              <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
+                Pick the job. Wireline gives it a line.
+              </h2>
+              <p className="mx-auto mt-4 max-w-[42rem] text-[16px] leading-[1.6] text-muted-foreground">
+                Choose outbound, inbound, or both. Every included employee gets a number, and every
+                outcome stays visible.
               </p>
               <div
-                className="wl-segmented mt-7"
+                className="wl-segmented mx-auto mt-7 w-full max-w-[34rem]"
                 role="tablist"
                 aria-label="Agent call direction"
                 onKeyDown={handleModeKeyDown}
@@ -246,7 +224,7 @@ export default function WireAgentLanding() {
               </div>
             </div>
 
-            <div className="wl-paper rounded-[18px] p-6 sm:p-7">
+            <div className="wl-paper mx-auto mt-8 max-w-[58rem] rounded-[18px] p-6 text-center sm:p-8">
               {MODE_OPTIONS.map(({ key, label }) => (
                 <div
                   key={key}
@@ -262,12 +240,12 @@ export default function WireAgentLanding() {
                         <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">
                           {detail.eyebrow}
                         </p>
-                        <h3 className="wl-display-3 mt-3">{detail.title}</h3>
-                        <p className="mt-4 text-[15px] leading-[1.65] text-muted-foreground">
+                        <h3 className="wl-display-3 mx-auto mt-3 max-w-[22ch]">{detail.title}</h3>
+                        <p className="mx-auto mt-4 max-w-[44rem] text-[15px] leading-[1.65] text-muted-foreground">
                           {detail.lead}
                         </p>
                       </div>
-                      <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="mx-auto grid max-w-[44rem] gap-2 sm:grid-cols-3">
                         {detail.bestFor.map((item) => (
                           <div
                             key={item}
@@ -279,7 +257,7 @@ export default function WireAgentLanding() {
                       </div>
                       <Link
                         to={detail.ctaPath}
-                        className="marketing-btn-primary min-h-11 justify-center px-5 text-[13px] font-semibold sm:w-fit"
+                        className="marketing-btn-primary mx-auto min-h-11 w-full justify-center px-5 text-[13px] font-semibold sm:w-fit"
                       >
                         {detail.cta}
                         <ArrowRight size={14} aria-hidden="true" />
