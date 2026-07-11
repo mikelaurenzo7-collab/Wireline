@@ -24,6 +24,7 @@ import {
   sanitizeSignupIntent,
   syncSignupIntent,
   type SignupIntent,
+  type SignupPlanId,
 } from "../lib/signup-intent";
 import {
   persistAuthRedirect,
@@ -74,12 +75,20 @@ function cleanThrownMessage(e: unknown): string | null {
   return trimmed;
 }
 
+const SIGNUP_PLAN_LABELS: Record<SignupPlanId, string> = {
+  personal: "Free Builder",
+  starter: "Starter · $9/month",
+  team: "Starter Plus · $19/month",
+  business: "Pro · $59/month",
+  enterprise: "Business · $149/month",
+};
+
 function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
-  const parts = [];
-  if (intent.preferredPlanId) parts.push(`${intent.preferredPlanId} plan`);
+  const parts: string[] = [];
+  if (intent.preferredPlanId) parts.push(SIGNUP_PLAN_LABELS[intent.preferredPlanId]);
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
-  return parts.join(" / ");
+  return parts.join(" · ");
 }
 
 function getPasswordStrengthLabel(password: string): string | null {
@@ -405,13 +414,14 @@ export default function AuthPortal() {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
+  const isSignupRoute = pathname === "/signup" || pathname === "/get-started";
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(
     () =>
       workspaceFromIntent(captureSignupIntentFromLocation()) ||
       readStoredWorkspaceMode() ||
       "personal",
   );
-  const initialMode: AuthMode = pathname === "/signup" ? "signup" : "signin";
+  const initialMode: AuthMode = isSignupRoute ? "signup" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -449,22 +459,29 @@ export default function AuthPortal() {
   }, [authLoading, user, navigate, workspaceMode, location.search]);
 
   useEffect(() => {
-    if (pathname === "/signup") setMode("signup");
+    if (isSignupRoute) setMode("signup");
     else setMode((m) => (m === "reset" ? "reset" : "signin"));
-  }, [pathname]);
+  }, [isSignupRoute]);
 
   const applyWorkspaceMode = (nextMode: WorkspaceMode) => {
     setWorkspaceMode(nextMode);
     persistWorkspaceMode(nextMode);
-    setSignupIntent((current) =>
-      persistSignupIntent(
+    setSignupIntent((current) => {
+      const preferredPlanId =
+        nextMode === "personal"
+          ? "personal"
+          : current?.preferredPlanId && current.preferredPlanId !== "personal"
+            ? current.preferredPlanId
+            : "starter";
+
+      return persistSignupIntent(
         sanitizeSignupIntent({
           ...current,
-          preferredPlanId: nextMode === "business" ? "business" : "personal",
+          preferredPlanId,
           capturedAt: current?.capturedAt || new Date().toISOString(),
         }),
-      ),
-    );
+      );
+    });
   };
 
   const setIsSignUp = (value: boolean) => {
