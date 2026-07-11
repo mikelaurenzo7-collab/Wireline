@@ -157,6 +157,38 @@ describe("company identity pack", () => {
     expect(registry).toContain("app.use(companyIdentityRouter)");
   });
 
+  it("reconciles generic branding and every tenant-number mutation", () => {
+    const mutation = read("src/lib/company-identity-mutation.ts");
+    const settingsGuard = read("src/routes/company-identity-settings-guard-routes.ts");
+    const carrier = read("src/routes/carrier-routes.ts");
+    const provisioning = read("src/lib/phone-provisioning.ts");
+    const registry = read("src/server/register-api-routes.ts");
+
+    expect(mutation).toContain("acquireCompanyIdentityMutationLock");
+    expect(mutation).toContain("reconcileCompanyIdentityAfterMutation");
+    expect(mutation).toContain("pg_advisory_xact_lock");
+    expect(mutation).toContain("company_identity.review_invalidated");
+    expect(mutation).toContain('reason: "branding_changed" | "phone_number_changed"');
+
+    expect(settingsGuard).toContain("IDENTITY_SETTING_KEYS");
+    expect(settingsGuard).toContain('runCompanyIdentityMutation(req.user.id, "branding_changed"');
+    expect(settingsGuard).toContain("delete downstreamBody[key]");
+    expect(registry).toContain(
+      'import companyIdentitySettingsGuardRouter from "../routes/company-identity-settings-guard-routes"',
+    );
+    expect(registry).toContain("app.use(companyIdentitySettingsGuardRouter)");
+
+    expect(carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g))
+      .toHaveLength(3);
+    expect(carrier).toContain("desc(schema.phoneNumbers.id)");
+    expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
+    expect(provisioning).toContain("compensateProvisionedNumber");
+    expect(provisioning).toContain("Provider number released after local persistence failure");
+    expect(provisioning).toContain(
+      "Number provisioning could not be saved; the provider allocation was released.",
+    );
+  });
+
   it("keeps the customer surface explicit, fail-closed, and touch accessible", () => {
     const surface = read("src/components/settings/CompanyIdentityPack.tsx");
     const phoneSettings = read("src/pages/PhoneSettings.tsx");
