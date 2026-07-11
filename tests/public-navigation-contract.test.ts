@@ -19,6 +19,17 @@ describe("public navigation mobile regression contract", () => {
     expect(header).not.toContain("querySelector<HTMLElement>");
   });
 
+  it("keeps tablet widths on the collision-safe compact navigation", () => {
+    const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
+
+    expect(header).toContain("gap-6 lg:flex");
+    expect(header).toContain("gap-5 lg:flex");
+    expect(header).toContain("lg:hidden");
+    expect(header).not.toContain("gap-6 md:flex");
+    expect(header).not.toContain("gap-5 md:flex");
+    expect(header).not.toContain("md:hidden");
+  });
+
   it("keeps all primary navigation and account actions visible in the mobile dialog", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
