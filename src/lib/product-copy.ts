@@ -4,6 +4,7 @@ export const BRAND_SYSTEM = {
   northStar: "The best employee you've ever had, for next to nothing.",
   productNoun: "AI employee",
   defaultRole: "Your best employee",
+  brandSpine: ["Wire", "Work", "Win"],
   proofLoop: ["Brief", "Train", "Launch", "Improve"],
   toneRules: [
     "Lead with business outcomes before AI mechanics.",
@@ -65,10 +66,9 @@ export const OUTBOUND_WEDGE = {
 
 export const MARKETING_VOICE = {
   eyebrow: "AI employees for sales, marketing, calls, scheduling, support, and follow-up",
-  headline: BRAND_SYSTEM.northStar,
-  subline:
-    "Wireline gives any business or person a trained AI employee that answers, researches, sells, markets, books appointments, revives stale leads, follows up, and reports every outcome - with an included number and owner-controlled rules.",
-  proof: BRAND_SYSTEM.proofLoop,
+  headline: BRAND_SYSTEM.brandSpine.join(" → "),
+  subline: "Voice AI employee for real conversations.",
+  proof: BRAND_SYSTEM.brandSpine,
   extensionLead:
     "Command your AI employee from any page. It researches, calls, answers, follows up, books the next step, and logs proof while you stay focused.",
   differentiator: OUTBOUND_WEDGE.differentiator,
