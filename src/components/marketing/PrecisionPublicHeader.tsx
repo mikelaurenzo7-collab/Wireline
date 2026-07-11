@@ -2,6 +2,7 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
+import { MARKETING_VOICE } from "../../lib/product-copy";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../atoms";
 import WirelineMark from "../brand/WirelineMark";
 import SkipToContentLink from "../layout/SkipToContentLink";
@@ -99,7 +100,7 @@ export default function PrecisionPublicHeader() {
           <div className="flex items-center justify-between border-b border-border pb-4">
             <p className="wl-overline">Wireline</p>
             <span className="font-[var(--wireline-font-display)] text-sm font-semibold tracking-[-.02em] text-foreground">
-              Wire your agent
+              {MARKETING_VOICE.headline}
             </span>
           </div>
           <nav className="mt-2" aria-label="Mobile site">
