@@ -18,6 +18,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
 import { STRIPE_PLANS, planById, type StripePlanId } from "./plan-catalog";
+import { runCompanyIdentityMutation } from "./company-identity-mutation";
 import {
   ensureTenantTelecomDefaults,
   findAgentPhoneLine,
@@ -148,6 +149,32 @@ async function removeTwilioNumberByE164(phoneNumber: string): Promise<void> {
   }
 }
 
+async function compensateProvisionedNumber(args: {
+  userId: string;
+  phoneNumber: string;
+  vapiNumberId: string;
+  removeTwilio: boolean;
+  persistenceError: unknown;
+}): Promise<void> {
+  await releaseVapiNumber(args.vapiNumberId).catch((releaseError) => {
+    log.error("Failed to release Vapi number after persistence failure", {
+      userId: args.userId,
+      phoneNumber: args.phoneNumber,
+      vapiNumberId: args.vapiNumberId,
+      error: getErrorMessage(releaseError),
+    });
+  });
+  if (args.removeTwilio) {
+    await removeTwilioNumberByE164(args.phoneNumber);
+  }
+  log.error("Provider number released after local persistence failure", {
+    userId: args.userId,
+    phoneNumber: args.phoneNumber,
+    vapiNumberId: args.vapiNumberId,
+    error: getErrorMessage(args.persistenceError),
+  });
+}
+
 export async function provisionTenantNumber(
   userId: string,
   opts: ProvisionOpts = {},
@@ -253,13 +280,29 @@ export async function provisionTenantNumber(
       phoneNumber = fresh.number;
     }
 
-    await drizzle.insert(schema.phoneNumbers).values({
-      userId,
-      phoneNumber,
-      vapiNumberId: vapiNumberId,
-      agentId: opts.agentId ?? null,
-      campaignLabel: opts.campaignLabel ?? "auto-provisioned",
-    });
+    try {
+      await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
+        await tx.insert(schema.phoneNumbers).values({
+          userId,
+          phoneNumber,
+          vapiNumberId,
+          agentId: opts.agentId ?? null,
+          campaignLabel: opts.campaignLabel ?? "auto-provisioned",
+        });
+      });
+    } catch (persistenceError) {
+      await compensateProvisionedNumber({
+        userId,
+        phoneNumber,
+        vapiNumberId,
+        removeTwilio: Boolean(twilioPurchased),
+        persistenceError,
+      });
+      return {
+        ok: false,
+        error: "Number provisioning could not be saved; the provider allocation was released.",
+      };
+    }
 
     await ensureTenantTelecomDefaults(userId, {
       vapiPhoneNumberId: vapiNumberId,
@@ -322,7 +365,9 @@ export async function releaseTenantNumber(
       await removeTwilioNumberByE164(phoneNumber);
     }
 
-    await drizzle.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.id, row.id));
+    await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
+      await tx.delete(schema.phoneNumbers).where(eq(schema.phoneNumbers.id, row.id));
+    });
     return { ok: true };
   } catch (err) {
     return { ok: false, error: getErrorMessage(err) };
