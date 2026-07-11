@@ -23,9 +23,9 @@ Wireline can:
 - provision or attach a dedicated business number on eligible paid plans;
 - collect and validate the company's identity profile;
 - separate profile readiness from external provider approval;
-- submit eligible identity assets to supported providers;
+- record an auditable request for Wireline review;
+- support founder-led provider submission during the founding-customer phase;
 - track review state per channel;
-- retain an auditable review request;
 - use one company identity across the employee's connected channels;
 - show exactly what is missing before a review request can be made.
 
@@ -36,6 +36,7 @@ Wireline must not claim that:
 - a company name will appear on every recipient's phone;
 - a logo or call reason will appear on every mobile network or device;
 - completing the Wireline form means a carrier has approved the identity;
+- clicking the review button automatically submits to every provider;
 - traditional CNAM and enhanced mobile branding are the same thing;
 - an SMS sender is production-ready before required business/campaign registration;
 - an email sender is authenticated before DNS/domain verification succeeds;
@@ -43,7 +44,7 @@ Wireline must not claim that:
 
 The customer-facing guarantee is intentionally narrow:
 
-> Wireline can submit a verified business identity to supported providers. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.
+> Wireline records a verified business profile and supports provider submission through approved workflows. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.
 
 ## Current implementation
 
@@ -61,7 +62,7 @@ The customer-facing guarantee is intentionally narrow:
 - voice, SMS, and email channel selection;
 - per-channel profile readiness;
 - per-channel provider status;
-- an explicit verification-review request.
+- an explicit Wireline identity-review request.
 
 ### API
 
@@ -71,9 +72,9 @@ The customer-facing guarantee is intentionally narrow:
 - `POST /api/company-identity`
 - `POST /api/company-identity/review-request`
 
-The review request is audit logged as `company_identity.review_requested`.
+The review request is audit logged as `company_identity.review_requested`. Repeated requests are idempotent: they do not downgrade an approved or in-review channel back to `review_requested`.
 
-### Persistence
+### Persistence and integrity
 
 Canonical brand fields remain in `wireline_settings`:
 
@@ -83,7 +84,24 @@ Canonical brand fields remain in `wireline_settings`:
 
 The channel-specific identity workflow is stored under `wireline_user_preferences.preferences.company_identity` so it can evolve without adding carrier-specific columns to the tenant settings table.
 
-Provider-owned states are not user-editable. Saving a changed identity profile resets prior review states to `not_requested`, preventing stale approval from being shown against changed company data.
+Provider-owned states are not user-editable. The generic user-preferences route preserves the server-owned `company_identity` namespace instead of accepting client-supplied provider states.
+
+Provider review state is bound to a fingerprint of the actual reviewed identity, including the dedicated number. Changing the company identity or number invalidates stale review state. Merely adding another requested channel does not erase an already-approved identity for another channel.
+
+Audit evidence stores a SHA-256 fingerprint rather than duplicating the raw company profile.
+
+### Founding-customer operating mode
+
+The current launch path is intentionally founder-led:
+
+1. The customer completes the identity profile.
+2. Wireline validates channel prerequisites.
+3. The customer requests Wireline review.
+4. The request and exact identity fingerprint are recorded durably.
+5. Wireline operations completes the applicable carrier, messaging, or email-provider workflow manually.
+6. Provider status is reflected only after authoritative evidence exists.
+
+Automatic provider submission is not claimed until the relevant provider adapters, callbacks, and admin controls are implemented and proven.
 
 ## State model
 
@@ -150,11 +168,11 @@ Official references:
 
 ## Next implementation sequence
 
-1. Add an internal operations queue for identity review requests.
+1. Add a platform-admin operations queue and provider-state transition surface.
 2. Add provider adapters for Branded Calling compliance/provisioning status once account access is approved.
 3. Add A2P 10DLC customer registration orchestration and status webhooks.
 4. Add email-domain DNS verification and provider status.
-5. Add admin-only provider-state transitions with immutable audit evidence.
+5. Add immutable provider-evidence attachments to every state transition.
 6. Add number-level identity mapping so different business lines can use distinct approved identities.
 7. Add monitoring for rejected, expired, or coverage-limited identities.
 
@@ -165,5 +183,6 @@ Official references:
 - Wireline never represents profile completion as provider approval.
 - Every review request is auditable.
 - Provider limitations are visible before activation.
-- Identity changes invalidate stale review states.
+- Identity or number changes invalidate stale review states.
+- Adding a channel does not erase unrelated approvals.
 - The product remains provider-neutral even when Twilio is the initial carrier implementation.
