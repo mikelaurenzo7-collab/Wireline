@@ -83,10 +83,11 @@ async function dependencySnapshot(stripe) {
   const paymentLinkPriceIds = new Set();
   const checkoutPriceIds = new Set();
 
-  const subscriptions = [
-    ...(await collect(stripe.subscriptions.list({ status: "active", limit: 100 }))),
-    ...(await collect(stripe.subscriptions.list({ status: "trialing", limit: 100 }))),
-  ];
+  const subscriptions = (
+    await collect(stripe.subscriptions.list({ status: "all", limit: 100 }))
+  ).filter(
+    (subscription) => !["canceled", "incomplete_expired"].includes(subscription.status),
+  );
   for (const subscription of subscriptions) {
     for (const item of subscription.items?.data || []) {
       const priceId = priceIdOf(item);
