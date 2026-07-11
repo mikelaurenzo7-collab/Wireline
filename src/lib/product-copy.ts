@@ -11,7 +11,7 @@ export const BRAND_SYSTEM = {
     "Keep the owner in control: rules, approvals, spend, handoffs, and escalation stay explicit.",
     "Treat specialists as expansion, not setup homework.",
     "Show logged proof after every call, handoff, campaign, and follow-up.",
-    "Never name the role Wireline Operator; Wireline is the platform and the customer owns the employee.",
+    "Never name the customer-facing role after the platform; Wireline is the platform and the customer owns the employee.",
   ],
 } as const;
 
