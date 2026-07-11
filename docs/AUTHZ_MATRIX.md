@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 276
-**Protected:** 233
-**Public (allowlisted):** 43
+**Routes scanned:** 270
+**Protected:** 229
+**Public (allowlisted):** 41
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -45,10 +45,8 @@
 | `GET /openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
-| `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation + rate limit |
+| `POST /api/twilio-webhook/message-status` | Twilio signature validation + rate limit |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation + rate limit |
-| `POST /api/twilio-webhook/voice-fallback` | Twilio signature validation + rate limit |
-| `POST /api/twilio-webhook/voicemail-complete` | Twilio signature validation + rate limit |
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 | `POST /voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
@@ -233,6 +231,7 @@
 | knowledge-routes.ts | POST | `/api/knowledge` | inline | — | — | Protected |
 | knowledge-routes.ts | PATCH | `/api/knowledge/:id` | inline | — | — | Protected |
 | knowledge-routes.ts | DELETE | `/api/knowledge/:id` | inline | — | — | Protected |
+| launch-billing-checkout-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | learning-routes.ts | GET | `/api/agents/:id/learning-digest` | inline | — | — | Protected |
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
@@ -268,6 +267,9 @@
 | pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |
 | pipeline-routes.ts | PATCH | `/api/pipeline/lead/:id` | inline | — | — | Protected |
+| post-call-output-routes.ts | POST | `/api/call-logs/:callLogId/artifact` | inline | — | — | Protected |
+| post-call-output-routes.ts | GET | `/api/post-call-output-preferences` | inline | — | — | Protected |
+| post-call-output-routes.ts | POST | `/api/post-call-output-preferences` | inline | — | — | Protected |
 | pronunciation-routes.ts | GET | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | POST | `/api/pronunciation-dicts` | inline | — | — | Protected |
 | pronunciation-routes.ts | PATCH | `/api/pronunciation-dicts/:id` | inline | — | — | Protected |
@@ -302,20 +304,10 @@
 | team-routes.ts | GET | `/api/team` | inline | permission | — | Protected |
 | team-routes.ts | DELETE | `/api/team/:id` | inline | permission | — | Protected |
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
-| twilio-webhook.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
+| twilio-webhook.ts | POST | `/api/twilio-webhook/message-status` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
-| twilio-webhook.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
-| twilio-webhook.ts | POST | `/api/twilio-webhook/voicemail-complete` | — | — | yes | Public (allowlisted) |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
-| video-presenter-routes.ts | GET | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
-| video-presenter-routes.ts | PATCH | `/api/agents/:id/video-presenter` | inline | — | — | Protected |
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
-| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/sample` | inline | — | — | Protected |
-| video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/session` | inline | — | — | Protected |
-| video-presenter-routes.ts | GET | `/api/video-presenter/avatars` | inline | — | — | Protected |
-| video-presenter-routes.ts | GET | `/api/video-presenter/avatars/:avatarId/matched-voice` | inline | — | — | Protected |
-| video-presenter-routes.ts | GET | `/api/video-presenter/entitlement` | inline | — | — | Protected |
-| video-presenter-routes.ts | GET | `/api/video-presenter/status` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
