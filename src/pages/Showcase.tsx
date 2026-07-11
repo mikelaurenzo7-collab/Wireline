@@ -34,7 +34,7 @@ export default function Showcase() {
         secondaryAction={{ label: "Call a demo line", to: "#demo-lines", tone: "secondary" }}
         proof={SHOWCASE_HERO_PROOF}
         visual={
-          <div className="flex min-h-[22rem] flex-col justify-between">
+          <div className="mx-auto flex min-h-[22rem] max-w-3xl flex-col justify-between text-center">
             <div>
               <div className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Volume2 className="h-4 w-4 text-primary" />
@@ -43,11 +43,11 @@ export default function Showcase() {
               <h2 className="mt-5 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.4vw,3.35rem)] font-normal leading-[.98] tracking-[-.045em] text-foreground">
                 Talk to an agent.
               </h2>
-              <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
                 Your microphone turns on only after you start.
               </p>
             </div>
-            <div className="mt-8 rounded-[16px] border border-border bg-background/70 p-4">
+            <div className="mx-auto mt-8 w-full max-w-2xl rounded-[16px] border border-border bg-background/70 p-4">
               <BrowserCallWidget agentName={primaryDemo.name} buttonLabel="Start live demo" />
             </div>
           </div>
