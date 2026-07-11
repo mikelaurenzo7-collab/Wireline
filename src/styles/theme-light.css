@@ -20,7 +20,8 @@
 
   --wireline-color-text-primary: #171426;
   --wireline-color-text-secondary: #5b5770;
-  --wireline-color-text-tertiary: #8b87a0;
+  /* 4.69:1 on the light canvas and 5.09:1 on white: AA-safe for small metadata. */
+  --wireline-color-text-tertiary: #706b84;
   --wireline-color-text-onAction: #ffffff;
 
   --wireline-color-action-primary-default: #6d28d9;
