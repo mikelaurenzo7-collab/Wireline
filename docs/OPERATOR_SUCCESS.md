@@ -1,13 +1,13 @@
-# Wireline Operator Success Playbook
+# Wireline Best Employee Success Playbook
 
-How we win: operators **trust the fleet** - on the phone, in Studio, and in their CRM.
+How we win: owners **trust their AI employee** - on the phone, in Studio, and in their CRM.
 
 ## North-star metrics
 
 | Metric | Target | Where to measure |
 | --- | --- | --- |
 | Time to first call | < 10 minutes | Onboarding quickstart on Home |
-| Weekly active operators | > 80% of paid seats | Product analytics |
+| Weekly active account holders | > 80% of paid accounts | Product analytics |
 | Post-call book rate | Trending up | Insights -> Funnel |
 | Escalation rate | Trending down | Triage + Insights -> Failures |
 | Voice p95 latency | Stable or down | Insights -> Latency |
@@ -15,9 +15,9 @@ How we win: operators **trust the fleet** - on the phone, in Studio, and in thei
 
 ## Activation ladder
 
-1. **Create agent** - one sentence -> persona wizard or Fleet.
+1. **Build best employee** - one outcome -> all-purpose employee or specialist preset.
 2. **Training** - website scrape or paste pricing and hours.
-3. **Number** - included on plan; confirm routing in Fleet.
+3. **Number** - included on plan; confirm routing.
 4. **Test call** - browser test or dial demo line **(630) 581-1834**.
 5. **Integration** - Gmail or Outlook plus CRM when ready.
 6. **Go live** - flip agent to active and watch **Live** on Home.
