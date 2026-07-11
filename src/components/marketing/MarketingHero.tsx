@@ -46,7 +46,7 @@ export default function MarketingHero({
   compact = false,
 }: MarketingHeroProps) {
   const actions = [primaryAction, secondaryAction].filter(Boolean) as HeroAction[];
-  const isBrandSpine = typeof title === "string" && title === MARKETING_VOICE.headline;
+  const isHomeHero = typeof title === "string" && title === MARKETING_VOICE.headline;
 
   return (
     <section
@@ -54,10 +54,10 @@ export default function MarketingHero({
         "marketing-hero border-b border-border px-5 sm:px-8 lg:px-10",
         compact
           ? "py-10 sm:py-12 lg:py-16"
-          : isBrandSpine
+          : isHomeHero
             ? "py-14 sm:py-20 lg:py-24"
             : "py-12 sm:py-16 lg:py-20",
-        isBrandSpine && "wireline-home-hero",
+        isHomeHero && "wireline-home-hero",
         className,
       )}
     >
@@ -65,7 +65,7 @@ export default function MarketingHero({
         <div
           className={cn(
             "marketing-hero__content mx-auto flex max-w-[70rem] flex-col items-center text-center",
-            isBrandSpine && "wireline-home-hero__content",
+            isHomeHero && "wireline-home-hero__content",
           )}
         >
           {eyebrow ? (
@@ -78,12 +78,12 @@ export default function MarketingHero({
           ) : null}
 
           <h1
-            aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}
+            aria-label={isHomeHero && typeof title === "string" ? title : undefined}
             className={cn(
               "marketing-hero__title mx-auto max-w-[22ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-bold uppercase leading-[0.98] tracking-[-.005em] text-foreground",
               eyebrow ? "mt-6" : "mt-0",
-              isBrandSpine &&
-                "max-w-[16ch] text-[clamp(2.6rem,6vw,5rem)] leading-[0.9] tracking-[-.015em]",
+              isHomeHero &&
+                "max-w-[19ch] text-[clamp(2.45rem,5.5vw,4.65rem)] leading-[0.94] tracking-[-.012em]",
             )}
           >
             {title}
@@ -92,8 +92,8 @@ export default function MarketingHero({
           <p
             className={cn(
               "marketing-hero__description mx-auto mt-6 max-w-[52rem] text-pretty text-[1.0625rem] leading-8 text-muted-foreground sm:text-[1.2rem] sm:leading-[1.62]",
-              isBrandSpine &&
-                "max-w-[42rem] font-[var(--wireline-font-family-display)] text-[clamp(1.05rem,2.1vw,1.4rem)] font-semibold leading-snug tracking-[-.015em]",
+              isHomeHero &&
+                "max-w-[48rem] font-[var(--wireline-font-family-display)] text-[clamp(1.05rem,2.1vw,1.4rem)] font-semibold leading-snug tracking-[-.015em]",
             )}
           >
             {description}
@@ -138,7 +138,7 @@ export default function MarketingHero({
           {proof.length ? (
             <ul
               className="mt-7 flex max-w-3xl flex-wrap justify-center gap-2"
-              aria-label="Wireline proof points"
+              aria-label="Wireline capabilities"
             >
               {proof.map((item) => (
                 <li
