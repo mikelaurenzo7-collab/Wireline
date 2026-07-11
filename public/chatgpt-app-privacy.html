@@ -20,6 +20,9 @@
     <h2>Information used to create an agent</h2>
     <p>When a connected user creates or updates an agent draft, Wireline processes the agent name, business or brand, intended role, goal, voice and tone preferences, operating rules, knowledge summary, intended actions, prohibited topics, and escalation preferences supplied in the ChatGPT conversation. This information becomes part of the user’s private Wireline workspace draft and may be edited or deleted in Wireline.</p>
 
+    <h2>Information returned to ChatGPT</h2>
+    <p>To fulfill a user’s request, Wireline may return the connected user’s agent draft identifier, agent name, role, business name, primary goal, tone, operating rules, prohibited topics, allowed actions, escalation policy, knowledge summary, draft lifecycle, and a link to open the draft in Wireline. Agent-list results may include agent identifiers, names, roles, and channels. A private simulation credential is provided only to the ChatGPT widget in protected metadata and is not included in the model-visible conversation.</p>
+
     <h2>Private voice simulation</h2>
     <p>If a connected user selects <strong>Try private voice</strong>, the app requests microphone access through the ChatGPT widget surface and creates a short-lived, tool-free realtime simulation for that saved draft. The simulation cannot access business systems or complete an external action. Audio processing for this optional feature is performed through OpenAI services. Do not use the simulation to provide sensitive personal information, payment-card data, health information, or confidential customer records.</p>
 
@@ -35,7 +38,7 @@
     <h2>Contact</h2>
     <p>Questions or privacy requests: <a href="mailto:support@trywireline.com">support@trywireline.com</a>.</p>
 
-    <p><small>Last updated: June 24, 2026</small></p>
+    <p><small>Last updated: July 10, 2026</small></p>
   </main>
 </body>
 </html>
