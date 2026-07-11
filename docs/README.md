@@ -57,6 +57,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md) | **Active** — DNC, Redis, Sentry, and scale-readiness env vars. |
 | [MULTI_SURFACE_QA_2026-07-07.md](./MULTI_SURFACE_QA_2026-07-07.md) | **Active** — extension, native, and ChatGPT MCP QA rituals. |
 | [STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md](./STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md) | **Active** — strict branch review for design, UI/UX, branding, pricing, marketing, SEO, AI runtime, integrations, and business structure. |
+| [WIRELINE_VISUAL_OPERATING_PACK_2026-07.md](./WIRELINE_VISUAL_OPERATING_PACK_2026-07.md) | **Active** — validated Mermaid diagram pack (product loop, activation funnel, horizon roadmap, journey, positioning, content flywheel, GTM map) plus the Miro Launch Command Center board reference. |
 | [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md) | **Planned** — Conversation Balance referral loop (post-Horizon 0). |
 | [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | **Active** — brand voice, marketing/GTM, onboarding, pricing, voice/avatar product, and ops execution plan tied to the Aurora rebrand. |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
