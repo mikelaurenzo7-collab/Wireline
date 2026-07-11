@@ -16,13 +16,17 @@ type HeroMetric = {
 };
 
 type MarketingHeroProps = {
-  eyebrow: ReactNode;
+  eyebrow?: ReactNode;
   title: ReactNode;
   description: ReactNode;
   primaryAction?: HeroAction;
   secondaryAction?: HeroAction;
   proof?: readonly string[];
   metrics?: readonly HeroMetric[];
+  /**
+   * Kept for call-site compatibility. Generic marketing previews are intentionally
+   * no longer rendered; only a genuinely functional custom visual earns hero space.
+   */
   visualEyebrow?: string;
   visualTitle?: ReactNode;
   visualBody?: ReactNode;
@@ -44,48 +48,54 @@ export default function MarketingHero({
   secondaryAction,
   proof = [],
   metrics = [],
-  visualEyebrow = "Operating loop",
-  visualTitle = "Build. Train. Wire. Run.",
-  visualBody = "One clean path from role definition to real conversations, outcomes, and follow-up.",
-  visualItems = ["Create the employee", "Teach the playbook", "Connect the number", "Review the result"],
   visual,
   className,
   compact = false,
 }: MarketingHeroProps) {
   const actions = [primaryAction, secondaryAction].filter(Boolean) as HeroAction[];
+  const isBrandSpine = typeof title === "string" && title.includes("→");
 
   return (
     <section
       className={cn(
-        "marketing-hero border-b border-border px-5 sm:px-8 lg:px-10",
-        compact ? "py-12 sm:py-16 lg:py-20" : "py-14 sm:py-20 lg:py-24",
+        "marketing-hero border-b border-border px-5 text-center sm:px-8 lg:px-10",
+        compact ? "py-12 sm:py-16 lg:py-20" : "py-16 sm:py-24 lg:py-28",
         className,
       )}
     >
-      <div className="wl-public-rail grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,.72fr)] lg:items-center">
-        <div className="max-w-[60rem] text-left">
-          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 shadow-[var(--wireline-elevation-sm)]">
-            <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
-            <span className="wl-eyebrow wl-eyebrow--wired min-w-0 truncate text-muted-foreground">
-              {eyebrow}
-            </span>
-          </div>
+      <div className="wl-public-rail mx-auto">
+        <div className="mx-auto flex max-w-[72rem] flex-col items-center">
+          {eyebrow ? (
+            <div className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 shadow-[var(--wireline-elevation-sm)]">
+              <span className="marketing-live-dot h-1.5 w-1.5 shrink-0 rounded-full" aria-hidden="true" />
+              <span className="wl-eyebrow wl-eyebrow--wired min-w-0 truncate text-muted-foreground">
+                {eyebrow}
+              </span>
+            </div>
+          ) : null}
 
-          <h1 className="mt-6 max-w-[18.75ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.85rem,6.05vw,6.1rem)] font-bold leading-[.92] tracking-[-.055em] text-foreground md:max-w-[21ch] lg:max-w-[18.75ch]">
+          <h1
+            className={cn(
+              "marketing-hero__title mx-auto max-w-[20ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.75rem,7vw,6.2rem)] font-bold leading-[.94] tracking-[-.055em] text-foreground",
+              eyebrow ? "mt-6" : "mt-0",
+              isBrandSpine &&
+                "max-w-none whitespace-nowrap text-[clamp(2.05rem,8.25vw,6rem)] tracking-[-.065em]",
+            )}
+          >
             {title}
           </h1>
 
-          <p className="mt-6 max-w-[48rem] text-pretty text-[1.0625rem] leading-8 text-muted-foreground sm:text-[1.2rem] sm:leading-[1.62]">
+          <p className="marketing-hero__description mx-auto mt-6 max-w-[48rem] text-pretty text-[1.0625rem] leading-8 text-muted-foreground sm:text-[1.2rem] sm:leading-[1.62]">
             {description}
           </p>
 
           {actions.length ? (
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
               {actions.map((action) => {
                 const primary = action.tone !== "secondary";
-                const className = cn(
+                const actionClassName = cn(
                   primary ? "marketing-btn-primary" : "marketing-btn-secondary",
-                  "min-h-12 justify-center px-6 text-[15px] font-semibold sm:w-auto",
+                  "min-h-12 w-full justify-center px-6 text-[15px] font-semibold sm:w-auto",
                 );
                 const children = (
                   <>
@@ -95,11 +105,19 @@ export default function MarketingHero({
                 );
 
                 return isExternalHref(action.to) ? (
-                  <a key={`${action.to}-${action.label}`} href={action.to} className={className}>
+                  <a
+                    key={`${action.to}-${action.label}`}
+                    href={action.to}
+                    className={actionClassName}
+                  >
                     {children}
                   </a>
                 ) : (
-                  <Link key={`${action.to}-${action.label}`} to={action.to} className={className}>
+                  <Link
+                    key={`${action.to}-${action.label}`}
+                    to={action.to}
+                    className={actionClassName}
+                  >
                     {children}
                   </Link>
                 );
@@ -108,7 +126,10 @@ export default function MarketingHero({
           ) : null}
 
           {proof.length ? (
-            <ul className="mt-7 flex flex-wrap gap-2.5" aria-label="Wireline proof points">
+            <ul
+              className="mt-7 flex flex-wrap items-center justify-center gap-2.5"
+              aria-label="Wireline proof points"
+            >
               {proof.map((item) => (
                 <li
                   key={item}
@@ -127,58 +148,38 @@ export default function MarketingHero({
           ) : null}
         </div>
 
-        <aside
-          className="wl-paper relative overflow-hidden rounded-[22px] p-5 sm:p-6 lg:p-7"
-          aria-label="Wireline operating preview"
-        >
+        {visual || metrics.length ? (
           <div
-            className="pointer-events-none absolute inset-0 opacity-70"
-            aria-hidden="true"
-            style={{
-              background:
-                "radial-gradient(circle at 18% 0%, var(--wireline-color-glow-primary), transparent 44%)",
-            }}
-          />
-          <div className="relative">
-            {visual ?? (
-              <>
-                <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">{visualEyebrow}</p>
-                <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-bold leading-[.98] tracking-[-.045em] text-foreground">
-                  {visualTitle}
-                </h2>
-                <p className="mt-4 text-[15px] leading-7 text-muted-foreground">{visualBody}</p>
-                <ol className="mt-7 grid gap-3">
-                  {visualItems.map((item, index) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-3 rounded-[14px] border border-border bg-background/70 px-4 py-3"
-                    >
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-border bg-card font-mono text-[11px] font-bold text-primary">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span className="text-sm font-semibold text-foreground">{item}</span>
-                    </li>
+            className="wl-paper relative mx-auto mt-12 w-full max-w-[72rem] overflow-hidden rounded-[22px] p-5 text-center sm:p-7 lg:p-8"
+            aria-label="Wireline interactive preview"
+          >
+            <div
+              className="pointer-events-none absolute inset-0 opacity-70"
+              aria-hidden="true"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 0%, var(--wireline-color-glow-primary), transparent 52%)",
+              }}
+            />
+            <div className="relative mx-auto max-w-4xl">
+              {visual}
+              {metrics.length ? (
+                <div className="mx-auto mt-7 grid max-w-3xl gap-3 sm:grid-cols-3">
+                  {metrics.map((metric) => (
+                    <div key={metric.label} className="rounded-[14px] border border-border bg-card/70 p-4 text-center">
+                      <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
+                        {metric.value}
+                      </p>
+                      <p className="mt-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
+                        {metric.label}
+                      </p>
+                    </div>
                   ))}
-                </ol>
-              </>
-            )}
-
-            {metrics.length ? (
-              <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-                {metrics.map((metric) => (
-                  <div key={metric.label} className="rounded-[14px] border border-border bg-card/70 p-4">
-                    <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
-                      {metric.value}
-                    </p>
-                    <p className="mt-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
-                      {metric.label}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+                </div>
+              ) : null}
+            </div>
           </div>
-        </aside>
+        ) : null}
       </div>
     </section>
   );
