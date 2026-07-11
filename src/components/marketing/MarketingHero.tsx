@@ -53,10 +53,10 @@ export default function MarketingHero({
       className={cn(
         "marketing-hero border-b border-border px-5 sm:px-8 lg:px-10",
         compact
-          ? "py-12 sm:py-16 lg:py-20"
+          ? "py-10 sm:py-12 lg:py-16"
           : isBrandSpine
-            ? "py-20 sm:py-28 lg:py-32"
-            : "py-16 sm:py-24 lg:py-28",
+            ? "py-14 sm:py-20 lg:py-24"
+            : "py-12 sm:py-16 lg:py-20",
         isBrandSpine && "wireline-home-hero",
         className,
       )}
@@ -80,10 +80,10 @@ export default function MarketingHero({
           <h1
             aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}
             className={cn(
-              "marketing-hero__title mx-auto max-w-[18ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.85rem,6.2vw,6.5rem)] font-bold leading-[.92] tracking-[-.055em] text-foreground",
-              eyebrow ? "mt-7" : "mt-0",
+              "marketing-hero__title mx-auto max-w-[20ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.25rem,4.6vw,3.75rem)] font-bold leading-[1.02] tracking-[-.03em] text-foreground",
+              eyebrow ? "mt-6" : "mt-0",
               isBrandSpine &&
-                "max-w-[15ch] text-[clamp(3.2rem,8.2vw,7.25rem)] leading-[.9] tracking-[-.065em]",
+                "max-w-[15ch] text-[clamp(2.75rem,6.4vw,5.25rem)] leading-[.94] tracking-[-.05em]",
             )}
           >
             {title}
@@ -137,20 +137,15 @@ export default function MarketingHero({
 
           {proof.length ? (
             <ul
-              className="mt-8 flex max-w-4xl flex-wrap justify-center gap-2.5"
+              className="mt-7 flex max-w-3xl flex-wrap justify-center gap-2"
               aria-label="Wireline proof points"
             >
               {proof.map((item) => (
                 <li
                   key={item}
-                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-card px-3 text-[13px] font-semibold text-muted-foreground"
+                  className="inline-flex min-h-8 items-center gap-2 rounded-full border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground"
                 >
-                  <span
-                    className="marketing-proof-chip grid h-[18px] w-[18px] place-items-center"
-                    aria-hidden="true"
-                  >
-                    ✓
-                  </span>
+                  <span className="h-1 w-1 rounded-full bg-primary" aria-hidden="true" />
                   {item}
                 </li>
               ))}
@@ -164,7 +159,10 @@ export default function MarketingHero({
             {metrics.length ? (
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
                 {metrics.map((metric) => (
-                  <div key={metric.label} className="rounded-[14px] border border-border bg-card/70 p-4 text-center">
+                  <div
+                    key={metric.label}
+                    className="rounded-[14px] border border-border bg-card/70 p-4 text-center"
+                  >
                     <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
                       {metric.value}
                     </p>
