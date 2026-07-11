@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Wireline</title>
+  <desc id="desc">A connected W mark for Wireline on a dark rounded square.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="72%">
+      <stop offset="0" stop-color="#181225"/>
+      <stop offset="0.58" stop-color="#0D0C13"/>
+      <stop offset="1" stop-color="#07070B"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="150" y1="300" x2="890" y2="740" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D8B4FE"/>
+      <stop offset="0.45" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="#0A0A0E"/>
+  <rect x="28" y="28" width="968" height="968" rx="204" fill="url(#bg)" stroke="#6D28D9" stroke-width="28"/>
+  <path d="M182 416H238L386 710Q416 768 452 704L646 330"
+        fill="none" stroke="url(#mark)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M438 426H512Q552 426 574 466L710 710Q742 768 776 704L876 426H892"
+        fill="none" stroke="url(#mark)" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="150" cy="416" r="46" fill="#D8B4FE"/>
+  <circle cx="646" cy="292" r="46" fill="#BFA4FB"/>
+  <circle cx="892" cy="426" r="46" fill="#9D7BF8"/>
+</svg>
