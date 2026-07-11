@@ -28,16 +28,21 @@ describe("product voice cohesion", () => {
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Present calling, texting, and email as channels of one trained employee, not three required employees.",
     );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
+    );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("Your next AI employee calls, texts, and emails.");
+    expect(MARKETING_VOICE.headline).toBe(
+      "Your AI Voice Employee Calls, Texts, Emails—and Gets Work Done.",
+    );
     expect(MARKETING_VOICE.subline).toBe(
-      "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
+      "Every paid plan includes a Wireline number at no extra line fee. Train one employee to answer, sell, support, book, follow up, update your systems, and log every outcome across every customer conversation.",
     );
     expect(MARKETING_VOICE.channelProof).toEqual([
-      "Voice agent",
-      "Text / SMS agent",
-      "Email agent",
-      "One shared memory",
+      "Voice calls",
+      "Text / SMS",
+      "Email",
+      "Number included",
     ]);
     expect(MARKETING_VOICE.spine).toEqual(BRAND_SYSTEM.brandSpine);
     expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);
@@ -51,8 +56,8 @@ describe("product voice cohesion", () => {
     expect(OUTBOUND_WEDGE.subline).toContain("sells");
     expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every included AI employee");
-    expect(AGENT_NUMBER_PROMISE).toContain("included Wireline number");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every paid AI employee");
+    expect(AGENT_NUMBER_PROMISE).toContain("includes a Wireline number");
     expect(AGENT_NUMBER_PROMISE).toContain("text follow-ups");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
     expect(AGENT_DIRECTION_MODES.inbound.promise).toContain("text or email");
