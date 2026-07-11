@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { MARKETING_VOICE } from "../../lib/product-copy";
 import { cn } from "../../lib/utils";
 
 type HeroAction = {
@@ -53,7 +54,7 @@ export default function MarketingHero({
   compact = false,
 }: MarketingHeroProps) {
   const actions = [primaryAction, secondaryAction].filter(Boolean) as HeroAction[];
-  const isBrandSpine = typeof title === "string" && title === "Wire → Work → Win";
+  const isBrandSpine = typeof title === "string" && title === MARKETING_VOICE.headline;
 
   return (
     <section
@@ -88,11 +89,12 @@ export default function MarketingHero({
           ) : null}
 
           <h1
+            aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}
             className={cn(
               "marketing-hero__title max-w-[18.75ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.85rem,6.05vw,6.1rem)] font-bold leading-[.92] tracking-[-.055em] text-foreground md:max-w-[21ch] lg:max-w-[18.75ch]",
               eyebrow ? "mt-6" : "mt-0",
               isBrandSpine &&
-                "max-w-none whitespace-nowrap text-[clamp(2.1rem,9.8vw,5.65rem)] tracking-[-.065em] sm:text-[clamp(3.4rem,6.4vw,5.65rem)] md:max-w-none lg:max-w-none",
+                "max-w-none whitespace-nowrap text-[clamp(1.6rem,8.1vw,5.65rem)] tracking-[-.065em] sm:text-[clamp(3.4rem,6.4vw,5.65rem)] md:max-w-none lg:max-w-none",
             )}
           >
             {title}
