@@ -5,7 +5,7 @@ import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
 const PUBLIC_DESCRIPTION =
-  "Wireline builds AI employees with included numbers that call, book appointments, revive leads, promote offers, recover opportunities, follow up, and report back with every result.";
+  "Voice AI employee for real conversations. Wireline handles calls, follow-up, booking, and logged outcomes with an included number.";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Wire your AI employee"
+        title="Wireline | Wire → Work → Win"
         description={PUBLIC_DESCRIPTION}
         image="/og-image.png"
       />

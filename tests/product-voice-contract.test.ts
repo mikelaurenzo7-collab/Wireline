@@ -20,20 +20,17 @@ describe("product voice cohesion", () => {
     expect(BRAND_SYSTEM.northStar).toBe(
       "The best employee you've ever had, for next to nothing.",
     );
-    expect(BRAND_SYSTEM.defaultRole).toBe("Wireline Operator");
+    expect(BRAND_SYSTEM.defaultRole).toBe("Your best employee");
+    expect(BRAND_SYSTEM.brandSpine).toEqual(["Wire", "Work", "Win"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
     expect(BRAND_SYSTEM.toneRules).toContain("Lead with business outcomes before AI mechanics.");
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Make the default feel like the owner's best employee, not another executive title.",
     );
-    expect(MARKETING_VOICE.headline).toBe(BRAND_SYSTEM.northStar);
-    expect(MARKETING_VOICE.subline).toContain("trained AI employee");
-    expect(MARKETING_VOICE.subline).toContain("answers");
-    expect(MARKETING_VOICE.subline).toContain("sells");
-    expect(MARKETING_VOICE.subline).toContain("markets");
-    expect(MARKETING_VOICE.subline).toContain("revives stale leads");
-    expect(MARKETING_VOICE.subline).toContain("reports every outcome");
-    expect(MARKETING_VOICE.subline).toContain("owner-controlled rules");
+    expect(MARKETING_VOICE.eyebrow).toBeNull();
+    expect(MARKETING_VOICE.headline).toBe("Wire → Work → Win");
+    expect(MARKETING_VOICE.subline).toBe("Voice AI employee for real conversations.");
+    expect(MARKETING_VOICE.spine).toEqual(BRAND_SYSTEM.brandSpine);
     expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);
 
     expect(OUTBOUND_WEDGE.headline).toBe("Your best employee for growth work.");
@@ -44,7 +41,7 @@ describe("product voice cohesion", () => {
     expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
     expect(OUTBOUND_WEDGE.subline).toContain("included number");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every included Wireline phone employee");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every included AI employee");
     expect(AGENT_NUMBER_PROMISE).toContain("included number");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Sell", "Follow up", "Sync"]);
@@ -77,6 +74,8 @@ describe("product voice cohesion", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
+    expect(landing).toContain("MARKETING_VOICE.headline");
+    expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
     expect(workroom).toContain("WORKSPACE_VOICE");

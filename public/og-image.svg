@@ -49,18 +49,18 @@
     </text>
   </g>
 
-  <text x="80" y="238" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="88" font-weight="400" letter-spacing="-3" fill="#F5F4F8">
-    WIRE YOUR
+  <text x="80" y="252" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="76" font-weight="400" letter-spacing="-3" fill="#F5F4F8">
+    WIRE → WORK → WIN
   </text>
-  <text x="80" y="336" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="96" font-style="italic" font-weight="400" letter-spacing="-3" fill="#A78BFA">
-    AI EMPLOYEE
+  <text x="80" y="342" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="58" font-style="italic" font-weight="400" letter-spacing="-2" fill="#A78BFA">
+    VOICE AI EMPLOYEE
   </text>
 
-  <text x="84" y="408" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="28" font-weight="500" fill="#B6B1C6">
-    Appointments · lead revival · promotions · recovery
+  <text x="84" y="408" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="27" font-weight="500" fill="#B6B1C6">
+    For real conversations.
   </text>
-  <text x="84" y="452" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24" font-weight="500" fill="#B6B1C6">
-    Book. Revive. Promote. Follow up. Log every result.
+  <text x="84" y="452" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="23" font-weight="500" fill="#B6B1C6">
+    Calls · follow-up · booking · logged outcomes
   </text>
 
   <g transform="translate(760, 172)">
@@ -77,19 +77,19 @@
       AI Employee
     </text>
     <text x="104" y="72" font-family="Space Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.4" fill="#A78BFA">
-      TRAINED ON YOUR PITCH
+      TRAINED ON YOUR BUSINESS
     </text>
     <rect x="24" y="108" width="238" height="42" rx="16" fill="#201E29"/>
     <text x="42" y="135" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#B6B1C6">
-      Call the warm list.
+      Handle the conversation.
     </text>
     <rect x="88" y="162" width="248" height="48" rx="18" fill="#A78BFA"/>
     <text x="108" y="192" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#0E0B16">
-      Booked and logged.
+      Outcome logged.
     </text>
     <g transform="translate(24, 228)">
       <rect width="108" height="24" rx="12" fill="#1E1730"/>
-      <text x="15" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#A78BFA">Booked</text>
+      <text x="15" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#A78BFA">Handled</text>
       <rect x="118" width="112" height="24" rx="12" fill="#1C1D22"/>
       <text x="132" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C7CCD6">Next step</text>
     </g>
@@ -97,6 +97,6 @@
 
   <line x1="80" y1="588" x2="1120" y2="588" stroke="#A78BFA" stroke-opacity="0.2" stroke-width="1"/>
   <text x="80" y="612" font-family="Space Mono, ui-monospace, monospace" font-size="12" font-weight="700" letter-spacing="3" fill="#8B87A0">
-    APPOINTMENTS · LEAD REVIVAL · PROMOTIONS · RECOVERY · FOLLOW-UP
+    CALLS · FOLLOW-UP · BOOKING · OUTCOMES · CONTROL
   </text>
 </svg>
