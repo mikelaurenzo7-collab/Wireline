@@ -1,9 +1,5 @@
 import { Router, type NextFunction, type Response } from "express";
-import { eq } from "drizzle-orm";
 
-import * as schema from "../db/schema";
-import { drizzle, log } from "../lib/server-context";
-import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -16,43 +12,24 @@ function preferenceEnvelope(value: unknown): Record<string, unknown> {
 }
 
 /**
- * The generic preferences endpoint is intentionally broad for UI preferences,
- * but provider approval and review evidence are server-owned. Preserve that
- * namespace before the downstream settings route replaces the JSON envelope.
+ * Provider approval and review evidence are server-owned. Strip that namespace
+ * from the client payload before the canonical settings route performs its
+ * locked read/merge/write. Reading the database here would create a lost-update
+ * window between this middleware and the downstream JSON-envelope write.
  */
 router.post(
   "/api/user-preferences",
   authenticateUser,
-  async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
-    try {
-      if (!req.body?.preferences || typeof req.body.preferences !== "object") {
-        next();
-        return;
-      }
-
-      const [existing] = await drizzle
-        .select({ preferences: schema.userPreferences.preferences })
-        .from(schema.userPreferences)
-        .where(eq(schema.userPreferences.userId, req.user.id))
-        .limit(1);
-      const currentEnvelope = preferenceEnvelope(existing?.preferences);
-      const requestedEnvelope = preferenceEnvelope(req.body.preferences);
-
-      if (Object.prototype.hasOwnProperty.call(currentEnvelope, "company_identity")) {
-        requestedEnvelope.company_identity = currentEnvelope.company_identity;
-      } else {
-        delete requestedEnvelope.company_identity;
-      }
-
-      req.body = { ...req.body, preferences: requestedEnvelope };
+  (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
+    if (!req.body?.preferences || typeof req.body.preferences !== "object") {
       next();
-    } catch (error) {
-      log.error("server-owned preference guard failed", {
-        userId: req.user.id,
-        error: getErrorMessage(error),
-      });
-      next(error);
+      return;
     }
+
+    const requestedEnvelope = preferenceEnvelope(req.body.preferences);
+    delete requestedEnvelope.company_identity;
+    req.body = { ...req.body, preferences: requestedEnvelope };
+    next();
   },
 );
 
