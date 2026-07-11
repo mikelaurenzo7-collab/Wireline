@@ -30,7 +30,7 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
 
   const proofList = page.getByRole("list", { name: "Wireline proof points" });
   for (const label of ["Sales", "Marketing", "Support", "Admin"]) {
-    await expect(proofList.getByText(label, { exact: true })).toBeVisible();
+    await expect(proofList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
 
   const tablist = page.getByRole("tablist", { name: "Agent call direction" });
