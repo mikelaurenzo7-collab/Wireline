@@ -14,6 +14,8 @@ type ClonedVoice = {
   owned_by_user: boolean;
 };
 
+type VoiceConsentBasis = "self" | "authorized_third_party";
+
 function bufferToBase64(buffer: ArrayBuffer) {
   return btoa(Array.from(new Uint8Array(buffer), (byte) => String.fromCharCode(byte)).join(""));
 }
@@ -27,6 +29,7 @@ export default function VoiceLibraryPanel() {
   const [showCloneForm, setShowCloneForm] = useState(false);
   const [cloneName, setCloneName] = useState("");
   const [cloneFile, setCloneFile] = useState<File | null>(null);
+  const [consentBasis, setConsentBasis] = useState<VoiceConsentBasis | "">("");
   const [consent, setConsent] = useState(false);
   const [cloning, setCloning] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -80,6 +83,7 @@ export default function VoiceLibraryPanel() {
     setShowCloneForm(false);
     setCloneName("");
     setCloneFile(null);
+    setConsentBasis("");
     setConsent(false);
   };
 
@@ -88,8 +92,10 @@ export default function VoiceLibraryPanel() {
     if (!cloneFile) return toastError("Audio sample required");
     if (cloneFile.size > 25 * 1024 * 1024)
       return toastError("File too large", "Keep samples under 25 MB.");
+    if (!consentBasis)
+      return toastError("Voice owner required", "Choose whether this is your voice or an authorized third party's voice.");
     if (!consent)
-      return toastError("Consent required", "Confirm you have the right to use this voice.");
+      return toastError("Consent required", "Confirm you are authorized to create and use this voice.");
     setCloning(true);
     try {
       const response = await authFetch("/api/voices/clone", {
@@ -99,12 +105,21 @@ export default function VoiceLibraryPanel() {
           name: cloneName.trim(),
           audioBase64: bufferToBase64(await cloneFile.arrayBuffer()),
           audioMimeType: cloneFile.type,
+          consent_basis: consentBasis,
           consent_given: true,
         }),
       });
-      const body = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) throw new Error(body?.error || "Clone failed.");
-      toastSuccess("Voice ready", "You can select it for any agent.");
+      const body = (await response.json().catch(() => null)) as {
+        error?: string;
+        consent_evidence_id?: string;
+      } | null;
+      if (!response.ok) throw new Error(body?.error || "Voice creation failed.");
+      toastSuccess(
+        "Voice ready",
+        body?.consent_evidence_id
+          ? "Authorization recorded. You can select this voice for any agent."
+          : "You can select this voice for any agent.",
+      );
       resetClone();
       await loadVoices();
     } catch (error) {
@@ -121,7 +136,8 @@ export default function VoiceLibraryPanel() {
       const response = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Delete failed.");
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Delete failed.");
       toastSuccess("Voice deleted");
       await loadVoices();
     } catch (error) {
@@ -137,8 +153,8 @@ export default function VoiceLibraryPanel() {
         <p className="wl-label text-brand">Wireline voice</p>
         <h2 className="mt-1 font-display text-2xl font-semibold text-foreground">Voice library</h2>
         <p className="mt-1 text-[var(--wireline-typography-caption-size)] leading-relaxed text-muted">
-          Create a recognizable sound for your agents. Use only your own voice or a voice you have
-          explicit permission to use.
+          Create a recognizable sound for your agents. Wireline records authorization before a voice
+          is created. Use only your own voice or one you have explicit permission to use.
         </p>
       </header>
 
@@ -194,7 +210,7 @@ export default function VoiceLibraryPanel() {
             <Input
               type="file"
               required
-              accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.ogg"
+              accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/x-m4a,audio/ogg,.mp3,.wav,.m4a,.ogg"
               onChange={(event) => setCloneFile(event.target.files?.[0] || null)}
               className="mt-1.5 w-full text-[var(--wireline-typography-caption-size)]"
             />
@@ -204,6 +220,37 @@ export default function VoiceLibraryPanel() {
               </p>
             ) : null}
           </label>
+          <fieldset className="space-y-2">
+            <legend className="wl-label text-muted">Who owns this voice?</legend>
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 text-[var(--wireline-typography-overline-size)] text-foreground/80 transition-colors hover:border-brand/35">
+              <input
+                type="radio"
+                name="voice-consent-basis"
+                value="self"
+                checked={consentBasis === "self"}
+                onChange={() => setConsentBasis("self")}
+                className="mt-0.5 h-4 w-4 accent-brand"
+              />
+              <span>
+                <strong className="block font-medium text-foreground">This is my voice</strong>
+                I am authorizing Wireline to create and use this voice for my agents.
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 text-[var(--wireline-typography-overline-size)] text-foreground/80 transition-colors hover:border-brand/35">
+              <input
+                type="radio"
+                name="voice-consent-basis"
+                value="authorized_third_party"
+                checked={consentBasis === "authorized_third_party"}
+                onChange={() => setConsentBasis("authorized_third_party")}
+                className="mt-0.5 h-4 w-4 accent-brand"
+              />
+              <span>
+                <strong className="block font-medium text-foreground">Someone else's voice</strong>
+                The speaker gave me explicit permission to create and use this voice.
+              </span>
+            </label>
+          </fieldset>
           <label className="flex cursor-pointer items-start gap-2.5 text-[var(--wireline-typography-overline-size)] text-foreground/80">
             <Checkbox
               checked={consent}
@@ -211,8 +258,8 @@ export default function VoiceLibraryPanel() {
               className="mt-0.5 h-3.5 w-3.5 accent-brand"
             />
             <span>
-              I confirm I have permission to use this voice and, if it belongs to another person, I
-              have their explicit consent.
+              I confirm this authorization is accurate and I will not use the voice to impersonate,
+              deceive, defraud, or violate another person's rights.
             </span>
           </label>
           <div className="flex gap-2">
@@ -220,7 +267,9 @@ export default function VoiceLibraryPanel() {
               type="submit"
               variant="editorial"
               disableAnimations
-              disabled={cloning || !cloneFile || !consent || cloneName.trim().length < 2}
+              disabled={
+                cloning || !cloneFile || !consentBasis || !consent || cloneName.trim().length < 2
+              }
               className="flex-1 rounded-full py-2.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.22em]"
             >
               {cloning ? (
@@ -287,7 +336,7 @@ export default function VoiceLibraryPanel() {
                   <p className="truncate text-[var(--wireline-typography-caption-size)] font-medium text-foreground">
                     {voice.name}
                   </p>
-                  <p className="wl-label-muted/70">Wireline voice</p>
+                  <p className="wl-label-muted/70">Wireline voice · authorization recorded</p>
                 </div>
                 <ShadButton
                   type="button"
