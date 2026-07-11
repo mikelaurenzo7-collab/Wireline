@@ -171,6 +171,13 @@ describe("company identity pack", () => {
     expect(mutation).toContain('reason: "branding_changed" | "phone_number_changed"');
 
     expect(settingsGuard).toContain("IDENTITY_SETTING_KEYS");
+    expect(settingsGuard).toContain('"business_name"');
+    expect(settingsGuard).toContain('"businessName"');
+    expect(settingsGuard).toContain('"brand_logo_url"');
+    expect(settingsGuard).toContain('"brandLogoUrl"');
+    expect(settingsGuard).toContain("router.use(");
+    expect(settingsGuard).not.toContain("router.post(");
+    expect(settingsGuard).toContain('req.method !== "POST"');
     expect(settingsGuard).toContain('runCompanyIdentityMutation(req.user.id, "branding_changed"');
     expect(settingsGuard).toContain("delete downstreamBody[key]");
     expect(registry).toContain(
