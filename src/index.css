@@ -132,3 +132,19 @@ button[class*="tracking-[0.25em]"],
 button[class*="tracking-[0.3em]"] {
   letter-spacing: 0.08em !important;
 }
+
+/* Mobile editing contract: 16px controls prevent Safari focus zoom, including
+ * legacy forms that have not yet migrated to the shared atoms. */
+@media (max-width: 767px) {
+  .wl-ui-caps :where(
+      input:not([type="checkbox"]):not([type="radio"]),
+      select,
+      textarea
+    ) {
+    font-size: 16px;
+  }
+
+  .wl-stitch-auth-divider {
+    font-size: var(--wireline-typography-overline-size);
+  }
+}
