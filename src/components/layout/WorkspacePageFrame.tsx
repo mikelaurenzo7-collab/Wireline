@@ -66,7 +66,7 @@ export function WorkspacePageIntro({
       className={cn(
         "wl-workspace-page-intro flex w-full flex-col gap-3",
         start
-          ? "items-start text-left sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+          ? "items-start text-left md:flex-row md:items-start md:justify-between md:gap-6"
           : "mx-auto max-w-prose items-center text-center sm:flex-col",
       )}
     >
@@ -77,7 +77,7 @@ export function WorkspacePageIntro({
         {description ? (
           <p
             className={cn(
-              "mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground",
+              "mt-2 max-w-prose text-pretty text-sm leading-relaxed text-muted-foreground",
               !start && "mx-auto text-center",
             )}
           >
@@ -86,7 +86,16 @@ export function WorkspacePageIntro({
         ) : null}
       </div>
       {action ? (
-        <div className={cn("shrink-0", start ? "w-full sm:w-auto" : "w-full")}>{action}</div>
+        <div
+          className={cn(
+            "shrink-0",
+            start
+              ? "w-full [&>*]:w-full md:w-auto md:[&>*]:w-auto"
+              : "w-full",
+          )}
+        >
+          {action}
+        </div>
       ) : null}
     </header>
   );
