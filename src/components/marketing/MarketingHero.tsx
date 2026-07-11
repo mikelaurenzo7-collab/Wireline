@@ -60,7 +60,7 @@ export default function MarketingHero({
       className={cn(
         "marketing-hero border-b border-border px-5 sm:px-8 lg:px-10",
         compact ? "py-12 sm:py-16 lg:py-20" : "py-14 sm:py-20 lg:py-24",
-        isBrandSpine && "wireline-home-hero",
+        isBrandSpine && "wireline-home-hero py-12 sm:py-16 lg:py-20",
         className,
       )}
     >
@@ -72,7 +72,12 @@ export default function MarketingHero({
             : "lg:grid-cols-[minmax(0,1fr)_minmax(20rem,.72fr)]",
         )}
       >
-        <div className="marketing-hero__content min-w-0 max-w-[60rem] text-left">
+        <div
+          className={cn(
+            "min-w-0 max-w-[60rem] text-left",
+            isBrandSpine && "wireline-home-hero__content",
+          )}
+        >
           {eyebrow ? (
             <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 shadow-[var(--wireline-elevation-sm)]">
               <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
@@ -104,7 +109,7 @@ export default function MarketingHero({
           </p>
 
           {actions.length ? (
-            <div className="marketing-hero__actions mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               {actions.map((action) => {
                 const primary = action.tone !== "secondary";
                 const actionClassName = cn(
