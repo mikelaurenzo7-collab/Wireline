@@ -17,6 +17,8 @@ import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const VOICE_CLONE_CONSENT_VERSION = "voice-clone-consent-v2-2026-07-11";
+// 3 MiB expands to ~4 MiB as base64, leaving safe headroom under Vercel's 4.5 MB request cap.
+const MAX_CLONE_UPLOAD_BYTES = 3 * 1024 * 1024;
 const SUPPORTED_CLONE_AUDIO_TYPES = new Set([
   "audio/mpeg",
   "audio/mp3",
@@ -108,8 +110,8 @@ export default function VoiceLibraryPanel() {
   const startClone = async (event: FormEvent) => {
     event.preventDefault();
     if (!cloneFile) return toastError("Audio sample required");
-    if (cloneFile.size > 25 * 1024 * 1024)
-      return toastError("File too large", "Keep samples under 25 MB.");
+    if (cloneFile.size > MAX_CLONE_UPLOAD_BYTES)
+      return toastError("File too large", "Use a compressed sample under 3 MB.");
     const normalizedType = cloneFile.type.split(";")[0]?.trim().toLowerCase();
     if (!normalizedType || !SUPPORTED_CLONE_AUDIO_TYPES.has(normalizedType))
       return toastError("Unsupported audio", "Use MP3, WAV, M4A, OGG, or WebM.");
@@ -205,8 +207,8 @@ export default function VoiceLibraryPanel() {
           <div>
             <h3 className="font-display text-lg font-semibold text-foreground">Create a voice</h3>
             <p className="mt-1 text-[var(--wireline-typography-overline-size)] leading-relaxed text-muted">
-              Upload a clean 30–90 second, single-speaker sample. MP3, WAV, M4A, OGG, or WebM under
-              25 MB.
+              Upload a clean 30–90 second, single-speaker sample. Compressed MP3 or M4A is
+              recommended; files must stay under 3 MB.
             </p>
           </div>
           <div className="flex items-start gap-2.5 rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3">
