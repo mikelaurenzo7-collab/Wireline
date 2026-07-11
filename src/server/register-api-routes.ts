@@ -23,6 +23,7 @@ import emailOutcomeRouter from "../routes/email-outcome-routes";
 import emailSyncRouter from "../routes/email-sync-routes";
 import accountRouter from "../routes/account-routes";
 import userPreferenceGuardRouter from "../routes/user-preference-guard-routes";
+import companyIdentitySettingsGuardRouter from "../routes/company-identity-settings-guard-routes";
 import settingsRouter from "../routes/settings-routes";
 import postCallOutputRouter from "../routes/post-call-output-routes";
 import carrierRouter from "../routes/carrier-routes";
@@ -85,7 +86,9 @@ export function registerApiRoutes(app: Express): void {
   app.use(pronunciationRouter);
   app.use(elevenlabsWebhookRouter);
   app.use(accountRouter);
+  // These terminal/guard writers must precede the broad legacy settings router.
   app.use(userPreferenceGuardRouter);
+  app.use(companyIdentitySettingsGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
   app.use(carrierRouter);
