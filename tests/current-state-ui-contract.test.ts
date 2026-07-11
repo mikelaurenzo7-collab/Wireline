@@ -10,6 +10,23 @@ import {
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 
+function relativeLuminance(hex: string): number {
+  const channels = hex
+    .replace("#", "")
+    .match(/.{2}/g)!
+    .map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) =>
+      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+    );
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(a: string, b: string): number {
+  const lighter = Math.max(relativeLuminance(a), relativeLuminance(b));
+  const darker = Math.min(relativeLuminance(a), relativeLuminance(b));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 describe("current-state UI contract", () => {
   it("keeps authenticated product headers start-aligned and wrap-safe", () => {
     const frame = read("src/components/layout/WorkspacePageFrame.tsx");
@@ -81,6 +98,55 @@ describe("current-state UI contract", () => {
       'className="truncate font-[var(--wireline-font-family-display)]',
     );
     expect(features).toContain('["Build", "Train", "Launch", "Improve"]');
+  });
+
+  it("keeps the design-system cascade, mobile controls, and dock geometry unified", () => {
+    const main = read("src/main.tsx");
+    const index = read("src/index.css");
+    const responsive = read("src/styles/responsive.css");
+    const input = read("src/components/atoms/Input.tsx");
+    const select = read("src/components/atoms/NativeSelect.tsx");
+    const textarea = read("src/components/atoms/Textarea.tsx");
+    const radixSelect = read("src/components/ui/shadcn/Select.tsx");
+    const navigation = read("src/constants/navigation.ts");
+
+    expect(main).toContain('import "./index.css"');
+    expect(main).not.toMatch(/styles\/(?:foundation|responsive|ruthless-mobile-cleanup)/);
+    expect(index).toMatch(
+      /system-hardening\.css";[\s\S]*responsive\.css";[\s\S]*ruthless-mobile-cleanup\.css";[\s\S]*agent-tabs-compact\.css";/,
+    );
+    expect(index).toContain("font-size: 16px");
+    expect(responsive).toContain(
+      "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",
+    );
+    for (const source of [input, select]) {
+      expect(source).toContain("h-11");
+      expect(source).toContain("text-base");
+      expect(source).toContain("md:text-sm");
+    }
+    expect(textarea).toContain("text-base");
+    expect(radixSelect).toContain("min-h-11");
+    expect(navigation).toContain('label: "Connections"');
+    expect(navigation).toContain('shortLabel: "Wire"');
+  });
+
+  it("keeps optional Paper theme tertiary copy at WCAG AA contrast", () => {
+    const lightTheme = read("src/styles/theme-light.css");
+    const tertiary = lightTheme.match(
+      /--wireline-color-text-tertiary:\s*(#[0-9a-f]{6})/i,
+    )?.[1];
+    const canvas = lightTheme.match(
+      /--wireline-color-canvas-default:\s*(#[0-9a-f]{6})/i,
+    )?.[1];
+    const surface = lightTheme.match(
+      /--wireline-color-surface-default:\s*(#[0-9a-f]{6})/i,
+    )?.[1];
+
+    expect(tertiary).toBeTruthy();
+    expect(canvas).toBeTruthy();
+    expect(surface).toBeTruthy();
+    expect(contrastRatio(tertiary!, canvas!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(tertiary!, surface!)).toBeGreaterThanOrEqual(4.5);
   });
 
   it("uses direction and guardrails for product control without weakening legal consent copy", () => {
