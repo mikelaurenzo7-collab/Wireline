@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
 import { Router, type Response } from "express";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
@@ -24,6 +23,8 @@ import type { AuthenticatedRequest } from "../types/auth";
 const router = Router();
 
 type PreferenceEnvelope = Record<string, unknown>;
+type IdentityReader = Pick<typeof drizzle, "select">;
+type IdentityLocker = Pick<typeof drizzle, "execute">;
 
 function asPreferenceEnvelope(value: unknown): PreferenceEnvelope {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -51,9 +52,13 @@ function httpsUrl(value: unknown, field: string): string | null | undefined {
   try {
     const parsed = new URL(normalized);
     if (parsed.protocol !== "https:") throw new Error("https required");
+    if (parsed.username || parsed.password) throw new Error("credentials not allowed");
     return parsed.toString();
   } catch {
-    throw AppError.fromHttpStatus(400, `${field} must be a valid HTTPS URL.`);
+    throw AppError.fromHttpStatus(
+      400,
+      `${field} must be a valid HTTPS URL without embedded credentials.`,
+    );
   }
 }
 
@@ -90,7 +95,11 @@ function requestedChannels(value: unknown): CompanyIdentityChannel[] | undefined
   if (channels.length !== value.length) {
     throw AppError.fromHttpStatus(400, "requested_channels contains an unsupported channel.");
   }
-  return [...new Set(channels)];
+  const uniqueChannels = [...new Set(channels)];
+  if (uniqueChannels.length === 0) {
+    throw AppError.fromHttpStatus(400, "Select at least one identity channel.");
+  }
+  return uniqueChannels;
 }
 
 function sameChannels(left: CompanyIdentityChannel[], right: CompanyIdentityChannel[]): boolean {
@@ -110,13 +119,21 @@ function fingerprintProfile(profile: {
   return companyIdentityFingerprint(profile);
 }
 
-function fingerprintDigest(fingerprint: string): string {
-  return createHash("sha256").update(fingerprint).digest("hex");
+async function lockIdentityState(db: IdentityLocker, userId: string): Promise<void> {
+  await db.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext('company-identity'), hashtext(${userId}))`,
+  );
+  await db.execute(
+    sql`SELECT id FROM wireline_settings WHERE user_id = ${userId} FOR UPDATE`,
+  );
+  await db.execute(
+    sql`SELECT user_id FROM wireline_user_preferences WHERE user_id = ${userId} FOR UPDATE`,
+  );
 }
 
-async function loadIdentityState(userId: string) {
+async function loadIdentityState(userId: string, db: IdentityReader = drizzle) {
   const [[settingsRow], [preferencesRow], [phoneRow]] = await Promise.all([
-    drizzle
+    db
       .select({
         businessName: schema.settings.businessName,
         brandName: schema.settings.brandName,
@@ -125,16 +142,19 @@ async function loadIdentityState(userId: string) {
       .from(schema.settings)
       .where(eq(schema.settings.userId, userId))
       .limit(1),
-    drizzle
+    db
       .select({ preferences: schema.userPreferences.preferences })
       .from(schema.userPreferences)
       .where(eq(schema.userPreferences.userId, userId))
       .limit(1),
-    drizzle
-      .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    db
+      .select({
+        id: schema.phoneNumbers.id,
+        phoneNumber: schema.phoneNumbers.phoneNumber,
+      })
       .from(schema.phoneNumbers)
       .where(eq(schema.phoneNumbers.userId, userId))
-      .orderBy(desc(schema.phoneNumbers.createdAt))
+      .orderBy(desc(schema.phoneNumbers.createdAt), desc(schema.phoneNumbers.id))
       .limit(1),
   ]);
 
@@ -174,6 +194,50 @@ async function loadIdentityState(userId: string) {
     currentFingerprint,
     staleReviewState,
   };
+}
+
+async function loadReconciledIdentityState(userId: string) {
+  const initial = await loadIdentityState(userId);
+  if (!initial.staleReviewState) return initial;
+
+  return drizzle.transaction(async (tx) => {
+    await lockIdentityState(tx, userId);
+    const current = await loadIdentityState(userId, tx);
+    if (!current.staleReviewState) return current;
+
+    const nextEnvelope = {
+      ...current.envelope,
+      company_identity: current.preferences,
+    };
+    await tx
+      .insert(schema.userPreferences)
+      .values({
+        userId,
+        preferences: nextEnvelope,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: schema.userPreferences.userId,
+        set: { preferences: nextEnvelope, updatedAt: new Date() },
+      });
+    await tx.insert(schema.auditLog).values({
+      userId,
+      action: "company_identity.review_invalidated",
+      eventType: "company_identity.review_invalidated",
+      severity: "info",
+      resourceType: "company_identity",
+      metadata: {
+        reason: "identity_or_number_changed",
+        profileFingerprintSha256: current.currentFingerprint,
+      },
+    });
+
+    return {
+      ...current,
+      envelope: nextEnvelope,
+      staleReviewState: true,
+    };
+  });
 }
 
 function publicPayload(state: Awaited<ReturnType<typeof loadIdentityState>>) {
@@ -225,7 +289,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      res.json(publicPayload(await loadIdentityState(req.user.id)));
+      res.json(publicPayload(await loadReconciledIdentityState(req.user.id)));
     } catch (error) {
       if (error instanceof AppError) throw error;
       log.error("company identity load failed", {
@@ -243,7 +307,6 @@ router.post(
   userPreferencesRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const current = await loadIdentityState(req.user.id);
       const businessName = nullableText(req.body?.business_name, "Business name", 120);
       const brandName = nullableText(req.body?.brand_name, "Brand name", 80);
       const logoUrl = httpsUrl(req.body?.logo_url, "Logo URL");
@@ -257,53 +320,58 @@ router.post(
       );
       const nextRequestedChannels = requestedChannels(req.body?.requested_channels);
 
-      const nextBusinessName =
-        businessName === undefined ? current.profile.businessName : businessName;
-      const nextBrandName = brandName === undefined ? current.profile.brandName : brandName;
-      const nextLogoUrl = logoUrl === undefined ? current.profile.logoUrl : logoUrl;
-      const requestedChannelSelection =
-        nextRequestedChannels ?? current.preferences.requestedChannels;
-      const nextIdentityValues = {
-        businessName: nextBusinessName,
-        brandName: nextBrandName,
-        logoUrl: nextLogoUrl,
-        callerIdName:
-          nextCallerIdName === undefined ? current.preferences.callerIdName : nextCallerIdName,
-        website: website === undefined ? current.preferences.website : website,
-        supportEmail:
-          nextSupportEmail === undefined ? current.preferences.supportEmail : nextSupportEmail,
-        defaultCallReason:
-          defaultCallReason === undefined
-            ? current.preferences.defaultCallReason
-            : defaultCallReason,
-        phoneNumber: current.phoneNumber,
-      };
-      const nextFingerprint = fingerprintProfile(nextIdentityValues);
-      const identityChanged = current.currentFingerprint !== nextFingerprint;
-      const channelSelectionChanged = !sameChannels(
-        current.preferences.requestedChannels,
-        requestedChannelSelection,
-      );
+      const result = await drizzle.transaction(async (tx) => {
+        await lockIdentityState(tx, req.user.id);
+        const current = await loadIdentityState(req.user.id, tx);
+        const nextBusinessName =
+          businessName === undefined ? current.profile.businessName : businessName;
+        const nextBrandName = brandName === undefined ? current.profile.brandName : brandName;
+        const nextLogoUrl = logoUrl === undefined ? current.profile.logoUrl : logoUrl;
+        const requestedChannelSelection =
+          nextRequestedChannels ?? current.preferences.requestedChannels;
+        if (requestedChannelSelection.length === 0) {
+          throw AppError.fromHttpStatus(400, "Select at least one identity channel.");
+        }
+        const nextIdentityValues = {
+          businessName: nextBusinessName,
+          brandName: nextBrandName,
+          logoUrl: nextLogoUrl,
+          callerIdName:
+            nextCallerIdName === undefined ? current.preferences.callerIdName : nextCallerIdName,
+          website: website === undefined ? current.preferences.website : website,
+          supportEmail:
+            nextSupportEmail === undefined ? current.preferences.supportEmail : nextSupportEmail,
+          defaultCallReason:
+            defaultCallReason === undefined
+              ? current.preferences.defaultCallReason
+              : defaultCallReason,
+          phoneNumber: current.phoneNumber,
+        };
+        const nextFingerprint = fingerprintProfile(nextIdentityValues);
+        const identityChanged = current.currentFingerprint !== nextFingerprint;
+        const channelSelectionChanged = !sameChannels(
+          current.preferences.requestedChannels,
+          requestedChannelSelection,
+        );
 
-      const nextPreferences: CompanyIdentityPreferences = {
-        ...current.preferences,
-        callerIdName: nextIdentityValues.callerIdName,
-        website: nextIdentityValues.website,
-        supportEmail: nextIdentityValues.supportEmail,
-        defaultCallReason: nextIdentityValues.defaultCallReason,
-        requestedChannels: requestedChannelSelection,
-        reviewRequestedAt: identityChanged ? null : current.preferences.reviewRequestedAt,
-        reviewFingerprint: identityChanged ? null : current.preferences.reviewFingerprint,
-        providerStatus: identityChanged
-          ? defaultCompanyIdentityPreferences().providerStatus
-          : current.preferences.providerStatus,
-      };
-      const nextEnvelope = {
-        ...current.envelope,
-        company_identity: nextPreferences,
-      };
+        const nextPreferences: CompanyIdentityPreferences = {
+          ...current.preferences,
+          callerIdName: nextIdentityValues.callerIdName,
+          website: nextIdentityValues.website,
+          supportEmail: nextIdentityValues.supportEmail,
+          defaultCallReason: nextIdentityValues.defaultCallReason,
+          requestedChannels: requestedChannelSelection,
+          reviewRequestedAt: identityChanged ? null : current.preferences.reviewRequestedAt,
+          reviewFingerprint: identityChanged ? null : current.preferences.reviewFingerprint,
+          providerStatus: identityChanged
+            ? defaultCompanyIdentityPreferences().providerStatus
+            : current.preferences.providerStatus,
+        };
+        const nextEnvelope = {
+          ...current.envelope,
+          company_identity: nextPreferences,
+        };
 
-      await drizzle.transaction(async (tx) => {
         await tx
           .insert(schema.settings)
           .values({
@@ -351,12 +419,14 @@ router.post(
             },
           });
         }
+
+        return { identityChanged, channelSelectionChanged };
       });
 
       res.json({
         ok: true,
-        profile_changed: identityChanged,
-        channel_selection_changed: channelSelectionChanged,
+        profile_changed: result.identityChanged,
+        channel_selection_changed: result.channelSelectionChanged,
         ...publicPayload(await loadIdentityState(req.user.id)),
       });
     } catch (error) {
@@ -376,63 +446,79 @@ router.post(
   userPreferencesRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const current = await loadIdentityState(req.user.id);
-      if (
-        !canRequestCompanyIdentityReview({
-          readiness: current.readiness,
-          requestedChannels: current.profile.requestedChannels,
-        })
-      ) {
-        return res.status(409).json({
-          code: "IDENTITY_PROFILE_INCOMPLETE",
-          error: "Complete every selected channel's company identity requirements first.",
-          channels: publicPayload(current).channels,
-        });
-      }
-
-      const selectedStatuses = current.profile.requestedChannels.map(
-        (channel) => current.preferences.providerStatus[channel],
-      );
-      const reviewMatchesCurrentProfile =
-        current.preferences.reviewFingerprint === current.currentFingerprint;
-      if (reviewMatchesCurrentProfile && selectedStatuses.includes("rejected")) {
-        return res.status(409).json({
-          code: "IDENTITY_REVIEW_REQUIRES_CHANGES",
-          error: "Update the rejected company identity details before requesting another review.",
-          ...publicPayload(current),
-        });
-      }
-      if (
-        reviewMatchesCurrentProfile &&
-        selectedStatuses.every((status) => status !== "not_requested")
-      ) {
-        return res.status(200).json({
-          ok: true,
-          already_requested: true,
-          message: "The current company identity is already submitted or has a provider decision.",
-          ...publicPayload(current),
-        });
-      }
-
-      const requestedAt = new Date().toISOString();
-      const providerStatus = { ...current.preferences.providerStatus };
-      for (const channel of current.profile.requestedChannels) {
-        if (providerStatus[channel] === "not_requested") {
-          providerStatus[channel] = "review_requested";
+      const outcome = await drizzle.transaction(async (tx) => {
+        await lockIdentityState(tx, req.user.id);
+        const current = await loadIdentityState(req.user.id, tx);
+        if (
+          !canRequestCompanyIdentityReview({
+            readiness: current.readiness,
+            requestedChannels: current.profile.requestedChannels,
+          })
+        ) {
+          return {
+            response: {
+              status: 409,
+              body: {
+                code: "IDENTITY_PROFILE_INCOMPLETE",
+                error: "Complete every selected channel's company identity requirements first.",
+                channels: publicPayload(current).channels,
+              },
+            },
+          };
         }
-      }
-      const nextPreferences: CompanyIdentityPreferences = {
-        ...current.preferences,
-        reviewRequestedAt: requestedAt,
-        reviewFingerprint: current.currentFingerprint,
-        providerStatus,
-      };
-      const nextEnvelope = {
-        ...current.envelope,
-        company_identity: nextPreferences,
-      };
 
-      await drizzle.transaction(async (tx) => {
+        const selectedStatuses = current.profile.requestedChannels.map(
+          (channel) => current.preferences.providerStatus[channel],
+        );
+        const reviewMatchesCurrentProfile =
+          current.preferences.reviewFingerprint === current.currentFingerprint;
+        if (reviewMatchesCurrentProfile && selectedStatuses.includes("rejected")) {
+          return {
+            response: {
+              status: 409,
+              body: {
+                code: "IDENTITY_REVIEW_REQUIRES_CHANGES",
+                error: "Update the rejected company identity details before requesting another review.",
+                ...publicPayload(current),
+              },
+            },
+          };
+        }
+        if (
+          reviewMatchesCurrentProfile &&
+          selectedStatuses.every((status) => status !== "not_requested")
+        ) {
+          return {
+            response: {
+              status: 200,
+              body: {
+                ok: true,
+                already_requested: true,
+                message: "The current company identity is already submitted or has a provider decision.",
+                ...publicPayload(current),
+              },
+            },
+          };
+        }
+
+        const requestedAt = new Date().toISOString();
+        const providerStatus = { ...current.preferences.providerStatus };
+        for (const channel of current.profile.requestedChannels) {
+          if (providerStatus[channel] === "not_requested") {
+            providerStatus[channel] = "review_requested";
+          }
+        }
+        const nextPreferences: CompanyIdentityPreferences = {
+          ...current.preferences,
+          reviewRequestedAt: requestedAt,
+          reviewFingerprint: current.currentFingerprint,
+          providerStatus,
+        };
+        const nextEnvelope = {
+          ...current.envelope,
+          company_identity: nextPreferences,
+        };
+
         await tx
           .insert(schema.userPreferences)
           .values({
@@ -455,10 +541,17 @@ router.post(
             hasNumber: Boolean(current.phoneNumber),
             hasLogo: Boolean(current.profile.logoUrl),
             requestedAt,
-            profileFingerprintSha256: fingerprintDigest(current.currentFingerprint),
+            priorReviewInvalidated: current.staleReviewState,
+            profileFingerprintSha256: current.currentFingerprint,
           },
         });
+
+        return { response: null };
       });
+
+      if (outcome.response) {
+        return res.status(outcome.response.status).json(outcome.response.body);
+      }
 
       res.status(202).json({
         ok: true,
