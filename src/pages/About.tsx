@@ -43,10 +43,6 @@ export default function About() {
         primaryAction={{ label: "Get started now", to: "/pricing" }}
         secondaryAction={{ label: "Contact support", to: "/contact", tone: "secondary" }}
         proof={ABOUT_HERO_ITEMS}
-        visualEyebrow="Product posture"
-        visualTitle="Useful, trained, accountable."
-        visualBody="Wireline is built for businesses that need calls answered, leads qualified, appointments booked, and outcomes logged without losing control."
-        visualItems={ABOUT_HERO_ITEMS}
       />
 
       <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">

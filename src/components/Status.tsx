@@ -168,7 +168,7 @@ export default function Status() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="marketing-panel relative mb-6 overflow-hidden p-6 sm:p-8"
+            className="marketing-panel relative mb-6 overflow-hidden p-6 text-center sm:p-8"
             data-testid="status-overall"
           >
             <div
@@ -176,11 +176,11 @@ export default function Status() {
               className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${STATE_META[overall].bgGradient}`}
             />
             <div className="relative">
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-4 flex items-center justify-center gap-2">
                 <span className="hero-accent-line bg-brand" />
                 <span className="text-eyebrow">Live system status</span>
               </div>
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col items-center gap-4 text-center">
                 <div
                   className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${STATE_META[overall].pill}`}
                 >
@@ -190,7 +190,7 @@ export default function Status() {
                     <OverallIcon className="h-6 w-6" strokeWidth={1.75} />
                   )}
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 max-w-2xl flex-1 text-center">
                   <h1 className="marketing-hero-title mb-1 text-3xl sm:text-4xl">
                     {loading
                       ? "Checking…"

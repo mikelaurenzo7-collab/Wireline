@@ -67,14 +67,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
   const heroProof = isPersonal
     ? ["Your voice", "Clear outcomes", "Private by default"]
     : ["Answers", "Books", "Reports"];
-  const heroItems = cfg.pains
-    .slice(0, 4)
-    .map((pain) => (isPersonal ? PERSONAL_PAIN_TITLES[pain.title] || pain.title : pain.title));
   const heroDescription = isPersonal ? "Offload the calls that follow you around." : cfg.subhead;
-  const heroVisualTitle = isPersonal ? "Calls off your plate." : cfg.statValue;
-  const heroVisualBody = isPersonal
-    ? "Text what you need. Wireline calls, handles the back-and-forth, and reports back with the result."
-    : cfg.statLabel;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -117,10 +110,6 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         primaryAction={{ label: cfg.primaryCta.label, to: cfg.primaryCta.href }}
         secondaryAction={{ label: cfg.secondaryCta.label, to: cfg.secondaryCta.href, tone: "secondary" }}
         proof={heroProof}
-        visualEyebrow={isPersonal ? "Personal call desk" : "Vertical playbook"}
-        visualTitle={heroVisualTitle}
-        visualBody={heroVisualBody}
-        visualItems={heroItems}
       />
 
       <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
@@ -139,7 +128,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             return (
               <article
                 key={pain.title}
-                className="wl-stitch-card marketing-pain-card flex items-start gap-4 p-5 sm:p-6"
+                className="wl-stitch-card marketing-pain-card flex flex-col items-center gap-4 p-5 text-center sm:p-6"
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-muted text-primary">
                   <Icon className="h-4 w-4" />
@@ -166,7 +155,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 : "Your process, handled consistently."}
             </h2>
           </div>
-          <div className="wl-stitch-card marketing-script-card border-l-4 border-l-primary p-6 sm:p-8">
+          <div className="wl-stitch-card marketing-script-card border-t-4 border-t-primary p-6 text-center sm:p-8">
             <p className="wl-stitch-label">Example opening</p>
             <blockquote
               className="mt-4 text-lg leading-8 tracking-[-.02em] text-foreground"

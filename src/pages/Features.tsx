@@ -103,13 +103,6 @@ const USE_CASES = [
 ] as const;
 
 const FEATURE_HERO_PROOF = ["Build", "Train", "Wire", "Run"] as const;
-const FEATURE_HERO_ITEMS = [
-  "Conversation control",
-  "Phone operation",
-  "Scheduling and handoff",
-  "Outcome review",
-] as const;
-
 export default function Features() {
   return (
     <div className="marketing-surface min-h-screen bg-background text-foreground">
@@ -127,10 +120,6 @@ export default function Features() {
           primaryAction={{ label: "Build an employee", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={FEATURE_HERO_PROOF}
-          visualEyebrow="Feature stack"
-          visualTitle="One structure. Every lane."
-          visualBody="Conversation control, phone operation, scheduling, approvals, training, and outcome review stay inside one Build -> Train -> Wire -> Run flow."
-          visualItems={FEATURE_HERO_ITEMS}
         />
 
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
@@ -175,23 +164,23 @@ export default function Features() {
         </section>
 
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <div className="wl-public-rail grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:items-center">
-            <div className="text-center lg:text-left">
-              <Workflow size={22} className="mx-auto text-primary lg:mx-0" aria-hidden="true" />
+          <div className="wl-public-rail">
+            <div className="mx-auto max-w-3xl text-center">
+              <Workflow size={22} className="mx-auto text-primary" aria-hidden="true" />
               <p className="wl-overline mt-5 text-primary">Integrations</p>
               <h2 className="wl-public-section-heading mt-3">
                 Connect tools only when they improve the outcome.
               </h2>
-              <p className="wl-public-copy mt-5">
+              <p className="wl-public-copy mx-auto mt-5">
                 Calendars, CRMs, email, payments, and commerce systems should never be decorative
                 logos. Each connection needs permission clarity, status, and a useful recent result.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-2">
               {INTEGRATION_STATES.map(([title, body]) => (
                 <article
                   key={title}
-                  className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
+                  className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-center"
                 >
                   <p className="wl-overline text-primary">{title}</p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{body}</p>

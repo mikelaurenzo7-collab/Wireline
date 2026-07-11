@@ -101,18 +101,18 @@ export function ContactPage() {
           <ArrowLeft className="h-4 w-4" />
           Back home
         </Link>
-        <div className="mt-8 max-w-3xl">
+        <div className="mx-auto mt-8 max-w-3xl text-center">
           <p className="wl-stitch-eyebrow">Talk to Wireline</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
             Get the right kind of call coverage.
           </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
             Tell us whether you are handing off a personal call, exploring customer coverage for a
             team, or need help with an existing setup. We will point you to the right next step.
           </p>
           <div className="mt-6 grid gap-2 sm:grid-cols-3">
             {CONTACT_PROMISES.map(([label, detail]) => (
-              <div key={label} className="rounded border border-border bg-card/70 p-3">
+              <div key={label} className="rounded border border-border bg-card/70 p-3 text-center">
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
               </div>
@@ -121,8 +121,8 @@ export function ContactPage() {
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a href={`tel:${salesAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5">
-            <Phone className="h-5 w-5 text-primary" />
+          <a href={`tel:${salesAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+            <Phone className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 font-semibold text-foreground">Call Wireline</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {salesAgent.display} for fit, demos, and rollout questions.
@@ -130,9 +130,9 @@ export function ContactPage() {
           </a>
           <a
             href="mailto:support@trywireline.com"
-            className="wl-stitch-card wl-stitch-card-hover p-5"
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
-            <Mail className="h-5 w-5 text-primary" />
+            <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Personal questions, business coverage, partnerships, and support.
