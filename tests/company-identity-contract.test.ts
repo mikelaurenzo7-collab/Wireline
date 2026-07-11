@@ -145,6 +145,6 @@ describe("company identity pack", () => {
     expect(surface).toContain("Save these changes before requesting verification review.");
     expect(surface).toContain("requesting || !identity.review_eligible || isDirty");
     expect(surface).toContain("Request verification review");
-    expect(phoneSettings).toContain("<CompanyIdentityPack />");
+    expect(phoneSettings).toContain('key={activeNumber?.id ?? "no-number"}');
   });
 });
