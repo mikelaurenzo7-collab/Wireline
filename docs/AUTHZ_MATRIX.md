@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 270
-**Protected:** 229
+**Routes scanned:** 274
+**Protected:** 233
 **Public (allowlisted):** 41
 **Violations:** 0
 
@@ -155,6 +155,9 @@
 | carrier-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
 | carrier-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
 | carrier-routes.ts | POST | `/api/phone-numbers/search` | inline | — | — | Protected |
+| company-identity-routes.ts | GET | `/api/company-identity` | inline | — | — | Protected |
+| company-identity-routes.ts | POST | `/api/company-identity` | inline | — | — | Protected |
+| company-identity-routes.ts | POST | `/api/company-identity/review-request` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/compliance/center` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/compliance/consent-log` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/dnc` | inline | — | — | Protected |
@@ -306,6 +309,7 @@
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/message-status` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
+| user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
 | vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
 | video-presenter-routes.ts | POST | `/api/agents/:id/video-presenter/enable` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
