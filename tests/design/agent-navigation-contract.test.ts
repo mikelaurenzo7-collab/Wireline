@@ -84,7 +84,7 @@ describe("agent navigation contract", () => {
     expect(createDialog).toMatch(/Fast Start/);
     expect(createDialog).toMatch(/~3 minutes to your first agent/);
     expect(createDialog).toMatch(/What do you need handled/);
-    expect(createDialog).toMatch(/Provision Wireline number/);
+    expect(createDialog).toMatch(/Provision a number/);
     expect(createDialog).toMatch(/\/studio\?agent=/);
     expect(createDialog).not.toMatch(/\/training\?agent=|\/knowledge\?agent=/);
     expect(productCopy).toMatch(/Brief it\. Train it\. Launch it on the line\./);

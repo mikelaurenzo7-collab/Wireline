@@ -59,7 +59,7 @@ export default function ClientAppsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard">
-        <WorkspacePageIntro title="Apps" description={CLIENT_SURFACE_POSTURE.summary} />
+        <WorkspacePageIntro title="Apps" />
         <section
           className="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
           aria-label="Wireline apps and companion surfaces"

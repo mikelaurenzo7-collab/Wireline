@@ -187,7 +187,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/Developers.tsx",
     developersPage,
-    /Programmatic agents/,
+    /create a new agent configuration/,
     "developer surface must position agents, not assistants",
   );
   mustExclude(

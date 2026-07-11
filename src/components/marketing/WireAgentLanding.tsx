@@ -155,8 +155,6 @@ export default function WireAgentLanding() {
           proof={AUDIENCES}
         />
 
-        
-
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -310,9 +308,13 @@ export default function WireAgentLanding() {
               ))}
             </div>
             <div className="mt-8 text-center">
+              <p className="mx-auto max-w-[46ch] text-[13px] leading-[1.6] text-muted-foreground">
+                Every plan includes guaranteed voice minutes. Usage beyond them draws from prepaid
+                Conversation Balance you top up and control — no surprise invoices.
+              </p>
               <Link
                 to="/pricing"
-                className="inline-flex items-center gap-2 text-[14px] font-semibold text-primary hover:underline"
+                className="mt-5 inline-flex items-center gap-2 text-[14px] font-semibold text-primary hover:underline"
               >
                 Compare every plan <ArrowRight size={14} aria-hidden="true" />
               </Link>

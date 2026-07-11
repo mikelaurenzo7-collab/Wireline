@@ -2,22 +2,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  CLIENT_SURFACE_POSTURE,
-  PRODUCT_POSTURE,
-} from "../src/lib/product-copy";
+import { CLIENT_SURFACE_POSTURE, PRODUCT_POSTURE } from "../src/lib/product-copy";
 
-const read = (path: string) =>
-  readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 function relativeLuminance(hex: string): number {
   const channels = hex
     .replace("#", "")
     .match(/.{2}/g)!
     .map((channel) => Number.parseInt(channel, 16) / 255)
-    .map((channel) =>
-      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-    );
+    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
@@ -43,9 +37,7 @@ describe("current-state UI contract", () => {
   it("keeps companion availability honest to the web-first launch order", () => {
     const apps = read("src/pages/ClientAppsPage.tsx");
 
-    expect(CLIENT_SURFACE_POSTURE.summary).toContain(
-      "Web is the canonical runtime",
-    );
+    expect(CLIENT_SURFACE_POSTURE.summary).toContain("Web is the canonical runtime");
     expect(CLIENT_SURFACE_POSTURE.browser.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.chatgpt.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.android.status).toBe("Internal beta");
@@ -65,17 +57,13 @@ describe("current-state UI contract", () => {
     expect(landing).toContain("/signup?plan=starter&mode=inbound");
     expect(landing).toContain("/signup?plan=starter&mode=hybrid");
 
-    expect(auth).toContain(
-      'pathname === "/signup" || pathname === "/get-started"',
-    );
+    expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
     expect(auth).toContain('starter: "Starter · $9/month"');
     expect(auth).toContain('team: "Starter Plus · $19/month"');
     expect(auth).toContain('business: "Pro · $59/month"');
     expect(auth).toContain('enterprise: "Business · $149/month"');
     expect(auth).toContain(': "starter";');
-    expect(auth).not.toContain(
-      'nextMode === "business" ? "business" : "personal"',
-    );
+    expect(auth).not.toContain('nextMode === "business" ? "business" : "personal"');
   });
 
   it("keeps account entry and shared page headers centered, concise, and wrap-safe", () => {
@@ -90,13 +78,9 @@ describe("current-state UI contract", () => {
     expect(auth).toContain("location.search");
     expect(auth).not.toContain("AuthBrandPanel");
     expect(authCss).toContain("grid-template-columns: minmax(0, 1fr)");
-    expect(mobile).toMatch(
-      /\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/,
-    );
+    expect(mobile).toMatch(/\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/);
     expect(shell).toContain("max-w-[32ch] break-words text-balance");
-    expect(shell).not.toContain(
-      'className="truncate font-[var(--wireline-font-family-display)]',
-    );
+    expect(shell).not.toContain('className="truncate font-[var(--wireline-font-family-display)]');
     expect(features).toContain('["Build", "Train", "Launch", "Improve"]');
   });
 
@@ -116,9 +100,7 @@ describe("current-state UI contract", () => {
       /system-hardening\.css";[\s\S]*responsive\.css";[\s\S]*ruthless-mobile-cleanup\.css";[\s\S]*agent-tabs-compact\.css";/,
     );
     expect(index).toContain("font-size: 16px");
-    expect(responsive).toContain(
-      "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",
-    );
+    expect(responsive).toContain("padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));");
     for (const source of [input, select]) {
       expect(source).toContain("h-11");
       expect(source).toContain("text-base");
@@ -126,21 +108,15 @@ describe("current-state UI contract", () => {
     }
     expect(textarea).toContain("text-base");
     expect(radixSelect).toContain("min-h-11");
-    expect(navigation).toContain('label: "Connections"');
-    expect(navigation).toContain('shortLabel: "Wire"');
+    expect(navigation).toContain('label: "Wire"');
+    expect(navigation).toContain('shortLabel: "Train"');
   });
 
   it("keeps optional Paper theme tertiary copy at WCAG AA contrast", () => {
     const lightTheme = read("src/styles/theme-light.css");
-    const tertiary = lightTheme.match(
-      /--wireline-color-text-tertiary:\s*(#[0-9a-f]{6})/i,
-    )?.[1];
-    const canvas = lightTheme.match(
-      /--wireline-color-canvas-default:\s*(#[0-9a-f]{6})/i,
-    )?.[1];
-    const surface = lightTheme.match(
-      /--wireline-color-surface-default:\s*(#[0-9a-f]{6})/i,
-    )?.[1];
+    const tertiary = lightTheme.match(/--wireline-color-text-tertiary:\s*(#[0-9a-f]{6})/i)?.[1];
+    const canvas = lightTheme.match(/--wireline-color-canvas-default:\s*(#[0-9a-f]{6})/i)?.[1];
+    const surface = lightTheme.match(/--wireline-color-surface-default:\s*(#[0-9a-f]{6})/i)?.[1];
 
     expect(tertiary).toBeTruthy();
     expect(canvas).toBeTruthy();
@@ -154,12 +130,8 @@ describe("current-state UI contract", () => {
 
     expect(copy).toContain("under the owner's direction");
     expect(copy).toContain("under your direction");
-    expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
-      "Your calls. Your direction. Your outcomes.",
-    );
-    expect(copy).toContain(
-      "guardrails, approvals, spend, handoffs, and escalation",
-    );
+    expect(PRODUCT_POSTURE.personal.emptyBody).toBe("Your calls. Your direction. Your outcomes.");
+    expect(copy).toContain("guardrails, approvals, spend, handoffs, and escalation");
     expect(copy).not.toContain("under the owner's rules");
     expect(copy).toContain("consent rules");
   });

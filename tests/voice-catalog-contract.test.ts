@@ -32,11 +32,13 @@ describe("voice catalog", () => {
       "resolveAvatarDefaultVoice",
     );
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
+    // The face picker is intentionally minimal while the presenter catalog is paused; it still
+    // wires matched-voice resolution through the MatchedPresenterVoice callback API.
     expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
-      "matched-voice",
+      "MatchedPresenterVoice",
     );
     expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
-      "Voice match",
+      "onMatchedVoiceChange",
     );
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
   });

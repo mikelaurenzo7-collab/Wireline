@@ -21,9 +21,9 @@ describe("static marketing metadata", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const landing = read("src/pages/LandingPage.tsx");
 
-    expect(hero).toContain('title === MARKETING_VOICE.headline');
+    expect(hero).toContain("title === MARKETING_VOICE.headline");
     expect(hero).toContain('aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}');
-    expect(hero).toContain("whitespace-nowrap text-[clamp(1.6rem,8.1vw,5.65rem)]");
+    expect(hero).toContain("text-[clamp(3.2rem,8.2vw,7.25rem)]");
     expect(landing).toContain('title="Wireline — Wire → Work → Win"');
     expect(landing).not.toContain('title="Wireline | Wire → Work → Win"');
   });

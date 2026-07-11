@@ -17,9 +17,7 @@ describe("product voice cohesion", () => {
   it("keeps marketing hero strings and call direction modes in one shared module", () => {
     // Customer-facing positioning must feel like the owner's best employee,
     // not a threatening executive title or a menu of departments to configure.
-    expect(BRAND_SYSTEM.northStar).toBe(
-      "The best employee you've ever had, for next to nothing.",
-    );
+    expect(BRAND_SYSTEM.northStar).toBe("The best employee you've ever had, for next to nothing.");
     expect(BRAND_SYSTEM.defaultRole).toBe("Your best employee");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Wire", "Work", "Win"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
@@ -39,10 +37,10 @@ describe("product voice cohesion", () => {
     expect(OUTBOUND_WEDGE.subline).toContain("sells");
     expect(OUTBOUND_WEDGE.subline).toContain("markets");
     expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
-    expect(OUTBOUND_WEDGE.subline).toContain("included number");
+    expect(OUTBOUND_WEDGE.subline).toContain("included Wireline number");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
     expect(AGENT_NUMBER_PROMISE).toContain("Every included AI employee");
-    expect(AGENT_NUMBER_PROMISE).toContain("included number");
+    expect(AGENT_NUMBER_PROMISE).toContain("included Wireline number");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Sell", "Follow up", "Sync"]);
   });
@@ -52,12 +50,15 @@ describe("product voice cohesion", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const authPortal = read("src/components/AuthPortal.tsx");
 
-    for (const surface of [features, authPortal]) {
-      expect(surface).toContain("Build");
-      expect(surface).toContain("Train");
-      expect(surface).toContain("Launch");
-      expect(surface).toContain("Improve");
-    }
+    // Features is the explanatory public surface that carries the full operating loop.
+    expect(features).toContain("Build");
+    expect(features).toContain("Train");
+    expect(features).toContain("Launch");
+    expect(features).toContain("Improve");
+
+    // The sign-in/up funnel stays intentionally minimal (see PR #738): it leads with
+    // the product promise, not a decorative four-step loop grid.
+    expect(authPortal).toContain("Build your first AI employee.");
 
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");

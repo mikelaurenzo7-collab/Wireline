@@ -54,13 +54,7 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     icon: GraduationCap,
     matches: ["/knowledge", "/training"],
   },
-  {
-    href: "/connections",
-    label: "Connections",
-    shortLabel: "Wire",
-    icon: Workflow,
-    matches: ["/connections", "/actions"],
-  },
+  { href: "/connections", label: "Wire", icon: Workflow, matches: ["/connections", "/actions"] },
 ];
 
 export const OPERATE_NAV: ShellNavItem[] = [
@@ -93,13 +87,7 @@ export const MOBILE_MORE_NAV: ShellNavItem[] = [
     icon: GraduationCap,
     matches: ["/knowledge", "/training"],
   },
-  {
-    href: "/connections",
-    label: "Connections",
-    shortLabel: "Wire",
-    icon: Workflow,
-    matches: ["/connections", "/actions"],
-  },
+  { href: "/connections", label: "Wire", icon: Workflow, matches: ["/connections", "/actions"] },
   { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
   { href: "/insights", label: "Insights", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
@@ -172,7 +160,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/overview": "Overview",
   "/studio": "Studio",
   "/knowledge": "Training",
-  "/connections": "Connections",
+  "/connections": "Wire",
   "/phone": "Phone",
   "/approvals": "Approvals",
   "/insights": "Insights",

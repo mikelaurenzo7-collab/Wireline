@@ -538,19 +538,15 @@ export default function CreateAgentDialog({
                 </button>
               </div>
 
-              <StatusNotice
-                tone="info"
-                title="Launch safely"
-                className="mt-4"
-                actions={null}
-              >
-                You can train first, then claim a number and test the line before customers reach it.
+              <StatusNotice tone="info" title="Launch safely" className="mt-4">
+                You can train first, then claim a number and test the line before customers reach
+                it.
               </StatusNotice>
             </>
           )}
 
           {error ? (
-            <StatusNotice tone="danger" title="Fast Start issue" className="mt-5" actions={null}>
+            <StatusNotice tone="destructive" title="Fast Start issue" className="mt-5">
               {error}
             </StatusNotice>
           ) : null}
@@ -565,7 +561,12 @@ export default function CreateAgentDialog({
             </p>
             <div className="flex gap-2 sm:justify-end">
               {step === 2 ? (
-                <Button type="button" variant="ghost" onClick={() => setStep(1)} disabled={creating}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setStep(1)}
+                  disabled={creating}
+                >
                   Back
                 </Button>
               ) : null}

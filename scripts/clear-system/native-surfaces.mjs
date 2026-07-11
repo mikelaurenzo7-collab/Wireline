@@ -52,8 +52,8 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
     androidApp,
-    /AI profit agents for appointments, lead revival, promotions, and follow-up\./,
-    "Android sign-in must use the profit-agent landing promise",
+    /AI employees for appointments, lead revival, promotions, and follow-up\./,
+    "Android sign-in must use the AI-employee landing promise",
   );
   mustInclude(
     "android/app/src/main/java/com/wireline/app/ui/setup/SetupScreens.kt",
@@ -101,8 +101,8 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "ios/Wireline/Views/SignInView.swift",
     iosSignIn,
-    /AI profit agents for appointments, lead revival, promotions, and follow-up\./,
-    "iOS sign-in must use the profit-agent landing promise",
+    /AI employees for appointments, lead revival, promotions, and follow-up\./,
+    "iOS sign-in must use the AI-employee landing promise",
   );
   mustInclude(
     "ios/Wireline/Views/WorkspaceView.swift",

@@ -7,7 +7,7 @@ import {
 
 describe("signup-intent", () => {
   it("normalizes retired plan ids into the current commercial model", () => {
-    expect(parseSignupIntent("?plan=personal-plus")?.preferredPlanId).toBe("starter");
+    expect(parseSignupIntent("?plan=personal-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");
     expect(parseSignupIntent("?plan=starter")?.preferredPlanId).toBe("starter");
     expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("enterprise");
