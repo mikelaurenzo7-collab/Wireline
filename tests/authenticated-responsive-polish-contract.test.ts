@@ -33,6 +33,24 @@ describe("authenticated responsive polish contract", () => {
     expect(inbox).not.toContain("sm:flex-row sm:items-end sm:justify-between");
   });
 
+  it("keeps the shared workspace chrome mounted while lazy routes resolve", () => {
+    const routes = read("src/routes/AppRoutes.tsx");
+
+    expect(routes).toContain('<WorkspaceShell contentClassName="pt-1 pb-8">');
+    expect(routes).toContain('<WorkspacePageFrame mode="standard">');
+    expect(routes).toContain("<RouteFallback />");
+  });
+
+  it("keeps one desktop Settings entry while preserving mobile access", () => {
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const navigation = read("src/constants/navigation.ts");
+
+    expect(shell).toContain('item.href !== "/settings"');
+    expect(shell).toContain('to="/settings"');
+    expect(shell).toContain('aria-label="Account settings"');
+    expect(navigation).toContain('{ href: "/settings", label: "Settings"');
+  });
+
   it("gives framed settings rows full-width actions on the smallest phones", () => {
     const css = read("src/styles/workspace-polish.css");
 
