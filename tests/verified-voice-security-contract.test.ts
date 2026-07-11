@@ -34,11 +34,14 @@ describe("voice authorization security contract", () => {
     expect(library).not.toContain("verified voice");
   });
 
-  it("keeps browser uploads beneath the deployed function payload ceiling", () => {
+  it("keeps browser and server payloads beneath the deployed function ceiling", () => {
     expect(library).toContain("MAX_CLONE_UPLOAD_BYTES = 3 * 1024 * 1024");
     expect(library).toContain("cloneFile.size > MAX_CLONE_UPLOAD_BYTES");
     expect(library).toContain("compressed sample under 3 MB");
+    expect(routes).toContain("MAX_CLONE_AUDIO_BYTES = 3 * 1024 * 1024");
+    expect(routes).toContain("Audio sample too large (max 3 MB)");
     expect(library).not.toContain("under 25 MB");
+    expect(routes).not.toContain("max 25 MB");
   });
 
   it("enforces authenticated spend limits across serverless replicas", () => {
@@ -46,6 +49,7 @@ describe("voice authorization security contract", () => {
     expect(routes).toContain("voice.clone.requested");
     expect(routes).toContain("pg_advisory_xact_lock");
     expect(routes).toContain("drizzle.transaction");
+    expect(routes).toContain("cloneRequestReserved = true");
   });
 
   it("validates inputs and compensates provider resources on persistence failure", () => {
@@ -57,14 +61,14 @@ describe("voice authorization security contract", () => {
     expect(routes).not.toContain("Cloned by Wireline tenant");
   });
 
-  it("preserves tenant ownership when provider deletion fails", () => {
+  it("preserves tenant ownership whenever provider deletion cannot be completed", () => {
     const deleteHandler = routes.match(
-      /router\.delete\([\s\S]*?ElevenLabs delete failed — preserving local ownership for retry[\s\S]*?res\.json\(\{ ok: true \}\);/,
+      /router\.delete\([\s\S]*?if \(!elevenLabsConfigured\(\)\)[\s\S]*?ElevenLabs delete failed — preserving local ownership for retry[\s\S]*?res\.json\(\{ ok: true \}\);/,
     )?.[0];
     expect(deleteHandler).toBeDefined();
-    expect(deleteHandler).toContain("throw AppError.fromHttpStatus(");
     expect(deleteHandler).toContain("The voice remains private and owned by this workspace.");
     expect(deleteHandler).toContain(".delete(schema.clonedVoices)");
+    expect(deleteHandler).toContain("await elDeleteVoice(voiceId)");
   });
 
   it("does not return raw provider errors to account holders", () => {
