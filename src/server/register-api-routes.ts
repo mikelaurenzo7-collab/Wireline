@@ -25,6 +25,7 @@ import accountRouter from "../routes/account-routes";
 import settingsRouter from "../routes/settings-routes";
 import postCallOutputRouter from "../routes/post-call-output-routes";
 import carrierRouter from "../routes/carrier-routes";
+import companyIdentityRouter from "../routes/company-identity-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
 import dashboardRouter from "../routes/dashboard-routes";
@@ -86,6 +87,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
   app.use(carrierRouter);
+  app.use(companyIdentityRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);
   // Audit/AI-spend ledger: /api/audit/summary(/events/stats/export), plus a
