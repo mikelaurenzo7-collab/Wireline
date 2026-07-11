@@ -132,6 +132,11 @@ export function buildCompanyIdentityProfile(args: {
   };
 }
 
+/**
+ * Fingerprints the facts a carrier, messaging provider, or email provider
+ * actually reviews. Requested channel selection is deliberately excluded so
+ * adding Email later does not erase an already-approved Voice identity.
+ */
 export function companyIdentityFingerprint(value: {
   businessName: string | null;
   brandName: string | null;
@@ -140,7 +145,7 @@ export function companyIdentityFingerprint(value: {
   website: string | null;
   supportEmail: string | null;
   defaultCallReason: string | null;
-  requestedChannels: CompanyIdentityChannel[];
+  phoneNumber: string | null;
 }): string {
   return JSON.stringify({
     businessName: nullableString(value.businessName),
@@ -150,7 +155,7 @@ export function companyIdentityFingerprint(value: {
     website: nullableString(value.website),
     supportEmail: nullableString(value.supportEmail)?.toLowerCase() ?? null,
     defaultCallReason: nullableString(value.defaultCallReason),
-    requestedChannels: [...value.requestedChannels].sort(),
+    phoneNumber: nullableString(value.phoneNumber),
   });
 }
 
