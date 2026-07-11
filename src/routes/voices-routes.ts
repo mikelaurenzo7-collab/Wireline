@@ -51,7 +51,8 @@ const router = Router();
 
 const CLONE_WINDOW_MS = 24 * 60 * 60_000;
 const MAX_CLONE_REQUESTS_PER_WINDOW = 5;
-const MAX_CLONE_AUDIO_BYTES = 25 * 1024 * 1024;
+// 3 MiB expands to ~4 MiB as base64, leaving headroom under Vercel's 4.5 MB request cap.
+const MAX_CLONE_AUDIO_BYTES = 3 * 1024 * 1024;
 const MIN_CLONE_AUDIO_BYTES = 1024;
 const VOICE_CLONE_CONSENT_VERSION = "voice-clone-consent-v2-2026-07-11";
 const VOICE_CLONE_DEFAULT_SCOPE = "wireline-agents";
@@ -69,8 +70,8 @@ const ALLOWED_CLONE_AUDIO_MIME_TYPES = new Set([
 ]);
 
 /**
- * Defense in depth for unauthenticated infrastructure abuse. The durable
- * per-user quota below is the source of truth for authenticated clone spend.
+ * Defense in depth for infrastructure abuse. The durable per-user quota below
+ * is the source of truth for authenticated clone spend.
  */
 const cloneRateLimiter = createIpRateLimiter({
   bucket: "api:voice-clone",
@@ -144,7 +145,7 @@ function decodeCloneAudio(value: unknown): { bytes: Buffer; base64: string } {
     throw AppError.fromHttpStatus(400, "Audio sample is too short.");
   }
   if (bytes.length > MAX_CLONE_AUDIO_BYTES) {
-    throw AppError.fromHttpStatus(413, "Audio sample too large (max 25 MB).");
+    throw AppError.fromHttpStatus(413, "Audio sample too large (max 3 MB).");
   }
 
   return { bytes, base64 };
@@ -240,7 +241,7 @@ async function recordVoiceCloneOutcome(args: {
   }
 }
 
-// GET /api/voices — merged catalog.
+// GET /api/voices — merged tenant-private and public-premade catalog.
 router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     let ownClones: Array<{ voiceId: string; name: string; previewUrl: string | null }> = [];
@@ -332,6 +333,7 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
   }
 });
 
+// GET /api/voices/curated/preview — Wireline-curated provider samples.
 router.get(
   "/api/voices/curated/preview",
   curatedPreviewRateLimiter,
@@ -356,6 +358,7 @@ router.get(
   },
 );
 
+// GET /api/voices/presenter/:id/preview — trusted presenter sample redirect.
 router.get("/api/voices/presenter/:id/preview", async (req: Request, res: Response) => {
   try {
     if (!presenterVoicesConfigured()) {
@@ -374,6 +377,7 @@ router.get("/api/voices/presenter/:id/preview", async (req: Request, res: Respon
   }
 });
 
+// GET /api/voices/:id/preview — public provider-premade preview only.
 router.get(
   "/api/voices/:id/preview",
   publicPreviewRateLimiter,
@@ -413,11 +417,13 @@ router.get(
   },
 );
 
+// POST /api/voices/clone — authorized instant clone from one audio sample.
 router.post(
   "/api/voices/clone",
   authenticateUser,
   cloneRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
+    let cloneRequestReserved = false;
     try {
       if (!elevenLabsConfigured()) {
         return res.status(503).json({
@@ -469,6 +475,7 @@ router.post(
         audioMimeType: cloneMimeType,
         intendedUse,
       });
+      cloneRequestReserved = true;
 
       let providerAudioBase64 = decodedAudio.base64;
       let providerMimeType = cloneMimeType;
@@ -483,7 +490,6 @@ router.post(
             outputBytes: Buffer.byteLength(providerAudioBase64, "base64"),
           });
         } catch (e) {
-          if (e instanceof AppError) throw e;
           log.warn("voice isolation failed — proceeding with validated source audio", {
             userId: req.user.id,
             error: getErrorMessage(e),
@@ -544,16 +550,18 @@ router.post(
         },
       });
     } catch (e) {
-      if (e instanceof AppError) throw e;
       log.error("voice clone failed", {
         userId: req.user.id,
         error: getErrorMessage(e),
       });
-      await recordVoiceCloneOutcome({
-        userId: req.user.id,
-        outcome: "failed",
-        errorClass: e instanceof Error ? e.name : "UnknownError",
-      });
+      if (cloneRequestReserved) {
+        await recordVoiceCloneOutcome({
+          userId: req.user.id,
+          outcome: "failed",
+          errorClass: e instanceof Error ? e.name : "UnknownError",
+        });
+      }
+      if (e instanceof AppError) throw e;
       res.status(500).json({
         code: "INTERNAL_ERROR",
         error: "Voice creation failed. Try again or contact support.",
@@ -562,6 +570,7 @@ router.post(
   },
 );
 
+// DELETE /api/voices/:id — tenant-owned cloned voice only.
 router.delete(
   "/api/voices/:id",
   authenticateUser,
@@ -580,27 +589,31 @@ router.delete(
         .limit(1);
       if (!own) throw AppError.fromHttpStatus(404, "Voice not found in your library.");
 
-      if (elevenLabsConfigured()) {
-        try {
-          await elDeleteVoice(voiceId);
-        } catch (e) {
-          if (e instanceof AppError) throw e;
-          log.error("ElevenLabs delete failed — preserving local ownership for retry", {
-            userId: req.user.id,
-            voiceId,
-            error: getErrorMessage(e),
-          });
-          await recordVoiceCloneOutcome({
-            userId: req.user.id,
-            voiceId,
-            outcome: "failed",
-            errorClass: "ProviderDeletionError",
-          });
-          throw AppError.fromHttpStatus(
-            502,
-            "Voice deletion is temporarily unavailable. The voice remains private and owned by this workspace.",
-          );
-        }
+      if (!elevenLabsConfigured()) {
+        throw AppError.fromHttpStatus(
+          503,
+          "Voice deletion is temporarily unavailable. The voice remains private and owned by this workspace.",
+        );
+      }
+
+      try {
+        await elDeleteVoice(voiceId);
+      } catch (e) {
+        log.error("ElevenLabs delete failed — preserving local ownership for retry", {
+          userId: req.user.id,
+          voiceId,
+          error: getErrorMessage(e),
+        });
+        await recordVoiceCloneOutcome({
+          userId: req.user.id,
+          voiceId,
+          outcome: "failed",
+          errorClass: "ProviderDeletionError",
+        });
+        throw AppError.fromHttpStatus(
+          502,
+          "Voice deletion is temporarily unavailable. The voice remains private and owned by this workspace.",
+        );
       }
 
       await drizzle
