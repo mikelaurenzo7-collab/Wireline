@@ -86,6 +86,22 @@ if (FOUNDER_PRICES.length !== 14) {
   errors.push(`Founder manifest must define 14 active prices; found ${FOUNDER_PRICES.length}.`);
 }
 
+for (const [source, label] of [
+  [setupCatalog, "Stripe setup"],
+  [auditCatalog, "Stripe live audit"],
+]) {
+  requireText(
+    source,
+    'status: "all"',
+    `${label} must inspect every Stripe subscription status before catalog cleanup.`,
+  );
+  requireText(
+    source,
+    '"incomplete_expired"',
+    `${label} must distinguish terminal from nonterminal subscriptions.`,
+  );
+}
+
 for (const retiredToken of [
   "Wireline Team - Monthly",
   "Wireline Business - Monthly",
