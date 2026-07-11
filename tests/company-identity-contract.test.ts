@@ -157,7 +157,7 @@ describe("company identity pack", () => {
     expect(registry).toContain("app.use(companyIdentityRouter)");
   });
 
-  it("keeps the customer surface explicit about coverage and approval limits", () => {
+  it("keeps the customer surface explicit, fail-closed, and touch accessible", () => {
     const surface = read("src/components/settings/CompanyIdentityPack.tsx");
     const phoneSettings = read("src/pages/PhoneSettings.tsx");
 
@@ -166,7 +166,12 @@ describe("company identity pack", () => {
     expect(surface).toContain("Maximum 15 characters for traditional CNAM fallback.");
     expect(surface).toContain("supported mobile networks after approval");
     expect(surface).toContain("Save these changes before requesting verification review.");
-    expect(surface).toContain("requesting || !identity.review_eligible || isDirty");
+    expect(surface).toContain("Select at least one identity channel before saving.");
+    expect(surface).toContain("min-h-11 cursor-pointer");
+    expect(surface).toContain("reviewAlreadyRequested");
+    expect(surface).toContain("Review already requested");
+    expect(surface).toContain("Update identity to resubmit");
+    expect(surface).toContain("Not selected");
     expect(surface).toContain("Request verification review");
     expect(phoneSettings).toContain('key={activeNumber?.id ?? "no-number"}');
   });
