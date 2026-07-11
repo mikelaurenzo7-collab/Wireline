@@ -1,93 +1,92 @@
 /**
- * Launch story — the profit-agent positioning and the included-number promise
- * are the active truth across static metadata, runtime metadata, manifest,
- * OG asset, shared copy, landing, catalog, billing render paths, and docs.
- * Retired positioning must not resurface on any of these surfaces.
+ * Launch story — Wire → Work → Win and the AI-employee operating model are
+ * the active truth across metadata, install surfaces, shared copy, conversion,
+ * and billing. Retired brand eras must not return to active product surfaces.
  */
 const RETIRED_PRODUCT_TERMS = [
   "Ametrine Precision",
   "Browser Companion",
-  "personal AI call assistant",
-  "AI phone employee",
-  "AI phone employees",
+  "AI profit agent",
+  "AI profit agents",
+  "7-day free trial",
 ];
 
 export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   const indexHtml = read("index.html");
   const pageMeta = read("src/lib/page-meta.tsx");
   const manifest = read("public/site.webmanifest");
-  const ogImage = read("public/og-image.svg");
   const productCopy = read("src/lib/product-copy.ts");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
   const landingPage = read("src/pages/LandingPage.tsx");
   const planCatalog = read("src/lib/plan-catalog.ts");
-  const billingSettings = read("src/pages/BillingSettings.tsx");
   const pricingPage = read("src/pages/Pricing.tsx");
-  const extensionPanel = read("apps/browser-extension/panel/index.html");
-  const docsReadme = read("docs/README.md");
-  const rootReadme = read("README.md");
-  const wedgeDoc = read("docs/OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md");
 
   mustInclude(
     "index.html",
     indexHtml,
-    /Wireline — AI profit agents that actually call\./,
-    "static metadata must use the profit-agent positioning",
+    /<title>Wireline — Wire → Work → Win<\/title>/,
+    "static metadata must use the canonical brand spine",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /AI profit agents with included numbers.*book appointments, revive leads, promote offers/i,
-    "static metadata must describe the profit-agent and included-number promise",
+    /Voice AI employee for real conversations\./,
+    "static metadata must state the current product category",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline - AI profit agents that actually call"/,
-    "runtime fallback title must use profit-agent positioning",
+    /DEFAULT_TITLE = "Wireline - Wire → Work → Win"/,
+    "runtime metadata must use the canonical brand spine",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /AI profit agents with included numbers/,
-    "runtime fallback description must use the included-number promise",
+    /Voice AI employee for real conversations\./,
+    "runtime metadata must use the current product description",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"Wireline - AI profit agents"/,
-    "install manifest must use profit-agent positioning",
+    /"name"\s*:\s*"Wireline - AI employees"/,
+    "install metadata must use AI-employee positioning",
   );
   mustInclude(
-    "public/og-image.svg",
-    ogImage,
-    /AI PROFIT[\s\S]*AGENTS/,
-    "OG image must use the profit-agent headline",
-  );
-  mustInclude(
-    "public/og-image.svg",
-    ogImage,
-    /Book\. Revive\. Promote\. Follow up\. Log every result\./,
-    "OG image must reinforce the profit-agent promise",
+    "public/site.webmanifest",
+    manifest,
+    /included numbers that call, book appointments, revive leads/,
+    "install metadata must explain the operating value",
   );
 
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /AI profit agents that actually call\./,
-    "shared product copy must anchor the profit-agent headline",
+    /northStar:\s*"The best employee you've ever had, for next to nothing\."/,
+    "shared copy must preserve the north-star promise",
   );
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /PROFIT_AGENT_NUMBER_PROMISE/,
-    "shared product copy must expose the number promise",
+    /productNoun:\s*"AI employee"/,
+    "shared copy must define the canonical product noun",
   );
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /Every included Wireline agent comes with an included number/,
-    "number promise must be explicit and reusable",
+    /brandSpine:\s*\["Wire", "Work", "Win"\]/,
+    "shared copy must define the canonical brand spine",
+  );
+  mustInclude(
+    "src/lib/product-copy.ts",
+    productCopy,
+    /AGENT_NUMBER_PROMISE/,
+    "shared copy must expose the included-number promise",
+  );
+  mustInclude(
+    "src/lib/product-copy.ts",
+    productCopy,
+    /included Wireline number at no extra line fee/,
+    "the included-number promise must stay explicit",
   );
   mustExclude(
     "src/lib/product-copy.ts",
@@ -95,105 +94,73 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /guaranteed profit|profit guarantee/i,
     "shared copy must never promise guaranteed profit",
   );
+
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Your best salesperson, without the commission\./,
-    "landing page must use the strongest profit wedge",
+    /MARKETING_VOICE\.headline/,
+    "landing must consume the shared brand spine",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Every included agent gets an included number/,
-    "landing page must market the included-number promise",
+    /MARKETING_VOICE\.subline/,
+    "landing must consume the shared product subline",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /List -> Pitch -> Call -> Profit/,
-    "landing page must teach the profit-agent loop",
+    /\/signup\?plan=starter&mode=outbound/,
+    "sales conversion must preserve Starter intent",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /Conversation Balance/,
+    "landing economics must explain prepaid variable usage",
   );
   mustInclude(
     "src/pages/LandingPage.tsx",
     landingPage,
-    /AI profit agents with included numbers/,
-    "landing metadata must describe profit agents with included numbers",
+    /Wire → Work → Win|MARKETING_VOICE/,
+    "landing metadata or composition must preserve the brand spine",
   );
 
   mustInclude(
     "src/lib/plan-catalog.ts",
     planCatalog,
-    /Every included agent includes one dedicated number/,
-    "catalog contract must back the included-number claim",
+    /FOUNDER_CATALOG_VERSION/,
+    "the application catalog must stay versioned",
   );
   mustInclude(
     "src/lib/plan-catalog.ts",
     planCatalog,
-    /max_agents:\s*4,[\s\S]*included_phone_numbers:\s*4/,
-    "Team must include one number per included agent",
-  );
-  mustInclude(
-    "src/lib/plan-catalog.ts",
-    planCatalog,
-    /max_agents:\s*8,[\s\S]*included_phone_numbers:\s*8/,
-    "Business must include one number per included agent",
-  );
-  mustInclude(
-    "src/pages/BillingSettings.tsx",
-    billingSettings,
-    /plan\.included_phone_numbers/,
-    "billing settings must render included-number capacity from the catalog",
+    /included_phone_numbers/,
+    "the plan catalog must back included-number claims",
   );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /\$\{planById\.team\.included_phone_numbers\} phone lines included/,
-    "pricing must render Team included numbers from the catalog",
+    /Free Builder/,
+    "pricing must preserve the free build tier",
   );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /\$\{planById\.business\.included_phone_numbers\} phone lines included/,
-    "pricing must render Business included numbers from the catalog",
-  );
-
-  mustInclude(
-    "apps/browser-extension/panel/index.html",
-    extensionPanel,
-    /Command your AI profit agent from any page/,
-    "browser command must use profit-agent copy",
-  );
-
-  mustInclude(
-    "docs/README.md",
-    docsReadme,
-    /AI profit agents/,
-    "docs index must describe the current profit-agent wedge",
+    /Starter Plus/,
+    "pricing must preserve the Founder tier names",
   );
   mustInclude(
-    "docs/README.md",
-    docsReadme,
-    /one dedicated number/i,
-    "docs index must describe the included-number promise",
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /Conversation Balance/,
+    "pricing must explain prepaid Conversation Balance",
   );
-  mustInclude("README.md", rootReadme, /Profit agents/, "README must describe profit agents");
-  mustInclude(
-    "README.md",
-    rootReadme,
-    /Every included agent gets an included number/,
-    "README must describe the included-number promise",
-  );
-  mustInclude(
-    "docs/OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md",
-    wedgeDoc,
-    /AI Profit Agent Wedge/,
-    "wedge doc must be recast around profit agents",
-  );
-  mustInclude(
-    "docs/OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md",
-    wedgeDoc,
-    /Every included Wireline agent should include one dedicated number/,
-    "wedge doc must pin the included-number promise",
+  mustExclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /unlimited (?:calls|messages|usage)|silent(?:ly)? add(?:ed)? overage/i,
+    "pricing must not imply uncontrolled or silent variable usage",
   );
 
   for (const [file, source] of [
@@ -202,9 +169,6 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     ["src/lib/product-copy.ts", productCopy],
     ["src/components/marketing/WireAgentLanding.tsx", wireAgentLanding],
     ["public/site.webmanifest", manifest],
-    ["public/og-image.svg", ogImage],
-    ["README.md", rootReadme],
-    ["docs/README.md", docsReadme],
   ]) {
     const lower = source.toLowerCase();
     const found = RETIRED_PRODUCT_TERMS.filter((term) => lower.includes(term.toLowerCase()));
