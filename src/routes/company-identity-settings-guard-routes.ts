@@ -17,11 +17,19 @@ const IDENTITY_SETTING_KEYS = ["business_name", "brand_name", "brand_logo_url"] 
  * clients. Commit those fields under the same Company Identity lock, reconcile
  * review state, then remove them from the downstream legacy write so they
  * cannot race a review request after the lock is released.
+ *
+ * This is path middleware rather than a duplicate POST route. The canonical
+ * POST /api/settings entry remains owned and inventoried by settings-routes.ts.
  */
-router.post(
+router.use(
   "/api/settings",
   authenticateUser,
   async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
+    if (req.method !== "POST") {
+      next();
+      return;
+    }
+
     const body = req.body ?? {};
     const hasIdentityField = IDENTITY_SETTING_KEYS.some((key) =>
       Object.prototype.hasOwnProperty.call(body, key),
