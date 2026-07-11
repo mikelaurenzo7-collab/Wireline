@@ -228,7 +228,7 @@ export default function VoiceLibraryPanel() {
               maxLength={80}
               required
               placeholder="e.g. Founder voice"
-              className="mt-1.5 w-full rounded-md border border-white/10 bg-card px-3 py-2.5 text-[var(--wireline-typography-caption-size)]"
+              className="mt-1.5 w-full rounded-md border border-border bg-card px-3 py-2.5 text-[var(--wireline-typography-caption-size)]"
             />
           </label>
           <label className="block">
@@ -290,12 +290,12 @@ export default function VoiceLibraryPanel() {
       <section className="space-y-2">
         <p className="wl-label-muted">Your private voices · {ownedVoices.length}</p>
         {loading ? (
-          <div className="flex items-center gap-2 rounded-md border border-white/8 p-4 text-[var(--wireline-typography-caption-size)] text-muted">
+          <div className="flex items-center gap-2 rounded-md border border-border p-4 text-[var(--wireline-typography-caption-size)] text-muted">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
           </div>
         ) : null}
         {!loading && !ownedVoices.length ? (
-          <div className="rounded-md border border-dashed border-white/15 p-6 text-center text-[var(--wireline-typography-caption-size)] text-muted">
+          <div className="rounded-md border border-dashed border-border p-6 text-center text-[var(--wireline-typography-caption-size)] text-muted">
             No private voices created yet.
           </div>
         ) : null}
@@ -303,7 +303,7 @@ export default function VoiceLibraryPanel() {
           ? ownedVoices.map((voice) => (
               <div
                 key={voice.voice_id}
-                className="flex items-center gap-3 rounded-md border border-white/10 bg-card p-3"
+                className="flex items-center gap-3 rounded-md border border-border bg-card p-3"
               >
                 <ShadButton
                   type="button"
@@ -316,7 +316,7 @@ export default function VoiceLibraryPanel() {
                     "h-9 w-9 shrink-0 rounded-full",
                     voice.preview_url
                       ? "border-brand/20 bg-brand/10 text-brand hover:bg-brand/20"
-                      : "bg-black/5 text-muted/70",
+                      : "bg-muted/10 text-muted/70",
                   )}
                   aria-label={`Play preview of ${voice.name}`}
                 >
@@ -330,7 +330,7 @@ export default function VoiceLibraryPanel() {
                   <p className="truncate text-[var(--wireline-typography-caption-size)] font-medium text-foreground">
                     {voice.name}
                   </p>
-                  <p className="wl-label-muted/70">Private Wireline voice</p>
+                  <p className="wl-label-muted opacity-70">Private Wireline voice</p>
                 </div>
                 <ShadButton
                   type="button"
