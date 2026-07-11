@@ -62,7 +62,10 @@ The customer-facing guarantee is intentionally narrow:
 - voice, SMS, and email channel selection;
 - per-channel profile readiness;
 - per-channel provider status;
-- an explicit Wireline identity-review request.
+- an explicit Wireline identity-review request;
+- provider-state-aware review controls that prevent no-op resubmission;
+- explicit fail-closed feedback when no channel is selected;
+- 44-pixel minimum channel-selection targets.
 
 ### API
 
@@ -74,7 +77,9 @@ The customer-facing guarantee is intentionally narrow:
 
 The review request is audit logged as `company_identity.review_requested`. Repeated requests are idempotent: they do not downgrade an approved or in-review channel back to `review_requested`.
 
-### Persistence and integrity
+A changed identity or dedicated number invalidates stale provider state. That reconciliation is persisted and audit logged as `company_identity.review_invalidated`; it is not merely hidden in an API response.
+
+### Persistence, privacy, and concurrency
 
 Canonical brand fields remain in `wireline_settings`:
 
@@ -84,11 +89,13 @@ Canonical brand fields remain in `wireline_settings`:
 
 The channel-specific identity workflow is stored under `wireline_user_preferences.preferences.company_identity` so it can evolve without adding carrier-specific columns to the tenant settings table.
 
-Provider-owned states are not user-editable. The generic user-preferences route preserves the server-owned `company_identity` namespace instead of accepting client-supplied provider states.
+Provider-owned states are not user-editable. The canonical user-preferences writer is mounted before the legacy settings router, terminates the matching request, and preserves the server-owned `company_identity` namespace instead of accepting client-supplied provider states.
 
-Provider review state is bound to a fingerprint of the actual reviewed identity, including the dedicated number. Changing the company identity or number invalidates stale review state. Merely adding another requested channel does not erase an already-approved identity for another channel.
+Company Identity saves, review requests, stale-state reconciliation, and ordinary preference-envelope writes share a transaction-scoped PostgreSQL advisory lock. The settings and user-preferences rows are also locked before state is recalculated. This prevents an ordinary preference save from restoring an older identity snapshot over a newer profile or review request.
 
-Audit evidence stores a SHA-256 fingerprint rather than duplicating the raw company profile.
+Provider review state is bound to a SHA-256 digest of the actual reviewed identity, including the dedicated number. The normalized business profile is not duplicated as a raw fingerprint in preferences or audit metadata. Changing the company identity or number invalidates stale review state. Merely adding another requested channel does not erase an already-approved identity for another channel.
+
+An explicitly empty or corrupt channel selection fails closed. Wireline never silently broadens it back to voice, SMS, and email.
 
 ### Founding-customer operating mode
 
@@ -97,7 +104,7 @@ The current launch path is intentionally founder-led:
 1. The customer completes the identity profile.
 2. Wireline validates channel prerequisites.
 3. The customer requests Wireline review.
-4. The request and exact identity fingerprint are recorded durably.
+4. The request and exact identity digest are recorded durably.
 5. Wireline operations completes the applicable carrier, messaging, or email-provider workflow manually.
 6. Provider status is reflected only after authoritative evidence exists.
 
@@ -181,8 +188,10 @@ Official references:
 - Customers understand that the number belongs to their AI employee.
 - Customers can configure one recognizable company identity across channels.
 - Wireline never represents profile completion as provider approval.
-- Every review request is auditable.
+- Every review request and invalidation is auditable.
 - Provider limitations are visible before activation.
-- Identity or number changes invalidate stale review states.
+- Identity or number changes invalidate stale review states durably.
 - Adding a channel does not erase unrelated approvals.
+- Concurrent preference writes cannot restore stale identity state.
+- Empty or corrupt channel scope never broadens silently.
 - The product remains provider-neutral even when Twilio is the initial carrier implementation.
