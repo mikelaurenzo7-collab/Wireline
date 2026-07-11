@@ -22,6 +22,7 @@ export type CompanyIdentityPreferences = {
   defaultCallReason: string | null;
   requestedChannels: CompanyIdentityChannel[];
   reviewRequestedAt: string | null;
+  reviewFingerprint: string | null;
   providerStatus: Record<CompanyIdentityChannel, CompanyIdentityProviderStatus>;
 };
 
@@ -35,6 +36,7 @@ export type CompanyIdentityProfile = {
   defaultCallReason: string | null;
   requestedChannels: CompanyIdentityChannel[];
   reviewRequestedAt: string | null;
+  reviewFingerprint: string | null;
   providerStatus: Record<CompanyIdentityChannel, CompanyIdentityProviderStatus>;
 };
 
@@ -61,6 +63,7 @@ export function defaultCompanyIdentityPreferences(): CompanyIdentityPreferences 
     defaultCallReason: null,
     requestedChannels: [...COMPANY_IDENTITY_CHANNELS],
     reviewRequestedAt: null,
+    reviewFingerprint: null,
     providerStatus: { ...DEFAULT_PROVIDER_STATUS },
   };
 }
@@ -97,6 +100,7 @@ export function readCompanyIdentityPreferences(value: unknown): CompanyIdentityP
     defaultCallReason: nullableString(raw.defaultCallReason),
     requestedChannels: requestedChannels.length ? requestedChannels : defaults.requestedChannels,
     reviewRequestedAt: nullableString(raw.reviewRequestedAt),
+    reviewFingerprint: nullableString(raw.reviewFingerprint),
     providerStatus: {
       voice: providerStatus(rawProviderStatus.voice),
       sms: providerStatus(rawProviderStatus.sms),
@@ -123,8 +127,47 @@ export function buildCompanyIdentityProfile(args: {
     defaultCallReason: args.preferences.defaultCallReason,
     requestedChannels: args.preferences.requestedChannels,
     reviewRequestedAt: args.preferences.reviewRequestedAt,
+    reviewFingerprint: args.preferences.reviewFingerprint,
     providerStatus: args.preferences.providerStatus,
   };
+}
+
+export function companyIdentityFingerprint(value: {
+  businessName: string | null;
+  brandName: string | null;
+  logoUrl: string | null;
+  callerIdName: string | null;
+  website: string | null;
+  supportEmail: string | null;
+  defaultCallReason: string | null;
+  requestedChannels: CompanyIdentityChannel[];
+}): string {
+  return JSON.stringify({
+    businessName: nullableString(value.businessName),
+    brandName: nullableString(value.brandName),
+    logoUrl: nullableString(value.logoUrl),
+    callerIdName: nullableString(value.callerIdName),
+    website: nullableString(value.website),
+    supportEmail: nullableString(value.supportEmail)?.toLowerCase() ?? null,
+    defaultCallReason: nullableString(value.defaultCallReason),
+    requestedChannels: [...value.requestedChannels].sort(),
+  });
+}
+
+function supportEmailMatchesWebsite(website: string | null, supportEmail: string | null): boolean {
+  if (!website || !supportEmail) return false;
+  try {
+    const websiteHost = new URL(website).hostname.toLowerCase().replace(/^www\./, "");
+    const emailDomain = supportEmail.split("@")[1]?.toLowerCase().replace(/^www\./, "");
+    if (!emailDomain) return false;
+    return (
+      websiteHost === emailDomain ||
+      websiteHost.endsWith(`.${emailDomain}`) ||
+      emailDomain.endsWith(`.${websiteHost}`)
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function buildCompanyIdentityReadiness(args: {
@@ -135,6 +178,10 @@ export function buildCompanyIdentityReadiness(args: {
   const hasName = Boolean(args.profile.brandName || args.profile.businessName);
   const hasWebsite = Boolean(args.profile.website);
   const hasSupportEmail = Boolean(args.profile.supportEmail);
+  const hasBrandedSupportEmail = supportEmailMatchesWebsite(
+    args.profile.website,
+    args.profile.supportEmail,
+  );
   const hasCallerIdName = Boolean(args.profile.callerIdName);
 
   const voiceMissing = [
@@ -154,7 +201,7 @@ export function buildCompanyIdentityReadiness(args: {
   const emailMissing = [
     !hasName ? "company display name" : null,
     !hasWebsite ? "company website" : null,
-    !hasSupportEmail ? "support email on the company domain" : null,
+    !hasBrandedSupportEmail ? "support email on the company domain" : null,
   ].filter((value): value is string => Boolean(value));
 
   return {
