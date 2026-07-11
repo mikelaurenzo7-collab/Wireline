@@ -104,10 +104,9 @@ async function openCheckoutSessions(stripe) {
 }
 
 async function liveSubscriptions(stripe) {
-  return [
-    ...(await collect(stripe.subscriptions.list({ status: "active", limit: 100 }))),
-    ...(await collect(stripe.subscriptions.list({ status: "trialing", limit: 100 }))),
-  ];
+  return (await collect(stripe.subscriptions.list({ status: "all", limit: 100 }))).filter(
+    (subscription) => !["canceled", "incomplete_expired"].includes(subscription.status),
+  );
 }
 
 async function main() {
