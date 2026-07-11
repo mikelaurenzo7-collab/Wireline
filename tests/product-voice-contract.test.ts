@@ -32,17 +32,15 @@ describe("product voice cohesion", () => {
       "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe(
-      "Your AI Voice Employee Calls, Texts, Emails—and Gets Work Done.",
-    );
+    expect(MARKETING_VOICE.headline).toBe("Your next AI employee calls, texts, and emails.");
     expect(MARKETING_VOICE.subline).toBe(
-      "Every paid plan includes a Wireline number at no extra line fee. Train one employee to answer, sell, support, book, follow up, update your systems, and log every outcome across every customer conversation.",
+      "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
     );
     expect(MARKETING_VOICE.channelProof).toEqual([
-      "Voice calls",
-      "Text / SMS",
-      "Email",
-      "Number included",
+      "Voice agent",
+      "Text / SMS agent",
+      "Email agent",
+      "One shared memory",
     ]);
     expect(MARKETING_VOICE.spine).toEqual(BRAND_SYSTEM.brandSpine);
     expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);
