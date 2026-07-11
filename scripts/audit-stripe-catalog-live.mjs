@@ -195,6 +195,20 @@ async function main() {
   for (const price of activePrices) {
     if (canonicalPriceIds.has(price.id)) continue;
     const product = productById.get(productIdOf(price));
+    const retainedRetiredDefault =
+      product &&
+      !product.active &&
+      (product.default_price === price.id ||
+        price.metadata?.wireline_catalog_state === "retired_anchor");
+    if (retainedRetiredDefault) {
+      addFinding(findings, "warning", "Inactive product retains its Stripe-required default price.", {
+        price_id: price.id,
+        product_id: product.id,
+        product: product.name,
+      });
+      continue;
+    }
+
     const looksManaged =
       expectedProductNames.has(product?.name) ||
       !!price.metadata?.wireline_plan_id ||
