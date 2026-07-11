@@ -22,11 +22,15 @@ describe("voice authorization security contract", () => {
     expect(presenterVoices).toContain("await listPresenterVoices()");
     expect(presenterVoices).toContain("Enforce the same public-catalog boundary before paid synthesis");
     expect(presenterVoices).not.toContain("/v3/voices/${encodeURIComponent(normalized)}");
-    expect(presenterVoices).toContain('throw AppError.fromHttpStatus(404, "Presenter voice not found.")');
+    expect(presenterVoices).toContain(
+      'throw AppError.fromHttpStatus(404, "Presenter voice not found.")',
+    );
   });
 
   it("records versioned authorization evidence without retaining source audio", () => {
-    expect(routes).toContain('VOICE_CLONE_CONSENT_VERSION = "voice-clone-consent-v2-2026-07-11"');
+    expect(routes).toContain(
+      'VOICE_CLONE_CONSENT_VERSION = "voice-clone-consent-v2-2026-07-11"',
+    );
     expect(routes).toContain(
       "consent_statement_version !== VOICE_CLONE_CONSENT_VERSION",
     );
@@ -51,6 +55,14 @@ describe("voice authorization security contract", () => {
     expect(routes).toContain("Audio sample too large (max 3 MB)");
     expect(library).not.toContain("under 25 MB");
     expect(routes).not.toContain("max 25 MB");
+  });
+
+  it("uses semantic theme tokens in the voice-library surface", () => {
+    expect(library).toContain("border-border");
+    expect(library).toContain("bg-card");
+    expect(library).not.toContain("border-white/");
+    expect(library).not.toContain("bg-black/");
+    expect(library).not.toContain("wl-label-muted/");
   });
 
   it("enforces authenticated spend limits across serverless replicas", () => {
