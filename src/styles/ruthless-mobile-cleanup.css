@@ -14,7 +14,12 @@
   }
 
   textarea[placeholder^="Message "] + div > div:first-child > button > span,
-  textarea[placeholder^="Message "] + div > div:first-child > div > button > span,
+  textarea[placeholder^="Message "]
+    + div
+    > div:first-child
+    > div
+    > button
+    > span,
   textarea[placeholder^="Message "] + div > button > span {
     display: none;
   }
@@ -33,26 +38,28 @@
     padding: 1.25rem 1rem 2rem;
   }
 
-  .wl-stitch-auth-shell main > div > .mb-6 {
+  .wl-auth-entry-mark {
     margin-bottom: 1rem;
-    text-align: left;
+    font-size: 1.125rem;
   }
 
-  .wl-stitch-auth-shell main > div > .mb-6 > a:first-child {
-    font-size: 0.9375rem;
-  }
-
-  .wl-stitch-auth-shell main > div > .mb-6 .wl-stitch-headline {
-    margin-top: 0.4rem;
-    font-size: clamp(1.5rem, 7vw, 1.9rem);
-    letter-spacing: -0.045em;
-    line-height: 1.04;
-  }
-
-  /* The outer shell owns the title. The inner card should begin with the task. */
-  .wl-stitch-auth-shell main > div > .mb-6 > p,
+  /* The form card owns the task title on phones; keep it visible and concise. */
   .wl-stitch-auth-card > .mb-6.text-center {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .wl-stitch-auth-card > .mb-6.text-center h1 {
+    font-size: 1.125rem;
+    line-height: 1.2;
+  }
+
+  .wl-stitch-auth-card > .mb-6.text-center > p:not(.wl-stitch-label) {
     display: none;
+  }
+
+  .wl-stitch-auth-card > .mb-6.text-center .wl-stitch-label {
+    margin-top: 0.625rem;
   }
 
   .wl-stitch-auth-card {
@@ -88,12 +95,20 @@
     min-width: 0;
   }
 
-  .wl-stitch-auth-card > .mb-6.grid > button > span:last-child > span:first-child {
+  .wl-stitch-auth-card
+    > .mb-6.grid
+    > button
+    > span:last-child
+    > span:first-child {
     justify-content: center;
     font-size: 0.8125rem;
   }
 
-  .wl-stitch-auth-card > .mb-6.grid > button > span:last-child > span:last-child {
+  .wl-stitch-auth-card
+    > .mb-6.grid
+    > button
+    > span:last-child
+    > span:last-child {
     display: none;
   }
 
@@ -186,11 +201,17 @@
     gap: 0.5rem;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > div:last-child > button:nth-child(n + 3) {
+  .scroll-viewport
+    > div:has(> h3.font-display.italic)
+    > div:last-child
+    > button:nth-child(n + 3) {
     display: none;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > div:last-child > button {
+  .scroll-viewport
+    > div:has(> h3.font-display.italic)
+    > div:last-child
+    > button {
     min-width: 0;
     min-height: 2.75rem;
     justify-content: center;
@@ -201,7 +222,11 @@
     white-space: nowrap;
   }
 
-  .scroll-viewport > div:has(> h3.font-display.italic) > div:last-child > button > span {
+  .scroll-viewport
+    > div:has(> h3.font-display.italic)
+    > div:last-child
+    > button
+    > span {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -250,9 +275,12 @@
   }
 
   main:has(#studio-brief) :is(p, span, button, a, textarea, input, label),
-  main:has(#studio-workroom-message) :is(p, span, button, a, textarea, input, label),
-  main[data-wireline-route^="/settings"] :is(p, span, button, a, input, label, h1, h2, h3),
-  form[aria-labelledby="create-agent-title"] :is(p, span, button, textarea, input, select, label) {
+  main:has(#studio-workroom-message)
+    :is(p, span, button, a, textarea, input, label),
+  main[data-wireline-route^="/settings"]
+    :is(p, span, button, a, input, label, h1, h2, h3),
+  form[aria-labelledby="create-agent-title"]
+    :is(p, span, button, textarea, input, select, label) {
     text-transform: none;
     letter-spacing: 0;
   }
@@ -366,7 +394,11 @@
 
   main[data-wireline-route^="/settings"] a.studio-card,
   main[data-wireline-route^="/settings"] section.studio-card {
-    border-color: color-mix(in srgb, var(--wireline-color-border-default) 82%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--wireline-color-border-default) 82%,
+      transparent
+    );
   }
 
   /* -----------------------------------------------------------------------
