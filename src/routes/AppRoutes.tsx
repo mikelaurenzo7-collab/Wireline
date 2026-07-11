@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import RouteFallback from "../components/layout/RouteFallback";
+import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
 
@@ -24,7 +25,13 @@ const TeamSettings = lazy(() => import("../pages/TeamSettings"));
 const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"));
 const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
 
-const loading = <RouteFallback />;
+const loading = (
+  <WorkspaceShell contentClassName="pt-1 pb-8">
+    <WorkspacePageFrame mode="standard">
+      <RouteFallback />
+    </WorkspacePageFrame>
+  </WorkspaceShell>
+);
 
 function AuthNotFound() {
   return (
