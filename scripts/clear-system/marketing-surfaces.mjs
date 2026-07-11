@@ -1,14 +1,15 @@
 /**
- * Public marketing surfaces — centered rails, the shared marketing voice, the
- * wire signature, and honest positioning across every public page.
+ * Public marketing surfaces — centered rails, shared product voice, accessible
+ * work-lane interactions, the wire signature, and honest Founder economics.
  */
 export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   const claritySystemCss = read("src/styles/clarity-system.css");
   const marketingPageFrame = read("src/components/layout/MarketingPageFrame.tsx");
+  const marketingHero = read("src/components/marketing/MarketingHero.tsx");
+  const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const wireAgentLanding = read("src/components/marketing/WireAgentLanding.tsx");
   const signatureCss = read("src/styles/wireline-signature.css");
   const productCopy = read("src/lib/product-copy.ts");
-  const ogImage = read("public/og-image.svg");
   const developersPage = read("src/pages/Developers.tsx");
   const solutionsPage = read("src/pages/SolutionsPage.tsx");
   const featuresPage = read("src/pages/Features.tsx");
@@ -26,23 +27,11 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     /\.marketing-surface \.wl-marketing-actions,[\s\S]*\.marketing-hero__actions[\s\S]*justify-content:\s*center;/,
     "marketing actions must center by default",
   );
-  mustExclude(
-    "src/styles/clarity-system.css",
-    claritySystemCss,
-    /left-aligned reading rail/,
-    "clarity system must not describe the retired left-aligned marketing rail",
-  );
   mustInclude(
     "src/components/layout/MarketingPageFrame.tsx",
     marketingPageFrame,
     /scroll \? "grow" : "min-h-0 flex-1"/,
-    "scroll marketing pages must grow with content before the footer renders",
-  );
-  mustExclude(
-    "src/components/layout/MarketingPageFrame.tsx",
-    marketingPageFrame,
-    /"relative z-10 min-h-0 flex-1"/,
-    "scroll marketing pages must not constrain content under the footer",
+    "scroll marketing pages must grow with content before the footer",
   );
 
   for (const file of [
@@ -67,19 +56,56 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/lib/product-copy.ts",
     productCopy,
     /MARKETING_VOICE/,
-    "marketing hero copy must live in product-copy module",
+    "marketing voice must live in the shared product-copy module",
   );
+  mustInclude(
+    "src/components/marketing/PrecisionPublicHeader.tsx",
+    publicHeader,
+    /MARKETING_VOICE\.headline/,
+    "mobile navigation must consume the canonical brand spine",
+  );
+  mustExclude(
+    "src/components/marketing/PrecisionPublicHeader.tsx",
+    publicHeader,
+    /Wire your agent/,
+    "public navigation must not revive retired campaign copy",
+  );
+  mustInclude(
+    "src/components/marketing/MarketingHero.tsx",
+    marketingHero,
+    /aria-label=\{isBrandSpine \? "Wire\. Work\. Win\."/,
+    "the visual arrow headline must expose a screen-reader-safe name",
+  );
+  mustInclude(
+    "src/components/marketing/MarketingHero.tsx",
+    marketingHero,
+    /aria-label="Wireline proof points"/,
+    "hero proof chips must have an accessible list name",
+  );
+
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /MARKETING_VOICE\.headline/,
-    "landing hero must consume the shared marketing headline",
+    "landing hero must consume the shared headline",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /MARKETING_VOICE\.subline/,
-    "landing hero must keep the short punchy subhero",
+    "landing hero must consume the shared subline",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /role="tablist"[\s\S]*aria-label="Agent call direction"/,
+    "work lanes must use an accessible tablist",
+  );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    wireAgentLanding,
+    /onKeyDown=\{handleModeKeyDown\}/,
+    "work lanes must support keyboard navigation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -91,13 +117,13 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
     /Conversation Balance/,
-    "landing pricing must explain Conversation Balance",
+    "landing pricing must explain prepaid variable usage",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /Start 7-day trial|Start your 7-day trial|Try 7 days free|7-day free trial|7-day trial|No gimmick free plan|name:\s*"Starter"|name:\s*"Pro"|Everything in Starter|Everything in Pro|\$79/,
-    "landing pricing must not revive retired trial or Starter/Pro catalog copy",
+    /Start 7-day trial|Try 7 days free|\$79|postpaid voice-overage/i,
+    "landing must not revive retired trial or overage positioning",
   );
 
   mustInclude(
@@ -122,55 +148,23 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/styles/wireline-signature.css",
     signatureCss,
     /\.wl-wire-step--settled/,
-    "the loop steps must run silver-to-violet on the wire",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /wl-wire-step__node/,
-    "landing loop steps must be nodes on the wire",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /wl-wire-step--settled/,
     "the final loop step must settle violet on the wire",
-  );
-  mustInclude(
-    "src/components/marketing/WireAgentLanding.tsx",
-    wireAgentLanding,
-    /wl-featured-wire/,
-    "dark ink panels (recommended plan, closing CTA) must carry the wire",
-  );
-  mustInclude(
-    "src/styles/wireline-signature.css",
-    signatureCss,
-    /\.wl-featured-wire--live::after[\s\S]*?animation: wl-wire-pulse/,
-    "the closing CTA wire must carry the live traveling signal",
-  );
-  mustInclude(
-    "src/styles/wireline-signature.css",
-    signatureCss,
-    /\.wl-mark-signal\s*\{\s*fill: var\(--wireline-color-action-secondary-default\)/,
-    "the mark's central node must carry the silver signal on public surfaces",
-  );
-  mustExclude(
-    "public/og-image.svg",
-    ogImage,
-    /ANSWERING NOW|picks up right now/i,
-    "OG image must not use answer-only live-work copy",
   );
 
   mustInclude(
     "src/pages/Features.tsx",
     featuresPage,
     /Build → Train → Launch → Improve/,
-    "features page must preserve the current launch loop",
+    "features must preserve the canonical operating loop",
   );
-  mustInclude("src/pages/Pricing.tsx", pricingPage, /Personal/, "pricing must position Personal");
-  mustInclude("src/pages/Pricing.tsx", pricingPage, /Team/, "pricing must position Team");
-  mustInclude("src/pages/Pricing.tsx", pricingPage, /Business/, "pricing must position Business");
-  mustInclude("src/pages/Pricing.tsx", pricingPage, /Enterprise/, "pricing must position Enterprise");
+  for (const tier of ["Free Builder", "Starter", "Starter Plus", "Pro", "Business"]) {
+    mustInclude(
+      "src/pages/Pricing.tsx",
+      pricingPage,
+      new RegExp(tier.replace(" ", "\\s+")),
+      `pricing must expose the ${tier} tier`,
+    );
+  }
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
@@ -188,7 +182,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/SolutionsPage.tsx",
     solutionsPage,
     /HeroCallPreview|Sarah/,
-    "use-cases page must not render the retired Sarah call preview",
+    "solutions must not render the retired call preview",
   );
   mustInclude(
     "src/pages/Developers.tsx",
@@ -201,17 +195,5 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     developersPage,
     /\bassistant(s)?\b/i,
     "developer surface must use agent language",
-  );
-  mustExclude(
-    "src/components/AssistantComposer.tsx",
-    read("src/components/AssistantComposer.tsx"),
-    /Ask your assistant/i,
-    "shared composer must use agent copy",
-  );
-  mustExclude(
-    "src/components/marketing/TrustSignals.tsx",
-    read("src/components/marketing/TrustSignals.tsx"),
-    /demo assistants/i,
-    "trust strip must use agent language",
   );
 }

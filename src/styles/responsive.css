@@ -59,8 +59,8 @@
     min-height: 2.3rem;
     justify-content: center;
     padding-inline: 0.5rem;
-    font-size: 0.62rem;
-    letter-spacing: 0.1em;
+    font-size: var(--wireline-typography-overline-size);
+    letter-spacing: var(--wireline-typography-overline-letterSpacing);
   }
   .marketing-hero-proof span:nth-child(2n) {
     border-right: 1px solid var(--wireline-color-border-default);
@@ -204,7 +204,8 @@
   }
   .wl-workspace-main {
     padding-inline: 1rem;
-    padding-bottom: 1rem;
+    /* Preserve the complete scroll clearance owned by the fixed mobile dock. */
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
   }
   .wl-workspace-header {
     min-height: 3.75rem;
@@ -219,7 +220,7 @@
     line-height: 1.1;
   }
   .wl-workspace-header .wl-overline {
-    font-size: 0.5625rem;
+    font-size: var(--wireline-typography-overline-size);
   }
   .wl-workspace-header-actions > :first-child {
     display: none;

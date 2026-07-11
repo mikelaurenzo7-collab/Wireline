@@ -5,11 +5,9 @@ import App from "./App.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import { isLikelyStaleChunkError, requestStaleChunkReload } from "./lib/chunk-recovery";
 
-import "./styles/foundation.css";
+// One CSS entrypoint owns the complete design-system cascade. Keeping the
+// import graph centralized prevents duplicated foundations and order drift.
 import "./index.css";
-import "./styles/responsive.css";
-import "./styles/ruthless-mobile-cleanup.css";
-import "./styles/agent-tabs-compact.css";
 
 if (typeof window !== "undefined") {
   window.addEventListener("error", (event) => {

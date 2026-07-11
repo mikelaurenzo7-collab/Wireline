@@ -76,7 +76,8 @@
   --color-amber-800: var(--wireline-color-status-warning);
 }
 
-/* Wireline — Letterpress design system. */
+/* Wireline — Letterpress design system. This is the sole application CSS
+ * entrypoint; tier order below is part of the executable design contract. */
 @import "./styles/tokens.generated.css";
 @import "./styles/foundation.css";
 @import "./styles/design-system.css";
@@ -90,6 +91,12 @@
 @import "./styles/visual-qa-hotfix.css";
 @import "./styles/theme-light.css";
 @import "./styles/system-hardening.css";
+
+/* Terminal responsive tiers intentionally follow the semantic system. They
+ * may compact components, but must not redefine tokens or brand foundations. */
+@import "./styles/responsive.css";
+@import "./styles/ruthless-mobile-cleanup.css";
+@import "./styles/agent-tabs-compact.css";
 
 body {
   background: var(--wireline-color-canvas-default);
@@ -124,4 +131,20 @@ body {
 button[class*="tracking-[0.25em]"],
 button[class*="tracking-[0.3em]"] {
   letter-spacing: 0.08em !important;
+}
+
+/* Mobile editing contract: 16px controls prevent Safari focus zoom, including
+ * legacy forms that have not yet migrated to the shared atoms. */
+@media (max-width: 767px) {
+  .wl-ui-caps :where(
+      input:not([type="checkbox"]):not([type="radio"]),
+      select,
+      textarea
+    ) {
+    font-size: 16px;
+  }
+
+  .wl-stitch-auth-divider {
+    font-size: var(--wireline-typography-overline-size);
+  }
 }

@@ -21,40 +21,39 @@ async function gotoHomepageWithMain(page: Page) {
   throw lastError;
 }
 
-test("homepage hero has accessible audience tabs and no serious axe violations", async ({
+test("homepage hero has accessible work-lane tabs and no serious axe violations", async ({
   page,
 }) => {
   await gotoHomepageWithMain(page);
-  await expect(page.getByRole("heading", { name: /wire your agent/i })).toBeVisible();
-  await expect(
-    page.getByText(/personal assistants to call centers and sales teams/i),
-  ).toBeVisible();
-  const audienceList = page.getByRole("list", { name: "Wireline audiences" });
-  await expect(audienceList.getByText(/Personal calls/).first()).toBeVisible();
-  await expect(audienceList.getByText(/Support/).first()).toBeVisible();
-  await expect(audienceList.getByText(/Call centers/).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /wire\. work\. win\./i })).toBeVisible();
+  await expect(page.getByText(/voice ai employee for real conversations/i)).toBeVisible();
+
+  const proofList = page.getByRole("list", { name: "Wireline proof points" });
+  for (const label of ["Sales", "Marketing", "Support", "Admin"]) {
+    await expect(proofList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
+  }
 
   const tablist = page.getByRole("tablist", { name: "Agent call direction" });
   await expect(tablist).toBeVisible();
 
-  const outboundTab = page.getByRole("tab", { name: "Outbound" });
-  const inboundTab = page.getByRole("tab", { name: "Inbound" });
-  const hybridTab = page.getByRole("tab", { name: "Hybrid" });
+  const salesTab = page.getByRole("tab", { name: "Sales" });
+  const serviceTab = page.getByRole("tab", { name: "Service" });
+  const allPurposeTab = page.getByRole("tab", { name: "All-purpose" });
 
-  await expect(outboundTab).toHaveAttribute("aria-selected", "true");
-  await expect(outboundTab).toHaveAttribute("aria-controls", "wire-agent-outbound-panel");
-  await expect(inboundTab).toHaveAttribute("aria-selected", "false");
-  await expect(page.getByRole("tabpanel", { name: "Outbound" })).toBeVisible();
+  await expect(salesTab).toHaveAttribute("aria-selected", "true");
+  await expect(salesTab).toHaveAttribute("aria-controls", "wire-agent-outbound-panel");
+  await expect(serviceTab).toHaveAttribute("aria-selected", "false");
+  await expect(page.getByRole("tabpanel", { name: "Sales agent details" })).toBeVisible();
 
-  await outboundTab.focus();
+  await salesTab.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(inboundTab).toBeFocused();
-  await expect(inboundTab).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel", { name: "Inbound" })).toBeVisible();
+  await expect(serviceTab).toBeFocused();
+  await expect(serviceTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel", { name: "Service agent details" })).toBeVisible();
 
   await page.keyboard.press("End");
-  await expect(hybridTab).toBeFocused();
-  await expect(hybridTab).toHaveAttribute("aria-selected", "true");
+  await expect(allPurposeTab).toBeFocused();
+  await expect(allPurposeTab).toHaveAttribute("aria-selected", "true");
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
   const blockingViolations = results.violations.filter((violation) =>
