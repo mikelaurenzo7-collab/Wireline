@@ -99,6 +99,30 @@ export default function MarketingHero({
             {description}
           </p>
 
+          {isBrandSpine ? (
+            <div className="mt-7 w-full max-w-[52rem] rounded-[18px] border border-border bg-card/70 px-5 py-5 shadow-[var(--wireline-elevation-sm)] sm:px-7">
+              <p className="text-balance font-[var(--wireline-font-family-display)] text-[1.05rem] font-semibold tracking-[-.02em] text-foreground sm:text-[1.15rem]">
+                {MARKETING_VOICE.channelHeadline}
+              </p>
+              <p className="mx-auto mt-2 max-w-[46rem] text-pretty text-[14px] leading-6 text-muted-foreground sm:text-[15px]">
+                {MARKETING_VOICE.channelPromise}
+              </p>
+              <ul
+                className="mt-4 grid gap-2 sm:grid-cols-3"
+                aria-label="AI employee conversation channels"
+              >
+                {MARKETING_VOICE.channels.map((channel) => (
+                  <li
+                    key={channel}
+                    className="rounded-[12px] border border-border bg-background px-4 py-3 text-[13px] font-semibold text-foreground"
+                  >
+                    {channel}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {actions.length ? (
             <div className="marketing-hero__actions mt-9">
               {actions.map((action) => {
