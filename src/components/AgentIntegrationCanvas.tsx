@@ -224,7 +224,7 @@ export default function AgentIntegrationCanvas({
               />
               {/* Core shell */}
               <div className="relative w-11 h-11 rounded-full flex items-center justify-center z-10 wl-canvas-agent-core">
-                <WirelineMark className="w-5 h-5 text-paper" strokeWidth={90} />
+                <WirelineMark className="w-5 h-5 text-paper" strokeWidth={10} />
               </div>
             </div>
           </div>

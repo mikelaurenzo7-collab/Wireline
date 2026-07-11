@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Mail, ShieldCheck } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import WirelineMark from "../components/WirelineMark";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import MarketingHero from "../components/marketing/MarketingHero";
 
@@ -43,10 +42,7 @@ export default function About() {
       <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
         <div className="mx-auto grid max-w-6xl overflow-hidden border border-border bg-border lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
           <div className="bg-card px-5 py-9 text-center sm:px-8 sm:py-12 lg:px-10">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded bg-primary text-primary-foreground">
-              <WirelineMark className="h-7 w-7" strokeWidth={120} />
-            </div>
-            <p className="wl-stitch-eyebrow mt-6">Built with accountability</p>
+            <p className="wl-stitch-eyebrow">Built with accountability</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
               Built independently, with a direct line to the people improving it.
             </h2>

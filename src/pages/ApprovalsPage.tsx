@@ -7,10 +7,7 @@ export default function ApprovalsPage() {
   return (
     <WorkspaceShell contentClassName="flex min-h-0 flex-1 flex-col pt-1 pb-8">
       <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
-        <WorkspacePageIntro
-          title="Approvals"
-          description="Every proposed action cites call evidence. Approve, edit, or reject before execution."
-        />
+        <WorkspacePageIntro title="Approvals" />
         <ApprovalInbox embedded />
       </WorkspacePageFrame>
     </WorkspaceShell>
