@@ -317,6 +317,19 @@ async function main() {
       !!price.metadata?.wireline_catalog_state;
     if (!looksManaged) continue;
 
+    const retainedRetiredDefault =
+      product &&
+      !canonicalProductIds.has(product.id) &&
+      product.default_price === price.id;
+    if (retainedRetiredDefault) {
+      cleanup.push({
+        type: "price",
+        id: price.id,
+        action: "retained_default_until_product_archive",
+      });
+      continue;
+    }
+
     const blockedBy = priceIsBlocked(price.id, dependencies);
     if (blockedBy.length) {
       cleanup.push({ type: "price", id: price.id, action: "skipped", blocked_by: blockedBy });
