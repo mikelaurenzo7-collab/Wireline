@@ -20,7 +20,7 @@ describe("verified voice security contract", () => {
     expect(routes).toContain('event: "voice.clone.consent_granted"');
     expect(routes).toContain("sourceSha256");
     expect(routes).toContain("sourceAudioRetained: false");
-    expect(routes).toContain("createHash(\"sha256\")");
+    expect(routes).toContain('createHash("sha256")');
     expect(library).toContain("consent_statement_version");
     expect(library).toContain("documented authorization");
     expect(library).toContain("not stored in Wireline's database");
@@ -43,7 +43,11 @@ describe("verified voice security contract", () => {
   });
 
   it("does not return raw provider errors to account holders", () => {
-    expect(routes).toContain('error: "Voice creation failed. Try again or contact support."');
-    expect(routes).not.toContain('error: getErrorMessage(e),\n      });\n    }\n  },\n);');
+    const handler = routes.match(
+      /log\.error\("voice clone failed"[\s\S]*?res\.status\(500\)\.json\(\{([\s\S]*?)\}\);/,
+    )?.[1];
+    expect(handler).toBeDefined();
+    expect(handler).toContain('error: "Voice creation failed. Try again or contact support."');
+    expect(handler).not.toContain("getErrorMessage");
   });
 });
