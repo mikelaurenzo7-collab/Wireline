@@ -6,6 +6,7 @@ import {
   buildCompanyIdentityProfile,
   buildCompanyIdentityReadiness,
   canRequestCompanyIdentityReview,
+  companyIdentityFingerprint,
   defaultCompanyIdentityPreferences,
 } from "../src/lib/company-identity";
 
@@ -58,8 +59,51 @@ describe("company identity pack", () => {
     ).toBe(false);
   });
 
+  it("requires the email identity to use the company website domain", () => {
+    const profile = buildCompanyIdentityProfile({
+      settings: { businessName: "Acme", brandName: "Acme", brandLogoUrl: null },
+      preferences: {
+        ...defaultCompanyIdentityPreferences(),
+        website: "https://www.example.com/",
+        supportEmail: "acme@gmail.com",
+      },
+    });
+    const readiness = buildCompanyIdentityReadiness({ profile, phoneNumber: "+13125550123" });
+
+    expect(readiness.sms.profileStatus).toBe("ready");
+    expect(readiness.email.profileStatus).toBe("incomplete");
+    expect(readiness.email.missing).toContain("support email on the company domain");
+  });
+
+  it("binds external review state to the exact saved identity profile", () => {
+    const base = {
+      businessName: "Acme LLC",
+      brandName: "Acme",
+      logoUrl: "https://example.com/logo.png",
+      callerIdName: "ACME",
+      website: "https://example.com/",
+      supportEmail: "support@example.com",
+      defaultCallReason: "Scheduling",
+      requestedChannels: ["voice", "sms"] as const,
+    };
+    const first = companyIdentityFingerprint({ ...base, requestedChannels: [...base.requestedChannels] });
+    const reordered = companyIdentityFingerprint({
+      ...base,
+      requestedChannels: ["sms", "voice"],
+    });
+    const renamed = companyIdentityFingerprint({
+      ...base,
+      brandName: "Acme Home Services",
+      requestedChannels: [...base.requestedChannels],
+    });
+
+    expect(first).toBe(reordered);
+    expect(first).not.toBe(renamed);
+  });
+
   it("protects the authenticated review workflow and audit trail", () => {
     const routes = read("src/routes/company-identity-routes.ts");
+    const guard = read("src/routes/user-preference-guard-routes.ts");
     const registry = read("src/server/register-api-routes.ts");
 
     expect(routes).toContain('router.get(\n  "/api/company-identity"');
@@ -67,8 +111,16 @@ describe("company identity pack", () => {
     expect(routes).toContain('"/api/company-identity/review-request"');
     expect(routes.match(/authenticateUser/g)?.length).toBeGreaterThanOrEqual(3);
     expect(routes).toContain("company_identity.review_requested");
+    expect(routes).toContain("reviewFingerprint: current.currentFingerprint");
+    expect(routes).toContain("staleReviewState");
     expect(routes).toContain("approval and display coverage are not guaranteed");
     expect(routes).not.toContain('providerStatus[channel] = "approved"');
+    expect(guard).toContain("requestedEnvelope.company_identity = currentEnvelope.company_identity");
+    expect(guard).toContain("delete requestedEnvelope.company_identity");
+    expect(registry).toContain(
+      'import userPreferenceGuardRouter from "../routes/user-preference-guard-routes"',
+    );
+    expect(registry).toContain("app.use(userPreferenceGuardRouter)");
     expect(registry).toContain('import companyIdentityRouter from "../routes/company-identity-routes"');
     expect(registry).toContain("app.use(companyIdentityRouter)");
   });
@@ -81,6 +133,8 @@ describe("company identity pack", () => {
     expect(surface).toContain("Provider approval and recipient-device display remain external states.");
     expect(surface).toContain("Maximum 15 characters for traditional CNAM fallback.");
     expect(surface).toContain("supported mobile networks after approval");
+    expect(surface).toContain("Save these changes before requesting verification review.");
+    expect(surface).toContain("requesting || !identity.review_eligible || isDirty");
     expect(surface).toContain("Request verification review");
     expect(phoneSettings).toContain("<CompanyIdentityPack />");
   });
