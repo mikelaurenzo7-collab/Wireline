@@ -48,7 +48,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     lead: "Call warm lists, revive old leads, promote offers, follow up on quotes, book appointments, and log profit-moving outcomes with one tireless employee.",
     bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
     cta: "Build your best employee",
-    ctaPath: "/signup?plan=business&mode=outbound",
+    ctaPath: "/signup?plan=starter&mode=outbound",
   },
   inbound: {
     eyebrow: "Front desk and support",
@@ -56,7 +56,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     lead: "Handle front desk calls, inbound lead qualification, scheduling, callbacks, overflow, and after-hours coverage with a reachable Wireline number.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
     cta: "Build your best employee",
-    ctaPath: "/signup?plan=business&mode=inbound",
+    ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
     eyebrow: "Right-hand operator",
@@ -64,7 +64,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     lead: "When sales, marketing, callbacks, scheduling, recovery, and CRM updates belong in one workflow, Wireline owns the busywork and shows you the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
     cta: "Build your best employee",
-    ctaPath: "/signup?plan=business&mode=hybrid",
+    ctaPath: "/signup?plan=starter&mode=hybrid",
   },
 };
 
@@ -90,12 +90,12 @@ const PLAN_PREVIEW = [
     ctaPath: "/signup?plan=personal",
   },
   {
-    name: "Starter Plus",
-    price: `$${planCatalog.team.price_usd_monthly}`,
+    name: "Starter",
+    price: \`$\${planCatalog.starter.price_usd_monthly}\`,
     period: "/mo",
-    body: `${planCatalog.team.max_agents} live AI employee and ${planCatalog.team.included_phone_numbers} included number, plus ${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.`,
-    cta: "Start Starter Plus",
-    ctaPath: "/signup?plan=team",
+    body: \`$\${planCatalog.starter.max_agents} live AI employee and $\${planCatalog.starter.included_phone_numbers} included number, plus $\${planCatalog.starter.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.\`,
+    cta: "Start for $9",
+    ctaPath: "/signup?plan=starter",
   },
   {
     name: "Pro",
