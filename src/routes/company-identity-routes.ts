@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
@@ -175,6 +175,22 @@ function publicPayload(state: Awaited<ReturnType<typeof loadIdentityState>>) {
   };
 }
 
+function identityFingerprint(value: {
+  businessName: string | null;
+  brandName: string | null;
+  logoUrl: string | null;
+  callerIdName: string | null;
+  website: string | null;
+  supportEmail: string | null;
+  defaultCallReason: string | null;
+  requestedChannels: CompanyIdentityChannel[];
+}): string {
+  return JSON.stringify({
+    ...value,
+    requestedChannels: [...value.requestedChannels].sort(),
+  });
+}
+
 router.get(
   "/api/company-identity",
   authenticateUser,
@@ -212,28 +228,14 @@ router.post(
       );
       const nextRequestedChannels = requestedChannels(req.body?.requested_channels);
 
-      const settingsPatch: Record<string, unknown> = { updatedAt: new Date() };
-      if (businessName !== undefined) settingsPatch.businessName = businessName;
-      if (brandName !== undefined) settingsPatch.brandName = brandName;
-      if (logoUrl !== undefined) settingsPatch.brandLogoUrl = logoUrl;
-
-      await drizzle
-        .insert(schema.settings)
-        .values({
-          id: req.user.id,
-          userId: req.user.id,
-          businessName: businessName ?? current.profile.businessName,
-          brandName: brandName ?? current.profile.brandName,
-          brandLogoUrl: logoUrl ?? current.profile.logoUrl,
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: schema.settings.userId,
-          set: settingsPatch,
-        });
-
-      const nextPreferences: CompanyIdentityPreferences = {
-        ...current.preferences,
+      const nextBusinessName =
+        businessName === undefined ? current.profile.businessName : businessName;
+      const nextBrandName = brandName === undefined ? current.profile.brandName : brandName;
+      const nextLogoUrl = logoUrl === undefined ? current.profile.logoUrl : logoUrl;
+      const nextIdentityValues = {
+        businessName: nextBusinessName,
+        brandName: nextBrandName,
+        logoUrl: nextLogoUrl,
         callerIdName:
           nextCallerIdName === undefined ? current.preferences.callerIdName : nextCallerIdName,
         website: website === undefined ? current.preferences.website : website,
@@ -244,27 +246,87 @@ router.post(
             ? current.preferences.defaultCallReason
             : defaultCallReason,
         requestedChannels: nextRequestedChannels ?? current.preferences.requestedChannels,
-        reviewRequestedAt: null,
-        providerStatus: defaultCompanyIdentityPreferences().providerStatus,
+      };
+      const profileChanged =
+        identityFingerprint({
+          businessName: current.profile.businessName,
+          brandName: current.profile.brandName,
+          logoUrl: current.profile.logoUrl,
+          callerIdName: current.profile.callerIdName,
+          website: current.profile.website,
+          supportEmail: current.profile.supportEmail,
+          defaultCallReason: current.profile.defaultCallReason,
+          requestedChannels: current.profile.requestedChannels,
+        }) !== identityFingerprint(nextIdentityValues);
+
+      const nextPreferences: CompanyIdentityPreferences = {
+        ...current.preferences,
+        callerIdName: nextIdentityValues.callerIdName,
+        website: nextIdentityValues.website,
+        supportEmail: nextIdentityValues.supportEmail,
+        defaultCallReason: nextIdentityValues.defaultCallReason,
+        requestedChannels: nextIdentityValues.requestedChannels,
+        reviewRequestedAt: profileChanged ? null : current.preferences.reviewRequestedAt,
+        providerStatus: profileChanged
+          ? defaultCompanyIdentityPreferences().providerStatus
+          : current.preferences.providerStatus,
       };
       const nextEnvelope = {
         ...current.envelope,
         company_identity: nextPreferences,
       };
 
-      await drizzle
-        .insert(schema.userPreferences)
-        .values({
-          userId: req.user.id,
-          preferences: nextEnvelope,
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: schema.userPreferences.userId,
-          set: { preferences: nextEnvelope, updatedAt: new Date() },
-        });
+      await drizzle.transaction(async (tx) => {
+        await tx
+          .insert(schema.settings)
+          .values({
+            id: req.user.id,
+            userId: req.user.id,
+            businessName: nextBusinessName,
+            brandName: nextBrandName,
+            brandLogoUrl: nextLogoUrl,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: schema.settings.userId,
+            set: {
+              businessName: nextBusinessName,
+              brandName: nextBrandName,
+              brandLogoUrl: nextLogoUrl,
+              updatedAt: new Date(),
+            },
+          });
+        await tx
+          .insert(schema.userPreferences)
+          .values({
+            userId: req.user.id,
+            preferences: nextEnvelope,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: schema.userPreferences.userId,
+            set: { preferences: nextEnvelope, updatedAt: new Date() },
+          });
+        if (profileChanged) {
+          await tx.insert(schema.auditLog).values({
+            userId: req.user.id,
+            action: "company_identity.profile_updated",
+            eventType: "company_identity.profile_updated",
+            severity: "info",
+            resourceType: "company_identity",
+            metadata: {
+              channels: nextIdentityValues.requestedChannels,
+              priorReviewInvalidated: Boolean(current.preferences.reviewRequestedAt),
+            },
+          });
+        }
+      });
 
-      res.json({ ok: true, ...publicPayload(await loadIdentityState(req.user.id)) });
+      res.json({
+        ok: true,
+        profile_changed: profileChanged,
+        ...publicPayload(await loadIdentityState(req.user.id)),
+      });
     } catch (error) {
       if (error instanceof AppError) throw error;
       log.error("company identity save failed", {
