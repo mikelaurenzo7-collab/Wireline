@@ -80,10 +80,10 @@ export default function MarketingHero({
           <h1
             aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}
             className={cn(
-              "marketing-hero__title mx-auto max-w-[20ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.25rem,4.6vw,3.75rem)] font-bold leading-[1.02] tracking-[-.03em] text-foreground",
+              "marketing-hero__title mx-auto max-w-[22ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-bold uppercase leading-[0.98] tracking-[-.005em] text-foreground",
               eyebrow ? "mt-6" : "mt-0",
               isBrandSpine &&
-                "max-w-[15ch] text-[clamp(2.75rem,6.4vw,5.25rem)] leading-[.94] tracking-[-.05em]",
+                "max-w-[16ch] text-[clamp(2.6rem,6vw,5rem)] leading-[0.9] tracking-[-.015em]",
             )}
           >
             {title}

@@ -23,7 +23,7 @@ describe("static marketing metadata", () => {
 
     expect(hero).toContain("title === MARKETING_VOICE.headline");
     expect(hero).toContain('aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}');
-    expect(hero).toContain("text-[clamp(2.75rem,6.4vw,5.25rem)]");
+    expect(hero).toContain("text-[clamp(2.6rem,6vw,5rem)]");
     expect(landing).toContain('title="Wireline — Wire → Work → Win"');
     expect(landing).not.toContain('title="Wireline | Wire → Work → Win"');
   });
