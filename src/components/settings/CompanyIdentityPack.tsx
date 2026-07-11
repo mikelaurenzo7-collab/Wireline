@@ -78,6 +78,24 @@ const EMPTY_FORM: IdentityForm = {
 const FIELD_CLASS =
   "mt-1.5 min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
 
+const CHANNEL_CONFIG = {
+  voice: {
+    icon: PhoneCall,
+    title: "Calling identity",
+    description: "Verified display name, optional logo and call reason, with CNAM fallback.",
+  },
+  sms: {
+    icon: MessageSquareText,
+    title: "SMS identity",
+    description: "Business and campaign registration for compliant application-to-person messaging.",
+  },
+  email: {
+    icon: Mail,
+    title: "Email identity",
+    description: "Company sender name and authenticated sending-domain preparation.",
+  },
+} as const;
+
 function formFromIdentity(identity: IdentityResponse): IdentityForm {
   return {
     business_name: identity.profile.business_name ?? "",
@@ -87,9 +105,7 @@ function formFromIdentity(identity: IdentityResponse): IdentityForm {
     website: identity.profile.website ?? "",
     support_email: identity.profile.support_email ?? "",
     default_call_reason: identity.profile.default_call_reason ?? "",
-    requested_channels: identity.profile.requested_channels.length
-      ? identity.profile.requested_channels
-      : [...CHANNELS],
+    requested_channels: [...identity.profile.requested_channels],
   };
 }
 
@@ -125,44 +141,77 @@ function providerStatusLabel(status: ProviderStatus): string {
 }
 
 function statusTone(status: ProviderStatus, ready: boolean) {
-  if (status === "approved") return "border-emerald-500/25 bg-emerald-500/8 text-emerald-700";
+  if (status === "approved") {
+    return "border-emerald-500/25 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300";
+  }
   if (status === "rejected") return "border-destructive/25 bg-destructive/8 text-destructive";
-  if (status === "review_requested" || status === "in_review")
-    return "border-amber-500/25 bg-amber-500/8 text-amber-700";
+  if (status === "review_requested" || status === "in_review") {
+    return "border-amber-500/25 bg-amber-500/8 text-amber-700 dark:text-amber-300";
+  }
   if (ready) return "border-primary/25 bg-primary/8 text-primary";
   return "border-border bg-muted/35 text-muted-foreground";
+}
+
+function reviewSummary(identity: IdentityResponse | null) {
+  if (!identity || identity.profile.requested_channels.length === 0) return null;
+  const statuses = identity.profile.requested_channels.map(
+    (channel) => identity.channels[channel].provider_status,
+  );
+  if (statuses.includes("rejected")) {
+    return {
+      label: "Needs changes",
+      className: "border-destructive/25 bg-destructive/8 text-destructive",
+    };
+  }
+  if (statuses.every((status) => status === "approved")) {
+    return {
+      label: "Identity approved",
+      className:
+        "border-emerald-500/25 bg-emerald-500/8 text-emerald-700 dark:text-emerald-300",
+    };
+  }
+  if (statuses.includes("in_review")) {
+    return {
+      label: "Provider review",
+      className: "border-amber-500/25 bg-amber-500/8 text-amber-700 dark:text-amber-300",
+    };
+  }
+  if (statuses.includes("review_requested")) {
+    return {
+      label: "Review requested",
+      className: "border-amber-500/25 bg-amber-500/8 text-amber-700 dark:text-amber-300",
+    };
+  }
+  if (statuses.includes("limited")) {
+    return {
+      label: "Limited coverage",
+      className: "border-border bg-muted/35 text-muted-foreground",
+    };
+  }
+  return null;
 }
 
 function ChannelCard({
   channel,
   identity,
+  selected,
 }: {
   channel: Channel;
   identity: IdentityResponse;
+  selected: boolean;
 }) {
   const meta = identity.channels[channel];
   const ready = meta.profile_status === "ready";
-  const config = {
-    voice: {
-      icon: PhoneCall,
-      title: "Calling identity",
-      description: "Verified display name, optional logo and call reason, with CNAM fallback.",
-    },
-    sms: {
-      icon: MessageSquareText,
-      title: "SMS identity",
-      description: "Business and campaign registration for compliant application-to-person messaging.",
-    },
-    email: {
-      icon: Mail,
-      title: "Email identity",
-      description: "Company sender name and authenticated sending-domain preparation.",
-    },
-  }[channel];
+  const config = CHANNEL_CONFIG[channel];
   const Icon = config.icon;
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <article
+      className={cn(
+        "rounded-2xl border bg-card p-4 sm:p-5",
+        selected ? "border-border" : "border-border/70 opacity-80",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/5 text-primary">
@@ -176,14 +225,18 @@ function ChannelCard({
         <span
           className={cn(
             "inline-flex min-h-7 shrink-0 items-center rounded-full border px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em]",
-            statusTone(meta.provider_status, ready),
+            selected
+              ? statusTone(meta.provider_status, ready)
+              : "border-border bg-muted/35 text-muted-foreground",
           )}
         >
-          {meta.provider_status === "not_requested"
-            ? ready
-              ? "Profile ready"
-              : "Incomplete"
-            : providerStatusLabel(meta.provider_status)}
+          {!selected
+            ? "Not selected"
+            : meta.provider_status === "not_requested"
+              ? ready
+                ? "Profile ready"
+                : "Incomplete"
+              : providerStatusLabel(meta.provider_status)}
         </span>
       </div>
       {meta.missing.length ? (
@@ -223,7 +276,7 @@ export default function CompanyIdentityPack() {
       setForm(formFromIdentity(body));
       if (body.review_state_invalidated) {
         setMessage(
-          "A company identity field changed after the prior review request, so Wireline reset the stale provider state.",
+          "A company identity field or dedicated number changed after the prior review request, so Wireline reset the stale provider state.",
         );
       }
     } catch (err) {
@@ -242,6 +295,16 @@ export default function CompanyIdentityPack() {
     if (!identity) return false;
     return formFingerprint(form) !== formFingerprint(formFromIdentity(identity));
   }, [form, identity]);
+  const savedReviewStatuses = identity
+    ? identity.profile.requested_channels.map(
+        (channel) => identity.channels[channel].provider_status,
+      )
+    : [];
+  const reviewAlreadyRequested =
+    savedReviewStatuses.length > 0 &&
+    savedReviewStatuses.every((status) => status !== "not_requested");
+  const reviewRejected = savedReviewStatuses.includes("rejected");
+  const summary = reviewSummary(identity);
 
   function updateField(field: keyof Omit<IdentityForm, "requested_channels">, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -257,7 +320,7 @@ export default function CompanyIdentityPack() {
   }
 
   async function saveIdentity() {
-    if (saving || !isDirty) return;
+    if (saving || !isDirty || selectedChannelCount === 0) return;
     setSaving(true);
     setMessage(null);
     setError(null);
@@ -289,7 +352,7 @@ export default function CompanyIdentityPack() {
   }
 
   async function requestReview() {
-    if (requesting || isDirty) return;
+    if (requesting || isDirty || reviewAlreadyRequested) return;
     setRequesting(true);
     setMessage(null);
     setError(null);
@@ -334,10 +397,15 @@ export default function CompanyIdentityPack() {
             </p>
           </div>
         </div>
-        {identity?.profile.review_requested_at ? (
-          <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/8 px-3 text-[11px] font-semibold text-amber-700">
+        {summary ? (
+          <span
+            className={cn(
+              "inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[11px] font-semibold",
+              summary.className,
+            )}
+          >
             <Clock3 size={14} aria-hidden="true" />
-            Review requested
+            {summary.label}
           </span>
         ) : null}
       </div>
@@ -348,7 +416,12 @@ export default function CompanyIdentityPack() {
         <>
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
             {CHANNELS.map((channel) => (
-              <ChannelCard key={channel} channel={channel} identity={identity} />
+              <ChannelCard
+                key={channel}
+                channel={channel}
+                identity={identity}
+                selected={form.requested_channels.includes(channel)}
+              />
             ))}
           </div>
 
@@ -455,7 +528,7 @@ export default function CompanyIdentityPack() {
                   <label
                     key={channel}
                     className={cn(
-                      "inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border px-3 text-xs font-medium transition",
+                      "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 text-xs font-medium transition",
                       form.requested_channels.includes(channel)
                         ? "border-primary/30 bg-primary/8 text-primary"
                         : "border-border bg-card text-muted-foreground",
@@ -485,14 +558,33 @@ export default function CompanyIdentityPack() {
                 type="button"
                 variant="secondary"
                 onClick={requestReview}
-                disabled={requesting || !identity.review_eligible || isDirty}
+                disabled={
+                  requesting ||
+                  !identity.review_eligible ||
+                  isDirty ||
+                  reviewAlreadyRequested
+                }
               >
-                {requesting ? "Requesting…" : "Request verification review"}
+                {requesting
+                  ? "Requesting…"
+                  : reviewRejected
+                    ? "Update identity to resubmit"
+                    : reviewAlreadyRequested
+                      ? "Review already requested"
+                      : "Request verification review"}
               </Button>
             </div>
-            {isDirty ? (
+            {selectedChannelCount === 0 ? (
+              <p className="mt-3 text-xs leading-5 text-destructive">
+                Select at least one identity channel before saving.
+              </p>
+            ) : isDirty ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
                 Save these changes before requesting verification review.
+              </p>
+            ) : reviewRejected ? (
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                Update the rejected identity details and save them before requesting another review.
               </p>
             ) : !identity.review_eligible ? (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
