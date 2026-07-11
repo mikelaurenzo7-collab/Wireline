@@ -101,12 +101,12 @@ export default function SolutionsPage() {
         secondaryAction={{ to: page.secondary.href, label: page.secondary.label, tone: "secondary" }}
         proof={page.sequence.map(([title]) => title)}
         visual={
-          <div>
+          <div className="text-center">
             <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">Live preview</p>
             <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-normal leading-[.98] tracking-[-.045em] text-foreground">
               Hear this lane before you build it.
             </h2>
-            <p className="mt-4 text-[15px] leading-7 text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">
               Preview the call lane, then build it with your voice, playbook, and handoff rules when
               ready.
             </p>
@@ -126,8 +126,8 @@ export default function SolutionsPage() {
         </div>
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
           {page.sequence.map(([title], index) => (
-            <li key={title} className="wl-stitch-card relative p-6 sm:p-7">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-caption-size)] font-semibold text-primary">
+            <li key={title} className="wl-stitch-card relative p-6 text-center sm:p-7">
+              <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
               </span>
               <h3 className="wl-section-title mt-5 text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
@@ -148,7 +148,7 @@ export default function SolutionsPage() {
             <h2 className="wl-stitch-display mt-3 text-balance">
               The capabilities that make a conversation operational.
             </h2>
-            <p className="mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
               Start with a focused assignment. Expand into the next channel, connected account, or
               workflow only when it makes the outcome better.
             </p>
@@ -159,8 +159,8 @@ export default function SolutionsPage() {
                 index
               ] as LucideIcon;
               return (
-                <article key={title} className="wl-stitch-card bg-background p-5">
-                  <CapabilityIcon size={18} className="text-primary" />
+                <article key={title} className="wl-stitch-card bg-background p-5 text-center">
+                  <CapabilityIcon size={18} className="mx-auto text-primary" />
                   <h3 className="wl-card-title mt-4">{title}</h3>
                   <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                     {copy}

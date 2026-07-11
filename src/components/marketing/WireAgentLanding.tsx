@@ -28,13 +28,6 @@ type ModeDetail = {
 const HERO_LOOP = MARKETING_VOICE.proof;
 
 const AUDIENCES = ["Sales", "Marketing", "Support", "Admin"] as const;
-const HERO_VISUAL_ITEMS = [
-  "Brief the outcome",
-  "Train the truth",
-  "Give it a number",
-  "See the proof",
-] as const;
-
 const MODE_OPTIONS: { key: AgentMode; label: string }[] = [
   { key: "outbound", label: AGENT_DIRECTION_MODES.outbound.label },
   { key: "inbound", label: AGENT_DIRECTION_MODES.inbound.label },
@@ -48,7 +41,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     lead: "Call warm lists, revive old leads, promote offers, follow up on quotes, book appointments, and log profit-moving outcomes with one tireless employee.",
     bestFor: ["Lead response", "Quote follow-up", "Appointment setting"],
     cta: "Build your best employee",
-    ctaPath: "/signup?plan=business&mode=outbound",
+    ctaPath: "/signup?plan=starter&mode=outbound",
   },
   inbound: {
     eyebrow: "Front desk and support",
@@ -56,7 +49,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     lead: "Handle front desk calls, inbound lead qualification, scheduling, callbacks, overflow, and after-hours coverage with a reachable Wireline number.",
     bestFor: ["Front desk", "Lead qualifier", "Support triage"],
     cta: "Build your best employee",
-    ctaPath: "/signup?plan=business&mode=inbound",
+    ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
     eyebrow: "Right-hand operator",
@@ -64,7 +57,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     lead: "When sales, marketing, callbacks, scheduling, recovery, and CRM updates belong in one workflow, Wireline owns the busywork and shows you the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
     cta: "Build your best employee",
-    ctaPath: "/signup?plan=business&mode=hybrid",
+    ctaPath: "/signup?plan=starter&mode=hybrid",
   },
 };
 
@@ -90,12 +83,12 @@ const PLAN_PREVIEW = [
     ctaPath: "/signup?plan=personal",
   },
   {
-    name: "Starter Plus",
-    price: `$${planCatalog.team.price_usd_monthly}`,
+    name: "Starter",
+    price: `$${planCatalog.starter.price_usd_monthly}`,
     period: "/mo",
-    body: `${planCatalog.team.max_agents} live AI employee and ${planCatalog.team.included_phone_numbers} included number, plus ${planCatalog.team.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.`,
-    cta: "Start Starter Plus",
-    ctaPath: "/signup?plan=team",
+    body: `${planCatalog.starter.max_agents} live AI employee and ${planCatalog.starter.included_phone_numbers} included number, plus ${planCatalog.starter.voice_minutes_monthly} guaranteed voice minutes for one focused growth lane.`,
+    cta: "Start for $9",
+    ctaPath: "/signup?plan=starter",
   },
   {
     name: "Pro",
@@ -149,7 +142,7 @@ export default function WireAgentLanding() {
   };
 
   return (
-    <div className="wl-viewport-frame bg-background text-foreground">
+    <div className="marketing-surface wl-viewport-frame bg-background text-foreground">
       <PrecisionPublicHeader />
 
       <main id="main-content" className="wl-viewport-scroll pt-16" tabIndex={-1}>
@@ -160,20 +153,9 @@ export default function WireAgentLanding() {
           primaryAction={{ label: "Build your best employee", to: "/signup" }}
           secondaryAction={{ label: "Hear a demo", to: "/showcase", tone: "secondary" }}
           proof={AUDIENCES}
-          visualEyebrow="Brief -> Train -> Launch -> Prove"
-          visualTitle="One number. One employee. Every outcome logged."
-          visualBody="Tell Wireline what you want done, train it on your rules, give it an included line, then review exactly what moved after every conversation."
-          visualItems={HERO_VISUAL_ITEMS}
         />
 
-        <section className="marketing-ink-panel border-b border-border px-5 py-5 text-center">
-          <p className="marketing-ink-panel__soft text-[18px] font-[var(--wireline-font-family-display)]">
-            Salesperson. Marketer. Front desk. Follow-up machine. {" "}
-            <span className="text-[var(--wireline-color-text-primary)]">
-              Start with one best employee, then add specialists only when volume proves it.
-            </span>
-          </p>
-        </section>
+        
 
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
@@ -210,16 +192,18 @@ export default function WireAgentLanding() {
         </section>
 
         <section className="border-b border-border bg-card/40 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-          <div className="wl-public-rail grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:items-start">
-            <div>
+          <div className="wl-public-rail">
+            <div className="mx-auto max-w-3xl text-center">
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Work lanes</p>
-              <h2 className="wl-display-2 mt-4">Choose the outcome. Wireline gives it a line.</h2>
-              <p className="mt-4 max-w-[34rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Sales, service, or all-purpose follow-through — same product. You choose the first
-                business result; Wireline handles the number, handoff, record, and balance. {AGENT_NUMBER_PROMISE}
+              <h2 className="wl-display-2 mx-auto mt-4 max-w-[18ch]">
+                Choose the outcome. Wireline gives it a line.
+              </h2>
+              <p className="mx-auto mt-4 max-w-[42rem] text-[16px] leading-[1.6] text-muted-foreground">
+                Start with sales, service, or all-purpose follow-through. Wireline handles the
+                number, handoff, record, and balance. {AGENT_NUMBER_PROMISE}
               </p>
               <div
-                className="wl-segmented mt-7"
+                className="wl-segmented mx-auto mt-7 flex w-fit max-w-full"
                 role="tablist"
                 aria-label="Agent call direction"
                 onKeyDown={handleModeKeyDown}
@@ -246,7 +230,7 @@ export default function WireAgentLanding() {
               </div>
             </div>
 
-            <div className="wl-paper rounded-[18px] p-6 sm:p-7">
+            <div className="wl-paper mx-auto mt-8 max-w-3xl rounded-[18px] p-6 text-center sm:p-8">
               {MODE_OPTIONS.map(({ key, label }) => (
                 <div
                   key={key}
@@ -257,13 +241,13 @@ export default function WireAgentLanding() {
                   hidden={mode !== key}
                 >
                   {mode === key ? (
-                    <div className="space-y-6">
+                    <div className="space-y-6 text-center">
                       <div>
                         <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">
                           {detail.eyebrow}
                         </p>
-                        <h3 className="wl-display-3 mt-3">{detail.title}</h3>
-                        <p className="mt-4 text-[15px] leading-[1.65] text-muted-foreground">
+                        <h3 className="wl-display-3 mx-auto mt-3 max-w-[20ch]">{detail.title}</h3>
+                        <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-[1.65] text-muted-foreground">
                           {detail.lead}
                         </p>
                       </div>
@@ -279,7 +263,7 @@ export default function WireAgentLanding() {
                       </div>
                       <Link
                         to={detail.ctaPath}
-                        className="marketing-btn-primary min-h-11 justify-center px-5 text-[13px] font-semibold sm:w-fit"
+                        className="marketing-btn-primary mx-auto min-h-11 justify-center px-5 text-[13px] font-semibold sm:w-fit"
                       >
                         {detail.cta}
                         <ArrowRight size={14} aria-hidden="true" />

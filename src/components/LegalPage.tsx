@@ -29,18 +29,18 @@ function LegalLayout({
           <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
 
-        <div className="flex items-center gap-3 mb-2">
+        <div className="mb-3 flex flex-col items-center gap-3 text-center">
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
             <Icon className="w-5 h-5 text-on-brand" />
           </div>
           <h1 className="marketing-hero-title text-2xl sm:text-3xl">{title}</h1>
         </div>
-        <p className="text-eyebrow !text-[0.625rem] mb-10">Last updated: {LAST_UPDATED}</p>
+        <p className="mb-10 text-center text-eyebrow !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>
 
         {summary?.length ? (
           <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label={`${title} summary`}>
             {summary.map((item) => (
-              <div key={item} className="rounded-md border border-border bg-background/45 p-4">
+              <div key={item} className="rounded-md border border-border bg-background/45 p-4 text-center">
                 <p className="text-sm leading-6 text-foreground">{item}</p>
               </div>
             ))}

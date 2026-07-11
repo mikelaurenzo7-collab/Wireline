@@ -2,9 +2,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { CLIENT_SURFACE_POSTURE, PRODUCT_POSTURE } from "../src/lib/product-copy";
+import {
+  CLIENT_SURFACE_POSTURE,
+  PRODUCT_POSTURE,
+} from "../src/lib/product-copy";
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const read = (path: string) =>
+  readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("current-state UI contract", () => {
   it("keeps authenticated product headers start-aligned and wrap-safe", () => {
@@ -22,7 +26,9 @@ describe("current-state UI contract", () => {
   it("keeps companion availability honest to the web-first launch order", () => {
     const apps = read("src/pages/ClientAppsPage.tsx");
 
-    expect(CLIENT_SURFACE_POSTURE.summary).toContain("Web is the canonical runtime");
+    expect(CLIENT_SURFACE_POSTURE.summary).toContain(
+      "Web is the canonical runtime",
+    );
     expect(CLIENT_SURFACE_POSTURE.browser.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.chatgpt.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.android.status).toBe("Internal beta");
@@ -30,6 +36,51 @@ describe("current-state UI contract", () => {
     expect(apps).toContain("CLIENT_SURFACE_POSTURE");
     expect(apps).not.toContain('status: "Live"');
     expect(apps).not.toContain('action: "TestFlight"');
+  });
+
+  it("keeps public conversion routes on the selected launch plan", () => {
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const auth = read("src/components/AuthPortal.tsx");
+
+    expect(landing).toContain('name: "Starter"');
+    expect(landing).toContain("planCatalog.starter.price_usd_monthly");
+    expect(landing).toContain("/signup?plan=starter&mode=outbound");
+    expect(landing).toContain("/signup?plan=starter&mode=inbound");
+    expect(landing).toContain("/signup?plan=starter&mode=hybrid");
+
+    expect(auth).toContain(
+      'pathname === "/signup" || pathname === "/get-started"',
+    );
+    expect(auth).toContain('starter: "Starter · $9/month"');
+    expect(auth).toContain('team: "Starter Plus · $19/month"');
+    expect(auth).toContain('business: "Pro · $59/month"');
+    expect(auth).toContain('enterprise: "Business · $149/month"');
+    expect(auth).toContain(': "starter";');
+    expect(auth).not.toContain(
+      'nextMode === "business" ? "business" : "personal"',
+    );
+  });
+
+  it("keeps account entry and shared page headers centered, concise, and wrap-safe", () => {
+    const auth = read("src/components/AuthPortal.tsx");
+    const authCss = read("src/styles/precision-auth.css");
+    const mobile = read("src/styles/ruthless-mobile-cleanup.css");
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const features = read("src/pages/Features.tsx");
+
+    expect(auth).toContain("max-w-[520px]");
+    expect(auth).toContain('const nextPath = value ? "/signup" : "/signin"');
+    expect(auth).toContain("location.search");
+    expect(auth).not.toContain("AuthBrandPanel");
+    expect(authCss).toContain("grid-template-columns: minmax(0, 1fr)");
+    expect(mobile).toMatch(
+      /\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/,
+    );
+    expect(shell).toContain("max-w-[32ch] break-words text-balance");
+    expect(shell).not.toContain(
+      'className="truncate font-[var(--wireline-font-family-display)]',
+    );
+    expect(features).toContain('["Build", "Train", "Launch", "Improve"]');
   });
 
   it("uses direction and guardrails for product control without weakening legal consent copy", () => {
@@ -40,7 +91,9 @@ describe("current-state UI contract", () => {
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
       "Your calls. Your direction. Your outcomes.",
     );
-    expect(copy).toContain("guardrails, approvals, spend, handoffs, and escalation");
+    expect(copy).toContain(
+      "guardrails, approvals, spend, handoffs, and escalation",
+    );
     expect(copy).not.toContain("under the owner's rules");
     expect(copy).toContain("consent rules");
   });

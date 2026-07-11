@@ -24,10 +24,6 @@ type MarketingHeroProps = {
   secondaryAction?: HeroAction;
   proof?: readonly string[];
   metrics?: readonly HeroMetric[];
-  visualEyebrow?: string;
-  visualTitle?: ReactNode;
-  visualBody?: ReactNode;
-  visualItems?: readonly string[];
   visual?: ReactNode;
   className?: string;
   compact?: boolean;
@@ -45,10 +41,6 @@ export default function MarketingHero({
   secondaryAction,
   proof = [],
   metrics = [],
-  visualEyebrow = "Operating loop",
-  visualTitle = "Build. Train. Wire. Run.",
-  visualBody = "One clean path from role definition to real conversations, outcomes, and follow-up.",
-  visualItems = ["Create the employee", "Teach the playbook", "Connect the number", "Review the result"],
   visual,
   className,
   compact = false,
@@ -60,27 +52,24 @@ export default function MarketingHero({
     <section
       className={cn(
         "marketing-hero border-b border-border px-5 sm:px-8 lg:px-10",
-        compact ? "py-12 sm:py-16 lg:py-20" : "py-14 sm:py-20 lg:py-24",
-        isBrandSpine && "wireline-home-hero py-12 sm:py-16 lg:py-20",
+        compact
+          ? "py-12 sm:py-16 lg:py-20"
+          : isBrandSpine
+            ? "py-20 sm:py-28 lg:py-32"
+            : "py-16 sm:py-24 lg:py-28",
+        isBrandSpine && "wireline-home-hero",
         className,
       )}
     >
-      <div
-        className={cn(
-          "wl-public-rail grid gap-10 lg:items-center",
-          isBrandSpine
-            ? "lg:grid-cols-[minmax(0,1.08fr)_minmax(20rem,.68fr)]"
-            : "lg:grid-cols-[minmax(0,1fr)_minmax(20rem,.72fr)]",
-        )}
-      >
+      <div className="wl-public-rail">
         <div
           className={cn(
-            "min-w-0 max-w-[60rem] text-left",
+            "marketing-hero__content mx-auto flex max-w-[70rem] flex-col items-center text-center",
             isBrandSpine && "wireline-home-hero__content",
           )}
         >
           {eyebrow ? (
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 shadow-[var(--wireline-elevation-sm)]">
+            <div className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 shadow-[var(--wireline-elevation-sm)]">
               <span className="marketing-live-dot h-1.5 w-1.5 rounded-full" aria-hidden="true" />
               <span className="wl-eyebrow wl-eyebrow--wired min-w-0 truncate text-muted-foreground">
                 {eyebrow}
@@ -91,10 +80,10 @@ export default function MarketingHero({
           <h1
             aria-label={isBrandSpine ? "Wire. Work. Win." : undefined}
             className={cn(
-              "marketing-hero__title max-w-[18.75ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.85rem,6.05vw,6.1rem)] font-bold leading-[.92] tracking-[-.055em] text-foreground md:max-w-[21ch] lg:max-w-[18.75ch]",
-              eyebrow ? "mt-6" : "mt-0",
+              "marketing-hero__title mx-auto max-w-[18ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.85rem,6.2vw,6.5rem)] font-bold leading-[.92] tracking-[-.055em] text-foreground",
+              eyebrow ? "mt-7" : "mt-0",
               isBrandSpine &&
-                "max-w-none whitespace-nowrap text-[clamp(1.6rem,8.1vw,5.65rem)] tracking-[-.065em] sm:text-[clamp(3.4rem,6.4vw,5.65rem)] md:max-w-none lg:max-w-none",
+                "max-w-[15ch] text-[clamp(3.2rem,8.2vw,7.25rem)] leading-[.9] tracking-[-.065em]",
             )}
           >
             {title}
@@ -102,16 +91,16 @@ export default function MarketingHero({
 
           <p
             className={cn(
-              "marketing-hero__description mt-6 max-w-[48rem] text-pretty text-[1.0625rem] leading-8 text-muted-foreground sm:text-[1.2rem] sm:leading-[1.62]",
+              "marketing-hero__description mx-auto mt-6 max-w-[52rem] text-pretty text-[1.0625rem] leading-8 text-muted-foreground sm:text-[1.2rem] sm:leading-[1.62]",
               isBrandSpine &&
-                "mt-5 max-w-[38rem] font-[var(--wireline-font-family-display)] text-[clamp(1rem,2.1vw,1.3rem)] font-semibold leading-snug tracking-[-.015em]",
+                "max-w-[42rem] font-[var(--wireline-font-family-display)] text-[clamp(1.05rem,2.1vw,1.4rem)] font-semibold leading-snug tracking-[-.015em]",
             )}
           >
             {description}
           </p>
 
           {actions.length ? (
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="marketing-hero__actions mt-9">
               {actions.map((action) => {
                 const primary = action.tone !== "secondary";
                 const actionClassName = cn(
@@ -147,7 +136,10 @@ export default function MarketingHero({
           ) : null}
 
           {proof.length ? (
-            <ul className="mt-7 flex flex-wrap gap-2.5" aria-label="Wireline proof points">
+            <ul
+              className="mt-8 flex max-w-4xl flex-wrap justify-center gap-2.5"
+              aria-label="Wireline proof points"
+            >
               {proof.map((item) => (
                 <li
                   key={item}
@@ -166,46 +158,13 @@ export default function MarketingHero({
           ) : null}
         </div>
 
-        <aside
-          className="wl-paper relative overflow-hidden rounded-[22px] p-5 sm:p-6 lg:p-7"
-          aria-label="Wireline operating preview"
-        >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-70"
-            aria-hidden="true"
-            style={{
-              background:
-                "radial-gradient(circle at 18% 0%, var(--wireline-color-glow-primary), transparent 44%)",
-            }}
-          />
-          <div className="relative">
-            {visual ?? (
-              <>
-                <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">{visualEyebrow}</p>
-                <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-bold leading-[.98] tracking-[-.045em] text-foreground">
-                  {visualTitle}
-                </h2>
-                <p className="mt-4 text-[15px] leading-7 text-muted-foreground">{visualBody}</p>
-                <ol className="mt-7 grid gap-3">
-                  {visualItems.map((item, index) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-3 rounded-[14px] border border-border bg-background/70 px-4 py-3"
-                    >
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-border bg-card font-mono text-[11px] font-bold text-primary">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span className="text-sm font-semibold text-foreground">{item}</span>
-                    </li>
-                  ))}
-                </ol>
-              </>
-            )}
-
+        {visual ? (
+          <div className="marketing-hero__experience wl-paper mx-auto mt-12 max-w-4xl overflow-hidden rounded-[22px] p-5 text-center sm:p-7 lg:p-9">
+            {visual}
             {metrics.length ? (
-              <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+              <div className="mt-7 grid gap-3 sm:grid-cols-3">
                 {metrics.map((metric) => (
-                  <div key={metric.label} className="rounded-[14px] border border-border bg-card/70 p-4">
+                  <div key={metric.label} className="rounded-[14px] border border-border bg-card/70 p-4 text-center">
                     <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
                       {metric.value}
                     </p>
@@ -217,7 +176,20 @@ export default function MarketingHero({
               </div>
             ) : null}
           </div>
-        </aside>
+        ) : metrics.length ? (
+          <div className="mx-auto mt-12 grid max-w-4xl gap-3 sm:grid-cols-3">
+            {metrics.map((metric) => (
+              <div key={metric.label} className="wl-paper rounded-[14px] p-5 text-center">
+                <p className="font-[var(--wireline-font-family-display)] text-3xl font-bold leading-none tracking-[-.04em] text-foreground">
+                  {metric.value}
+                </p>
+                <p className="mt-2 text-[12px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
+                  {metric.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

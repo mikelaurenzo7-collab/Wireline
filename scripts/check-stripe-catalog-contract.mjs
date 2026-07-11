@@ -3,76 +3,127 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const planCatalogPath = join(root, "src/lib/plan-catalog.ts");
-const setupCatalogPath = join(root, "scripts/setup-stripe-catalog.mjs");
+import {
+  FOUNDER_CATALOG_VERSION,
+  FOUNDER_PRICES,
+  FOUNDER_PRODUCTS,
+} from "./lib/stripe-founder-catalog.mjs";
 
-const planCatalog = readFileSync(planCatalogPath, "utf8");
-const setupCatalog = readFileSync(setupCatalogPath, "utf8");
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const read = (path) => readFileSync(join(root, path), "utf8");
+const planCatalog = read("src/lib/plan-catalog.ts");
+const setupCatalog = read("scripts/setup-stripe-catalog.mjs");
+const auditCatalog = read("scripts/audit-stripe-catalog-live.mjs");
+const packageJson = JSON.parse(read("package.json"));
 const errors = [];
 
-const unique = (items) => [...new Set(items)].sort();
-const capture = (source, regex) => unique([...source.matchAll(regex)].map((match) => match[1]));
+function requireText(source, token, message) {
+  if (!source.includes(token)) errors.push(message);
+}
 
-const setupEnvTargets = capture(setupCatalog, /envTarget:\s*"([A-Z0-9_]+)"/g);
-const runtimeEnvTargets = capture(
+requireText(
   planCatalog,
-  /(?:priceIdEnv|annualPriceIdEnv|extraAgentPriceIdEnv|overagePriceIdEnv):\s*"([A-Z0-9_]+)"/g,
+  `FOUNDER_CATALOG_VERSION = "${FOUNDER_CATALOG_VERSION}"`,
+  "plan-catalog.ts must use the shared Founder catalog version.",
+);
+requireText(
+  setupCatalog,
+  'from "./lib/stripe-founder-catalog.mjs"',
+  "Stripe setup must import the shared Founder catalog manifest.",
+);
+requireText(
+  auditCatalog,
+  'from "./lib/stripe-founder-catalog.mjs"',
+  "Stripe live audit must import the shared Founder catalog manifest.",
 );
 
-const recurringRuntimeEnvTargets = runtimeEnvTargets.filter((name) =>
-  /^(?:STRIPE_BUSINESS_STARTER|STRIPE_PRO)_/.test(name),
-);
-
-// Only enforce the setup → plan-catalog reference for prices that carry a
-// wireline_plan_id in the setup script — those are plan prices. Add-ons
-// (e.g. live video) intentionally live outside plan-catalog and are checked
-// out via dedicated routes; requiring them to appear in plan-catalog would
-// force a bogus reference just to satisfy the contract.
-const setupPlanEnvTargets = new Set();
-for (const [, , envTarget, metadata] of setupCatalog.matchAll(
-  /\{\s*key:\s*"([^"]+)"[\s\S]*?envTarget:\s*"([^"]+)"[\s\S]*?metadata:\s*\{([^}]+)\}/g,
-)) {
-  if (/wireline_plan_id\s*:\s*"[^"]+"/.test(metadata)) {
-    setupPlanEnvTargets.add(envTarget);
-  }
+if (packageJson.scripts?.["stripe:setup"] !== "node scripts/setup-stripe-catalog.mjs") {
+  errors.push("stripe:setup must run the Founder catalog reconciler.");
+}
+if (packageJson.scripts?.["stripe:catalog:check"] !== "node scripts/check-stripe-catalog-contract.mjs") {
+  errors.push("stripe:catalog:check must run this contract.");
 }
 
-for (const name of setupEnvTargets) {
-  if (setupPlanEnvTargets.has(name) && !runtimeEnvTargets.includes(name)) {
-    errors.push(`Catalog setup creates plan price ${name}, but plan-catalog.ts does not reference it.`);
-  }
+const planEnvTargets = FOUNDER_PRICES.filter(
+  (price) => price.envTarget && price.metadata?.wireline_plan_id,
+).map((price) => price.envTarget);
+
+for (const envTarget of planEnvTargets) {
+  requireText(
+    planCatalog,
+    `"${envTarget}"`,
+    `plan-catalog.ts does not reference canonical price env ${envTarget}.`,
+  );
 }
 
-for (const name of recurringRuntimeEnvTargets) {
-  if (!setupEnvTargets.includes(name)) {
-    errors.push(`plan-catalog.ts references recurring price ${name}, but setup-stripe-catalog.mjs does not create it.`);
-  }
+for (const envTarget of ["STRIPE_EXTRA_AGENT_PRICE_ID"]) {
+  requireText(
+    planCatalog,
+    `"${envTarget}"`,
+    `plan-catalog.ts does not reference canonical add-on env ${envTarget}.`,
+  );
 }
 
-const priceBlocks = [
-  ...setupCatalog.matchAll(
-    /\{\s*key:\s*"([^"]+)"[\s\S]*?envTarget:\s*"([^"]+)"[\s\S]*?metadata:\s*\{([^}]+)\}/g,
-  ),
+const expectedPlans = [
+  ["starter", 9, 90],
+  ["team", 19, 190],
+  ["business", 59, 590],
+  ["enterprise", 149, 1490],
 ];
-
-for (const [, key, envTarget, metadata] of priceBlocks) {
-  if (!/^(?:STRIPE_BUSINESS_STARTER|STRIPE_PRO)_/.test(envTarget)) continue;
-
-  if (!/wireline_plan_id\s*:\s*"(team|business)"/.test(metadata)) {
-    errors.push(`${key} (${envTarget}) must carry wireline_plan_id metadata.`);
-  }
-
-  if (!/wireline_price_type\s*:\s*"[^"]+"/.test(metadata)) {
-    errors.push(`${key} (${envTarget}) must carry wireline_price_type metadata.`);
+for (const [id, monthly, annual] of expectedPlans) {
+  const pattern = new RegExp(
+    `id: "${id}"[\\s\\S]{0,240}?price_usd_monthly: ${monthly},[\\s\\S]{0,120}?price_usd_annual: ${annual},`,
+  );
+  if (!pattern.test(planCatalog)) {
+    errors.push(`plan-catalog.ts price drift for ${id}: expected $${monthly}/$${annual}.`);
   }
 }
 
-for (const token of ["wireline_price_key", "wireline_catalog_state", "wireline_catalog_version"]) {
-  if (!setupCatalog.includes(token)) {
-    errors.push(`setup-stripe-catalog.mjs must write ${token} onto created prices.`);
+if (FOUNDER_PRODUCTS.length !== 8) {
+  errors.push(`Founder manifest must define 8 active paid/add-on products; found ${FOUNDER_PRODUCTS.length}.`);
+}
+if (FOUNDER_PRICES.length !== 14) {
+  errors.push(`Founder manifest must define 14 active prices; found ${FOUNDER_PRICES.length}.`);
+}
+
+for (const [source, label] of [
+  [setupCatalog, "Stripe setup"],
+  [auditCatalog, "Stripe live audit"],
+]) {
+  requireText(
+    source,
+    'status: "all"',
+    `${label} must inspect every Stripe subscription status before catalog cleanup.`,
+  );
+  requireText(
+    source,
+    '"incomplete_expired"',
+    `${label} must distinguish terminal from nonterminal subscriptions.`,
+  );
+}
+
+for (const retiredToken of [
+  "Wireline Team - Monthly",
+  "Wireline Business - Monthly",
+  "team_voice_overage",
+  "business_voice_overage",
+  "VOICE_OVERAGE_METER_EVENT_NAME",
+]) {
+  if (setupCatalog.includes(retiredToken) || auditCatalog.includes(retiredToken)) {
+    errors.push(`Stripe maintenance scripts still contain retired catalog token: ${retiredToken}.`);
   }
 }
+
+requireText(
+  setupCatalog,
+  "No postpaid voice-overage price is created.",
+  "Stripe setup must preserve the prepaid-overflow guardrail.",
+);
+requireText(
+  auditCatalog,
+  "Superseded Wireline price is still active.",
+  "Stripe audit must reject active superseded prices.",
+);
 
 if (errors.length) {
   console.error("Stripe catalog contract check failed:");
@@ -81,5 +132,5 @@ if (errors.length) {
 }
 
 console.log(
-  `Stripe catalog contract OK: ${setupEnvTargets.length} setup env targets, ${recurringRuntimeEnvTargets.length} recurring runtime env targets.`,
+  `Stripe Founder catalog contract OK: ${FOUNDER_PRODUCTS.length} products, ${FOUNDER_PRICES.length} prices, ${planEnvTargets.length} plan env targets.`,
 );

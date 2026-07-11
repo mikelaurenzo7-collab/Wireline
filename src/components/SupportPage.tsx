@@ -83,21 +83,21 @@ export function SupportPage() {
           <ArrowLeft className="h-4 w-4" />
           Back home
         </Link>
-        <div className="mt-8 max-w-3xl">
+        <div className="mx-auto mt-8 max-w-3xl text-center">
           <p className="wl-stitch-eyebrow">Support</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
             Help with your agent, without the runaround.
           </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
             We aim for a first response within one business day. For a service interruption or a
             live call that needs attention, call us directly.
           </p>
           <div className="mt-6 grid gap-2 sm:grid-cols-3">
             {SUPPORT_ROUTING.map(([label, detail], index) => (
-              <div key={label} className="rounded border border-border bg-card/70 p-3">
+              <div key={label} className="rounded border border-border bg-card/70 p-3 text-center">
                 {index === 0 ? (
                   <AlertTriangle
-                    className="mb-2 h-4 w-4 text-[var(--wireline-color-status-warning)]"
+                    className="mx-auto mb-2 h-4 w-4 text-[var(--wireline-color-status-warning)]"
                     aria-hidden="true"
                   />
                 ) : null}
@@ -109,8 +109,8 @@ export function SupportPage() {
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a href={`tel:${supportAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5">
-            <Phone className="h-5 w-5 text-primary" />
+          <a href={`tel:${supportAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+            <Phone className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Call Wireline</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {supportAgent.display} for urgent help and call triage.
@@ -118,16 +118,16 @@ export function SupportPage() {
           </a>
           <a
             href="mailto:support@trywireline.com"
-            className="wl-stitch-card wl-stitch-card-hover p-5"
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
-            <Mail className="h-5 w-5 text-primary" />
+            <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Email support</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Billing, account access, personal use, and business coverage questions.
             </p>
           </a>
-          <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5">
-            <MessageSquare className="h-5 w-5 text-primary" />
+          <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+            <MessageSquare className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Open Studio</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Already signed in? Review your agent and live activity in one place.

@@ -81,7 +81,7 @@ export default function TrustPackPage() {
   return (
     <MarketingChrome>
       <PageMeta title={`Trust · ${pack.title}`} description={pack.subtitle} />
-      <div className="max-w-2xl mx-auto px-4 py-12">
+      <div className="mx-auto max-w-2xl px-4 py-12 text-center">
         <Link
           to="/security"
           className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground mb-6 touch-press"
@@ -89,16 +89,16 @@ export default function TrustPackPage() {
           <ArrowLeft className="w-4 h-4" />
           Security overview
         </Link>
-        <div className="flex items-center gap-3 mb-4">
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <span className="flex h-11 w-11 items-center justify-center rounded-md bg-brand/12 text-brand">
             <ShieldCheck className="w-5 h-5" />
           </span>
-          <div>
+          <div className="text-center">
             <h1 className="font-display italic text-2xl text-foreground">{pack.title}</h1>
             <p className="text-sm text-muted mt-1">{pack.subtitle}</p>
           </div>
         </div>
-        <ul className="space-y-3 mb-8">
+        <ul className="mx-auto mb-8 max-w-xl space-y-3 text-left">
           {pack.bullets.map((b) => (
             <li key={b} className="flex gap-2 text-sm text-foreground/80 leading-relaxed">
               <span className="text-brand mt-0.5">✓</span>

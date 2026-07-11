@@ -37,18 +37,20 @@ export default function EmailPage() {
   return (
     <WorkspaceShell contentClassName="flex min-h-0 flex-1 flex-col pt-1 pb-8">
       <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <WorkspacePageIntro title="Inbox" />
-          <WorkspaceTabStrip
-            ariaLabel="Inbox channels"
-            tabs={inboxTabs}
-            activeId={activeTab}
-            onSelect={(id) => setActiveTab(id as InboxTabId)}
-            align="start"
-            density="compact"
-            className="mb-0 w-full border-b-0 pb-0 sm:w-auto"
-          />
-        </div>
+        <WorkspacePageIntro
+          title="Inbox"
+          action={
+            <WorkspaceTabStrip
+              ariaLabel="Inbox channels"
+              tabs={inboxTabs}
+              activeId={activeTab}
+              onSelect={(id) => setActiveTab(id as InboxTabId)}
+              align="start"
+              density="compact"
+              className="mb-0 border-b-0 pb-0 md:w-auto"
+            />
+          }
+        />
         <div className="wl-inbox-route flex min-h-0 flex-1 flex-col">
           {activeTab === "email" ? <EmailInbox embedded /> : <SmsThreads embedded />}
         </div>

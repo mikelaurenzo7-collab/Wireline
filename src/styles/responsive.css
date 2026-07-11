@@ -139,8 +139,10 @@
     letter-spacing: -0.02em;
   }
   .marketing-script-card {
-    border-left-width: 2px;
+    border-left-width: 0;
+    border-top-width: 2px;
     padding: 1.125rem !important;
+    text-align: center;
   }
   .marketing-script-card blockquote {
     max-height: 18rem;

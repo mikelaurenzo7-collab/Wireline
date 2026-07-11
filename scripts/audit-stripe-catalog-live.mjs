@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Read-only audit of the live Stripe catalog against Wireline's launch model.
+ * Read-only audit of the live Stripe account against Founder Early Access.
  *
- * This script intentionally performs no Stripe writes. Use it before/after
- * `npm run stripe:setup` and before syncing generated Stripe env values.
+ * This script performs no writes. It validates the exact active product and
+ * price set, then checks that live subscriptions, payment links, and open
+ * checkouts do not depend on superseded catalog objects.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -11,50 +12,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import Stripe from "stripe";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, "..");
+import {
+  FOUNDER_CATALOG_VERSION,
+  FOUNDER_PRICES,
+  FOUNDER_PRODUCTS,
+  PRODUCT_BY_KEY,
+} from "./lib/stripe-founder-catalog.mjs";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const API_VERSION = "2026-02-25.clover";
-
-const EXPECTED_ACTIVE_PRODUCTS = new Set([
-  "Conversation Balance",
-  "Wireline Business",
-  "Wireline Enterprise",
-  "Wireline Live Video",
-  "Wireline Personal",
-  "Wireline Team",
-]);
-
-const EXPECTED_PRICE_KEYS = new Set([
-  "balance_5",
-  "balance_10",
-  "balance_25",
-  "balance_50",
-  "business_annual",
-  "business_extra_agent",
-  "business_monthly",
-  "business_voice_overage",
-  "team_annual",
-  "team_extra_agent",
-  "team_monthly",
-  "team_voice_overage",
-  "live_video_monthly",
-]);
-
-const RETIRED_PRODUCT_NAMES = new Set([
-  "Custom Enterprise",
-  "Front Desk",
-  "Office Assistant",
-  "Sales & Reception",
-  "Solo Agent",
-  "Wireline Concierge",
-  "Wireline Custom",
-  "Wireline Everyday",
-  "Wireline Household",
-  "Wireline Lead Gen",
-  "Wireline Plus",
-  "Wireline Starter",
-  "Wireline Conversation Balance",
-]);
 
 function parseEnvFile(path) {
   if (!existsSync(path)) return {};
@@ -78,7 +44,7 @@ function parseEnvFile(path) {
 }
 
 function loadStripeSecret() {
-  if (process.env.STRIPE_SECRET_KEY) return process.env.STRIPE_SECRET_KEY;
+  if (process.env.STRIPE_SECRET_KEY?.trim()) return process.env.STRIPE_SECRET_KEY.trim();
   for (const path of [join(ROOT, ".env.local"), join(ROOT, ".tmp", "vercel-production.env")]) {
     const parsed = parseEnvFile(path);
     if (parsed.STRIPE_SECRET_KEY) return parsed.STRIPE_SECRET_KEY;
@@ -86,9 +52,9 @@ function loadStripeSecret() {
   return "";
 }
 
-async function collect(listPromise) {
+async function collect(iterator) {
   const rows = [];
-  for await (const row of listPromise) rows.push(row);
+  for await (const row of iterator) rows.push(row);
   return rows;
 }
 
@@ -98,177 +64,222 @@ function productIdOf(priceOrItem) {
   return typeof price.product === "string" ? price.product : price.product.id;
 }
 
-function productNameById(products) {
-  return new Map(products.map((product) => [product.id, product.name]));
-}
-
-function sortStrings(values) {
-  return [...values].sort((a, b) => a.localeCompare(b));
-}
-
-async function activePaymentLinkProductIds(stripe) {
-  const ids = new Set();
-  const links = await collect(stripe.paymentLinks.list({ active: true, limit: 100 }));
-  for (const link of links) {
-    const lineItems = await collect(stripe.paymentLinks.listLineItems(link.id, { limit: 100 }));
-    for (const item of lineItems) {
-      const productId = productIdOf(item);
-      if (productId) ids.add(productId);
-    }
-  }
-  return { links, ids };
-}
-
-async function liveSubscriptionProductIds(stripe) {
-  const ids = new Set();
-  const subscriptions = [
-    ...(await collect(stripe.subscriptions.list({ status: "active", limit: 100 }))),
-    ...(await collect(stripe.subscriptions.list({ status: "trialing", limit: 100 }))),
-  ];
-  for (const subscription of subscriptions) {
-    for (const item of subscription.items?.data || []) {
-      const productId = productIdOf(item);
-      if (productId) ids.add(productId);
-    }
-  }
-  return { subscriptions, ids };
-}
-
-async function openCheckoutProductIds(stripe) {
-  const ids = new Set();
-  const sessions = (await collect(stripe.checkout.sessions.list({ limit: 100 }))).filter(
-    (session) => session.status === "open",
-  );
-  for (const session of sessions) {
-    const lineItems = await collect(stripe.checkout.sessions.listLineItems(session.id, { limit: 100 }));
-    for (const item of lineItems) {
-      const productId = productIdOf(item);
-      if (productId) ids.add(productId);
-    }
-  }
-  return { sessions, ids };
+function priceIdOf(item) {
+  return typeof item?.price === "string" ? item.price : item?.price?.id || item?.id || null;
 }
 
 function addFinding(findings, level, message, metadata = {}) {
   findings.push({ level, message, metadata });
 }
 
+function sameRecurring(actual, expected) {
+  if (!expected) return !actual;
+  return (
+    actual?.interval === expected.interval &&
+    (actual?.usage_type || "licensed") === (expected.usage_type || "licensed")
+  );
+}
+
+async function activePaymentLinks(stripe) {
+  const rows = [];
+  for await (const link of stripe.paymentLinks.list({ active: true, limit: 100 })) {
+    const lineItems = await collect(stripe.paymentLinks.listLineItems(link.id, { limit: 100 }));
+    rows.push({ link, lineItems });
+  }
+  return rows;
+}
+
+async function openCheckoutSessions(stripe) {
+  const sessions = (await collect(stripe.checkout.sessions.list({ limit: 100 }))).filter(
+    (session) => session.status === "open",
+  );
+  const rows = [];
+  for (const session of sessions) {
+    const lineItems = await collect(
+      stripe.checkout.sessions.listLineItems(session.id, { limit: 100 }),
+    );
+    rows.push({ session, lineItems });
+  }
+  return rows;
+}
+
+async function liveSubscriptions(stripe) {
+  return (await collect(stripe.subscriptions.list({ status: "all", limit: 100 }))).filter(
+    (subscription) => !["canceled", "incomplete_expired"].includes(subscription.status),
+  );
+}
+
 async function main() {
   const secret = loadStripeSecret();
   if (!secret) {
-    console.error("STRIPE_SECRET_KEY is required. Pull Vercel production env first.");
+    console.error("STRIPE_SECRET_KEY is required. Pull the Vercel production env first.");
     process.exit(1);
   }
 
   const stripe = new Stripe(secret, { apiVersion: API_VERSION });
   const account = await stripe.accounts.retrieve();
   const products = await collect(stripe.products.list({ limit: 100 }));
+  const activeProducts = products.filter((product) => product.active);
   const activePrices = await collect(stripe.prices.list({ active: true, limit: 100 }));
-  const productNames = productNameById(products);
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const expectedProductNames = new Set(FOUNDER_PRODUCTS.map((product) => product.name));
   const findings = [];
 
-  const activeProductNames = new Set(products.filter((product) => product.active).map((p) => p.name));
-  for (const expectedName of EXPECTED_ACTIVE_PRODUCTS) {
-    if (!activeProductNames.has(expectedName)) {
-      addFinding(findings, "error", `Expected active product is missing: ${expectedName}`);
-    }
-  }
-  for (const name of activeProductNames) {
-    if (!EXPECTED_ACTIVE_PRODUCTS.has(name)) {
-      addFinding(findings, "error", `Unexpected active product: ${name}`);
+  for (const expected of FOUNDER_PRODUCTS) {
+    const matches = activeProducts.filter((product) => product.name === expected.name);
+    if (matches.length !== 1) {
+      addFinding(
+        findings,
+        "error",
+        `Expected exactly one active product named ${expected.name}; found ${matches.length}.`,
+        { product_ids: matches.map((product) => product.id) },
+      );
     }
   }
 
-  for (const product of products) {
-    if (RETIRED_PRODUCT_NAMES.has(product.name) && product.active) {
-      addFinding(findings, "error", `Retired product is still active: ${product.name}`, {
+  for (const product of activeProducts) {
+    if (!expectedProductNames.has(product.name)) {
+      addFinding(findings, "error", `Unexpected active product: ${product.name}`, {
         product_id: product.id,
       });
     }
   }
 
-  const launchActivePrices = activePrices.filter(
-    (price) => price.metadata?.wireline_catalog_state === "launch_active",
-  );
-  const pricesByKey = new Map();
-  for (const price of launchActivePrices) {
-    const key = price.metadata?.wireline_price_key || "<missing>";
-    if (!pricesByKey.has(key)) pricesByKey.set(key, []);
-    pricesByKey.get(key).push(price);
-  }
+  const canonicalPriceIds = new Set();
 
-  for (const expectedKey of EXPECTED_PRICE_KEYS) {
-    const rows = pricesByKey.get(expectedKey) || [];
-    if (rows.length !== 1) {
-      addFinding(findings, "error", `Expected exactly one active launch price for ${expectedKey}; found ${rows.length}.`, {
-        price_ids: rows.map((row) => row.id),
+  for (const expected of FOUNDER_PRICES) {
+    const matches = expected.lookupKey
+      ? activePrices.filter((price) => price.lookup_key === expected.lookupKey)
+      : activePrices.filter((price) => price.metadata?.wireline_price_key === expected.key);
+
+    if (matches.length !== 1) {
+      addFinding(
+        findings,
+        "error",
+        `Expected exactly one active price for ${expected.key}; found ${matches.length}.`,
+        { price_ids: matches.map((price) => price.id) },
+      );
+      continue;
+    }
+
+    const price = matches[0];
+    const product = productById.get(productIdOf(price));
+    const expectedProduct = PRODUCT_BY_KEY.get(expected.productKey);
+    canonicalPriceIds.add(price.id);
+
+    if (price.currency !== "usd" || price.unit_amount !== expected.unitAmount) {
+      addFinding(findings, "error", `Price amount drift for ${expected.key}.`, {
+        price_id: price.id,
+        expected_unit_amount: expected.unitAmount,
+        actual_unit_amount: price.unit_amount,
+        currency: price.currency,
       });
     }
-  }
-  for (const key of pricesByKey.keys()) {
-    if (!EXPECTED_PRICE_KEYS.has(key)) {
-      addFinding(findings, "error", `Unexpected active launch price key: ${key}`);
+    if (!sameRecurring(price.recurring, expected.recurring)) {
+      addFinding(findings, "error", `Recurring contract drift for ${expected.key}.`, {
+        price_id: price.id,
+        expected: expected.recurring,
+        actual: price.recurring,
+      });
+    }
+    if (!product || product.name !== expectedProduct?.name) {
+      addFinding(findings, "error", `Price ${expected.key} points at the wrong product.`, {
+        price_id: price.id,
+        expected_product: expectedProduct?.name,
+        actual_product: product?.name || null,
+      });
     }
   }
 
   for (const price of activePrices) {
-    const productName = productNames.get(productIdOf(price));
-    if (productName && RETIRED_PRODUCT_NAMES.has(productName)) {
-      if (price.metadata?.wireline_catalog_state === "retired_anchor") continue;
-      const isProductDefault = products.find((product) => product.id === productIdOf(price))?.default_price === price.id;
-      addFinding(findings, isProductDefault ? "warning" : "error", `Active price remains under retired product: ${productName}`, {
-        product_id: productIdOf(price),
+    if (canonicalPriceIds.has(price.id)) continue;
+    const product = productById.get(productIdOf(price));
+    const retainedRetiredDefault =
+      product &&
+      !product.active &&
+      (product.default_price === price.id ||
+        price.metadata?.wireline_catalog_state === "retired_anchor");
+    if (retainedRetiredDefault) {
+      addFinding(findings, "warning", "Inactive product retains its Stripe-required default price.", {
         price_id: price.id,
-        nickname: price.nickname,
-        default_price: isProductDefault,
+        product_id: product.id,
+        product: product.name,
       });
+      continue;
     }
+
+    const looksManaged =
+      expectedProductNames.has(product?.name) ||
+      !!price.metadata?.wireline_plan_id ||
+      !!price.metadata?.wireline_addon_id ||
+      !!price.metadata?.wireline_price_key ||
+      !!price.metadata?.wireline_catalog_state;
+    if (!looksManaged) continue;
+
+    addFinding(findings, "error", "Superseded Wireline price is still active.", {
+      price_id: price.id,
+      nickname: price.nickname,
+      lookup_key: price.lookup_key,
+      product: product?.name || null,
+      wireline_price_key: price.metadata?.wireline_price_key || null,
+    });
   }
 
-  const [subs, paymentLinks, checkout] = await Promise.all([
-    liveSubscriptionProductIds(stripe),
-    activePaymentLinkProductIds(stripe),
-    openCheckoutProductIds(stripe),
+  const [subscriptions, paymentLinks, checkoutSessions] = await Promise.all([
+    liveSubscriptions(stripe),
+    activePaymentLinks(stripe),
+    openCheckoutSessions(stripe),
   ]);
 
-  for (const productId of subs.ids) {
-    const productName = productNames.get(productId);
-    if (productName && RETIRED_PRODUCT_NAMES.has(productName)) {
-      addFinding(findings, "error", `Live subscription depends on retired product: ${productName}`, {
-        product_id: productId,
-      });
+  for (const subscription of subscriptions) {
+    for (const item of subscription.items?.data || []) {
+      const priceId = priceIdOf(item);
+      if (priceId && !canonicalPriceIds.has(priceId)) {
+        addFinding(findings, "error", "Live subscription uses a noncanonical price.", {
+          subscription_id: subscription.id,
+          price_id: priceId,
+        });
+      }
     }
   }
-  for (const productId of paymentLinks.ids) {
-    const productName = productNames.get(productId);
-    if (productName && RETIRED_PRODUCT_NAMES.has(productName)) {
-      addFinding(findings, "error", `Active payment link depends on retired product: ${productName}`, {
-        product_id: productId,
-      });
+
+  for (const { link, lineItems } of paymentLinks) {
+    for (const item of lineItems) {
+      const priceId = priceIdOf(item);
+      if (priceId && !canonicalPriceIds.has(priceId)) {
+        addFinding(findings, "error", "Active payment link uses a noncanonical price.", {
+          payment_link_id: link.id,
+          price_id: priceId,
+        });
+      }
     }
   }
-  for (const productId of checkout.ids) {
-    const productName = productNames.get(productId);
-    if (productName && RETIRED_PRODUCT_NAMES.has(productName)) {
-      addFinding(findings, "warning", `Open checkout session depends on retired product: ${productName}`, {
-        product_id: productId,
-      });
+
+  for (const { session, lineItems } of checkoutSessions) {
+    for (const item of lineItems) {
+      const priceId = priceIdOf(item);
+      if (priceId && !canonicalPriceIds.has(priceId)) {
+        addFinding(findings, "warning", "Open checkout uses a noncanonical price.", {
+          checkout_session_id: session.id,
+          price_id: priceId,
+        });
+      }
     }
   }
 
   const summary = {
     account_id: account.id,
-    active_products: sortStrings(activeProductNames),
+    catalog_version: FOUNDER_CATALOG_VERSION,
+    active_products: activeProducts.map((product) => product.name).sort(),
     active_price_count: activePrices.length,
-    launch_active_price_count: launchActivePrices.length,
-    live_subscription_count: subs.subscriptions.length,
-    active_payment_link_count: paymentLinks.links.length,
-    open_checkout_session_count: checkout.sessions.length,
+    canonical_price_count: canonicalPriceIds.size,
+    live_subscription_count: subscriptions.length,
+    active_payment_link_count: paymentLinks.length,
+    open_checkout_session_count: checkoutSessions.length,
     findings,
   };
 
   console.log(JSON.stringify(summary, null, 2));
-
   if (findings.some((finding) => finding.level === "error")) process.exit(1);
 }
 

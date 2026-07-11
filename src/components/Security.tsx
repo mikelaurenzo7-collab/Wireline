@@ -221,13 +221,13 @@ export default function Security() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-10"
+            className="mb-10 text-center"
           >
-            <div className="flex items-center gap-3 mb-3">
+            <div className="mb-5 flex flex-col items-center justify-center gap-3 text-center">
               <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
                 <ShieldCheck className="w-5 h-5 text-on-brand" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-eyebrow">Security · Compliance · Honesty</p>
                 <h1 className="marketing-hero-title text-2xl sm:text-3xl">
                   {isTrustHub
@@ -236,7 +236,7 @@ export default function Security() {
                 </h1>
               </div>
             </div>
-            <p className="marketing-hero-lead max-w-prose">
+            <p className="marketing-hero-lead mx-auto max-w-prose">
               Wireline runs every call on infrastructure designed for the moments that matter: a
               customer trusting you, a regulator auditing you, a hacker testing you. This page is
               the honest summary of what we ship today, where we still have work to do, and how to
@@ -247,7 +247,7 @@ export default function Security() {
 
           <section className="mb-10 grid gap-3 sm:grid-cols-2" aria-label="Security summary">
             {SECURITY_SUMMARY.map(([label, detail]) => (
-              <div key={label} className="rounded-md border border-border bg-background/45 p-4">
+              <div key={label} className="rounded-md border border-border bg-background/45 p-4 text-center">
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
               </div>
@@ -264,13 +264,13 @@ export default function Security() {
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
                 >
-                  <div className="flex items-center gap-2.5 mb-2">
+                  <div className="mb-3 flex items-center justify-center gap-2.5 text-center">
                     <Icon className="w-4 h-4 text-brand" strokeWidth={1.8} />
                     <h2 className="font-display italic text-lg text-foreground leading-tight">
                       {title}
                     </h2>
                   </div>
-                  <ul className="space-y-1.5 marketing-body">
+                  <ul className="mx-auto max-w-2xl space-y-1.5 text-left marketing-body">
                     {items.map((line, i) => (
                       <li key={i} className="pl-5 relative">
                         <span
@@ -286,9 +286,9 @@ export default function Security() {
             )}
           </div>
 
-          <div className="mt-12 pt-6 border-t border-border">
+          <div className="mt-12 border-t border-border pt-6 text-center">
             <p className="text-eyebrow mb-2">On the roadmap</p>
-            <ul className="marketing-body space-y-1 list-disc pl-5">
+            <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
               <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q4.</li>
               <li>
                 Supabase RLS policy coverage + GraphQL exposure cleanup for all tenant tables.
@@ -302,9 +302,9 @@ export default function Security() {
             </ul>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-border">
+          <div className="mt-10 border-t border-border pt-6 text-center">
             <p className="text-eyebrow mb-3">Vertical trust packs</p>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 marketing-body">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 marketing-body">
               <Link to="/trust/medical" className="text-brand hover:underline">
                 Healthcare
               </Link>

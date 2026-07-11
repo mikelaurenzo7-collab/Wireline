@@ -80,13 +80,6 @@ const TABLE_ROWS = [
 ] as const;
 
 const COMPARE_HERO_PROOF = ["Make the call", "Keep the result", "Improve the next one"] as const;
-const COMPARE_HERO_ITEMS = [
-  "Make routine calls",
-  "Hold the context",
-  "Return the next step",
-  "Log the outcome",
-] as const;
-
 export default function Compare() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
@@ -103,10 +96,6 @@ export default function Compare() {
         primaryAction={{ label: "Start free", to: "/pricing" }}
         secondaryAction={{ label: "Hear an agent", to: "/showcase", tone: "secondary" }}
         proof={COMPARE_HERO_PROOF}
-        visualEyebrow="The difference"
-        visualTitle="A call should end with an answer."
-        visualBody="Wireline keeps the hard parts together: context, timing, conversation, outcome, and follow-up."
-        visualItems={COMPARE_HERO_ITEMS}
       />
 
       <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">

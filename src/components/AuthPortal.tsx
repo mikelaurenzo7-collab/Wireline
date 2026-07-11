@@ -24,6 +24,7 @@ import {
   sanitizeSignupIntent,
   syncSignupIntent,
   type SignupIntent,
+  type SignupPlanId,
 } from "../lib/signup-intent";
 import {
   persistAuthRedirect,
@@ -57,7 +58,8 @@ function extractServerErrorMessage(payload: unknown): string | null {
         const row = d as { field?: unknown; message?: unknown };
         const msg = typeof row.message === "string" ? row.message.trim() : "";
         if (!msg) return null;
-        const field = typeof row.field === "string" && row.field ? row.field : null;
+        const field =
+          typeof row.field === "string" && row.field ? row.field : null;
         return field ? `${field}: ${msg}` : msg;
       })
       .filter((s): s is string => !!s);
@@ -74,12 +76,21 @@ function cleanThrownMessage(e: unknown): string | null {
   return trimmed;
 }
 
+const SIGNUP_PLAN_LABELS: Record<SignupPlanId, string> = {
+  personal: "Free Builder",
+  starter: "Starter · $9/month",
+  team: "Starter Plus · $19/month",
+  business: "Pro · $59/month",
+  enterprise: "Business · $149/month",
+};
+
 function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (!intent?.preferredPlanId && !intent?.signupWedge) return null;
-  const parts = [];
-  if (intent.preferredPlanId) parts.push(`${intent.preferredPlanId} plan`);
+  const parts: string[] = [];
+  if (intent.preferredPlanId)
+    parts.push(SIGNUP_PLAN_LABELS[intent.preferredPlanId]);
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
-  return parts.join(" / ");
+  return parts.join(" · ");
 }
 
 function getPasswordStrengthLabel(password: string): string | null {
@@ -131,7 +142,9 @@ function OAuthSignInButtons({
         const bodySnippet = (await res.text().catch(() => "")).slice(0, 120);
         throw new Error(
           `Sign-in service returned ${res.status} ${res.statusText || ""}. ${
-            bodySnippet ? `Details: ${bodySnippet}` : "The server may be misconfigured."
+            bodySnippet
+              ? `Details: ${bodySnippet}`
+              : "The server may be misconfigured."
           }`.trim(),
         );
       }
@@ -149,7 +162,8 @@ function OAuthSignInButtons({
       window.location.assign(url);
     } catch (e: unknown) {
       setPending(null);
-      const providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1);
+      const providerLabel =
+        provider.charAt(0).toUpperCase() + provider.slice(1);
       const detail = cleanThrownMessage(e);
       onError?.(
         detail
@@ -159,7 +173,11 @@ function OAuthSignInButtons({
     }
   };
 
-  const providers: Array<{ id: OAuthProvider; label: string; mark: React.ReactNode }> = [
+  const providers: Array<{
+    id: OAuthProvider;
+    label: string;
+    mark: React.ReactNode;
+  }> = [
     {
       id: "google",
       label: "Gmail",
@@ -222,101 +240,37 @@ function OAuthSignInButtons({
           aria-label={`Continue with ${p.label}`}
           className="wl-stitch-oauth-btn"
         >
-          {pending === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : p.mark}
+          {pending === p.id ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            p.mark
+          )}
           Continue with {p.label}
         </button>
       ))}
-      <div className="wl-stitch-auth-divider">or {isSignUp ? "sign up" : "sign in"} with email</div>
+      <div className="wl-stitch-auth-divider">
+        or {isSignUp ? "sign up" : "sign in"} with email
+      </div>
     </div>
   );
 }
 
-const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
+const cn = (...parts: Array<string | false | null | undefined>) =>
+  parts.filter(Boolean).join(" ");
 
-const AUTH_BRAND = {
-  signin: {
-    label: "Welcome back",
-    headline: "Back on the line.",
-    body: "Your AI employees, call history, and follow-ups are waiting.",
-  },
-  signup: {
-    personal: {
-      label: "Personal",
-      headline: "Wire your AI employee.",
-      body: "Build one AI employee, launch it on a real line, and see every result.",
-    },
-    business: {
-      label: "Business",
-      headline: "Call work, handled.",
-      body: "Outbound, inbound, or hybrid AI employees — trained on your playbook and supervised from one workspace.",
-    },
-  },
-} as const;
-
-function AuthBrandPanel({
-  headerActive,
-  workspaceMode,
-}: {
-  headerActive: "signin" | "signup";
-  workspaceMode: WorkspaceMode;
-}) {
-  const brand =
-    headerActive === "signin"
-      ? AUTH_BRAND.signin
-      : workspaceMode === "business"
-        ? AUTH_BRAND.signup.business
-        : AUTH_BRAND.signup.personal;
-  return (
-    <aside className="wl-auth-brand-panel" aria-hidden="true">
-      <div className="wl-auth-brand-glow" />
-      <div className="wl-auth-brand-top">
-        <Link to="/" className="wl-auth-brand-mark" tabIndex={-1}>
-          <span className="wl-auth-brand-badge">
-            <WirelineMark className="h-4 w-6" strokeWidth={10} />
-          </span>
-          <span className="wl-auth-brand-word">Wireline</span>
-        </Link>
-      </div>
-      <div className="wl-auth-brand-copy">
-        <p className="wl-auth-brand-label wl-eyebrow--wired">{brand.label}</p>
-        <h2 className="wl-auth-brand-headline">{brand.headline}</h2>
-        <p className="wl-auth-brand-body">{brand.body}</p>
-      </div>
-      <div className="wl-auth-brand-grid">
-        {[
-          ["Build", "Role and result"],
-          ["Train", "Voice and rules"],
-          ["Launch", "Number and tools"],
-          ["Improve", "Outcomes and coaching"],
-        ].map(([name, sub]) => (
-          <div key={name} className="wl-auth-brand-grid-cell">
-            <div className="wl-auth-brand-grid-name">{name}</div>
-            <div className="wl-auth-brand-grid-sub">{sub}</div>
-          </div>
-        ))}
-      </div>
-    </aside>
-  );
-}
-
-function AuthShell({
-  children,
-  mode,
-  headerActive,
-}: {
-  children: ReactNode;
-  mode: WorkspaceMode;
-  headerActive: "signin" | "signup";
-}) {
+function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="wl-stitch-auth-shell">
-      <AuthBrandPanel headerActive={headerActive} workspaceMode={mode} />
       <main
         id="main-content"
-        className="wl-auth-form-panel flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12"
+        className="wl-auth-form-panel flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-6 sm:py-12"
       >
-        <div className="w-full max-w-[440px]">
-          <Link to="/" className="wl-auth-mobile-mark">
+        <div className="w-full max-w-[520px]">
+          <Link
+            to="/"
+            className="wl-auth-entry-mark"
+            aria-label="Wireline home"
+          >
             <span className="wl-auth-brand-badge">
               <WirelineMark className="h-4 w-6" strokeWidth={10} />
             </span>
@@ -349,17 +303,22 @@ function WorkspaceSelector({
   mode: WorkspaceMode;
   setMode: (mode: WorkspaceMode) => void;
 }) {
-  const options: Array<{ id: WorkspaceMode; title: string; text: string; icon: ReactNode }> = [
+  const options: Array<{
+    id: WorkspaceMode;
+    title: string;
+    text: string;
+    icon: ReactNode;
+  }> = [
     {
       id: "personal",
       title: "Personal",
-      text: "One private AI employee for calls, texts, and follow-up on your terms.",
+      text: "One private employee for calls, texts, and follow-up.",
       icon: <User className="h-4 w-4" />,
     },
     {
       id: "business",
       title: "Business",
-      text: "A shared phone operation with multiple employees, numbers, approvals, integrations, and analytics.",
+      text: "Shared employees, numbers, approvals, and integrations.",
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
@@ -371,7 +330,7 @@ function WorkspaceSelector({
           type="button"
           onClick={() => setMode(option.id)}
           className={cn(
-            "flex items-start gap-3 border p-4 text-left transition",
+            "flex items-start gap-3 rounded-xl border p-4 text-left transition",
             mode === option.id
               ? "border-brand bg-brand/10"
               : "border-border bg-background hover:border-brand/40",
@@ -380,7 +339,9 @@ function WorkspaceSelector({
           <span
             className={cn(
               "mt-0.5 flex h-8 w-8 items-center justify-center rounded-full",
-              mode === option.id ? "bg-brand text-paper" : "bg-secondary text-foreground",
+              mode === option.id
+                ? "bg-brand text-paper"
+                : "bg-secondary text-foreground",
             )}
           >
             {option.icon}
@@ -405,13 +366,14 @@ export default function AuthPortal() {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
+  const isSignupRoute = pathname === "/signup" || pathname === "/get-started";
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(
     () =>
       workspaceFromIntent(captureSignupIntentFromLocation()) ||
       readStoredWorkspaceMode() ||
       "personal",
   );
-  const initialMode: AuthMode = pathname === "/signup" ? "signup" : "signin";
+  const initialMode: AuthMode = isSignupRoute ? "signup" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -445,32 +407,45 @@ export default function AuthPortal() {
     if (authLoading || !user) return;
     // After successful auth (email/OAuth), navigate to resolved post-auth dest.
     // Default is /overview (Home) for logged-in users. See auth-redirect.ts.
-    navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
+    navigate(resolvePostAuthDestination(workspaceMode, location.search), {
+      replace: true,
+    });
   }, [authLoading, user, navigate, workspaceMode, location.search]);
 
   useEffect(() => {
-    if (pathname === "/signup") setMode("signup");
+    if (isSignupRoute) setMode("signup");
     else setMode((m) => (m === "reset" ? "reset" : "signin"));
-  }, [pathname]);
+  }, [isSignupRoute]);
 
   const applyWorkspaceMode = (nextMode: WorkspaceMode) => {
     setWorkspaceMode(nextMode);
     persistWorkspaceMode(nextMode);
-    setSignupIntent((current) =>
-      persistSignupIntent(
+    setSignupIntent((current) => {
+      const preferredPlanId =
+        nextMode === "personal"
+          ? "personal"
+          : current?.preferredPlanId && current.preferredPlanId !== "personal"
+            ? current.preferredPlanId
+            : "starter";
+
+      return persistSignupIntent(
         sanitizeSignupIntent({
           ...current,
-          preferredPlanId: nextMode === "business" ? "business" : "personal",
+          preferredPlanId,
           capturedAt: current?.capturedAt || new Date().toISOString(),
         }),
-      ),
-    );
+      );
+    });
   };
 
   const setIsSignUp = (value: boolean) => {
     setMode(value ? "signup" : "signin");
     setError(null);
     setMessage(null);
+    const nextPath = value ? "/signup" : "/signin";
+    if (location.pathname !== nextPath) {
+      navigate(`${nextPath}${location.search}`);
+    }
   };
 
   const handleAuth = async (event: React.FormEvent) => {
@@ -491,7 +466,9 @@ export default function AuthPortal() {
       setError("Password is required.");
       return;
     }
-    const passwordPolicyError = isSignUp ? getPasswordPolicyError(password) : null;
+    const passwordPolicyError = isSignUp
+      ? getPasswordPolicyError(password)
+      : null;
     if (passwordPolicyError) {
       setError(passwordPolicyError);
       return;
@@ -525,10 +502,15 @@ export default function AuthPortal() {
                 : "Password reset request failed."),
           );
         }
-        setMessage(data.message || "If that email is registered, a reset link is on its way.");
+        setMessage(
+          data.message ||
+            "If that email is registered, a reset link is on its way.",
+        );
       } else {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
-        const attribution = isSignUp ? sanitizeSignupIntent(signupIntent) : null;
+        const attribution = isSignUp
+          ? sanitizeSignupIntent(signupIntent)
+          : null;
         const demoSource = isSignUp ? readDemoSourceCookie() : null;
         const res = await fetch(endpoint, {
           method: "POST",
@@ -566,7 +548,9 @@ export default function AuthPortal() {
         }
         await syncSignupIntent(signupIntent).catch(() => {});
         if (!data.user?.id) {
-          throw new Error("Authentication succeeded but user payload was missing.");
+          throw new Error(
+            "Authentication succeeded but user payload was missing.",
+          );
         }
         if (isSignUp) {
           markFreshSignupSession();
@@ -581,23 +565,29 @@ export default function AuthPortal() {
         }
         signIn({ user: data.user });
         // Explicit post-auth navigate (also covered by user effect above).
-        navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
+        navigate(resolvePostAuthDestination(workspaceMode, location.search), {
+          replace: true,
+        });
       }
     } catch (err: unknown) {
-      setError(cleanThrownMessage(err) || "Authentication failed. Please try again.");
+      setError(
+        cleanThrownMessage(err) || "Authentication failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const pageTitle = isReset ? "Reset your password" : isSignUp ? "Create your account" : "Sign in";
+  const pageTitle = isReset
+    ? "Reset your password"
+    : isSignUp
+      ? "Create your account"
+      : "Sign in";
   const pageDescription = isReset
     ? "Enter your email and Wireline will send a secure password reset link."
     : isSignUp
-      ? "Create your Wireline account and build your first AI employee."
-      : "Sign in to your Wireline account.";
-
-  const headerActive = isSignUp ? "signup" : "signin";
+      ? "Build your first AI employee."
+      : "Welcome back to Wireline.";
 
   return (
     <>
@@ -607,10 +597,14 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <AuthShell mode={workspaceMode} headerActive={headerActive}>
+      <AuthShell>
         <div className="mb-6 text-center">
-          <h1 className="text-xl font-semibold tracking-[-.02em]">{pageTitle}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
+          <h1 className="text-xl font-semibold tracking-[-.02em]">
+            {pageTitle}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {pageDescription}
+          </p>
           {isSignUp && intentLabel ? (
             <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">
               {intentLabel}
@@ -619,15 +613,24 @@ export default function AuthPortal() {
         </div>
 
         {isSignUp && !isReset && (
-          <WorkspaceSelector mode={workspaceMode} setMode={applyWorkspaceMode} />
+          <WorkspaceSelector
+            mode={workspaceMode}
+            setMode={applyWorkspaceMode}
+          />
         )}
 
         <div>
           {!isReset && (
-            <div className="grid grid-cols-2 border-b border-ink/10 p-1 mb-4">
+            <div
+              className="mb-4 grid grid-cols-2 border-b border-ink/10 p-1"
+              role="tablist"
+              aria-label="Account access"
+            >
               <button
                 type="button"
                 onClick={() => setIsSignUp(false)}
+                role="tab"
+                aria-selected={!isSignUp}
                 className={`min-h-[44px] rounded-xl text-sm font-semibold transition ${
                   !isSignUp
                     ? "bg-primary text-primary-foreground"
@@ -639,6 +642,8 @@ export default function AuthPortal() {
               <button
                 type="button"
                 onClick={() => setIsSignUp(true)}
+                role="tab"
+                aria-selected={isSignUp}
                 className={`min-h-[44px] rounded-xl text-sm font-semibold transition ${
                   isSignUp
                     ? "bg-primary text-primary-foreground"
@@ -661,7 +666,10 @@ export default function AuthPortal() {
 
             <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-5">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground" htmlFor="auth-email">
+                <label
+                  className="text-sm font-semibold text-foreground"
+                  htmlFor="auth-email"
+                >
                   Email address
                 </label>
                 <div className="relative">
@@ -711,7 +719,9 @@ export default function AuthPortal() {
                       type={showPassword ? "text" : "password"}
                       required
                       minLength={isSignUp ? 8 : undefined}
-                      autoComplete={isSignUp ? "new-password" : "current-password"}
+                      autoComplete={
+                        isSignUp ? "new-password" : "current-password"
+                      }
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="wl-stitch-input h-11"
@@ -721,7 +731,9 @@ export default function AuthPortal() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((value) => !value)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                       aria-pressed={showPassword}
                       className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
                     >
@@ -735,7 +747,9 @@ export default function AuthPortal() {
                   {isSignUp && strengthLabel && (
                     <p className="text-xs text-foreground/55">
                       Password strength:{" "}
-                      <span className="font-semibold text-foreground">{strengthLabel}</span>
+                      <span className="font-semibold text-foreground">
+                        {strengthLabel}
+                      </span>
                     </p>
                   )}
                 </div>
