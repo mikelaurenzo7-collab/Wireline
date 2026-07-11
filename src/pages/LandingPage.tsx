@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { PageMeta } from "../lib/page-meta";
+import { MARKETING_VOICE } from "../lib/product-copy";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
-const PUBLIC_DESCRIPTION =
-  "Voice AI employee for real conversations. Wireline handles calls, follow-up, booking, and logged outcomes with an included number.";
+const PUBLIC_DESCRIPTION = MARKETING_VOICE.subline;
 
 export default function LandingPage() {
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline — Wire → Work → Win"
+        title="Wireline — Your next AI employee calls, texts & emails"
         description={PUBLIC_DESCRIPTION}
         image="/og-image.png"
       />
