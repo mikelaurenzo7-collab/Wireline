@@ -8,6 +8,7 @@ import {
   buildCompanyIdentityReadiness,
   canRequestCompanyIdentityReview,
   COMPANY_IDENTITY_CHANNELS,
+  companyIdentityFingerprint,
   type CompanyIdentityChannel,
   type CompanyIdentityPreferences,
   defaultCompanyIdentityPreferences,
@@ -91,6 +92,19 @@ function requestedChannels(value: unknown): CompanyIdentityChannel[] | undefined
   return [...new Set(channels)];
 }
 
+function fingerprintProfile(profile: {
+  businessName: string | null;
+  brandName: string | null;
+  logoUrl: string | null;
+  callerIdName: string | null;
+  website: string | null;
+  supportEmail: string | null;
+  defaultCallReason: string | null;
+  requestedChannels: CompanyIdentityChannel[];
+}): string {
+  return companyIdentityFingerprint(profile);
+}
+
 async function loadIdentityState(userId: string) {
   const [[settingsRow], [preferencesRow], [phoneRow]] = await Promise.all([
     drizzle
@@ -116,7 +130,22 @@ async function loadIdentityState(userId: string) {
   ]);
 
   const envelope = asPreferenceEnvelope(preferencesRow?.preferences);
-  const preferences = readCompanyIdentityPreferences(envelope.company_identity);
+  const storedPreferences = readCompanyIdentityPreferences(envelope.company_identity);
+  const storedProfile = buildCompanyIdentityProfile({ settings: settingsRow, preferences: storedPreferences });
+  const currentFingerprint = fingerprintProfile(storedProfile);
+  const hasReviewState =
+    Boolean(storedPreferences.reviewRequestedAt) ||
+    Object.values(storedPreferences.providerStatus).some((status) => status !== "not_requested");
+  const staleReviewState =
+    hasReviewState && storedPreferences.reviewFingerprint !== currentFingerprint;
+  const preferences: CompanyIdentityPreferences = staleReviewState
+    ? {
+        ...storedPreferences,
+        reviewRequestedAt: null,
+        reviewFingerprint: null,
+        providerStatus: defaultCompanyIdentityPreferences().providerStatus,
+      }
+    : storedPreferences;
   const profile = buildCompanyIdentityProfile({ settings: settingsRow, preferences });
   const readiness = buildCompanyIdentityReadiness({
     profile,
@@ -129,6 +158,8 @@ async function loadIdentityState(userId: string) {
     profile,
     readiness,
     phoneNumber: phoneRow?.phoneNumber ?? null,
+    currentFingerprint,
+    staleReviewState,
   };
 }
 
@@ -170,25 +201,10 @@ function publicPayload(state: Awaited<ReturnType<typeof loadIdentityState>>) {
       readiness: state.readiness,
       requestedChannels: state.profile.requestedChannels,
     }),
+    review_state_invalidated: state.staleReviewState,
     guarantee:
       "Wireline can submit a verified business identity to supported providers. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.",
   };
-}
-
-function identityFingerprint(value: {
-  businessName: string | null;
-  brandName: string | null;
-  logoUrl: string | null;
-  callerIdName: string | null;
-  website: string | null;
-  supportEmail: string | null;
-  defaultCallReason: string | null;
-  requestedChannels: CompanyIdentityChannel[];
-}): string {
-  return JSON.stringify({
-    ...value,
-    requestedChannels: [...value.requestedChannels].sort(),
-  });
 }
 
 router.get(
@@ -247,17 +263,8 @@ router.post(
             : defaultCallReason,
         requestedChannels: nextRequestedChannels ?? current.preferences.requestedChannels,
       };
-      const profileChanged =
-        identityFingerprint({
-          businessName: current.profile.businessName,
-          brandName: current.profile.brandName,
-          logoUrl: current.profile.logoUrl,
-          callerIdName: current.profile.callerIdName,
-          website: current.profile.website,
-          supportEmail: current.profile.supportEmail,
-          defaultCallReason: current.profile.defaultCallReason,
-          requestedChannels: current.profile.requestedChannels,
-        }) !== identityFingerprint(nextIdentityValues);
+      const nextFingerprint = fingerprintProfile(nextIdentityValues);
+      const profileChanged = current.currentFingerprint !== nextFingerprint;
 
       const nextPreferences: CompanyIdentityPreferences = {
         ...current.preferences,
@@ -267,6 +274,7 @@ router.post(
         defaultCallReason: nextIdentityValues.defaultCallReason,
         requestedChannels: nextIdentityValues.requestedChannels,
         reviewRequestedAt: profileChanged ? null : current.preferences.reviewRequestedAt,
+        reviewFingerprint: profileChanged ? null : current.preferences.reviewFingerprint,
         providerStatus: profileChanged
           ? defaultCompanyIdentityPreferences().providerStatus
           : current.preferences.providerStatus,
@@ -307,7 +315,7 @@ router.post(
             target: schema.userPreferences.userId,
             set: { preferences: nextEnvelope, updatedAt: new Date() },
           });
-        if (profileChanged) {
+        if (profileChanged || current.staleReviewState) {
           await tx.insert(schema.auditLog).values({
             userId: req.user.id,
             action: "company_identity.profile_updated",
@@ -316,7 +324,8 @@ router.post(
             resourceType: "company_identity",
             metadata: {
               channels: nextIdentityValues.requestedChannels,
-              priorReviewInvalidated: Boolean(current.preferences.reviewRequestedAt),
+              priorReviewInvalidated:
+                current.staleReviewState || Boolean(current.preferences.reviewRequestedAt),
             },
           });
         }
@@ -366,6 +375,7 @@ router.post(
       const nextPreferences: CompanyIdentityPreferences = {
         ...current.preferences,
         reviewRequestedAt: requestedAt,
+        reviewFingerprint: current.currentFingerprint,
         providerStatus,
       };
       const nextEnvelope = {
@@ -396,6 +406,7 @@ router.post(
             hasNumber: Boolean(current.phoneNumber),
             hasLogo: Boolean(current.profile.logoUrl),
             requestedAt,
+            profileFingerprint: current.currentFingerprint,
           },
         });
       });
