@@ -70,6 +70,7 @@ export const MARKETING_VOICE = {
   headline: "Your next AI employee calls, texts, and emails.",
   subline:
     "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
+  channelProof: ["Voice agent", "Text / SMS agent", "Email agent", "One shared memory"],
   spine: BRAND_SYSTEM.brandSpine,
   proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
