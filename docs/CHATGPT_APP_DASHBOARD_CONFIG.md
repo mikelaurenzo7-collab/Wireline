@@ -1,5 +1,18 @@
 # Wireline ChatGPT App — Dashboard Configuration
 
+## App identity
+
+- **Display name:** `Wireline`
+- **Subtitle:** `Build phone agents`
+- **Category:** `BUSINESS`
+- **Website:** `https://trywireline.com`
+- **Support:** `support@trywireline.com`
+- **Privacy notice:** `https://trywireline.com/chatgpt-app-privacy.html`
+- **Hosted logo:** `https://trywireline.com/wireline-chatgpt-app-icon.svg`
+- **Dashboard upload asset:** use the square PNG generated from `public/wireline-chatgpt-app-icon.svg` when the form requires a file upload rather than a URL.
+
+The dedicated ChatGPT icon is intentionally simpler than the full-size Wireline artwork so the connected-W mark stays clear at directory and composer avatar sizes.
+
 ## App registration
 
 - **Registration method:** Client Identifier Metadata Document (CIMD)
@@ -10,6 +23,8 @@
 - **Token URL:** `https://trywireline.com/mcp/oauth/token`
 - **Resource:** `https://trywireline.com/mcp`
 - **MCP server URL:** `https://trywireline.com/mcp`
+
+These identifiers belong to the currently approved Developer Mode connection. Do not replace them with generic placeholders when preparing the production submission. If OpenAI regenerates the approved app identifier in the dashboard, update this document and `chatgpt-app-submission.json` together before rescanning tools.
 
 ## Scopes
 
