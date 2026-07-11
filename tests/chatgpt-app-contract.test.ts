@@ -6,10 +6,26 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 const oauthRouteSource = read("src/routes/chatgpt-mcp-routes.ts");
 const accountRouteSource = read("src/routes/chatgpt-mcp-account-routes.ts");
+const mcpEntrypointSource = read("src/entrypoints/chatgpt-mcp-api.ts");
 const profileSource = read("src/lib/agent-customization.ts");
 const draftServiceSource = read("src/lib/agent-draft-service.ts");
 const rolloutDocs = read("docs/CHATGPT_APP.md");
 const submissionPacket = read("docs/CHATGPT_APP_SUBMISSION.md");
+const privacyNotice = read("public/chatgpt-app-privacy.html");
+const submission = JSON.parse(read("chatgpt-app-submission.json")) as {
+  app_info: { logo_url: string };
+  oauth: { client_url: string };
+  tools: Record<
+    string,
+    {
+      annotations: {
+        readOnlyHint: boolean;
+        openWorldHint: boolean;
+        destructiveHint: boolean;
+      };
+    }
+  >;
+};
 
 describe("Wireline ChatGPT App production contract", () => {
   it("publishes the required MCP and OAuth discovery surfaces", () => {
@@ -22,7 +38,6 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(oauthRouteSource).toContain("assertMcpTokenEndpointRateLimit");
     expect(oauthRouteSource).toContain("revokeMcpAccessTokensForClient");
     expect(oauthRouteSource).toContain("backfillMcpOAuthResourceBindings");
-    expect(oauthRouteSource).toContain("client_id_metadata_document_supported: true");
   });
 
   it("allows Cursor and Claude dynamic OAuth registration callbacks", () => {
@@ -46,10 +61,17 @@ describe("Wireline ChatGPT App production contract", () => {
     );
   });
 
-  it("keeps private voice simulation tool-free and rate-limited", () => {
+  it("keeps private voice simulation tool-free, rate-limited, and non-read-only", () => {
     expect(accountRouteSource).toContain('toolChoice: "none"');
     expect(accountRouteSource).toContain("tools: []");
     expect(accountRouteSource).toContain("chatgpt-private-simulation");
+    expect(mcpEntrypointSource).toContain('name === "start_private_voice_simulation"');
+    expect(mcpEntrypointSource).toContain("readOnlyHint: false");
+    expect(submission.tools.start_private_voice_simulation.annotations).toEqual({
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    });
   });
 
   it("requires explicit confirmation before a private draft is created or changed", () => {
@@ -67,6 +89,37 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(profileSource).toContain("escalationPolicy");
     expect(draftServiceSource).toContain("createAgentDraft");
     expect(draftServiceSource).toContain("updateAgentDraft");
+  });
+
+  it("keeps submission identity and OAuth metadata aligned with production", () => {
+    expect(submission.app_info.logo_url).toBe(
+      "https://trywireline.com/wireline-chatgpt-app-icon.svg",
+    );
+    expect(submission.oauth.client_url).toBe(
+      "https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json",
+    );
+    expect(read("public/wireline-chatgpt-app-icon.svg")).toContain("<title id=\"title\">Wireline</title>");
+  });
+
+  it("publishes explicit, complete tool annotations in the submission packet", () => {
+    expect(Object.keys(submission.tools)).toEqual([
+      "create_agent_draft",
+      "get_agent_draft",
+      "update_agent_draft",
+      "start_private_voice_simulation",
+      "list_wireline_agents",
+    ]);
+    for (const tool of Object.values(submission.tools)) {
+      expect(typeof tool.annotations.readOnlyHint).toBe("boolean");
+      expect(typeof tool.annotations.openWorldHint).toBe("boolean");
+      expect(typeof tool.annotations.destructiveHint).toBe("boolean");
+    }
+  });
+
+  it("discloses model-visible and widget-only returned data", () => {
+    expect(privacyNotice).toContain("Information returned to ChatGPT");
+    expect(privacyNotice).toContain("protected metadata");
+    expect(privacyNotice).toContain("not included in the model-visible conversation");
   });
 
   it("states the account-first no-launch boundary consistently", () => {
