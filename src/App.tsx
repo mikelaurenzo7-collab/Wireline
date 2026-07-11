@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
@@ -8,6 +9,7 @@ import { BrandingProvider } from "./contexts/BrandingContext";
 import { AccountProvider } from "./contexts/AccountContext";
 import TransitionSurface from "./components/TransitionSurface";
 import RouteChangeA11y from "./components/RouteChangeA11y";
+import PrecisionPublicHeader from "./components/marketing/PrecisionPublicHeader";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Features = lazy(() => import("./pages/Features"));
@@ -40,7 +42,59 @@ const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 const Developers = lazy(() => import("./pages/Developers"));
 
+const PUBLIC_MARKETING_PREFIXES = [
+  "/features",
+  "/pricing",
+  "/showcase",
+  "/compare",
+  "/solutions",
+  "/for",
+  "/about",
+  "/blog",
+  "/security",
+  "/trust",
+  "/status",
+  "/support",
+  "/contact",
+  "/privacy",
+  "/terms",
+  "/developers",
+] as const;
+
+function isPublicMarketingPath(pathname: string) {
+  return (
+    pathname === "/" ||
+    PUBLIC_MARKETING_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  );
+}
+
 function RouteLoading() {
+  const { pathname } = useLocation();
+
+  if (isPublicMarketingPath(pathname)) {
+    return (
+      <div className="marketing-surface min-h-[100dvh] bg-background text-foreground">
+        <PrecisionPublicHeader />
+        <main
+          id="main-content"
+          className="grid min-h-[100dvh] place-items-center px-5 pt-16"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div
+            role="status"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground"
+          >
+            <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+            <span>Loading page</span>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[9999]">
       <TransitionSurface eyebrow="Wireline" title="Loading" busyLabel="Loading" />
