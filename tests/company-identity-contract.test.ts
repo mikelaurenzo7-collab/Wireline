@@ -86,7 +86,10 @@ describe("company identity pack", () => {
       defaultCallReason: "Scheduling",
       requestedChannels: ["voice", "sms"] as const,
     };
-    const first = companyIdentityFingerprint({ ...base, requestedChannels: [...base.requestedChannels] });
+    const first = companyIdentityFingerprint({
+      ...base,
+      requestedChannels: [...base.requestedChannels],
+    });
     const reordered = companyIdentityFingerprint({
       ...base,
       requestedChannels: ["sms", "voice"],
@@ -113,6 +116,12 @@ describe("company identity pack", () => {
     expect(routes).toContain("company_identity.review_requested");
     expect(routes).toContain("reviewFingerprint: current.currentFingerprint");
     expect(routes).toContain("staleReviewState");
+    expect(routes).toContain("already_requested: true");
+    expect(routes).toContain("IDENTITY_REVIEW_REQUIRES_CHANGES");
+    expect(routes).toContain('if (providerStatus[channel] === "not_requested")');
+    expect(routes).toContain("profileFingerprintSha256");
+    expect(routes).toContain('createHash("sha256")');
+    expect(routes).not.toContain("profileFingerprint: current.currentFingerprint");
     expect(routes).toContain("approval and display coverage are not guaranteed");
     expect(routes).not.toContain('providerStatus[channel] = "approved"');
     expect(guard).toContain("requestedEnvelope.company_identity = currentEnvelope.company_identity");
