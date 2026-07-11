@@ -34,6 +34,135 @@
   z-index: 1;
 }
 
+/* ── Authenticated hierarchy — one start-aligned product rail ────────── */
+.wl-workspace-page-intro[data-align="start"] {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  text-align: left;
+}
+
+.wl-workspace-page-intro[data-align="start"] :is(h1, p),
+.wl-workspace-page-intro[data-align="start"] .wl-kicker {
+  margin-inline: 0;
+  text-align: left;
+}
+
+.wl-workspace-page .wl-section-label {
+  width: 100%;
+  text-align: left;
+}
+
+.wl-settings-tabs,
+.wl-workspace-tabs {
+  justify-content: flex-start;
+}
+
+.wl-workspace-main > .relative.mb-4.pb-3,
+.wl-workspace-main > .relative.lg\:mb-5 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.wl-workspace-main
+  > .relative.mb-4.pb-3
+  > .wl-workspace-content-inner,
+.wl-workspace-main
+  > .relative.lg\:mb-5
+  > .wl-workspace-content-inner {
+  width: 100%;
+  max-width: 1480px;
+  padding-inline: 0;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.wl-workspace-main
+  > .relative.mb-4.pb-3
+  > .wl-workspace-content-inner
+  > .wl-centered-header,
+.wl-workspace-main
+  > .relative.lg\:mb-5
+  > .wl-workspace-content-inner
+  > .wl-centered-header {
+  width: 100%;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.wl-workspace-main
+  > .relative.mb-4.pb-3
+  > .wl-workspace-content-inner
+  > .wl-centered-header
+  :is(h1, p),
+.wl-workspace-main
+  > .relative.lg\:mb-5
+  > .wl-workspace-content-inner
+  > .wl-centered-header
+  :is(h1, p) {
+  margin-inline: 0;
+  text-align: left;
+}
+
+.wl-workspace-main
+  > .relative.mb-4.pb-3
+  > .wl-workspace-content-inner
+  > .wl-centered-header
+  h1,
+.wl-workspace-main
+  > .relative.lg\:mb-5
+  > .wl-workspace-content-inner
+  > .wl-centered-header
+  h1 {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.wl-workspace-main > .relative.mb-4.pb-3 > .mt-3,
+.wl-workspace-main > .relative.lg\:mb-5 > .mt-3 {
+  position: static;
+  inset: auto;
+  margin-top: 0;
+  transform: none;
+  justify-content: flex-start;
+}
+
+.wl-workspace-main > .mx-3 {
+  width: 100%;
+  max-width: 1480px;
+  margin-inline: auto;
+}
+
+[data-wireline-route="/studio"] main > div > header.wl-centered-header {
+  width: 100%;
+  align-items: flex-start;
+  text-align: left;
+}
+
+[data-wireline-route="/studio"] main > div > header.wl-centered-header > div:first-child,
+[data-wireline-route="/studio"] main > div > header.wl-centered-header :is(h1, p) {
+  min-width: 0;
+  margin-inline: 0;
+  text-align: left;
+}
+
+[data-wireline-route="/studio"] main > div > header.wl-centered-header h1 {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+[data-wireline-route="/studio"] main > div > header.wl-centered-header > div:last-child {
+  width: 100%;
+  justify-content: flex-start;
+}
+
 /* ── Letterpress card cap (studio + workspace cards + polish primitives) ──
    The cap covers every authenticated card surface so migrating from
    studio-card to the wl-paper / wl-metric-tile primitives keeps the
@@ -127,7 +256,7 @@
   display: block;
   width: min(9rem, 42%);
   height: 1px;
-  margin: 1.1rem auto 0;
+  margin: 1.1rem 0 0;
   background: linear-gradient(
     90deg,
     transparent,
@@ -135,6 +264,34 @@
     color-mix(in srgb, var(--wireline-color-action-primary-default) 45%, transparent) 72%,
     transparent
   );
+}
+
+@media (min-width: 640px) {
+  [data-wireline-route="/studio"] main > div > header.wl-centered-header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  [data-wireline-route="/studio"] main > div > header.wl-centered-header > div:last-child {
+    width: auto;
+    justify-content: flex-end;
+  }
+}
+
+@media (min-width: 768px) {
+  .wl-workspace-main > .relative.mb-4.pb-3,
+  .wl-workspace-main > .relative.lg\:mb-5 {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 1.5rem;
+  }
+
+  .wl-workspace-main > .relative.mb-4.pb-3 > .mt-3,
+  .wl-workspace-main > .relative.lg\:mb-5 > .mt-3 {
+    justify-content: flex-end;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
