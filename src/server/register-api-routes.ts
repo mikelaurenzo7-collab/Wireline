@@ -22,6 +22,7 @@ import auditRouter from "../routes/audit-routes";
 import emailOutcomeRouter from "../routes/email-outcome-routes";
 import emailSyncRouter from "../routes/email-sync-routes";
 import accountRouter from "../routes/account-routes";
+import userPreferenceGuardRouter from "../routes/user-preference-guard-routes";
 import settingsRouter from "../routes/settings-routes";
 import postCallOutputRouter from "../routes/post-call-output-routes";
 import carrierRouter from "../routes/carrier-routes";
@@ -84,6 +85,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(pronunciationRouter);
   app.use(elevenlabsWebhookRouter);
   app.use(accountRouter);
+  app.use(userPreferenceGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
   app.use(carrierRouter);
