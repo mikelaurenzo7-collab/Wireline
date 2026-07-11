@@ -101,7 +101,7 @@ export default function SolutionsPage() {
         secondaryAction={{ to: page.secondary.href, label: page.secondary.label, tone: "secondary" }}
         proof={page.sequence.map(([title]) => title)}
         visual={
-          <div>
+          <div className="mx-auto max-w-2xl text-center">
             <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">Live preview</p>
             <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-normal leading-[.98] tracking-[-.045em] text-foreground">
               Hear this lane before you build it.
@@ -110,7 +110,7 @@ export default function SolutionsPage() {
               Preview the call lane, then build it with your voice, playbook, and handoff rules when
               ready.
             </p>
-            <div className="mt-7 rounded-[16px] border border-border bg-background/70 p-4">
+            <div className="mx-auto mt-7 max-w-xl rounded-[16px] border border-border bg-background/70 p-4">
               <BrowserCallWidget agentName={key === "sales" ? "Sales Agent" : "Front Desk"} />
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function SolutionsPage() {
             <h2 className="wl-stitch-display mt-3 text-balance">
               The capabilities that make a conversation operational.
             </h2>
-            <p className="mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
+            <p className="mx-auto mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
               Start with a focused assignment. Expand into the next channel, connected account, or
               workflow only when it makes the outcome better.
             </p>
