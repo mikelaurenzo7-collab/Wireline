@@ -1,84 +1,138 @@
 // GDPR account-deletion helpers.
 //
 // `purgeAccount` performs the irreversible hard-delete cascade across every
-// wireline_* table that holds user-owned data, then removes the Supabase auth
-// row. It is invoked from two places:
-//   1. The `purge_deleted_account` job handler (fires after the 30-day grace
-//      period elapses for a row in wireline_deletion_queue).
-//   2. Legacy / emergency code paths that need to force-purge a user.
-//
-// All other callers should use the soft-delete flow via
-// POST /api/account/delete + the 30-day grace window.
+// tenant-owned Wireline table, then removes the local Wireline auth row. It is
+// invoked from the delayed `purge_deleted_account` job after the 30-day grace
+// period. All normal callers should use POST /api/account/delete instead.
 
 import { sql } from "drizzle-orm";
 import { drizzle } from "./server-context";
 
-// Order matters: child tables before parent tables to satisfy any FKs that
-// are not ON DELETE CASCADE.
-//
-// wireline_stripe_events is intentionally omitted — it is a global Stripe
-// idempotency ledger with no user_id column.
-export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
-  "wireline_audit_log",
-  "wireline_signal_presence",
-  "wireline_follow_up_tasks",
-  "wireline_webhook_deliveries",
-  "wireline_webhooks",
-  "wireline_intake_keys",
-  "wireline_agent_lessons",
-  "wireline_directives",
-  "wireline_knowledge",
-  "wireline_personality",
-  "wireline_email_messages",
-  "wireline_email_threads",
-  "wireline_email_accounts",
-  "wireline_call_logs",
-  "wireline_outbound_leads",
-  "wireline_outbound_campaigns",
-  "wireline_appointments",
-  "wireline_dnc_list",
-  "wireline_phone_numbers",
-  "wireline_agent_conversation_messages",
-  "wireline_agents",
-  "wireline_accounts",
-  "wireline_director_conversation_messages",
-  "wireline_director_artifact_objects",
-  "wireline_director_artifacts",
-  "wireline_director_profile",
-  "wireline_cloned_voices",
-  "wireline_pronunciation_dictionaries",
-  "wireline_sms_messages",
-  "wireline_sms_threads",
-  "wireline_agent_team_members",
-  "wireline_agent_teams",
-  "wireline_call_queues",
-  "wireline_cadence_runs",
-  "wireline_cadences",
-  "wireline_supervisor_subscriptions",
-  "wireline_mobile_devices",
-  "wireline_credit_ledger",
-  "wireline_consent_log",
-  "wireline_lead_dossiers",
-  "wireline_goals",
-  "wireline_quota_usage",
-  "wireline_quota_limits",
-  "wireline_spend_alerts",
-  "wireline_spend_budgets",
-  "wireline_password_reset_tokens",
-  "wireline_email_verification_tokens",
-  "wireline_subscriptions",
-  "wireline_onboarding_progress",
-  "wireline_user_preferences",
-  "wireline_calendar_events",
-  "wireline_calendar_accounts",
-  "wireline_crm_connections",
-  "wireline_team_members",
-  "wireline_jobs",
-  "wireline_settings",
+type AccountDeletionTarget = {
+  table: string;
+  /** Columns that directly contain the Wireline user UUID. */
+  userColumns?: readonly string[];
+  /** Columns that contain an organization owned by the deleting user. */
+  organizationColumns?: readonly string[];
+};
+
+/**
+ * Child tables precede parents so the purge remains valid even where a foreign
+ * key is not configured with ON DELETE CASCADE. Keep this registry synchronized
+ * with every public `wireline_*` table that stores tenant-owned data.
+ *
+ * Global ledgers/catalogs are intentionally excluded:
+ * - wireline_stripe_events (global Stripe idempotency ledger)
+ * - wireline_mcp_oauth_clients (platform OAuth client registry)
+ * - wireline_demo_call_events (public showcase telemetry)
+ */
+export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
+  { table: "wireline_audit_log", userColumns: ["user_id"] },
+  { table: "wireline_signal_presence", userColumns: ["user_id"] },
+  { table: "wireline_follow_up_tasks", userColumns: ["user_id"] },
+  { table: "wireline_webhook_deliveries", userColumns: ["user_id"] },
+  { table: "wireline_webhook_health", userColumns: ["user_id"] },
+  { table: "wireline_webhooks", userColumns: ["user_id"] },
+  { table: "wireline_intake_keys", userColumns: ["user_id"] },
+  { table: "wireline_agent_lessons", userColumns: ["user_id"] },
+  { table: "wireline_directives", userColumns: ["user_id"] },
+  { table: "wireline_knowledge", userColumns: ["user_id"] },
+  { table: "wireline_personality", userColumns: ["user_id"] },
+  { table: "wireline_email_messages", userColumns: ["user_id"] },
+  { table: "wireline_email_threads", userColumns: ["user_id"] },
+  { table: "wireline_email_accounts", userColumns: ["user_id"] },
+  { table: "wireline_sms_messages", userColumns: ["user_id"] },
+  { table: "wireline_sms_threads", userColumns: ["user_id"] },
+  { table: "wireline_call_logs", userColumns: ["user_id"] },
+  { table: "wireline_call_reliability_staging", userColumns: ["user_id"] },
+  { table: "wireline_appointments", userColumns: ["user_id"] },
+  { table: "wireline_lead_dossiers", userColumns: ["user_id"] },
+  {
+    table: "wireline_outbound_leads",
+    userColumns: ["user_id"],
+    organizationColumns: ["organization_id"],
+  },
+  {
+    table: "wireline_outbound_campaigns",
+    userColumns: ["user_id"],
+    organizationColumns: ["organization_id"],
+  },
+  { table: "wireline_dnc_list", userColumns: ["user_id"] },
+  { table: "wireline_phone_numbers", userColumns: ["user_id"] },
+  { table: "wireline_agent_conversation_messages", userColumns: ["user_id"] },
+  { table: "wireline_agent_team_members", userColumns: ["user_id"] },
+  { table: "wireline_call_queues", userColumns: ["user_id"] },
+  { table: "wireline_agent_teams", userColumns: ["user_id"] },
+  { table: "wireline_cadence_runs", userColumns: ["user_id"] },
+  { table: "wireline_cadences", userColumns: ["user_id"] },
+  { table: "wireline_supervisor_subscriptions", userColumns: ["user_id"] },
+  { table: "wireline_mobile_devices", userColumns: ["user_id"] },
+  { table: "wireline_credit_ledger", userColumns: ["user_id"] },
+  { table: "wireline_consent_log", userColumns: ["user_id"] },
+  { table: "wireline_goals", userColumns: ["user_id"] },
+  { table: "wireline_quota_usage", userColumns: ["user_id"] },
+  { table: "wireline_quota_limits", userColumns: ["user_id"] },
+  { table: "wireline_spend_alerts", userColumns: ["user_id"] },
+  { table: "wireline_spend_budgets", userColumns: ["user_id"] },
+  { table: "wireline_password_reset_tokens", userColumns: ["user_id"] },
+  { table: "wireline_email_verification_tokens", userColumns: ["user_id"] },
+  { table: "wireline_mcp_access_tokens", userColumns: ["user_id"] },
+  { table: "wireline_mcp_oauth_codes", userColumns: ["user_id"] },
+  { table: "wireline_mcp_refresh_tokens", userColumns: ["user_id"] },
+  { table: "wireline_oauth_pending_codes", userColumns: ["user_id"] },
+  { table: "wireline_browser_handoffs", userColumns: ["user_id"] },
+  { table: "wireline_design_integrations", userColumns: ["user_id"] },
+  { table: "wireline_design_profiles", userColumns: ["user_id"] },
+  { table: "wireline_director_conversation_messages", userColumns: ["user_id"] },
+  { table: "wireline_director_artifacts", userColumns: ["user_id"] },
+  { table: "wireline_director_artifact_objects", userColumns: ["user_id"] },
+  { table: "wireline_director_profile", userColumns: ["user_id"] },
+  { table: "wireline_cloned_voices", userColumns: ["user_id"] },
+  { table: "wireline_pronunciation_dictionaries", userColumns: ["user_id"] },
+  { table: "wireline_subscriptions", userColumns: ["user_id"] },
+  { table: "wireline_onboarding_progress", userColumns: ["user_id"] },
+  { table: "wireline_user_preferences", userColumns: ["user_id"] },
+  { table: "wireline_calendar_events", userColumns: ["user_id"] },
+  { table: "wireline_calendar_accounts", userColumns: ["user_id"] },
+  { table: "wireline_crm_connections", userColumns: ["user_id"] },
+  {
+    table: "wireline_team_members",
+    userColumns: ["user_id", "tenant_id"],
+  },
+  {
+    table: "wireline_memberships",
+    userColumns: ["user_id"],
+    organizationColumns: ["organization_id"],
+  },
+  { table: "wireline_jobs", userColumns: ["user_id"] },
+  {
+    table: "wireline_settings",
+    userColumns: ["user_id"],
+    organizationColumns: ["organization_id"],
+  },
+  {
+    table: "wireline_agents",
+    userColumns: ["user_id"],
+    organizationColumns: ["organization_id"],
+  },
+  { table: "wireline_accounts", userColumns: ["user_id"] },
+  // Legacy production backup still contains training data and must not outlive
+  // the account merely because it is no longer part of the active schema.
+  { table: "wireline_training_backup_20260609", userColumns: ["user_id"] },
+  // Delete organizations only when the account being deleted owns them. A user
+  // who is merely a member loses their membership above without deleting the
+  // workspace or another owner's data.
+  { table: "wireline_organizations", userColumns: ["owner_id"] },
+  // The queue contains IP/user-agent data, so the terminal purge removes it too.
+  // The worker has already loaded the row and tolerates its final status update
+  // affecting zero rows.
+  { table: "wireline_deletion_queue", userColumns: ["user_id"] },
 ];
 
-// Tables that scope by tenant_id instead of user_id.
-const TENANT_SCOPED_TABLES = new Set<string>(["wireline_team_members"]);
+/** Backward-compatible table-name export used by tests and operator tooling. */
+export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = ACCOUNT_DELETION_TARGETS.map(
+  ({ table }) => table,
+);
 
 type ExecuteResult = { rows?: Array<{ table_exists?: boolean }> };
 
@@ -108,9 +162,8 @@ export interface PurgeAccountResult {
 }
 
 /**
- * Hard-deletes a user across every wireline_* table and removes the Supabase
- * auth record. Idempotent — running twice is safe (subsequent runs simply
- * find no rows to delete).
+ * Hard-deletes a user across every tenant-owned Wireline table and removes the
+ * local auth record. Idempotent: subsequent runs simply find no rows to delete.
  */
 export async function purgeAccount(
   userId: string,
@@ -121,35 +174,49 @@ export async function purgeAccount(
 
   try {
     return await db.transaction(async (tx) => {
-      for (const table of ACCOUNT_DELETION_TABLES) {
-        if (!(await tableExists(tx, table))) {
-          log.warn("account purge skipped missing table", { table, userId });
+      for (const target of ACCOUNT_DELETION_TARGETS) {
+        if (!(await tableExists(tx, target.table))) {
+          log.warn("account purge skipped missing table", { table: target.table, userId });
           continue;
         }
-        const userCol = TENANT_SCOPED_TABLES.has(table) ? "tenant_id" : "user_id";
-        // Use parameterized query to prevent SQL injection
-        // Table name is validated against known list, userId is parameterized
-        await tx.execute(sql`DELETE FROM ${sql.raw(table)} WHERE ${sql.raw(userCol)} = ${userId}`);
-        tablesTouched.push(table);
+
+        const predicates = [
+          ...(target.userColumns || []).map(
+            (column) => sql`${sql.raw(column)} = ${userId}`,
+          ),
+          ...(target.organizationColumns || []).map(
+            (column) =>
+              sql`${sql.raw(column)} IN (
+                SELECT id FROM wireline_organizations WHERE owner_id = ${userId}
+              )`,
+          ),
+        ];
+
+        if (predicates.length === 0) {
+          log.error("account purge target has no ownership predicate", {
+            table: target.table,
+            userId,
+          });
+          throw new Error(`Unsafe account purge target: ${target.table}`);
+        }
+
+        await tx.execute(
+          sql`DELETE FROM ${sql.raw(target.table)} WHERE ${sql.join(predicates, sql` OR `)}`,
+        );
+        tablesTouched.push(target.table);
       }
 
-      // Delete the local auth row last. Once gone the user is fully
-      // unauthenticated and cannot make further requests.
       await tx.execute(sql`DELETE FROM wireline_users WHERE id = ${userId}`);
       return { ok: true, tablesTouched, authRemoved: true };
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    log.error("account purge transaction failed", { error: message });
+    log.error("account purge transaction failed", { error: message, userId });
     return { ok: false, tablesTouched, authRemoved: false, error: message };
   }
 }
 
-/**
- * Returns the scheduled purge timestamp for a deletion request submitted at
- * `requestedAt`. Centralised so the route, the worker, and tests agree on
- * the grace window (currently 30 days).
- */
+/** Shared 30-day reversible grace window. */
 export const ACCOUNT_DELETION_GRACE_DAYS = 30;
 
 export function computeScheduledPurgeAt(requestedAt: Date): Date {

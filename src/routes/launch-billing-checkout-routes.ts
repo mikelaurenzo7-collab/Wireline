@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { eq } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
-import { planById, planLookupKey } from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION, planById, planLookupKey } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { stripe, stripeAvailable } from "../lib/stripe-helpers";
@@ -35,7 +35,7 @@ async function resolveLaunchPriceId(
       const price = await stripe.prices.retrieve(envPriceId);
       if (
         price.active &&
-        price.metadata?.wireline_catalog_version === "founder_early_access_2026_07" &&
+        price.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION &&
         price.metadata?.wireline_plan_id === plan.id
       ) {
         return price.id;
@@ -58,7 +58,13 @@ async function resolveLaunchPriceId(
     limit: 1,
   });
   const price = prices.data[0];
-  if (!price || price.metadata?.wireline_plan_id !== plan.id) return null;
+  if (
+    !price ||
+    price.metadata?.wireline_plan_id !== plan.id ||
+    price.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION
+  ) {
+    return null;
+  }
   return price.id;
 }
 
@@ -184,7 +190,7 @@ router.post(
         metadata: {
           wireline_user_id: req.user.id,
           wireline_plan: plan.id,
-          wireline_catalog_version: "founder_early_access_2026_07",
+          wireline_catalog_version: FOUNDER_CATALOG_VERSION,
           overage_policy: "prepaid_balance_only",
           ...attributionMetadata,
         },
@@ -197,7 +203,7 @@ router.post(
         plan: plan.id,
         customerId,
         ip: req.ip,
-        metadata: { interval, price_id: priceId, catalog: "founder_early_access_2026_07" },
+        metadata: { interval, price_id: priceId, catalog: FOUNDER_CATALOG_VERSION },
       })
       .catch((error) =>
         log.warn("billing audit log failed", {

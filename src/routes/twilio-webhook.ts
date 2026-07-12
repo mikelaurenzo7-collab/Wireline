@@ -9,9 +9,14 @@ import { sanitizePhone } from "../lib/vapi-helpers";
 import baseRouter from "./twilio-webhook-base";
 
 const router = Router();
+const LEGACY_OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "opt in"]);
 
 function emptyTwiml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response/>`;
+}
+
+function optInConfirmationTwiml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>You have been resubscribed. Welcome back.</Message></Response>`;
 }
 
 async function tenantForSender(toValue: string): Promise<string | null> {
@@ -40,12 +45,15 @@ async function tenantForSender(toValue: string): Promise<string | null> {
 
 /**
  * Twilio Advanced Opt-Out has already sent the confirmation response when
- * OptOutType is present. Persist the state, then stop before the legacy route
- * emits a second confirmation message.
+ * OptOutType is present. We also intercept legacy START-style replies here so
+ * they can only reverse an SMS-created suppression. The older base route used
+ * to delete every matching DNC row, including manual/legal records.
  */
 router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next: NextFunction) => {
   const optOutType = String(req.body?.OptOutType || "").toUpperCase();
-  if (!optOutType) return next();
+  const bodyKeyword = String(req.body?.Body || "").trim().toLowerCase();
+  const legacyOptIn = !optOutType && LEGACY_OPT_IN_KEYWORDS.has(bodyKeyword);
+  if (!optOutType && !legacyOptIn) return next();
   if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send(emptyTwiml());
 
   const userId = await tenantForSender(String(req.body?.To || ""));
@@ -65,17 +73,21 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
             source: "twilio_advanced_opt_out",
           })
           .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
-      } else if (optOutType === "START") {
-        // START reverses only the SMS suppression that Twilio created. It must
-        // never remove a manual, federal, voice, legal, or other workspace DNC.
+      } else if (optOutType === "START" || legacyOptIn) {
+        // A customer SMS opt-in can reverse only an SMS-created suppression.
+        // Manual, federal, voice, legal, complaint, and workspace DNC entries
+        // remain intact until an authorized account holder removes them.
         await drizzle
           .delete(schema.dncList)
           .where(
             and(
               eq(schema.dncList.userId, userId),
               eq(schema.dncList.phone, customerNumber),
-              eq(schema.dncList.source, "twilio_advanced_opt_out"),
               eq(schema.dncList.reason, "opt-out"),
+              or(
+                eq(schema.dncList.source, "twilio_advanced_opt_out"),
+                eq(schema.dncList.source, "sms_opt_out"),
+              ),
             ),
           );
       }
@@ -86,23 +98,27 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         event:
           optOutType === "STOP"
             ? "sms_opt_out"
-            : optOutType === "START"
+            : optOutType === "START" || legacyOptIn
               ? "sms_opt_in"
               : "sms_help",
-        rule: "twilio_advanced_opt_out",
+        rule: legacyOptIn ? "legacy_start_keyword" : "twilio_advanced_opt_out",
         ruleVersion: "v1",
         state:
-          optOutType === "STOP" ? "opted_out" : optOutType === "START" ? "opted_in" : "unchanged",
+          optOutType === "STOP"
+            ? "opted_out"
+            : optOutType === "START" || legacyOptIn
+              ? "opted_in"
+              : "unchanged",
       });
     } catch (error) {
-      log.error("Twilio Advanced Opt-Out persistence failed", {
+      log.error("Twilio opt-out persistence failed", {
         userId,
-        optOutType,
+        optOutType: optOutType || "LEGACY_START",
         error: getErrorMessage(error),
       });
     }
     res.setHeader("Content-Type", "text/xml");
-    return res.status(200).send(emptyTwiml());
+    return res.status(200).send(legacyOptIn ? optInConfirmationTwiml() : emptyTwiml());
   });
 });
 
