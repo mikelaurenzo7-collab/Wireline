@@ -88,6 +88,18 @@ router.post(
         }
       }
 
+      // The auth profile is deleted separately after the tenant registry during
+      // terminal purge, so include it explicitly and let the shared redactor
+      // remove password_hash or any future credential-shaped columns.
+      const userResult = (await drizzle.execute(
+        sql`SELECT * FROM wireline_users WHERE id = ${userId}`,
+      )) as ExecuteResult;
+      const userRows = (userResult.rows || []).map(
+        (row) => redactAccountExportValue(row) as Record<string, unknown>,
+      );
+      tables.users = userRows;
+      totalRows += userRows.length;
+
       const exportedAt = new Date();
       const exportPackage = {
         metadata: {
