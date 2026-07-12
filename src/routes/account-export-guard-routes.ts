@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- raw account-export rows span every tenant table. */
 import { Router, type Response } from "express";
 import { sql } from "drizzle-orm";
 
