@@ -76,7 +76,7 @@ let voiceCache: { at: number; voices: PresenterVoice[] } | null = null;
 const VOICE_CACHE_TTL_MS = 60 * 60 * 1000;
 
 function heygenApiKey(): string | null {
-  return process.env.HEYGEN_API_KEY?.trim() || process.env.LIVEAVATAR_API_KEY?.trim() || null;
+  return process.env.HEYGEN_API_KEY?.trim() || null;
 }
 
 export function presenterVoicesConfigured(): boolean {
@@ -86,10 +86,7 @@ export function presenterVoicesConfigured(): boolean {
 async function heygenFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const apiKey = heygenApiKey();
   if (!apiKey) {
-    throw AppError.fromHttpStatus(
-      503,
-      "Presenter voices are not configured. Add HEYGEN_API_KEY or LIVEAVATAR_API_KEY.",
-    );
+    throw AppError.fromHttpStatus(503, "Presenter voices are not configured. Add HEYGEN_API_KEY.");
   }
   const headers = new Headers(init?.headers);
   headers.set("X-Api-Key", apiKey);

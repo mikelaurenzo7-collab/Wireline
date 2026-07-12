@@ -19,7 +19,7 @@ type LiveAvatarEnvelope<T> = {
 };
 
 function liveAvatarApiKey(): string | null {
-  return process.env.LIVEAVATAR_API_KEY?.trim() || process.env.HEYGEN_API_KEY?.trim() || null;
+  return process.env.LIVEAVATAR_API_KEY?.trim() || null;
 }
 
 function defaultAvatarId(): string | null {
