@@ -25,15 +25,19 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   page,
 }) => {
   await gotoHomepageWithMain(page);
-  await expect(page.getByRole("heading", { name: /wire\. work\. win\./i })).toBeVisible();
-  await expect(page.getByText(/voice ai employee for real conversations/i)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /your next ai employee calls, texts, and emails\./i }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/one trained employee handles customer conversations/i),
+  ).toBeVisible();
 
   const proofList = page.getByRole("list", { name: "Wireline proof points" });
-  for (const label of ["Sales", "Marketing", "Support", "Admin"]) {
+  for (const label of ["Voice agent", "Text / SMS agent", "Email agent", "One shared memory"]) {
     await expect(proofList.getByRole("listitem").filter({ hasText: label })).toBeVisible();
   }
 
-  const tablist = page.getByRole("tablist", { name: "Agent call direction" });
+  const tablist = page.getByRole("tablist", { name: "Agent work lane" });
   await expect(tablist).toBeVisible();
 
   const salesTab = page.getByRole("tab", { name: "Sales" });
@@ -43,13 +47,13 @@ test("homepage hero has accessible work-lane tabs and no serious axe violations"
   await expect(salesTab).toHaveAttribute("aria-selected", "true");
   await expect(salesTab).toHaveAttribute("aria-controls", "wire-agent-outbound-panel");
   await expect(serviceTab).toHaveAttribute("aria-selected", "false");
-  await expect(page.getByRole("tabpanel", { name: "Sales agent details" })).toBeVisible();
+  await expect(page.getByRole("tabpanel", { name: "Sales" })).toBeVisible();
 
   await salesTab.focus();
   await page.keyboard.press("ArrowRight");
   await expect(serviceTab).toBeFocused();
   await expect(serviceTab).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel", { name: "Service agent details" })).toBeVisible();
+  await expect(page.getByRole("tabpanel", { name: "Service" })).toBeVisible();
 
   await page.keyboard.press("End");
   await expect(allPurposeTab).toBeFocused();

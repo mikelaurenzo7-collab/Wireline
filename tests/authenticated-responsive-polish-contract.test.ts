@@ -28,7 +28,7 @@ describe("authenticated responsive polish contract", () => {
 
     expect(frame).toContain("md:flex-row md:items-start md:justify-between");
     expect(frame).toContain("w-full [&>*]:w-full md:w-auto md:[&>*]:w-auto");
-    expect(inbox).toContain('<WorkspacePageIntro\n          title="Inbox"');
+    expect(inbox).toMatch(/<WorkspacePageIntro\s+title="Inbox"/);
     expect(inbox).toContain("action={");
     expect(inbox).not.toContain("sm:flex-row sm:items-end sm:justify-between");
   });

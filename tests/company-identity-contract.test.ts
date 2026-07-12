@@ -41,9 +41,7 @@ describe("company identity pack", () => {
     expect(readiness.voice.providerStatus).toBe("not_requested");
     expect(readiness.voice.displayScope).toContain("supported mobile networks");
     expect(readiness.voice.displayScope).toContain("CNAM");
-    expect(canRequestCompanyIdentityReview({ readiness, requestedChannels: ["voice"] })).toBe(
-      true,
-    );
+    expect(canRequestCompanyIdentityReview({ readiness, requestedChannels: ["voice"] })).toBe(true);
   });
 
   it("requires the real channel prerequisites before review", () => {
@@ -118,8 +116,8 @@ describe("company identity pack", () => {
     const guard = read("src/routes/user-preference-guard-routes.ts");
     const registry = read("src/server/register-api-routes.ts");
 
-    expect(routes).toContain('router.get(\n  "/api/company-identity"');
-    expect(routes).toContain('router.post(\n  "/api/company-identity"');
+    expect(routes).toMatch(/router\.get\(\r?\n\s+"\/api\/company-identity"/);
+    expect(routes).toMatch(/router\.post\(\r?\n\s+"\/api\/company-identity"/);
     expect(routes).toContain('"/api/company-identity/review-request"');
     expect(routes.match(/authenticateUser/g)?.length).toBeGreaterThanOrEqual(3);
     expect(routes).toContain("company_identity.review_requested");
@@ -128,7 +126,9 @@ describe("company identity pack", () => {
     expect(routes).toContain("already_requested: true");
     expect(routes).toContain("IDENTITY_REVIEW_REQUIRES_CHANGES");
     expect(routes).toContain('if (providerStatus[channel] === "not_requested")');
-    expect(routes).toContain('throw AppError.fromHttpStatus(400, "Select at least one identity channel.")');
+    expect(routes).toContain(
+      'throw AppError.fromHttpStatus(400, "Select at least one identity channel.")',
+    );
     expect(routes).toContain("pg_advisory_xact_lock");
     expect(routes).toContain("wireline_settings WHERE user_id");
     expect(routes).toContain("wireline_user_preferences WHERE user_id");
@@ -147,13 +147,17 @@ describe("company identity pack", () => {
     expect(guard).toContain("Canonical preference writer");
     expect(guard).toContain("pg_advisory_xact_lock");
     expect(guard).toContain("FOR UPDATE");
-    expect(guard).toContain("requestedEnvelope.company_identity = currentEnvelope.company_identity");
+    expect(guard).toContain(
+      "requestedEnvelope.company_identity = currentEnvelope.company_identity",
+    );
     expect(guard).toContain("delete requestedEnvelope.company_identity");
     expect(registry).toContain(
       'import userPreferenceGuardRouter from "../routes/user-preference-guard-routes"',
     );
     expect(registry).toContain("app.use(userPreferenceGuardRouter)");
-    expect(registry).toContain('import companyIdentityRouter from "../routes/company-identity-routes"');
+    expect(registry).toContain(
+      'import companyIdentityRouter from "../routes/company-identity-routes"',
+    );
     expect(registry).toContain("app.use(companyIdentityRouter)");
   });
 
@@ -178,6 +182,11 @@ describe("company identity pack", () => {
     expect(settingsGuard).toContain("router.use(");
     expect(settingsGuard).not.toContain("router.post(");
     expect(settingsGuard).toContain('req.method !== "POST"');
+    expect(settingsGuard).toContain("identityHttpsUrl");
+    expect(settingsGuard).toContain('parsed.protocol !== "https:"');
+    expect(settingsGuard).toContain("parsed.username || parsed.password");
+    expect(settingsGuard).toMatch(/"Business name",\r?\n\s+120/);
+    expect(settingsGuard).toMatch(/"Brand name",\r?\n\s+80/);
     expect(settingsGuard).toContain('runCompanyIdentityMutation(req.user.id, "branding_changed"');
     expect(settingsGuard).toContain("delete downstreamBody[key]");
     expect(registry).toContain(
@@ -185,8 +194,9 @@ describe("company identity pack", () => {
     );
     expect(registry).toContain("app.use(companyIdentitySettingsGuardRouter)");
 
-    expect(carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g))
-      .toHaveLength(3);
+    expect(
+      carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g),
+    ).toHaveLength(3);
     expect(carrier).toContain("desc(schema.phoneNumbers.id)");
     expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
     expect(provisioning).toContain("compensateProvisionedNumber");
@@ -201,7 +211,9 @@ describe("company identity pack", () => {
     const phoneSettings = read("src/pages/PhoneSettings.tsx");
 
     expect(surface).toContain("Brand the employee, not just the dashboard.");
-    expect(surface).toContain("Provider approval and recipient-device display remain external states.");
+    expect(surface).toContain(
+      "Provider approval and recipient-device display remain external states.",
+    );
     expect(surface).toContain("Maximum 15 characters for traditional CNAM fallback.");
     expect(surface).toContain("supported mobile networks after approval");
     expect(surface).toContain("Save these changes before requesting verification review.");

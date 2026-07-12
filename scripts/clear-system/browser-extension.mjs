@@ -38,7 +38,7 @@ export function checkBrowserExtension({ read, mustInclude }) {
   mustInclude(
     "apps/browser-extension/panel/index.html",
     extensionPanel,
-    /Call[\s\S]*Text[\s\S]*Follow-up[\s\S]*Agent task/,
+    /Call[\s\S]*Text[\s\S]*Email[\s\S]*Agent task/,
     "extension panel must expose quick command actions",
   );
   mustInclude(

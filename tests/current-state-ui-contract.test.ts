@@ -81,7 +81,9 @@ describe("current-state UI contract", () => {
     expect(mobile).toMatch(/\.wl-stitch-auth-card > \.mb-6\.text-center[\s\S]*display: block/);
     expect(shell).toContain("max-w-[32ch] break-words text-balance");
     expect(shell).not.toContain('className="truncate font-[var(--wireline-font-family-display)]');
-    expect(features).toContain('["Build", "Train", "Launch", "Improve"]');
+    for (const step of ["Build", "Train", "Launch", "Improve"]) {
+      expect(features).toContain(`step: "${step}"`);
+    }
   });
 
   it("keeps the design-system cascade, mobile controls, and dock geometry unified", () => {
@@ -130,7 +132,9 @@ describe("current-state UI contract", () => {
 
     expect(copy).toContain("under the owner's direction");
     expect(copy).toContain("under your direction");
-    expect(PRODUCT_POSTURE.personal.emptyBody).toBe("Your calls. Your direction. Your outcomes.");
+    expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
+      "Your calls. Your texts. Your email. Your outcomes.",
+    );
     expect(copy).toContain("guardrails, approvals, spend, handoffs, and escalation");
     expect(copy).not.toContain("under the owner's rules");
     expect(copy).toContain("consent rules");

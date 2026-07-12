@@ -73,8 +73,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,
-    /aria-label=\{isBrandSpine \? "Wire\. Work\. Win\."/,
-    "the visual arrow headline must expose a screen-reader-safe name",
+    /aria-label=\{isHomeHero && typeof title === "string" \? title : undefined\}/,
+    "the home hero headline must expose its visual copy as a screen-reader-safe name",
   );
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
@@ -98,7 +98,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     wireAgentLanding,
-    /role="tablist"[\s\S]*aria-label="Agent call direction"/,
+    /role="tablist"[\s\S]*aria-label="Agent work lane"/,
     "work lanes must use an accessible tablist",
   );
   mustInclude(

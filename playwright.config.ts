@@ -27,7 +27,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run build && npm run start",
+    command:
+      "npm run build && node -e \"process.env.PORT='3000'; process.env.VERCEL='0'; process.env.NODE_ENV='production'; process.env.POSTGRES_URL ||= 'postgresql://wireline:wireline@127.0.0.1:5432/wireline'; require('./dist/server.cjs')\"",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

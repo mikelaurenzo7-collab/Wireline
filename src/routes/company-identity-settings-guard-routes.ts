@@ -23,11 +23,7 @@ function hasOwn(value: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
-function identityText(
-  value: unknown,
-  field: string,
-  maxLength: number,
-): string | null | undefined {
+function identityText(value: unknown, field: string, maxLength: number): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
   if (typeof value !== "string") {
@@ -41,11 +37,24 @@ function identityText(
   return normalized;
 }
 
-function aliasedValue(
-  body: Record<string, unknown>,
-  snakeKey: string,
-  camelKey: string,
-): unknown {
+function identityHttpsUrl(value: unknown, field: string): string | null | undefined {
+  const normalized = identityText(value, field, 500);
+  if (!normalized) return normalized;
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+      throw new Error("unsafe identity URL");
+    }
+    return parsed.toString();
+  } catch {
+    throw AppError.fromHttpStatus(
+      400,
+      `${field} must be a valid HTTPS URL without embedded credentials.`,
+    );
+  }
+}
+
+function aliasedValue(body: Record<string, unknown>, snakeKey: string, camelKey: string): unknown {
   return hasOwn(body, snakeKey) ? body[snakeKey] : body[camelKey];
 }
 
@@ -87,21 +96,20 @@ router.use(
         identityUpdate.businessName = identityText(
           aliasedValue(body, "business_name", "businessName"),
           "Business name",
-          200,
+          120,
         );
       }
       if (hasOwn(body, "brand_name") || hasOwn(body, "brandName")) {
         identityUpdate.brandName = identityText(
           aliasedValue(body, "brand_name", "brandName"),
           "Brand name",
-          200,
+          80,
         );
       }
       if (hasOwn(body, "brand_logo_url") || hasOwn(body, "brandLogoUrl")) {
-        identityUpdate.brandLogoUrl = identityText(
+        identityUpdate.brandLogoUrl = identityHttpsUrl(
           aliasedValue(body, "brand_logo_url", "brandLogoUrl"),
           "Brand logo URL",
-          500,
         );
       }
 

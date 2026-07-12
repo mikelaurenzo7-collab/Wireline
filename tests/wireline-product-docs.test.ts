@@ -98,11 +98,11 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline — Wire → Work → Win");
-    expect(head).toContain("Voice AI employee for real conversations.");
-    expect(head).toContain("calls, follow-up, booking, and logged outcomes");
-    expect(ogImage).toMatch(/WIRE → WORK → WIN[\s\S]*VOICE AI EMPLOYEE/);
-    expect(ogImage).toContain("CALLS · FOLLOW-UP · BOOKING · OUTCOMES · CONTROL");
+    expect(head).toContain("Wireline — Your next AI employee calls, texts &amp; emails");
+    expect(head).toContain("customer conversations across voice, SMS, and email");
+    expect(head).toContain("follows up, books the next step, and logs every outcome");
+    expect(ogImage).toMatch(/YOUR AI VOICE EMPLOYEE[\s\S]*CALLS · TEXTS · EMAILS/);
+    expect(ogImage).toContain("VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });

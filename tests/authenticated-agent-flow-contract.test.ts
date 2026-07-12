@@ -66,7 +66,9 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("VoicePickerField");
     expect(createDialog).toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build your best employee."');
-    expect(productCopy).toContain('emptyCue: "Brief it. Train it.');
+    expect(productCopy).toContain(
+      'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
+    );
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
     expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');

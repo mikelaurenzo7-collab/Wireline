@@ -5,15 +5,14 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("static marketing metadata", () => {
-  it("keeps the HTML shell aligned with the AI voice employee promise", () => {
+  it("keeps the HTML shell aligned with the multichannel AI employee promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("Your AI Voice Employee Calls, Texts &amp; Emails");
-    expect(index).toContain("Every paid plan includes a Wireline number at no extra line fee");
-    expect(index).toContain("answer, sell, support, book, follow up, update your systems");
-    expect(index).toContain("log every outcome across every customer conversation");
+    expect(index).toContain("Your next AI employee calls, texts &amp; emails");
+    expect(index).toContain("customer conversations across voice, SMS, and email");
+    expect(index).toContain("follows up, books the next step, and logs every outcome");
     expect(index).toContain('"slogan": "Wire → Work → Win"');
-    expect(index).not.toContain("Your next AI employee calls, texts &amp; emails");
+    expect(index).not.toContain("Your AI Voice Employee Calls, Texts &amp; Emails");
     expect(index).not.toContain("Voice AI employee for real conversations.");
     expect(index).not.toContain("AI phone employees that turn calls into sales.");
     expect(index).not.toContain("solo business agents");
@@ -30,9 +29,11 @@ describe("static marketing metadata", () => {
       'aria-label={isHomeHero && typeof title === "string" ? title : undefined}',
     );
     expect(hero).toContain("text-[clamp(2.45rem,5.5vw,4.65rem)]");
-    expect(landing).toContain('title="Wireline — Your AI Voice Employee Calls, Texts & Emails"');
+    expect(landing).toContain('title="Wireline — Your next AI employee calls, texts & emails"');
     expect(landing).toContain("MARKETING_VOICE.subline");
-    expect(landing).not.toContain('title="Wireline — Your next AI employee calls, texts & emails"');
+    expect(landing).not.toContain(
+      'title="Wireline — Your AI Voice Employee Calls, Texts & Emails"',
+    );
     expect(landing).not.toContain('title="Wireline — Wire → Work → Win"');
   });
 
@@ -44,7 +45,7 @@ describe("static marketing metadata", () => {
     expect(ogImage).toContain("PAID PLAN NUMBER INCLUDED");
     expect(ogImage).toContain("One trained employee. One shared memory.");
     expect(ogImage).toContain("Conversation handled. Work completed.");
-    expect(ogImage).toContain("VOICE · SMS · EMAIL · FREE NUMBER · OUTCOMES · CONTROL");
+    expect(ogImage).toContain("VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL");
     expect(ogImage).not.toContain("YOUR NEXT AI EMPLOYEE");
   });
 

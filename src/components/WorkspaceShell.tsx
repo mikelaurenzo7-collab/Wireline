@@ -49,19 +49,11 @@ function userInitial(name?: string | null, email?: string | null) {
   return source.charAt(0).toUpperCase() || "W";
 }
 
-function readinessLabel(
-  agent: { phone_number?: string | null } | undefined,
-): string {
+function readinessLabel(agent: { phone_number?: string | null } | undefined): string {
   return agent?.phone_number ? "Active" : "Training";
 }
 
-function RailLink({
-  item,
-  pathname,
-}: {
-  item: ShellNavItem;
-  pathname: string;
-}) {
+function RailLink({ item, pathname }: { item: ShellNavItem; pathname: string }) {
   const active = isNavActive(pathname, item.href);
   const Icon = item.icon;
   const hint = NAV_SHORTCUT_HINTS[item.href];
@@ -97,9 +89,7 @@ function MobileDockLink({
   onMore: () => void;
 }) {
   const isMore = item.href === MOBILE_MORE_HREF;
-  const active = isMore
-    ? isMobileMoreActive(pathname)
-    : isNavActive(pathname, item.href);
+  const active = isMore ? isMobileMoreActive(pathname) : isNavActive(pathname, item.href);
   const Icon = item.icon;
 
   if (isMore) {
@@ -152,8 +142,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
   const { accountType } = useAccount();
   const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
-  const planLabel =
-    accountType === "business" ? "Business workspace" : "Personal workspace";
+  const planLabel = accountType === "business" ? "Business workspace" : "Personal workspace";
   const orderedAgents = resolvedId
     ? [
         ...agents.filter((agent) => agent.id === resolvedId),
@@ -185,9 +174,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
         type="button"
         aria-label="Open command palette"
         className="mb-3 flex min-h-[44px] w-full items-center gap-2 rounded-[10px] border border-border bg-muted/40 px-2.5 text-left text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
-        onClick={() =>
-          window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))
-        }
+        onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
       >
         <Search size={14} strokeWidth={2} aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate">Search</span>
@@ -217,8 +204,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
           </div>
           <nav className="grid gap-1 pr-0.5" aria-label="Agents">
             {visibleAgents.map((agent) => {
-              const active =
-                isNavActive(pathname, "/studio") && resolvedId === agent.id;
+              const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
               return (
                 <Link
                   key={agent.id}
@@ -237,12 +223,9 @@ function DesktopRail({ pathname }: { pathname: string }) {
                     className="shrink-0"
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-semibold">
-                      {agent.name}
-                    </span>
+                    <span className="block truncate text-[12px] font-semibold">{agent.name}</span>
                     <span className="block truncate text-[10px] text-[color:var(--wireline-color-text-secondary)]">
-                      {formatAgentRoleLabel(agent.role)} ·{" "}
-                      {readinessLabel(agent)}
+                      {formatAgentRoleLabel(agent.role)} · {readinessLabel(agent)}
                     </span>
                   </span>
                 </Link>
@@ -267,11 +250,11 @@ function DesktopRail({ pathname }: { pathname: string }) {
 
       <WiredEyebrow className="shrink-0 px-2.5 pb-2 pt-3">Operate</WiredEyebrow>
       <nav className="flex shrink-0 flex-col gap-0.5" aria-label="Operate">
-        {OPERATE_NAV.filter((item) =>
-          isRouteAvailableForAccount(accountType, item.href),
-        ).map((item) => (
-          <RailLink key={item.href} item={item} pathname={pathname} />
-        ))}
+        {OPERATE_NAV.filter((item) => isRouteAvailableForAccount(accountType, item.href)).map(
+          (item) => (
+            <RailLink key={item.href} item={item} pathname={pathname} />
+          ),
+        )}
       </nav>
 
       <Link
@@ -322,11 +305,7 @@ function MobileDock({
           ))}
         </div>
       </nav>
-      <MobileNavMoreSheet
-        open={moreOpen}
-        onOpenChange={onMoreOpen}
-        pathname={pathname}
-      />
+      <MobileNavMoreSheet open={moreOpen} onOpenChange={onMoreOpen} pathname={pathname} />
     </>
   );
 }
@@ -362,7 +341,7 @@ export default function WorkspaceShell({
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">
       <SkipToContentLink href="#workspace-main" />
-      <div className="grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[236px_minmax(0,1fr)]">
+      <div className="wl-workspace-frame grid h-full min-h-0 w-full overflow-hidden lg:grid-cols-[236px_minmax(0,1fr)]">
         <DesktopRail pathname={location.pathname} />
         <main
           id="workspace-main"
@@ -403,11 +382,7 @@ export default function WorkspaceShell({
         </main>
       </div>
       {!nativeAppShell ? <MobileBrowserUtilities /> : null}
-      <MobileDock
-        pathname={location.pathname}
-        moreOpen={moreOpen}
-        onMoreOpen={setMoreOpen}
-      />
+      <MobileDock pathname={location.pathname} moreOpen={moreOpen} onMoreOpen={setMoreOpen} />
     </div>
   );
 }

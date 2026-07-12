@@ -138,7 +138,7 @@ export default function MarketingHero({
           {proof.length ? (
             <ul
               className="mt-7 flex max-w-3xl flex-wrap justify-center gap-2"
-              aria-label="Wireline capabilities"
+              aria-label="Wireline proof points"
             >
               {proof.map((item) => (
                 <li

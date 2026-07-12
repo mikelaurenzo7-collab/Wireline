@@ -39,6 +39,7 @@ describe("canonical mobile overlay system", () => {
 
   it("keeps WorkspaceShell on the canonical desktop rail plus native/mobile utility split", () => {
     const shell = source("src/components/WorkspaceShell.tsx");
+    const signature = source("src/styles/wireline-app-signature.css");
 
     expect(shell).toContain("function DesktopRail");
     // Claude Design mobile chrome: one unified MobileDock + a native-shell gate
@@ -52,6 +53,9 @@ describe("canonical mobile overlay system", () => {
     expect(shell).toContain("WORKSPACE_NAV");
     expect(shell).toContain("OPERATE_NAV");
     expect(shell).toContain("MOBILE_PRIMARY_NAV");
+    expect(shell).toContain("wl-workspace-frame");
+    expect(signature).toContain(".wl-workspace-shell > .wl-workspace-frame");
+    expect(signature).not.toContain(".wl-workspace-shell > *");
     expect(shell).not.toContain("document.body.style.overflow");
     expect(shell).not.toContain("window.addEventListener");
   });

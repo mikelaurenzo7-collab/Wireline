@@ -8,7 +8,7 @@ export const INLINE_SCRIPT_HASHES = [
   "'sha256-3Z3f8c52musA1bws65NjZG2DaDDUbBisRU8i4FLei1w='",
   "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
   "'sha256-DVH1TrP34UqNunth7OtSpEQeORp9fBY4cJ1c8J3vaN8='",
-  "'sha256-HRu6lpIht0GMfPA9V16W3+XLb2AmzF5D8q+AufQyOk4='",
+  "'sha256-Sgtkva0aoGBbIVz0IEvpLrdSvwJevIdCBSRF85pZ3LI='",
 ] as const;
 
 /**

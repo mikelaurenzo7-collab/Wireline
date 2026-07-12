@@ -1,6 +1,10 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+// Import-only tests construct the shared database pool but never connect to it.
+// Keep the suite hermetic when CI or a fresh checkout has no production secrets.
+process.env.POSTGRES_URL ??= "postgresql://wireline:wireline@127.0.0.1:5432/wireline";
+
 export default defineConfig({
   resolve: {
     alias: [

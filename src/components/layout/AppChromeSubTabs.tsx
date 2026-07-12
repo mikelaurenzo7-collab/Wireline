@@ -36,7 +36,7 @@ export default function AppChromeSubTabs({
       role="group"
       aria-label="Page section navigation"
       className={cn(
-        "shrink-0 flex items-center gap-1.5 min-w-0 max-w-full overflow-x-auto tab-strip-scroll max-lg:tab-strip-scroll--fade scrollbar-hide md:flex-wrap",
+        "flex w-full min-w-0 max-w-full shrink-0 items-center gap-1.5 overflow-x-auto tab-strip-scroll max-lg:tab-strip-scroll--fade [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap",
         density === "compact" ? "mb-0" : "",
         className,
       )}
