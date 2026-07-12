@@ -40,6 +40,46 @@ describe("code review hardening contracts", () => {
     expect(twilio).toContain("tenantStore.run(tenantUserId");
   });
 
+  it("never lets an SMS START reply remove manual or legal DNC records", () => {
+    const twilio = read("src/routes/twilio-webhook.ts");
+    expect(twilio).toContain("LEGACY_OPT_IN_KEYWORDS");
+    expect(twilio).toContain('eq(schema.dncList.source, "twilio_advanced_opt_out")');
+    expect(twilio).toContain('eq(schema.dncList.source, "sms_opt_out")');
+    expect(twilio).toContain('eq(schema.dncList.reason, "opt-out")');
+    expect(twilio).toContain("legacyOptIn ? optInConfirmationTwiml() : emptyTwiml()");
+  });
+
+  it("purges every credential and tenant-data surface found in the live schema audit", () => {
+    const deletion = read("src/lib/account-deletion.ts");
+    for (const table of [
+      "wireline_browser_handoffs",
+      "wireline_call_reliability_staging",
+      "wireline_deletion_queue",
+      "wireline_design_integrations",
+      "wireline_design_profiles",
+      "wireline_mcp_access_tokens",
+      "wireline_mcp_oauth_codes",
+      "wireline_mcp_refresh_tokens",
+      "wireline_memberships",
+      "wireline_oauth_pending_codes",
+      "wireline_organizations",
+      "wireline_training_backup_20260609",
+      "wireline_webhook_health",
+    ]) {
+      expect(deletion).toContain(`table: "${table}"`);
+    }
+    expect(deletion).toContain('organizationColumns: ["organization_id"]');
+    expect(deletion).toContain('userColumns: ["user_id", "tenant_id"]');
+    expect(deletion).toContain("sql.join(predicates, sql` OR `)");
+  });
+
+  it("uses one canonical Stripe catalog version for price validation and checkout metadata", () => {
+    const checkout = read("src/routes/launch-billing-checkout-routes.ts");
+    expect(checkout).toContain("FOUNDER_CATALOG_VERSION");
+    expect(checkout).not.toContain('wireline_catalog_version === "founder_early_access_2026_07"');
+    expect(checkout).not.toContain('wireline_catalog_version: "founder_early_access_2026_07"');
+  });
+
   it("propagates credit wallet failures instead of swallowing them", () => {
     const wallet = read("src/lib/credit-wallet.ts");
     expect(wallet).toContain("export interface CreditMutationResult");
