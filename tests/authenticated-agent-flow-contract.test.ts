@@ -14,13 +14,12 @@ describe("authenticated agent flow", () => {
     const appShell = read("src/components/layout/AppShell.tsx");
     const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
-    expect(authPortal).toContain(
-      'preferredPlanId: nextMode === "business" ? "business" : "personal"',
-    );
+    // Workspace mode drives signup intent into the current 5-tier commercial model.
+    expect(authPortal).toContain("const SIGNUP_PLAN_LABELS");
+    expect(authPortal).toContain('nextMode === "personal"');
     expect(authPortal).toContain('import WirelineMark from "./brand/WirelineMark"');
-    expect(authPortal).toContain('["Build", "Role and result"]');
-    expect(authPortal).toContain('["Launch", "Number and tools"]');
-    expect(authPortal).toContain('["Improve", "Outcomes and coaching"]');
+    // The auth funnel stays minimal (PR #738): product promise, not a decorative loop grid.
+    expect(authPortal).toContain("Build your first AI employee.");
     expect(authPortal).not.toContain('<span className="wl-auth-brand-badge">W</span>');
     expect(workspaceShell).toContain('import WirelineMark from "./brand/WirelineMark"');
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
@@ -66,8 +65,10 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("~3 minutes to your first agent");
     expect(createDialog).toContain("VoicePickerField");
     expect(createDialog).toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Build an AI employee."');
-    expect(productCopy).toContain('emptyCue: "Brief it. Train it.');
+    expect(productCopy).toContain('createHeadline: "Build your best employee."');
+    expect(productCopy).toContain(
+      'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
+    );
 
     expect(mobileUtilities).toContain('pathname === "/studio"');
     expect(mobileUtilities).toContain('pathname.startsWith("/studio/")');
@@ -86,7 +87,7 @@ describe("authenticated agent flow", () => {
     expect(createDialog).toContain("Support Desk");
     expect(createDialog).toContain("Sales, support, scheduling, overflow");
     expect(createDialog).toContain("Qualify inbound demand, answer support questions");
-    expect(createDialog).toContain("Provision Wireline number");
+    expect(createDialog).toContain("Provision a number");
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 

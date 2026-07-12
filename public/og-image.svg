@@ -44,27 +44,27 @@
   <g transform="translate(790, 54)">
     <rect width="330" height="40" rx="20" ry="20" fill="#1E1730" stroke="#2E2350" stroke-width="1"/>
     <circle cx="24" cy="20" r="5.5" fill="#4ADE9A"/>
-    <text x="42" y="26" font-family="Space Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="2" fill="#A78BFA">
-      INCLUDED NUMBER READY
+    <text x="42" y="26" font-family="Space Mono, ui-monospace, monospace" font-size="11" font-weight="700" letter-spacing="1.6" fill="#A78BFA">
+      PAID PLAN NUMBER INCLUDED
     </text>
   </g>
 
-  <text x="80" y="252" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="76" font-weight="400" letter-spacing="-3" fill="#F5F4F8">
-    WIRE → WORK → WIN
+  <text x="80" y="220" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="67" font-weight="400" letter-spacing="-3" fill="#F5F4F8">
+    YOUR AI VOICE EMPLOYEE
   </text>
-  <text x="80" y="342" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="58" font-style="italic" font-weight="400" letter-spacing="-2" fill="#A78BFA">
-    VOICE AI EMPLOYEE
-  </text>
-
-  <text x="84" y="408" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="27" font-weight="500" fill="#B6B1C6">
-    For real conversations.
-  </text>
-  <text x="84" y="452" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="23" font-weight="500" fill="#B6B1C6">
-    Calls · follow-up · booking · logged outcomes
+  <text x="80" y="304" font-family="Instrument Serif, Georgia, ui-serif, serif" font-size="54" font-style="italic" font-weight="400" letter-spacing="-2" fill="#A78BFA">
+    CALLS · TEXTS · EMAILS
   </text>
 
-  <g transform="translate(760, 172)">
-    <rect width="360" height="268" rx="26" ry="26" fill="#141319" stroke="#262430" stroke-width="1.5"/>
+  <text x="84" y="374" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="27" font-weight="500" fill="#B6B1C6">
+    One trained employee. One shared memory.
+  </text>
+  <text x="84" y="420" font-family="DM Sans, system-ui, -apple-system, Segoe UI, sans-serif" font-size="23" font-weight="500" fill="#B6B1C6">
+    Books · follows up · updates systems · logs outcomes
+  </text>
+
+  <g transform="translate(760, 156)">
+    <rect width="360" height="296" rx="26" ry="26" fill="#141319" stroke="#262430" stroke-width="1.5"/>
     <rect x="24" y="24" width="64" height="56" rx="16" fill="#0A0A0E" stroke="#2E2350" stroke-width="1"/>
     <g transform="translate(31 37) scale(0.46)" fill="none" stroke="url(#markSignal)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 31H25L44 73C47 80 53 80 56 74L82 25"/>
@@ -74,29 +74,33 @@
       <circle cx="122" cy="33" r="6.5"/>
     </g>
     <text x="104" y="48" font-family="DM Sans, system-ui, sans-serif" font-size="18" font-weight="700" fill="#F5F4F8">
-      AI Employee
+      AI Voice Employee
     </text>
     <text x="104" y="72" font-family="Space Mono, ui-monospace, monospace" font-size="10" font-weight="700" letter-spacing="1.4" fill="#A78BFA">
       TRAINED ON YOUR BUSINESS
     </text>
-    <rect x="24" y="108" width="238" height="42" rx="16" fill="#201E29"/>
-    <text x="42" y="135" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#B6B1C6">
-      Handle the conversation.
+
+    <rect x="24" y="108" width="94" height="38" rx="15" fill="#201E29"/>
+    <text x="44" y="133" font-family="DM Sans, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Voice</text>
+    <rect x="132" y="108" width="94" height="38" rx="15" fill="#201E29"/>
+    <text x="159" y="133" font-family="DM Sans, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">SMS</text>
+    <rect x="240" y="108" width="96" height="38" rx="15" fill="#201E29"/>
+    <text x="266" y="133" font-family="DM Sans, system-ui, sans-serif" font-size="13" font-weight="700" fill="#C7CCD6">Email</text>
+
+    <rect x="24" y="164" width="312" height="48" rx="18" fill="#A78BFA"/>
+    <text x="64" y="194" font-family="DM Sans, system-ui, sans-serif" font-size="14" font-weight="700" fill="#0E0B16">
+      Conversation handled. Work completed.
     </text>
-    <rect x="88" y="162" width="248" height="48" rx="18" fill="#A78BFA"/>
-    <text x="108" y="192" font-family="DM Sans, system-ui, sans-serif" font-size="14" fill="#0E0B16">
-      Outcome logged.
-    </text>
-    <g transform="translate(24, 228)">
-      <rect width="108" height="24" rx="12" fill="#1E1730"/>
-      <text x="15" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#A78BFA">Handled</text>
-      <rect x="118" width="112" height="24" rx="12" fill="#1C1D22"/>
-      <text x="132" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C7CCD6">Next step</text>
+    <g transform="translate(24, 238)">
+      <rect width="142" height="24" rx="12" fill="#1E1730"/>
+      <text x="16" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#A78BFA">Shared memory</text>
+      <rect x="154" width="158" height="24" rx="12" fill="#1C1D22"/>
+      <text x="170" y="16" font-family="DM Sans, system-ui, sans-serif" font-size="11" font-weight="700" fill="#C7CCD6">Outcome logged</text>
     </g>
   </g>
 
   <line x1="80" y1="588" x2="1120" y2="588" stroke="#A78BFA" stroke-opacity="0.2" stroke-width="1"/>
   <text x="80" y="612" font-family="Space Mono, ui-monospace, monospace" font-size="12" font-weight="700" letter-spacing="3" fill="#8B87A0">
-    CALLS · FOLLOW-UP · BOOKING · OUTCOMES · CONTROL
+    VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL
   </text>
 </svg>

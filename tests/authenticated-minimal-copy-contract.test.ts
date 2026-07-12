@@ -10,6 +10,7 @@ const AUTHENTICATED_PAGE_INTROS = [
   "src/pages/EmailPage.tsx",
   "src/pages/TemplatesPage.tsx",
   "src/pages/KnowledgePage.tsx",
+  "src/pages/ApprovalsPage.tsx",
 ] as const;
 
 describe("authenticated minimal copy contract", () => {

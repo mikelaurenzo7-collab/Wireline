@@ -16,7 +16,18 @@ writeFileSync(
 let operations;
 try {
   operations = JSON.parse(
-    execFileSync(process.execPath, [tsxCli, tmp], { encoding: "utf8", cwd: root }),
+    execFileSync(process.execPath, [tsxCli, tmp], {
+      encoding: "utf8",
+      cwd: root,
+      // The OpenAPI module imports route schemas that construct the shared pool at
+      // module load. Parity checking never queries the database, so keep this gate
+      // hermetic instead of requiring a developer or CI secret.
+      env: {
+        ...process.env,
+        POSTGRES_URL:
+          process.env.POSTGRES_URL || "postgresql://wireline:wireline@127.0.0.1:5432/wireline",
+      },
+    }),
   );
 } finally {
   rmSync(tmp, { force: true });

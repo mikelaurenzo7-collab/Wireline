@@ -86,8 +86,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/constants/navigation.ts",
     navigation,
-    /href:\s*"\/connections",[\s\S]*label:\s*"Connections",[\s\S]*shortLabel:\s*"Wire"/,
-    "Connections must be explicit in navigation while preserving branded shorthand",
+    /href:\s*"\/connections",\s*label:\s*"Wire"/,
+    "Wire must be the customer-facing wiring surface label in navigation (Create -> Train -> Wire -> Run)",
   );
   mustExclude(
     "src/components/WorkspaceShell.tsx",

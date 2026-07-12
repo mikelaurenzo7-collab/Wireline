@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
+import CompanyIdentityPack from "../components/settings/CompanyIdentityPack";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
@@ -130,6 +131,8 @@ export default function PhoneSettings() {
             </Button>
           ) : null}
         </section>
+
+        <CompanyIdentityPack key={activeNumber?.id ?? "no-number"} />
 
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <section className="studio-card p-5 sm:p-6">

@@ -112,7 +112,7 @@ describe("video presenter integration", () => {
     const billing = source("src/routes/billing-routes.ts");
     expect(billing).toContain("/billing/live-video-checkout");
     expect(billing).toContain("live_video_addon");
-    expect(source("scripts/setup-stripe-catalog.mjs")).toContain(
+    expect(source("scripts/lib/stripe-founder-catalog.mjs")).toContain(
       "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     );
     expect(source("src/components/StripeBillingCard.tsx")).toContain("live-video-checkout");

@@ -136,7 +136,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Wireline Personal[\s\S]*Wireline Team[\s\S]*Wireline Business[\s\S]*Wireline Enterprise/,
+    /Wireline Starter[\s\S]*Wireline Starter Plus[\s\S]*Wireline Pro[\s\S]*Wireline Business/,
     "shared product knowledge must match the launch catalog",
   );
   mustExclude(
@@ -148,7 +148,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/data/vertical-wedges.ts",
     verticalWedges,
-    /Start 14-day free trial|14-day free trial|Free trial|Everyday tier|\$7\/mo|\$9\/mo|Account Holder|personal AI voice assistant/i,
+    /Start 14-day free trial|14-day free trial|Free trial|Everyday tier|\$7\/mo|Account Holder|personal AI voice assistant/i,
     "vertical wedges must not revive retired trial or pricing copy",
   );
   mustInclude(

@@ -29,7 +29,7 @@
   opacity: 0.55;
 }
 
-.wl-workspace-shell > * {
+.wl-workspace-shell > .wl-workspace-frame {
   position: relative;
   z-index: 1;
 }

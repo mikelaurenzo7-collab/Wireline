@@ -25,18 +25,22 @@ describe("voice catalog", () => {
   });
 
   it("wires HeyGen presenter voices and matched-face resolution", () => {
-    expect(read("src/lib/video-presenter/heygen-voice-service.ts")).toContain(
-      "listPresenterVoices",
-    );
-    expect(read("src/lib/video-presenter/heygen-voice-service.ts")).toContain(
-      "resolveAvatarDefaultVoice",
-    );
+    const heygenService = read("src/lib/video-presenter/heygen-voice-service.ts");
+    const liveAvatarService = read("src/lib/video-presenter/liveavatar-service.ts");
+    expect(heygenService).toContain("listPresenterVoices");
+    expect(heygenService).toContain("resolveAvatarDefaultVoice");
+    expect(heygenService).toContain("process.env.HEYGEN_API_KEY?.trim() || null");
+    expect(heygenService).not.toContain("process.env.LIVEAVATAR_API_KEY");
+    expect(liveAvatarService).toContain("process.env.LIVEAVATAR_API_KEY?.trim() || null");
+    expect(liveAvatarService).not.toContain("process.env.HEYGEN_API_KEY");
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
+    // The face picker is intentionally minimal while the presenter catalog is paused; it still
+    // wires matched-voice resolution through the MatchedPresenterVoice callback API.
     expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
-      "matched-voice",
+      "MatchedPresenterVoice",
     );
     expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
-      "Voice match",
+      "onMatchedVoiceChange",
     );
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
   });

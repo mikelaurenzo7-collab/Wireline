@@ -26,7 +26,8 @@ describe("billing proof contract", () => {
     expect(stripeHelpers).toContain("export async function syncSubscriptionFromStripe");
     expect(stripeHelpers).toContain("schema.subscriptions");
     expect(stripeHelpers).toContain("schema.settings");
-    expect(stripeHelpers).toContain("maxAgents: plan?.max_agents");
+    expect(stripeHelpers).toContain("const baseMaxAgents = plan?.max_agents ?? 1");
+    expect(stripeHelpers).toContain("maxAgents: effectiveMaxAgents");
     expect(stripeHelpers).toContain("subscriptionStatus: localStatus");
   });
 

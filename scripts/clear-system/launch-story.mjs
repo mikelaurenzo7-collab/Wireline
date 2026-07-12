@@ -24,25 +24,25 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>Wireline — Wire → Work → Win<\/title>/,
-    "static metadata must use the canonical brand spine",
+    /<title>Wireline — Your next AI employee calls, texts &amp; emails<\/title>/,
+    "static metadata must state the current product promise",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Voice AI employee for real conversations\./,
+    /One trained employee handles customer conversations across voice, SMS, and email/,
     "static metadata must state the current product category",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "Wireline - Wire → Work → Win"/,
-    "runtime metadata must use the canonical brand spine",
+    /DEFAULT_TITLE = "Wireline - Your next AI employee calls, texts & emails"/,
+    "runtime metadata must state the current product promise",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /Voice AI employee for real conversations\./,
+    /One trained employee handles customer conversations across voice, SMS, and email/,
     "runtime metadata must use the current product description",
   );
   mustInclude(
@@ -85,7 +85,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/product-copy.ts",
     productCopy,
-    /included Wireline number at no extra line fee/,
+    /includes a Wireline number at no extra line fee/,
     "the included-number promise must stay explicit",
   );
   mustExclude(

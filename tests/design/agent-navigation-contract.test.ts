@@ -84,10 +84,10 @@ describe("agent navigation contract", () => {
     expect(createDialog).toMatch(/Fast Start/);
     expect(createDialog).toMatch(/~3 minutes to your first agent/);
     expect(createDialog).toMatch(/What do you need handled/);
-    expect(createDialog).toMatch(/Provision Wireline number/);
+    expect(createDialog).toMatch(/Provision a number/);
     expect(createDialog).toMatch(/\/studio\?agent=/);
     expect(createDialog).not.toMatch(/\/training\?agent=|\/knowledge\?agent=/);
-    expect(productCopy).toMatch(/Brief it\. Train it\. Launch it on the line\./);
+    expect(productCopy).toMatch(/Brief it\. Train it once\. Connect calls, texts, and email\./);
   });
 
   it("translates the Zip handoff into current control-surface and pricing language", () => {
@@ -120,6 +120,18 @@ describe("agent navigation contract", () => {
   it("keeps Training tabs compact and resilient across narrow workspaces", () => {
     expect(trainingPage).toMatch(/WorkspaceTabStrip/);
     expect(trainingPage).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
+  });
+
+  it("keeps long account and team identifiers inside narrow workspace cards", () => {
+    const dataRows = read("src/styles/letterpress-polish.css");
+
+    expect(dataRows).toMatch(
+      /\.wl-data-row\s*\{[\s\S]*width: 100%;[\s\S]*min-width: 0;[\s\S]*max-width: 100%/,
+    );
+    expect(teamPage).toContain("flex w-full min-w-0 max-w-full");
+    expect(teamPage).toContain("min-w-0 flex-1 items-center");
+    expect(teamPage).toContain("text-ellipsis whitespace-nowrap");
+    expect(teamPage).toContain('className="shrink-0"');
   });
 
   it("uses navigation.ts as the shell source of truth with a 5-item mobile dock", () => {

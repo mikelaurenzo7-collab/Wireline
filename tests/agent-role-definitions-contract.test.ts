@@ -46,8 +46,8 @@ describe("agent role definitions contract", () => {
 
   it("aligns create default and archetype resolution", () => {
     expect(AGENT_CREATE_DEFAULT_ROLE_ID).toBe("ceo");
-    expect(resolveAgentRoleArchetype("ceo")).toBe("Business Operating Agent");
-    expect(resolveAgentRoleArchetype("general_manager")).toBe("Business Operating Agent");
+    expect(resolveAgentRoleArchetype("ceo")).toBe("All-Purpose AI Employee");
+    expect(resolveAgentRoleArchetype("general_manager")).toBe("All-Purpose AI Employee");
     expect(listAgentRolesForApi().length).toBe(AGENT_ROLE_DEFINITIONS.length);
   });
 });

@@ -146,7 +146,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "HEYGEN_API_KEY",
     group: "voice",
     required: false,
-    description: "Legacy alias for LIVEAVATAR_API_KEY",
+    description: "HeyGen Studio API credential for optional presenter voice previews",
     validate: nonEmpty,
   },
   {

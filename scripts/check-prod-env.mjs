@@ -128,7 +128,7 @@ const optional = [
     "Default LiveAvatar catalog UUID assigned to new business agents",
   ],
   ["LIVEAVATAR_SANDBOX", "Force sandbox sessions (true/false; auto in non-production)"],
-  ["HEYGEN_API_KEY", "Legacy alias for LIVEAVATAR_API_KEY"],
+  ["HEYGEN_API_KEY", "Optional HeyGen Studio key for presenter voice previews"],
 ];
 
 const formatHints = new Map([

@@ -60,7 +60,7 @@
     "security:audit": "npm audit --audit-level=high --omit=dev",
     "security:audit:dev": "npm audit",
     "security:audit:full": "npm audit --omit=dev",
-    "smoke:server": "node -e \"process.env.VERCEL='1'; require('./dist/server.cjs'); console.log('server bundle imports')\"",
+    "smoke:server": "node -e \"process.env.VERCEL='1'; process.env.POSTGRES_URL ||= 'postgresql://wireline:wireline@127.0.0.1:5432/wireline'; require('./dist/server.cjs'); console.log('server bundle imports')\"",
     "oauth:redirects": "node scripts/print-oauth-redirects.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

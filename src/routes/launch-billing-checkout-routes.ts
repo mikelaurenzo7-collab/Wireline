@@ -102,10 +102,7 @@ router.post(
       .where(eq(schema.subscriptions.userId, req.user.id))
       .limit(1);
 
-    if (
-      existing?.stripeSubscriptionId &&
-      LIVE_SUBSCRIPTION_STATUSES.has(existing.status || "")
-    ) {
+    if (existing?.stripeSubscriptionId && LIVE_SUBSCRIPTION_STATUSES.has(existing.status || "")) {
       return res.status(409).json({
         code: "ALREADY_SUBSCRIBED",
         error: "You already have a subscription. Use the Customer Portal to change plans.",
@@ -170,7 +167,10 @@ router.post(
 
     const appUrl = resolveCanonicalAppUrl();
     if ("error" in appUrl) {
-      return res.status(503).json({ error: "Billing is unavailable: APP_URL is not configured." });
+      return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "Billing is unavailable: APP_URL is not configured.",
+      });
     }
 
     const session = await stripe.checkout.sessions.create({

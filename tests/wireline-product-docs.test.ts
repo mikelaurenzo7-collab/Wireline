@@ -57,7 +57,7 @@ describe("Wireline product documentation contract", () => {
     expect(roadmap).toContain("voice + presenter");
     expect(roadmap).toContain("Material-style dark SaaS");
     expect(vendors).toContain("LiveAvatar");
-    expect(vendors).toContain("Customer surfaces never name vendors");
+    expect(vendors).toContain("Customer surfaces must never name vendors");
     expect(theme).toContain("wireline-theme");
     expect(themeLight).toContain(":root.light");
     expect(studioCanvas).toContain("PresenterPstnVoiceNotice");
@@ -98,11 +98,11 @@ describe("Wireline product documentation contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("Wireline — Wire your AI employee.");
-    expect(head).toContain("AI employees with included numbers");
-    expect(head).toContain("book appointments, revive leads, promote offers");
-    expect(ogImage).toMatch(/WIRE YOUR[\s\S]*AI EMPLOYEE/);
-    expect(ogImage).toContain("Book. Revive. Promote. Follow up. Log every result.");
+    expect(head).toContain("Wireline — Your next AI employee calls, texts &amp; emails");
+    expect(head).toContain("customer conversations across voice, SMS, and email");
+    expect(head).toContain("follows up, books the next step, and logs every outcome");
+    expect(ogImage).toMatch(/YOUR AI VOICE EMPLOYEE[\s\S]*CALLS · TEXTS · EMAILS/);
+    expect(ogImage).toContain("VOICE · SMS · EMAIL · NUMBER INCLUDED · OUTCOMES · CONTROL");
     expectNoTerms(head, retiredProductTerms);
     expectNoTerms(ogImage, retiredProductTerms);
   });

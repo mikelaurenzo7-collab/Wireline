@@ -113,9 +113,8 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "Presenter voice previews and matched avatar voice generation.",
     "voice",
     false,
-    [],
-    "Presenter routes can also use LIVEAVATAR_API_KEY.",
-    [["HEYGEN_API_KEY", "LIVEAVATAR_API_KEY"]],
+    ["HEYGEN_API_KEY"],
+    "Requires a HeyGen Studio API key; LiveAvatar credentials are intentionally not reused.",
   ),
   item(
     "google-workspace",

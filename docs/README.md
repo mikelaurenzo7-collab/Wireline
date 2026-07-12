@@ -65,6 +65,9 @@ Wireline's durable documentation follows the active product model. The customer-
 | [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md) | **Active** — Stripe checkout, entitlement sync, Conversation Balance, webhook idempotency, cancellation, and usage reconciliation proof runbook. |
 | [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md) | **Active** — Jul 2026 pricing lock checklist and live billing proof status. |
 | [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) | xAI realtime voice path, safety posture, and live test constraints. |
+| [VOICE_CLONING_EXPANSION.md](./VOICE_CLONING_EXPANSION.md) | **Active** — current voice-cloning trust foundation, deployable upload constraints, and remaining production gates. |
+| [VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md](./VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md) | **Active** — provider-neutral voice moat, partner sequence, outcome metrics, Voice Passport direction, and 90-day execution plan. |
+| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md) | **Active** — dedicated number plus verified calling, SMS, and email identity with truthful provider-state and coverage boundaries. |
 | [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md) | Operational success motion and support posture. |
 | [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md) | Research lanes, prioritization, metrics, and 30/90/180-day execution roadmap. |
 | [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md) | **Active** — 2026 product audit, competitive positioning, Letterpress UX, onboarding, KPIs, and implementation checklist. |

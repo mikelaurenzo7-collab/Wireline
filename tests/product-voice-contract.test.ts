@@ -14,12 +14,10 @@ import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("product voice cohesion", () => {
-  it("keeps marketing hero strings and call direction modes in one shared module", () => {
+  it("keeps the one-employee multichannel hero and direction modes in one shared module", () => {
     // Customer-facing positioning must feel like the owner's best employee,
-    // not a threatening executive title or a menu of departments to configure.
-    expect(BRAND_SYSTEM.northStar).toBe(
-      "The best employee you've ever had, for next to nothing.",
-    );
+    // not three separate channel products or a menu of departments to configure.
+    expect(BRAND_SYSTEM.northStar).toBe("The best employee you've ever had, for next to nothing.");
     expect(BRAND_SYSTEM.defaultRole).toBe("Your best employee");
     expect(BRAND_SYSTEM.brandSpine).toEqual(["Wire", "Work", "Win"]);
     expect(BRAND_SYSTEM.proofLoop).toEqual(["Brief", "Train", "Launch", "Improve"]);
@@ -27,24 +25,44 @@ describe("product voice cohesion", () => {
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Make the default feel like the owner's best employee, not another executive title.",
     );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Present calling, texting, and email as channels of one trained employee, not three required employees.",
+    );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
+    );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("Wire → Work → Win");
-    expect(MARKETING_VOICE.subline).toBe("Voice AI employee for real conversations.");
+    expect(MARKETING_VOICE.headline).toBe("Your next AI employee");
+    expect(MARKETING_VOICE.subline).toBe(
+      "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
+    );
+    expect(MARKETING_VOICE.channelProof).toEqual([
+      "Voice agent",
+      "Text / SMS agent",
+      "Email agent",
+      "Paid-plan number",
+      "Connected inbox",
+      "Shared memory",
+    ]);
     expect(MARKETING_VOICE.spine).toEqual(BRAND_SYSTEM.brandSpine);
     expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);
 
     expect(OUTBOUND_WEDGE.headline).toBe("Your best employee for growth work.");
-    expect(OUTBOUND_WEDGE.subline).toContain("answers");
+    expect(OUTBOUND_WEDGE.subline).toContain("one all-in-one AI employee");
+    expect(OUTBOUND_WEDGE.subline).toContain("calls");
+    expect(OUTBOUND_WEDGE.subline).toContain("texts");
+    expect(OUTBOUND_WEDGE.subline).toContain("emails");
     expect(OUTBOUND_WEDGE.subline).toContain("researches");
     expect(OUTBOUND_WEDGE.subline).toContain("sells");
-    expect(OUTBOUND_WEDGE.subline).toContain("markets");
     expect(OUTBOUND_WEDGE.subline).toContain("logs proof");
-    expect(OUTBOUND_WEDGE.subline).toContain("included number");
     expect(OUTBOUND_WEDGE.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_NUMBER_PROMISE).toContain("Every included AI employee");
-    expect(AGENT_NUMBER_PROMISE).toContain("included number");
+    expect(AGENT_NUMBER_PROMISE).toContain("Every paid AI employee");
+    expect(AGENT_NUMBER_PROMISE).toContain("includes a Wireline number");
+    expect(AGENT_NUMBER_PROMISE).toContain("text follow-ups");
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
+    expect(AGENT_DIRECTION_MODES.inbound.promise).toContain("text or email");
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Sell", "Follow up", "Sync"]);
+    expect(AGENT_DIRECTION_MODES.hybrid.promise).toContain("calls, texts, email");
   });
 
   it("keeps the canonical operating loop across public buying surfaces", () => {
@@ -52,12 +70,15 @@ describe("product voice cohesion", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const authPortal = read("src/components/AuthPortal.tsx");
 
-    for (const surface of [features, authPortal]) {
-      expect(surface).toContain("Build");
-      expect(surface).toContain("Train");
-      expect(surface).toContain("Launch");
-      expect(surface).toContain("Improve");
-    }
+    // Features is the explanatory public surface that carries the full operating loop.
+    expect(features).toContain("Build");
+    expect(features).toContain("Train");
+    expect(features).toContain("Launch");
+    expect(features).toContain("Improve");
+
+    // The sign-in/up funnel stays intentionally minimal (see PR #738): it leads with
+    // the product promise, not a decorative four-step loop grid.
+    expect(authPortal).toContain("Build your first AI employee.");
 
     expect(features).toContain("Build → Train → Launch → Improve");
     expect(features).not.toContain("Create → Train → Wire → Run");
@@ -70,7 +91,7 @@ describe("product voice cohesion", () => {
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
-  it("wires landing and workroom surfaces to shared voice constants", () => {
+  it("wires landing, workroom, and extension surfaces to shared voice constants", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
@@ -80,6 +101,9 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("HERO_LOOP");
     expect(workroom).toContain("WORKSPACE_VOICE");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
+    expect(extension).toContain('data-action="call"');
+    expect(extension).toContain('data-action="text"');
+    expect(extension).toContain(">Email</button>");
   });
 
   it("keeps public landing examples broad across profit, inbound, and hybrid buyers", () => {

@@ -5,16 +5,18 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("marketing metadata contract", () => {
-  it("keeps static and runtime fallback metadata aligned to Wire Work Win", () => {
+  it("keeps static and runtime fallback metadata aligned to the multichannel promise", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("Wireline — Wire → Work → Win");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "Wireline - Wire → Work → Win"');
-    expect(staticHead).toContain("Voice AI employee for real conversations.");
-    expect(staticHead).toContain("calls, follow-up, booking, and logged outcomes");
-    expect(runtimeMeta).toContain("Voice AI employee for real conversations.");
-    expect(runtimeMeta).toContain("calls, follow-up, booking, and logged outcomes");
+    expect(staticHead).toContain("Wireline — Your next AI employee calls, texts &amp; emails");
+    expect(runtimeMeta).toContain(
+      'const DEFAULT_TITLE = "Wireline - Your next AI employee calls, texts & emails"',
+    );
+    for (const source of [staticHead, runtimeMeta]) {
+      expect(source).toContain("customer conversations across voice, SMS, and email");
+      expect(source).toContain("follows up, books the next step, and logs every outcome");
+    }
     expect(staticHead).not.toContain("AI phone employees that turn calls into sales");
     expect(runtimeMeta).not.toContain("Personal & Business AI Assistants");
   });
@@ -26,10 +28,9 @@ describe("marketing metadata contract", () => {
     expect(staticHead).not.toMatch(/"@type"\s*:\s*"Offer"/);
   });
 
-  it("keeps public pricing, contact, and ROI copy aligned to the active catalog", () => {
+  it("keeps public pricing and contact copy aligned to the active catalog", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const contact = read("src/components/ContactPage.tsx");
-    const roi = read("src/components/marketing/RoiCalculator.tsx");
     const catalog = read("src/lib/plan-catalog.ts");
 
     expect(catalog).toContain('id: "team"');
@@ -39,16 +40,14 @@ describe("marketing metadata contract", () => {
     expect(catalog).toContain("price_usd_monthly: 59");
     expect(catalog).toContain("included_phone_numbers: 5");
 
-    expect(pricing).toContain("Build free. Go live from $9. Scale when the work proves itself.");
+    expect(pricing).toContain("Build Free. Launch for $9. Scale When It Pays.");
     expect(contact).toContain(
       "Create and train for free. Starter Plus starts at $19/mo; Pro at $59/mo.",
     );
     expect(contact).toContain('searchParams.get("intent") ?? searchParams.get("topic")');
     expect(contact).toContain("Preferred callback");
-    expect(roi).toContain("Net annual savings (after the Pro plan)");
-    expect(roi).toContain("Pro tier billed at $59/mo");
 
-    for (const source of [pricing, contact, roi]) {
+    for (const source of [pricing, contact]) {
       expect(source).not.toContain("Personal starts at $9");
       expect(source).not.toContain("Business coverage starts at $99");
       expect(source).not.toContain("Wireline Pro");

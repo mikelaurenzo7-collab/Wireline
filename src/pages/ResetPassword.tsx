@@ -100,7 +100,7 @@ export default function ResetPassword() {
         <div className="w-full max-w-[420px] wl-auth-card rounded-md p-6 sm:p-8">
           <div className="wl-auth-card-header mb-6">
             <div className="wl-auth-brand-chip" aria-hidden="true">
-              <WirelineMark className="w-5 h-5" stroke="white" strokeWidth={120} />
+              <WirelineMark className="w-5 h-5" stroke="white" strokeWidth={10} />
             </div>
             <div>
               <h1 className="font-display italic text-2xl sm:text-3xl text-foreground leading-tight">

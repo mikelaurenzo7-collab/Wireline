@@ -15,6 +15,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { ensureTenantTelecomDefaults } from "../lib/agent-phone-lines";
+import { runCompanyIdentityMutation } from "../lib/company-identity-mutation";
 import {
   listVapiNumbers,
   provisionVapiNumber,
@@ -43,7 +44,7 @@ router.get(
         .select()
         .from(schema.phoneNumbers)
         .where(eq(schema.phoneNumbers.userId, req.user.id))
-        .orderBy(desc(schema.phoneNumbers.createdAt));
+        .orderBy(desc(schema.phoneNumbers.createdAt), desc(schema.phoneNumbers.id));
 
       // Drizzle returns camelCase JS keys (phoneNumber, vapiNumberId, …) but
       // every client consumer (CarrierPanel, ActivationNudge, AdminSettings)
@@ -79,10 +80,12 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { phone_number, vapi_number_id } = req.body;
-      await drizzle.insert(schema.phoneNumbers).values({
-        phoneNumber: phone_number,
-        vapiNumberId: vapi_number_id,
-        userId: req.user.id,
+      await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
+        await tx.insert(schema.phoneNumbers).values({
+          phoneNumber: phone_number,
+          vapiNumberId: vapi_number_id,
+          userId: req.user.id,
+        });
       });
       res.json({ success: true });
     } catch (err: any) {
@@ -212,14 +215,16 @@ router.delete(
   rateLimiters.phoneNumberRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      await drizzle
-        .delete(schema.phoneNumbers)
-        .where(
-          and(
-            eq(schema.phoneNumbers.id, BigInt(req.params.id)),
-            eq(schema.phoneNumbers.userId, req.user.id),
-          ),
-        );
+      await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
+        await tx
+          .delete(schema.phoneNumbers)
+          .where(
+            and(
+              eq(schema.phoneNumbers.id, BigInt(req.params.id)),
+              eq(schema.phoneNumbers.userId, req.user.id),
+            ),
+          );
+      });
 
       res.json({ success: true });
     } catch (error: any) {
@@ -376,11 +381,13 @@ router.post(
         if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
       }
 
-      await drizzle.insert(schema.phoneNumbers).values({
-        userId: req.user.id,
-        phoneNumber,
-        vapiNumberId: match.id,
-        agentId,
+      await runCompanyIdentityMutation(req.user.id, "phone_number_changed", async (tx) => {
+        await tx.insert(schema.phoneNumbers).values({
+          userId: req.user.id,
+          phoneNumber,
+          vapiNumberId: match.id,
+          agentId,
+        });
       });
 
       await ensureTenantTelecomDefaults(req.user.id, {

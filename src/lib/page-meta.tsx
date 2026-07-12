@@ -12,9 +12,9 @@ interface PageMetaProps {
 const BRAND_SUFFIX = " - Wireline";
 const SITE_URL = "https://trywireline.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "Wireline - Wire → Work → Win";
+const DEFAULT_TITLE = "Wireline - Your next AI employee calls, texts & emails";
 const DEFAULT_DESCRIPTION =
-  "Voice AI employee for real conversations. Wireline handles calls, follow-up, booking, and logged outcomes with an included number.";
+  "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.";
 
 function setMeta(attr: "name" | "property", key: string, content: string | null) {
   const selector = `meta[${attr}="${key}"]`;
@@ -89,11 +89,8 @@ export function PageMeta({
     setCanonical(canonicalUrl || null);
     setMeta("property", "og:title", fullTitle);
     setMeta("property", "og:description", resolvedDescription);
-    setMeta("property", "og:url", canonicalUrl || null);
+    setMeta("property", "og:url", canonicalUrl || SITE_URL);
     setMeta("property", "og:image", ogImage);
-    setMeta("property", "og:type", "website");
-    setMeta("property", "og:site_name", "Wireline");
-    setMeta("name", "twitter:card", "summary_large_image");
     setMeta("name", "twitter:title", fullTitle);
     setMeta("name", "twitter:description", resolvedDescription);
     setMeta("name", "twitter:image", ogImage);
