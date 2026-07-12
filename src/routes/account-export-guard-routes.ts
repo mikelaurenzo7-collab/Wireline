@@ -1,4 +1,4 @@
-import { Router, type Response } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import { sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
@@ -34,16 +34,26 @@ function postgresErrorCode(error: unknown): string | undefined {
     : undefined;
 }
 
+function postOnly(req: Request, _res: Response, next: NextFunction): void {
+  if (req.method !== "POST") {
+    next("router");
+    return;
+  }
+  next();
+}
+
 /**
- * Secure replacement for the legacy export route in settings-routes.ts.
+ * Secure terminal middleware for the canonical legacy export route declared in
+ * settings-routes.ts. Keeping the declaration there prevents generated authz
+ * documentation from treating this hardening layer as a second public route.
  *
- * It derives coverage from the same audited registry used by terminal account
- * deletion, excludes short-lived authentication artifacts, and recursively
- * removes provider credentials from otherwise user-owned settings/connections.
- * Registration order makes this handler terminal before the legacy route.
+ * Coverage derives from the same audited registry used by terminal account
+ * deletion. Short-lived authentication artifacts are excluded and provider
+ * credentials are recursively removed from user-owned settings/connections.
  */
-router.post(
+router.use(
   "/api/account/export",
+  postOnly,
   authenticateUser,
   accountExportRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
