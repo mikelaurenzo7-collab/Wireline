@@ -49,6 +49,7 @@ describe("current-state UI contract", () => {
 
   it("keeps public conversion routes on the selected launch plan", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const hero = read("src/components/marketing/MarketingHero.tsx");
     const auth = read("src/components/AuthPortal.tsx");
 
     expect(landing).toContain('name: "Starter"');
@@ -56,6 +57,13 @@ describe("current-state UI contract", () => {
     expect(landing).toContain("/signup?plan=starter&mode=outbound");
     expect(landing).toContain("/signup?plan=starter&mode=inbound");
     expect(landing).toContain("/signup?plan=starter&mode=hybrid");
+    expect(hero).toContain('aria-label="Wire to Work to Win"');
+    expect(hero).toContain("MARKETING_VOICE.spine.map");
+    expect(hero).toContain("flex-nowrap");
+    expect(hero).toContain("whitespace-nowrap");
+    expect(hero).toContain("size-[1em] shrink-0");
+    expect(hero).toContain("max-w-[22rem] grid-cols-2");
+    expect(hero).toContain("col-span-2 sm:col-span-1");
 
     expect(auth).toContain('pathname === "/signup" || pathname === "/get-started"');
     expect(auth).toContain('starter: "Starter · $9/month"');

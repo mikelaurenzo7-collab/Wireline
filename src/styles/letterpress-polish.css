@@ -712,6 +712,9 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 3.25rem;
   padding: 0.625rem 0.25rem;
   color: var(--wireline-color-text-primary);

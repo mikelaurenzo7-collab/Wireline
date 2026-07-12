@@ -164,22 +164,25 @@ export default function TeamSettings() {
               {displayMembers.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-4 py-4"
+                  className="flex w-full min-w-0 max-w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-border bg-background px-4 py-4"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
                     <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
                       {memberInitial(member.email)}
                     </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <p className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-foreground">
                         {member.email || "Pending invite"}
                       </p>
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground">
                         {member.email === user?.email ? "You" : "Workspace member"}
                       </p>
                     </div>
                   </div>
-                  <Badge variant={member.role === "owner" ? "success" : "outline"}>
+                  <Badge
+                    className="shrink-0"
+                    variant={member.role === "owner" ? "success" : "outline"}
+                  >
                     {formatRole(member.role)}
                   </Badge>
                 </div>

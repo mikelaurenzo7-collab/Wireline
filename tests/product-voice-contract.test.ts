@@ -32,7 +32,7 @@ describe("product voice cohesion", () => {
       "State that the included Wireline number applies to paid plans so the free builder is never misrepresented.",
     );
     expect(MARKETING_VOICE.eyebrow).toBeNull();
-    expect(MARKETING_VOICE.headline).toBe("Your next AI employee calls, texts, and emails.");
+    expect(MARKETING_VOICE.headline).toBe("Your next AI employee");
     expect(MARKETING_VOICE.subline).toBe(
       "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
     );
@@ -40,7 +40,9 @@ describe("product voice cohesion", () => {
       "Voice agent",
       "Text / SMS agent",
       "Email agent",
-      "One shared memory",
+      "Paid-plan number",
+      "Connected inbox",
+      "Shared memory",
     ]);
     expect(MARKETING_VOICE.spine).toEqual(BRAND_SYSTEM.brandSpine);
     expect(MARKETING_VOICE.proof).toEqual(["Brief", "Train", "Launch", "Improve"]);

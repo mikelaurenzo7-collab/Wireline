@@ -40,7 +40,7 @@ describe("marketing metadata contract", () => {
     expect(catalog).toContain("price_usd_monthly: 59");
     expect(catalog).toContain("included_phone_numbers: 5");
 
-    expect(pricing).toContain("Build Your AI Voice Employee Free. Launch from $9.");
+    expect(pricing).toContain("Build Free. Launch for $9. Scale When It Pays.");
     expect(contact).toContain(
       "Create and train for free. Starter Plus starts at $19/mo; Pro at $59/mo.",
     );

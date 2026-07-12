@@ -124,8 +124,8 @@ const FAQ = [
     "New live work uses prepaid Conversation Balance. Wireline does not silently add a postpaid metered line item. Add balance, enable auto-refill, wait for renewal, or upgrade.",
   ],
   [
-    "Can Wireline send unlimited email or SMS?",
-    "No responsible communications platform should promise uncontrolled outreach. Email follows the connected provider's limits and reputation policies. SMS and provider-funded actions are metered through prepaid balance, with consent and compliance controls remaining authoritative.",
+    "Why keep live usage prepaid?",
+    "Calls and messages carry real carrier and AI costs, so flat usage promises usually hide a cap or risk a runaway bill. Wireline takes the founder-friendly route: one subscription unlocks every channel, included capacity gets you live, and additional provider usage stays prepaid and visible.",
   ],
   [
     "What is the Scale plan?",
@@ -146,12 +146,12 @@ const assurances = [
   },
   {
     icon: CircleDollarSign,
-    label: "No surprise overages",
+    label: "No surprise bills",
     detail: "Variable provider usage is prepaid, not silently invoiced.",
   },
   {
     icon: ShieldCheck,
-    label: "Controlled execution",
+    label: "Spend controls",
     detail: "Approvals, consent, spend controls, logs, and outcomes remain visible.",
   },
 ] as const;
@@ -196,8 +196,8 @@ export default function Pricing() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <MarketingHero
           eyebrow="Founder Early Access"
-          title="Build Your AI Voice Employee Free. Launch from $9."
-          description="Every paid plan includes a Wireline number at no extra line fee. One employee can call, text, email, book, follow up, update your systems, and log outcomes—then you add specialists only when the work earns it."
+          title="Build Free. Launch for $9. Scale When It Pays."
+          description="One subscription unlocks calls, texts, email, follow-up, and Lead Hunt—plus a number on every paid plan. Extra usage stays prepaid, never a surprise bill."
           primaryAction={{ label: "Build your AI Voice Employee", to: "/signup?plan=personal" }}
           secondaryAction={{ label: "Compare every plan", to: "#plans", tone: "secondary" }}
           proof={assurances.map(({ label }) => label)}
@@ -375,7 +375,7 @@ export default function Pricing() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="wl-stitch-label">Channel economics</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-                One employee. Clear costs at the real vendor boundaries.
+                One employee. No channel seat tax. Clear usage costs.
               </h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">
                 Wireline does not charge three employee subscriptions just because one employee uses

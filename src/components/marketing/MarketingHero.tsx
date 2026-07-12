@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -77,11 +77,27 @@ export default function MarketingHero({
             </div>
           ) : null}
 
+          {isHomeHero ? (
+            <div
+              aria-label="Wire to Work to Win"
+              className="inline-flex max-w-full flex-nowrap items-center justify-center gap-[clamp(.4rem,2.5vw,.75rem)] whitespace-nowrap rounded-full border border-border bg-card px-[clamp(.8rem,4vw,1.25rem)] py-2 font-[var(--wireline-font-family-mono)] text-[clamp(.7rem,3.3vw,.82rem)] font-semibold uppercase tracking-[.12em] text-muted-foreground shadow-[var(--wireline-elevation-sm)]"
+            >
+              {MARKETING_VOICE.spine.map((item, index) => (
+                <Fragment key={item}>
+                  <span>{item}</span>
+                  {index < MARKETING_VOICE.spine.length - 1 ? (
+                    <ArrowRight className="size-[1em] shrink-0 text-primary" aria-hidden="true" />
+                  ) : null}
+                </Fragment>
+              ))}
+            </div>
+          ) : null}
+
           <h1
             aria-label={isHomeHero && typeof title === "string" ? title : undefined}
             className={cn(
               "marketing-hero__title mx-auto max-w-[22ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-bold uppercase leading-[0.98] tracking-[-.005em] text-foreground",
-              eyebrow ? "mt-6" : "mt-0",
+              eyebrow || isHomeHero ? "mt-6" : "mt-0",
               isHomeHero &&
                 "max-w-[19ch] text-[clamp(2.45rem,5.5vw,4.65rem)] leading-[0.94] tracking-[-.012em]",
             )}
@@ -137,13 +153,18 @@ export default function MarketingHero({
 
           {proof.length ? (
             <ul
-              className="mt-7 flex max-w-3xl flex-wrap justify-center gap-2"
+              className="mt-7 grid w-full max-w-[22rem] grid-cols-2 gap-2 sm:flex sm:max-w-3xl sm:flex-wrap sm:justify-center"
               aria-label="Wireline proof points"
             >
-              {proof.map((item) => (
+              {proof.map((item, index) => (
                 <li
                   key={item}
-                  className="inline-flex min-h-8 items-center gap-2 rounded-full border border-border bg-card px-3.5 text-[13px] font-medium text-muted-foreground"
+                  className={cn(
+                    "inline-flex min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-border bg-card px-2.5 text-center text-[12px] font-medium text-muted-foreground sm:px-3.5 sm:text-[13px]",
+                    proof.length % 2 === 1 && index === proof.length - 1
+                      ? "col-span-2 sm:col-span-1"
+                      : undefined,
+                  )}
                 >
                   <span className="h-1 w-1 rounded-full bg-primary" aria-hidden="true" />
                   {item}

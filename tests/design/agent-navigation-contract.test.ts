@@ -122,6 +122,18 @@ describe("agent navigation contract", () => {
     expect(trainingPage).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
   });
 
+  it("keeps long account and team identifiers inside narrow workspace cards", () => {
+    const dataRows = read("src/styles/letterpress-polish.css");
+
+    expect(dataRows).toMatch(
+      /\.wl-data-row\s*\{[\s\S]*width: 100%;[\s\S]*min-width: 0;[\s\S]*max-width: 100%/,
+    );
+    expect(teamPage).toContain("flex w-full min-w-0 max-w-full");
+    expect(teamPage).toContain("min-w-0 flex-1 items-center");
+    expect(teamPage).toContain("text-ellipsis whitespace-nowrap");
+    expect(teamPage).toContain('className="shrink-0"');
+  });
+
   it("uses navigation.ts as the shell source of truth with a 5-item mobile dock", () => {
     const navigation = read("src/constants/navigation.ts");
     expect(workspaceShell).toMatch(/from "\.\.\/constants\/navigation"/);
