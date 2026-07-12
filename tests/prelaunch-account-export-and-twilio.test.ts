@@ -76,13 +76,15 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(registration.indexOf("app.use(accountExportGuardRouter)")).toBeLessThan(settings);
   });
 
-  it("derives export coverage from the audited deletion registry", () => {
+  it("derives export coverage from the audited deletion registry without a duplicate route", () => {
     const route = read("src/routes/account-export-guard-routes.ts");
     expect(route).toContain("ACCOUNT_DELETION_TARGETS");
     expect(route).toContain("ACCOUNT_EXPORT_SECURITY_ONLY_TABLES");
     expect(route).toContain("redactAccountExportValue");
     expect(route).toContain("SELECT * FROM wireline_users");
     expect(route).toContain('bucket: "api:account-export"');
+    expect(route).toContain('router.use(\n  "/api/account/export"');
+    expect(route).not.toContain('router.post(\n  "/api/account/export"');
     expect(route).not.toContain("jobsRateLimit");
     expect(route).toContain("source_registry: \"ACCOUNT_DELETION_TARGETS\"");
     expect(route).toContain("sql.join(predicates, sql` OR `)");
