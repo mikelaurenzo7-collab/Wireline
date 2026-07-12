@@ -20,6 +20,7 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     const exported = redactAccountExportValue({
       access_token: "oauth-access",
       refreshToken: "oauth-refresh",
+      password_hash: "password-hash",
       secret: "webhook-secret",
       secret_last_four: "1234",
       input_tokens: 42,
@@ -80,6 +81,7 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(route).toContain("ACCOUNT_DELETION_TARGETS");
     expect(route).toContain("ACCOUNT_EXPORT_SECURITY_ONLY_TABLES");
     expect(route).toContain("redactAccountExportValue");
+    expect(route).toContain("SELECT * FROM wireline_users");
     expect(route).toContain("source_registry: \"ACCOUNT_DELETION_TARGETS\"");
     expect(route).toContain("sql.join(predicates, sql` OR `)");
   });
