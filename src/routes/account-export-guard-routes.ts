@@ -11,11 +11,16 @@ import {
 } from "../lib/account-export";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { jobsRateLimit } from "../middleware/api-rate-limits";
+import { createRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+const accountExportRateLimit = createRateLimiter({
+  bucket: "api:account-export",
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+});
 
 type ExecuteResult = { rows?: Array<Record<string, unknown>> };
 
@@ -40,7 +45,7 @@ function postgresErrorCode(error: unknown): string | undefined {
 router.post(
   "/api/account/export",
   authenticateUser,
-  jobsRateLimit,
+  accountExportRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
     const tables: Record<string, unknown[]> = {};
