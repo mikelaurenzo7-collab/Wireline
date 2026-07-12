@@ -15,6 +15,11 @@ export const e164 = z
   .trim()
   .regex(/^\+[1-9]\d{1,14}$/, "Must be an E.164 phone number, e.g. +14155550123");
 
+const twilioMessagingServiceSid = z
+  .string()
+  .trim()
+  .regex(/^MG[a-fA-F0-9]{32}$/, "Must be a Twilio Messaging Service SID beginning with MG");
+
 /**
  * POST /api/settings — tenant settings update.
  *
@@ -55,12 +60,12 @@ export const SettingsSchema = z
     twilio_messaging_enabled: z.boolean().nullable().optional(),
     twilio_lookup_enabled: z.boolean().nullable().optional(),
     twilio_manager_alerts_enabled: z.boolean().nullable().optional(),
-    twilio_messaging_service_sid: z.string().nullable().optional(),
-    twilio_sms_from_number: z.string().nullable().optional(),
-    twilio_whatsapp_from_number: z.string().nullable().optional(),
-    twilio_manager_alert_number: z.string().nullable().optional(),
+    twilio_messaging_service_sid: twilioMessagingServiceSid.nullable().optional(),
+    twilio_sms_from_number: e164.nullable().optional(),
+    twilio_whatsapp_from_number: e164.nullable().optional(),
+    twilio_manager_alert_number: e164.nullable().optional(),
 
-    handoff_phone: z.string().nullable().optional(),
+    handoff_phone: e164.nullable().optional(),
 
     prospecting_enabled: z.boolean().nullable().optional(),
     target_titles: z.unknown().nullable().optional(),
