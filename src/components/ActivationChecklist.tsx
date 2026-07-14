@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Circle, Phone, Sparkles, GraduationCap, Cable, Play, Inbox } from "lucide-react";
+import { Check, Circle, Phone, Sparkles, GraduationCap, Cable, Inbox } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import {
@@ -53,14 +53,6 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       done: p.numbers > 0,
       href: "/connections",
       icon: Cable,
-    },
-    {
-      id: "test",
-      label: "Test conversation completed",
-      detail: "Try a realistic customer request before sending traffic to the employee.",
-      done: p.calls > 0,
-      href: "/studio?section=test",
-      icon: Play,
     },
     {
       id: "live",
@@ -119,8 +111,7 @@ export default function ActivationChecklist({ className }: { className?: string 
             {completed} of {steps.length} customer-ready steps complete
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            Finish only what the first customer workflow needs. Optional providers and advanced
-            automation can wait until real conversations show where they add value.
+            Test freely in Studio. This checklist tracks only saved setup, live channels, and real customer outcomes.
           </p>
         </div>
         <button
