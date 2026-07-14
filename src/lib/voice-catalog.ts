@@ -107,9 +107,11 @@ export type VoiceCatalogProviders = {
 export function resolveVoiceLabel(voiceId: string | null | undefined): string {
   if (!voiceId) return "Not selected";
   const pools = [...WIRELINE_LIVE_VOICES, ...VAPI_CURATED_VOICES];
-  const match = pools.find((voice) => voice.id === voiceId);
+  const normalizedId = voiceId.toLowerCase();
+  const match = pools.find((voice) => voice.id.toLowerCase() === normalizedId);
   if (match) return match.name;
-  return voiceId.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  if (normalizedId === "pninz6obpgdqgcfmajgb") return "Adam — Deep";
+  return "Custom voice";
 }
 
 /** User-facing provider family — no third-party vendor names. */

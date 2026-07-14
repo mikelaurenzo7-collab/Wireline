@@ -40,4 +40,22 @@ describe("authenticated responsive polish contract", () => {
     expect(css).toContain(".wl-data-row--framed .wl-data-row__trailing");
     expect(css).toContain("padding-inline-start: 2.75rem");
   });
+
+  it("reserves enough desktop width for the compliance action rail", () => {
+    const compliance = read("src/components/ComplianceCenter.tsx");
+
+    expect(compliance).toContain("minmax(448px,.9fr)");
+    expect(compliance).not.toContain("minmax(320px,.9fr)");
+  });
+
+  it("gives every previously headingless workspace a clear page heading", () => {
+    const studio = read("src/components/studio/StudioContextChrome.tsx");
+    const team = read("src/pages/TeamSettings.tsx");
+    const admin = read("src/components/AdminSettings.tsx");
+
+    expect(studio).toContain('<h1 className="sr-only">Studio</h1>');
+    expect(studio).toContain("{activeAgent.name}");
+    expect(team).toContain(">\n            Team\n          </h1>");
+    expect(admin).toContain('<h1 className="sr-only">Admin workspace</h1>');
+  });
 });

@@ -151,13 +151,14 @@ export default function ComplianceCenter() {
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,.9fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(448px,.9fr)]">
         <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Recent disclosure and consent events (rule version {summary?.consent_rule_version || "—"}).
+                Recent disclosure and consent events (rule version{" "}
+                {summary?.consent_rule_version || "—"}).
               </p>
             </div>
             <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">

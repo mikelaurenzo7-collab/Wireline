@@ -85,7 +85,7 @@ export default function OAuthComplete() {
             <>
               <div role="alert" className="flex items-center justify-center gap-2 text-rose-600">
                 <AlertTriangle className="w-5 h-5" />
-                <span className="text-eyebrow text-rose-600">Sign-in failed</span>
+                <h1 className="text-eyebrow text-rose-600">Sign-in failed</h1>
               </div>
               <p className="text-caption leading-relaxed">{error}</p>
               <Link to="/signin" className="marketing-btn-secondary w-full min-h-[48px]">
@@ -96,7 +96,7 @@ export default function OAuthComplete() {
             <>
               <div className="flex items-center justify-center gap-2 text-brand">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-eyebrow text-brand">Completing sign-in</span>
+                <h1 className="text-eyebrow text-brand">Completing sign-in</h1>
               </div>
               <p className="text-caption">Just a moment…</p>
             </>

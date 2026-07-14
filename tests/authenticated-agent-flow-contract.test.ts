@@ -124,11 +124,14 @@ describe("authenticated agent flow", () => {
 
   it("launches post-create Train → Channels → Wire → Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const studioHome = read("src/pages/AgentStudioHomeClaude.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
 
     expect(createDialog).toContain("stashPostCreateWizard");
+    expect(createDialog).toContain("onCreated?.(wizardPayload)");
+    expect(studioHome).toContain("onCreated={setPostCreateWizard}");
     expect(createFlow).toContain("POST_CREATE_WIZARD_KEY");
     expect(createFlow).toContain("readPostCreateWizard");
     expect(createFlow).toContain("clearPostCreateWizard");

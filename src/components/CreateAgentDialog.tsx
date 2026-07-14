@@ -10,7 +10,11 @@ import CreateAgentCatalogFacePicker, {
 import VoicePickerField, { type VoicePickerValue } from "./create-agent/VoicePickerField";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
-import { stashCreateWarning, stashPostCreateWizard } from "../lib/wireline-create-flow";
+import {
+  stashCreateWarning,
+  stashPostCreateWizard,
+  type PostCreateWizardPayload,
+} from "../lib/wireline-create-flow";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
 import { emitProductEvent } from "../lib/product-event-client";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
@@ -82,11 +86,13 @@ function defaultRole(posture: Posture): Role {
 export default function CreateAgentDialog({
   open,
   onClose,
+  onCreated,
   initialBrief = "",
   business = false,
 }: {
   open: boolean;
   onClose: () => void;
+  onCreated?: (payload: PostCreateWizardPayload) => void;
   initialBrief?: string;
   business?: boolean;
 }) {
@@ -302,12 +308,14 @@ export default function CreateAgentDialog({
         });
       }
       if (postCreateWarning) stashCreateWarning(postCreateWarning);
-      stashPostCreateWizard({
+      const wizardPayload: PostCreateWizardPayload = {
         agentId: body.id,
         agentName: finalName,
         phoneProvisionRequested: provisionNumber,
         phoneProvisioned,
-      });
+      };
+      stashPostCreateWizard(wizardPayload);
+      onCreated?.(wizardPayload);
       setPostSignupFlowActive(true);
       navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });
       onClose();

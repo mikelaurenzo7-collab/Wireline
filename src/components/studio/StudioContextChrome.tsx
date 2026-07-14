@@ -39,7 +39,7 @@ export default function StudioContextChrome() {
               <span aria-hidden="true" className="text-muted-foreground/50">
                 /
               </span>
-              <span className="inline-flex min-w-0 items-center gap-2 font-semibold text-foreground">
+              <div className="inline-flex min-w-0 items-center gap-2 font-semibold text-foreground">
                 <span className="hidden shrink-0 sm:inline-flex">
                   <AgentPresenceSlot
                     name={activeAgent.name}
@@ -49,12 +49,14 @@ export default function StudioContextChrome() {
                     variant="badge"
                   />
                 </span>
-                <span className="block max-w-[9rem] truncate sm:max-w-[14rem]">
+                <h1 className="block max-w-[9rem] truncate text-sm font-semibold sm:max-w-[14rem]">
                   {activeAgent.name}
-                </span>
-              </span>
+                </h1>
+              </div>
             </>
-          ) : null}
+          ) : (
+            <h1 className="sr-only">Studio</h1>
+          )}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">

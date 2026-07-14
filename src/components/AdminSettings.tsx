@@ -365,6 +365,7 @@ export default function AdminSettings() {
   return (
     <>
       <AdminHubViewport>
+        <h1 className="sr-only">Admin workspace</h1>
         <WorkspaceTabStrip
           ariaLabel="Admin sections"
           activeId={activeTab}

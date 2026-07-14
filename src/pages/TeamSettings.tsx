@@ -118,6 +118,15 @@ export default function TeamSettings() {
       <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
 
+        <div>
+          <h1 className="font-[var(--wireline-font-family-display)] text-3xl font-semibold tracking-[-.03em] text-foreground">
+            Team
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Invite teammates and keep workspace access easy to review.
+          </p>
+        </div>
+
         {teamAccess === "restricted" ? (
           <StatusNotice tone="info" title="Solo workspace">
             Team invites are available on Team and Business plans.{" "}

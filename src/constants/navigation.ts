@@ -159,15 +159,40 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 export const PAGE_TITLES: Record<string, string> = {
   "/overview": "Overview",
   "/studio": "Studio",
+  "/studio/handoff": "Browser handoff",
+  "/templates": "Templates",
   "/knowledge": "Training",
   "/connections": "Wire",
+  "/connections/salesforce": "Salesforce connection",
   "/phone": "Phone",
   "/approvals": "Approvals",
   "/insights": "Insights",
   "/inbox": "Inbox",
   "/apps": "Apps",
   "/settings": "Settings",
+  "/settings/billing": "Billing settings",
+  "/settings/phone": "Phone settings",
+  "/settings/team": "Team settings",
+  "/settings/customization": "Customization settings",
+  "/settings/compliance": "Compliance center",
+  "/settings/apps": "App settings",
+  "/admin": "Admin",
 };
+
+export function workspacePageTitle(pathname: string) {
+  const current = cleanNavPath(pathname);
+  let bestMatch = "";
+  let title = "Workspace";
+
+  for (const [route, routeTitle] of Object.entries(PAGE_TITLES)) {
+    if ((current === route || current.startsWith(`${route}/`)) && route.length > bestMatch.length) {
+      bestMatch = route;
+      title = routeTitle;
+    }
+  }
+
+  return title;
+}
 
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   A: "/overview",

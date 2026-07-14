@@ -112,6 +112,7 @@ export default function AgentStudioHomeClaude() {
       <CreateAgentDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
+        onCreated={setPostCreateWizard}
         initialBrief={initialBrief}
         business={wantsBusinessAgent}
       />
