@@ -1,5 +1,6 @@
 import { Router, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { AppError } from "../lib/api-error";
 import { runStructuredStream } from "../lib/ai-structured";
@@ -8,11 +9,24 @@ import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log } from "../lib/server-context";
 import { authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
-import { validateBody, workspaceMessageSchema } from "../lib/api-validation";
+import { validateBody } from "../lib/api-validation";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 
 const router = Router();
+
+const customerTestMessageSchema = z.object({
+  content: z.string().trim().min(1).max(4000),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["customer", "employee"]),
+        content: z.string().trim().min(1).max(4000),
+      }),
+    )
+    .max(12)
+    .default([]),
+});
 
 function compactLines(values: Array<string | null | undefined>, limit: number) {
   return values
@@ -25,11 +39,12 @@ router.post(
   "/api/agents/:id/test/stream",
   authenticateEventStream,
   claudeRateLimiter,
-  validateBody(workspaceMessageSchema),
+  validateBody(customerTestMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
       const customerMessage = req.body.content.trim();
+      const history = req.body.history as Array<{ role: "customer" | "employee"; content: string }>;
       if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
 
       const [agentRows, personalities, directives, knowledge] = await Promise.all([
@@ -114,6 +129,12 @@ router.post(
         .filter(Boolean)
         .join("\n\n");
 
+      const transcript = history
+        .slice(-12)
+        .map((message) => `${message.role === "customer" ? "Customer" : agent.name || "Employee"}: ${message.content}`)
+        .join("\n");
+      const user = `${transcript ? `Conversation so far:\n${transcript}\n\n` : ""}Customer: ${customerMessage}`;
+
       const CUSTOMER_TEST_TOOL = {
         name: "customer_test_reply",
         description: "Reply directly to the customer using the saved AI employee configuration.",
@@ -138,7 +159,7 @@ router.post(
         }>(
           {
             system,
-            user: `Customer: ${customerMessage}`,
+            user,
             tool: CUSTOMER_TEST_TOOL,
             model: STRUCTURED_RUNTIME_MODELS.STANDARD,
             maxTokens: 900,
