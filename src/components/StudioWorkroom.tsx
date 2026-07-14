@@ -92,7 +92,9 @@ function MessageBubble({
         <div className="rounded-xl bg-primary px-4 py-3 text-[14px] font-medium leading-[1.5] text-primary-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
-        {mode === "test" ? <p className="mt-1 text-right text-[10px] text-muted-foreground">Customer</p> : null}
+        {mode === "test" ? (
+          <p className="mt-1 text-right text-[10px] text-muted-foreground">Customer</p>
+        ) : null}
       </article>
     );
   }
@@ -165,8 +167,11 @@ const StudioWorkroom = forwardRef<
   );
 
   const endpoint = useMemo(
-    () => `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`,
-    [agentId],
+    () =>
+      mode === "test"
+        ? `/api/agents/${encodeURIComponent(agentId)}/test/stream`
+        : `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`,
+    [agentId, mode],
   );
 
   const loadMessages = useCallback(async () => {
@@ -252,12 +257,8 @@ const StudioWorkroom = forwardRef<
     setDraft("");
     setError(null);
     setSending(true);
-    const content =
-      mode === "test"
-        ? `Start a fresh customer roleplay. Ignore prior setup discussion. Reply only as the AI employee to this customer message; do not discuss configuration or propose changes. Customer says: ${text}`
-        : text;
-    void streamSend({ content });
-  }, [draft, mode, sending, streamSend]);
+    void streamSend({ content: text });
+  }, [draft, sending, streamSend]);
 
   const clearConversation = useCallback(async () => {
     if (clearing) return;
@@ -343,7 +344,10 @@ const StudioWorkroom = forwardRef<
       </header>
 
       {error ? (
-        <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground" role="alert">
+        <div
+          className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
