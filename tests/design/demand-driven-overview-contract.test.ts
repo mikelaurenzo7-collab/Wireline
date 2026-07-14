@@ -84,6 +84,14 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
   });
 
+  it("preserves a multi-turn roleplay without database persistence", () => {
+    expect(studioTest).toMatch(/messages\.slice\(-12\)/);
+    expect(studioTest).toMatch(/history: mode === "test" \? history/);
+    expect(studioTestRoute).toMatch(/history: z/);
+    expect(studioTestRoute).toMatch(/Conversation so far/);
+    expect(studioTestRoute).toMatch(/history\.slice\(-12\)/);
+  });
+
   it("distinguishes browser response testing from real phone voice testing", () => {
     expect(voicePicker).toMatch(/Browser testing checks what the employee says/);
     expect(voicePicker).toMatch(/place a real call to hear the selected voice/);
