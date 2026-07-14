@@ -14,7 +14,8 @@ describe("demand-driven authenticated experience", () => {
 
   it("prioritizes customer demand and outcomes over internal inventory", () => {
     expect(overview).toMatch(/Customer conversations today/);
-    expect(overview).toMatch(/High-intent leads/);
+    expect(overview).toMatch(/Priority leads/);
+    expect(overview).toMatch(/Latest high-intent conversations/);
     expect(overview).toMatch(/Appointments booked/);
     expect(overview).toMatch(/Follow-ups waiting/);
     expect(overview).toMatch(/Customer outcomes/);
@@ -29,6 +30,14 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toMatch(/Google Business Profile/);
     expect(overview).toMatch(/missed-call forwarding/);
     expect(overview).toMatch(/Review follow-ups/);
+  });
+
+  it("does not offer live calling before a line exists", () => {
+    expect(overview).toMatch(/hasLiveLine \? \(/);
+    expect(overview).toMatch(/Start a call/);
+    expect(overview).toMatch(/Test employee/);
+    expect(overview).toMatch(/hasConversationHistory/);
+    expect(overview).toMatch(/No new conversations today\. Your customer line is still ready/);
   });
 
   it("keeps activation inside the current guided workflow", () => {
