@@ -137,6 +137,9 @@ router.use(
         skippedMissingTableCount: skippedMissingTables.length,
       });
 
+      // Account archives contain private customer and conversation data.
+      // Prevent browsers and intermediary caches from retaining the response.
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("Content-Type", "application/json");
       res.setHeader(
         "Content-Disposition",
