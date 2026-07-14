@@ -1,71 +1,77 @@
 # Wireline launch design QA
 
-## Result
+Date: 2026-07-14  
+Baseline: `f1adccd2c6577fd1b09b1729a3a3a5a2b377263d`  
+Final reviewed candidate: `d5099acd1d907c1ed7a3ed5226a6fb7f1a68f54d`
 
-**Passed.** No open P0, P1, or P2 visual, responsive, accessibility, or core-interaction findings remain in the reviewed launch surface.
+## Outcome
 
-## Review target
+The launch candidate passed the final visual, responsive, first-run, interaction, and local release gates. No P0-P2 product defect remained after the final fixes.
 
-- Source commit requested for review: `7719fba771e1e6d4f9383571b546cc8fe5845900`
-- Final reviewed head: `81247568cb189439b9a36f3b8f6ed6289d150387`
-- Exact final preview: `https://wireline-hyuc5yqed-revaluate.vercel.app`
-- Baseline design language: the existing Wireline Letterpress system, typography, spacing, tokens, cards, navigation, and interaction patterns.
+The highest-leverage product change is a deliberately narrow first-run path:
 
-## Coverage
+1. A zero-agent workspace explains the first ten minutes instead of showing an empty operations dashboard.
+2. Fast Start asks for one job and a name, then keeps voice, identity, and phone choices optional.
+3. The post-create guide opens immediately and walks through Review, Number, and Test without requiring a reload.
+4. Users can safely finish without provisioning a number or granting microphone access.
 
-Public pages were captured at 36 routes across nine viewports. Authenticated product pages were captured at 26 routes across the same nine viewports. The changed homepage and pricing page were recaptured on the final UI build at every viewport.
+## Final visual matrix
 
-| Viewport | Dimensions | Class |
-| --- | ---: | --- |
-| Phone small | 360 × 800 | Mobile |
-| Phone standard | 390 × 844 | Mobile |
-| Phone large | 430 × 932 | Mobile |
-| Tablet portrait | 768 × 1024 | Tablet |
-| Tablet large | 834 × 1112 | Tablet |
-| Laptop | 1024 × 768 | Laptop |
-| Desktop | 1280 × 900 | Desktop |
-| Desktop large | 1440 × 1100 | Desktop |
-| Wide desktop | 1920 × 1080 | Wide |
+- 39 public and lifecycle routes.
+- 24 authenticated workspace routes.
+- 15 widths: 360, 390, 430, 639, 640, 767, 768, 834, 1023, 1024, 1280, 1365, 1440, 1536, and 1920 pixels.
+- 945 accepted route/viewport screenshots: 585 public and 360 authenticated.
+- 16 additional focused-state screenshots for onboarding and high-risk interactions.
+- 0 accepted captures with a route failure, unresolved loading state, page-level horizontal overflow, or broken image.
 
-States exercised included anonymous marketing, sign-in and sign-up, authenticated owner workspace, all settings and admin tabs, the mobile More sheet, the Fast Start agent-creation dialog, Studio, phone logs, inbox/SMS, integrations, approvals, and responsive navigation.
+The in-app Browser's `fullPage` mode was rejected as evidence because this application scrolls inside bounded marketing/workspace surfaces and the capture mode produced blank or header-only images. Every accepted final artifact is a settled, true viewport capture; invalid exploratory captures are excluded from the release bundle.
 
-## Focused comparison
+## Verified interaction paths
 
-At 360 × 800, the production baseline wrapped `Wire → Work → Win` into two lines, leaving the first arrow visually disconnected. The final implementation moves the brand spine into a compact, single-line badge and keeps all three words and both arrows horizontally aligned. The final hero also uses the approved `YOUR NEXT AI EMPLOYEE` headline and a balanced two-column proof grid.
+- Fresh email signup redirects to `/studio?create=1`.
+- Fast Start creates a business agent from a one-sentence brief.
+- The activation guide opens immediately after creation without a reload.
+- Review → Number → Test → Ready completes without purchasing a number or requesting microphone access.
+- SMS Inbox empty state routes to phone setup.
+- iCloud connection exposes the email and Apple app-specific-password guidance, then cancels without persisting credentials.
+- Compliance DNC add-number modal keeps submission disabled until valid input exists.
+- Tenant account/audit export returns an authenticated JSON attachment.
+- Phone history empty state explains the next actions.
+- Built-in voice preview completes and customer-facing surfaces show readable voice names rather than opaque provider IDs.
+- Unknown public and authenticated routes render intentional 404 states.
 
-- Before: `outputs/visual-qa-final/production-mobile-brand-line-before.png`
-- Final: `outputs/visual-qa-final/public-final-phone-360-home.png`
-- Side-by-side: `outputs/visual-qa-final/comparison-mobile-brand-before-after.png`
+## Fixes driven by the audit
 
-## High-leverage fixes verified
+- Simplified the zero-agent Overview and Fast Start journey.
+- Added immediate post-create activation handoff.
+- Made fresh-signup redirect scope deterministic.
+- Added public changelog and public 404 treatment.
+- Added Gmail, Outlook, Yahoo, and iCloud mailbox setup surfaces.
+- Reconciled DNC, account-export, phone-history, and voice-preview request paths.
+- Added route-specific authenticated document titles and missing page headings.
+- Rebalanced the Compliance Center desktop grid so DNC controls do not clip.
+- Replaced raw voice identifiers with human-readable or safe fallback labels.
+- Hardened live voice preview cleanup, authorization, proxying, and rate-limit behavior.
+- Reconciled production migration `0087` and removed duplicate Vercel migration execution.
 
-- Prevented the mobile authenticated dock from clipping or escaping the viewport.
-- Removed the native Insights tab scrollbar while preserving horizontal access.
-- Kept long team email addresses inside narrow member cards without covering role badges.
-- Made the homepage brand spine, headline, CTAs, and six proof chips compose cleanly at 360 px.
-- Sharpened founder pricing around a $9 launch point, one subscription across channels, a paid-plan number, and prepaid variable usage without an unsustainable unlimited-use promise.
-- Preserved visible keyboard focus, semantic page entry, labeled controls, and zero automated serious WCAG A/AA findings on the public accessibility suite.
-- Hardened the Company Identity Pack and settings mutations without changing the established product visual language.
+## Release evidence
 
-## Verification evidence
+- `npm.cmd run verify:full`: passed.
+- TypeScript, ESLint, design-system, route-registry, OpenAPI, authz, CSP, runtime-policy, and server-bootstrap checks: passed.
+- Vitest: 115 files, 592 tests passed.
+- Production build and server smoke: passed.
+- `npm audit --audit-level=high --omit=dev`: 0 vulnerabilities.
+- Vercel preview health: operational for voice runtime, voice fallback, and reasoning.
+- Final dogfood account creation and agent activation: passed.
 
-- Public visual matrix: 324 route/viewport captures, with no broken images or document overflow.
-- Final changed-public matrix: 18 captures, with no broken images, alerts, missing headings, or document overflow.
-- Authenticated visual matrix: 234 captures, with no auth walls, shell failures, document overflow, visible layout escape, broken images, dock failures, or alerts.
-- Interaction evidence: mobile More menu and Fast Start create-agent dialog both opened and exposed the expected destinations and controls.
-- Browser runtime console: no errors on the final UI pass.
-- Full release gate: 109 test files and 565 tests passed; build, security, authorization, Stripe catalog, OpenAPI, CSP, design, and runtime-policy gates passed.
-- Browser E2E: 55 passed and 12 credential-gated design-gold snapshots skipped; authenticated visual QA was completed separately against the live preview.
+## Non-blocking launch operations
 
-## History
+- Supabase leaked-password protection remains disabled and should be enabled before broad public signup if the project plan supports it.
+- Supabase is still on a free-plan backup posture; establish production backup/restore ownership before meaningful customer volume.
+- Vercel project settings still display Node 20 while `package.json` correctly selects Node 22 during builds.
+- The live `0087` database state is verified, but the canonical Drizzle migration remains the source of truth because the manually reconciled change is not listed in Supabase's platform migration history.
+- Real carrier provisioning, real mailbox consent completion, and microphone/live-call audio were intentionally not completed with demo-only accounts.
 
-1. Captured the production baseline and reproduced the mobile brand-spine wrap.
-2. Implemented the compact horizontal spine and approved hero/pricing copy.
-3. Captured the local candidate and compared it with the production baseline at the same viewport.
-4. Captured the immutable Vercel preview across the full public and authenticated matrices.
-5. Fixed the remaining authenticated dock, tab-scrollbar, and long-identifier containment issues.
-6. Re-ran the exact-code release gate and live preview QA.
+## Promotion decision
 
-## Final assessment
-
-The launch surface is visually coherent, responsive, accessible, and consistent with the existing Wireline system. The reviewed flows are release-ready at the tested states and dimensions.
+Ready to promote once the final branch SHA, production deployment health, and remote `main` fast-forward are revalidated immediately before push.
