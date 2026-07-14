@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, PhoneCall, Volume2 } from "lucide-react";
+import { Check, Loader2, MessageCircle, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
 import { VAPI_CURATED_VOICES, type VoiceOption } from "../../lib/voice-catalog";
@@ -102,10 +102,10 @@ export default function SimpleVoicePicker({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold tracking-tight">Choose how calls sound</h3>
+          <h3 className="text-base font-semibold tracking-tight">Choose how live calls sound</h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            These voices are built into the phone runtime and do not require an ElevenLabs or xAI
-            account. Select one, then hear it during a test call.
+            These voices run on live phone calls and do not require an ElevenLabs or xAI account.
+            Browser testing checks what the employee says; place a real call to hear the selected voice.
           </p>
         </div>
         <button
@@ -113,8 +113,8 @@ export default function SimpleVoicePicker({
           onClick={onTest}
           className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
         >
-          <PhoneCall className="size-4" aria-hidden="true" />
-          Test call
+          <MessageCircle className="size-4" aria-hidden="true" />
+          Test response
         </button>
       </div>
 
@@ -170,7 +170,7 @@ export default function SimpleVoicePicker({
                     {voice.name}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {selected ? "Selected" : "Use for phone calls"}
+                    {selected ? "Selected for live calls" : "Use for live calls"}
                   </span>
                 </span>
               </button>
