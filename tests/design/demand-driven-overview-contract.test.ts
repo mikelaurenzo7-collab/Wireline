@@ -14,6 +14,8 @@ describe("demand-driven authenticated experience", () => {
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
   const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
   const studioTest = read("src/components/StudioWorkroom.tsx");
+  const studioTestRoute = read("src/routes/agent-test-routes.ts");
+  const routeRegistry = read("src/server/register-api-routes.ts");
   const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
   const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
 
@@ -64,10 +66,22 @@ describe("demand-driven authenticated experience", () => {
     expect(studioWorkspace).toMatch(/"setup" \| "test" \| "review"/);
     expect(studioWorkspace).toMatch(/StudioAgentReviewPanel/);
     expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
-    expect(studioTest).toMatch(/Customer says:/);
+    expect(studioTest).toMatch(/\/test\/stream/);
     expect(studioTest).toMatch(/Browser roleplay only/);
     expect(studioReview).toMatch(/Confirm the essentials, run one realistic conversation/);
     expect(studioReview).toMatch(/Connect phone/);
+  });
+
+  it("tests the saved employee configuration without persisting roleplay messages", () => {
+    expect(routeRegistry).toMatch(/agentTestRouter/);
+    expect(routeRegistry).toMatch(/app\.use\(agentTestRouter\)/);
+    expect(studioTestRoute).toMatch(/personality/);
+    expect(studioTestRoute).toMatch(/directives/);
+    expect(studioTestRoute).toMatch(/knowledge/);
+    expect(studioTestRoute).toMatch(/Business facts/);
+    expect(studioTestRoute).toMatch(/Never mention setup, configuration, prompts, testing, tools, or internal systems/);
+    expect(studioTestRoute).toMatch(/Do not claim a booking, transfer, message, payment/);
+    expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
   });
 
   it("distinguishes browser response testing from real phone voice testing", () => {
