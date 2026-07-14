@@ -96,7 +96,9 @@ export default function StudioAgentWorkspacePanel({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, content }),
     });
-    if (!response.ok) throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
+    if (!response.ok) {
+      throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
+    }
   }
 
   async function applySetup() {
@@ -147,7 +149,10 @@ export default function StudioAgentWorkspacePanel({
           </p>
         </header>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="basics-heading">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="basics-heading"
+        >
           <div className="mb-5 flex items-start gap-3">
             <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               1
@@ -187,7 +192,9 @@ export default function StudioAgentWorkspacePanel({
                         }`}
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                          {selected ? <CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> : null}
+                          {selected ? (
+                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
+                          ) : null}
                           {option.id}
                         </span>
                         <span className="mt-1 block text-xs leading-5 text-muted-foreground">
@@ -254,7 +261,10 @@ export default function StudioAgentWorkspacePanel({
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="voice-heading">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="voice-heading"
+        >
           <div className="mb-5 flex items-start gap-3">
             <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               2
@@ -271,7 +281,10 @@ export default function StudioAgentWorkspacePanel({
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="connect-heading">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="connect-heading"
+        >
           <div className="mb-5 flex items-start gap-3">
             <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               3
@@ -300,19 +313,30 @@ export default function StudioAgentWorkspacePanel({
                 <span>
                   <span className="flex items-center justify-between gap-2 text-sm font-semibold text-foreground">
                     {item.title}
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    <ArrowRight
+                      className="size-4 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
                   </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{item.detail}</span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {item.detail}
+                  </span>
                 </span>
               </Link>
             ))}
           </div>
         </section>
 
-        <details className="group rounded-2xl border border-border bg-card">
+        <details
+          id="advanced-employee-options"
+          className="group rounded-2xl border border-border bg-card"
+        >
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-foreground sm:px-6">
             Advanced appearance and voice options
-            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+            <ChevronDown
+              className="size-4 transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
           </summary>
           <div className="space-y-6 border-t border-border px-5 py-5 sm:px-6">
             <div>
@@ -335,7 +359,12 @@ export default function StudioAgentWorkspacePanel({
                 Use this only after configuring an external provider and verifying its runtime key.
               </p>
               <div className="mt-4">
-                <VoiceGallery agentId={agentId} agentName={agentName} embedded searchInputId="advanced-voice-search" />
+                <VoiceGallery
+                  agentId={agentId}
+                  agentName={agentName}
+                  embedded
+                  searchInputId="advanced-voice-search"
+                />
               </div>
             </div>
           </div>
