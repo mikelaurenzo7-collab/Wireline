@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { Check, ChevronDown, PhoneCall } from "lucide-react";
 
 import { Badge, Button } from "../atoms";
@@ -50,7 +50,7 @@ export default function VoicePickerField({
   const recommended =
     voices.find((voice) => voice.id === RECOMMENDED_VOICE_ID) ?? voices[0] ?? null;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (value.mode !== "auto" || !recommended) return;
     onChange({ mode: "custom", voiceId: recommended.id, provider: "vapi" });
   }, [onChange, recommended, value.mode]);
@@ -141,12 +141,10 @@ function VoiceChoice({
   voice,
   selected,
   onSelect,
-  icon,
 }: {
   voice: VoiceOption;
   selected: boolean;
   onSelect: () => void;
-  icon?: ReactNode;
 }) {
   return (
     <Button
@@ -160,7 +158,7 @@ function VoiceChoice({
           selected ? "bg-primary-foreground/15" : "bg-background"
         }`}
       >
-        {icon ?? (selected ? <Check className="size-3.5" aria-hidden="true" /> : null)}
+        {selected ? <Check className="size-3.5" aria-hidden="true" /> : null}
       </span>
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold">{voice.name}</span>
