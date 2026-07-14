@@ -1,5 +1,5 @@
-import { LayoutDashboard, MessageCircle, Plus, Settings2, Sparkles } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { CheckCircle2, MessageCircle, Plus, Settings2, Sparkles } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button, Skeleton } from "../components/atoms";
@@ -8,11 +8,11 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
-import StudioAgentCanvas from "./StudioAgentCanvas";
+import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 
-type WorkspaceSection = "setup" | "test" | "overview";
+type WorkspaceSection = "setup" | "test" | "review";
 
 const SECTIONS: Array<{
   id: WorkspaceSection;
@@ -20,9 +20,9 @@ const SECTIONS: Array<{
   description: string;
   icon: typeof Settings2;
 }> = [
-  { id: "setup", label: "Set up", description: "Basics, voice, and channels", icon: Settings2 },
-  { id: "test", label: "Test", description: "Try real conversations", icon: MessageCircle },
-  { id: "overview", label: "Overview", description: "Review the full configuration", icon: LayoutDashboard },
+  { id: "setup", label: "Set up", description: "Job, greeting, facts, and voice", icon: Settings2 },
+  { id: "test", label: "Test", description: "Try a customer conversation", icon: MessageCircle },
+  { id: "review", label: "Review", description: "Confirm readiness and go live", icon: CheckCircle2 },
 ];
 
 function StudioLoadingState() {
@@ -32,9 +32,9 @@ function StudioLoadingState() {
       aria-busy="true"
       aria-label="Loading employee workspace"
     >
-      <div className="mx-auto w-full max-w-5xl space-y-4">
+      <div className="mx-auto w-full max-w-4xl space-y-4">
         <Skeleton shape="text" className="h-3 w-20" />
-        <Skeleton shape="text" className="h-8 w-80 max-w-full" />
+        <Skeleton shape="text" className="h-8 w-72 max-w-full" />
         <Skeleton shape="surface" className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]" />
         <PanelSkeleton rows={2} className="pt-1" />
       </div>
@@ -43,7 +43,6 @@ function StudioLoadingState() {
 }
 
 function StudioEmptyState() {
-  const navigate = useNavigate();
   const [brief, setBrief] = useState("");
 
   function createHref() {
@@ -53,43 +52,33 @@ function StudioEmptyState() {
     return `/studio?${params.toString()}`;
   }
 
-  function startCreate() {
-    navigate(createHref());
-  }
-
   return (
     <EmptyState
       fill
       icon={Sparkles}
       title="Create your first AI employee"
-      description="Describe the work once. Wireline guides you through setup, testing, and launch."
+      description="Start with one customer-facing job. Wireline will guide setup, testing, and launch."
       className="wl-composer-dock"
     >
       <div className="mx-auto mt-2 w-full max-w-xl text-left">
-        <label className="sr-only" htmlFor="studio-brief">
+        <label className="mb-2 block text-sm font-semibold text-foreground" htmlFor="studio-brief">
           What should this employee handle?
         </label>
         <textarea
           id="studio-brief"
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              startCreate();
-            }
-          }}
-          className="min-h-[84px] w-full resize-y rounded-xl border border-border bg-card p-4 text-[15px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-          placeholder="Answer calls, book appointments, explain pricing, and follow up by text and email…"
+          className="min-h-[92px] w-full resize-y rounded-xl border border-border bg-card p-4 text-[15px] leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+          placeholder="Answer missed calls, qualify leads, book appointments, and follow up by text…"
         />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <Button asChild>
             <Link to={createHref()}>
               <Plus size={15} aria-hidden="true" />
-              Start guided setup
+              Start setup
             </Link>
           </Button>
-          <span className="text-xs text-muted-foreground">or press Enter</span>
+          <span className="text-xs text-muted-foreground">You can change everything later.</span>
         </div>
       </div>
     </EmptyState>
@@ -97,12 +86,13 @@ function StudioEmptyState() {
 }
 
 function normalizeSection(value: string | null): WorkspaceSection {
-  return value === "test" || value === "overview" ? value : "setup";
+  if (value === "test") return "test";
+  if (value === "review" || value === "overview") return "review";
+  return "setup";
 }
 
 export default function StudioWorkspaceV2() {
   const { loading } = useAgents();
-  const navigate = useNavigate();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
@@ -180,26 +170,10 @@ export default function StudioWorkspaceV2() {
     [active, setParams],
   );
 
-  function editOverviewSection(target: string) {
-    if (!active) return;
-    if (target === "knowledge") {
-      navigate(`/knowledge?agent=${encodeURIComponent(active.id)}`);
-      return;
-    }
-    setSection("setup");
-    if (target === "presence") {
-      window.setTimeout(() => {
-        const advanced = document.getElementById("advanced-employee-options");
-        advanced?.setAttribute("open", "");
-        advanced?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 80);
-    }
-  }
-
-  const testVoiceInChat = useCallback(() => {
+  const startCustomerTest = useCallback(() => {
     setSection("test");
     window.setTimeout(() => {
-      workroomRef.current?.focusComposer("Introduce yourself and handle a sample customer call.");
+      workroomRef.current?.focusComposer("Hi, I’m a customer. Can you explain your services and help me choose the next step?");
     }, 120);
   }, [setSection]);
 
@@ -222,9 +196,9 @@ export default function StudioWorkspaceV2() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5">
-        <div className="mx-auto flex w-full max-w-4xl gap-2" role="tablist" aria-label="Employee workspace">
-          {SECTIONS.map((item) => {
+      <nav className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5" aria-label="Studio steps">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-2" role="tablist" aria-label="Employee setup steps">
+          {SECTIONS.map((item, index) => {
             const selected = section === item.id;
             const Icon = item.icon;
             return (
@@ -234,24 +208,31 @@ export default function StudioWorkspaceV2() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setSection(item.id)}
-                className={`flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border px-2 text-left transition-colors sm:justify-start sm:px-4 ${
+                className={`min-w-0 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                   selected
                     ? "border-primary/35 bg-primary/5 text-foreground"
                     : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <Icon className={`size-4 shrink-0 ${selected ? "text-primary" : ""}`} aria-hidden="true" />
-                <span className="min-w-0">
-                  <span className="block truncate text-xs font-semibold sm:text-sm">{item.label}</span>
-                  <span className="hidden truncate text-[11px] text-muted-foreground md:block">
-                    {item.description}
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
+                      selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {index + 1}
                   </span>
+                  <Icon className={`size-4 shrink-0 ${selected ? "text-primary" : ""}`} aria-hidden="true" />
+                  <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
+                </span>
+                <span className="mt-1 hidden truncate pl-8 text-[11px] text-muted-foreground md:block">
+                  {item.description}
                 </span>
               </button>
             );
           })}
         </div>
-      </div>
+      </nav>
 
       <div className="min-h-0 flex-1 overflow-hidden">
         {section === "setup" ? (
@@ -261,7 +242,7 @@ export default function StudioWorkspaceV2() {
             agentName={active.name}
             agentRole={active.role}
             isBusinessAgent={active.is_business_agent}
-            onTestVoiceInChat={testVoiceInChat}
+            onTestVoiceInChat={startCustomerTest}
             className="h-full border-t-0"
           />
         ) : null}
@@ -274,17 +255,21 @@ export default function StudioWorkspaceV2() {
             initialCommand={params.get("command") || undefined}
             commandNonce={params.get("commandNonce") || undefined}
             onBack={() => setSection("setup")}
-            backLabel="Setup"
+            backLabel="Back to setup"
             layout="split"
+            mode="test"
+            allowOutbound={Boolean(active.phone_number)}
           />
         ) : null}
-        {section === "overview" ? (
-          <StudioAgentCanvas
+        {section === "review" ? (
+          <StudioAgentReviewPanel
             key={active.id}
             agentId={active.id}
             agentName={active.name}
-            isBusinessAgent={active.is_business_agent}
-            onEditSection={editOverviewSection}
+            agentRole={active.role}
+            phoneNumber={active.phone_number}
+            onEdit={() => setSection("setup")}
+            onTest={startCustomerTest}
             className="h-full"
           />
         ) : null}
