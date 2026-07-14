@@ -11,6 +11,9 @@ function read(path: string) {
 describe("demand-driven authenticated experience", () => {
   const overview = read("src/pages/OverviewPage.tsx");
   const activation = read("src/components/ActivationChecklist.tsx");
+  const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
+  const studioTest = read("src/components/StudioWorkroom.tsx");
+  const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
 
   it("prioritizes customer demand and outcomes over internal inventory", () => {
     expect(overview).toMatch(/Customer conversations today/);
@@ -52,5 +55,15 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).toMatch(/\/studio\?section=test/);
     expect(activation).not.toMatch(/knowledge\?tab=simulator/);
     expect(activation).not.toMatch(/Voice previewed/);
+  });
+
+  it("keeps Studio on a simple setup, test, review loop", () => {
+    expect(studioWorkspace).toMatch(/"setup" \| "test" \| "review"/);
+    expect(studioWorkspace).toMatch(/StudioAgentReviewPanel/);
+    expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
+    expect(studioTest).toMatch(/Customer says:/);
+    expect(studioTest).toMatch(/Browser roleplay only/);
+    expect(studioReview).toMatch(/Confirm the essentials, run one realistic conversation/);
+    expect(studioReview).toMatch(/Connect phone/);
   });
 });
