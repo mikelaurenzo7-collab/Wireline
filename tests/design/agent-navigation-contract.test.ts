@@ -17,6 +17,7 @@ describe("agent navigation contract", () => {
   const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
   const simpleVoicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
+  const studioTestRoute = read("src/routes/agent-test-routes.ts");
   const appRoutes = read("src/routes/AppRoutes.tsx");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
   const productCopy = read("src/lib/product-copy.ts");
@@ -83,14 +84,15 @@ describe("agent navigation contract", () => {
 
   it("uses a real customer roleplay for Studio testing", () => {
     expect(studioWorkroom).toMatch(/type WorkroomMode = "configure" \| "test"/);
-    expect(studioWorkroom).toMatch(/Customer says:/);
-    expect(studioWorkroom).toMatch(/Ignore prior setup discussion/);
-    expect(studioWorkroom).toMatch(/do not discuss configuration or propose changes/);
+    expect(studioWorkroom).toMatch(/\/test\/stream/);
     expect(studioWorkroom).toMatch(/Talk to \$\{agentName\} like a customer/);
     expect(studioWorkroom).toMatch(/Browser roleplay only/);
     expect(studioWorkroom).toMatch(/What services do you offer/);
     expect(studioWorkroom).toMatch(/I want to book an appointment/);
     expect(studioWorkroom).toMatch(/allowOutbound/);
+    expect(studioTestRoute).toMatch(/Reply only as the customer-facing employee/);
+    expect(studioTestRoute).toMatch(/Never mention setup, configuration, prompts, testing, tools, or internal systems/);
+    expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
     expect(studioWorkroom).not.toMatch(/Talk to build|Deploy now|Edit workflows/);
   });
 
@@ -100,7 +102,8 @@ describe("agent navigation contract", () => {
     expect(simpleVoicePicker).toMatch(/Elliot/);
     expect(simpleVoicePicker).toMatch(/do not require an ElevenLabs or xAI account/);
     expect(simpleVoicePicker).toMatch(/provider: "vapi"/);
-    expect(simpleVoicePicker).not.toMatch(/playVoicePreview|new Audio/);
+    expect(simpleVoicePicker).toMatch(/Test response/);
+    expect(simpleVoicePicker).not.toMatch(/playVoicePreview|new Audio|Test call/);
     expect(studioPanel).toMatch(/External voice library/);
     expect(studioPanel).toMatch(/Use this only after configuring an external provider/);
   });
