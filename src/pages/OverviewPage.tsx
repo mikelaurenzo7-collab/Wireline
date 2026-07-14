@@ -7,6 +7,7 @@ import {
   Flame,
   ListTodo,
   Phone,
+  Play,
   PlugZap,
   Sparkles,
 } from "lucide-react";
@@ -66,9 +67,9 @@ function metricRows(
       icon: Phone,
     },
     {
-      label: "High-intent leads",
+      label: "Priority leads",
       value: String(hotLeadsCount),
-      detail: hotLeadsCount > 0 ? "Priority conversations to review" : "No priority leads yet",
+      detail: hotLeadsCount > 0 ? "Latest high-intent conversations" : "No priority leads yet",
       tone: hotLeadsCount > 0 ? ("primary" as const) : ("neutral" as const),
       href: "/insights",
       icon: Flame,
@@ -76,7 +77,7 @@ function metricRows(
     {
       label: "Appointments booked",
       value: String(totalAppointments),
-      detail: totalAppointments > 0 ? "Captured across conversations" : "Connect a calendar to book",
+      detail: totalAppointments > 0 ? "Total appointments on record" : "Connect a calendar to book",
       tone: totalAppointments > 0 ? ("wire" as const) : ("neutral" as const),
       href: totalAppointments > 0 ? "/insights" : "/connections",
       icon: CalendarCheck2,
@@ -211,6 +212,7 @@ function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
 
 function DemandReadinessCard({
   hasLiveLine,
+  hasConversationHistory,
   callsCount,
   pendingFollowUps,
   connectionsCount,
@@ -219,6 +221,7 @@ function DemandReadinessCard({
   testHref,
 }: {
   hasLiveLine: boolean;
+  hasConversationHistory: boolean;
   callsCount: number;
   pendingFollowUps: number;
   connectionsCount: number;
@@ -237,7 +240,7 @@ function DemandReadinessCard({
         secondaryHref: testHref,
         secondaryLabel: "Test the employee first",
       }
-    : callsCount === 0
+    : !hasConversationHistory
       ? {
           eyebrow: "Line ready",
           title: "Your line is live. Put it where customers already call.",
@@ -260,8 +263,11 @@ function DemandReadinessCard({
             secondaryLabel: "Open conversations",
           }
         : {
-            eyebrow: "Customer demand flowing",
-            title: "Wireline is handling conversations and recording what happened.",
+            eyebrow: callsCount > 0 ? "Customer demand today" : "Line ready",
+            title:
+              callsCount > 0
+                ? "Wireline is handling conversations and recording what happened."
+                : "No new conversations today. Your customer line is still ready.",
             detail:
               "Use customer outcomes—not configuration volume—to decide what to train, connect, or automate next.",
             primaryHref: "/phone?tab=logs",
@@ -486,6 +492,7 @@ export default function OverviewPage() {
   const isFirstRun = !loading && !degraded && agents.length === 0;
   const primaryAgent = agents[0];
   const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
+  const hasConversationHistory = recentCalls.length > 0;
   const primaryStudioHref = primaryAgent
     ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=setup`
     : "/studio?create=1";
@@ -522,15 +529,24 @@ export default function OverviewPage() {
                       Manage AI employee
                     </Link>
                   </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="shrink-0 justify-center sm:min-w-[154px]"
-                    onClick={() => setShowOutboundDial(true)}
-                  >
-                    <Phone aria-hidden="true" size={15} />
-                    Start a call
-                  </Button>
+                  {hasLiveLine ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="shrink-0 justify-center sm:min-w-[154px]"
+                      onClick={() => setShowOutboundDial(true)}
+                    >
+                      <Phone aria-hidden="true" size={15} />
+                      Start a call
+                    </Button>
+                  ) : (
+                    <Button asChild variant="secondary" className="shrink-0 justify-center sm:min-w-[154px]">
+                      <Link to={primaryTestHref}>
+                        <Play aria-hidden="true" size={15} />
+                        Test employee
+                      </Link>
+                    </Button>
+                  )}
                 </>
               ) : null}
             </div>
@@ -547,6 +563,7 @@ export default function OverviewPage() {
 
             <DemandReadinessCard
               hasLiveLine={hasLiveLine}
+              hasConversationHistory={hasConversationHistory}
               callsCount={callsCount}
               pendingFollowUps={pendingFollowUps}
               connectionsCount={connectionsCount}
