@@ -101,7 +101,10 @@ export default function VoicePickerField({
       )}
 
       <details className="group rounded-xl border border-border bg-background">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-semibold text-foreground">
+        <summary
+          id="voice-picker-details-toggle"
+          className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-semibold text-foreground"
+        >
           Choose another built-in voice
           <ChevronDown
             className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
