@@ -4,6 +4,7 @@ import { AppError } from "../lib/api-error";
 import { log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
+  copyTwilioSettingsRecord,
   normalizeTwilioMessagingServiceSid,
   normalizeTwilioPhoneSetting,
 } from "../lib/twilio-settings";
@@ -72,10 +73,13 @@ router.use(
       return;
     }
 
-    const body =
-      req.body && typeof req.body === "object" && !Array.isArray(req.body)
-        ? ({ ...req.body } as Record<string, unknown>)
-        : {};
+    const body = copyTwilioSettingsRecord(req.body);
+    if (!body) {
+      // Preserve malformed bodies so the canonical SettingsSchema can return
+      // the same validation error it did before this guard was introduced.
+      next();
+      return;
+    }
 
     try {
       for (const setting of PHONE_SETTINGS) {
