@@ -3,6 +3,7 @@ import authRouter from "../routes/auth-routes";
 import authOAuthRouter from "../routes/auth-oauth-routes";
 import oauthRouter from "../routes/oauth";
 import agentRouter from "../routes/agent-routes-v2";
+import agentTestRouter from "../routes/agent-test-routes";
 import agentWorkspaceRouter from "../routes/agent-workspace-routes";
 import qaRouter from "../routes/qa-routes";
 import qaV2Router from "../routes/qa-routes-v2";
@@ -80,6 +81,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(authRouter);
   app.use(oauthRouter);
   app.use(agentRouter);
+  app.use(agentTestRouter);
   app.use(agentWorkspaceRouter);
   app.use(browserHandoffRouter);
   app.use("/api/qa", qaRouter);
