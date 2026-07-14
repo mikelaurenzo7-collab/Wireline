@@ -27,6 +27,7 @@ export const ACCOUNT_EXPORT_REDACTED_FIELDS = [
   "refresh_token",
   "secret",
   "secret_encrypted",
+  "token",
   "token_hash",
   "vapi_private_key",
 ] as const;
@@ -51,6 +52,7 @@ export function isSensitiveAccountExportField(field: string): boolean {
     "passwordhash",
     "privatekey",
     "refreshtoken",
+    "token",
     "tokenhash",
   ].some((suffix) => normalized.endsWith(suffix));
 }
