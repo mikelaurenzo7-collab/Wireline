@@ -245,6 +245,10 @@ const StudioWorkroom = forwardRef<
   const submit = useCallback(() => {
     const text = draft.trim();
     if (!text || sending) return;
+    const history = messages.slice(-12).map((message) => ({
+      role: message.role === "Account Holder" ? "customer" : "employee",
+      content: message.content,
+    }));
     setMessages((current) => [
       ...current,
       {
@@ -257,8 +261,8 @@ const StudioWorkroom = forwardRef<
     setDraft("");
     setError(null);
     setSending(true);
-    void streamSend({ content: text });
-  }, [draft, sending, streamSend]);
+    void streamSend({ content: text, history: mode === "test" ? history : undefined });
+  }, [draft, messages, mode, sending, streamSend]);
 
   const clearConversation = useCallback(async () => {
     if (clearing) return;
