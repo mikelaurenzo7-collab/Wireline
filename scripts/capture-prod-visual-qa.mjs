@@ -578,7 +578,18 @@ async function createDemoAgent(page) {
   const nameInput = dialog.getByLabel(/(?:AI employee|Agent) name/i);
   await nameInput.fill("Visual QA Front Desk");
   await dialog.getByRole("button", { name: "Continue", exact: true }).click();
-  await dialog.getByRole("button", { name: /^Create (?:AI employee|agent)$/i }).click();
+  const createButton = dialog.getByRole("button", {
+    name: /^Create (?:AI employee|agent)$/i,
+  });
+  // The create action intentionally disables and then removes this button while
+  // the route changes. Avoid coupling evidence capture to that transient DOM
+  // lifetime; the URL + discovered agent below are the authoritative outcome.
+  await createButton.click({ noWaitAfter: true }).catch(async (error) => {
+    const current = new URL(page.url());
+    const creationStarted =
+      current.pathname === "/studio" || (await createButton.isDisabled().catch(() => false));
+    if (!creationStarted) throw error;
+  });
   await page.waitForURL(
     (url) => url.pathname === "/studio" && Boolean(url.searchParams.get("agent")),
     {

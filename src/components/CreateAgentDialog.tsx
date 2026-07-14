@@ -420,8 +420,7 @@ export default function CreateAgentDialog({
               aria-label={`Fast Start step ${step} of 2`}
             >
               <div
-                className="h-full rounded-full bg-primary transition-all duration-300"
-                style={{ width: step === 1 ? "40%" : "80%" }}
+                className={`h-full rounded-full bg-primary transition-all duration-300 ${step === 1 ? "w-2/5" : "w-4/5"}`}
               />
             </div>
           </div>

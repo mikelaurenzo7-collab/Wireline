@@ -91,6 +91,8 @@ describe("production visual QA harness", () => {
     expect(capture).toContain('getByRole("dialog", { name: /Fast Start/i })');
     expect(capture).toContain("/(?:AI employee|Agent) name/i");
     expect(capture).toContain("/^Create (?:AI employee|agent)$/i");
+    expect(capture).toContain("click({ noWaitAfter: true })");
+    expect(capture).toContain('current.pathname === "/studio"');
     expect(capture).toContain('failure?.errorText?.includes("ERR_ABORTED")');
     expect(capture).toContain("fullPage: false");
     expect(capture).not.toContain("fullPage: true");

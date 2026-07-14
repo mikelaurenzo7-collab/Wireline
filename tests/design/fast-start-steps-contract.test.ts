@@ -20,4 +20,9 @@ describe("Fast Start step flow contract", () => {
     expect(createDialog).toMatch(/Create now,\s*or personalize any detail below\./);
     expect(createDialog).not.toMatch(/Step 1 · Brief, voice, and face/);
   });
+
+  it("keeps the progress indicator compatible with the production CSP", () => {
+    expect(createDialog).toContain('step === 1 ? "w-2/5" : "w-4/5"');
+    expect(createDialog).not.toMatch(/style=\{\{\s*width:\s*step === 1/);
+  });
 });
