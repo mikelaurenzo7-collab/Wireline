@@ -23,13 +23,18 @@ describe("Fast Start native voice contract", () => {
   it("keeps external provider complexity out of Fast Start", () => {
     expect(voicePicker).not.toMatch(/authFetch\("\/api\/voices"\)/);
     expect(voicePicker).not.toMatch(/playVoicePreview/);
-    expect(voicePicker).toMatch(/External voice libraries and video[\s\S]*optional advanced settings in Studio/);
+    expect(voicePicker).toMatch(
+      /External voice libraries and video[\s\S]*optional advanced settings in Studio/,
+    );
   });
 
-  it("persists the resolved voice through the existing creation flow", () => {
-    expect(createDialog).toMatch(/voiceChoice\.mode === "custom"/);
-    expect(createDialog).toMatch(/\/agent-config\/\$\{encodeURIComponent\(created\.id\)\}\/voice/);
-    expect(createDialog).toMatch(/voiceId: voiceChoice\.voiceId/);
-    expect(createDialog).toMatch(/provider: voiceChoice\.provider/);
+  it("preserves Fast Start keyboard focus and existing voice persistence", () => {
+    expect(voicePicker).toMatch(/id="voice-picker-details-toggle"/);
+    expect(createDialog).toMatch(/voice\.mode === "custom"/);
+    expect(createDialog).toMatch(
+      /\/agent-config\/\$\{encodeURIComponent\(body\.id\)\}\/voice/,
+    );
+    expect(createDialog).toMatch(/voiceId: voice\.voiceId/);
+    expect(createDialog).toMatch(/provider: voice\.provider/);
   });
 });
