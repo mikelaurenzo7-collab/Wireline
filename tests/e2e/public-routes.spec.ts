@@ -15,6 +15,7 @@ const PUBLIC_ROUTES = [
   "/compare",
   "/about",
   "/blog",
+  "/changelog",
   "/security",
   "/trust",
   "/status",
@@ -37,7 +38,10 @@ const PUBLIC_ROUTES = [
   "/for/insurance",
   "/for/restaurants",
   "/for/sales",
-  "/solutions/personal",
+  "/solutions/support",
+  "/solutions/sales",
+  "/404",
+  "/not-found",
 ];
 
 for (const route of PUBLIC_ROUTES) {
@@ -72,10 +76,14 @@ test("security headers are present", async ({ request }) => {
   expect(headers["x-content-type-options"]).toBe("nosniff");
 });
 
-test("unknown public path falls back to the SPA shell", async ({ page }) => {
+test("unknown anonymous path renders the public 404 instead of sign-in", async ({ page }) => {
   const response = await page.goto("/this-route-does-not-exist", {
     waitUntil: "domcontentloaded",
   });
   expect(response!.status()).toBeLessThan(400);
-  await expect(page.locator("h1, h2").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page).toHaveURL(/\/this-route-does-not-exist$/);
+  await expect(page.getByRole("heading", { name: /Welcome back/i })).toHaveCount(0);
 });

@@ -70,6 +70,10 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(normalizeTwilioPhoneSetting(" whatsapp:+14155550123 ", "WhatsApp sender")).toBe(
       "+14155550123",
     );
+    expect(normalizeTwilioPhoneSetting("+1 415 555 0123", "SMS sender")).toBe("+14155550123");
+    expect(normalizeTwilioPhoneSetting("+1 (415) 555-0123", "Manager alert number")).toBe(
+      "+14155550123",
+    );
     expect(normalizeTwilioPhoneSetting("   ", "Manager alert number")).toBeNull();
     expect(() =>
       normalizeTwilioPhoneSetting("+14155550123</Dial><Say>injected</Say>", "Fallback number"),
@@ -78,9 +82,7 @@ describe("strict prelaunch account export and Twilio contracts", () => {
   });
 
   it("validates Twilio Messaging Service identifiers", () => {
-    expect(normalizeTwilioMessagingServiceSid(`MG${"a".repeat(32)}`)).toBe(
-      `MG${"a".repeat(32)}`,
-    );
+    expect(normalizeTwilioMessagingServiceSid(`MG${"a".repeat(32)}`)).toBe(`MG${"a".repeat(32)}`);
     expect(() => normalizeTwilioMessagingServiceSid("SM123")).toThrow(/must start with MG/);
   });
 
@@ -104,7 +106,16 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(route).toContain('router.use(\n  "/api/account/export"');
     expect(route).not.toContain('router.post(\n  "/api/account/export"');
     expect(route).not.toContain("jobsRateLimit");
-    expect(route).toContain("source_registry: \"ACCOUNT_DELETION_TARGETS\"");
+    expect(route).toContain('source_registry: "ACCOUNT_DELETION_TARGETS"');
     expect(route).toContain("sql.join(predicates, sql` OR `)");
+  });
+
+  it("keeps the historical training archive in tenant-scoped exports", () => {
+    const migration = read("drizzle/migrations/0087_launch_integrity_reconciliation.sql");
+    expect(migration).toContain("wireline_training_backup_20260609");
+    expect(migration).toContain("GRANT SELECT");
+    expect(migration).toContain("TO wireline_server");
+    expect(migration).toContain("tenant_export_select");
+    expect(migration).toContain("wireline_current_user_id()");
   });
 });

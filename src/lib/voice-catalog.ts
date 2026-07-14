@@ -23,17 +23,30 @@ export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
  */
 export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
   { id: "Elliot", name: "Elliot — Steady & Professional", provider: "vapi" },
-  { id: "Kylie", name: "Kylie — Bright & Friendly", provider: "vapi" },
-  { id: "Lily", name: "Lily — Soft & Clear", provider: "vapi" },
   { id: "Savannah", name: "Savannah — Warm & Confident", provider: "vapi" },
-  { id: "Rohan", name: "Rohan — Calm & Assured", provider: "vapi" },
-  { id: "Hana", name: "Hana — Crisp & Polished", provider: "vapi" },
-  { id: "Neha", name: "Neha — Upbeat & Helpful", provider: "vapi" },
-  { id: "Cole", name: "Cole — Direct & Grounded", provider: "vapi" },
+  { id: "Rohan", name: "Rohan — Bright & Energetic", provider: "vapi" },
+  { id: "Emma", name: "Emma — Warm & Conversational", provider: "vapi" },
+  { id: "Clara", name: "Clara — Warm & Professional", provider: "vapi" },
+  { id: "Nico", name: "Nico — Casual & Natural", provider: "vapi" },
+  { id: "Kai", name: "Kai — Friendly & Relaxed", provider: "vapi" },
+  { id: "Sagar", name: "Sagar — Steady & Professional", provider: "vapi" },
+  { id: "Godfrey", name: "Godfrey — Young & Energetic", provider: "vapi" },
+  { id: "Neil", name: "Neil — Clear & Professional", provider: "vapi" },
+  { id: "Layla", name: "Layla — Warm & Cheerful", provider: "vapi" },
+  { id: "Sid", name: "Sid — Smooth & Deep", provider: "vapi" },
+  { id: "Naina", name: "Naina — Calm & Professional", provider: "vapi" },
 ] as const;
 
 /** Default PSTN voice when presenter lip-sync is the Studio voice. */
 export const DEFAULT_PRESENTER_PHONE_VOICE = VAPI_CURATED_VOICES[0];
+
+const VAPI_V2_VOICE_IDS = new Set(
+  VAPI_CURATED_VOICES.filter((voice) => voice.id !== "Rohan").map((voice) => voice.id),
+);
+
+export function vapiVoiceVersion(voiceId: string | null | undefined): 2 | undefined {
+  return voiceId && VAPI_V2_VOICE_IDS.has(voiceId) ? 2 : undefined;
+}
 
 export function defaultPresenterPhoneVoicePayload(): {
   phoneVoiceId: string;
@@ -129,25 +142,41 @@ export function voiceRoutingHint(provider: VoiceProvider): string | null {
 }
 
 /** Resolve the server preview URL for any voice option. */
-export function voicePreviewUrl(voice: VoiceOption): string {
-  if (voice.preview_url) return voice.preview_url;
+export function voicePreviewUrl(voice: VoiceOption): string | null {
   if (voice.provider === "xai") {
     return `/api/voices/curated/preview?provider=xai&voiceId=${encodeURIComponent(voice.id)}`;
   }
   if (voice.provider === "vapi") {
-    return `/api/voices/curated/preview?provider=vapi&voiceId=${encodeURIComponent(voice.id)}`;
+    return null;
   }
   if (voice.provider === "presenter") {
     return `/api/voices/presenter/${encodeURIComponent(voice.id)}/preview`;
+  }
+  if (voice.owned_by_user) {
+    return `/api/voices/${encodeURIComponent(voice.id)}/owned-preview`;
   }
   return `/api/voices/${encodeURIComponent(voice.id)}/preview`;
 }
 
 /** Play a short voice sample in the browser via server-hosted audio. */
-export function playVoicePreview(voice: VoiceOption, onEnd: () => void): void {
+export function canPreviewVoice(voice: VoiceOption): boolean {
+  return voicePreviewUrl(voice) !== null;
+}
+
+/** Play an exact sample; unavailable providers are intentionally not substituted. */
+export function playVoicePreview(
+  voice: VoiceOption,
+  onEnd: () => void,
+  onError: () => void = onEnd,
+): HTMLAudioElement | null {
   const url = voicePreviewUrl(voice);
+  if (!url) {
+    onError();
+    return null;
+  }
   const audio = new Audio(url);
   audio.onended = onEnd;
-  audio.onerror = onEnd;
-  void audio.play().catch(onEnd);
+  audio.onerror = onError;
+  void audio.play().catch(onError);
+  return audio;
 }

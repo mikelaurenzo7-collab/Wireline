@@ -25,15 +25,18 @@ export function normalizeTwilioPhoneSetting(
 
   const normalized = value.trim().replace(/^whatsapp:\s*/i, "");
   if (!normalized) return null;
-  if (!E164_PHONE_PATTERN.test(normalized)) {
+
+  // Accept the visual separators people naturally paste from carrier tools,
+  // while storage and provider calls always receive strict E.164. Deliberately
+  // remove only separators; letters, markup, and every other character fail.
+  const compact = normalized.replace(/[\s().-]/g, "");
+  if (!E164_PHONE_PATTERN.test(compact)) {
     throw new TypeError(`${fieldLabel} must be an E.164 number, for example +14155550123.`);
   }
-  return normalized;
+  return compact;
 }
 
-export function normalizeTwilioMessagingServiceSid(
-  value: unknown,
-): string | null | undefined {
+export function normalizeTwilioMessagingServiceSid(value: unknown): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null) return null;
   if (typeof value !== "string") throw new TypeError("Twilio Messaging Service SID must be text.");
@@ -41,7 +44,9 @@ export function normalizeTwilioMessagingServiceSid(
   const normalized = value.trim();
   if (!normalized) return null;
   if (!TWILIO_MESSAGING_SERVICE_PATTERN.test(normalized)) {
-    throw new TypeError("Twilio Messaging Service SID must start with MG and contain 32 hex characters.");
+    throw new TypeError(
+      "Twilio Messaging Service SID must start with MG and contain 32 hex characters.",
+    );
   }
   return normalized;
 }

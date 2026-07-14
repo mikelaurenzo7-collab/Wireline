@@ -53,14 +53,16 @@ export default function PostCreateActivationWizard({
 }: PostCreateActivationWizardProps) {
   const [step, setStepState] = useState<WizardStep>(() => {
     const stored = readPostCreateWizardStep();
+    if (stored === "channels") return "wire";
     return isWizardStep(stored) ? stored : "train";
   });
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [loadingPhone, setLoadingPhone] = useState(true);
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
+  const [testStarted, setTestStarted] = useState(false);
 
-  const stepOrder: WizardStep[] = ["train", "channels", "wire", "test", "complete"];
+  const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"];
   const stepIndex = stepOrder.indexOf(step);
 
   const setStep = useCallback(
@@ -154,11 +156,6 @@ export default function PostCreateActivationWizard({
   }
 
   function finish() {
-    emitProductEventOnce({
-      event: "test_call_completed",
-      agentId: payload.agentId,
-      metadata: { source: "wizard" },
-    });
     setStep("complete");
   }
 
@@ -235,7 +232,7 @@ export default function PostCreateActivationWizard({
         </header>
 
         <div className="flex gap-2 border-b border-border px-5 py-3 sm:px-6">
-          {(["train", "channels", "wire", "test"] as const).map((id, index) => {
+          {(["train", "wire", "test"] as const).map((id, index) => {
             const active = step === id;
             const done = stepIndex > index || step === "complete";
             const labels = POST_CREATE_WIZARD_COPY.steps;
@@ -296,7 +293,7 @@ export default function PostCreateActivationWizard({
                       agentId: payload.agentId,
                       metadata: { source: "wizard_train_step" },
                     });
-                    setStep("channels");
+                    setStep("wire");
                   }}
                 >
                   {POST_CREATE_WIZARD_COPY.steps.train.secondary}
@@ -450,13 +447,14 @@ export default function PostCreateActivationWizard({
               <RoleplaySandbox
                 agentId={payload.agentId}
                 agentName={payload.agentName}
-                onTestStarted={() =>
+                onTestStarted={() => {
+                  setTestStarted(true);
                   emitProductEventOnce({
                     event: "first_test_call_started",
                     agentId: payload.agentId,
                     metadata: { channel: "roleplay" },
-                  })
-                }
+                  });
+                }}
               />
               {hasLine && phoneNumber ? (
                 <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
@@ -469,6 +467,7 @@ export default function PostCreateActivationWizard({
                   <a
                     href={formatTel(phoneNumber)}
                     onClick={() => {
+                      setTestStarted(true);
                       emitProductEventOnce({
                         event: "first_test_call_started",
                         agentId: payload.agentId,
@@ -516,7 +515,7 @@ export default function PostCreateActivationWizard({
           ) : null}
           {step === "test" ? (
             <Button type="button" size="sm" onClick={finish}>
-              {POST_CREATE_WIZARD_COPY.steps.test.primary}
+              {testStarted ? POST_CREATE_WIZARD_COPY.steps.test.primary : "Finish without a test"}
             </Button>
           ) : null}
           {step === "complete" ? (

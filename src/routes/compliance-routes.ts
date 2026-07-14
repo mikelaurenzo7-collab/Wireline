@@ -34,7 +34,7 @@ interface DncEntry {
 }
 
 // List DNC entries
-router.get("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/api/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = await drizzle
       .select({
@@ -69,7 +69,7 @@ router.get("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Resp
 });
 
 // Add one or more numbers to DNC list
-router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/api/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { entries } = req.body as { entries: Array<DncEntry> };
     if (!entries || entries.length === 0) {
@@ -135,32 +135,36 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
 });
 
 // Remove a number from DNC list
-router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const removed = await drizzle
-      .delete(schema.dncList)
-      .where(and(eq(schema.dncList.id, req.params.id), eq(schema.dncList.userId, req.user.id)))
-      .returning({ id: schema.dncList.id });
+router.delete(
+  "/api/dnc/:id",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const removed = await drizzle
+        .delete(schema.dncList)
+        .where(and(eq(schema.dncList.id, req.params.id), eq(schema.dncList.userId, req.user.id)))
+        .returning({ id: schema.dncList.id });
 
-    if (!removed.length) {
-      throw AppError.fromHttpStatus(404, "DNC entry not found.");
+      if (!removed.length) {
+        throw AppError.fromHttpStatus(404, "DNC entry not found.");
+      }
+
+      void auditLogger
+        .logDnc("removed", {
+          userId: req.user.id,
+          count: 1,
+          ip: req.ip,
+          metadata: { dnc_id: req.params.id },
+        })
+        .catch((err) => log.warn("audit logDnc(removed) failed", { error: getErrorMessage(err) }));
+      res.json({ success: true });
+    } catch (e: any) {
+      if (e instanceof AppError) throw e; // preserve the 404 not-found above
+      log.error("DNC delete failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Failed to remove DNC entry.");
     }
-
-    void auditLogger
-      .logDnc("removed", {
-        userId: req.user.id,
-        count: 1,
-        ip: req.ip,
-        metadata: { dnc_id: req.params.id },
-      })
-      .catch((err) => log.warn("audit logDnc(removed) failed", { error: getErrorMessage(err) }));
-    res.json({ success: true });
-  } catch (e: any) {
-    if (e instanceof AppError) throw e; // preserve the 404 not-found above
-    log.error("DNC delete failed", { error: getErrorMessage(e) });
-    throw AppError.fromHttpStatus(500, "Failed to remove DNC entry.");
-  }
-});
+  },
+);
 
 // ==========================================
 // TCPA CONSENT CHECK
@@ -172,7 +176,7 @@ router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, re
  * Internally checks wireline_dnc for the calling user's DNC list.
  */
 router.get(
-  "/tcpa/consent-check",
+  "/api/tcpa/consent-check",
   authenticateUser,
   tcpaRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {

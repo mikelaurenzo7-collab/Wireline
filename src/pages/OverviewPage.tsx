@@ -110,6 +110,97 @@ function AgentLoadingRows() {
   );
 }
 
+function FirstRunLaunchpad() {
+  const steps = [
+    {
+      title: "Create your agent",
+      detail: "Give it one job and a name. The reliable defaults are already selected.",
+      icon: Bot,
+    },
+    {
+      title: "Connect a number",
+      detail: "When you are ready for live calls, claim the number included with a paid plan.",
+      icon: Phone,
+    },
+    {
+      title: "Make one real call",
+      detail: "Roleplay in the browser first, then call the line and review the logged outcome.",
+      icon: Sparkles,
+    },
+  ];
+
+  return (
+    <section
+      className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-7"
+      aria-labelledby="first-run-title"
+    >
+      <div className="grid gap-7 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
+        <div>
+          <p className="wl-eyebrow wl-eyebrow--primary">First 10 minutes</p>
+          <h2
+            id="first-run-title"
+            className="mt-2 text-xl font-semibold text-foreground sm:text-2xl"
+          >
+            One clear path to your first live call.
+          </h2>
+          <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
+            Start with one agent. Training, extra channels, and advanced settings are optional until
+            the first conversation proves what you need.
+          </p>
+          <Button asChild className="mt-5 w-full justify-center sm:w-auto">
+            <Link to="/studio?create=1">
+              Create your first agent
+              <ArrowRight size={15} aria-hidden="true" />
+            </Link>
+          </Button>
+          <p className="mt-3 text-xs text-muted-foreground">
+            No integrations required to create or browser-test it.
+          </p>
+        </div>
+
+        <ol className="grid gap-2" aria-label="First-run path">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <li
+                key={step.title}
+                className={`flex items-start gap-3 rounded-[var(--wireline-radius-md)] border px-4 py-3 ${
+                  index === 0 ? "border-primary/35 bg-primary/5" : "border-border bg-card"
+                }`}
+              >
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[10px] font-semibold text-muted-foreground">
+                  {index + 1}
+                </span>
+                <Icon className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">{step.title}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                    {step.detail}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
+  return (
+    <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
+      <StatusNotice tone="warning" title="Your workspace is reconnecting">
+        Wireline could not verify your agent roster, so no empty-state claims or create actions are
+        shown yet. Your existing agents and data are unchanged.
+      </StatusNotice>
+      <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
+        Retry workspace
+      </Button>
+    </section>
+  );
+}
+
 function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
   const active = !!agent.phone_number;
   const enc = encodeURIComponent(agent.id);
@@ -195,7 +286,7 @@ function formatCallMeta(createdAt: string, durationSeconds?: number | null) {
 
 export default function OverviewPage() {
   const { user } = useAuth();
-  const { agents, loading, degraded } = useAgents();
+  const { agents, loading, degraded, refresh } = useAgents();
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
   const [callsCount, setCallsCount] = useState<number>(0);
@@ -290,6 +381,10 @@ export default function OverviewPage() {
   const personalAgents = agents.filter((agent) => !agent.is_business_agent);
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
   const hasAgents = !loading && agents.length > 0;
+  // An empty list during a degraded fetch is not proof that this is a new
+  // workspace. Keep the recovery notice visible instead of prompting an
+  // existing customer to create a duplicate "first" agent.
+  const isFirstRun = !loading && !degraded && agents.length === 0;
   const primaryAgent = agents[0];
   const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
   const primaryStudioHref = primaryAgent
@@ -306,7 +401,9 @@ export default function OverviewPage() {
           <div className="mt-3 flex flex-col items-center gap-5">
             <div className="max-w-prose">
               <h1 className="wl-display-2 text-balance">
-                {dayGreeting()}, {workspaceFirstName(user?.full_name, user?.email)}.
+                {isFirstRun
+                  ? "Let's build your first AI employee."
+                  : `${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
               </h1>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -328,183 +425,194 @@ export default function OverviewPage() {
                     New call
                   </Button>
                 </>
-              ) : (
-                <Button asChild className="shrink-0 justify-center sm:min-w-[180px]">
-                  <Link to="/studio?create=1">
-                    <Sparkles aria-hidden="true" size={15} />
-                    Wire your first agent
-                  </Link>
-                </Button>
-              )}
+              ) : null}
             </div>
           </div>
         </section>
 
-        <ActivationChecklist className="mb-2" />
+        {isFirstRun ? (
+          <FirstRunLaunchpad />
+        ) : degraded && !hasAgents ? (
+          <WorkspaceRecovery onRetry={refresh} />
+        ) : (
+          <>
+            <ActivationChecklist className="mb-2" />
 
-        <section
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-          aria-label="Workspace metrics"
-        >
-          {loadingDashboard && loading
-            ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
-            : metricRows(
-                agents,
-                hasAgents,
-                activeAgents,
-                callsCount,
-                callsDetail,
-                connectionsCount,
-                connectionsDetail,
-                balanceUsd,
-              ).map((item, index) => (
-                <article
-                  key={item.label}
-                  className={`wl-metric-tile wl-reveal wl-reveal-${index + 1}`}
-                  data-tone={item.tone}
-                >
-                  <p className="wl-metric-tile__label">{item.label}</p>
-                  <div className="wl-metric-tile__value">
-                    {loading && item.label === "Agents" ? "—" : item.value}
-                  </div>
-                  <p className="wl-metric-tile__detail">{item.detail}</p>
-                </article>
-              ))}
-        </section>
-
-        {degraded ? (
-          <StatusNotice tone="warning" title="Status partial.">
-            Agent links are recovering — showing the last safe state.
-          </StatusNotice>
-        ) : null}
-
-        <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Outcome ledger">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              Outcome ledger
-            </p>
-            <Link to="/approvals" className="text-xs font-semibold text-primary hover:underline">
-              Approvals →
-            </Link>
-          </div>
-          <OutcomeLedger limit={5} showViewAll />
-        </section>
-
-        <WidgetBoundary label="Daily brief">
-          <Suspense fallback={<RouteFallback />}>
-            <DailyBriefPanel />
-          </Suspense>
-        </WidgetBoundary>
-
-        <section className="grid gap-4 lg:grid-cols-[1fr_1fr]" aria-label="Agents and recent calls">
-          <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Agents
-              </p>
-              <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
-                Open Studio →
-              </Link>
-            </div>
-            {loading ? (
-              <AgentLoadingRows />
-            ) : hasAgents ? (
-              <div className="grid gap-5">
-                <AgentSection kind="personal" agents={personalAgents} />
-                <AgentSection kind="business" agents={businessAgents} />
-              </div>
-            ) : (
-              <EmptyState
-                density="compact"
-                titleTone="ui"
-                withHalo={false}
-                icon={<Bot aria-hidden="true" />}
-                title="No agents yet"
-                description="Wire one in Studio — it learns from every outcome."
-                action={
-                  <Button asChild size="sm">
-                    <Link to="/studio?create=1">Wire one</Link>
-                  </Button>
-                }
-              />
-            )}
-          </article>
-
-          <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Recent calls
-              </p>
-              <Link
-                to="/phone?tab=logs"
-                className="text-xs font-semibold text-primary hover:underline"
-              >
-                View all →
-              </Link>
-            </div>
-            <div className="grid gap-0">
-              {loadingDashboard ? (
-                <div className="grid gap-3 py-2" aria-busy="true" aria-label="Loading recent calls">
-                  {Array.from({ length: 3 }, (_, index) => (
-                    <div key={index} className="flex items-center gap-3 py-2">
-                      <Skeleton shape="circle" className="size-2 rounded-full" />
-                      <div className="min-w-0 flex-1">
-                        <Skeleton shape="text" className="h-4 w-48" />
-                        <Skeleton shape="text" className="mt-1.5 h-3 w-32" />
+            <section
+              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+              aria-label="Workspace metrics"
+            >
+              {loadingDashboard && loading
+                ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
+                : metricRows(
+                    agents,
+                    hasAgents,
+                    activeAgents,
+                    callsCount,
+                    callsDetail,
+                    connectionsCount,
+                    connectionsDetail,
+                    balanceUsd,
+                  ).map((item, index) => (
+                    <article
+                      key={item.label}
+                      className={`wl-metric-tile wl-reveal wl-reveal-${index + 1}`}
+                      data-tone={item.tone}
+                    >
+                      <p className="wl-metric-tile__label">{item.label}</p>
+                      <div className="wl-metric-tile__value">
+                        {loading && item.label === "Agents" ? "—" : item.value}
                       </div>
-                    </div>
+                      <p className="wl-metric-tile__detail">{item.detail}</p>
+                    </article>
                   ))}
-                </div>
-              ) : recentCalls.length > 0 ? (
-                recentCalls.map((call) => (
-                  <Link
-                    key={call.id}
-                    to="/phone?tab=logs"
-                    className="wl-data-row wl-data-row--divided group"
-                  >
-                    <span className="wl-data-row__leading" aria-hidden="true">
-                      <span className="size-2 rounded-full bg-[var(--wireline-color-action-primary-default)]" />
-                    </span>
-                    <span className="wl-data-row__main">
-                      <span className="wl-data-row__title">
-                        {call.customer_number || "Unknown caller"}
-                      </span>
-                      <span className="wl-data-row__detail wl-data-row__detail--clamp">
-                        {[
-                          call.agent_name || primaryAgent?.name || "Agent",
-                          formatCallMeta(call.created_at, call.duration_seconds),
-                          call.summary || call.intent_label,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    </span>
-                    <span className="wl-data-row__trailing">
-                      <Clock3
-                        className="size-3.5 transition-colors group-hover:text-[var(--wireline-color-action-primary-default)]"
-                        aria-hidden="true"
-                      />
-                    </span>
+            </section>
+
+            {degraded ? (
+              <StatusNotice tone="warning" title="Status partial.">
+                Agent links are recovering — showing the last safe state.
+              </StatusNotice>
+            ) : null}
+
+            <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Outcome ledger">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Outcome ledger
+                </p>
+                <Link
+                  to="/approvals"
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Approvals →
+                </Link>
+              </div>
+              <OutcomeLedger limit={5} showViewAll />
+            </section>
+
+            <WidgetBoundary label="Daily brief">
+              <Suspense fallback={<RouteFallback />}>
+                <DailyBriefPanel />
+              </Suspense>
+            </WidgetBoundary>
+
+            <section
+              className="grid gap-4 lg:grid-cols-[1fr_1fr]"
+              aria-label="Agents and recent calls"
+            >
+              <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Agents
+                  </p>
+                  <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
+                    Open Studio →
                   </Link>
-                ))
-              ) : (
-                <EmptyState
-                  density="compact"
-                  titleTone="ui"
-                  icon={<Phone aria-hidden="true" />}
-                  title="No calls yet"
-                  action={
-                    !hasAgents ? (
+                </div>
+                {loading ? (
+                  <AgentLoadingRows />
+                ) : hasAgents ? (
+                  <div className="grid gap-5">
+                    <AgentSection kind="personal" agents={personalAgents} />
+                    <AgentSection kind="business" agents={businessAgents} />
+                  </div>
+                ) : (
+                  <EmptyState
+                    density="compact"
+                    titleTone="ui"
+                    withHalo={false}
+                    icon={<Bot aria-hidden="true" />}
+                    title="No agents yet"
+                    description="Wire one in Studio — it learns from every outcome."
+                    action={
                       <Button asChild size="sm">
-                        <Link to="/studio?create=1">Create agent</Link>
+                        <Link to="/studio?create=1">Wire one</Link>
                       </Button>
-                    ) : undefined
-                  }
-                />
-              )}
-            </div>
-          </article>
-        </section>
+                    }
+                  />
+                )}
+              </article>
+
+              <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Recent calls
+                  </p>
+                  <Link
+                    to="/phone?tab=logs"
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    View all →
+                  </Link>
+                </div>
+                <div className="grid gap-0">
+                  {loadingDashboard ? (
+                    <div
+                      className="grid gap-3 py-2"
+                      aria-busy="true"
+                      aria-label="Loading recent calls"
+                    >
+                      {Array.from({ length: 3 }, (_, index) => (
+                        <div key={index} className="flex items-center gap-3 py-2">
+                          <Skeleton shape="circle" className="size-2 rounded-full" />
+                          <div className="min-w-0 flex-1">
+                            <Skeleton shape="text" className="h-4 w-48" />
+                            <Skeleton shape="text" className="mt-1.5 h-3 w-32" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : recentCalls.length > 0 ? (
+                    recentCalls.map((call) => (
+                      <Link
+                        key={call.id}
+                        to="/phone?tab=logs"
+                        className="wl-data-row wl-data-row--divided group"
+                      >
+                        <span className="wl-data-row__leading" aria-hidden="true">
+                          <span className="size-2 rounded-full bg-[var(--wireline-color-action-primary-default)]" />
+                        </span>
+                        <span className="wl-data-row__main">
+                          <span className="wl-data-row__title">
+                            {call.customer_number || "Unknown caller"}
+                          </span>
+                          <span className="wl-data-row__detail wl-data-row__detail--clamp">
+                            {[
+                              call.agent_name || primaryAgent?.name || "Agent",
+                              formatCallMeta(call.created_at, call.duration_seconds),
+                              call.summary || call.intent_label,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        </span>
+                        <span className="wl-data-row__trailing">
+                          <Clock3
+                            className="size-3.5 transition-colors group-hover:text-[var(--wireline-color-action-primary-default)]"
+                            aria-hidden="true"
+                          />
+                        </span>
+                      </Link>
+                    ))
+                  ) : (
+                    <EmptyState
+                      density="compact"
+                      titleTone="ui"
+                      icon={<Phone aria-hidden="true" />}
+                      title="No calls yet"
+                      action={
+                        !hasAgents ? (
+                          <Button asChild size="sm">
+                            <Link to="/studio?create=1">Create agent</Link>
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                  )}
+                </div>
+              </article>
+            </section>
+          </>
+        )}
       </WorkspacePageFrame>
       <OutboundDialDialog open={showOutboundDial} onClose={() => setShowOutboundDial(false)} />
     </WorkspaceShell>

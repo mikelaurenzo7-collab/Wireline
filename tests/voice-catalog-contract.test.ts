@@ -15,11 +15,25 @@ describe("voice catalog", () => {
     expect(catalog).not.toContain("speechSynthesis");
     expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain("/api/voices");
     expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
+      "if (!catalogOpen || catalogLoaded) return",
+    );
+    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
+      "Choose a specific voice",
+    );
+    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
       "Presenter voice (video)",
     );
     expect(read("src/routes/voices-routes.ts")).toContain("providers:");
     expect(read("src/routes/voices-routes.ts")).toContain("presenterVoices");
     expect(read("src/routes/voices-routes.ts")).toContain("/api/voices/curated/preview");
+    expect(read("src/lib/voice/voice-preview-service.ts")).toContain(
+      'const XAI_TTS_URL = "https://api.x.ai/v1/tts"',
+    );
+    expect(read("src/lib/voice/voice-preview-service.ts")).not.toContain("XAI_TO_ELEVENLABS");
+    expect(read("src/lib/voice-catalog.ts")).not.toMatch(/id: "(Kylie|Lily|Hana|Neha|Cole)"/);
+    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
+      "Hear in phone test",
+    );
     expect(read("src/lib/voice/pcm-resample.ts")).toContain("VAPI_LISTEN_PCM_RATE_HZ");
     expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("consumeCreateWarning");
   });

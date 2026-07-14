@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import CrmConnectionCard from "../components/CrmConnectionCard";
+import MailboxConnectionCard from "../components/MailboxConnectionCard";
 import IntegrationOperatingMap from "../components/integrations/IntegrationOperatingMap";
 import { Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -21,8 +22,14 @@ export default function ConnectionsPage() {
             <Link to="/settings/phone">Open phone setup</Link>
           </Button>
         </section>
-        <IntegrationOperatingMap />
+        <MailboxConnectionCard />
         <CrmConnectionCard />
+        <section className="mt-2" aria-labelledby="integration-map-title">
+          <h2 id="integration-map-title" className="mb-3 text-sm font-semibold text-foreground">
+            How your connected stack works
+          </h2>
+          <IntegrationOperatingMap />
+        </section>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

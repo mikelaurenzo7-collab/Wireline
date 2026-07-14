@@ -5,6 +5,7 @@ import { History, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import CallLogsClaude from "./CallLogsClaude";
 import { EmptyState, Button } from "./atoms";
+import { StatusNotice } from "./molecules";
 
 type CallsProbeResponse = {
   calls?: unknown[];
@@ -18,18 +19,27 @@ type CallsProbeResponse = {
 export default function PhoneCallHistoryPanel() {
   const [loading, setLoading] = useState(true);
   const [hasCalls, setHasCalls] = useState<boolean | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     authFetch("/api/calls?limit=1")
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) => {
+        if (!response.ok) throw new Error(`Call history request failed (${response.status})`);
+        return response.json();
+      })
       .then((body: CallsProbeResponse | null) => {
         if (cancelled) return;
         setHasCalls(Array.isArray(body?.calls) && body.calls.length > 0);
       })
       .catch(() => {
-        if (!cancelled) setHasCalls(null);
+        if (!cancelled) {
+          setHasCalls(null);
+          setFailed(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -37,7 +47,7 @@ export default function PhoneCallHistoryPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   if (loading) {
     return (
@@ -46,6 +56,29 @@ export default function PhoneCallHistoryPanel() {
           <Loader2 className="size-4 animate-spin" aria-hidden />
           Loading call history…
         </span>
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div className="w-full px-4 py-8 sm:px-6">
+        <StatusNotice
+          tone="destructive"
+          title="Call history unavailable"
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setAttempt((current) => current + 1)}
+            >
+              Try again
+            </Button>
+          }
+        >
+          We could not load calls. Nothing has been erased; retry when the connection recovers.
+        </StatusNotice>
       </div>
     );
   }

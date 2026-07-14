@@ -43,7 +43,7 @@ const SECTIONS = [
     title: "Strict browser security headers",
     items: [
       "Content-Security-Policy: explicit allowlist; no unsafe-eval. Blocks classic XSS at the browser layer.",
-      "Cross-Origin-Opener-Policy: same-origin. Prevents tab-hijacking via window.opener.",
+      "Cross-Origin-Opener-Policy: same-origin-allow-popups. Restricts opener relationships while preserving user-initiated OAuth connections.",
       "Cross-Origin-Resource-Policy: same-origin where appropriate. Defends against Spectre-class leaks.",
       "Referrer-Policy: strict-origin-when-cross-origin. Permissions-Policy: locked to what we use.",
     ],
@@ -247,7 +247,10 @@ export default function Security() {
 
           <section className="mb-10 grid gap-3 sm:grid-cols-2" aria-label="Security summary">
             {SECURITY_SUMMARY.map(([label, detail]) => (
-              <div key={label} className="rounded-md border border-border bg-background/45 p-4 text-center">
+              <div
+                key={label}
+                className="rounded-md border border-border bg-background/45 p-4 text-center"
+              >
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
               </div>

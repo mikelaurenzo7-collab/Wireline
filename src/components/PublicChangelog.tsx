@@ -45,6 +45,18 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Jul 13, 2026",
+    tag: "feature",
+    title: "Fast Start turns a blank workspace into a first working agent",
+    body: "New workspaces now open directly into a focused two-step builder with a recommended voice already selected. After creation, Wireline guides the owner through review, number connection, and one real test call instead of dropping them into an empty dashboard.",
+  },
+  {
+    date: "Jul 13, 2026",
+    tag: "security",
+    title: "Launch-integrity pass across exports, messaging, and voice",
+    body: "Account exports now include tenant-scoped historical training records without exposing them to browser roles. Inbound text retries are idempotent, internal database helpers are no longer public RPCs, and voice previews use the exact supported provider voice with clear recovery when a sample is unavailable.",
+  },
+  {
     date: "Jun 4, 2026",
     tag: "security",
     title: "OAuth sign-in store sealed off from the data API",
@@ -124,6 +136,10 @@ const ENTRIES: ChangelogEntry[] = [
   },
 ];
 
+const SORTED_ENTRIES = [...ENTRIES].sort(
+  (left, right) => Date.parse(right.date) - Date.parse(left.date),
+);
+
 export default function PublicChangelog() {
   return (
     <>
@@ -153,7 +169,7 @@ export default function PublicChangelog() {
           </motion.div>
 
           <ol className="space-y-6">
-            {ENTRIES.map((entry, idx) => {
+            {SORTED_ENTRIES.map((entry, idx) => {
               const meta = TAG_META[entry.tag];
               const Icon = meta.icon;
               return (

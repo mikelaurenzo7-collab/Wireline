@@ -140,14 +140,14 @@ export const POST_CREATE_WIZARD_COPY = {
   title: "Next up for",
   steps: {
     train: {
-      label: "Train",
-      title: "Review what your agent learned",
+      label: "Review",
+      title: "Optional: review what your agent learned",
       detail:
-        "Sales is the recommended first wedge — speed-to-lead, quote follow-up, and governed warm follow-up. Your opening brief is already in Training. Add a site, document, or policy before you go live.",
+        "Your opening brief is already saved. Add a site, document, or policy now if it matters for the first call, or train more later.",
       salesHint:
         "Recommended first path: train a sales agent for speed-to-lead and approved follow-up queues.",
-      primary: "Open Training",
-      secondary: "Looks good — continue",
+      primary: "Open optional training",
+      secondary: "Continue to number",
     },
     channels: {
       label: "Channels",
@@ -162,7 +162,7 @@ export const POST_CREATE_WIZARD_COPY = {
       continue: "Continue to phone line",
     },
     wire: {
-      label: "Wire",
+      label: "Number",
       title: "Connect a live line",
       detail:
         "Provision a US number so callers reach this agent. Conversation Balance or a paid plan is required.",

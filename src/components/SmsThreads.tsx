@@ -278,9 +278,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         <EmptyState
           icon={<MessageSquare className="size-5" />}
           title={OPS_CHANNEL_EMPTY.sms.title}
+          description="Wire a number, then text it from another phone to start the first thread."
           action={
             <Button asChild>
-              <a href="/connections">Open Connections</a>
+              <a href="/settings/phone">Open phone setup</a>
             </Button>
           }
           density="compact"

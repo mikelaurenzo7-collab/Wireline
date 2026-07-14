@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
@@ -8,6 +8,8 @@ import { BrandingProvider } from "./contexts/BrandingContext";
 import { AccountProvider } from "./contexts/AccountContext";
 import TransitionSurface from "./components/TransitionSurface";
 import RouteChangeA11y from "./components/RouteChangeA11y";
+import { useAuth } from "./contexts/AuthContext";
+import { isWorkspaceRoute } from "./lib/workspace-route-scope";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Features = lazy(() => import("./pages/Features"));
@@ -39,6 +41,8 @@ const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 const Developers = lazy(() => import("./pages/Developers"));
+const PublicChangelog = lazy(() => import("./components/PublicChangelog"));
+const PublicNotFound = lazy(() => import("./pages/PublicNotFound"));
 
 function RouteLoading() {
   return (
@@ -46,6 +50,20 @@ function RouteLoading() {
       <TransitionSurface eyebrow="Wireline" title="Loading" busyLabel="Loading" />
     </div>
   );
+}
+
+/**
+ * Preserve the authenticated workspace wildcard without turning anonymous
+ * typos into a sign-in prompt. Unknown routes probe the session once: signed-in
+ * people keep the native workspace 404, while visitors get the public 404.
+ */
+function UnknownRoute() {
+  const { user, loading } = useAuth();
+  const { pathname } = useLocation();
+
+  if (loading) return <RouteLoading />;
+  if (isWorkspaceRoute(pathname)) return <AppShell />;
+  return user ? <AppShell /> : <PublicNotFound />;
 }
 
 function AppRouter() {
@@ -73,6 +91,7 @@ function AppRouter() {
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/*" element={<Navigate to="/blog" replace />} />
+        <Route path="/changelog" element={<PublicChangelog />} />
         <Route path="/security" element={<Security />} />
         <Route path="/trust" element={<Security />} />
         {/* Vertical trust packs — linked from /security for regulated buyers. */}
@@ -94,9 +113,11 @@ function AppRouter() {
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
         <Route path="/onboarding" element={<OnboardingFlow />} />
+        <Route path="/404" element={<PublicNotFound />} />
+        <Route path="/not-found" element={<PublicNotFound />} />
         {/* All other paths under AppShell (authenticated workspace). Inside AppShell/AppRoutes,
-            unauthenticated -> signin with redirect; authenticated default to /overview (Home). */}
-        <Route path="/*" element={<AppShell />} />
+            authenticated visitors retain the workspace 404; anonymous visitors see the public 404. */}
+        <Route path="/*" element={<UnknownRoute />} />
       </Routes>
     </Suspense>
   );

@@ -5,7 +5,7 @@ import { Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import { motion } from "motion/react";
-import { authFetch } from "../lib/api";
+import { authFetch, safeJson } from "../lib/api";
 import { clientLog } from "../lib/client-log";
 import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
 import { WorkspacePageFrame } from "./layout/WorkspacePageFrame";
@@ -246,7 +246,12 @@ export default function AdminSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const body = (await safeJson(res)) as { error?: string; message?: string } | null;
+        throw new Error(
+          body?.error || body?.message || `Settings could not be saved (${res.status}).`,
+        );
+      }
 
       updateBranding({
         brand_name: settings.brand_name,

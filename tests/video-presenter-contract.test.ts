@@ -25,8 +25,10 @@ describe("video presenter integration", () => {
 
   it("keeps Fast Start copy honest about app-only avatars", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain("Step 2 · Voice, badge, and line");
-    expect(dialog).toContain("The avatar is only an app identifier");
+    const facePicker = source("src/components/create-agent/CreateAgentCatalogFacePicker.tsx");
+    expect(dialog).toContain("Step 2 · Optional details");
+    expect(dialog).toContain("polished voice, badge, and response style");
+    expect(facePicker).toContain("avatar is only an in-app identifier");
   });
 
   it("starts LiveAvatar LITE sessions on the server", () => {

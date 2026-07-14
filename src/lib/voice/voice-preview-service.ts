@@ -1,48 +1,17 @@
-/**
- * Server-side curated voice previews — replaces browser speechSynthesis for
- * Wireline Live (xAI) and Wireline Phone (Vapi) timbre samples.
- *
- * Uses ElevenLabs TTS with a fixed mapping so previews sound polished even
- * when the caller's runtime voice is Grok realtime or Vapi native TTS.
- */
+/** Exact server-side previews for Wireline Live voices. */
 import { AppError } from "../api-error";
-import { elevenLabsConfigured, generateSample } from "../elevenlabs-client";
 import { VAPI_CURATED_VOICES, WIRELINE_LIVE_VOICES } from "../voice-catalog";
 
-/** Shared sample line — matches the old browser preview copy. */
 export const CURATED_VOICE_PREVIEW_TEXT = "Hello, this is {name}. How can I help you today?";
 
-/**
- * Approximate timbre mapping from curated Wireline Live voices → ElevenLabs
- * starter voices (documented public IDs every account can use).
- */
-const XAI_TO_ELEVENLABS: Record<string, string> = {
-  eve: "EXAVITQu4vr4xnSDxMaL", // Sarah · energetic
-  ara: "21m00Tcm4TlvDq8ikWAM", // Rachel · warm
-  rex: "VR6AewLTigWG4xSOukaG", // Arnold · crisp
-  sal: "pNInz6obpgDQGcFmaJgB", // Adam · balanced
-  leo: "ErXwobaYiN019PkySvjV", // Antoni · direct
-};
+const XAI_TTS_URL = "https://api.x.ai/v1/tts";
+const XAI_VOICE_IDS = new Set(WIRELINE_LIVE_VOICES.map((voice) => voice.id));
 
-/** Vapi curated names → ElevenLabs approximations for audition only. */
-const VAPI_TO_ELEVENLABS: Record<string, string> = {
-  Elliot: "pNInz6obpgDQGcFmaJgB",
-  Kylie: "EXAVITQu4vr4xnSDxMaL",
-  Lily: "21m00Tcm4TlvDq8ikWAM",
-  Savannah: "MF3mGyEYCl7XYWbV9V6O", // Elli
-  Rohan: "VR6AewLTigWG4xSOukaG",
-  Hana: "AZnzlk1XvdvUeBnXmlld",
-  Neha: "jsCqWAovK2LkecY7zXl4",
-  Cole: "ErXwobaYiN019PkySvjV",
-};
-
+type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 export type CuratedPreviewProvider = "xai" | "vapi";
 
 export function curatedVoicePreviewPath(provider: CuratedPreviewProvider, voiceId: string): string {
-  const params = new URLSearchParams({
-    provider,
-    voiceId,
-  });
+  const params = new URLSearchParams({ provider, voiceId });
   return `/api/voices/curated/preview?${params.toString()}`;
 }
 
@@ -53,29 +22,69 @@ function resolveDisplayName(provider: CuratedPreviewProvider, voiceId: string): 
   return match.name.split(" — ")[0]?.trim() || match.name;
 }
 
-function resolveElevenLabsVoiceId(provider: CuratedPreviewProvider, voiceId: string): string {
-  const normalized = voiceId.trim();
-  const map = provider === "xai" ? XAI_TO_ELEVENLABS : VAPI_TO_ELEVENLABS;
-  const mapped = map[normalized];
-  if (!mapped) {
-    throw AppError.fromHttpStatus(404, "Voice preview not available for this selection.");
-  }
-  return mapped;
-}
-
 export function isCuratedPreviewProvider(value: string): value is CuratedPreviewProvider {
   return value === "xai" || value === "vapi";
 }
 
+/**
+ * Generate an MP3 with the provider and exact voice the user selected.
+ * Vapi does not expose a documented standalone preview endpoint, so its voices
+ * are intentionally auditioned during a phone test instead of being faked with
+ * a different provider.
+ */
 export async function generateCuratedVoicePreview(
   provider: CuratedPreviewProvider,
   voiceId: string,
+  fetchImpl: FetchLike = fetch,
 ): Promise<ArrayBuffer> {
-  if (!elevenLabsConfigured()) {
+  if (provider !== "xai") {
+    throw AppError.fromHttpStatus(404, "Hear this voice during a phone test.");
+  }
+
+  const normalizedVoiceId = voiceId.trim().toLowerCase();
+  if (!XAI_VOICE_IDS.has(normalizedVoiceId)) {
+    throw AppError.fromHttpStatus(404, "Voice preview not available for this selection.");
+  }
+
+  const apiKey = process.env.XAI_API_KEY?.trim();
+  if (!apiKey) {
     throw AppError.fromHttpStatus(503, "Voice previews unavailable.");
   }
-  const elevenLabsId = resolveElevenLabsVoiceId(provider, voiceId);
-  const displayName = resolveDisplayName(provider, voiceId);
+
+  const displayName = resolveDisplayName(provider, normalizedVoiceId);
   const text = CURATED_VOICE_PREVIEW_TEXT.replace("{name}", displayName);
-  return generateSample({ voiceId: elevenLabsId, text });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+
+  try {
+    const response = await fetchImpl(XAI_TTS_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        voice_id: normalizedVoiceId,
+        language: "en",
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
+    }
+
+    const audio = await response.arrayBuffer();
+    if (audio.byteLength === 0) {
+      throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
+    }
+    return audio;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
+  } finally {
+    clearTimeout(timeout);
+  }
 }

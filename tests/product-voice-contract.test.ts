@@ -40,7 +40,7 @@ describe("product voice cohesion", () => {
       "Voice calling",
       "Text / SMS",
       "Email messaging",
-      "Included number",
+      "Paid-plan number",
       "Connected inbox",
       "Shared memory",
     ]);

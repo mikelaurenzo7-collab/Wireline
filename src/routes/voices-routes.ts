@@ -21,7 +21,7 @@ import { AppError } from "../lib/api-error";
  */
 import { Router, type Request, type Response } from "express";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { createIpRateLimiter } from "../middleware/api-rate-limits";
+import { createIpRateLimiter, createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { log, drizzle } from "../lib/server-context";
@@ -88,6 +88,13 @@ const curatedPreviewRateLimiter = createIpRateLimiter({
   message: { error: "Preview limit reached. Try again in a minute." },
 });
 
+/** Provider TTS spends are also capped per signed-in account. */
+const voicePreviewUserRateLimiter = createRateLimiter({
+  bucket: "api:voice-preview-user",
+  windowMs: 60_000,
+  max: 12,
+});
+
 /** Public premade catalog resolution also touches the provider API. */
 const publicPreviewRateLimiter = createIpRateLimiter({
   bucket: "api:voice-public-preview",
@@ -102,10 +109,7 @@ function normalizeCloneMimeType(value: unknown): string {
   }
   const normalized = value.split(";")[0]?.trim().toLowerCase() ?? "";
   if (!ALLOWED_CLONE_AUDIO_MIME_TYPES.has(normalized)) {
-    throw AppError.fromHttpStatus(
-      415,
-      "Unsupported audio type. Use MP3, WAV, M4A, OGG, or WebM.",
-    );
+    throw AppError.fromHttpStatus(415, "Unsupported audio type. Use MP3, WAV, M4A, OGG, or WebM.");
   }
   return normalized;
 }
@@ -126,17 +130,52 @@ function assertTrustedElevenLabsPreviewUrl(value: string): string {
   return url.toString();
 }
 
+const MAX_PREVIEW_AUDIO_BYTES = 8 * 1024 * 1024;
+
+async function fetchTrustedPreview(
+  value: string,
+  assertTrusted: (url: string) => string,
+): Promise<{ bytes: Buffer; contentType: string }> {
+  let trustedUrl = assertTrusted(value);
+  let upstream: globalThis.Response | null = null;
+  for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
+    upstream = await fetch(trustedUrl, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (upstream.status < 300 || upstream.status >= 400) break;
+    const location = upstream.headers.get("location");
+    if (!location) throw AppError.fromHttpStatus(502, "Voice preview redirect is invalid.");
+    trustedUrl = assertTrusted(new URL(location, trustedUrl).toString());
+  }
+  if (!upstream || (upstream.status >= 300 && upstream.status < 400)) {
+    throw AppError.fromHttpStatus(502, "Voice preview redirected too many times.");
+  }
+  if (!upstream.ok) {
+    throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
+  }
+  const contentType = upstream.headers.get("content-type") || "audio/mpeg";
+  if (!contentType.toLowerCase().startsWith("audio/")) {
+    throw AppError.fromHttpStatus(502, "Voice preview returned invalid media.");
+  }
+  const declaredLength = Number(upstream.headers.get("content-length") || 0);
+  if (declaredLength > MAX_PREVIEW_AUDIO_BYTES) {
+    throw AppError.fromHttpStatus(502, "Voice preview is too large.");
+  }
+  const bytes = Buffer.from(await upstream.arrayBuffer());
+  if (!bytes.length || bytes.length > MAX_PREVIEW_AUDIO_BYTES) {
+    throw AppError.fromHttpStatus(502, "Voice preview returned invalid media.");
+  }
+  return { bytes, contentType };
+}
+
 function decodeCloneAudio(value: unknown): { bytes: Buffer; base64: string } {
   if (typeof value !== "string") {
     throw AppError.fromHttpStatus(400, "Audio sample required (30-90 seconds recommended).");
   }
 
   const base64 = value.replace(/\s/g, "");
-  if (
-    base64.length < 4 ||
-    base64.length % 4 === 1 ||
-    !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)
-  ) {
+  if (base64.length < 4 || base64.length % 4 === 1 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
     throw AppError.fromHttpStatus(400, "Audio sample is not valid base64.");
   }
 
@@ -336,6 +375,8 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
 // GET /api/voices/curated/preview — Wireline-curated provider samples.
 router.get(
   "/api/voices/curated/preview",
+  authenticateUser,
+  voicePreviewUserRateLimiter,
   curatedPreviewRateLimiter,
   async (req: Request, res: Response) => {
     try {
@@ -359,27 +400,64 @@ router.get(
 );
 
 // GET /api/voices/presenter/:id/preview — trusted presenter sample redirect.
-router.get("/api/voices/presenter/:id/preview", async (req: Request, res: Response) => {
-  try {
-    if (!presenterVoicesConfigured()) {
-      throw AppError.fromHttpStatus(503, "Presenter voice previews unavailable.");
+router.get(
+  "/api/voices/presenter/:id/preview",
+  authenticateUser,
+  voicePreviewUserRateLimiter,
+  publicPreviewRateLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      if (!presenterVoicesConfigured()) {
+        throw AppError.fromHttpStatus(503, "Presenter voice previews unavailable.");
+      }
+      const voice = await getPresenterVoice(req.params.id);
+      const previewUrl = voice?.preview_audio_url?.trim();
+      if (!previewUrl) {
+        throw AppError.fromHttpStatus(404, "No preview available for this presenter voice.");
+      }
+      const preview = await fetchTrustedPreview(previewUrl, assertTrustedHeyGenMediaUrl);
+      res.setHeader("Content-Type", preview.contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(preview.bytes);
+    } catch (e) {
+      if (e instanceof AppError) throw e;
+      log.error("presenter voice preview failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Preview failed");
     }
-    const voice = await getPresenterVoice(req.params.id);
-    const previewUrl = voice?.preview_audio_url?.trim();
-    if (!previewUrl) {
-      throw AppError.fromHttpStatus(404, "No preview available for this presenter voice.");
-    }
-    res.redirect(302, assertTrustedHeyGenMediaUrl(previewUrl));
-  } catch (e) {
-    if (e instanceof AppError) throw e;
-    log.error("presenter voice preview failed", { error: getErrorMessage(e) });
-    throw AppError.fromHttpStatus(500, "Preview failed");
-  }
-});
+  },
+);
+
+// GET /api/voices/:id/owned-preview — authenticated preview for this user's clone.
+router.get(
+  "/api/voices/:id/owned-preview",
+  authenticateUser,
+  voicePreviewUserRateLimiter,
+  publicPreviewRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const [ownedVoice] = await drizzle
+      .select({ previewUrl: schema.clonedVoices.previewUrl })
+      .from(schema.clonedVoices)
+      .where(
+        and(
+          eq(schema.clonedVoices.voiceId, req.params.id),
+          eq(schema.clonedVoices.userId, req.user.id),
+        ),
+      )
+      .limit(1);
+    const previewUrl = ownedVoice?.previewUrl?.trim();
+    if (!previewUrl) throw AppError.fromHttpStatus(404, "Voice preview not found.");
+    const preview = await fetchTrustedPreview(previewUrl, assertTrustedElevenLabsPreviewUrl);
+    res.setHeader("Content-Type", preview.contentType);
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    res.send(preview.bytes);
+  },
+);
 
 // GET /api/voices/:id/preview — public provider-premade preview only.
 router.get(
   "/api/voices/:id/preview",
+  authenticateUser,
+  voicePreviewUserRateLimiter,
   publicPreviewRateLimiter,
   async (req: Request, res: Response) => {
     try {
@@ -402,8 +480,10 @@ router.get(
           throw AppError.fromHttpStatus(404, "No preview available for this voice.");
         }
 
+        const preview = await fetchTrustedPreview(previewUrl, assertTrustedElevenLabsPreviewUrl);
+        res.setHeader("Content-Type", preview.contentType);
         res.setHeader("Cache-Control", "public, max-age=86400");
-        res.redirect(302, assertTrustedElevenLabsPreviewUrl(previewUrl));
+        res.send(preview.bytes);
       } catch (e) {
         if (e instanceof AppError) throw e;
         log.warn("voice preview lookup failed", { error: getErrorMessage(e), voiceId });

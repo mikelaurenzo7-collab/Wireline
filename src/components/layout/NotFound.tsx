@@ -46,9 +46,9 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         className="space-y-3 max-w-md"
       >
         <p className="wl-eyebrow">Error 404</p>
-        <h2 className="wl-display-mark text-2xl md:text-3xl text-foreground leading-tight">
+        <h1 className="wl-display-mark text-2xl md:text-3xl text-foreground leading-tight">
           Page not found
-        </h2>
+        </h1>
         <p className="text-caption leading-relaxed max-w-md">
           {location.pathname && location.pathname !== "/" && (
             <>
@@ -78,7 +78,9 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.55 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-3xl"
+        className={`grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-3xl ${
+          isPublic ? "lg:grid-cols-3" : "lg:grid-cols-4"
+        }`}
       >
         {isPublic ? (
           <>

@@ -11,11 +11,18 @@ import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 /**
- * Inline voice preview button — fetches /api/voices/:id/preview
- * (which 302-redirects to the public ElevenLabs preview MP3) and
- * plays it. Self-contained: handles its own audio ref + play state.
+ * Inline voice preview button. Owned clones use the tenant-scoped endpoint;
+ * provider-premade voices use the authenticated catalog endpoint.
  */
-export function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName: string }) {
+export function VoicePreviewButton({
+  voiceId,
+  voiceName,
+  ownedByUser = false,
+}: {
+  voiceId: string;
+  voiceName: string;
+  ownedByUser?: boolean;
+}) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -28,17 +35,25 @@ export function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; vo
       audioRef.current = null;
     }
     setPlaying(false);
-  }, [voiceId]);
+    return () => {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    };
+  }, [ownedByUser, voiceId]);
 
   async function toggle() {
     if (playing) {
       audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      audioRef.current = null;
       setPlaying(false);
       return;
     }
     setLoading(true);
     try {
-      const audio = new Audio(`/api/voices/${encodeURIComponent(voiceId)}/preview`);
+      const suffix = ownedByUser ? "owned-preview" : "preview";
+      const audio = new Audio(`/api/voices/${encodeURIComponent(voiceId)}/${suffix}`);
       audio.onended = () => setPlaying(false);
       audio.onerror = () => {
         setPlaying(false);
@@ -139,7 +154,13 @@ export default function DeployAgentModal({
   // declare before any conditional return — the `if (!template) return`
   // below is conditional so this state has to land here.
   const [clonedVoices, setClonedVoices] = useState<
-    Array<{ id: string; provider: string; name: string; gender: string }>
+    Array<{
+      id: string;
+      provider: string;
+      name: string;
+      gender: string;
+      ownedByUser: true;
+    }>
   >([]);
 
   // Pin the page underneath while the deploy modal is open.
@@ -163,6 +184,7 @@ export default function DeployAgentModal({
             // Cloned voices don't carry gender metadata — surface in
             // both buckets so they're always reachable from the picker.
             gender: "neutral",
+            ownedByUser: true as const,
           }));
         if (!cancelled) setClonedVoices(owned);
       } catch {
@@ -397,6 +419,9 @@ export default function DeployAgentModal({
                         <VoicePreviewButton
                           voiceId={selectedVoice.id}
                           voiceName={selectedVoice.name}
+                          ownedByUser={
+                            "ownedByUser" in selectedVoice && selectedVoice.ownedByUser === true
+                          }
                         />
                       </div>
                     )}

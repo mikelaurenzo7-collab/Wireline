@@ -67,7 +67,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       id: "approve",
       label: "First action approved",
       done: p.approvedAction,
-      href: "/inbox",
+      href: "/approvals",
       icon: Inbox,
     },
   ];

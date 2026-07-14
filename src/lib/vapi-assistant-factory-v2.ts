@@ -18,6 +18,7 @@ import {
 } from "./ai-models";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { buildGrokStrengthsPromptSection, isGrokModelId } from "./grok-features";
+import { vapiVoiceVersion } from "./voice-catalog";
 
 export interface AssistantRequestPayload {
   message: { type: string; call?: any };
@@ -158,6 +159,9 @@ export async function buildVapiAssistant({
     voice: {
       provider: voiceProvider,
       voiceId: effectiveVoiceId,
+      ...(voiceProvider === "vapi" && vapiVoiceVersion(effectiveVoiceId)
+        ? { version: vapiVoiceVersion(effectiveVoiceId) }
+        : {}),
       ...(voiceProvider === "11labs"
         ? {
             model: "eleven_flash_v2_5",

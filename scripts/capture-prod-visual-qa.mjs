@@ -22,7 +22,8 @@ const marketingRoutes = [
   "/pricing",
   "/showcase",
   "/compare",
-  "/solutions/personal",
+  "/solutions/support",
+  "/solutions/sales",
   "/for/personal",
   "/for/home-services",
   "/for/medical",
@@ -33,6 +34,7 @@ const marketingRoutes = [
   "/for/sales",
   "/about",
   "/blog",
+  "/changelog",
   "/security",
   "/status",
   "/support",
@@ -42,6 +44,8 @@ const marketingRoutes = [
   "/get-started",
   "/signin",
   "/signup",
+  "/404",
+  "/not-found",
 ];
 
 const authenticatedRoutes = [

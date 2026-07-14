@@ -64,6 +64,13 @@
       "when": 1783382400000,
       "tag": "0084_browser_handoffs",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784000000000,
+      "tag": "0087_launch_integrity_reconciliation",
+      "breakpoints": true
     }
   ]
 }

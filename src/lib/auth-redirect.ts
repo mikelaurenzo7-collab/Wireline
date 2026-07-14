@@ -54,17 +54,22 @@ export function resolvePostAuthDestination(
    * Studio is kept as the tool/create surface (nav, /studio, ?create=1 links).
    * Fresh signups can reach create in Studio when appropriate via links or the one-time flow.
    */
+  const freshSignup = isFreshSignupSession();
   const fromSearch = readRedirectFromSearch(search);
-  if (fromSearch) return fromSearch;
+  if (fromSearch) {
+    if (freshSignup) clearFreshSignupSession();
+    return fromSearch;
+  }
   if (typeof window !== "undefined") {
     const stored = window.localStorage.getItem(AUTH_REDIRECT_KEY);
     if (isSafeInternalPath(stored)) {
       window.localStorage.removeItem(AUTH_REDIRECT_KEY);
+      if (freshSignup) clearFreshSignupSession();
       return stored;
     }
   }
 
-  if (isFreshSignupSession()) {
+  if (freshSignup) {
     // Consume the one-time flag so only the immediate post-signup navigation targets
     // Studio create. Subsequent logins default to /overview (Home).
     clearFreshSignupSession();

@@ -26,6 +26,7 @@ describe("authenticated agent flow", () => {
     expect(authRedirect).toContain(
       'workspaceMode === "business" ? "/studio?create=1&posture=business" : "/studio?create=1"',
     );
+    expect(authPortal.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
     expect(onboardingFlow).toContain("Opening your first agent");
     expect(onboardingFlow).not.toContain("Link your phone");
     expect(appShell).not.toContain("ActivationCheckpoint");
@@ -51,6 +52,20 @@ describe("authenticated agent flow", () => {
     expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
     expect(nav).toMatch(/href:\s*["']\/insights["']/);
     expect(overview).toContain("DailyBriefPanel");
+  });
+
+  it("gives first-time users real mailbox connection actions", () => {
+    const connections = read("src/pages/ConnectionsPage.tsx");
+    const mailboxes = read("src/components/MailboxConnectionCard.tsx");
+    expect(connections).toContain("MailboxConnectionCard");
+    expect(connections.indexOf("<MailboxConnectionCard")).toBeLessThan(
+      connections.indexOf("<IntegrationOperatingMap"),
+    );
+    expect(mailboxes).toContain("/api/oauth/${provider}/url");
+    expect(mailboxes).toContain("/api/emails/accounts");
+    expect(mailboxes).toContain("OAUTH_AUTH_SUCCESS");
+    expect(mailboxes).toContain("EMAIL_OAUTH_SUCCESS");
+    expect(mailboxes).toContain('authFetch("/api/emails/sync"');
   });
 
   it("keeps studio as the authenticated run surface entry", () => {
@@ -161,11 +176,14 @@ describe("authenticated agent flow", () => {
     expect(wizard).toContain("ACTIVATION_REQUIRED");
   });
 
-  it("rate-limits public curated voice previews", () => {
+  it("authenticates and rate-limits provider-backed voice previews", () => {
     const voices = read("src/routes/voices-routes.ts");
 
     expect(voices).toContain("curatedPreviewRateLimiter");
+    expect(voices).toContain("voicePreviewUserRateLimiter");
+    expect(voices).toContain("fetchTrustedPreview");
     expect(voices).toContain('"/api/voices/curated/preview"');
+    expect(voices).toContain('"/api/voices/:id/preview"');
   });
 
   it("routes presenter PSTN through dual phone voice columns", () => {

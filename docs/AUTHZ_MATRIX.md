@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 274
-**Protected:** 233
-**Public (allowlisted):** 41
+**Routes scanned:** 275
+**Protected:** 237
+**Public (allowlisted):** 38
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -50,9 +50,6 @@
 | `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 | `POST /voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
-| `GET /api/voices/:id/preview` | Premade voice previews only; cloned/tenant voices are on the authed route |
-| `GET /api/voices/curated/preview` | Public Wireline Live / Phone timbre samples; ElevenLabs-backed, no tenant data |
-| `GET /api/voices/presenter/:id/preview` | Public HeyGen presenter voice preview redirect; no tenant data |
 | `POST /api/webhooks/elevenlabs` | ElevenLabs HMAC-SHA256 signature |
 
 ## Full Matrix
@@ -160,10 +157,10 @@
 | company-identity-routes.ts | POST | `/api/company-identity/review-request` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/compliance/center` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/compliance/consent-log` | inline | — | — | Protected |
-| compliance-routes.ts | GET | `/dnc` | inline | — | — | Protected |
-| compliance-routes.ts | POST | `/dnc` | inline | — | — | Protected |
-| compliance-routes.ts | DELETE | `/dnc/:id` | inline | — | — | Protected |
-| compliance-routes.ts | GET | `/tcpa/consent-check` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/api/dnc` | inline | — | — | Protected |
+| compliance-routes.ts | POST | `/api/dnc` | inline | — | — | Protected |
+| compliance-routes.ts | DELETE | `/api/dnc/:id` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/api/tcpa/consent-check` | inline | — | — | Protected |
 | conversation-balance-routes.ts | GET | `/api/conversation-balance` | inline | — | — | Protected |
 | conversation-balance-routes.ts | POST | `/api/conversation-balance/checkout` | inline | — | — | Protected |
 | daily-brief-routes.ts | POST | `/api/daily-brief/schedule` | — | — | yes | Public (allowlisted) |
@@ -319,10 +316,11 @@
 | voice-observability-routes.ts | POST | `/voice/metrics` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | — | — | Protected |
-| voices-routes.ts | GET | `/api/voices/:id/preview` | — | — | yes | Public (allowlisted) |
+| voices-routes.ts | GET | `/api/voices/:id/owned-preview` | inline | — | — | Protected |
+| voices-routes.ts | GET | `/api/voices/:id/preview` | inline | — | yes | Protected |
 | voices-routes.ts | POST | `/api/voices/clone` | inline | — | — | Protected |
-| voices-routes.ts | GET | `/api/voices/curated/preview` | — | — | yes | Public (allowlisted) |
-| voices-routes.ts | GET | `/api/voices/presenter/:id/preview` | — | — | yes | Public (allowlisted) |
+| voices-routes.ts | GET | `/api/voices/curated/preview` | inline | — | yes | Protected |
+| voices-routes.ts | GET | `/api/voices/presenter/:id/preview` | inline | — | yes | Protected |
 | webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks` | inline | permission | — | Protected |
 | webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | permission | — | Protected |

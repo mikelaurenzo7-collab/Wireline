@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Loader2, Play, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, Loader2, Play, Sparkles } from "lucide-react";
 
 import { Badge, Button } from "../atoms";
+import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import {
+  canPreviewVoice,
   normalizeApiVoices,
   playVoicePreview,
   providerLabel,
@@ -44,15 +46,25 @@ export default function VoicePickerField({
   });
   const [presenterVoices, setPresenterVoices] = useState<VoiceOption[]>([]);
   const [catalogReady, setCatalogReady] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [catalogOpen, setCatalogOpen] = useState(value.mode === "custom");
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!catalogOpen || catalogLoaded) return;
     let cancelled = false;
     setLoading(true);
+    setCatalogError(null);
     void authFetch("/api/voices")
-      .then((response) => (response.ok ? response.json() : null))
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Voice catalog unavailable.");
+        return response.json();
+      })
       .then((data) => {
         if (cancelled) return;
         setLibraryVoices(normalizeApiVoices(data?.voices));
@@ -68,15 +80,36 @@ export default function VoicePickerField({
         }
       })
       .catch(() => {
-        if (!cancelled) setLibraryVoices([]);
+        if (!cancelled) {
+          setLibraryVoices([]);
+          setCatalogReady(false);
+          setCatalogError(
+            "The voice catalog could not load. Your recommended default still works.",
+          );
+        }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setCatalogLoaded(true);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [catalogLoaded, catalogOpen]);
+
+  useEffect(() => {
+    if (value.mode === "custom") setCatalogOpen(true);
+  }, [value.mode]);
+
+  useEffect(
+    () => () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    },
+    [],
+  );
 
   const liveVoices = useMemo(
     () => (providers.wirelineLive ? [...WIRELINE_LIVE_VOICES] : []),
@@ -118,11 +151,30 @@ export default function VoicePickerField({
   function togglePreview(voice: VoiceOption) {
     const key = voicePlayKey(voice);
     if (playingId === key) {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      audioRef.current = null;
       setPlayingId(null);
       return;
     }
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setPreviewError(null);
     setPlayingId(key);
-    playVoicePreview(voice, () => setPlayingId(null));
+    let nextAudio: HTMLAudioElement | null = null;
+    nextAudio = playVoicePreview(
+      voice,
+      () => {
+        if (audioRef.current === nextAudio) audioRef.current = null;
+        setPlayingId(null);
+      },
+      () => {
+        if (audioRef.current === nextAudio) audioRef.current = null;
+        setPlayingId(null);
+        setPreviewError("That sample is temporarily unavailable. You can still use this voice.");
+      },
+    );
+    audioRef.current = nextAudio;
   }
 
   return (
@@ -137,16 +189,18 @@ export default function VoicePickerField({
         </div>
       </div>
 
-      <label className="grid gap-1.5">
-        <span className="sr-only">Search voices</span>
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search voices…"
-          className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/40"
-        />
-      </label>
+      {catalogOpen ? (
+        <label className="grid gap-1.5">
+          <span className="sr-only">Search voices</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search voices…"
+            className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/40"
+          />
+        </label>
+      ) : null}
 
       <button
         type="button"
@@ -157,9 +211,12 @@ export default function VoicePickerField({
             : "border-border bg-card hover:border-primary/25"
         }`}
       >
-        <p className="break-words text-sm font-semibold text-foreground">Auto voice</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="break-words text-sm font-semibold text-foreground">Auto voice</p>
+          <Badge variant="outline">Recommended</Badge>
+        </div>
         <p className="mt-0.5 break-words text-xs text-muted-foreground">
-          Wireline picks a polished default from your connected providers.
+          Ready now. Wireline picks a reliable default; change it anytime in Training.
         </p>
       </button>
 
@@ -184,71 +241,107 @@ export default function VoicePickerField({
         </button>
       ) : null}
 
-      {loading ? (
-        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Loading voice catalog…
-        </div>
-      ) : (
-        <div className="grid max-h-[min(260px,34vh)] gap-4 overflow-y-auto overscroll-contain pr-1 lg:grid-cols-2">
-          {filteredLive.length ? (
+      <button
+        id="voice-picker-details-toggle"
+        type="button"
+        onClick={() => setCatalogOpen((current) => !current)}
+        aria-expanded={catalogOpen}
+        className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2 text-left text-sm font-semibold text-foreground transition-colors hover:border-primary/30"
+      >
+        <span>{value.mode === "custom" ? "Change specific voice" : "Choose a specific voice"}</span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${catalogOpen ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {catalogOpen ? (
+        catalogError ? (
+          <StatusNotice tone="warning" title="Voice catalog unavailable">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span>{catalogError}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setCatalogLoaded(false)}
+              >
+                Retry
+              </Button>
+            </div>
+          </StatusNotice>
+        ) : loading ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            Loading voice catalog…
+          </div>
+        ) : (
+          <div className="grid max-h-[min(260px,34vh)] gap-4 overflow-y-auto overscroll-contain pr-1 lg:grid-cols-2">
+            {filteredLive.length ? (
+              <VoiceGroup
+                title="Wireline Live"
+                icon={<Sparkles size={13} className="text-primary" aria-hidden="true" />}
+                voices={filteredLive}
+                selectedId={selectedId}
+                selectedProvider={selectedProvider}
+                playingId={playingId}
+                onSelect={selectVoice}
+                onPreview={togglePreview}
+                voicePlayKey={voicePlayKey}
+              />
+            ) : null}
+
+            {filteredPhone.length ? (
+              <VoiceGroup
+                title="Wireline Phone"
+                voices={filteredPhone}
+                selectedId={selectedId}
+                selectedProvider={selectedProvider}
+                playingId={playingId}
+                onSelect={selectVoice}
+                onPreview={togglePreview}
+                voicePlayKey={voicePlayKey}
+              />
+            ) : null}
+
+            {filteredPresenter.length ? (
+              <VoiceGroup
+                title="Presenter voice (video)"
+                voices={filteredPresenter}
+                selectedId={selectedId}
+                selectedProvider={selectedProvider}
+                playingId={playingId}
+                onSelect={selectVoice}
+                onPreview={togglePreview}
+                voicePlayKey={voicePlayKey}
+              />
+            ) : null}
+
             <VoiceGroup
-              title="Wireline Live"
-              icon={<Sparkles size={13} className="text-primary" aria-hidden="true" />}
-              voices={filteredLive}
+              title="Wireline Voice library"
+              voices={filteredLibrary}
               selectedId={selectedId}
               selectedProvider={selectedProvider}
               playingId={playingId}
               onSelect={selectVoice}
               onPreview={togglePreview}
               voicePlayKey={voicePlayKey}
+              emptyMessage={
+                catalogReady
+                  ? "No library voices matched your search."
+                  : "Voice library offline — connect ElevenLabs or use Live / Phone voices above."
+              }
+              className={filteredLive.length && filteredPhone.length ? "lg:col-span-2" : ""}
             />
-          ) : null}
+          </div>
+        )
+      ) : null}
 
-          {filteredPhone.length ? (
-            <VoiceGroup
-              title="Wireline Phone"
-              voices={filteredPhone}
-              selectedId={selectedId}
-              selectedProvider={selectedProvider}
-              playingId={playingId}
-              onSelect={selectVoice}
-              onPreview={togglePreview}
-              voicePlayKey={voicePlayKey}
-            />
-          ) : null}
-
-          {filteredPresenter.length ? (
-            <VoiceGroup
-              title="Presenter voice (video)"
-              voices={filteredPresenter}
-              selectedId={selectedId}
-              selectedProvider={selectedProvider}
-              playingId={playingId}
-              onSelect={selectVoice}
-              onPreview={togglePreview}
-              voicePlayKey={voicePlayKey}
-            />
-          ) : null}
-
-          <VoiceGroup
-            title="Wireline Voice library"
-            voices={filteredLibrary}
-            selectedId={selectedId}
-            selectedProvider={selectedProvider}
-            playingId={playingId}
-            onSelect={selectVoice}
-            onPreview={togglePreview}
-            voicePlayKey={voicePlayKey}
-            emptyMessage={
-              catalogReady
-                ? "No library voices matched your search."
-                : "Voice library offline — connect ElevenLabs or use Live / Phone voices above."
-            }
-            className={filteredLive.length && filteredPhone.length ? "lg:col-span-2" : ""}
-          />
-        </div>
-      )}
+      {previewError ? (
+        <StatusNotice tone="destructive" title="Preview unavailable">
+          {previewError}
+        </StatusNotice>
+      ) : null}
 
       {value.mode === "custom" ? (
         <div className="grid gap-1">
@@ -335,15 +428,21 @@ function VoiceGroup({
                   </p>
                 </button>
                 <div className="flex shrink-0 items-center gap-1.5">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => onPreview(voice)}
-                  >
-                    <Play size={12} aria-hidden="true" />
-                    {playing ? "Stop" : "Preview"}
-                  </Button>
+                  {canPreviewVoice(voice) ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onPreview(voice)}
+                    >
+                      <Play size={12} aria-hidden="true" />
+                      {playing ? "Stop" : "Preview"}
+                    </Button>
+                  ) : (
+                    <span className="max-w-28 text-right text-[10px] leading-tight text-muted-foreground">
+                      Hear in phone test
+                    </span>
+                  )}
                   <Button type="button" size="sm" onClick={() => onSelect(voice)}>
                     {selected ? "Selected" : "Use"}
                   </Button>

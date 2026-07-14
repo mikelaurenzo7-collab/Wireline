@@ -75,7 +75,7 @@ export const MARKETING_VOICE = {
     "Voice calling",
     "Text / SMS",
     "Email messaging",
-    "Included number",
+    "Paid-plan number",
     "Connected inbox",
     "Shared memory",
   ],

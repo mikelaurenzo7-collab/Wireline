@@ -75,29 +75,38 @@ export default function VoiceLibraryPanel() {
 
   useEffect(() => {
     void loadVoices();
-    return () => audioRef.current?.pause();
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once while the panel is mounted
   }, []);
 
   const playPreview = (voice: ClonedVoice) => {
-    if (!voice.preview_url) {
-      toastError("No preview available", "This voice does not have a preview yet.");
-      return;
-    }
     audioRef.current?.pause();
     if (playingVoiceId === voice.voice_id) {
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      audioRef.current = null;
       setPlayingVoiceId(null);
       return;
     }
-    const audio = new Audio(voice.preview_url);
+    const audio = new Audio(`/api/voices/${encodeURIComponent(voice.voice_id)}/owned-preview`);
     audioRef.current = audio;
-    audio.onended = () => setPlayingVoiceId(null);
+    audio.onended = () => {
+      audioRef.current = null;
+      setPlayingVoiceId(null);
+    };
     audio.onerror = () => {
+      audioRef.current = null;
       setPlayingVoiceId(null);
       toastError("Preview failed", "Couldn't play the audio sample.");
     };
     setPlayingVoiceId(voice.voice_id);
-    audio.play().catch(() => setPlayingVoiceId(null));
+    audio.play().catch(() => {
+      audioRef.current = null;
+      setPlayingVoiceId(null);
+      toastError("Preview failed", "Couldn't play the audio sample.");
+    });
   };
 
   const resetClone = () => {

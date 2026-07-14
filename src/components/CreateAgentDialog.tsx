@@ -154,10 +154,10 @@ export default function CreateAgentDialog({
     setError("");
     setStep(2);
     requestAnimationFrame(() => {
-      const search = voiceSectionRef.current?.querySelector<HTMLInputElement>(
-        'input[type="search"], input[placeholder*="Search"]',
+      const firstOptionalControl = voiceSectionRef.current?.querySelector<HTMLElement>(
+        "#voice-picker-details-toggle",
       );
-      search?.focus();
+      firstOptionalControl?.focus();
     });
   }
 
@@ -479,13 +479,13 @@ export default function CreateAgentDialog({
             </>
           ) : (
             <>
-              <p className={WL_APP_CLASSES.wiredEyebrow}>Step 2 · Voice, badge, and line</p>
+              <p className={WL_APP_CLASSES.wiredEyebrow}>Step 2 · Optional details</p>
               <h3 className="mt-3 font-[var(--wireline-font-family-display)] text-[clamp(1.75rem,3.5vw,2.25rem)] font-normal leading-none tracking-[-0.035em] text-foreground">
-                Sound and identity
+                Ready to create
               </h3>
               <p className="mt-3 text-sm text-muted-foreground">
-                Pick how {previewName} answers. The avatar is only an app identifier; video
-                presenters return when the curated Presence Catalog is ready.
+                {previewName} already has a polished voice, badge, and response style. Create now,
+                or personalize any detail below.
               </p>
 
               <div
@@ -539,8 +539,8 @@ export default function CreateAgentDialog({
               </div>
 
               <StatusNotice tone="info" title="Launch safely" className="mt-4">
-                You can train first, then claim a number and test the line before customers reach
-                it.
+                Training can wait. Connect a number only when you are ready to make or receive real
+                calls.
               </StatusNotice>
             </>
           )}
@@ -557,7 +557,7 @@ export default function CreateAgentDialog({
             <p className="text-xs text-muted-foreground">
               {step === 1
                 ? "Brief first. Sound, badge, and line next."
-                : "Creates, trains, and opens Studio."}
+                : "Creates your agent and opens Studio. Optional settings can wait."}
             </p>
             <div className="flex gap-2 sm:justify-end">
               {step === 2 ? (

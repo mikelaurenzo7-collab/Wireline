@@ -33,7 +33,7 @@ Both production aliases (`trywireline.com`, `wireline-chi.vercel.app`,
 
 ### Node.js runtime
 
-The repo prefers **Node 22** (`.nvmrc`, `vercel.json` `build.env.NODE_VERSION`) for full modern features, but `package.json` `engines` accepts `>=20 <23` to prevent install warnings when the Vercel project dashboard is still set to 20.x. 
+The repo prefers **Node 22** (`.nvmrc`, `vercel.json` `build.env.NODE_VERSION`) for full modern features, but `package.json` `engines` accepts `>=20 <23` to prevent install warnings when the Vercel project dashboard is still set to 20.x.
 
 In Vercel → wireline → Settings → General, set **Node.js Version** to **22.x** (recommended). Vercel uses `package.json` `engines.node` during installs, so once the dashboard is updated to 22 the strict preference takes effect cleanly. The flexible engines eliminate the known "project 20.x / package 22.x" warning in the meantime.
 
@@ -55,7 +55,7 @@ build signal. In that case:
    is explicitly accepted by the owner.
 
 Vercel previews must never apply migrations to a shared production database.
-The `vercel-build` script intentionally routes through `scripts/vercel-build.mjs`.
+The explicit `build:vercel` command intentionally routes through `scripts/vercel-build.mjs`.
 That wrapper runs `npm run db:migrate` only when `VERCEL_ENV=production` or
 `WIRELINE_RUN_MIGRATIONS=true`; all preview builds should log that migrations
 were skipped before running the normal production build. Keep this wrapper wired
@@ -80,20 +80,20 @@ specific branch for Preview which is awkward — prefer the UI.
 
 ### Var inventory (key ones)
 
-| Var                                                 | Why it exists                                                                               |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                        |
-| `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                               |
-| `POSTGRES_URL`                                      | Supabase Postgres connection                                                                |
-| `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias. |
-| `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                  |
-| `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                      |
-| `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                             |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                               |
+| Var                                                 | Why it exists                                                                                                       |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                                           | Base URL for OAuth callbacks, Stripe webhooks, Vapi assistant config                                                |
+| `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                                                       |
+| `POSTGRES_URL`                                      | Supabase Postgres connection                                                                                        |
+| `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias.                         |
+| `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                                          |
+| `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                                              |
+| `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                                                     |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`          | Outbound SMS, inbound webhook                                                                                       |
 | `OWNER_PHONE` / `OWNER_EMAIL` / `PLATFORM_SMS_FROM` | Escalation routing (where agent escalations go). Set `OWNER_EMAIL=mikelaurenzo7@gmail.com` for the founder account. |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                     |
-| `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                              |
-| `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged) |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`       | Billing                                                                                                             |
+| `ANTHROPIC_API_KEY`                                 | Claude API for agent reasoning                                                                                      |
+| `OPENROUTER_API_KEY`                                | Optional — Director chat model picker (Pro+ in app; company key; voice runtime unchanged)                           |
 
 ### Internal JWT secret cleanup
 
@@ -182,7 +182,7 @@ third-party status checks. Do not merge blocked PRs until named jobs and logs
 are available, unless the owner explicitly accepts the infrastructure risk.
 
 **Vercel preview tries to run database migrations**
-→ Stop the merge. `package.json` must keep `"vercel-build":
+→ Stop the merge. `package.json` must keep `"build:vercel":
 "node scripts/vercel-build.mjs"` and preview environments must leave
 `WIRELINE_RUN_MIGRATIONS` unset or `false`. Only production builds or explicit
 migration test runs may set it to `true`.

@@ -27,6 +27,7 @@ import { normalizeOutboundNumber } from "./dialer-compliance";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
+import { vapiVoiceVersion } from "./voice-catalog";
 import {
   resolveElevenLabsSpeed,
   resolveOutboundStartSpeakingPlan,
@@ -563,6 +564,10 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       return {
         provider,
         voiceId: agentConfig.voiceIdOutbound || agentConfig.voiceId || "bIHbv24MWmeRgasZH58o",
+        ...(provider === "vapi" &&
+        vapiVoiceVersion(agentConfig.voiceIdOutbound || agentConfig.voiceId)
+          ? { version: vapiVoiceVersion(agentConfig.voiceIdOutbound || agentConfig.voiceId) }
+          : {}),
         // Pin the ElevenLabs TTS model so Vapi doesn't auto-swap
         // between turbo / flash / multilingual / v3 mid-call. Each
         // model has subtly different prosody for the same voiceId,

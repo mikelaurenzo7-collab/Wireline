@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Play, Sparkles } from "lucide-react";
 
 import { Badge, Button } from "../atoms";
 import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
 import {
+  canPreviewVoice,
   normalizeApiVoices,
   playVoicePreview,
   providerLabel,
@@ -15,7 +16,6 @@ import {
   type VoiceOption,
 } from "../../lib/voice-catalog";
 import { groupVoicesByUseCase, TONE_PRESETS } from "../../lib/voice-use-case-groups";
-import { VoicePreviewButton } from "../DeployAgentModal";
 
 type VoiceGalleryProps = {
   agentId: string;
@@ -48,6 +48,7 @@ export default function VoiceGallery({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [applyingTone, setApplyingTone] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   async function applyTonePreset(presetId: string, content: string) {
     if (!agentId || applyingTone) return;
@@ -96,7 +97,10 @@ export default function VoiceGallery({
     let cancelled = false;
     setLoadingCatalog(true);
     authFetch("/api/voices")
-      .then((response) => (response.ok ? response.json() : null))
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Voice catalog unavailable.");
+        return response.json();
+      })
       .then((data) => {
         if (cancelled) return;
         setLibraryVoices(normalizeApiVoices(data?.voices));
@@ -104,7 +108,11 @@ export default function VoiceGallery({
         setCatalogReady(data?.configured !== false);
       })
       .catch(() => {
-        if (!cancelled) setLibraryVoices([]);
+        if (!cancelled) {
+          setLibraryVoices([]);
+          setCatalogReady(false);
+          setError("The voice catalog could not load. Retry by reopening Training.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoadingCatalog(false);
@@ -113,6 +121,14 @@ export default function VoiceGallery({
       cancelled = true;
     };
   }, []);
+
+  useEffect(
+    () => () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    },
+    [],
+  );
 
   const filteredLive = useMemo(
     () =>
@@ -153,11 +169,30 @@ export default function VoiceGallery({
   function playVoice(voice: VoiceOption) {
     const key = voiceKey(voice);
     if (playingVoiceId === key) {
+      audioRef.current?.pause();
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      audioRef.current = null;
       setPlayingVoiceId(null);
       return;
     }
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setError(null);
     setPlayingVoiceId(key);
-    playVoicePreview(voice, () => setPlayingVoiceId(null));
+    let nextAudio: HTMLAudioElement | null = null;
+    nextAudio = playVoicePreview(
+      voice,
+      () => {
+        if (audioRef.current === nextAudio) audioRef.current = null;
+        setPlayingVoiceId(null);
+      },
+      () => {
+        if (audioRef.current === nextAudio) audioRef.current = null;
+        setPlayingVoiceId(null);
+        setError("That sample is temporarily unavailable. You can still assign the voice.");
+      },
+    );
+    audioRef.current = nextAudio;
   }
 
   async function applyVoice(voice: VoiceOption, target: "studio" | "phone" = "studio") {
@@ -395,15 +430,21 @@ export default function VoiceGallery({
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => playVoice(voice)}
-                      >
-                        <Play size={12} aria-hidden="true" />
-                        {isPlaying ? "Stop" : "Preview"}
-                      </Button>
+                      {canPreviewVoice(voice) ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => playVoice(voice)}
+                        >
+                          <Play size={12} aria-hidden="true" />
+                          {isPlaying ? "Stop" : "Preview"}
+                        </Button>
+                      ) : (
+                        <span className="max-w-28 text-right text-[10px] leading-tight text-muted-foreground">
+                          Hear in phone test
+                        </span>
+                      )}
                       <Button
                         type="button"
                         size="sm"
@@ -523,7 +564,15 @@ export default function VoiceGallery({
                         <p className="text-xs text-muted-foreground">Wireline Voice · Flash</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <VoicePreviewButton voiceId={voice.id} voiceName={voice.name} />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => playVoice(voice)}
+                        >
+                          <Play className="size-3.5" aria-hidden="true" />
+                          {playingVoiceId === voiceKey(voice) ? "Stop" : "Preview"}
+                        </Button>
                         <Button
                           type="button"
                           size="sm"

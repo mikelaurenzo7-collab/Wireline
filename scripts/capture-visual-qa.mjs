@@ -19,8 +19,11 @@ const marketingRoutes = [
   "/pricing",
   "/showcase",
   "/compare",
+  "/solutions/support",
+  "/solutions/sales",
   "/about",
   "/blog",
+  "/changelog",
   "/contact",
   "/support",
   "/security",
@@ -33,6 +36,8 @@ const marketingRoutes = [
   "/for/sales",
   "/signin",
   "/signup",
+  "/404",
+  "/not-found",
 ];
 
 const authenticatedRoutes = [

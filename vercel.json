@@ -1,8 +1,7 @@
 {
   "version": 2,
-  "regions": [
-    "cle1"
-  ],
+  "buildCommand": "npm run build:vercel",
+  "regions": ["cle1"],
   "build": {
     "env": {
       "NODE_VERSION": "22"
@@ -31,7 +30,7 @@
         },
         {
           "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin"
+          "value": "same-origin-allow-popups"
         },
         {
           "key": "Cross-Origin-Resource-Policy",
