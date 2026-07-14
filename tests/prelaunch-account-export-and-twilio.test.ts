@@ -8,6 +8,7 @@ import {
   redactAccountExportValue,
 } from "../src/lib/account-export";
 import {
+  copyTwilioSettingsRecord,
   normalizeTwilioMessagingServiceSid,
   normalizeTwilioPhoneSetting,
 } from "../src/lib/twilio-settings";
@@ -19,6 +20,8 @@ describe("strict prelaunch account export and Twilio contracts", () => {
   it("redacts usable provider credentials without deleting usage metrics", () => {
     const exported = redactAccountExportValue({
       access_token: "oauth-access",
+      fcm_token: "push-registration-token",
+      idToken: "oauth-id-token",
       refreshToken: "oauth-refresh",
       password_hash: "password-hash",
       secret: "webhook-secret",
@@ -33,7 +36,21 @@ describe("strict prelaunch account export and Twilio contracts", () => {
       nested: { outputTokens: 9 },
     });
     expect(isSensitiveAccountExportField("vapi_private_key")).toBe(true);
+    expect(isSensitiveAccountExportField("apns_voip_token")).toBe(true);
+    expect(isSensitiveAccountExportField("fcm_token")).toBe(true);
     expect(isSensitiveAccountExportField("cache_create_tokens")).toBe(false);
+    expect(isSensitiveAccountExportField("inputTokens")).toBe(false);
+  });
+
+  it("preserves malformed settings bodies for the canonical validator", () => {
+    expect(copyTwilioSettingsRecord(null)).toBeUndefined();
+    expect(copyTwilioSettingsRecord("invalid")).toBeUndefined();
+    expect(copyTwilioSettingsRecord(["invalid"])).toBeUndefined();
+
+    const original = { twilio_sms_from_number: "+14155550123" };
+    const copied = copyTwilioSettingsRecord(original);
+    expect(copied).toEqual(original);
+    expect(copied).not.toBe(original);
   });
 
   it("never downloads short-lived authentication artifacts", () => {
@@ -83,6 +100,7 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(route).toContain("redactAccountExportValue");
     expect(route).toContain("SELECT * FROM wireline_users");
     expect(route).toContain('bucket: "api:account-export"');
+    expect(route).toContain('res.setHeader("Cache-Control", "private, no-store")');
     expect(route).toContain('router.use(\n  "/api/account/export"');
     expect(route).not.toContain('router.post(\n  "/api/account/export"');
     expect(route).not.toContain("jobsRateLimit");
