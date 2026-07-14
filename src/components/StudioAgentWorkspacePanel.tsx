@@ -251,7 +251,7 @@ export default function StudioAgentWorkspacePanel({
               Phone voice
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Built-in voices are the dependable default. Hear the selected voice during testing or a real call.
+              Built-in voices are the dependable default. Browser testing checks the response; a real call is required to hear the phone voice.
             </p>
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
