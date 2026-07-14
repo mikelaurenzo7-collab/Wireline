@@ -72,10 +72,10 @@ export const MARKETING_VOICE = {
   subline:
     "One trained employee handles customer conversations across voice, SMS, and email—then follows up, books the next step, and logs every outcome.",
   channelProof: [
-    "Voice agent",
-    "Text / SMS agent",
-    "Email agent",
-    "Paid-plan number",
+    "Voice calling",
+    "Text / SMS",
+    "Email messaging",
+    "Included number",
     "Connected inbox",
     "Shared memory",
   ],
