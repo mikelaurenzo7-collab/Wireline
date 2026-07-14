@@ -13,6 +13,8 @@ describe("agent navigation contract", () => {
   const overviewPage = read("src/pages/OverviewPage.tsx");
   const studioChrome = read("src/components/studio/StudioContextChrome.tsx");
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
+  const studioPanel = read("src/components/StudioAgentWorkspacePanel.tsx");
+  const simpleVoicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
   const studioCanvas = read("src/components/StudioAgentCanvas.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
   const appRoutes = read("src/routes/AppRoutes.tsx");
@@ -27,18 +29,19 @@ describe("agent navigation contract", () => {
   const billingPage = read("src/pages/BillingSettings.tsx");
   const teamPage = read("src/pages/TeamSettings.tsx");
 
-  it("keeps agent-first IA with Studio as the primary build destination", () => {
+  it("uses a plain-language employee IA with secondary tools out of the primary rail", () => {
     const navigation = read("src/constants/navigation.ts");
-    expect(workspaceShell).not.toMatch(/label:\s*"Assistants"/);
-    expect(workspaceShell).not.toMatch(/label:\s*"Agent Studio"/);
     expect(navigation).toMatch(/href: "\/overview"[\s\S]*label: "Overview"/);
-    expect(navigation).toMatch(/href: "\/studio", label: "Studio"/);
-    expect(navigation).toMatch(/href: "\/knowledge"[\s\S]*label: "Training"/);
-    expect(navigation).toMatch(/href: "\/connections", label: "Wire"/);
+    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "AI Employee"/);
+    expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
+    expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
+    expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
+    expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);
+    expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/knowledge"[\s\S]*label: "Knowledge"/);
+    expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/approvals"/);
     expect(workspaceShell).toMatch(/aria-label="Agents"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
     expect(workspaceShell).toMatch(/to="\/settings"[\s\S]*aria-label="Account settings"/);
-    expect(workspaceShell).not.toMatch(/Current agent/);
     expect(appRoutes).toMatch(/path="\/agents"[\s\S]*to="\/studio"/);
     expect(appRoutes).not.toMatch(/path="\/(pulse|fleet|ops|training|chat|actions|nexus|wires)"/);
   });
@@ -56,30 +59,38 @@ describe("agent navigation contract", () => {
     expect(overviewPage).not.toMatch(/Your assistants|New assistant|Create assistant/);
   });
 
-  it("keeps Studio visually aligned with the ZIP screenshot", () => {
-    expect(studioWorkspace).toMatch(/400px_minmax/);
-    expect(studioChrome).toMatch(/Studio/);
-    expect(studioChrome).toMatch(/Run test call/);
-    expect(studioChrome).not.toMatch(/agentSubtitle|Talk to build\. Canvas to tune\./);
+  it("makes Studio a single guided workspace instead of a simultaneous split interface", () => {
+    expect(studioWorkspace).toMatch(/type WorkspaceSection = "setup" \| "test" \| "overview"/);
+    expect(studioWorkspace).toMatch(/label: "Set up"/);
+    expect(studioWorkspace).toMatch(/label: "Test"/);
+    expect(studioWorkspace).toMatch(/label: "Overview"/);
+    expect(studioWorkspace).not.toMatch(/400px_minmax/);
+    expect(studioWorkspace).not.toMatch(/lg:grid-cols/);
+    expect(studioChrome).toMatch(/AI Employee/);
+    expect(studioChrome).toMatch(/Test employee/);
+    expect(studioChrome).toMatch(/Connect calls/);
+    expect(studioChrome).not.toMatch(/Deploy|Deep edit/);
+    expect(studioPanel).toMatch(/Define the basics/);
+    expect(studioPanel).toMatch(/Choose a voice and test it/);
+    expect(studioPanel).toMatch(/Connect work channels/);
+    expect(studioPanel).toMatch(/Advanced appearance and voice options/);
     expect(studioWorkroom).toMatch(/Wireline AI/);
-    expect(studioWorkroom).toMatch(/Ask me anything about/);
-    expect(studioWorkroom).toMatch(/Change voice/);
-    expect(studioWorkroom).toMatch(/Edit workflows/);
-    expect(studioWorkroom).toMatch(/Adjust greeting/);
-    expect(studioWorkroom).toMatch(/Deploy now/);
-    expect(studioCanvas).toMatch(/Identity/);
-    expect(studioCanvas).not.toMatch(/line-clamp-4/);
-    expect(studioCanvas).toMatch(/Voice/);
-    expect(studioCanvas).toMatch(/Workflows & Capabilities/);
-    expect(studioCanvas).toMatch(/Knowledge Base/);
-    expect(studioCanvas).toMatch(/Situations/);
-    expect(studioCanvas).toMatch(/Business Profile|Line Profile/);
-    expect(studioCanvas).toMatch(/Escalation & Guardrails/);
     expect(studioCanvas).toMatch(/Setup health/);
   });
 
-  it("uses agent language and Fast Start across studio entry points", () => {
-    expect(studioChrome).toMatch(/New agent/);
+  it("uses dependable built-in phone voices before optional external providers", () => {
+    expect(simpleVoicePicker).toMatch(/VAPI_CURATED_VOICES/);
+    expect(simpleVoicePicker).toMatch(/Savannah/);
+    expect(simpleVoicePicker).toMatch(/Elliot/);
+    expect(simpleVoicePicker).toMatch(/do not require an ElevenLabs or xAI account/);
+    expect(simpleVoicePicker).toMatch(/provider: "vapi"/);
+    expect(simpleVoicePicker).not.toMatch(/playVoicePreview|new Audio/);
+    expect(studioPanel).toMatch(/External voice library/);
+    expect(studioPanel).toMatch(/Use this only after configuring an external provider/);
+  });
+
+  it("keeps the existing Fast Start creation flow while clarifying the active workspace", () => {
+    expect(studioChrome).toMatch(/New AI employee/);
     expect(studioChrome).not.toMatch(/New assistant|Assistants/);
     expect(createDialog).toMatch(/Fast Start/);
     expect(createDialog).toMatch(/~3 minutes to your first agent/);
@@ -103,9 +114,9 @@ describe("agent navigation contract", () => {
     expect(pricingPage).not.toMatch(/Try 7 days free/);
   });
 
-  it("keeps Wire as the customer-facing wiring surface while preserving routes", () => {
+  it("uses Connections as the plain-language wiring destination while preserving routes", () => {
     const navigation = read("src/constants/navigation.ts");
-    expect(navigation).toMatch(/href: "\/connections", label: "Wire"/);
+    expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
     expect(read("src/components/integrations/IntegrationOperatingMap.tsx")).toMatch(
       /wl-eyebrow[\s\S]*Wire/,
@@ -113,11 +124,10 @@ describe("agent navigation contract", () => {
     expect(read("src/components/integrations/IntegrationOperatingMap.tsx")).toMatch(
       /Integration map/,
     );
-    expect(navigation).toMatch(/label: "Wire"[\s\S]*href: "\/connections"/);
     expect(read("src/lib/wireline-onboarding-copy.ts")).toMatch(/Open Wire/);
   });
 
-  it("keeps Training tabs compact and resilient across narrow workspaces", () => {
+  it("keeps Knowledge tabs compact and resilient across narrow workspaces", () => {
     expect(trainingPage).toMatch(/WorkspaceTabStrip/);
     expect(trainingPage).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
   });
@@ -145,15 +155,12 @@ describe("agent navigation contract", () => {
     expect(read("src/components/layout/MobileNavMoreSheet.tsx")).toMatch(/MOBILE_MORE_NAV/);
   });
 
-  it("migrates secondary workspace pages to the new quiet screenshot system", () => {
-    // Connections is a thin page that mounts the live integrations card.
+  it("migrates secondary workspace pages to the quiet authenticated system", () => {
     expect(connectionsPage).toMatch(/CrmConnectionCard/);
     expect(read("src/components/CrmConnectionCard.tsx")).toMatch(/Connected stack/);
     expect(settingsPage).toMatch(/Profile/);
     expect(settingsPage).toMatch(/Security/);
     expect(billingPage).toMatch(/Current plan/);
-    // Billing intentionally defers renewal amount and invoices to Stripe
-    // (the customer portal) rather than computing/caching a price locally.
     expect(billingPage).toMatch(/Stripe is the source of truth for your renewal amount/);
     expect(billingPage).toMatch(/View invoices and payment method/);
     expect(teamPage).toMatch(/Members/);
