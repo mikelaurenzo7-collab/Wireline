@@ -12,7 +12,8 @@ describe("Fast Start native voice contract", () => {
   const voicePicker = read("src/components/create-agent/VoicePickerField.tsx");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
 
-  it("resolves the legacy auto state to a concrete built-in phone voice", () => {
+  it("resolves the legacy auto state before interaction to a built-in phone voice", () => {
+    expect(voicePicker).toMatch(/useLayoutEffect/);
     expect(voicePicker).toMatch(/const RECOMMENDED_VOICE_ID = "Savannah"/);
     expect(voicePicker).toMatch(/value\.mode !== "auto"/);
     expect(voicePicker).toMatch(/provider: "vapi"/);
