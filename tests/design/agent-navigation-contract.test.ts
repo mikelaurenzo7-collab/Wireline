@@ -14,8 +14,8 @@ describe("agent navigation contract", () => {
   const studioChrome = read("src/components/studio/StudioContextChrome.tsx");
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
   const studioPanel = read("src/components/StudioAgentWorkspacePanel.tsx");
+  const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
   const simpleVoicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
-  const studioCanvas = read("src/components/StudioAgentCanvas.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
   const appRoutes = read("src/routes/AppRoutes.tsx");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
@@ -46,36 +46,50 @@ describe("agent navigation contract", () => {
     expect(appRoutes).not.toMatch(/path="\/(pulse|fleet|ops|training|chat|actions|nexus|wires)"/);
   });
 
-  it("uses the screenshot-inspired overview as the personal and business roster", () => {
+  it("makes Overview answer customer-demand questions before configuration questions", () => {
     expect(overviewPage).toMatch(/function dayGreeting/);
-    expect(overviewPage).toMatch(/Good evening/);
-    expect(overviewPage).toMatch(/Workspace metrics/);
-    expect(overviewPage).toMatch(/Personal agents/);
-    expect(overviewPage).toMatch(/Business agents/);
-    expect(overviewPage).toMatch(/Wire your first agent|Open /);
-    expect(overviewPage).toMatch(/posture=/);
-    expect(overviewPage).toMatch(/Recent calls/);
-    expect(overviewPage).not.toMatch(/Quick actions/);
+    expect(overviewPage).toMatch(/Customer conversations today/);
+    expect(overviewPage).toMatch(/Priority leads/);
+    expect(overviewPage).toMatch(/Appointments booked/);
+    expect(overviewPage).toMatch(/Follow-ups waiting/);
+    expect(overviewPage).toMatch(/Customer outcomes/);
+    expect(overviewPage).toMatch(/Personal AI employees/);
+    expect(overviewPage).toMatch(/Business AI employees/);
+    expect(overviewPage).toMatch(/Recent customer conversations/);
+    expect(overviewPage).not.toMatch(/Workspace metrics|Conversation Balance|Workspace pulse/);
     expect(overviewPage).not.toMatch(/Your assistants|New assistant|Create assistant/);
   });
 
-  it("makes Studio a single guided workspace instead of a simultaneous split interface", () => {
-    expect(studioWorkspace).toMatch(/type WorkspaceSection = "setup" \| "test" \| "overview"/);
+  it("makes Studio a clean setup, test, and review workflow", () => {
+    expect(studioWorkspace).toMatch(/type WorkspaceSection = "setup" \| "test" \| "review"/);
     expect(studioWorkspace).toMatch(/label: "Set up"/);
     expect(studioWorkspace).toMatch(/label: "Test"/);
-    expect(studioWorkspace).toMatch(/label: "Overview"/);
-    expect(studioWorkspace).not.toMatch(/400px_minmax/);
-    expect(studioWorkspace).not.toMatch(/lg:grid-cols/);
+    expect(studioWorkspace).toMatch(/label: "Review"/);
+    expect(studioWorkspace).toMatch(/StudioAgentReviewPanel/);
+    expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
+    expect(studioWorkspace).not.toMatch(/400px_minmax|lg:grid-cols/);
     expect(studioChrome).toMatch(/AI Employee/);
-    expect(studioChrome).toMatch(/Test employee/);
-    expect(studioChrome).toMatch(/Connect calls/);
-    expect(studioChrome).not.toMatch(/Deploy|Deep edit/);
-    expect(studioPanel).toMatch(/Define the basics/);
-    expect(studioPanel).toMatch(/Choose a voice and test it/);
-    expect(studioPanel).toMatch(/Connect work channels/);
-    expect(studioPanel).toMatch(/Advanced appearance and voice options/);
-    expect(studioWorkroom).toMatch(/Wireline AI/);
-    expect(studioCanvas).toMatch(/Setup health/);
+    expect(studioChrome).toMatch(/New employee/);
+    expect(studioChrome).not.toMatch(/Test employee|Connect calls|Deploy|Deep edit/);
+    expect(studioPanel).toMatch(/Give \{agentName\} one clear job/);
+    expect(studioPanel).toMatch(/Essentials/);
+    expect(studioPanel).toMatch(/Phone voice/);
+    expect(studioPanel).toMatch(/Test before going live/);
+    expect(studioPanel).toMatch(/Advanced options/);
+    expect(studioReview).toMatch(/Is \{agentName\} ready for customers/);
+    expect(studioReview).toMatch(/Customer-facing job/);
+    expect(studioReview).toMatch(/Browser-ready; live line not connected/);
+  });
+
+  it("uses a real customer roleplay for Studio testing", () => {
+    expect(studioWorkroom).toMatch(/type WorkroomMode = "configure" \| "test"/);
+    expect(studioWorkroom).toMatch(/Customer says:/);
+    expect(studioWorkroom).toMatch(/Talk to \{agentName\} like a customer/);
+    expect(studioWorkroom).toMatch(/Browser roleplay only/);
+    expect(studioWorkroom).toMatch(/What services do you offer/);
+    expect(studioWorkroom).toMatch(/I want to book an appointment/);
+    expect(studioWorkroom).toMatch(/allowOutbound/);
+    expect(studioWorkroom).not.toMatch(/Talk to build|Deploy now|Edit workflows/);
   });
 
   it("uses dependable built-in phone voices before optional external providers", () => {
@@ -90,7 +104,7 @@ describe("agent navigation contract", () => {
   });
 
   it("keeps the existing Fast Start creation flow while clarifying the active workspace", () => {
-    expect(studioChrome).toMatch(/New AI employee/);
+    expect(studioChrome).toMatch(/New employee/);
     expect(studioChrome).not.toMatch(/New assistant|Assistants/);
     expect(createDialog).toMatch(/Fast Start/);
     expect(createDialog).toMatch(/~3 minutes to your first agent/);
