@@ -84,6 +84,8 @@ describe("agent navigation contract", () => {
   it("uses a real customer roleplay for Studio testing", () => {
     expect(studioWorkroom).toMatch(/type WorkroomMode = "configure" \| "test"/);
     expect(studioWorkroom).toMatch(/Customer says:/);
+    expect(studioWorkroom).toMatch(/Ignore prior setup discussion/);
+    expect(studioWorkroom).toMatch(/do not discuss configuration or propose changes/);
     expect(studioWorkroom).toMatch(/Talk to \$\{agentName\} like a customer/);
     expect(studioWorkroom).toMatch(/Browser roleplay only/);
     expect(studioWorkroom).toMatch(/What services do you offer/);
