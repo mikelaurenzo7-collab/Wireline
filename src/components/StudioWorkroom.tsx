@@ -92,9 +92,7 @@ function MessageBubble({
         <div className="rounded-xl bg-primary px-4 py-3 text-[14px] font-medium leading-[1.5] text-primary-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
-        {mode === "test" ? (
-          <p className="mt-1 text-right text-[10px] text-muted-foreground">Customer</p>
-        ) : null}
+        {mode === "test" ? <p className="mt-1 text-right text-[10px] text-muted-foreground">Customer</p> : null}
       </article>
     );
   }
@@ -254,7 +252,11 @@ const StudioWorkroom = forwardRef<
     setDraft("");
     setError(null);
     setSending(true);
-    void streamSend({ content: mode === "test" ? `Customer says: ${text}` : text });
+    const content =
+      mode === "test"
+        ? `Start a fresh customer roleplay. Ignore prior setup discussion. Reply only as the AI employee to this customer message; do not discuss configuration or propose changes. Customer says: ${text}`
+        : text;
+    void streamSend({ content });
   }, [draft, mode, sending, streamSend]);
 
   const clearConversation = useCallback(async () => {
