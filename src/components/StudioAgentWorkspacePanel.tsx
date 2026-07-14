@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
+import { CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { authFetch } from "../lib/api";
 import AgentPresenceLivePreview from "./AgentPresenceLivePreview";
+import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import VoiceGallery from "./voice/VoiceGallery";
 
 const PERSONALITIES = [
-  { id: "Clear", description: "Direct, concise, and easy to understand" },
-  { id: "Warm", description: "Friendly, patient, and conversational" },
-  { id: "Polished", description: "Professional, measured, and precise" },
-  { id: "Energetic", description: "Upbeat, proactive, and enthusiastic" },
+  { id: "Clear", description: "Direct and easy to understand" },
+  { id: "Warm", description: "Friendly and patient" },
+  { id: "Polished", description: "Professional and measured" },
+  { id: "Energetic", description: "Upbeat and proactive" },
 ] as const;
 
 type StudioAgentWorkspacePanelProps = {
@@ -27,7 +28,6 @@ type StudioAgentWorkspacePanelProps = {
 type AgentSetupResponse = {
   personality?: string;
   directives?: Array<{ content?: string }>;
-  knowledge?: Array<{ content?: string }>;
 };
 
 function inferPersonality(value: string | undefined) {
@@ -125,7 +125,7 @@ export default function StudioAgentWorkspacePanel({
         setSetupKnowledge("");
       }
 
-      setSetupNotice("Basics saved. Next, choose a voice and run a test call.");
+      setSetupNotice("Changes saved. Run a customer test before connecting live traffic.");
     } catch (reason) {
       setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
     } finally {
@@ -135,36 +135,27 @@ export default function StudioAgentWorkspacePanel({
 
   return (
     <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
-      <div className="mx-auto w-full max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
-        <header className="flex flex-col gap-2">
+      <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
+        <header>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-            Employee setup
+            Set up
           </p>
-          <h2 className="font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-0.03em] text-foreground">
-            Get {agentName} ready to work
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            Give {agentName} one clear job.
           </h2>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            Set the basics, choose a dependable phone voice, test the experience, then connect the
-            channels this employee should handle.
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Set the tone, greeting, essential facts, and phone voice. Test before adding more tools.
           </p>
         </header>
 
-        <section
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-labelledby="basics-heading"
-        >
-          <div className="mb-5 flex items-start gap-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              1
-            </span>
-            <div>
-              <h3 id="basics-heading" className="text-lg font-semibold tracking-tight">
-                Define the basics
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Keep this simple. You can refine behavior through normal conversation later.
-              </p>
-            </div>
+        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="essentials-heading">
+          <div className="mb-5">
+            <h3 id="essentials-heading" className="text-lg font-semibold tracking-tight text-foreground">
+              Essentials
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Customers should understand who answered, what this employee can do, and when a person takes over.
+            </p>
           </div>
 
           {loadingSetup ? (
@@ -192,9 +183,7 @@ export default function StudioAgentWorkspacePanel({
                         }`}
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                          {selected ? (
-                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
-                          ) : null}
+                          {selected ? <CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> : null}
                           {option.id}
                         </span>
                         <span className="mt-1 block text-xs leading-5 text-muted-foreground">
@@ -218,7 +207,7 @@ export default function StudioAgentWorkspacePanel({
 
               <label className="grid gap-2" htmlFor="setup-knowledge">
                 <span className="text-sm font-semibold text-foreground">
-                  Add essential business information
+                  Essential business facts
                   <span className="ml-2 font-normal text-muted-foreground">Optional</span>
                 </span>
                 <textarea
@@ -229,120 +218,77 @@ export default function StudioAgentWorkspacePanel({
                   placeholder="Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
                 />
                 <span className="text-xs text-muted-foreground">
-                  Paste plain language. Wireline extracts the useful facts and operating rules.
+                  Add only what the first customer workflow needs. More knowledge can come later.
                 </span>
               </label>
 
               {setupNotice ? (
-                <StatusNotice tone="success" title="Setup saved">
+                <StatusNotice tone="success" title="Changes saved">
                   {setupNotice}
                 </StatusNotice>
               ) : null}
               {setupError ? (
-                <StatusNotice tone="destructive" title="Setup not saved">
+                <StatusNotice tone="destructive" title="Changes not saved">
                   {setupError}
                 </StatusNotice>
               ) : null}
 
-              <button
-                type="button"
-                onClick={() => void applySetup()}
-                disabled={applyingSetup}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.985] disabled:cursor-wait disabled:opacity-60"
-              >
+              <Button type="button" onClick={() => void applySetup()} disabled={applyingSetup}>
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Save className="size-4" aria-hidden="true" />
                 )}
-                {applyingSetup ? "Saving…" : "Save basics"}
-              </button>
+                {applyingSetup ? "Saving…" : "Save changes"}
+              </Button>
             </div>
           )}
         </section>
 
-        <section
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-labelledby="voice-heading"
-        >
-          <div className="mb-5 flex items-start gap-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              2
-            </span>
-            <div>
-              <h3 id="voice-heading" className="text-lg font-semibold tracking-tight">
-                Choose a voice and test it
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Use the built-in phone voices first. External voice providers remain optional.
-              </p>
-            </div>
+        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="voice-heading">
+          <div className="mb-5">
+            <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
+              Phone voice
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Built-in voices are the dependable default. Browser testing checks the response; a real call is required to hear the phone voice.
+            </p>
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
-        <section
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
-          aria-labelledby="connect-heading"
-        >
-          <div className="mb-5 flex items-start gap-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-              3
-            </span>
+        <section className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6" aria-label="Continue setup">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 id="connect-heading" className="text-lg font-semibold tracking-tight">
-                Connect work channels
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Start with one channel. Add calls, text, email, calendars, and CRM access as needed.
+              <h3 className="text-base font-semibold text-foreground">Test before going live</h3>
+              <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
+                Try a realistic customer question. Connect phone, text, email, calendar, or CRM only after the response feels right.
               </p>
             </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { to: "/settings/phone", title: "Calls & text", detail: "Assign a number and routing" },
-              { to: "/connections", title: "Email & calendar", detail: "Connect the tools you use" },
-              { to: "/inbox", title: "Inbox", detail: "Review conversations and outcomes" },
-            ].map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="group flex min-h-28 flex-col justify-between rounded-xl border border-border bg-background p-4 transition-colors hover:border-primary/35 hover:bg-primary/5"
-              >
-                <PlugZap className="size-5 text-primary" aria-hidden="true" />
-                <span>
-                  <span className="flex items-center justify-between gap-2 text-sm font-semibold text-foreground">
-                    {item.title}
-                    <ArrowRight
-                      className="size-4 transition-transform group-hover:translate-x-0.5"
-                      aria-hidden="true"
-                    />
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    {item.detail}
-                  </span>
-                </span>
-              </Link>
-            ))}
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="secondary" onClick={onTestVoiceInChat} className="justify-center">
+                Test conversation
+              </Button>
+              <Button asChild className="justify-center">
+                <Link to="/connections">
+                  <PlugZap className="size-4" aria-hidden="true" />
+                  Connect channels
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
 
-        <details
-          id="advanced-employee-options"
-          className="group rounded-2xl border border-border bg-card"
-        >
+        <details id="advanced-employee-options" className="group rounded-2xl border border-border bg-card">
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-foreground sm:px-6">
-            Advanced appearance and voice options
-            <ChevronDown
-              className="size-4 transition-transform group-open:rotate-180"
-              aria-hidden="true"
-            />
+            Advanced options
+            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
           </summary>
           <div className="space-y-6 border-t border-border px-5 py-5 sm:px-6">
             <div>
-              <h3 className="text-base font-semibold">On-screen presence</h3>
+              <h3 className="text-base font-semibold text-foreground">On-screen appearance</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Optional. Phone, text, and email work without a video presenter.
+                Optional. Calls, text, and email work without a video presenter.
               </p>
               <div className="mt-4">
                 <AgentPresenceLivePreview
@@ -354,7 +300,7 @@ export default function StudioAgentWorkspacePanel({
               </div>
             </div>
             <div className="border-t border-border pt-6">
-              <h3 className="text-base font-semibold">External voice library</h3>
+              <h3 className="text-base font-semibold text-foreground">External voice library</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Use this only after configuring an external provider and verifying its runtime key.
               </p>

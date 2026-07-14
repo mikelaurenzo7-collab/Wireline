@@ -7,17 +7,13 @@ import {
   useRef,
   useState,
 } from "react";
-
 import { ArrowLeft, Loader2, Phone, Send, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 import { Button } from "../components/atoms";
 import AgentFace from "./AgentFace";
 import OutboundDialDialog from "./OutboundDialDialog";
-import OutcomeLedger from "./OutcomeLedger";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
-import { WORKSPACE_VOICE } from "../lib/product-copy";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 
 type StudioMessage = {
@@ -32,7 +28,15 @@ type StudioMessage = {
   };
 };
 
-const QUICK_PROMPTS = ["Change voice", "Edit workflows", "Adjust greeting", "Deploy now"] as const;
+type WorkroomMode = "configure" | "test";
+
+const CONFIGURE_PROMPTS = ["Adjust the greeting", "Change the tone", "Add a business rule"] as const;
+const TEST_PROMPTS = [
+  "What services do you offer?",
+  "I want to book an appointment.",
+  "How much does it cost?",
+  "I need to speak with a person.",
+] as const;
 
 function proposalCount(message: StudioMessage) {
   return (
@@ -56,30 +60,6 @@ export type StudioWorkroomHandle = {
   focusComposer: (text?: string) => void;
 };
 
-function seedMessages(agentName: string): StudioMessage[] {
-  const name = agentName || "this agent";
-  return [
-    {
-      id: "seed-ready",
-      role: "agent",
-      content: `I'm ready to help you build ${name}. ${name} is almost ready — run a test call when you want to hear it live. What would you like to configure?`,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "seed-user",
-      role: "Account Holder",
-      content: "Can you walk me through the greeting?",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "seed-greeting",
-      role: "agent",
-      content: `${name}'s current greeting is: “Thank you for calling, how can I help you today?” Want me to personalize it with your business name?`,
-      createdAt: new Date().toISOString(),
-    },
-  ];
-}
-
 function AgentAvatar({ agentName, speaking = false }: { agentName: string; speaking?: boolean }) {
   return (
     <AgentFace
@@ -95,10 +75,12 @@ function AgentAvatar({ agentName, speaking = false }: { agentName: string; speak
 function MessageBubble({
   message,
   agentName,
+  mode,
   speaking = false,
 }: {
   message: StudioMessage;
   agentName: string;
+  mode: WorkroomMode;
   speaking?: boolean;
 }) {
   const isUser = message.role === "Account Holder";
@@ -106,24 +88,27 @@ function MessageBubble({
 
   if (isUser) {
     return (
-      <article className="ml-auto max-w-[82%]">
-        <div className="rounded-[10px] bg-primary px-4 py-3 text-[14px] font-medium leading-[1.45] text-primary-foreground shadow-sm">
+      <article className="ml-auto max-w-[84%]">
+        <div className="rounded-xl bg-primary px-4 py-3 text-[14px] font-medium leading-[1.5] text-primary-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
+        {mode === "test" ? (
+          <p className="mt-1 text-right text-[10px] text-muted-foreground">Customer</p>
+        ) : null}
       </article>
     );
   }
 
   return (
-    <article className="flex max-w-[90%] items-start gap-3">
+    <article className="flex max-w-[92%] items-start gap-3">
       <AgentAvatar agentName={agentName} speaking={speaking} />
       <div className="min-w-0">
-        <div className="rounded-[10px] border border-border bg-card px-4 py-3 text-[14px] leading-[1.48] text-foreground shadow-sm">
+        <div className="rounded-xl border border-border bg-card px-4 py-3 text-[14px] leading-[1.5] text-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
-        {message.proposals && suggestions > 0 ? (
-          <div className="mt-2 rounded-[10px] border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-primary">
-            {suggestions} proposed update{suggestions === 1 ? "" : "s"} ready for {agentName}.
+        {mode === "configure" && message.proposals && suggestions > 0 ? (
+          <div className="mt-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-primary">
+            {suggestions} proposed update{suggestions === 1 ? "" : "s"} ready for review.
           </div>
         ) : null}
       </div>
@@ -141,6 +126,8 @@ const StudioWorkroom = forwardRef<
     onBack: () => void;
     backLabel?: string;
     layout?: "standalone" | "canvas" | "split";
+    mode?: WorkroomMode;
+    allowOutbound?: boolean;
   }
 >(function StudioWorkroom(
   {
@@ -149,14 +136,16 @@ const StudioWorkroom = forwardRef<
     initialCommand,
     commandNonce,
     onBack,
-    backLabel = "Agent workspace",
+    backLabel = "Back",
     layout = "standalone",
+    mode = "configure",
+    allowOutbound = true,
   },
   ref,
 ) {
   const [messages, setMessages] = useState<StudioMessage[]>([]);
   const [draft, setDraft] = useState(initialCommand || "");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(mode === "configure");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
@@ -164,6 +153,7 @@ const StudioWorkroom = forwardRef<
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const split = layout === "split";
+  const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
 
   useImperativeHandle(
     ref,
@@ -177,17 +167,24 @@ const StudioWorkroom = forwardRef<
   );
 
   const endpoint = useMemo(
-    () => `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`,
-    [agentId],
+    () =>
+      mode === "test"
+        ? `/api/agents/${encodeURIComponent(agentId)}/test/stream`
+        : `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`,
+    [agentId, mode],
   );
 
   const loadMessages = useCallback(async () => {
+    if (mode === "test") {
+      setMessages([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const response = await authFetch(
-        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
-      );
+      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`);
       if (!response.ok) throw new Error("Conversation could not be loaded.");
       const payload = await response.json();
       setMessages(Array.isArray(payload.messages) ? payload.messages : []);
@@ -196,7 +193,7 @@ const StudioWorkroom = forwardRef<
     } finally {
       setLoading(false);
     }
-  }, [agentId]);
+  }, [agentId, mode]);
 
   const {
     state: streamState,
@@ -248,6 +245,10 @@ const StudioWorkroom = forwardRef<
   const submit = useCallback(() => {
     const text = draft.trim();
     if (!text || sending) return;
+    const history = messages.slice(-12).map((message) => ({
+      role: message.role === "Account Holder" ? "customer" : "employee",
+      content: message.content,
+    }));
     setMessages((current) => [
       ...current,
       {
@@ -260,18 +261,25 @@ const StudioWorkroom = forwardRef<
     setDraft("");
     setError(null);
     setSending(true);
-    void streamSend({ content: text });
-  }, [draft, sending, streamSend]);
+    void streamSend({ content: text, history: mode === "test" ? history : undefined });
+  }, [draft, messages, mode, sending, streamSend]);
 
   const clearConversation = useCallback(async () => {
-    if (clearing || !window.confirm("Clear this conversation?")) return;
+    if (clearing) return;
+    if (mode === "test") {
+      setMessages([]);
+      setError(null);
+      requestAnimationFrame(() => inputRef.current?.focus());
+      return;
+    }
+    if (!window.confirm("Clear this conversation?")) return;
+
     setClearing(true);
     setError(null);
     try {
-      const response = await authFetch(
-        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
-        { method: "DELETE" },
-      );
+      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`, {
+        method: "DELETE",
+      });
       if (!response.ok) throw new Error("Conversation could not be cleared.");
       setMessages([]);
     } catch (reason) {
@@ -279,7 +287,7 @@ const StudioWorkroom = forwardRef<
     } finally {
       setClearing(false);
     }
-  }, [agentId, clearing]);
+  }, [agentId, clearing, mode]);
 
   const workingLabel =
     streamState.phase === "connecting" || streamState.phase === "preparing"
@@ -287,146 +295,118 @@ const StudioWorkroom = forwardRef<
       : streamState.phase === "thinking"
         ? "Thinking"
         : streamState.phase === "replying"
-          ? "Writing"
+          ? "Replying"
           : "Working";
-
-  const visibleMessages = messages.length ? messages : split ? seedMessages(agentName) : [];
 
   const clearButton = (
     <button
       type="button"
       disabled={!messages.length || clearing}
       onClick={() => void clearConversation()}
-      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-      aria-label="Clear conversation"
+      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+      aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
     >
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </button>
   );
 
   return (
-    <main
-      className={`flex h-full min-h-0 flex-col bg-background ${layout === "canvas" ? "relative" : ""}`}
-    >
-      {layout === "standalone" ? (
-        <header className="relative flex h-12 shrink-0 items-center border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4">
-          <button
-            type="button"
-            onClick={onBack}
-            className="z-10 grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label={backLabel}
-          >
-            <ArrowLeft size={16} aria-hidden="true" />
-          </button>
-          <div className="pointer-events-none absolute left-1/2 max-w-[42vw] -translate-x-1/2 text-center wl-centered-header sm:max-w-md">
-            <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-              {agentName}
+    <main className="flex h-full min-h-0 flex-col bg-background">
+      <header className="shrink-0 border-b border-border/60 bg-card/50 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-3xl items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {mode === "test" ? "Browser test" : "Build by conversation"}
             </p>
-            <p className="text-[10px] text-muted-foreground">Direct the work.</p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+              {mode === "test" ? `Talk to ${agentName} like a customer` : `Improve ${agentName}`}
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
+              {mode === "test"
+                ? "Type a realistic customer question. This tests the response in the browser and does not place a phone call."
+                : "Describe a change in plain language and review the proposed update."}
+            </p>
           </div>
-          <div className="z-10 ml-auto flex items-center gap-1.5">{clearButton}</div>
-        </header>
-      ) : split ? (
-        <header className="shrink-0 border-b border-border/60 px-5 py-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
-                Wireline AI
-              </p>
-              <p className="mt-2 text-[13px] leading-5 text-foreground/75">
-                Talk to build. Ask me anything about {agentName}&apos;s setup.
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => setShowOutboundDial(true)}
-              >
-                <Phone className="h-3.5 w-3.5" aria-hidden />
-                <span className="hidden sm:inline">Outbound</span>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {mode === "test" && allowOutbound ? (
+              <Button type="button" size="sm" variant="secondary" onClick={() => setShowOutboundDial(true)}>
+                <Phone className="size-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Real call</span>
               </Button>
-              <button
-                type="button"
-                onClick={onBack}
-                className="shrink-0 rounded-lg px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                {backLabel} →
-              </button>
-            </div>
+            ) : null}
+            {clearButton}
+            <button
+              type="button"
+              onClick={onBack}
+              className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={backLabel}
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+            </button>
           </div>
-        </header>
-      ) : (
-        <div className="absolute right-3 top-2 z-10 sm:right-4">{clearButton}</div>
-      )}
+        </div>
+      </header>
 
       {error ? (
         <div
-          className="mx-4 mt-3 rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground"
+          className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground"
           role="alert"
         >
           {error}
         </div>
       ) : null}
 
-      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5">
-        {loading ? (
-          <MessageSkeletons />
-        ) : visibleMessages.length ? (
-          <div className="flex flex-col gap-5">
-            {visibleMessages.map((message, index) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                agentName={agentName}
-                speaking={
-                  sending &&
-                  streamState.phase === "replying" &&
-                  message.role === "agent" &&
-                  index === visibleMessages.length - 1
-                }
-              />
-            ))}
-            {sending ? (
-              <div className="flex max-w-[90%] items-start gap-3">
-                <AgentAvatar agentName={agentName} speaking={streamState.phase === "replying"} />
-                <div className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
-                  {workingLabel}...
+      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+        <div className="mx-auto h-full w-full max-w-3xl">
+          {loading ? (
+            <MessageSkeletons />
+          ) : messages.length ? (
+            <div className="flex flex-col gap-5">
+              {messages.map((message, index) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  agentName={agentName}
+                  mode={mode}
+                  speaking={
+                    sending &&
+                    streamState.phase === "replying" &&
+                    message.role === "agent" &&
+                    index === messages.length - 1
+                  }
+                />
+              ))}
+              {sending ? (
+                <div className="flex max-w-[92%] items-start gap-3">
+                  <AgentAvatar agentName={agentName} speaking={streamState.phase === "replying"} />
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+                    {workingLabel}…
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <div className="mx-auto flex h-full max-w-3xl items-end justify-center pb-2 text-center wl-centered-header">
-            <p className="text-sm font-semibold tracking-[-0.01em] text-muted-foreground">Ready.</p>
-          </div>
-        )}
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
+              <AgentFace seed={agentName} size={48} title={`${agentName} face`} />
+              <h3 className="mt-4 text-lg font-semibold text-foreground">
+                {mode === "test" ? "Start with a real customer question" : "Describe what should change"}
+              </h3>
+              <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                {mode === "test"
+                  ? "Try pricing, booking, support, objections, or a request to speak with a person."
+                  : "Use plain language. Wireline will propose the smallest useful update."}
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
-      {!loading && !split ? (
-        <div className="mx-auto max-w-3xl px-4 pb-3 sm:px-6 xl:max-w-5xl 2xl:max-w-6xl">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-              Outcome ledger
-            </div>
-            <Link
-              to="/approvals"
-              className="text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              Open approvals →
-            </Link>
-          </div>
-          <OutcomeLedger agentId={agentId} limit={4} compact showViewAll={false} />
-        </div>
-      ) : null}
-
       <div className="shrink-0 border-t border-border bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl xl:max-w-5xl 2xl:max-w-6xl">
+        <div className="mx-auto max-w-3xl">
           <div className={WL_COMPOSER_CLASSES.composerDock}>
             <label className="sr-only" htmlFor="studio-workroom-message">
-              Message {agentName}
+              {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
             </label>
             <textarea
               id="studio-workroom-message"
@@ -439,14 +419,18 @@ const StudioWorkroom = forwardRef<
                   submit();
                 }
               }}
-              rows={split ? 1 : 2}
+              rows={2}
               disabled={sending}
-              placeholder={WORKSPACE_VOICE.directAgent(agentName)}
+              placeholder={
+                mode === "test"
+                  ? "Type what a customer would say…"
+                  : `Tell Wireline what to change about ${agentName}…`
+              }
               className="wl-composer-dock__input disabled:opacity-60"
             />
             <div className="wl-composer-dock__toolbar">
               <div className="flex flex-wrap gap-1.5">
-                {QUICK_PROMPTS.map((prompt) => (
+                {quickPrompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
@@ -460,27 +444,27 @@ const StudioWorkroom = forwardRef<
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-1.5">
-                {!split ? clearButton : null}
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={!draft.trim() || sending}
-                  onClick={submit}
-                  className="transition-all active:scale-[0.985]"
-                  aria-busy={sending}
-                >
-                  {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
-                  <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!draft.trim() || sending}
+                onClick={submit}
+                className="transition-all active:scale-[0.985]"
+                aria-busy={sending}
+              >
+                {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+                <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
+              </Button>
             </div>
           </div>
-        </div>
-        <div className="mt-2 hidden text-center text-[10px] text-muted-foreground sm:block">
-          Cmd + Enter to send
+          <p className="mt-2 text-center text-[10px] text-muted-foreground">
+            {mode === "test"
+              ? "Browser roleplay only. Use Real call after a phone line is connected."
+              : "Review proposed changes before using them with customers."}
+          </p>
         </div>
       </div>
+
       <OutboundDialDialog
         open={showOutboundDial}
         onClose={() => setShowOutboundDial(false)}

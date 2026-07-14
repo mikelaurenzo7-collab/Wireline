@@ -1,5 +1,16 @@
-import { useEffect, useState, lazy, Suspense } from "react";
-import { ArrowRight, Bot, Clock3, Phone, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Bot,
+  CalendarCheck2,
+  Clock3,
+  Flame,
+  ListTodo,
+  Phone,
+  Play,
+  PlugZap,
+  Sparkles,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 import ActivationChecklist from "../components/ActivationChecklist";
@@ -10,8 +21,6 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import AgentFace from "../components/AgentFace";
 import OutboundDialDialog from "../components/OutboundDialDialog";
 import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
-import WidgetBoundary from "../components/WidgetBoundary";
-import RouteFallback from "../components/layout/RouteFallback";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel } from "../lib/product-copy";
@@ -19,8 +28,6 @@ import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import type { CallLog } from "../types/api";
-
-const DailyBriefPanel = lazy(() => import("../components/DailyBrief"));
 
 function todayLabel() {
   return new Intl.DateTimeFormat(undefined, {
@@ -40,43 +47,48 @@ function dayGreeting(date = new Date()) {
 }
 
 function agentReadiness(agent: WorkspaceAgentSummary) {
-  return agent.phone_number ? "Active" : "Training";
+  return agent.phone_number ? "Live" : "Setup needed";
 }
 
 function metricRows(
-  agents: WorkspaceAgentSummary[],
-  hasAgents: boolean,
-  activeAgents: number,
   callsCount: number,
   callsDetail: string,
-  connectionsCount: number,
-  connectionsDetail: string,
-  balanceUsd: number | null,
+  hotLeadsCount: number,
+  totalAppointments: number,
+  pendingFollowUps: number,
 ) {
   return [
     {
-      label: "Agents",
-      value: String(agents.length),
-      detail: hasAgents ? `${activeAgents} active` : "Create one",
-      tone: hasAgents ? ("success" as const) : ("warning" as const),
-    },
-    {
-      label: "Calls today",
+      label: "Customer conversations today",
       value: String(callsCount),
       detail: callsDetail,
       tone: callsCount > 0 ? ("success" as const) : ("neutral" as const),
+      href: "/phone?tab=logs",
+      icon: Phone,
     },
     {
-      label: "Connections",
-      value: String(connectionsCount),
-      detail: connectionsDetail,
-      tone: connectionsCount > 0 ? ("primary" as const) : ("neutral" as const),
+      label: "Priority leads",
+      value: String(hotLeadsCount),
+      detail: hotLeadsCount > 0 ? "Latest high-intent conversations" : "No priority leads yet",
+      tone: hotLeadsCount > 0 ? ("primary" as const) : ("neutral" as const),
+      href: "/insights",
+      icon: Flame,
     },
     {
-      label: "Balance",
-      value: balanceUsd !== null ? `$${balanceUsd.toFixed(2)}` : "--",
-      detail: "Conversation Balance",
-      tone: balanceUsd !== null && balanceUsd > 0 ? ("wire" as const) : ("neutral" as const),
+      label: "Appointments booked",
+      value: String(totalAppointments),
+      detail: totalAppointments > 0 ? "Total appointments on record" : "Connect a calendar to book",
+      tone: totalAppointments > 0 ? ("wire" as const) : ("neutral" as const),
+      href: totalAppointments > 0 ? "/insights" : "/connections",
+      icon: CalendarCheck2,
+    },
+    {
+      label: "Follow-ups waiting",
+      value: String(pendingFollowUps),
+      detail: pendingFollowUps > 0 ? "Review before they go out" : "Nothing waiting for approval",
+      tone: pendingFollowUps > 0 ? ("warning" as const) : ("success" as const),
+      href: "/approvals",
+      icon: ListTodo,
     },
   ];
 }
@@ -84,16 +96,16 @@ function metricRows(
 function MetricSkeleton() {
   return (
     <div className="wl-metric-tile" aria-hidden="true">
-      <Skeleton shape="text" className="h-3 w-16" />
+      <Skeleton shape="text" className="h-3 w-28" />
       <Skeleton shape="text" className="mt-5 h-8 w-12" />
-      <Skeleton shape="text" className="mt-4 h-3 w-28" />
+      <Skeleton shape="text" className="mt-4 h-3 w-36" />
     </div>
   );
 }
 
 function AgentLoadingRows() {
   return (
-    <div className="grid gap-2" aria-busy="true" aria-label="Loading agents">
+    <div className="grid gap-2" aria-busy="true" aria-label="Loading AI employees">
       {Array.from({ length: 3 }, (_, index) => (
         <div key={index} className="rounded-[10px] border border-border px-3 py-3">
           <div className="flex items-center gap-3">
@@ -113,18 +125,18 @@ function AgentLoadingRows() {
 function FirstRunLaunchpad() {
   const steps = [
     {
-      title: "Create your agent",
-      detail: "Give it one job and a name. The reliable defaults are already selected.",
+      title: "Choose one real job",
+      detail: "Start with missed calls, appointment booking, lead qualification, or customer support.",
       icon: Bot,
     },
     {
-      title: "Connect a number",
-      detail: "When you are ready for live calls, claim the number included with a paid plan.",
+      title: "Connect the customer line",
+      detail: "Claim a number, or route calls customers already make to your business.",
       icon: Phone,
     },
     {
-      title: "Make one real call",
-      detail: "Roleplay in the browser first, then call the line and review the logged outcome.",
+      title: "Review the first outcome",
+      detail: "See what the customer needed, what Wireline completed, and what needs your approval.",
       icon: Sparkles,
     },
   ];
@@ -136,29 +148,26 @@ function FirstRunLaunchpad() {
     >
       <div className="grid gap-7 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
-          <p className="wl-eyebrow wl-eyebrow--primary">First 10 minutes</p>
-          <h2
-            id="first-run-title"
-            className="mt-2 text-xl font-semibold text-foreground sm:text-2xl"
-          >
-            One clear path to your first live call.
+          <p className="wl-eyebrow wl-eyebrow--primary">Start with demand</p>
+          <h2 id="first-run-title" className="mt-2 text-xl font-semibold text-foreground sm:text-2xl">
+            Put one customer-facing job to work today.
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-            Start with one agent. Training, extra channels, and advanced settings are optional until
-            the first conversation proves what you need.
+            Do not configure everything. Give one AI employee a clear job, test it, then connect the
+            phone, text, email, calendar, or CRM channels that job actually needs.
           </p>
           <Button asChild className="mt-5 w-full justify-center sm:w-auto">
             <Link to="/studio?create=1">
-              Create your first agent
+              Create your first AI employee
               <ArrowRight size={15} aria-hidden="true" />
             </Link>
           </Button>
           <p className="mt-3 text-xs text-muted-foreground">
-            No integrations required to create or browser-test it.
+            Reliable voice and behavior defaults are already selected.
           </p>
         </div>
 
-        <ol className="grid gap-2" aria-label="First-run path">
+        <ol className="grid gap-2" aria-label="First customer-demand workflow">
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (
@@ -191,8 +200,8 @@ function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
   return (
     <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
       <StatusNotice tone="warning" title="Your workspace is reconnecting">
-        Wireline could not verify your agent roster, so no empty-state claims or create actions are
-        shown yet. Your existing agents and data are unchanged.
+        Wireline could not verify your AI employee roster, so no empty-state claims or create actions
+        are shown yet. Your existing employees and customer data are unchanged.
       </StatusNotice>
       <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
         Retry workspace
@@ -201,14 +210,113 @@ function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+function DemandReadinessCard({
+  hasLiveLine,
+  hasConversationHistory,
+  callsCount,
+  pendingFollowUps,
+  connectionsCount,
+  connectionsDetail,
+  setupHref,
+  testHref,
+}: {
+  hasLiveLine: boolean;
+  hasConversationHistory: boolean;
+  callsCount: number;
+  pendingFollowUps: number;
+  connectionsCount: number;
+  connectionsDetail: string;
+  setupHref: string;
+  testHref: string;
+}) {
+  const state = !hasLiveLine
+    ? {
+        eyebrow: "Demand path incomplete",
+        title: "Connect a phone line to start capturing real demand.",
+        detail:
+          "Use it on your website, Google Business Profile, ads, or as missed-call forwarding from the number customers already know.",
+        primaryHref: "/connections",
+        primaryLabel: "Connect phone and channels",
+        secondaryHref: testHref,
+        secondaryLabel: "Test the employee first",
+      }
+    : !hasConversationHistory
+      ? {
+          eyebrow: "Line ready",
+          title: "Your line is live. Put it where customers already call.",
+          detail:
+            "Publish the number on customer-facing profiles or forward unanswered calls to Wireline. Then place one real inbound call and review the outcome.",
+          primaryHref: "/settings/phone",
+          primaryLabel: "Review phone setup",
+          secondaryHref: testHref,
+          secondaryLabel: "Run a test conversation",
+        }
+      : pendingFollowUps > 0
+        ? {
+            eyebrow: "Action required",
+            title: `${pendingFollowUps} customer follow-up${pendingFollowUps === 1 ? " needs" : "s need"} your decision.`,
+            detail:
+              "Review the proposed next steps while the customer context is fresh. Approve, edit, or decline each action before it goes out.",
+            primaryHref: "/approvals",
+            primaryLabel: "Review follow-ups",
+            secondaryHref: "/phone?tab=logs",
+            secondaryLabel: "Open conversations",
+          }
+        : {
+            eyebrow: callsCount > 0 ? "Customer demand today" : "Line ready",
+            title:
+              callsCount > 0
+                ? "Wireline is handling conversations and recording what happened."
+                : "No new conversations today. Your customer line is still ready.",
+            detail:
+              "Use customer outcomes—not configuration volume—to decide what to train, connect, or automate next.",
+            primaryHref: "/phone?tab=logs",
+            primaryLabel: "Review conversations",
+            secondaryHref: setupHref,
+            secondaryLabel: "Improve the employee",
+          };
+
+  return (
+    <section className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-6" aria-label="Demand readiness">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 max-w-3xl">
+          <div className="flex items-center gap-2">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <PlugZap size={17} aria-hidden="true" />
+            </span>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+              {state.eyebrow}
+            </p>
+          </div>
+          <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            {state.title}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {connectionsCount > 0 ? `Connected now: ${connectionsDetail}` : "No live channels connected yet."}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
+          <Button asChild>
+            <Link to={state.primaryHref}>{state.primaryLabel}</Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to={state.secondaryHref}>{state.secondaryLabel}</Link>
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
-  const active = !!agent.phone_number;
+  const live = Boolean(agent.phone_number);
   const enc = encodeURIComponent(agent.id);
   return (
     <Link
       to={`/studio?agent=${enc}`}
       className={`group flex min-h-[56px] items-center gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-2 wl-press wl-focus-ring-halo ${
-        active
+        live
           ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)]"
           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
       }`}
@@ -226,8 +334,8 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
         </span>
       </span>
       <span
-        className={`wl-chip wl-chip--${active ? "success" : "warning"} shrink-0`}
-        aria-label={`Agent status: ${agentReadiness(agent)}`}
+        className={`wl-chip wl-chip--${live ? "success" : "warning"} shrink-0`}
+        aria-label={`AI employee status: ${agentReadiness(agent)}`}
       >
         <span className="wl-chip__dot" aria-hidden="true" />
         {agentReadiness(agent)}
@@ -243,7 +351,7 @@ function CompactAgentRow({ agent }: { agent: WorkspaceAgentSummary }) {
 type AgentKind = "personal" | "business";
 
 function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgentSummary[] }) {
-  const heading = kind === "personal" ? "Personal agents" : "Business agents";
+  const heading = kind === "personal" ? "Personal AI employees" : "Business AI employees";
   if (agents.length === 0) return null;
 
   return (
@@ -264,7 +372,7 @@ function AgentSection({ kind, agents }: { kind: AgentKind; agents: WorkspaceAgen
           to={`/studio?create=1&posture=${kind}`}
           className="grid min-h-[44px] place-items-center rounded-[10px] border border-dashed border-border bg-background/30 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
         >
-          + New {kind} agent
+          + New {kind} employee
         </Link>
       </div>
     </section>
@@ -289,11 +397,13 @@ export default function OverviewPage() {
   const { agents, loading, degraded, refresh } = useAgents();
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
-  const [callsCount, setCallsCount] = useState<number>(0);
-  const [callsDetail, setCallsDetail] = useState<string>("Waiting for first call");
-  const [connectionsCount, setConnectionsCount] = useState<number>(0);
-  const [connectionsDetail, setConnectionsDetail] = useState<string>("Checking connections...");
-  const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
+  const [callsCount, setCallsCount] = useState(0);
+  const [callsDetail, setCallsDetail] = useState("Waiting for first conversation");
+  const [connectionsCount, setConnectionsCount] = useState(0);
+  const [connectionsDetail, setConnectionsDetail] = useState("Checking connections…");
+  const [hotLeadsCount, setHotLeadsCount] = useState(0);
+  const [totalAppointments, setTotalAppointments] = useState(0);
+  const [pendingFollowUps, setPendingFollowUps] = useState(0);
   const [recentCalls, setRecentCalls] = useState<CallLog[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
@@ -303,19 +413,21 @@ export default function OverviewPage() {
     async function loadDashboard() {
       setLoadingDashboard(true);
       try {
-        const [statsRes, crmRes, calendarRes, balanceRes] = await Promise.all([
+        const [statsRes, crmRes, calendarRes, navCountsRes] = await Promise.all([
           authFetch("/api/dashboard/stats"),
           authFetch("/api/oauth/crm/status"),
           authFetch("/api/calendar/accounts"),
-          authFetch("/api/conversation-balance"),
+          authFetch("/api/nav-counts"),
         ]);
 
         if (cancelled) return;
 
         if (statsRes.ok) {
           const data = await statsRes.json();
-          const logs: CallLog[] = data.recentLogs || [];
+          const logs: CallLog[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
           setRecentCalls(logs.slice(0, 4));
+          setHotLeadsCount(Array.isArray(data?.hotLeads) ? data.hotLeads.length : 0);
+          setTotalAppointments(Number(data?.totalAppointments ?? 0));
 
           const todayStr = localDateKey(new Date());
           const todayLogs = logs.filter((log) => isoToLocalDateKey(log.created_at) === todayStr);
@@ -326,47 +438,43 @@ export default function OverviewPage() {
             const outbound = todayLogs.filter((log) => log.direction === "outbound").length;
             setCallsDetail(`${inbound} inbound · ${outbound} outbound`);
           } else {
-            setCallsDetail(
-              logs.length > 0 ? "No calls today · line active" : "Waiting for first call",
-            );
+            setCallsDetail(logs.length > 0 ? "No new calls today" : "Waiting for first conversation");
           }
         }
 
+        if (navCountsRes.ok) {
+          const data = await navCountsRes.json();
+          setPendingFollowUps(Number(data?.["/overview"] ?? 0));
+        }
+
+        const activeProviders: string[] = [];
         if (crmRes.ok) {
           const data = await crmRes.json();
-          const activeProviders = Object.entries(data as Record<string, { connected?: boolean }>)
-            .filter(([, conn]) => conn?.connected)
-            .map(([name]) =>
-              name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
-            );
-          // Only real links count: a linked calendar account and a live phone
-          // line (which carries SMS). No decorative placeholder connections.
-          const core: string[] = [];
-          if (calendarRes.ok) {
-            const calendarData = await calendarRes.json().catch(() => null);
-            if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
-              core.push("Calendar");
-            }
-          }
-          if (agents.some((agent) => agent.phone_number)) core.push("SMS");
-          const allConns = [...core, ...activeProviders];
-          setConnectionsCount(allConns.length);
-          setConnectionsDetail(
-            allConns.length ? allConns.join(" · ") : "Connect tools in Connections",
+          activeProviders.push(
+            ...Object.entries(data as Record<string, { connected?: boolean }>)
+              .filter(([, connection]) => connection?.connected)
+              .map(([name]) =>
+                name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
+              ),
           );
-        } else if (!cancelled) {
-          setConnectionsCount(0);
-          setConnectionsDetail("Connect tools in Connections");
         }
 
-        if (balanceRes.ok) {
-          const data = await balanceRes.json();
-          setBalanceUsd(data.balance_usd ?? 0);
+        const coreConnections: string[] = [];
+        if (calendarRes.ok) {
+          const calendarData = await calendarRes.json().catch(() => null);
+          if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
+            coreConnections.push("Calendar");
+          }
         }
+        if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone + SMS");
+
+        const allConnections = [...new Set([...coreConnections, ...activeProviders])];
+        setConnectionsCount(allConnections.length);
+        setConnectionsDetail(
+          allConnections.length ? allConnections.join(" · ") : "Connect tools in Connections",
+        );
       } catch {
-        if (!cancelled) {
-          setConnectionsDetail("Connect tools in Connections");
-        }
+        if (!cancelled) setConnectionsDetail("Connect tools in Connections");
       } finally {
         if (!cancelled) setLoadingDashboard(false);
       }
@@ -381,14 +489,15 @@ export default function OverviewPage() {
   const personalAgents = agents.filter((agent) => !agent.is_business_agent);
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
   const hasAgents = !loading && agents.length > 0;
-  // An empty list during a degraded fetch is not proof that this is a new
-  // workspace. Keep the recovery notice visible instead of prompting an
-  // existing customer to create a duplicate "first" agent.
   const isFirstRun = !loading && !degraded && agents.length === 0;
   const primaryAgent = agents[0];
-  const activeAgents = agents.filter((agent) => agent.phone_number).length || agents.length;
+  const hasLiveLine = agents.some((agent) => Boolean(agent.phone_number));
+  const hasConversationHistory = recentCalls.length > 0;
   const primaryStudioHref = primaryAgent
-    ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}`
+    ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=setup`
+    : "/studio?create=1";
+  const primaryTestHref = primaryAgent
+    ? `/studio?agent=${encodeURIComponent(primaryAgent.id)}&section=test`
     : "/studio?create=1";
 
   return (
@@ -399,31 +508,45 @@ export default function OverviewPage() {
             {todayLabel()}
           </p>
           <div className="mt-3 flex flex-col items-center gap-5">
-            <div className="max-w-prose">
+            <div className="max-w-2xl">
               <h1 className="wl-display-2 text-balance">
                 {isFirstRun
-                  ? "Let's build your first AI employee."
+                  ? "Let's put your first AI employee to work."
                   : `${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
               </h1>
+              {!isFirstRun ? (
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+                  See customer demand, pending decisions, and completed outcomes before changing setup.
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {hasAgents ? (
                 <>
-                  <Button asChild className="shrink-0 justify-center sm:min-w-[154px]">
+                  <Button asChild className="shrink-0 justify-center sm:min-w-[170px]">
                     <Link to={primaryStudioHref}>
                       <Sparkles aria-hidden="true" size={15} />
-                      {primaryAgent ? `Open ${primaryAgent.name}` : "Open Studio"}
+                      Manage AI employee
                     </Link>
                   </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="shrink-0 justify-center sm:min-w-[154px]"
-                    onClick={() => setShowOutboundDial(true)}
-                  >
-                    <Phone aria-hidden="true" size={15} />
-                    New call
-                  </Button>
+                  {hasLiveLine ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="shrink-0 justify-center sm:min-w-[154px]"
+                      onClick={() => setShowOutboundDial(true)}
+                    >
+                      <Phone aria-hidden="true" size={15} />
+                      Start a call
+                    </Button>
+                  ) : (
+                    <Button asChild variant="secondary" className="shrink-0 justify-center sm:min-w-[154px]">
+                      <Link to={primaryTestHref}>
+                        <Play aria-hidden="true" size={15} />
+                        Test employee
+                      </Link>
+                    </Button>
+                  )}
                 </>
               ) : null}
             </div>
@@ -438,74 +561,83 @@ export default function OverviewPage() {
           <>
             <ActivationChecklist className="mb-2" />
 
+            <DemandReadinessCard
+              hasLiveLine={hasLiveLine}
+              hasConversationHistory={hasConversationHistory}
+              callsCount={callsCount}
+              pendingFollowUps={pendingFollowUps}
+              connectionsCount={connectionsCount}
+              connectionsDetail={connectionsDetail}
+              setupHref={primaryStudioHref}
+              testHref={primaryTestHref}
+            />
+
             <section
               className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-              aria-label="Workspace metrics"
+              aria-label="Customer demand and outcomes"
             >
-              {loadingDashboard && loading
+              {loadingDashboard
                 ? Array.from({ length: 4 }, (_, index) => <MetricSkeleton key={index} />)
                 : metricRows(
-                    agents,
-                    hasAgents,
-                    activeAgents,
                     callsCount,
                     callsDetail,
-                    connectionsCount,
-                    connectionsDetail,
-                    balanceUsd,
-                  ).map((item, index) => (
-                    <article
-                      key={item.label}
-                      className={`wl-metric-tile wl-reveal wl-reveal-${index + 1}`}
-                      data-tone={item.tone}
-                    >
-                      <p className="wl-metric-tile__label">{item.label}</p>
-                      <div className="wl-metric-tile__value">
-                        {loading && item.label === "Agents" ? "—" : item.value}
-                      </div>
-                      <p className="wl-metric-tile__detail">{item.detail}</p>
-                    </article>
-                  ))}
+                    hotLeadsCount,
+                    totalAppointments,
+                    pendingFollowUps,
+                  ).map((item, index) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.href}
+                        className={`wl-metric-tile wl-reveal wl-reveal-${index + 1} group wl-focus-ring-halo`}
+                        data-tone={item.tone}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="wl-metric-tile__label">{item.label}</p>
+                          <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                        </div>
+                        <div className="wl-metric-tile__value">{item.value}</div>
+                        <p className="wl-metric-tile__detail">{item.detail}</p>
+                      </Link>
+                    );
+                  })}
             </section>
 
             {degraded ? (
-              <StatusNotice tone="warning" title="Status partial.">
-                Agent links are recovering — showing the last safe state.
+              <StatusNotice tone="warning" title="Status partial">
+                AI employee links are recovering — showing the last safe state.
               </StatusNotice>
             ) : null}
 
-            <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Outcome ledger">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Outcome ledger
-                </p>
-                <Link
-                  to="/approvals"
-                  className="text-xs font-semibold text-primary hover:underline"
-                >
-                  Approvals →
+            <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Customer outcomes">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Customer outcomes
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    What customers needed, what Wireline completed, and what still requires a decision.
+                  </p>
+                </div>
+                <Link to="/approvals" className="text-xs font-semibold text-primary hover:underline">
+                  Review follow-ups →
                 </Link>
               </div>
               <OutcomeLedger limit={5} showViewAll />
             </section>
 
-            <WidgetBoundary label="Daily brief">
-              <Suspense fallback={<RouteFallback />}>
-                <DailyBriefPanel />
-              </Suspense>
-            </WidgetBoundary>
-
             <section
               className="grid gap-4 lg:grid-cols-[1fr_1fr]"
-              aria-label="Agents and recent calls"
+              aria-label="AI employees and recent customer conversations"
             >
               <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    Agents
+                    AI employees
                   </p>
                   <Link to="/studio" className="text-xs font-semibold text-primary hover:underline">
-                    Open Studio →
+                    Manage →
                   </Link>
                 </div>
                 {loading ? (
@@ -521,11 +653,11 @@ export default function OverviewPage() {
                     titleTone="ui"
                     withHalo={false}
                     icon={<Bot aria-hidden="true" />}
-                    title="No agents yet"
-                    description="Wire one in Studio — it learns from every outcome."
+                    title="No AI employees yet"
+                    description="Create one for a specific customer-facing job."
                     action={
                       <Button asChild size="sm">
-                        <Link to="/studio?create=1">Wire one</Link>
+                        <Link to="/studio?create=1">Create AI employee</Link>
                       </Button>
                     }
                   />
@@ -535,7 +667,7 @@ export default function OverviewPage() {
               <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    Recent calls
+                    Recent customer conversations
                   </p>
                   <Link
                     to="/phone?tab=logs"
@@ -549,7 +681,7 @@ export default function OverviewPage() {
                     <div
                       className="grid gap-3 py-2"
                       aria-busy="true"
-                      aria-label="Loading recent calls"
+                      aria-label="Loading recent customer conversations"
                     >
                       {Array.from({ length: 3 }, (_, index) => (
                         <div key={index} className="flex items-center gap-3 py-2">
@@ -577,7 +709,7 @@ export default function OverviewPage() {
                           </span>
                           <span className="wl-data-row__detail wl-data-row__detail--clamp">
                             {[
-                              call.agent_name || primaryAgent?.name || "Agent",
+                              call.agent_name || primaryAgent?.name || "AI employee",
                               formatCallMeta(call.created_at, call.duration_seconds),
                               call.summary || call.intent_label,
                             ]
@@ -598,13 +730,18 @@ export default function OverviewPage() {
                       density="compact"
                       titleTone="ui"
                       icon={<Phone aria-hidden="true" />}
-                      title="No calls yet"
+                      title={hasLiveLine ? "No customer calls yet" : "Connect a line to receive calls"}
+                      description={
+                        hasLiveLine
+                          ? "Place one real inbound call, then review the outcome here."
+                          : "Test the employee first, then connect a phone number when it is ready."
+                      }
                       action={
-                        !hasAgents ? (
-                          <Button asChild size="sm">
-                            <Link to="/studio?create=1">Create agent</Link>
-                          </Button>
-                        ) : undefined
+                        <Button asChild size="sm">
+                          <Link to={hasLiveLine ? primaryTestHref : "/connections"}>
+                            {hasLiveLine ? "Run test conversation" : "Connect phone"}
+                          </Link>
+                        </Button>
                       }
                     />
                   )}
