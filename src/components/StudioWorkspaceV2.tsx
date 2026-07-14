@@ -108,10 +108,11 @@ export default function StudioWorkspaceV2() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
   const section = normalizeSection(params.get("section"));
+  const legacyMode = params.get("mode");
+  const legacyView = params.get("view");
+  const hasCommand = Boolean(params.get("command") || params.get("commandNonce"));
 
   useEffect(() => {
-    const legacyMode = params.get("mode");
-    const legacyView = params.get("view");
     if (legacyMode !== "workroom" && legacyView !== "workspace") return;
     setParams(
       (current) => {
@@ -123,7 +124,7 @@ export default function StudioWorkspaceV2() {
       },
       { replace: true },
     );
-  }, [params, setParams]);
+  }, [legacyMode, legacyView, setParams]);
 
   useEffect(() => {
     if (loading || agents.length === 0 || !resolvedAgentId || resolvedAgentId === requestedId) return;
@@ -142,7 +143,7 @@ export default function StudioWorkspaceV2() {
   }, [agents, loading, requestedId, resolvedAgentId, setParams]);
 
   useEffect(() => {
-    if (!params.get("command") && !params.get("commandNonce")) return;
+    if (!hasCommand || section === "test") return;
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -151,7 +152,7 @@ export default function StudioWorkspaceV2() {
       },
       { replace: true },
     );
-  }, [params, setParams]);
+  }, [hasCommand, section, setParams]);
 
   useEffect(() => {
     if (active?.id) writeStudioLastAgentId(active.id);
@@ -167,6 +168,10 @@ export default function StudioWorkspaceV2() {
           next.set("section", nextSection);
           next.delete("view");
           next.delete("mode");
+          if (nextSection !== "test") {
+            next.delete("command");
+            next.delete("commandNonce");
+          }
           return next;
         },
         { replace },
@@ -184,8 +189,9 @@ export default function StudioWorkspaceV2() {
     setSection("setup");
     if (target === "presence") {
       window.setTimeout(() => {
-        document.querySelector("details")?.setAttribute("open", "");
-        document.querySelector("details")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const advanced = document.getElementById("advanced-employee-options");
+        advanced?.setAttribute("open", "");
+        advanced?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
     }
   }
