@@ -43,16 +43,17 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).toMatch(/No new conversations today\. Your customer line is still ready/);
   });
 
-  it("keeps activation inside the current guided workflow", () => {
+  it("tracks only verifiable customer-readiness milestones", () => {
     expect(activation).toMatch(/Get ready for real customers/);
     expect(activation).toMatch(/Job and greeting defined/);
     expect(activation).toMatch(/Business facts added/);
     expect(activation).toMatch(/Phone number connected/);
-    expect(activation).toMatch(/Test conversation completed/);
     expect(activation).toMatch(/First live customer handled/);
     expect(activation).toMatch(/First follow-up reviewed/);
+    expect(activation).toMatch(/Test freely in Studio/);
     expect(activation).toMatch(/\/studio\?section=setup/);
-    expect(activation).toMatch(/\/studio\?section=test/);
+    expect(activation).not.toMatch(/Test conversation completed/);
+    expect(activation).not.toMatch(/\/studio\?section=test/);
     expect(activation).not.toMatch(/knowledge\?tab=simulator/);
     expect(activation).not.toMatch(/Voice previewed/);
   });
