@@ -65,11 +65,11 @@ describe("cross-surface design token generation", () => {
     expect(designSystem).toContain(".wl-composer-dock");
     expect(designSystem).toContain(".wl-chip-suggestion");
     expect(designSystem).toContain(".wl-panel-elevated");
-    // The composer-dock utility and the shared workspace voice constants live
-    // on Studio Workroom (the chat composer); Claude Design Overview is a
-    // dashboard with its own honest copy.
+    // Studio Workroom must consume the shared composer class map instead of
+    // duplicating the dock/chip class strings locally.
     const workroom = read("src/components/StudioWorkroom.tsx");
-    expect(workroom).toContain("wl-composer-dock");
-    expect(workroom).toContain("WORKSPACE_VOICE");
+    expect(workroom).toContain("WL_COMPOSER_CLASSES");
+    expect(workroom).toContain("WL_COMPOSER_CLASSES.composerDock");
+    expect(workroom).toContain("WL_COMPOSER_CLASSES.starterChip");
   });
 });

@@ -16,9 +16,8 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
 } from "./ai-models";
-import { pickRotatedVoiceId } from "../data/voice-roster";
 import { buildGrokStrengthsPromptSection, isGrokModelId } from "./grok-features";
-import { vapiVoiceVersion } from "./voice-catalog";
+import { resolvePresenterPhoneVoicePayload, vapiVoiceVersion } from "./voice-catalog";
 
 export interface AssistantRequestPayload {
   message: { type: string; call?: any };
@@ -95,9 +94,12 @@ export async function buildVapiAssistant({
   let voiceProvider = configured.voiceProvider || "11labs";
   let effectiveVoiceId = voiceId;
   if (voiceProvider === "presenter") {
-    const phoneProvider = (configured.phoneVoiceProvider || "vapi").toLowerCase();
-    voiceProvider = phoneProvider === "vapi" ? "vapi" : "11labs";
-    effectiveVoiceId = configured.phoneVoiceId || pickRotatedVoiceId(0);
+    const phoneVoice = resolvePresenterPhoneVoicePayload(
+      configured.phoneVoiceId,
+      configured.phoneVoiceProvider,
+    );
+    voiceProvider = phoneVoice.phoneVoiceProvider;
+    effectiveVoiceId = phoneVoice.phoneVoiceId;
   }
   const speech = resolveVapiSpeechPipeline();
   const latency = getVoiceLatencyProfile({

@@ -1,6 +1,17 @@
 import { chromium } from "@playwright/test";
-import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+
+import {
+  AUTHENTICATED_ROUTE_TEMPLATES,
+  FULL_SCREENSHOT_COUNT,
+  PUBLIC_ROUTES,
+  VISUAL_QA_SCHEMA_VERSION,
+  VISUAL_QA_VIEWPORTS,
+  allowedFinalPathnames,
+  materializeAuthenticatedRoutes,
+} from "./visual-qa-matrix.mjs";
+import { readPngDimensions } from "./visual-qa-manifest.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://trywireline.com").replace(
   /\/$/,
@@ -11,774 +22,759 @@ const outputRoot = path.resolve(
 );
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const outputDir = path.join(outputRoot, timestamp);
-const signupEmail =
-  process.env.WIRELINE_VISUAL_EMAIL?.trim() || `visual.qa.${Date.now()}@mailinator.com`;
-const signupPassword =
-  process.env.WIRELINE_VISUAL_PASSWORD || `WirelineQA!${String(Date.now()).slice(-6)}`;
+const manifestPath = path.join(outputDir, "manifest.json");
+const focus = (process.env.WIRELINE_QA_FOCUS || "full").trim().toLowerCase();
+const routeTimeoutMs = Number(process.env.WIRELINE_VISUAL_ROUTE_TIMEOUT_MS || 60_000);
+const providedEmail = process.env.WIRELINE_VISUAL_EMAIL?.trim() || "";
+const providedPassword = process.env.WIRELINE_VISUAL_PASSWORD || "";
+const demoAccountEmail = providedEmail || `visual.qa.${Date.now()}@mailinator.com`;
+const demoAccountPassword = providedPassword || `WirelineQA!${String(Date.now()).slice(-8)}a`;
 
-const marketingRoutes = [
-  "/",
-  "/features",
-  "/pricing",
-  "/showcase",
-  "/compare",
-  "/solutions/support",
-  "/solutions/sales",
-  "/for/personal",
-  "/for/home-services",
-  "/for/medical",
-  "/for/legal",
-  "/for/real-estate",
-  "/for/insurance",
-  "/for/restaurants",
-  "/for/sales",
-  "/about",
-  "/blog",
-  "/changelog",
-  "/security",
-  "/status",
-  "/support",
-  "/contact",
-  "/privacy",
-  "/terms",
-  "/get-started",
-  "/signin",
-  "/signup",
-  "/404",
-  "/not-found",
-];
+const captures = [];
+const issues = [];
+const ignoredEvents = [];
+const issueKeys = new Set();
+let browser;
+let authenticatedStorageState = null;
+let demoAgentId = "";
+let authMode = providedEmail && providedPassword ? "signin" : "signup";
+let orchestrationFinished = false;
 
-const authenticatedRoutes = [
-  "/overview",
-  "/agents",
-  "/studio",
-  "/studio?create=1",
-  "/knowledge",
-  "/phone",
-  "/phone?tab=logs",
-  "/phone?tab=outbound",
-  "/phone?tab=campaigns",
-  "/phone?tab=callbacks",
-  "/connections",
-  "/connections/salesforce",
-  "/apps",
-  "/inbox",
-  "/settings",
-  "/settings/billing",
-  "/admin",
-];
+const ignoredRequestHosts = new Set([
+  "analytics.google.com",
+  "connect.facebook.net",
+  "plausible.io",
+  "region1.google-analytics.com",
+  "www.google-analytics.com",
+  "www.googletagmanager.com",
+]);
 
-/*
- * Multi-agent /studio visual QA (optional deep links):
- * - Default canvas: /studio?agent=<id>
- * - Workspace depth: /studio?agent=<id>&view=workspace
- * - Native shell switcher: append ?wireline_native=1
- * Set WIRELINE_VISUAL_STUDIO_AGENT to capture agent-specific studio states.
- */
-function studioMultiAgentCaptureRoutes(agentId) {
-  if (!agentId?.trim()) return [];
-  const enc = encodeURIComponent(agentId.trim());
-  return [`/studio?agent=${enc}`, `/studio?agent=${enc}&view=workspace`];
-}
-
-const studioDeepLinkRoutes = studioMultiAgentCaptureRoutes(
-  process.env.WIRELINE_VISUAL_STUDIO_AGENT,
-);
-
-/*
- * `thinkpad` approximates the effective CSS viewport of a Windows laptop
- * after browser chrome/scaling. It is intentionally shorter than the regular
- * laptop target because composer visibility is a vertical ergonomics contract.
- */
-const viewports = [
-  { name: "desktop", width: 1440, height: 1100 },
-  { name: "laptop", width: 1280, height: 900 },
-  { name: "thinkpad", width: 1365, height: 768 },
-];
-
-function fileName(route) {
+function routeSlug(route) {
   if (route === "/") return "home";
-  return route.replace(/^\//, "").replace(/[^a-z0-9]+/gi, "-") || "home";
+  return (
+    route
+      .replace(/^\//, "")
+      .replace(/<demo-agent-id>/g, "demo-agent")
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "") || "home"
+  );
 }
 
-function isBenignConsoleError(text) {
-  return [
-    /favicon/i,
-    /plausible\.io/i,
-    /connect\.facebook\.net/i,
-    /googletagmanager/i,
-    /third-party cookie/i,
-  ].some((pattern) => pattern.test(text));
+function pushIssue(issue) {
+  const normalized = {
+    mode: issue.mode || "system",
+    viewport: issue.viewport || "seed",
+    route: issue.route || "n/a",
+    kind: issue.kind || "capture",
+    detail: issue.detail || "Unknown visual QA issue.",
+    explained: issue.explained === true,
+  };
+  const key = `${normalized.mode}|${normalized.viewport}|${normalized.route}|${normalized.kind}|${normalized.detail}`;
+  if (issueKeys.has(key)) return;
+  issueKeys.add(key);
+  issues.push(normalized);
 }
 
-async function settle(page) {
-  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
-  await page.waitForTimeout(600);
-}
-
-async function assertStudioComposer(page, viewportName, issues) {
-  const studioBrief = page.locator("textarea#studio-brief").first();
-  const workroomComposer = page.locator("textarea#studio-workroom-message").first();
-  const emptyCreate = page.getByRole("link", { name: /Create personal agent/i }).first();
-  const composer = (await studioBrief.isVisible().catch(() => false))
-    ? studioBrief
-    : (await workroomComposer.isVisible().catch(() => false))
-      ? workroomComposer
-      : null;
-  if (!composer) {
-    if (await emptyCreate.isVisible().catch(() => false)) return;
-    issues.push({
-      viewport: viewportName,
-      route: "/studio",
-      mode: "authenticated",
-      kind: "layout",
-      detail: "Studio entry point is not visible.",
-    });
-    return;
-  }
-  const box = await composer.boundingBox();
-  const viewport = page.viewportSize();
-  if (!box || !viewport || box.y < 0 || box.y + box.height > viewport.height) {
-    issues.push({
-      viewport: viewportName,
-      route: "/studio",
-      mode: "authenticated",
-      kind: "layout",
-      detail: "Studio entry point falls outside the visible viewport.",
-    });
-  }
-}
-
-async function captureRoute(page, viewportName, route, issues, mode) {
-  const response = await page.goto(`${baseUrl}${route}`, {
-    waitUntil: "domcontentloaded",
-    timeout: 45_000,
-  });
-  await settle(page);
-  const status = response?.status() ?? null;
-  if (status && status >= 400) {
-    issues.push({ viewport: viewportName, route, mode, kind: "http", detail: String(status) });
-  }
-
-  if (mode === "authenticated" && route === "/studio") {
-    await assertStudioComposer(page, viewportName, issues);
-  }
-
-  const prefix = path.join(outputDir, `${viewportName}-${mode}-${fileName(route)}`);
-  await page.screenshot({
-    path: `${prefix}-viewport.png`,
-    fullPage: false,
-    animations: "disabled",
-  });
-  await page.screenshot({ path: `${prefix}-full.png`, fullPage: true, animations: "disabled" });
-}
-
-async function signUp(page, viewportName, issues) {
-  await page.goto(`${baseUrl}/signup`, { waitUntil: "domcontentloaded", timeout: 45_000 });
-  await settle(page);
+function urlPath(value) {
   try {
-    const createTab = page.getByRole("button", { name: "Create account" });
-    if (await createTab.isVisible().catch(() => false)) await createTab.click();
-    await page.locator("#auth-email").fill(signupEmail);
-    await page.locator("#auth-password").fill(signupPassword);
-    const terms = page.locator('input[type="checkbox"]');
-    if (await terms.count()) await terms.first().check();
-    await page.locator('form button[type="submit"]').click();
-    await page.waitForURL(/\/(overview|agents|studio|onboarding)(?:\?|$)/, { timeout: 45_000 });
-    await settle(page);
-    return true;
-  } catch (error) {
-    issues.push({
-      viewport: viewportName,
-      route: "/signup",
-      mode: "authenticated",
-      kind: "auth",
-      detail: error instanceof Error ? error.message : "Sign-up failed",
-    });
+    return new URL(value).pathname;
+  } catch {
+    return value;
+  }
+}
+
+function isIgnoredUrl(value) {
+  try {
+    const url = new URL(value);
+    return (
+      ignoredRequestHosts.has(url.hostname) ||
+      url.pathname === "/favicon.ico" ||
+      url.pathname === "/apple-touch-icon.png"
+    );
+  } catch {
     return false;
   }
 }
 
-async function completeOnboardingIfNecessary(page, viewportName, issues) {
-  await page
-    .waitForURL(/\/(overview|agents|studio|onboarding)(?:\?|$)/, { timeout: 15_000 })
-    .catch(() => {});
-  const url = page.url();
-  if (url.includes("/onboarding")) {
-    console.log(
-      "[Onboarding Bypass] Onboarding page detected, selecting default Front Desk template...",
-    );
-    const frontDeskBtn = page.getByRole("button", { name: /Select Front Desk/i }).first();
-    if (await frontDeskBtn.isVisible().catch(() => false)) {
-      await frontDeskBtn.click();
-      await page
-        .waitForURL(/\/(overview|ops|studio|agents)(?:\?|$)/, { timeout: 15_000 })
-        .catch(() => {});
-      console.log(
-        "[Onboarding Bypass] Workspace template selection complete. Current URL:",
-        page.url(),
-      );
-      await settle(page);
-    } else {
-      issues.push({
-        viewport: viewportName,
-        route: "/onboarding",
-        mode: "authenticated",
-        kind: "flow",
-        detail: "Onboarding selection buttons not visible.",
-      });
-    }
+function isExpectedAnonymousResponse(mode, value, status) {
+  if (mode !== "public") return false;
+  try {
+    const url = new URL(value);
+    return url.pathname === "/api/auth/session" && (status === 401 || status === 403);
+  } catch {
+    return false;
   }
 }
 
-function attachDiagnostics(page, viewportName, mode, issues) {
+function attachRuntimeDiagnostics(page, context) {
   page.on("console", (message) => {
-    if (message.type() === "error" && !isBenignConsoleError(message.text())) {
-      issues.push({
-        viewport: viewportName,
-        route: page.url(),
-        mode,
-        kind: "console",
-        detail: message.text(),
-      });
-    }
+    if (message.type() !== "error") return;
+    const detail = message.text();
+    // Chromium also emits a generic console error for failed responses; the
+    // response listener below records the exact URL and status once.
+    if (/Failed to load resource/i.test(detail)) return;
+    if (/favicon|plausible\.io|googletagmanager|third-party cookie/i.test(detail)) return;
+    pushIssue({ ...context, kind: "console", detail });
   });
   page.on("pageerror", (error) => {
-    issues.push({
-      viewport: viewportName,
-      route: page.url(),
-      mode,
-      kind: "pageerror",
-      detail: error.message,
+    pushIssue({ ...context, kind: "pageerror", detail: error.message });
+  });
+  page.on("requestfailed", (request) => {
+    if (isIgnoredUrl(request.url())) return;
+    const failure = request.failure();
+    if (failure?.errorText?.includes("ERR_ABORTED")) {
+      ignoredEvents.push({
+        mode: context.mode,
+        viewport: context.viewport,
+        route: context.route,
+        kind: "navigation-abort",
+        detail: `${request.url()} - ${failure.errorText}`,
+      });
+      return;
+    }
+    pushIssue({
+      ...context,
+      kind: "request",
+      detail: `${request.url()} - ${failure?.errorText || "request failed"}`,
     });
   });
   page.on("response", (response) => {
     const status = response.status();
-    if (status >= 400 && !isBenignConsoleError(response.url())) {
-      issues.push({
-        viewport: viewportName,
-        route: page.url(),
-        mode,
-        kind: "network",
-        detail: `Failed to load resource: ${response.url()} returned status ${status}`,
+    if (status < 400 || response.request().resourceType() === "document") return;
+    if (isIgnoredUrl(response.url())) return;
+    if (isExpectedAnonymousResponse(context.mode, response.url(), status)) {
+      ignoredEvents.push({
+        mode: context.mode,
+        viewport: context.viewport,
+        route: context.route,
+        kind: "expected-anonymous-session",
+        detail: `${response.url()} returned ${status}`,
       });
+      return;
     }
+    pushIssue({
+      ...context,
+      kind: "network",
+      detail: `${response.url()} returned ${status}`,
+    });
   });
 }
 
-async function captureMarketing(browser, viewport, issues) {
-  const context = await browser.newContext({
-    viewport: { width: viewport.width, height: viewport.height },
-    deviceScaleFactor: 1,
-  });
-  const page = await context.newPage();
-  attachDiagnostics(page, viewport.name, "public", issues);
-  for (const route of marketingRoutes)
-    await captureRoute(page, viewport.name, route, issues, "public");
-  await context.close();
+async function settle(page) {
+  await page.waitForLoadState("domcontentloaded", { timeout: 20_000 }).catch(() => {});
+  await page
+    .evaluate(async () => {
+      if (document.fonts?.ready) await document.fonts.ready;
+    })
+    .catch(() => {});
+  await page
+    .waitForFunction(
+      () => {
+        const elements = Array.from(
+          document.querySelectorAll(
+            'main[aria-busy="true"], [data-route-loading="true"], [aria-label="Loading workspace"]',
+          ),
+        );
+        return !elements.some((element) => {
+          const style = window.getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return style.display !== "none" && style.visibility !== "hidden" && rect.height > 0;
+        });
+      },
+      undefined,
+      { timeout: 12_000 },
+    )
+    .catch(() => {});
+  await page.waitForTimeout(500);
 }
 
-async function captureAuthenticated(browser, viewport, storageState, issues) {
+async function gotoWithRetry(page, route, attempts = 2) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await page.goto(`${baseUrl}${route}`, {
+        waitUntil: "domcontentloaded",
+        timeout: routeTimeoutMs,
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) await page.waitForTimeout(800 * attempt);
+    }
+  }
+  throw lastError;
+}
+
+async function collectDomDiagnostics(page) {
+  return page.evaluate(() => {
+    const isVisible = (element) => {
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return (
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        Number(style.opacity || "1") > 0 &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > 0 &&
+        rect.right > 0 &&
+        rect.top < window.innerHeight &&
+        rect.left < window.innerWidth
+      );
+    };
+    const labelFor = (element) =>
+      element.getAttribute("aria-label") ||
+      element.getAttribute("alt") ||
+      element.textContent?.replace(/\s+/g, " ").trim().slice(0, 90) ||
+      element.tagName.toLowerCase();
+    const hasClippingAncestor = (element) => {
+      let parent = element.parentElement;
+      while (parent && parent !== document.body) {
+        const style = window.getComputedStyle(parent);
+        if (["auto", "scroll", "hidden", "clip"].includes(style.overflowX)) return true;
+        parent = parent.parentElement;
+      }
+      return false;
+    };
+
+    const ids = new Map();
+    for (const element of document.querySelectorAll("[id]")) {
+      const id = element.id.trim();
+      if (id) ids.set(id, (ids.get(id) || 0) + 1);
+    }
+    const duplicateIds = Array.from(ids.entries())
+      .filter(([, count]) => count > 1)
+      .map(([id]) => id)
+      .sort();
+
+    const brokenImages = Array.from(document.images)
+      .filter((image) => isVisible(image) && Boolean(image.currentSrc || image.src))
+      .filter((image) => image.complete && image.naturalWidth === 0)
+      .map((image) => image.currentSrc || image.src);
+
+    const dialogs = Array.from(
+      document.querySelectorAll('[role="dialog"], [aria-modal="true"]'),
+    ).filter(isVisible);
+    const busyElements = Array.from(document.querySelectorAll('[aria-busy="true"]')).filter(
+      isVisible,
+    );
+    const overflowElements = Array.from(
+      document.querySelectorAll(
+        'a, button, input, select, textarea, [role="button"], [role="tab"], h1, h2, h3, img',
+      ),
+    )
+      .filter(isVisible)
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return (
+          (rect.left < -1 || rect.right > window.innerWidth + 1) && !hasClippingAncestor(element)
+        );
+      })
+      .map(labelFor)
+      .slice(0, 12);
+    const nestedScrollSurfaces = Array.from(document.querySelectorAll("body *"))
+      .filter(isVisible)
+      .filter((element) => {
+        const style = window.getComputedStyle(element);
+        return (
+          ["auto", "scroll"].includes(style.overflowY) &&
+          element.scrollHeight > element.clientHeight + 2
+        );
+      })
+      .map((element) => ({
+        label: labelFor(element),
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        scrollTop: element.scrollTop,
+      }))
+      .slice(0, 12);
+
+    const bodyText = document.body?.innerText?.replace(/\s+/g, " ").trim() || "";
+    const semanticElements = Array.from(
+      document.querySelectorAll("h1, h2, h3, p, a, button, input, textarea, img, main, section"),
+    ).filter(isVisible).length;
+    const h1s = Array.from(document.querySelectorAll("h1"));
+
+    return {
+      title: document.title.trim(),
+      h1Count: h1s.length,
+      h1Text: h1s.map((heading) => heading.textContent?.replace(/\s+/g, " ").trim() || ""),
+      duplicateIds,
+      brokenImages,
+      modalCount: dialogs.length,
+      modalLabels: dialogs.map(labelFor),
+      busyCount: busyElements.length,
+      busyLabels: busyElements.map(labelFor).slice(0, 12),
+      bodyTextLength: bodyText.length,
+      bodyTextSample: bodyText.slice(0, 180),
+      visibleSemanticElementCount: semanticElements,
+      pageOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+      overflowElements,
+      nestedScrollSurfaces,
+    };
+  });
+}
+
+async function collectScreenshotStats(page, pngBuffer) {
+  const dataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
+  return page.evaluate(async (source) => {
+    const image = new Image();
+    image.src = source;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Canvas context unavailable");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const colors = new Set();
+    let luminanceTotal = 0;
+    let luminanceSquaredTotal = 0;
+    let opaquePixels = 0;
+    const sampleCount = pixels.length / 4;
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index];
+      const green = pixels[index + 1];
+      const blue = pixels[index + 2];
+      const alpha = pixels[index + 3];
+      colors.add(`${red >> 4}:${green >> 4}:${blue >> 4}:${alpha >> 4}`);
+      const luminance = red * 0.2126 + green * 0.7152 + blue * 0.0722;
+      luminanceTotal += luminance;
+      luminanceSquaredTotal += luminance * luminance;
+      if (alpha > 245) opaquePixels += 1;
+    }
+    const mean = luminanceTotal / sampleCount;
+    const variance = Math.max(0, luminanceSquaredTotal / sampleCount - mean * mean);
+    return {
+      sampledPixels: sampleCount,
+      quantizedColorCount: colors.size,
+      luminanceMean: Number(mean.toFixed(2)),
+      luminanceStdDev: Number(Math.sqrt(variance).toFixed(2)),
+      opaqueRatio: Number((opaquePixels / sampleCount).toFixed(4)),
+    };
+  }, dataUrl);
+}
+
+function evaluateDiagnostics(context, responseStatus, finalUrl, diagnostics, png, screenshotStats) {
+  if (responseStatus && responseStatus >= 400) {
+    pushIssue({ ...context, kind: "http", detail: `Document returned ${responseStatus}.` });
+  }
+
+  const finalPath = urlPath(finalUrl);
+  const allowedPaths = allowedFinalPathnames(context.mode, context.route);
+  if (!allowedPaths.includes(finalPath)) {
+    pushIssue({
+      ...context,
+      kind: "redirect",
+      detail: `Expected ${allowedPaths.join(" or ")}; reached ${finalPath}.`,
+    });
+  }
+
+  if (!png) {
+    pushIssue({ ...context, kind: "png", detail: "Screenshot is not a valid PNG." });
+  } else if (png.width !== context.width || png.height !== context.height) {
+    pushIssue({
+      ...context,
+      kind: "png-dimensions",
+      detail: `Expected ${context.width}x${context.height}; received ${png.width}x${png.height}.`,
+    });
+  }
+  if (!diagnostics.title || /^loading\b/i.test(diagnostics.title)) {
+    pushIssue({ ...context, kind: "title", detail: "Document title is missing or unresolved." });
+  }
+  if (diagnostics.h1Count !== 1) {
+    pushIssue({
+      ...context,
+      kind: "h1",
+      detail: `Expected one h1; received ${diagnostics.h1Count}.`,
+    });
+  }
+  if (diagnostics.duplicateIds.length > 0) {
+    pushIssue({
+      ...context,
+      kind: "duplicate-id",
+      detail: diagnostics.duplicateIds.join(", "),
+    });
+  }
+  if (diagnostics.brokenImages.length > 0) {
+    pushIssue({
+      ...context,
+      kind: "broken-image",
+      detail: diagnostics.brokenImages.join(", "),
+    });
+  }
+  if (diagnostics.pageOverflow) {
+    pushIssue({
+      ...context,
+      kind: "overflow",
+      detail: `Document width ${diagnostics.documentWidth}px exceeds ${diagnostics.viewportWidth}px.`,
+    });
+  }
+  if (diagnostics.overflowElements.length > 0) {
+    pushIssue({
+      ...context,
+      kind: "element-overflow",
+      detail: diagnostics.overflowElements.join(" | "),
+    });
+  }
+  if (diagnostics.busyCount > 0) {
+    pushIssue({
+      ...context,
+      kind: "loading",
+      detail: `Unresolved busy surfaces: ${diagnostics.busyLabels.join(" | ") || diagnostics.busyCount}.`,
+    });
+  }
+
+  const modalExpected = context.mode === "authenticated" && context.route === "/studio?create=1";
+  if (modalExpected && diagnostics.modalCount < 1) {
+    pushIssue({ ...context, kind: "modal", detail: "Fast Start modal is not visible." });
+  }
+  if (!modalExpected && diagnostics.modalCount > 0) {
+    pushIssue({
+      ...context,
+      kind: "modal",
+      detail: `Unexpected modal: ${diagnostics.modalLabels.join(" | ") || "unlabelled dialog"}.`,
+    });
+  }
+
+  const visuallyBlank =
+    screenshotStats.quantizedColorCount <= 2 && screenshotStats.luminanceStdDev < 0.75;
+  diagnostics.blank =
+    diagnostics.bodyTextLength < 12 ||
+    diagnostics.visibleSemanticElementCount < 2 ||
+    (visuallyBlank && diagnostics.bodyTextLength < 80);
+  if (diagnostics.blank) {
+    pushIssue({
+      ...context,
+      kind: "blank",
+      detail: `Visible text ${diagnostics.bodyTextLength} chars; ${screenshotStats.quantizedColorCount} sampled colors.`,
+    });
+  }
+}
+
+async function captureRoute(context, viewport, mode, routeTemplate, route) {
+  const page = await context.newPage();
+  page.setDefaultTimeout(routeTimeoutMs);
+  page.setDefaultNavigationTimeout(routeTimeoutMs);
+  const diagnosticContext = {
+    mode,
+    viewport: viewport.name,
+    route: routeTemplate,
+    width: viewport.width,
+    height: viewport.height,
+  };
+  attachRuntimeDiagnostics(page, diagnosticContext);
+
+  const record = {
+    mode,
+    viewport: viewport.name,
+    routeTemplate,
+    route,
+    finalUrl: null,
+    responseStatus: null,
+    file: null,
+    success: false,
+    png: null,
+    diagnostics: null,
+    screenshotStats: null,
+  };
+
+  try {
+    const response = await gotoWithRetry(page, route);
+    await settle(page);
+    record.responseStatus = response?.status() ?? null;
+    record.finalUrl = page.url();
+    const diagnostics = await collectDomDiagnostics(page);
+    const file = `${mode}--${viewport.name}--${routeSlug(routeTemplate)}.png`;
+    const pngBuffer = await page.screenshot({
+      path: path.join(outputDir, file),
+      fullPage: false,
+      animations: "disabled",
+      caret: "hide",
+      timeout: routeTimeoutMs,
+    });
+    const png = readPngDimensions(pngBuffer);
+    const screenshotStats = await collectScreenshotStats(page, pngBuffer);
+    evaluateDiagnostics(
+      diagnosticContext,
+      record.responseStatus,
+      record.finalUrl,
+      diagnostics,
+      png,
+      screenshotStats,
+    );
+    record.file = file;
+    record.success = true;
+    record.png = png;
+    record.diagnostics = diagnostics;
+    record.screenshotStats = screenshotStats;
+  } catch (error) {
+    pushIssue({
+      ...diagnosticContext,
+      kind: "capture",
+      detail: error instanceof Error ? error.message : String(error),
+    });
+  } finally {
+    captures.push(record);
+    await page.close({ runBeforeUnload: false }).catch(() => {});
+  }
+}
+
+async function waitForAuthenticatedDestination(page) {
+  await page.waitForURL((url) => ["/overview", "/studio", "/onboarding"].includes(url.pathname), {
+    timeout: routeTimeoutMs,
+  });
+  await settle(page);
+}
+
+async function signIn(page) {
+  await page.goto(`${baseUrl}/signin?redirect=%2Foverview`, {
+    waitUntil: "domcontentloaded",
+    timeout: routeTimeoutMs,
+  });
+  await settle(page);
+  await page.locator("#auth-email").fill(demoAccountEmail);
+  await page.locator("#auth-password").fill(demoAccountPassword);
+  await page.locator('form button[type="submit"]').click();
+  await waitForAuthenticatedDestination(page);
+}
+
+async function signUp(page) {
+  await page.goto(`${baseUrl}/signup`, {
+    waitUntil: "domcontentloaded",
+    timeout: routeTimeoutMs,
+  });
+  await settle(page);
+  await page.locator("#auth-email").fill(demoAccountEmail);
+  await page.locator("#auth-password").fill(demoAccountPassword);
+  await page.locator('form input[type="checkbox"]').check();
+  await page.locator('form button[type="submit"]').click();
+  await waitForAuthenticatedDestination(page);
+}
+
+async function discoverAgentId(page) {
+  return page.evaluate(async () => {
+    const response = await fetch("/api/agents", { credentials: "include" });
+    if (!response.ok) return "";
+    const body = await response.json().catch(() => null);
+    const id = Array.isArray(body?.agents) ? body.agents[0]?.id : "";
+    return typeof id === "string" ? id : "";
+  });
+}
+
+async function createDemoAgent(page) {
+  const brief =
+    "Answer missed calls, qualify demand, book appointments, and send a concise follow-up.";
+  await page.goto(
+    `${baseUrl}/studio?create=1&posture=business&brief=${encodeURIComponent(brief)}`,
+    { waitUntil: "domcontentloaded", timeout: routeTimeoutMs },
+  );
+  await settle(page);
+  const dialog = page.getByRole("dialog", { name: /Fast Start/i });
+  await dialog.waitFor({ state: "visible", timeout: routeTimeoutMs });
+  await dialog.locator("textarea").fill(brief);
+  const nameInput = dialog.getByLabel(/(?:AI employee|Agent) name/i);
+  await nameInput.fill("Visual QA Front Desk");
+  await dialog.getByRole("button", { name: "Continue", exact: true }).click();
+  await dialog.getByRole("button", { name: /^Create (?:AI employee|agent)$/i }).click();
+  await page.waitForURL(
+    (url) => url.pathname === "/studio" && Boolean(url.searchParams.get("agent")),
+    {
+      timeout: routeTimeoutMs,
+    },
+  );
+  await settle(page);
+  const createdId = new URL(page.url()).searchParams.get("agent") || "";
+  const closeGuide = page.getByRole("button", { name: "Close setup guide" });
+  if (await closeGuide.isVisible().catch(() => false)) {
+    await closeGuide.click();
+    await closeGuide.waitFor({ state: "hidden", timeout: 10_000 }).catch(() => {});
+  }
+  return createdId;
+}
+
+async function seedAuthenticatedState() {
   const context = await browser.newContext({
-    viewport: { width: viewport.width, height: viewport.height },
+    viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 1,
-    storageState,
   });
   const page = await context.newPage();
-  attachDiagnostics(page, viewport.name, "authenticated", issues);
-  for (const route of authenticatedRoutes)
-    await captureRoute(page, viewport.name, route, issues, "authenticated");
-  for (const route of studioDeepLinkRoutes)
-    await captureRoute(page, viewport.name, route, issues, "authenticated");
-  await context.close();
+  page.setDefaultTimeout(routeTimeoutMs);
+  page.setDefaultNavigationTimeout(routeTimeoutMs);
+  attachRuntimeDiagnostics(page, {
+    mode: "authenticated",
+    viewport: "seed",
+    route: authMode === "signin" ? "/signin" : "/signup",
+  });
+  try {
+    if (providedEmail && providedPassword) await signIn(page);
+    else await signUp(page);
+
+    demoAgentId = await discoverAgentId(page);
+    if (!demoAgentId) demoAgentId = await createDemoAgent(page);
+    if (!demoAgentId) throw new Error("Demo agent could not be created or discovered.");
+    authenticatedStorageState = await context.storageState();
+  } catch (error) {
+    const notices = await page
+      .locator('[role="alert"]')
+      .allTextContents()
+      .catch(() => []);
+    pushIssue({
+      mode: "authenticated",
+      viewport: "seed",
+      route: authMode === "signin" ? "/signin" : "/signup",
+      kind: "auth",
+      detail: `${error instanceof Error ? error.message : String(error)}${notices.length ? ` | ${notices.join(" | ")}` : ""}`,
+    });
+  } finally {
+    await page.close({ runBeforeUnload: false }).catch(() => {});
+    await context.close().catch(() => {});
+  }
+}
+
+function currentManifest(final = false) {
+  const successfulCaptures = captures.filter((capture) => capture.success).length;
+  const captureComplete =
+    final &&
+    orchestrationFinished &&
+    Boolean(authenticatedStorageState) &&
+    Boolean(demoAgentId) &&
+    captures.length === FULL_SCREENSHOT_COUNT &&
+    successfulCaptures === FULL_SCREENSHOT_COUNT;
+  return {
+    schemaVersion: VISUAL_QA_SCHEMA_VERSION,
+    createdAt: timestamp,
+    completedAt: final ? new Date().toISOString() : null,
+    baseUrl,
+    focus,
+    captureMode: "settled-viewport",
+    fullPageEvidence: false,
+    outputDir,
+    demoAccountEmail,
+    authMode,
+    demoAgentId,
+    authenticatedCapture: Boolean(authenticatedStorageState),
+    captureComplete,
+    viewports: VISUAL_QA_VIEWPORTS.map(({ name, width, height }) => ({ name, width, height })),
+    publicRoutes: [...PUBLIC_ROUTES],
+    authenticatedRouteTemplates: [...AUTHENTICATED_ROUTE_TEMPLATES],
+    authenticatedRoutes: demoAgentId ? materializeAuthenticatedRoutes(demoAgentId) : [],
+    screenshotCountExpected: FULL_SCREENSHOT_COUNT,
+    screenshotCountActual: successfulCaptures,
+    captures,
+    issues,
+    ignoredEvents,
+  };
+}
+
+async function writeManifest(final = false) {
+  await writeFile(manifestPath, `${JSON.stringify(currentManifest(final), null, 2)}\n`);
 }
 
 await mkdir(outputDir, { recursive: true });
-const browser = await chromium.launch({ headless: true });
-const issues = [];
-let storageState = null;
-
-let currentTurn = 1;
-try {
-  const loopStateStr = await readFile("artifacts/qa-loop-state.json", "utf8");
-  const loopState = JSON.parse(loopStateStr);
-  if (loopState && typeof loopState.currentTurn === "number") {
-    currentTurn = loopState.currentTurn;
-  }
-} catch (e) {
-  // Ignore error if loop state file doesn't exist
+if (focus !== "full") {
+  pushIssue({
+    kind: "configuration",
+    detail: `WIRELINE_QA_FOCUS must be 'full'; received '${focus}'. The full matrix will still run.`,
+  });
 }
-
-let qaFocus = (process.env.WIRELINE_QA_FOCUS || "").trim().toLowerCase();
-if (!qaFocus || qaFocus === "auto") {
-  const focuses = [
-    "onboarding",
-    "create-agent",
-    "training",
-    "studio-compose",
-    "billing-checkout",
-    "connections-actions",
-    "inbox-recaps",
-    "telemetry-performance",
-    "settings-team",
-    "mobile-responsive-smoke",
-  ];
-  const turnMod = (currentTurn - 1) % focuses.length;
-  qaFocus = focuses[turnMod];
-  console.log(
-    `[Evolving QA] Turn ${currentTurn} detected. Auto-selecting focus: '${qaFocus}' (highest-leverage check)`,
-  );
-} else {
-  console.log(`[Explicit QA] Using explicit focus override: '${qaFocus}'`);
+if (Boolean(providedEmail) !== Boolean(providedPassword)) {
+  authMode = "invalid-credentials";
+  pushIssue({
+    kind: "configuration",
+    detail: "WIRELINE_VISUAL_EMAIL and WIRELINE_VISUAL_PASSWORD must be provided together.",
+  });
 }
+await writeManifest(false);
 
 try {
-  const desktop = viewports[0];
+  const proxyServer =
+    process.env.HTTPS_PROXY ||
+    process.env.HTTP_PROXY ||
+    process.env.https_proxy ||
+    process.env.http_proxy;
+  browser = await chromium.launch({
+    headless: true,
+    ...(process.env.WIRELINE_E2E_CHROMIUM
+      ? { executablePath: process.env.WIRELINE_E2E_CHROMIUM }
+      : {}),
+    ...(proxyServer
+      ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,<-loopback>" } }
+      : {}),
+  });
 
-  if (qaFocus === "onboarding") {
-    console.log("Running onboarding flow focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
+  await seedAuthenticatedState();
+  const authenticatedRoutes = demoAgentId ? materializeAuthenticatedRoutes(demoAgentId) : [];
+
+  for (const viewport of VISUAL_QA_VIEWPORTS) {
+    const publicContext = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height },
+      isMobile: viewport.isMobile,
+      hasTouch: viewport.hasTouch,
       deviceScaleFactor: 1,
+      reducedMotion: "reduce",
+      colorScheme: "light",
     });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await signupPage.waitForURL(/\/onboarding(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
-      console.log("Onboarding URL reached:", signupPage.url());
-
-      const frontDeskBtn = signupPage.getByRole("button", { name: /Select Front Desk/i });
-      if (await frontDeskBtn.isVisible().catch(() => false)) {
-        await frontDeskBtn.click();
-        await signupPage
-          .waitForURL(/\/(overview|ops|studio)(?:\?|$)/, { timeout: 15_000 })
-          .catch(() => {});
-        console.log("After onboarding selection URL:", signupPage.url());
-      } else {
-        issues.push({
-          viewport: desktop.name,
-          route: "/onboarding",
-          mode: "authenticated",
-          kind: "flow",
-          detail: "Onboarding selection buttons not visible.",
-        });
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-onboarding`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    // Route screenshots should expose the route itself, not a delayed consent
+    // overlay. CookieConsent has its own interaction coverage.
+    await publicContext.addInitScript(() => {
+      window.localStorage.setItem("wireline_cookie_consent", "acknowledged");
+    });
+    for (const route of PUBLIC_ROUTES) {
+      await captureRoute(publicContext, viewport, "public", route, route);
     }
-    await signupContext.close();
-  } else if (qaFocus === "create-agent") {
-    console.log("Running create-agent flow focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+    await publicContext.close();
 
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      // Navigate to /agents
-      await signupPage.goto(`${baseUrl}/agents`, { waitUntil: "domcontentloaded" });
-      await settle(signupPage);
-
-      // Click "Create agent" button or go to /studio?create=1
-      const createBtn = signupPage.getByRole("link", { name: /Create agent/i }).first();
-      if (await createBtn.isVisible().catch(() => false)) {
-        await createBtn.click();
-      } else {
-        await signupPage.goto(`${baseUrl}/studio?create=1`, { waitUntil: "domcontentloaded" });
-      }
-      await settle(signupPage);
-
-      // Fill Name and select role
-      const nameInput = signupPage.locator("input[placeholder*='Casey']").first();
-      if (await nameInput.isVisible().catch(() => false)) {
-        await nameInput.fill("Receptionist Pro");
-        const roleSelect = signupPage.locator("select").first();
-        if (await roleSelect.isVisible().catch(() => false)) {
-          await roleSelect.selectOption("receptionist");
-        }
-        const briefTextarea = signupPage
-          .locator("textarea[placeholder*='Call my pharmacy']")
-          .first();
-        if (await briefTextarea.isVisible().catch(() => false)) {
-          await briefTextarea.fill(
-            "Greet incoming business callers, answer office FAQs, and capture lead callback details.",
-          );
-        }
-        const submitBtn = signupPage
-          .getByRole("button", { name: /Create and open Studio/i })
-          .first();
-        if (await submitBtn.isVisible().catch(() => false)) {
-          await submitBtn.click();
-          await signupPage.waitForURL(/\/studio\?agent=/, { timeout: 15_000 }).catch(() => {});
-          console.log("New agent created successfully! Current URL:", signupPage.url());
-          await settle(signupPage);
-        }
-      } else {
-        issues.push({
-          viewport: desktop.name,
-          route: "/studio?create=1",
-          mode: "authenticated",
-          kind: "flow",
-          detail: "New agent modal or inputs not visible.",
-        });
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-create-agent`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "training") {
-    console.log("Running training flow focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      // Navigate to /training
-      await signupPage.goto(`${baseUrl}/training`, { waitUntil: "domcontentloaded" });
-      await settle(signupPage);
-
-      const titleInput = signupPage.locator("input[placeholder*='Preferred pharmacy']").first();
-      const contentTextarea = signupPage
-        .locator("textarea[placeholder*='Describe a fact']")
-        .first();
-      const saveBtn = signupPage.getByRole("button", { name: /Save fact/i }).first();
-
-      if (await contentTextarea.isVisible().catch(() => false)) {
-        if (await titleInput.isVisible().catch(() => false)) {
-          await titleInput.fill("Pricing & Packages");
-        }
-        await contentTextarea.fill(
-          "Wireline Business uses shared operating capacity, approvals, analytics, CRM sync, roles, and pooled Conversation Balance.",
-        );
-        if (await saveBtn.isVisible().catch(() => false)) {
-          await saveBtn.click();
-          await signupPage.waitForTimeout(1500);
-          console.log("New business fact added successfully to Training.");
-        }
-      } else {
-        issues.push({
-          viewport: desktop.name,
-          route: "/training",
-          mode: "authenticated",
-          kind: "flow",
-          detail: "Add detail input elements not found on /knowledge.",
-        });
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-training`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "studio-compose") {
-    console.log("Running studio composer focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      // Navigate to /studio
-      await signupPage.goto(`${baseUrl}/studio`, { waitUntil: "domcontentloaded" });
-      await settle(signupPage);
-
-      const composer = signupPage.locator("textarea#studio-brief").first();
-      if (await composer.isVisible().catch(() => false)) {
-        await composer.fill(
-          "When a customer calls for sales, ask for their email address and phone number, and offer to schedule a callback.",
-        );
-        const saveBtn = signupPage.getByRole("button", { name: /Save|Deploy|Update/i }).first();
-        if (await saveBtn.isVisible().catch(() => false)) {
-          await saveBtn.click();
-          await signupPage.waitForTimeout(1500);
-          console.log("Studio composer training instructions updated successfully.");
-        }
-      } else {
-        issues.push({
-          viewport: desktop.name,
-          route: "/studio",
-          mode: "authenticated",
-          kind: "layout",
-          detail: "Studio composer not found.",
-        });
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-studio-compose`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "billing-checkout") {
-    console.log("Running billing checkout focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      await signupPage.goto(`${baseUrl}/settings/billing`, { waitUntil: "domcontentloaded" });
-      await settle(signupPage);
-
-      const changePlanBtn = signupPage
-        .getByRole("button", { name: /Change Plan|Upgrade|Subscribe/i })
-        .first();
-      if (await changePlanBtn.isVisible().catch(() => false)) {
-        await changePlanBtn.click();
-        await signupPage.waitForTimeout(1000);
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-billing-checkout`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "connections-actions") {
-    console.log("Running connections focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      // Navigate to /connections
-      await signupPage.goto(`${baseUrl}/connections`, { waitUntil: "domcontentloaded" });
-      await settle(signupPage);
-
-      const connectedStack = signupPage.getByText("Connected stack").first();
-      const connectionsReady = await connectedStack.isVisible().catch(() => false);
-      if (!connectionsReady) {
-        issues.push({
-          viewport: desktop.name,
-          route: "/connections",
-          mode: "authenticated",
-          kind: "flow",
-          detail: "Connections hub did not render the connected-stack card.",
-        });
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-connections`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "inbox-recaps") {
-    console.log("Running inbox and email recaps focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      // Navigate to /inbox
-      await signupPage.goto(`${baseUrl}/inbox`, { waitUntil: "domcontentloaded" });
-      await settle(signupPage);
-
-      const inboxHeader = signupPage.locator("h1:has-text('Inbox')").first();
-      if (!(await inboxHeader.isVisible().catch(() => false))) {
-        console.log("Inbox header not explicitly found; standardizing route check.");
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-inbox-recaps`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "telemetry-performance") {
-    console.log("Running performance telemetry audit QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      // Navigate to /overview to run performance collection
-      const startTime = Date.now();
-      await signupPage.goto(`${baseUrl}/overview`, { waitUntil: "load" });
-      const loadTimeMs = Date.now() - startTime;
-      console.log(`Page Load Telemetry: '/overview' loaded in ${loadTimeMs}ms`);
-
-      // Collect window.performance indicators
-      const performanceMetrics = await signupPage
-        .evaluate(() => {
-          const t = window.performance.timing;
-          return {
-            domContentLoaded: t.domContentLoadedEventEnd - t.navigationStart,
-            loadComplete: t.loadEventEnd - t.navigationStart,
-            totalResources: window.performance.getEntriesByType("resource").length,
-          };
-        })
-        .catch(() => ({ domContentLoaded: -1, loadComplete: -1, totalResources: -1 }));
-
-      console.log(`Metrics harvested:`, performanceMetrics);
-      if (performanceMetrics.loadComplete > 5000) {
-        issues.push({
-          viewport: desktop.name,
-          route: "/overview",
-          mode: "authenticated",
-          kind: "telemetry",
-          detail: `High latency detected! Page load took ${performanceMetrics.loadComplete}ms (threshold 5000ms).`,
-        });
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-telemetry-performance`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "settings-team") {
-    console.log("Running team settings roster focused QA...");
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-
-      // Navigate to /admin (where team is managed)
-      await signupPage.goto(`${baseUrl}/admin`, { waitUntil: "domcontentloaded" });
-      await settle(signupPage);
-
-      // Look for Team tab and click it if available
-      const teamTab = signupPage.locator("button:has-text('Team')").first();
-      if (await teamTab.isVisible().catch(() => false)) {
-        await teamTab.click();
-        await settle(signupPage);
-      }
-
-      const emailInput = signupPage.locator("input[placeholder*='colleague@']").first();
-      if (await emailInput.isVisible().catch(() => false)) {
-        await emailInput.fill("engineering.test@trywireline.com");
-        console.log("Populated the team roster invitation input successfully.");
-      } else {
-        issues.push({
-          viewport: desktop.name,
-          route: "/admin",
-          mode: "authenticated",
-          kind: "flow",
-          detail: "Team roster invitation fields are not visible.",
-        });
-      }
-
-      const prefix = path.join(outputDir, `${desktop.name}-flow-settings-team`);
-      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
-      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
-    }
-    await signupContext.close();
-  } else if (qaFocus === "mobile-responsive-smoke") {
-    console.log("Running mobile-responsive layout smoke checks...");
-    // Emulate iPhone viewport (390 x 844)
-    const mobileWidth = 390;
-    const mobileHeight = 844;
-    const mobileContext = await browser.newContext({
-      viewport: { width: mobileWidth, height: mobileHeight },
-      deviceScaleFactor: 2,
-    });
-    const mobilePage = await mobileContext.newPage();
-    attachDiagnostics(mobilePage, "iphone", "public", issues);
-
-    // Visit public route and check for layout overflow
-    await mobilePage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-    await settle(mobilePage);
-
-    const overflow = await mobilePage.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
-    );
-    if (overflow) {
-      issues.push({
-        viewport: "iphone",
-        route: "/",
-        mode: "public",
-        kind: "layout",
-        detail: "Horizontal layout overflow detected on landing page under mobile widths.",
+    if (authenticatedStorageState && authenticatedRoutes.length > 0) {
+      const authContext = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+        isMobile: viewport.isMobile,
+        hasTouch: viewport.hasTouch,
+        deviceScaleFactor: 1,
+        reducedMotion: "reduce",
+        colorScheme: "light",
+        storageState: authenticatedStorageState,
       });
-    }
-
-    const prefix = path.join(outputDir, `iphone-mobile-responsive-smoke`);
-    await mobilePage.screenshot({ path: `${prefix}-viewport.png`, fullPage: false });
-    await mobilePage.screenshot({ path: `${prefix}-full.png`, fullPage: true });
-    await mobileContext.close();
-  } else {
-    console.log("Running complete multi-viewport standard visual QA sweep...");
-    await captureMarketing(browser, desktop, issues);
-
-    const signupContext = await browser.newContext({
-      viewport: { width: desktop.width, height: desktop.height },
-      deviceScaleFactor: 1,
-    });
-    const signupPage = await signupContext.newPage();
-    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
-
-    if (await signUp(signupPage, desktop.name, issues)) {
-      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
-      storageState = await signupContext.storageState();
-      for (const route of [...authenticatedRoutes, ...studioDeepLinkRoutes]) {
-        await captureRoute(signupPage, desktop.name, route, issues, "authenticated");
+      for (let index = 0; index < AUTHENTICATED_ROUTE_TEMPLATES.length; index += 1) {
+        await captureRoute(
+          authContext,
+          viewport,
+          "authenticated",
+          AUTHENTICATED_ROUTE_TEMPLATES[index],
+          authenticatedRoutes[index],
+        );
       }
+      await authContext.close();
     }
-    await signupContext.close();
 
-    for (const viewport of viewports.slice(1)) {
-      await captureMarketing(browser, viewport, issues);
-      if (storageState) await captureAuthenticated(browser, viewport, storageState, issues);
-    }
+    await writeManifest(false);
+    console.log(
+      `[visual-qa] ${viewport.name}: ${captures.filter((capture) => capture.viewport === viewport.name && capture.success).length} viewport captures`,
+    );
   }
+  orchestrationFinished = true;
+} catch (error) {
+  pushIssue({
+    kind: "orchestration",
+    detail: error instanceof Error ? error.stack || error.message : String(error),
+  });
 } finally {
-  await browser.close();
+  if (browser) await browser.close().catch(() => {});
+  await writeManifest(true);
 }
 
-const authenticatedCaptureRoutes = [...authenticatedRoutes, ...studioDeepLinkRoutes];
-const routeCount =
-  marketingRoutes.length * viewports.length +
-  (storageState ? authenticatedCaptureRoutes.length * viewports.length : 0);
-const manifest = {
-  baseUrl,
-  outputDir,
-  signupEmail,
-  authenticatedCapture: !!storageState,
-  viewports,
-  marketingRoutes,
-  authenticatedRoutes: authenticatedCaptureRoutes,
-  studioDeepLinkRoutes,
-  screenshotCountExpected: routeCount * 2,
-  issues,
-};
-await writeFile(path.join(outputDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-console.log(`Visual QA screenshots written to ${outputDir}`);
-console.log(`Demo account: ${signupEmail}`);
-if (issues.length) console.warn(`${issues.length} visual QA issue(s) recorded in manifest.json`);
+const manifest = currentManifest(true);
+console.log(`Visual QA manifest: ${manifestPath}`);
+console.log(
+  `Captured ${manifest.screenshotCountActual}/${manifest.screenshotCountExpected} settled viewport screenshots.`,
+);
+if (!manifest.authenticatedCapture) {
+  console.warn("Authenticated capture was not established; the manifest gate will fail.");
+}
+if (manifest.issues.length > 0) {
+  console.warn(
+    `${manifest.issues.length} unexplained issue(s) recorded; the manifest gate will fail.`,
+  );
+}

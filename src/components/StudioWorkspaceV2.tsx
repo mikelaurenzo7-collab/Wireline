@@ -7,6 +7,7 @@ import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { useRovingTabIndex } from "../hooks/useRovingTabIndex";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
@@ -22,8 +23,14 @@ const SECTIONS: Array<{
 }> = [
   { id: "setup", label: "Set up", description: "Job, greeting, facts, and voice", icon: Settings2 },
   { id: "test", label: "Test", description: "Try a customer conversation", icon: MessageCircle },
-  { id: "review", label: "Review", description: "Confirm readiness and go live", icon: CheckCircle2 },
+  {
+    id: "review",
+    label: "Review",
+    description: "Confirm readiness and go live",
+    icon: CheckCircle2,
+  },
 ];
+const SECTION_IDS = SECTIONS.map((item) => item.id);
 
 function StudioLoadingState() {
   return (
@@ -35,7 +42,10 @@ function StudioLoadingState() {
       <div className="mx-auto w-full max-w-4xl space-y-4">
         <Skeleton shape="text" className="h-3 w-20" />
         <Skeleton shape="text" className="h-8 w-72 max-w-full" />
-        <Skeleton shape="surface" className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]" />
+        <Skeleton
+          shape="surface"
+          className="h-[min(280px,45dvh)] w-full rounded-[var(--radius-xl)]"
+        />
         <PanelSkeleton rows={2} className="pt-1" />
       </div>
     </main>
@@ -117,7 +127,8 @@ export default function StudioWorkspaceV2() {
   }, [legacyMode, legacyView, setParams]);
 
   useEffect(() => {
-    if (loading || agents.length === 0 || !resolvedAgentId || resolvedAgentId === requestedId) return;
+    if (loading || agents.length === 0 || !resolvedAgentId || resolvedAgentId === requestedId)
+      return;
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -173,9 +184,17 @@ export default function StudioWorkspaceV2() {
   const startCustomerTest = useCallback(() => {
     setSection("test");
     window.setTimeout(() => {
-      workroomRef.current?.focusComposer("Hi, I’m a customer. Can you explain your services and help me choose the next step?");
+      workroomRef.current?.focusComposer(
+        "Hi, I’m a customer. Can you explain your services and help me choose the next step?",
+      );
     }, 120);
   }, [setSection]);
+
+  const studioTabs = useRovingTabIndex({
+    itemIds: SECTION_IDS,
+    activeId: section,
+    onActivate: setSection,
+  });
 
   if (loading) return <StudioLoadingState />;
   if (agents.length === 0) return <StudioEmptyState />;
@@ -196,17 +215,31 @@ export default function StudioWorkspaceV2() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <nav className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5" aria-label="Studio steps">
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-2" role="tablist" aria-label="Employee setup steps">
+      <nav
+        className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5"
+        aria-label="Studio steps"
+      >
+        <div
+          ref={studioTabs.listRef}
+          className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-2"
+          role="tablist"
+          aria-label="Employee setup steps"
+          aria-orientation="horizontal"
+          onKeyDown={studioTabs.handleKeyDown}
+        >
           {SECTIONS.map((item, index) => {
             const selected = section === item.id;
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
+                id={`studio-tab-${item.id}`}
                 type="button"
                 role="tab"
                 aria-selected={selected}
+                aria-controls={`studio-panel-${item.id}`}
+                tabIndex={studioTabs.getTabIndex(item.id)}
+                data-roving-tab={item.id}
                 onClick={() => setSection(item.id)}
                 className={`min-w-0 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                   selected
@@ -217,12 +250,17 @@ export default function StudioWorkspaceV2() {
                 <span className="flex items-center gap-2">
                   <span
                     className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
-                      selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      selected
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {index + 1}
                   </span>
-                  <Icon className={`size-4 shrink-0 ${selected ? "text-primary" : ""}`} aria-hidden="true" />
+                  <Icon
+                    className={`size-4 shrink-0 ${selected ? "text-primary" : ""}`}
+                    aria-hidden="true"
+                  />
                   <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
                 </span>
                 <span className="mt-1 hidden truncate pl-8 text-[11px] text-muted-foreground md:block">
@@ -234,7 +272,12 @@ export default function StudioWorkspaceV2() {
         </div>
       </nav>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div
+        id={`studio-panel-${section}`}
+        role="tabpanel"
+        aria-labelledby={`studio-tab-${section}`}
+        className="min-h-0 flex-1 overflow-hidden"
+      >
         {section === "setup" ? (
           <StudioAgentWorkspacePanel
             key={active.id}

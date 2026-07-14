@@ -20,14 +20,14 @@ function loadSurfaces() {
   ) as Record<keyof typeof STUDIO_CANVAS_SURFACES, string>;
 }
 
-describe("Studio Canvas vision contract", () => {
+describe("Studio guided-workspace vision contract", () => {
   it("keeps the manifest as the single source of truth", () => {
     expect(STUDIO_CANVAS_VISION).toBe(WIRELINE_DESIGN_VISION.studioCanvas);
-    expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-plus-canvas");
-    expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("spatial-cards");
+    expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("setup-test-review");
+    expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("focused-panels");
     expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("context-chrome");
     expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(236);
-    expect(STUDIO_CANVAS_VISION.workspaceDepthParam).toBe("view=workspace");
+    expect(STUDIO_CANVAS_VISION.workspaceDepthParam).toBe("section");
     expect(STUDIO_CANVAS_VISION.minTouchTargetPx).toBe(44);
   });
 
@@ -35,7 +35,10 @@ describe("Studio Canvas vision contract", () => {
     const sources = loadSurfaces();
 
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_FORBIDDEN) as Array<
-      [keyof typeof STUDIO_CANVAS_FORBIDDEN, (typeof STUDIO_CANVAS_FORBIDDEN)[keyof typeof STUDIO_CANVAS_FORBIDDEN]]
+      [
+        keyof typeof STUDIO_CANVAS_FORBIDDEN,
+        (typeof STUDIO_CANVAS_FORBIDDEN)[keyof typeof STUDIO_CANVAS_FORBIDDEN],
+      ]
     >) {
       const text = sources[surface];
       for (const rule of rules) {
@@ -44,7 +47,7 @@ describe("Studio Canvas vision contract", () => {
     }
   });
 
-  it("requires the Claude Studio shell, context chrome, chat, and spatial Agent Canvas", () => {
+  it("requires the Studio shell, context chrome, and guided setup, test, review loop", () => {
     const sources = loadSurfaces();
 
     for (const [surface, rules] of Object.entries(STUDIO_CANVAS_REQUIRED) as Array<
@@ -66,7 +69,7 @@ describe("Studio Canvas vision contract", () => {
     }
   });
 
-  it("composes studio home from the dedicated shell and canvas orchestrator", () => {
+  it("composes studio home from the dedicated shell and guided orchestrator", () => {
     const studioHome = read(STUDIO_CANVAS_SURFACES.studioHome);
     expect(studioHome).toContain("StudioPageShell");
     expect(studioHome).toContain("StudioContextChrome");

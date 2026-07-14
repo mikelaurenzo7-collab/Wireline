@@ -1,10 +1,13 @@
 import { authFetch } from "./api";
 
 export type AssistantSetupProgress = {
+  agentId: string | null;
   agents: number;
+  essentialsReady: boolean;
   knowledge: number;
   numbers: number;
   calls: number;
+  browserTested: boolean;
   activated: boolean;
   approvedAction: boolean;
 };
@@ -28,32 +31,46 @@ export async function fetchActivationStatus(): Promise<boolean> {
 }
 
 export async function fetchAssistantSetupProgress(): Promise<AssistantSetupProgress> {
-  const [agents, knowledge, numbers, calls, activation] = await Promise.all([
-    authFetch("/api/agents")
-      .then((r) => r.json())
-      .then((d) => d.agents?.length ?? 0)
-      .catch(() => 0),
-    authFetch("/api/knowledge")
-      .then((r) => r.json())
-      .then((d) => d.total ?? d.knowledge?.length ?? 0)
-      .catch(() => 0),
+  const agentRows = await authFetch("/api/agents")
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => (Array.isArray(data?.agents) ? data.agents : []))
+    .catch(() => []);
+  const primaryAgentId = typeof agentRows[0]?.id === "string" ? agentRows[0].id : "";
+
+  const [numbers, calls, activation, essentials] = await Promise.all([
     authFetch("/api/phone-numbers")
-      .then((r) => r.json())
-      .then((d) => d.numbers?.length ?? 0)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) =>
+        Array.isArray(d?.numbers)
+          ? d.numbers.filter((number: { agent_id?: unknown }) => number.agent_id === primaryAgentId)
+              .length
+          : 0,
+      )
       .catch(() => 0),
-    authFetch("/api/calls?limit=1")
-      .then((r) => (r.ok ? r.json() : { calls: [] }))
-      .then((d) => (Array.isArray(d.calls) && d.calls.length > 0 ? 1 : 0))
-      .catch(() => 0),
+    primaryAgentId
+      ? authFetch(`/api/calls?limit=1&agentId=${encodeURIComponent(primaryAgentId)}`)
+          .then((r) => (r.ok ? r.json() : { calls: [] }))
+          .then((d) => (Array.isArray(d.calls) && d.calls.length > 0 ? 1 : 0))
+          .catch(() => 0)
+      : Promise.resolve(0),
     authFetch("/api/activation/status")
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
+    primaryAgentId
+      ? authFetch(`/api/agent-config/${encodeURIComponent(primaryAgentId)}`)
+          .then((response) => (response.ok ? response.json() : null))
+          .catch(() => null)
+      : Promise.resolve(null),
   ]);
   return {
-    agents,
-    knowledge,
+    agentId: primaryAgentId || null,
+    agents: agentRows.length,
+    essentialsReady:
+      essentials?.readiness?.jobDefined === true && essentials?.readiness?.greetingDefined === true,
+    knowledge: Number(essentials?.readiness?.knowledgeCount ?? 0),
     numbers,
     calls,
+    browserTested: Boolean(essentials?.readiness?.lastBrowserTestAt),
     activated: activation?.activated === true,
     approvedAction: activation?.activationWithApprovedAction === true,
   };
@@ -61,10 +78,10 @@ export async function fetchAssistantSetupProgress(): Promise<AssistantSetupProgr
 
 export function fleetSetupCompletedCount(progress: AssistantSetupProgress): number {
   let n = 0;
-  if (progress.agents > 0) n++;
+  if (progress.essentialsReady) n++;
   if (progress.knowledge > 0) n++;
   if (progress.numbers > 0) n++;
-  if (progress.calls > 0) n++;
+  if (progress.browserTested || progress.calls > 0) n++;
   if (progress.activated) n++;
   if (progress.approvedAction) n++;
   return n;

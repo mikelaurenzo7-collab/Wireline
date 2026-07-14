@@ -17,18 +17,20 @@ describe("account-type navigation lens", () => {
     expect(paths).not.toContain("/apps");
   });
 
-  it("keeps an Operate group for personal with trimmed items", () => {
+  it("keeps a Work group for personal with trimmed items", () => {
     const groups = accountNavGroups("personal");
-    expect(groups.map((group) => group.label)).toEqual(["Workspace", "Operate"]);
-    const operate = groups.find((group) => group.label === "Operate");
-    expect(operate?.items.map((item) => item.path)).toEqual(["/phone", "/inbox", "/settings"]);
+    expect(groups.map((group) => group.label)).toEqual(["Set up", "Work"]);
+    const work = groups.find((group) => group.label === "Work");
+    expect(work?.items.map((item) => item.path)).toEqual(["/inbox", "/phone", "/settings"]);
   });
 
-  it("exposes full Operate for business", () => {
+  it("exposes the simplified top-level Work destinations for business", () => {
     const paths = accountSidebarItems("business").map((item) => item.path);
     expect(paths).toContain("/insights");
-    expect(paths).toContain("/approvals");
-    // Apps moved out of top-level Operate into Settings tabs (simplified IA).
+    // Approvals remains route-available but is reached contextually / from More.
+    expect(paths).not.toContain("/approvals");
+    expect(isRouteAvailableForAccount("business", "/approvals")).toBe(true);
+    // Apps moved out of top-level Work into Settings tabs (simplified IA).
     expect(paths).not.toContain("/apps");
   });
 

@@ -21,12 +21,20 @@ type Step = {
 
 function buildSteps(progress: AssistantSetupProgress | null): Step[] {
   const p = progress ?? {
+    agentId: null,
     agents: 0,
+    essentialsReady: false,
     knowledge: 0,
     numbers: 0,
     calls: 0,
+    browserTested: false,
     activated: false,
     approvedAction: false,
+  };
+  const studioHref = (section: "setup" | "test") => {
+    const params = new URLSearchParams({ section });
+    if (p.agentId) params.set("agent", p.agentId);
+    return `/studio?${params.toString()}`;
   };
 
   return [
@@ -34,8 +42,8 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       id: "job",
       label: "Job and greeting defined",
       detail: "Give the employee one clear customer-facing responsibility.",
-      done: p.agents > 0,
-      href: "/studio?section=setup",
+      done: p.essentialsReady,
+      href: studioHref("setup"),
       icon: Sparkles,
     },
     {
@@ -43,7 +51,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       label: "Business facts added",
       detail: "Add pricing, hours, policies, FAQs, or other answers customers need.",
       done: p.knowledge > 0,
-      href: "/studio?section=setup",
+      href: studioHref("setup"),
       icon: GraduationCap,
     },
     {
@@ -53,6 +61,14 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       done: p.numbers > 0,
       href: "/connections",
       icon: Cable,
+    },
+    {
+      id: "test",
+      label: "One realistic test completed",
+      detail: "Ask a real customer question and confirm the saved answer in Studio.",
+      done: p.browserTested || p.calls > 0,
+      href: studioHref("test"),
+      icon: Sparkles,
     },
     {
       id: "live",
@@ -111,7 +127,8 @@ export default function ActivationChecklist({ className }: { className?: string 
             {completed} of {steps.length} customer-ready steps complete
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            Test freely in Studio. This checklist tracks only saved setup, live channels, and real customer outcomes.
+            Test freely in Studio. This checklist tracks only saved setup, live channels, and real
+            customer outcomes.
           </p>
         </div>
         <button

@@ -21,8 +21,8 @@ describe("activation path contract", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("ActivationChecklist");
     expect(overview).toContain("FirstRunLaunchpad");
-    expect(overview).toContain("One clear path to your first live call.");
-    expect(overview).toContain("No integrations required to create or browser-test it.");
+    expect(overview).toContain("Put one customer-facing job to work today.");
+    expect(overview).toContain("Do not configure everything.");
     expect(overview).toContain("degraded && !hasAgents");
     expect(overview).toContain("WorkspaceRecovery");
   });
@@ -30,12 +30,20 @@ describe("activation path contract", () => {
   it("aligns activation checklist with fleet setup progress (6 steps, live call gate)", () => {
     const checklist = read("src/components/ActivationChecklist.tsx");
     const progress = read("src/lib/fleet-setup-progress.ts");
+    const dashboardRoutes = read("src/routes/dashboard-routes.ts");
     expect(progress).toContain("FLEET_SETUP_STEP_COUNT = 6");
     expect(checklist).toContain('id: "live"');
     expect(checklist).toContain('id: "test"');
-    expect(checklist).toContain('id: "approve"');
+    expect(checklist).toContain('id: "review"');
     expect(checklist).toContain('href: "/approvals"');
-    expect(checklist).toContain("No training required for a quick browser preview");
+    expect(checklist).toContain("Test freely in Studio.");
+    expect(progress).toContain("browserTested");
+    expect(progress).toContain("agentId: primaryAgentId || null");
+    expect(progress).toContain("knowledgeCount");
+    expect(progress).toContain("agentId=${encodeURIComponent(primaryAgentId)}");
+    expect(checklist).toContain('params.set("agent", p.agentId)');
+    expect(dashboardRoutes).toContain('req.query.agentId === "string"');
+    expect(dashboardRoutes).toContain("tenantCallFilter");
   });
 
   it("keeps post-create setup honest and focused", () => {
@@ -43,7 +51,8 @@ describe("activation path contract", () => {
     const copy = read("src/lib/wireline-onboarding-copy.ts");
     expect(wizard).toContain('["train", "wire", "test"]');
     expect(wizard).not.toContain('event: "test_call_completed"');
-    expect(wizard).toContain("testStarted ?");
+    expect(wizard).toContain("testCompleted ?");
+    expect(wizard).toContain("onTestCompleted");
     expect(wizard).toContain("Finish without a test");
     expect(copy).toContain("Optional: review what your agent learned");
     expect(copy).toContain('label: "Number"');

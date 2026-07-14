@@ -1,17 +1,32 @@
 #!/usr/bin/env node
-/**
- * Fail CI when visual QA manifest contains P0 layout/auth/navigation issues.
- */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-const manifestPath = process.argv[2] || process.env.WIRELINE_VISUAL_MANIFEST;
-if (!manifestPath) {
-  console.error("Usage: node scripts/check-visual-qa-manifest.mjs <path/to/manifest.json>");
+import { validateVisualQaManifest } from "./visual-qa-manifest.mjs";
+
+const smokeMode = process.argv.includes("--smoke");
+const manifestArgument =
+  process.argv.slice(2).find((argument) => argument !== "--smoke") ||
+  process.env.WIRELINE_VISUAL_MANIFEST;
+if (!manifestArgument) {
+  console.error(
+    "Usage: node scripts/check-visual-qa-manifest.mjs [--smoke] <path/to/manifest.json>",
+  );
   process.exit(2);
 }
 
-const P0_KINDS = new Set([
+const manifestPath = path.resolve(manifestArgument);
+let manifest;
+try {
+  manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+} catch (error) {
+  console.error(
+    `Visual QA manifest could not be read: ${error instanceof Error ? error.message : String(error)}`,
+  );
+  process.exit(1);
+}
+
+const smokeBlockingKinds = new Set([
   "http",
   "navigation",
   "capture",
@@ -20,17 +35,27 @@ const P0_KINDS = new Set([
   "redirect",
   "auth",
 ]);
+const errors = smokeMode
+  ? (Array.isArray(manifest.issues) ? manifest.issues : [])
+      .filter((issue) => smokeBlockingKinds.has(issue?.kind))
+      .map(
+        (issue) =>
+          `[${issue?.kind || "issue"}] ${issue?.viewport || "unknown"} ${issue?.route || "unknown"}: ${issue?.detail || "No detail"}`,
+      )
+  : validateVisualQaManifest(manifest, {
+      manifestDir: path.dirname(manifestPath),
+      checkFiles: true,
+    });
 
-const manifest = JSON.parse(readFileSync(path.resolve(manifestPath), "utf8"));
-const issues = Array.isArray(manifest.issues) ? manifest.issues : [];
-const p0 = issues.filter((issue) => P0_KINDS.has(issue.kind));
-
-if (p0.length) {
-  console.error(`Visual QA P0 gate failed: ${p0.length} issue(s)`);
-  for (const issue of p0.slice(0, 20)) {
-    console.error(`  [${issue.kind}] ${issue.viewport} ${issue.route}: ${issue.detail}`);
-  }
+if (errors.length > 0) {
+  console.error(`Visual QA gate failed: ${errors.length} unexplained problem(s).`);
+  for (const error of errors.slice(0, 80)) console.error(`- ${error}`);
+  if (errors.length > 80) console.error(`- ...and ${errors.length - 80} more.`);
   process.exit(1);
 }
 
-console.log(`Visual QA manifest ok (${issues.length} non-blocking issue(s) ignored)`);
+console.log(
+  smokeMode
+    ? `Visual QA smoke manifest passed (${Array.isArray(manifest.issues) ? manifest.issues.length : 0} recorded issue(s)).`
+    : `Visual QA manifest passed: ${manifest.screenshotCountActual} settled viewport captures, including authenticated routes.`,
+);

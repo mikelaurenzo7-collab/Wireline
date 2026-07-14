@@ -53,9 +53,10 @@ describe("authenticated responsive polish contract", () => {
     const team = read("src/pages/TeamSettings.tsx");
     const admin = read("src/components/AdminSettings.tsx");
 
-    expect(studio).toContain('<h1 className="sr-only">Studio</h1>');
+    expect(studio).toMatch(/<h1[^>]*>[\s\S]*?\{activeAgent\.name\}[\s\S]*?<\/h1>/);
     expect(studio).toContain("{activeAgent.name}");
-    expect(team).toContain(">\n            Team\n          </h1>");
+    expect(studio).toContain('<h1 className="sr-only">AI employees</h1>');
+    expect(team).toMatch(/<h1[^>]*>\s*Team\s*<\/h1>/);
     expect(admin).toContain('<h1 className="sr-only">Admin workspace</h1>');
   });
 });

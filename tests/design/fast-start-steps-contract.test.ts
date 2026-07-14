@@ -13,7 +13,7 @@ describe("Fast Start step flow contract", () => {
     expect(createDialog).toContain("Step 2 · Optional details");
     expect(createDialog).toContain("step === 1");
     expect(createDialog).toContain("continueToVoice");
-    expect(createDialog).toContain("Create agent");
+    expect(createDialog).toContain("Create AI employee");
     expect(createDialog).toContain("if (step === 1 || creating) return");
     expect(createDialog).toContain("What do you need handled?");
     expect(createDialog).toContain("Ready to create");

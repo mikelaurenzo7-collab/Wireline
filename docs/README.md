@@ -4,17 +4,17 @@ Wireline's durable documentation follows the active product model. The customer-
 
 ## Active product surface
 
-| Area | Source | Purpose |
-| --- | --- | --- |
-| Overview | `src/pages/OverviewPage.tsx` | Calm command center for agents, calls, connections, Conversation Balance, and next actions. |
-| Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
-| Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx`, `src/components/PhoneAgentBlueprint.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, memory, and guided call-plan readiness. |
-| Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` | Numbers, integrations, routing, connected tools, approvals, billing, and launch controls. |
-| Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` | Chat-first execution for calls, texts, follow-up, approvals, handoff, and review. |
-| Browser | `apps/browser-extension/` | Wireline Command: explicit page-context handoff into Studio. |
-| Native | `ios/`, `android/` | Thin control surfaces for calls, approvals, notifications, widgets, and daily review. |
-| ChatGPT App | `docs/CHATGPT_APP.md` | OAuth-connected MCP surface for account-bound private actions. |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx` | Optional live visual presenter add-on for business agents with Wireline-owned customer copy. |
+| Area             | Source                                                                                                                                                  | Purpose                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Overview         | `src/pages/OverviewPage.tsx`                                                                                                                            | Calm command center for agents, calls, connections, Conversation Balance, and next actions.                               |
+| Create           | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx`                                                                           | Short intake for name, role, voice, personality, and starting brief.                                                      |
+| Train            | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx`, `src/components/PhoneAgentBlueprint.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, memory, and guided call-plan readiness. |
+| Wire             | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                              | Numbers, integrations, routing, connected tools, approvals, billing, and launch controls.                                 |
+| Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                             | Chat-first execution for calls, texts, follow-up, approvals, handoff, and review.                                         |
+| Browser          | `apps/browser-extension/`                                                                                                                               | Wireline Command: explicit page-context handoff into Studio.                                                              |
+| Native           | `ios/`, `android/`                                                                                                                                      | Thin control surfaces for calls, approvals, notifications, widgets, and daily review.                                     |
+| ChatGPT App      | `docs/CHATGPT_APP.md`                                                                                                                                   | OAuth-connected MCP surface for account-bound private actions.                                                            |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                                                                     | Optional live visual presenter add-on for business agents with Wireline-owned customer copy.                              |
 
 ## Current product rules
 
@@ -36,54 +36,55 @@ Wireline's durable documentation follows the active product model. The customer-
 
 ## Canonical system references
 
-| Document | Purpose |
-| --- | --- |
-| [README.md](../README.md) | Repo entry point, source map, setup, verification, and hygiene contract. |
-| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md) | Cleanup policy, deletion rules, source-control boundaries, and health standards. |
-| [ARCHITECTURE.md](../ARCHITECTURE.md) | Runtime architecture, route/data boundaries, provider posture, and security invariants. |
-| [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md) | Current codebase/repo health-pass findings, actions, and next priorities. |
-| [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md) | **Active** — source-of-truth triage for excluded/unmounted surfaces and their rebuild/delete targets. |
-| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md) | **Active** — whole-product showcase matrix across web, API, native, browser, ChatGPT, voice, video, integrations, trust, and margin. |
-| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md) | **Active** — AI-employee wedge (sales agents outbound) with outbound, inbound, and hybrid call modes, demo path, and pricing implications. |
-| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md) | **Active** — guided call-plan setup doctrine: ask, teach, capture, check, then launch. |
-| [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md) | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion. |
-| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md) | **Active** — customer-facing trust, compliance, and proof posture without overclaiming. |
-| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md) | **Active** — launch readiness scorecard and margin operating plan. |
-| [PERFECTION_PLAN.md](./PERFECTION_PLAN.md) | **Active** — canonical launch-readiness audit record, production gate commands, and open pre-launch actions. |
-| [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md) | **Active** — takeover pass: design system beautification, polish layer, contracts, and verified upgrades. |
-| [COMPOSER_CERTIFICATION_2026-07-05.md](./COMPOSER_CERTIFICATION_2026-07-05.md) | **Active** — Composer 2.5 certification ladder, dual-voice PSTN, funnel events, and ops proof. |
-| [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) | **Active** - Supabase security/performance advisor posture, custom-auth HIBP control, and unused-index evidence gate. |
-| [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md) | **Active** - dry-run-first demo tenant reset, reseed, and screenshot QA procedure. |
-| [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md) | **Active** — DNC, Redis, Sentry, and scale-readiness env vars. |
-| [MULTI_SURFACE_QA_2026-07-07.md](./MULTI_SURFACE_QA_2026-07-07.md) | **Active** — extension, native, and ChatGPT MCP QA rituals. |
-| [STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md](./STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md) | **Active** — strict branch review for design, UI/UX, branding, pricing, marketing, SEO, AI runtime, integrations, and business structure. |
-| [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md) | **Planned** — Conversation Balance referral loop (post-Horizon 0). |
-| [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md) | **Active** — brand voice, marketing/GTM, onboarding, pricing, voice/avatar product, and ops execution plan tied to the Aurora rebrand. |
-| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md) | Repository boundaries across web, browser, native, and ChatGPT surfaces. |
-| [CHATGPT_APP.md](./CHATGPT_APP.md) | ChatGPT App contract and release verification. |
-| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md) | Billing model, Stripe catalog direction, and Conversation Balance posture. |
-| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md) | **Active** — Stripe checkout, entitlement sync, Conversation Balance, webhook idempotency, cancellation, and usage reconciliation proof runbook. |
-| [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md) | **Active** — Jul 2026 pricing lock checklist and live billing proof status. |
-| [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) | xAI realtime voice path, safety posture, and live test constraints. |
-| [VOICE_CLONING_EXPANSION.md](./VOICE_CLONING_EXPANSION.md) | **Active** — current voice-cloning trust foundation, deployable upload constraints, and remaining production gates. |
-| [VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md](./VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md) | **Active** — provider-neutral voice moat, partner sequence, outcome metrics, Voice Passport direction, and 90-day execution plan. |
-| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md) | **Active** — dedicated number plus verified calling, SMS, and email identity with truthful provider-state and coverage boundaries. |
-| [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md) | Operational success motion and support posture. |
-| [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md) | Research lanes, prioritization, metrics, and 30/90/180-day execution roadmap. |
-| [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md) | **Active** — 2026 product audit, competitive positioning, Letterpress UX, onboarding, KPIs, and implementation checklist. |
-| [PRESENTER_VENDOR_STRATEGY.md](./PRESENTER_VENDOR_STRATEGY.md) | Live avatar vendors, custom face clone tiers, provider matrix, and Business presence roadmap. |
-| [INTEGRATION_VENDOR_AUDIT.md](./INTEGRATION_VENDOR_AUDIT.md) | Runtime/vendor decisions, deepen-before-expand priorities, and connector corrections. |
-| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md) | **Active** — launch-ready vendor/surface inventory (live, beta, planned, retire) and Stripe legacy cleanup gate. |
-| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md) | Authorization coverage artifact generated by authz verification. |
+| Document                                                                                     | Purpose                                                                                                                                          |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [README.md](../README.md)                                                                    | Repo entry point, source map, setup, verification, and hygiene contract.                                                                         |
+| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                  | Cleanup policy, deletion rules, source-control boundaries, and health standards.                                                                 |
+| [ARCHITECTURE.md](../ARCHITECTURE.md)                                                        | Runtime architecture, route/data boundaries, provider posture, and security invariants.                                                          |
+| [REPO_HEALTH_AUDIT_2026-07-04.md](./REPO_HEALTH_AUDIT_2026-07-04.md)                         | Current codebase/repo health-pass findings, actions, and next priorities.                                                                        |
+| [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md)             | **Active** — source-of-truth triage for excluded/unmounted surfaces and their rebuild/delete targets.                                            |
+| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                   | **Active** — whole-product showcase matrix across web, API, native, browser, ChatGPT, voice, video, integrations, trust, and margin.             |
+| [OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md](./OUTBOUND_CALL_AGENT_WEDGE_2026-07-07.md)         | **Active** — AI-employee wedge (sales agents outbound) with outbound, inbound, and hybrid call modes, demo path, and pricing implications.       |
+| [GUIDED_AGENT_SETUP_2026-07-08.md](./GUIDED_AGENT_SETUP_2026-07-08.md)                       | **Active** — guided call-plan setup doctrine: ask, teach, capture, check, then launch.                                                           |
+| [WIRELINE_LEVEL_UP_MASTER_PLAN.md](./WIRELINE_LEVEL_UP_MASTER_PLAN.md)                       | **Active** — phased execution plan for truth/deletion, wedge launch, reliability/margin, multi-surface excellence, and expansion.                |
+| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                       | **Active** — customer-facing trust, compliance, and proof posture without overclaiming.                                                          |
+| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                           | **Active** — launch readiness scorecard and margin operating plan.                                                                               |
+| [PERFECTION_PLAN.md](./PERFECTION_PLAN.md)                                                   | **Active** — canonical launch-readiness audit record, production gate commands, and open pre-launch actions.                                     |
+| [TAKEOVER_AUDIT_2026-07-05.md](./TAKEOVER_AUDIT_2026-07-05.md)                               | **Active** — takeover pass: design system beautification, polish layer, contracts, and verified upgrades.                                        |
+| [COMPOSER_CERTIFICATION_2026-07-05.md](./COMPOSER_CERTIFICATION_2026-07-05.md)               | **Active** — Composer 2.5 certification ladder, dual-voice PSTN, funnel events, and ops proof.                                                   |
+| [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md)           | **Active** - Supabase security/performance advisor posture, custom-auth HIBP control, and unused-index evidence gate.                            |
+| [VISUAL_QA.md](./VISUAL_QA.md)                                                               | **Active** - canonical 39-public/24-authenticated/15-viewport production capture matrix and strict manifest gate.                                |
+| [DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md](./DEMO_DATA_RESET_QA_CHECKLIST_2026-07-07.md)   | **Active** - dry-run-first demo tenant reset, reseed, and screenshot QA procedure.                                                               |
+| [OPS_CREDENTIALS_CHECKLIST_2026-07-07.md](./OPS_CREDENTIALS_CHECKLIST_2026-07-07.md)         | **Active** — DNC, Redis, Sentry, and scale-readiness env vars.                                                                                   |
+| [MULTI_SURFACE_QA_2026-07-07.md](./MULTI_SURFACE_QA_2026-07-07.md)                           | **Active** — extension, native, and ChatGPT MCP QA rituals.                                                                                      |
+| [STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md](./STRICT_BUSINESS_DESIGN_REVIEW_2026-07-07.md) | **Active** — strict branch review for design, UI/UX, branding, pricing, marketing, SEO, AI runtime, integrations, and business structure.        |
+| [REFERRAL_LOOP_SPEC_2026-07-07.md](./REFERRAL_LOOP_SPEC_2026-07-07.md)                       | **Planned** — Conversation Balance referral loop (post-Horizon 0).                                                                               |
+| [AURORA_MASTERPLAN.md](./AURORA_MASTERPLAN.md)                                               | **Active** — brand voice, marketing/GTM, onboarding, pricing, voice/avatar product, and ops execution plan tied to the Aurora rebrand.           |
+| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                   | Repository boundaries across web, browser, native, and ChatGPT surfaces.                                                                         |
+| [CHATGPT_APP.md](./CHATGPT_APP.md)                                                           | ChatGPT App contract and release verification.                                                                                                   |
+| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                   | Billing model, Stripe catalog direction, and Conversation Balance posture.                                                                       |
+| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                   | **Active** — Stripe checkout, entitlement sync, Conversation Balance, webhook idempotency, cancellation, and usage reconciliation proof runbook. |
+| [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md)                                           | **Active** — Jul 2026 pricing lock checklist and live billing proof status.                                                                      |
+| [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md)                                                   | xAI realtime voice path, safety posture, and live test constraints.                                                                              |
+| [VOICE_CLONING_EXPANSION.md](./VOICE_CLONING_EXPANSION.md)                                   | **Active** — current voice-cloning trust foundation, deployable upload constraints, and remaining production gates.                              |
+| [VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md](./VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md) | **Active** — provider-neutral voice moat, partner sequence, outcome metrics, Voice Passport direction, and 90-day execution plan.                |
+| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                       | **Active** — dedicated number plus verified calling, SMS, and email identity with truthful provider-state and coverage boundaries.               |
+| [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md)                                                 | Operational success motion and support posture.                                                                                                  |
+| [RESEARCH_OPERATING_SYSTEM.md](./RESEARCH_OPERATING_SYSTEM.md)                               | Research lanes, prioritization, metrics, and 30/90/180-day execution roadmap.                                                                    |
+| [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md)                                       | **Active** — 2026 product audit, competitive positioning, Letterpress UX, onboarding, KPIs, and implementation checklist.                        |
+| [PRESENTER_VENDOR_STRATEGY.md](./PRESENTER_VENDOR_STRATEGY.md)                               | Live avatar vendors, custom face clone tiers, provider matrix, and Business presence roadmap.                                                    |
+| [INTEGRATION_VENDOR_AUDIT.md](./INTEGRATION_VENDOR_AUDIT.md)                                 | Runtime/vendor decisions, deepen-before-expand priorities, and connector corrections.                                                            |
+| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                               | **Active** — launch-ready vendor/surface inventory (live, beta, planned, retire) and Stripe legacy cleanup gate.                                 |
+| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                         | Authorization coverage artifact generated by authz verification.                                                                                 |
 
 ## Historical / planning material
 
-| Location | Status |
-| --- | --- |
-| `docs/superpowers/specs/**` | Historical design/spec plans. Promote durable decisions into canonical docs before using as active truth. |
-| `docs/superpowers/plans/**` | Historical execution plans. Useful for context, not the current source of truth. |
+| Location                                   | Status                                                                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `docs/superpowers/specs/**`                | Historical design/spec plans. Promote durable decisions into canonical docs before using as active truth.             |
+| `docs/superpowers/plans/**`                | Historical execution plans. Useful for context, not the current source of truth.                                      |
 | `docs/mobile-web-native-strategy-audit.md` | Strategic context for mobile/browser/native split; verify against current `CLIENT_SURFACES.md` before implementation. |
-| `docs/ONE-AGENT-STRATEGY.md` | Strategic framing; keep aligned with Create -> Train -> Wire -> Run and current pricing docs. |
+| `docs/ONE-AGENT-STRATEGY.md`               | Strategic framing; keep aligned with Create -> Train -> Wire -> Run and current pricing docs.                         |
 
 ## Documentation hygiene rules
 

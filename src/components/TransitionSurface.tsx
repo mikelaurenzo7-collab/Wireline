@@ -20,6 +20,7 @@ type TransitionSurfaceProps = {
   title: string;
   description?: string;
   busyLabel?: string;
+  busy?: boolean;
   details?: TransitionDetail[];
   actions?: TransitionAction[];
   className?: string;
@@ -30,13 +31,14 @@ export default function TransitionSurface({
   title,
   description,
   busyLabel = "Working",
+  busy = true,
   details = [],
   actions = [],
   className = "",
 }: TransitionSurfaceProps) {
   return (
     <div className={`wl-transition-shell ${className}`.trim()}>
-      <main className="wl-transition-rail" role="status" aria-live="polite" aria-busy="true">
+      <main className="wl-transition-rail" role="status" aria-live="polite" aria-busy={busy}>
         <div className="wl-transition-brand">
           <span className="wl-transition-mark">
             <WirelineMark className="size-5 text-primary" />
@@ -51,10 +53,12 @@ export default function TransitionSurface({
             {description ? <p className="wl-transition-description">{description}</p> : null}
           </header>
 
-          <div className="wl-transition-status">
-            <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
-            <span>{busyLabel}</span>
-          </div>
+          {busy ? (
+            <div className="wl-transition-status">
+              <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+              <span>{busyLabel}</span>
+            </div>
+          ) : null}
 
           {details.length ? (
             <dl className="wl-transition-details">

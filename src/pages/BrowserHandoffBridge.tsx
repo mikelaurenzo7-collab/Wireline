@@ -88,7 +88,7 @@ export default function BrowserHandoffBridge() {
         eyebrow="Studio"
         title="Handoff unavailable"
         description={error}
-        busyLabel=""
+        busy={false}
       />
     );
   }

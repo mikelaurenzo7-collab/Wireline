@@ -14,6 +14,8 @@ export type PostCreateWizardPayload = {
   phoneProvisionRequested: boolean;
   /** Provision succeeded during create (false when gated or skipped). */
   phoneProvisioned: boolean;
+  /** Immediate, non-fatal setup warning after the agent row already exists. */
+  warning?: string | null;
 };
 
 export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {

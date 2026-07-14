@@ -35,7 +35,7 @@ describe("public route fallbacks", () => {
   });
 
   it("captures the live solution routes rather than the retired personal alias", () => {
-    for (const path of ["scripts/capture-prod-visual-qa.mjs", "tests/e2e/public-routes.spec.ts"]) {
+    for (const path of ["scripts/visual-qa-matrix.mjs", "tests/e2e/public-routes.spec.ts"]) {
       const source = read(path);
       expect(source, path).toContain('"/solutions/support"');
       expect(source, path).toContain('"/solutions/sales"');

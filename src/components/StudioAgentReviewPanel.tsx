@@ -12,11 +12,20 @@ const GREETING_PREFIX = "Opening greeting:";
 
 type AgentConfigResponse = {
   role?: string | null;
+  job?: string | null;
+  firstMessage?: string | null;
   personality?: string | null;
   directives?: Array<{ content?: string | null }>;
   voice?: {
     voiceId?: string | null;
     provider?: string | null;
+    phoneVoiceId?: string | null;
+    phoneVoiceProvider?: string | null;
+    effectivePhoneVoiceId?: string | null;
+    effectivePhoneVoiceProvider?: string | null;
+  };
+  readiness?: {
+    lastBrowserTestAt?: string | null;
   };
 };
 
@@ -30,7 +39,11 @@ type StudioAgentReviewPanelProps = {
   className?: string;
 };
 
-function openingGreeting(directives: AgentConfigResponse["directives"]) {
+function openingGreeting(
+  firstMessage: AgentConfigResponse["firstMessage"],
+  directives: AgentConfigResponse["directives"],
+) {
+  if (firstMessage?.trim()) return firstMessage.trim();
   const match = directives?.find((directive) => directive.content?.startsWith(GREETING_PREFIX));
   return match?.content?.slice(GREETING_PREFIX.length).trim() || "Uses the standard greeting";
 }
@@ -80,10 +93,21 @@ export default function StudioAgentReviewPanel({
     };
   }, [agentId]);
 
-  const voiceName = resolveVoiceLabel(config?.voice?.voiceId);
-  const voiceProvider = providerLabel(config?.voice?.provider);
-  const role = formatAgentRoleLabel(config?.role ?? agentRole ?? null);
+  const presenterActive = config?.voice?.provider === "presenter";
+  const effectivePhoneVoiceId =
+    config?.voice?.effectivePhoneVoiceId ??
+    (presenterActive ? config?.voice?.phoneVoiceId : config?.voice?.voiceId);
+  const effectivePhoneVoiceProvider =
+    config?.voice?.effectivePhoneVoiceProvider ??
+    (presenterActive ? config?.voice?.phoneVoiceProvider : config?.voice?.provider);
+  const voiceName = resolveVoiceLabel(effectivePhoneVoiceId);
+  const voiceProvider = providerLabel(effectivePhoneVoiceProvider);
+  const phoneVoiceSummary = effectivePhoneVoiceId
+    ? `${voiceName} · ${voiceProvider}`
+    : "Choose a phone voice before connecting live calls";
+  const role = config?.job?.trim() || formatAgentRoleLabel(config?.role ?? agentRole ?? null);
   const hasPhone = Boolean(phoneNumber);
+  const browserTested = Boolean(config?.readiness?.lastBrowserTestAt);
 
   return (
     <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
@@ -106,7 +130,10 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-label="Launch summary">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-label="Launch summary"
+        >
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2" aria-busy="true">
               {Array.from({ length: 4 }, (_, index) => (
@@ -121,12 +148,17 @@ export default function StudioAgentReviewPanel({
               {[
                 { label: "Customer-facing job", value: role },
                 { label: "Tone", value: toneLabel(config?.personality) },
-                { label: "Opening greeting", value: openingGreeting(config?.directives) },
-                { label: "Phone voice", value: `${voiceName} · ${voiceProvider}` },
+                {
+                  label: "Opening greeting",
+                  value: openingGreeting(config?.firstMessage, config?.directives),
+                },
+                { label: "Live phone voice", value: phoneVoiceSummary },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-border bg-background p-4">
                   <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
-                  <dd className="mt-2 text-sm font-semibold leading-5 text-foreground">{item.value}</dd>
+                  <dd className="mt-2 text-sm font-semibold leading-5 text-foreground">
+                    {item.value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -134,29 +166,52 @@ export default function StudioAgentReviewPanel({
         </section>
 
         <StatusNotice
-          tone={hasPhone ? "success" : "warning"}
-          title={hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"}
+          tone={browserTested ? "success" : "warning"}
+          title={
+            browserTested
+              ? hasPhone
+                ? "Browser test passed and live line connected"
+                : "Browser test passed; live line not connected"
+              : hasPhone
+                ? "Live line connected; browser test still needed"
+                : "Setup saved; browser test still needed"
+          }
         >
-          {hasPhone
-            ? `Customers can reach ${agentName} at ${phoneNumber}. Run a real inbound call before publishing the number broadly.`
-            : "Test the conversation in the browser first. Connect a phone number only when the greeting, answers, and handoff behavior feel right."}
+          {browserTested
+            ? hasPhone
+              ? `Customers can reach ${agentName} at ${phoneNumber}. Place one real inbound call before publishing the number broadly.`
+              : "The saved setup answered a browser roleplay successfully. Connect a number when the greeting, answers, and handoff behavior feel right."
+            : "Run one realistic browser conversation before treating this AI employee as customer-ready."}
         </StatusNotice>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-label="Next actions">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-label="Next actions"
+        >
           <h3 className="text-base font-semibold text-foreground">Next action</h3>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Keep the loop small: edit, test, then go live. Add advanced providers only after customer use proves the need.
+            Keep the loop small: edit, test, then go live. Add advanced providers only after
+            customer use proves the need.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
               <Settings2 className="size-4" aria-hidden="true" />
               Edit setup
             </Button>
-            <Button type="button" variant="secondary" onClick={onTest} className="justify-center">
+            <Button
+              type="button"
+              variant={browserTested ? "secondary" : "default"}
+              onClick={onTest}
+              className="justify-center"
+            >
               <MessageCircle className="size-4" aria-hidden="true" />
               Test conversation
             </Button>
-            <Button asChild className="justify-center">
+            <Button
+              asChild
+              variant={browserTested ? "default" : "secondary"}
+              className="justify-center"
+            >
               <Link to={hasPhone ? "/phone?tab=logs" : "/connections"}>
                 {hasPhone ? (
                   <CheckCircle2 className="size-4" aria-hidden="true" />

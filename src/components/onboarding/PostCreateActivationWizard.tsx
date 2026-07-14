@@ -3,7 +3,7 @@ import { Check, Cable, Loader2, MessageSquare, Phone, Sparkles, X } from "lucide
 import { Link } from "react-router-dom";
 
 import RoleplaySandbox from "../RoleplaySandbox";
-import { Button } from "../atoms";
+import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from "../atoms";
 import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
 import {
@@ -60,7 +60,7 @@ export default function PostCreateActivationWizard({
   const [loadingPhone, setLoadingPhone] = useState(true);
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
-  const [testStarted, setTestStarted] = useState(false);
+  const [testCompleted, setTestCompleted] = useState(false);
 
   const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"];
   const stepIndex = stepOrder.indexOf(step);
@@ -160,6 +160,7 @@ export default function PostCreateActivationWizard({
   }
 
   function dismiss() {
+    if (provisioning) return;
     setPostSignupFlowActive(false);
     clearPostCreateWizard();
     onClose();
@@ -204,27 +205,37 @@ export default function PostCreateActivationWizard({
   }, [hasLine, phoneNumber, payload.agentName]);
 
   return (
-    <div
-      className="fixed inset-0 z-[var(--wireline-z-modal,80)] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="post-create-wizard-title"
+    <Dialog
+      open
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !provisioning) dismiss();
+      }}
     >
-      <div className="flex max-h-[min(92dvh,880px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[var(--radius-xl)] border border-border bg-background shadow-[var(--wireline-elevation-lg)] sm:rounded-[var(--radius-xl)]">
+      <DialogContent
+        showClose={false}
+        overlayClassName="bg-black/55"
+        className="bottom-0 top-auto z-[var(--wireline-z-modal,80)] flex max-h-[min(92dvh,880px)] w-full max-w-2xl translate-y-0 flex-col gap-0 overflow-hidden rounded-t-[var(--radius-xl)] border-border bg-background p-0 shadow-[var(--wireline-elevation-lg)] sm:bottom-auto sm:top-[50%] sm:translate-y-[-50%] sm:rounded-[var(--radius-xl)]"
+        aria-labelledby="post-create-wizard-title"
+        aria-describedby="post-create-wizard-description"
+      >
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <p className={WL_APP_CLASSES.wiredEyebrow}>{POST_CREATE_WIZARD_COPY.eyebrow}</p>
-            <h2
+            <DialogTitle
               id="post-create-wizard-title"
               className="mt-1 font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground sm:text-2xl"
             >
               {POST_CREATE_WIZARD_COPY.title} {payload.agentName}
-            </h2>
+            </DialogTitle>
+            <DialogDescription id="post-create-wizard-description" className="sr-only">
+              Finish training, connect a customer line, and test this AI employee before launch.
+            </DialogDescription>
           </div>
           <button
             type="button"
             onClick={dismiss}
-            className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+            disabled={provisioning}
+            className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground disabled:cursor-wait disabled:opacity-50"
             aria-label="Close setup guide"
           >
             <X size={16} aria-hidden="true" />
@@ -265,6 +276,15 @@ export default function PostCreateActivationWizard({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          {payload.warning ? (
+            <StatusNotice
+              tone="warning"
+              title="Created with setup still to finish"
+              className="mb-4"
+            >
+              {payload.warning}
+            </StatusNotice>
+          ) : null}
           {step === "train" ? (
             <section className="grid gap-4">
               <div>
@@ -448,13 +468,13 @@ export default function PostCreateActivationWizard({
                 agentId={payload.agentId}
                 agentName={payload.agentName}
                 onTestStarted={() => {
-                  setTestStarted(true);
                   emitProductEventOnce({
                     event: "first_test_call_started",
                     agentId: payload.agentId,
                     metadata: { channel: "roleplay" },
                   });
                 }}
+                onTestCompleted={() => setTestCompleted(true)}
               />
               {hasLine && phoneNumber ? (
                 <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
@@ -467,7 +487,6 @@ export default function PostCreateActivationWizard({
                   <a
                     href={formatTel(phoneNumber)}
                     onClick={() => {
-                      setTestStarted(true);
                       emitProductEventOnce({
                         event: "first_test_call_started",
                         agentId: payload.agentId,
@@ -509,13 +528,19 @@ export default function PostCreateActivationWizard({
 
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">
           {step !== "complete" ? (
-            <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={dismiss}
+              disabled={provisioning}
+            >
               Skip for now
             </Button>
           ) : null}
           {step === "test" ? (
             <Button type="button" size="sm" onClick={finish}>
-              {testStarted ? POST_CREATE_WIZARD_COPY.steps.test.primary : "Finish without a test"}
+              {testCompleted ? POST_CREATE_WIZARD_COPY.steps.test.primary : "Finish without a test"}
             </Button>
           ) : null}
           {step === "complete" ? (
@@ -531,7 +556,7 @@ export default function PostCreateActivationWizard({
             </>
           ) : null}
         </footer>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

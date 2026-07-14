@@ -114,16 +114,16 @@ export const WIRELINE_DESIGN_VISION = {
   ],
   voiceModules: ["MARKETING_VOICE", "WORKSPACE_VOICE", "PRODUCT_POSTURE"],
   studioCanvas: {
-    // Claude Design Agent Studio: a route-correct workspace rail, a compact
-    // context chrome (breadcrumb, readiness, test/deploy), and a split pane:
-    // 380px-ish builder chat on the left + spatial Agent Canvas cards on the
-    // right. Agent switching belongs in the Assistants directory / Overview
-    // preview, not as a second roster strip inside Studio.
-    defaultSurface: "chat-plus-canvas",
-    canvasSurface: "spatial-cards",
+    // Studio keeps the route-correct workspace rail and compact employee
+    // context, then guides a first-time user through three focused surfaces:
+    // set up the essentials, test a realistic customer turn, and review launch
+    // readiness. Advanced configuration stays contextual instead of competing
+    // with the primary path.
+    defaultSurface: "setup-test-review",
+    canvasSurface: "focused-panels",
     agentSwitcher: "context-chrome",
     railWidthPx: 236,
-    workspaceDepthParam: "view=workspace",
+    workspaceDepthParam: "section",
     minTouchTargetPx: 44,
   },
 } as const;

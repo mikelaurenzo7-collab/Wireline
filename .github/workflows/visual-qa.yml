@@ -65,7 +65,7 @@ jobs:
       - name: Gate P0 manifest issues
         run: |
           MANIFEST=$(ls -td artifacts/visual-qa-pr/*/manifest.json | head -1)
-          node scripts/check-visual-qa-manifest.mjs "$MANIFEST"
+          node scripts/check-visual-qa-manifest.mjs --smoke "$MANIFEST"
 
       - name: Upload artifact
         if: always()

@@ -18,7 +18,7 @@ import {
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
-import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
+import { isVapiCuratedVoiceId, resolvePresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { AI_TOOLS } from "../lib/ai-tools";
 import {
   isGeminiModelId,
@@ -33,6 +33,7 @@ import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { resolveAgentEntitlement } from "../lib/agent-entitlements";
 import { runStructured } from "../lib/ai-structured";
+import { emitServerProductEvent } from "../lib/product-event-server";
 import {
   AGENT_CREATE_DEFAULT_ROLE_ID,
   canonicalizeAgentRoleForCreate,
@@ -42,6 +43,8 @@ import {
 } from "../lib/agent-role-definitions";
 
 const router = Router();
+const LEGACY_OPENING_GREETING_PREFIX = "Opening greeting:";
+const CUSTOMER_FACING_JOB_PREFIX = "Customer-facing job:";
 
 type ExtractedConfig = {
   directives: Array<{ content: string; priority?: number }>;
@@ -67,6 +70,24 @@ async function owned(agentId: string, userId: string) {
 
 function cleanText(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+function legacyOpeningGreeting(directives: Array<{ content?: string | null }>): string {
+  const directive = directives.find((item) =>
+    item.content?.trimStart().startsWith(LEGACY_OPENING_GREETING_PREFIX),
+  );
+  return directive?.content?.trimStart().slice(LEGACY_OPENING_GREETING_PREFIX.length).trim() || "";
+}
+
+function configuredCustomerFacingJob(directives: Array<{ content?: string | null }>): string {
+  const directive = directives.find((item) =>
+    item.content?.trimStart().startsWith(CUSTOMER_FACING_JOB_PREFIX),
+  );
+  return directive?.content?.trimStart().slice(CUSTOMER_FACING_JOB_PREFIX.length).trim() || "";
+}
+
+function isLegacyOpeningGreeting(directive: { content?: string | null }): boolean {
+  return Boolean(directive.content?.trimStart().startsWith(LEGACY_OPENING_GREETING_PREFIX));
 }
 
 function extractionReply(parsed: ExtractedConfig) {
@@ -337,12 +358,13 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [agentRows, personalities, directives, knowledge] = await Promise.all([
+    const [agentRows, personalities, directives, knowledge, browserTests] = await Promise.all([
       drizzle
         .select({
           name: schema.agents.name,
           role: schema.agents.role,
           archetype: schema.agents.archetype,
+          firstMessage: schema.agents.firstMessage,
           flowConfig: schema.agents.flowConfig,
           enabledTools: schema.agents.enabledTools,
           llmProvider: schema.agents.llmProvider,
@@ -391,7 +413,7 @@ router.get(
             eq(schema.directives.userId, req.user.id),
           ),
         )
-        .orderBy(desc(schema.directives.priority)),
+        .orderBy(desc(schema.directives.priority), desc(schema.directives.id)),
       drizzle
         .select()
         .from(schema.knowledge)
@@ -402,8 +424,43 @@ router.get(
           ),
         )
         .orderBy(desc(schema.knowledge.createdAt)),
+      drizzle
+        .select({ createdAt: schema.auditLog.createdAt })
+        .from(schema.auditLog)
+        .where(
+          and(
+            eq(schema.auditLog.userId, req.user.id),
+            eq(schema.auditLog.action, "test_call_completed"),
+            eq(schema.auditLog.eventType, "product.event"),
+            eq(schema.auditLog.resourceType, "product_event"),
+            eq(schema.auditLog.resourceId, req.params.id),
+            sql`coalesce(${schema.auditLog.metadata} ->> 'mode', '') in (${"browser_roleplay"}, ${"browser_live_voice"})`,
+          ),
+        )
+        .orderBy(desc(schema.auditLog.createdAt))
+        .limit(1),
     ]);
     const record = agentRows[0];
+    const migratedGreeting = legacyOpeningGreeting(directives);
+    const firstMessage = record?.firstMessage?.trim() || migratedGreeting;
+    const customerFacingJob = configuredCustomerFacingJob(directives);
+    const presenterVoice = record?.voiceProvider === "presenter";
+    const presenterPhoneVoice = resolvePresenterPhoneVoicePayload(
+      record?.phoneVoiceId,
+      record?.phoneVoiceProvider,
+    );
+    const effectivePhoneVoiceId = presenterVoice
+      ? presenterPhoneVoice.phoneVoiceId
+      : record?.voiceId || null;
+    const effectivePhoneVoiceProvider = presenterVoice
+      ? presenterPhoneVoice.phoneVoiceProvider
+      : record?.voiceProvider || null;
+    const browserTestCreatedAt = browserTests[0]?.createdAt;
+    const lastBrowserTestAt = browserTestCreatedAt
+      ? browserTestCreatedAt instanceof Date
+        ? browserTestCreatedAt.toISOString()
+        : String(browserTestCreatedAt)
+      : null;
     const identity = record
       ? resolveAgentVideoPresenter({
           id: req.params.id,
@@ -417,7 +474,9 @@ router.get(
       : null;
     res.json({
       role: record?.role || "customer_service",
+      job: customerFacingJob || record?.role || "customer_service",
       archetype: record?.archetype || "Assistant",
+      firstMessage,
       flowConfig: record?.flowConfig || null,
       enabledTools: normalizeEnabledTools(record?.enabledTools),
       runtime: {
@@ -430,10 +489,26 @@ router.get(
         provider: record?.voiceProvider || null,
         phoneVoiceId: record?.phoneVoiceId || null,
         phoneVoiceProvider: record?.phoneVoiceProvider || null,
+        effectivePhoneVoiceId,
+        effectivePhoneVoiceProvider,
       },
       personality: personalities[0]?.content || "",
       directives,
       knowledge,
+      readiness: {
+        jobDefined: Boolean(customerFacingJob),
+        greetingDefined: Boolean(firstMessage),
+        personalityConfigured: Boolean(personalities[0]?.content?.trim()),
+        greetingConfigured: Boolean(firstMessage),
+        directiveCount: directives.filter((directive) => !isLegacyOpeningGreeting(directive))
+          .length,
+        knowledgeCount: knowledge.length,
+        effectivePhoneVoice: {
+          voiceId: effectivePhoneVoiceId,
+          provider: effectivePhoneVoiceProvider,
+        },
+        lastBrowserTestAt,
+      },
       identity,
       businessProfile: record
         ? {
@@ -451,6 +526,115 @@ router.get(
             is_business_agent: record.isBusinessAgent ?? false,
           }
         : null,
+    });
+  },
+);
+
+router.patch(
+  "/api/agent-config/:id/essentials",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const job = cleanText(req.body?.job, 160);
+    const firstMessage = cleanText(req.body?.greeting, 500);
+    const personality = cleanText(req.body?.personality, 4000);
+    const knowledge = cleanText(req.body?.knowledge, 4000);
+    if (!job) throw AppError.fromHttpStatus(400, "Customer-facing job is required");
+    if (!firstMessage) throw AppError.fromHttpStatus(400, "Opening greeting is required");
+    if (!personality) throw AppError.fromHttpStatus(400, "Tone is required");
+
+    let knowledgeAdded = false;
+    await drizzle.transaction(async (tx) => {
+      // Serialize same-agent setup saves so optional knowledge remains idempotent
+      // even when a double-click or retry lands concurrently.
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`${req.user.id}:${req.params.id}:essentials`}))`,
+      );
+
+      const [updated] = await tx
+        .update(schema.agents)
+        // `role` is a canonical policy/runtime identifier. Keep it stable and
+        // store the editable customer job as a high-priority runtime directive.
+        .set({ firstMessage })
+        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+        .returning({ id: schema.agents.id });
+      if (!updated) throw AppError.fromHttpStatus(404, "Agent not found");
+
+      await tx
+        .insert(schema.personality)
+        .values({ agentId: req.params.id, userId: req.user.id, content: personality })
+        .onConflictDoUpdate({
+          target: schema.personality.agentId,
+          set: { userId: req.user.id, content: personality },
+        });
+
+      // Studio once stored the greeting as a directive. first_message is the
+      // canonical live-call field, so remove every legacy copy in this same commit.
+      await tx
+        .delete(schema.directives)
+        .where(
+          and(
+            eq(schema.directives.agentId, req.params.id),
+            eq(schema.directives.userId, req.user.id),
+            sql`lower(ltrim(${schema.directives.content})) like ${"opening greeting:%"}`,
+          ),
+        );
+
+      await tx
+        .delete(schema.directives)
+        .where(
+          and(
+            eq(schema.directives.agentId, req.params.id),
+            eq(schema.directives.userId, req.user.id),
+            sql`lower(ltrim(${schema.directives.content})) like ${"customer-facing job:%"}`,
+          ),
+        );
+      await tx.insert(schema.directives).values({
+        agentId: req.params.id,
+        userId: req.user.id,
+        content: `${CUSTOMER_FACING_JOB_PREFIX} ${job}`,
+        priority: 100,
+      });
+
+      if (knowledge) {
+        const [duplicate] = await tx
+          .select({ id: schema.knowledge.id })
+          .from(schema.knowledge)
+          .where(
+            and(
+              eq(schema.knowledge.agentId, req.params.id),
+              eq(schema.knowledge.userId, req.user.id),
+              sql`lower(btrim(${schema.knowledge.content})) = lower(${knowledge})`,
+            ),
+          )
+          .limit(1);
+        if (!duplicate) {
+          await tx
+            .insert(schema.knowledge)
+            .values({ agentId: req.params.id, userId: req.user.id, content: knowledge });
+          knowledgeAdded = true;
+        }
+      }
+    });
+
+    if (knowledgeAdded) {
+      emitServerProductEvent({
+        event: "training_asset_added",
+        userId: req.user.id,
+        agentId: req.params.id,
+        metadata: { source: "studio_essentials", content_chars: knowledge.length },
+      });
+    }
+    emitServerProductEvent({
+      event: "agent_correction_applied",
+      userId: req.user.id,
+      agentId: req.params.id,
+      metadata: { source: "studio_essentials", knowledge_added: knowledgeAdded },
+    });
+
+    res.json({
+      success: true,
+      essentials: { job, firstMessage, personality, knowledgeAdded },
     });
   },
 );
@@ -594,6 +778,9 @@ router.patch(
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
     const provider = providerRaw;
+    if (provider === "vapi" && voiceId && !isVapiCuratedVoiceId(voiceId)) {
+      throw AppError.fromHttpStatus(400, "Invalid built-in Vapi voice.");
+    }
     const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
     const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
     const phoneProviders = new Set(["11labs", "vapi"]);
@@ -613,13 +800,15 @@ router.patch(
     if (provider !== "presenter") {
       patch.phoneVoiceId = null;
       patch.phoneVoiceProvider = null;
-    } else if (hasPhoneVoiceId || hasPhoneVoiceProvider) {
-      if (hasPhoneVoiceId) patch.phoneVoiceId = phoneVoiceId;
-      if (hasPhoneVoiceProvider) patch.phoneVoiceProvider = phoneVoiceProviderRaw;
-    } else if (!voiceState?.phoneVoiceId || !voiceState?.phoneVoiceProvider) {
-      const defaults = defaultPresenterPhoneVoicePayload();
-      patch.phoneVoiceId = defaults.phoneVoiceId;
-      patch.phoneVoiceProvider = defaults.phoneVoiceProvider;
+    } else if (hasPhoneVoiceProvider && !hasPhoneVoiceId) {
+      throw AppError.fromHttpStatus(400, "phoneVoiceId is required with phoneVoiceProvider.");
+    } else {
+      const normalizedPhoneVoice = resolvePresenterPhoneVoicePayload(
+        hasPhoneVoiceId ? phoneVoiceId : voiceState?.phoneVoiceId,
+        hasPhoneVoiceId ? phoneVoiceProviderRaw : voiceState?.phoneVoiceProvider,
+      );
+      patch.phoneVoiceId = normalizedPhoneVoice.phoneVoiceId;
+      patch.phoneVoiceProvider = normalizedPhoneVoice.phoneVoiceProvider;
     }
     await drizzle
       .update(schema.agents)

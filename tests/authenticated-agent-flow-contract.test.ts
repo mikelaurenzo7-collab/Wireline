@@ -44,14 +44,15 @@ describe("authenticated agent flow", () => {
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
   });
 
-  it("mounts insights and daily brief on active workspace routes", () => {
+  it("mounts insights and demand outcomes on active workspace routes", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
     const overview = read("src/pages/OverviewPage.tsx");
     const nav = read("src/constants/navigation.ts");
 
     expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
     expect(nav).toMatch(/href:\s*["']\/insights["']/);
-    expect(overview).toContain("DailyBriefPanel");
+    expect(overview).toContain("OutcomeLedger");
+    expect(overview).toContain("Customer demand and outcomes");
   });
 
   it("gives first-time users real mailbox connection actions", () => {
@@ -77,7 +78,7 @@ describe("authenticated agent flow", () => {
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("Fast Start");
-    expect(createDialog).toContain("~3 minutes to your first agent");
+    expect(createDialog).toContain("About three minutes to your first AI employee");
     expect(createDialog).toContain("VoicePickerField");
     expect(createDialog).toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build your best employee."');

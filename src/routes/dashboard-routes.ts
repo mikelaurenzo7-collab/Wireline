@@ -96,13 +96,17 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
   try {
     const limitRaw = parseInt(req.query.limit as string);
     const offsetRaw = parseInt(req.query.offset as string);
+    const agentId = typeof req.query.agentId === "string" ? req.query.agentId.trim() : "";
     const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 50 : limitRaw), 200);
     const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
+    const tenantCallFilter = agentId
+      ? and(eq(schema.callLogs.userId, req.user.id), eq(schema.callLogs.agentId, agentId))
+      : eq(schema.callLogs.userId, req.user.id);
 
     const [countResult] = await drizzle
       .select({ count: sql`count(*)` })
       .from(schema.callLogs)
-      .where(eq(schema.callLogs.userId, req.user.id));
+      .where(tenantCallFilter);
 
     const count = Number(countResult.count);
 
@@ -139,7 +143,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
       })
       .from(schema.callLogs)
       .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-      .where(eq(schema.callLogs.userId, req.user.id))
+      .where(tenantCallFilter)
       .orderBy(desc(schema.callLogs.createdAt))
       .limit(limit)
       .offset(offset);
@@ -163,6 +167,42 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
 // ==========================================
 // 1.8 DASHBOARD STATS ENDPOINT
 // ==========================================
+router.get(
+  "/api/dashboard/today",
+  authenticateUser,
+  dashboardRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const rawSince = typeof req.query.since === "string" ? req.query.since : "";
+    const since = new Date(rawSince);
+    const now = Date.now();
+    if (
+      !rawSince ||
+      Number.isNaN(since.getTime()) ||
+      since.getTime() > now + 5 * 60 * 1000 ||
+      now - since.getTime() > 48 * 60 * 60 * 1000
+    ) {
+      throw AppError.fromHttpStatus(400, "A valid local-day start is required.");
+    }
+
+    const [counts] = await drizzle
+      .select({
+        total: sql<number>`count(*)`,
+        inbound: sql<number>`count(*) filter (where ${schema.callLogs.direction} = 'inbound')`,
+        outbound: sql<number>`count(*) filter (where ${schema.callLogs.direction} = 'outbound')`,
+      })
+      .from(schema.callLogs)
+      .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)));
+
+    res.json({
+      since: since.toISOString(),
+      total: Number(counts?.total ?? 0),
+      inbound: Number(counts?.inbound ?? 0),
+      outbound: Number(counts?.outbound ?? 0),
+      lastUpdatedAt: new Date().toISOString(),
+    });
+  },
+);
+
 router.get(
   "/api/dashboard/stats",
   authenticateUser,

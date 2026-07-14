@@ -26,7 +26,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 import { workspaceFirstName } from "../lib/user-display";
 import { authFetch } from "../lib/api";
-import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import type { CallLog } from "../types/api";
 
 function todayLabel() {
@@ -51,42 +50,66 @@ function agentReadiness(agent: WorkspaceAgentSummary) {
 }
 
 function metricRows(
-  callsCount: number,
+  callsCount: number | null,
   callsDetail: string,
-  hotLeadsCount: number,
-  totalAppointments: number,
-  pendingFollowUps: number,
+  hotLeadsCount: number | null,
+  totalAppointments: number | null,
+  pendingFollowUps: number | null,
 ) {
   return [
     {
       label: "Customer conversations today",
-      value: String(callsCount),
-      detail: callsDetail,
-      tone: callsCount > 0 ? ("success" as const) : ("neutral" as const),
+      value: callsCount == null ? "—" : String(callsCount),
+      detail: callsCount == null ? "Status unavailable — retry" : callsDetail,
+      tone: callsCount != null && callsCount > 0 ? ("success" as const) : ("neutral" as const),
       href: "/phone?tab=logs",
       icon: Phone,
     },
     {
       label: "Priority leads",
-      value: String(hotLeadsCount),
-      detail: hotLeadsCount > 0 ? "Latest high-intent conversations" : "No priority leads yet",
-      tone: hotLeadsCount > 0 ? ("primary" as const) : ("neutral" as const),
+      value: hotLeadsCount == null ? "—" : String(hotLeadsCount),
+      detail:
+        hotLeadsCount == null
+          ? "Status unavailable — retry"
+          : hotLeadsCount > 0
+            ? "Latest high-intent conversations"
+            : "No priority leads yet",
+      tone:
+        hotLeadsCount != null && hotLeadsCount > 0 ? ("primary" as const) : ("neutral" as const),
       href: "/insights",
       icon: Flame,
     },
     {
       label: "Appointments booked",
-      value: String(totalAppointments),
-      detail: totalAppointments > 0 ? "Total appointments on record" : "Connect a calendar to book",
-      tone: totalAppointments > 0 ? ("wire" as const) : ("neutral" as const),
-      href: totalAppointments > 0 ? "/insights" : "/connections",
+      value: totalAppointments == null ? "—" : String(totalAppointments),
+      detail:
+        totalAppointments == null
+          ? "Status unavailable — retry"
+          : totalAppointments > 0
+            ? "Total appointments on record"
+            : "Connect a calendar to book",
+      tone:
+        totalAppointments != null && totalAppointments > 0
+          ? ("wire" as const)
+          : ("neutral" as const),
+      href: totalAppointments != null && totalAppointments > 0 ? "/insights" : "/connections",
       icon: CalendarCheck2,
     },
     {
       label: "Follow-ups waiting",
-      value: String(pendingFollowUps),
-      detail: pendingFollowUps > 0 ? "Review before they go out" : "Nothing waiting for approval",
-      tone: pendingFollowUps > 0 ? ("warning" as const) : ("success" as const),
+      value: pendingFollowUps == null ? "—" : String(pendingFollowUps),
+      detail:
+        pendingFollowUps == null
+          ? "Status unavailable — retry"
+          : pendingFollowUps > 0
+            ? "Review before they go out"
+            : "Nothing waiting for approval",
+      tone:
+        pendingFollowUps == null
+          ? ("neutral" as const)
+          : pendingFollowUps > 0
+            ? ("warning" as const)
+            : ("success" as const),
       href: "/approvals",
       icon: ListTodo,
     },
@@ -126,7 +149,8 @@ function FirstRunLaunchpad() {
   const steps = [
     {
       title: "Choose one real job",
-      detail: "Start with missed calls, appointment booking, lead qualification, or customer support.",
+      detail:
+        "Start with missed calls, appointment booking, lead qualification, or customer support.",
       icon: Bot,
     },
     {
@@ -136,7 +160,8 @@ function FirstRunLaunchpad() {
     },
     {
       title: "Review the first outcome",
-      detail: "See what the customer needed, what Wireline completed, and what needs your approval.",
+      detail:
+        "See what the customer needed, what Wireline completed, and what needs your approval.",
       icon: Sparkles,
     },
   ];
@@ -149,7 +174,10 @@ function FirstRunLaunchpad() {
       <div className="grid gap-7 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
           <p className="wl-eyebrow wl-eyebrow--primary">Start with demand</p>
-          <h2 id="first-run-title" className="mt-2 text-xl font-semibold text-foreground sm:text-2xl">
+          <h2
+            id="first-run-title"
+            className="mt-2 text-xl font-semibold text-foreground sm:text-2xl"
+          >
             Put one customer-facing job to work today.
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
@@ -200,8 +228,8 @@ function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
   return (
     <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
       <StatusNotice tone="warning" title="Your workspace is reconnecting">
-        Wireline could not verify your AI employee roster, so no empty-state claims or create actions
-        are shown yet. Your existing employees and customer data are unchanged.
+        Wireline could not verify your AI employee roster, so no empty-state claims or create
+        actions are shown yet. Your existing employees and customer data are unchanged.
       </StatusNotice>
       <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
         Retry workspace
@@ -222,9 +250,9 @@ function DemandReadinessCard({
 }: {
   hasLiveLine: boolean;
   hasConversationHistory: boolean;
-  callsCount: number;
-  pendingFollowUps: number;
-  connectionsCount: number;
+  callsCount: number | null;
+  pendingFollowUps: number | null;
+  connectionsCount: number | null;
   connectionsDetail: string;
   setupHref: string;
   testHref: string;
@@ -240,44 +268,58 @@ function DemandReadinessCard({
         secondaryHref: testHref,
         secondaryLabel: "Test the employee first",
       }
-    : !hasConversationHistory
+    : callsCount == null || pendingFollowUps == null
       ? {
-          eyebrow: "Line ready",
-          title: "Your line is live. Put it where customers already call.",
+          eyebrow: "Status unavailable",
+          title: "Customer demand could not be verified yet.",
           detail:
-            "Publish the number on customer-facing profiles or forward unanswered calls to Wireline. Then place one real inbound call and review the outcome.",
-          primaryHref: "/settings/phone",
-          primaryLabel: "Review phone setup",
-          secondaryHref: testHref,
-          secondaryLabel: "Run a test conversation",
+            "Your customer records are unchanged. Retry the dashboard before acting on today's counts or follow-ups.",
+          primaryHref: "/phone?tab=logs",
+          primaryLabel: "Open conversations",
+          secondaryHref: setupHref,
+          secondaryLabel: "Review employee setup",
         }
-      : pendingFollowUps > 0
+      : !hasConversationHistory
         ? {
-            eyebrow: "Action required",
-            title: `${pendingFollowUps} customer follow-up${pendingFollowUps === 1 ? " needs" : "s need"} your decision.`,
+            eyebrow: "Line ready",
+            title: "Your line is live. Put it where customers already call.",
             detail:
-              "Review the proposed next steps while the customer context is fresh. Approve, edit, or decline each action before it goes out.",
-            primaryHref: "/approvals",
-            primaryLabel: "Review follow-ups",
-            secondaryHref: "/phone?tab=logs",
-            secondaryLabel: "Open conversations",
+              "Publish the number on customer-facing profiles or forward unanswered calls to Wireline. Then place one real inbound call and review the outcome.",
+            primaryHref: "/settings/phone",
+            primaryLabel: "Review phone setup",
+            secondaryHref: testHref,
+            secondaryLabel: "Run a test conversation",
           }
-        : {
-            eyebrow: callsCount > 0 ? "Customer demand today" : "Line ready",
-            title:
-              callsCount > 0
-                ? "Wireline is handling conversations and recording what happened."
-                : "No new conversations today. Your customer line is still ready.",
-            detail:
-              "Use customer outcomes—not configuration volume—to decide what to train, connect, or automate next.",
-            primaryHref: "/phone?tab=logs",
-            primaryLabel: "Review conversations",
-            secondaryHref: setupHref,
-            secondaryLabel: "Improve the employee",
-          };
+        : pendingFollowUps > 0
+          ? {
+              eyebrow: "Action required",
+              title: `${pendingFollowUps} customer follow-up${pendingFollowUps === 1 ? " needs" : "s need"} your decision.`,
+              detail:
+                "Review the proposed next steps while the customer context is fresh. Approve, edit, or decline each action before it goes out.",
+              primaryHref: "/approvals",
+              primaryLabel: "Review follow-ups",
+              secondaryHref: "/phone?tab=logs",
+              secondaryLabel: "Open conversations",
+            }
+          : {
+              eyebrow: callsCount > 0 ? "Customer demand today" : "Line ready",
+              title:
+                callsCount > 0
+                  ? "Wireline is handling conversations and recording what happened."
+                  : "No new conversations today. Your customer line is still ready.",
+              detail:
+                "Use customer outcomes—not configuration volume—to decide what to train, connect, or automate next.",
+              primaryHref: "/phone?tab=logs",
+              primaryLabel: "Review conversations",
+              secondaryHref: setupHref,
+              secondaryLabel: "Improve the employee",
+            };
 
   return (
-    <section className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-6" aria-label="Demand readiness">
+    <section
+      className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-6"
+      aria-label="Demand readiness"
+    >
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 max-w-3xl">
           <div className="flex items-center gap-2">
@@ -293,7 +335,11 @@ function DemandReadinessCard({
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
           <p className="mt-3 text-xs text-muted-foreground">
-            {connectionsCount > 0 ? `Connected now: ${connectionsDetail}` : "No live channels connected yet."}
+            {connectionsCount == null
+              ? "Connection status unavailable."
+              : connectionsCount > 0
+                ? `Connected now: ${connectionsDetail}`
+                : "No live channels connected yet."}
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
@@ -397,58 +443,89 @@ export default function OverviewPage() {
   const { agents, loading, degraded, refresh } = useAgents();
   const [showOutboundDial, setShowOutboundDial] = useState(false);
 
-  const [callsCount, setCallsCount] = useState(0);
+  const [callsCount, setCallsCount] = useState<number | null>(null);
   const [callsDetail, setCallsDetail] = useState("Waiting for first conversation");
-  const [connectionsCount, setConnectionsCount] = useState(0);
+  const [connectionsCount, setConnectionsCount] = useState<number | null>(null);
   const [connectionsDetail, setConnectionsDetail] = useState("Checking connections…");
-  const [hotLeadsCount, setHotLeadsCount] = useState(0);
-  const [totalAppointments, setTotalAppointments] = useState(0);
-  const [pendingFollowUps, setPendingFollowUps] = useState(0);
+  const [hotLeadsCount, setHotLeadsCount] = useState<number | null>(null);
+  const [totalAppointments, setTotalAppointments] = useState<number | null>(null);
+  const [pendingFollowUps, setPendingFollowUps] = useState<number | null>(null);
   const [recentCalls, setRecentCalls] = useState<CallLog[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [dashboardIssues, setDashboardIssues] = useState<string[]>([]);
+  const [dashboardRetryKey, setDashboardRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboard() {
       setLoadingDashboard(true);
+      setDashboardIssues([]);
       try {
-        const [statsRes, crmRes, calendarRes, navCountsRes] = await Promise.all([
-          authFetch("/api/dashboard/stats"),
-          authFetch("/api/oauth/crm/status"),
-          authFetch("/api/calendar/accounts"),
-          authFetch("/api/nav-counts"),
-        ]);
+        const localDayStart = new Date();
+        localDayStart.setHours(0, 0, 0, 0);
+        const [statsResult, crmResult, calendarResult, navCountsResult, todayResult] =
+          await Promise.allSettled([
+            authFetch("/api/dashboard/stats"),
+            authFetch("/api/oauth/crm/status"),
+            authFetch("/api/calendar/accounts"),
+            authFetch("/api/nav-counts"),
+            authFetch(
+              `/api/dashboard/today?since=${encodeURIComponent(localDayStart.toISOString())}`,
+            ),
+          ]);
+
+        const statsRes = statsResult.status === "fulfilled" ? statsResult.value : null;
+        const crmRes = crmResult.status === "fulfilled" ? crmResult.value : null;
+        const calendarRes = calendarResult.status === "fulfilled" ? calendarResult.value : null;
+        const navCountsRes = navCountsResult.status === "fulfilled" ? navCountsResult.value : null;
+        const todayRes = todayResult.status === "fulfilled" ? todayResult.value : null;
 
         if (cancelled) return;
+        const issues: string[] = [];
+        let hasAnyCallHistory = false;
 
-        if (statsRes.ok) {
+        if (statsRes?.ok) {
           const data = await statsRes.json();
           const logs: CallLog[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
+          hasAnyCallHistory = logs.length > 0;
           setRecentCalls(logs.slice(0, 4));
           setHotLeadsCount(Array.isArray(data?.hotLeads) ? data.hotLeads.length : 0);
           setTotalAppointments(Number(data?.totalAppointments ?? 0));
-
-          const todayStr = localDateKey(new Date());
-          const todayLogs = logs.filter((log) => isoToLocalDateKey(log.created_at) === todayStr);
-          const count = todayLogs.length;
-          setCallsCount(count);
-          if (count > 0) {
-            const inbound = todayLogs.filter((log) => log.direction === "inbound").length;
-            const outbound = todayLogs.filter((log) => log.direction === "outbound").length;
-            setCallsDetail(`${inbound} inbound · ${outbound} outbound`);
-          } else {
-            setCallsDetail(logs.length > 0 ? "No new calls today" : "Waiting for first conversation");
-          }
+        } else {
+          setHotLeadsCount(null);
+          setTotalAppointments(null);
+          issues.push("lead and appointment metrics");
         }
 
-        if (navCountsRes.ok) {
+        if (todayRes?.ok) {
+          const data = await todayRes.json();
+          const count = Number(data?.total ?? 0);
+          const inbound = Number(data?.inbound ?? 0);
+          const outbound = Number(data?.outbound ?? 0);
+          setCallsCount(count);
+          setCallsDetail(
+            count > 0
+              ? `${inbound} inbound · ${outbound} outbound`
+              : hasAnyCallHistory
+                ? "No new calls today"
+                : "Waiting for first conversation",
+          );
+        } else {
+          setCallsCount(null);
+          issues.push("today's conversation count");
+        }
+
+        if (navCountsRes?.ok) {
           const data = await navCountsRes.json();
           setPendingFollowUps(Number(data?.["/overview"] ?? 0));
+        } else {
+          setPendingFollowUps(null);
+          issues.push("follow-up approvals");
         }
 
         const activeProviders: string[] = [];
-        if (crmRes.ok) {
+        if (crmRes?.ok) {
           const data = await crmRes.json();
           activeProviders.push(
             ...Object.entries(data as Record<string, { connected?: boolean }>)
@@ -457,24 +534,43 @@ export default function OverviewPage() {
                 name.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
               ),
           );
+        } else {
+          issues.push("CRM connection status");
         }
 
         const coreConnections: string[] = [];
-        if (calendarRes.ok) {
+        if (calendarRes?.ok) {
           const calendarData = await calendarRes.json().catch(() => null);
           if (Array.isArray(calendarData?.accounts) && calendarData.accounts.length > 0) {
             coreConnections.push("Calendar");
           }
+        } else {
+          issues.push("calendar connection status");
         }
         if (agents.some((agent) => agent.phone_number)) coreConnections.push("Phone + SMS");
 
         const allConnections = [...new Set([...coreConnections, ...activeProviders])];
-        setConnectionsCount(allConnections.length);
-        setConnectionsDetail(
-          allConnections.length ? allConnections.join(" · ") : "Connect tools in Connections",
+        const connectionStatusComplete = Boolean(crmRes?.ok && calendarRes?.ok);
+        setConnectionsCount(
+          !connectionStatusComplete && allConnections.length === 0 ? null : allConnections.length,
         );
+        setConnectionsDetail(
+          allConnections.length
+            ? `${allConnections.join(" · ")}${connectionStatusComplete ? "" : " · Additional status unavailable"}`
+            : connectionStatusComplete
+              ? "Connect tools in Connections"
+              : "Connection status unavailable",
+        );
+        setDashboardIssues(issues);
       } catch {
-        if (!cancelled) setConnectionsDetail("Connect tools in Connections");
+        if (!cancelled) {
+          setCallsCount(null);
+          setConnectionsCount(null);
+          setHotLeadsCount(null);
+          setTotalAppointments(null);
+          setPendingFollowUps(null);
+          setDashboardIssues(["customer demand dashboard"]);
+        }
       } finally {
         if (!cancelled) setLoadingDashboard(false);
       }
@@ -484,7 +580,7 @@ export default function OverviewPage() {
     return () => {
       cancelled = true;
     };
-  }, [agents]);
+  }, [agents, dashboardRetryKey]);
 
   const personalAgents = agents.filter((agent) => !agent.is_business_agent);
   const businessAgents = agents.filter((agent) => agent.is_business_agent);
@@ -516,7 +612,8 @@ export default function OverviewPage() {
               </h1>
               {!isFirstRun ? (
                 <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                  See customer demand, pending decisions, and completed outcomes before changing setup.
+                  See customer demand, pending decisions, and completed outcomes before changing
+                  setup.
                 </p>
               ) : null}
             </div>
@@ -540,7 +637,11 @@ export default function OverviewPage() {
                       Start a call
                     </Button>
                   ) : (
-                    <Button asChild variant="secondary" className="shrink-0 justify-center sm:min-w-[154px]">
+                    <Button
+                      asChild
+                      variant="secondary"
+                      className="shrink-0 justify-center sm:min-w-[154px]"
+                    >
                       <Link to={primaryTestHref}>
                         <Play aria-hidden="true" size={15} />
                         Test employee
@@ -571,6 +672,26 @@ export default function OverviewPage() {
               setupHref={primaryStudioHref}
               testHref={primaryTestHref}
             />
+
+            {dashboardIssues.length > 0 ? (
+              <StatusNotice tone="warning" title="Some customer data could not be verified">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    Unavailable: {dashboardIssues.join(", ")}. Wireline shows an em dash instead of
+                    a misleading zero.
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="shrink-0"
+                    onClick={() => setDashboardRetryKey((value) => value + 1)}
+                  >
+                    Retry data
+                  </Button>
+                </div>
+              </StatusNotice>
+            ) : null}
 
             <section
               className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
@@ -610,17 +731,24 @@ export default function OverviewPage() {
               </StatusNotice>
             ) : null}
 
-            <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Customer outcomes">
+            <section
+              className="wl-paper wl-paper-elevated p-5 sm:p-6"
+              aria-label="Customer outcomes"
+            >
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                     Customer outcomes
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    What customers needed, what Wireline completed, and what still requires a decision.
+                    What customers needed, what Wireline completed, and what still requires a
+                    decision.
                   </p>
                 </div>
-                <Link to="/approvals" className="text-xs font-semibold text-primary hover:underline">
+                <Link
+                  to="/approvals"
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
                   Review follow-ups →
                 </Link>
               </div>
@@ -730,7 +858,9 @@ export default function OverviewPage() {
                       density="compact"
                       titleTone="ui"
                       icon={<Phone aria-hidden="true" />}
-                      title={hasLiveLine ? "No customer calls yet" : "Connect a line to receive calls"}
+                      title={
+                        hasLiveLine ? "No customer calls yet" : "Connect a line to receive calls"
+                      }
                       description={
                         hasLiveLine
                           ? "Place one real inbound call, then review the outcome here."

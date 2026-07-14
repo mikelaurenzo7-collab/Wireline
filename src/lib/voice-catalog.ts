@@ -37,6 +37,35 @@ export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
   { id: "Naina", name: "Naina — Calm & Professional", provider: "vapi" },
 ] as const;
 
+/** Vapi voices with an official docs sample. Rohan currently has no published sample. */
+export const VAPI_VOICE_SAMPLE_IDS: ReadonlySet<string> = new Set([
+  "Elliot",
+  "Savannah",
+  "Emma",
+  "Clara",
+  "Nico",
+  "Kai",
+  "Sagar",
+  "Godfrey",
+  "Neil",
+  "Layla",
+  "Sid",
+  "Naina",
+]);
+
+export function isVapiCuratedVoiceId(voiceId: string): boolean {
+  return VAPI_CURATED_VOICES.some(
+    (voice) => voice.id.toLowerCase() === voiceId.trim().toLowerCase(),
+  );
+}
+
+export function hasVapiVoiceSample(voiceId: string): boolean {
+  const canonicalVoice = VAPI_CURATED_VOICES.find(
+    (voice) => voice.id.toLowerCase() === voiceId.trim().toLowerCase(),
+  );
+  return Boolean(canonicalVoice && VAPI_VOICE_SAMPLE_IDS.has(canonicalVoice.id));
+}
+
 /** Default PSTN voice when presenter lip-sync is the Studio voice. */
 export const DEFAULT_PRESENTER_PHONE_VOICE = VAPI_CURATED_VOICES[0];
 
@@ -55,6 +84,27 @@ export function defaultPresenterPhoneVoicePayload(): {
   return {
     phoneVoiceId: DEFAULT_PRESENTER_PHONE_VOICE.id,
     phoneVoiceProvider: "vapi",
+  };
+}
+
+/**
+ * Resolve the exact PSTN voice for a presenter agent. Legacy presenter rows may
+ * have neither phone field, or may have an id without its provider. Never pair
+ * an ElevenLabs id with Vapi: missing values fall back as one atomic pair.
+ */
+export function resolvePresenterPhoneVoicePayload(
+  phoneVoiceId?: string | null,
+  _phoneVoiceProvider?: string | null,
+): {
+  phoneVoiceId: string;
+  phoneVoiceProvider: "vapi" | "11labs";
+} {
+  const id = phoneVoiceId?.trim();
+  if (!id) return defaultPresenterPhoneVoicePayload();
+
+  return {
+    phoneVoiceId: id,
+    phoneVoiceProvider: isVapiCuratedVoiceId(id) ? "vapi" : "11labs",
   };
 }
 
@@ -149,7 +199,9 @@ export function voicePreviewUrl(voice: VoiceOption): string | null {
     return `/api/voices/curated/preview?provider=xai&voiceId=${encodeURIComponent(voice.id)}`;
   }
   if (voice.provider === "vapi") {
-    return null;
+    return hasVapiVoiceSample(voice.id)
+      ? `/api/voices/curated/preview?provider=vapi&voiceId=${encodeURIComponent(voice.id)}`
+      : null;
   }
   if (voice.provider === "presenter") {
     return `/api/voices/presenter/${encodeURIComponent(voice.id)}/preview`;
@@ -170,6 +222,7 @@ export function playVoicePreview(
   voice: VoiceOption,
   onEnd: () => void,
   onError: () => void = onEnd,
+  onPlaying: () => void = () => undefined,
 ): HTMLAudioElement | null {
   const url = voicePreviewUrl(voice);
   if (!url) {
@@ -177,6 +230,8 @@ export function playVoicePreview(
     return null;
   }
   const audio = new Audio(url);
+  audio.preload = "auto";
+  audio.onplaying = onPlaying;
   audio.onended = onEnd;
   audio.onerror = onError;
   void audio.play().catch(onError);

@@ -98,18 +98,18 @@ describe("Wireline Letterpress design vision", () => {
     expect(WL_COMPOSER_CLASSES.starterChip).toContain("wl-chip-suggestion");
   });
 
-  it("documents studio canvas routing via the shared contract module", () => {
+  it("documents guided Studio routing via the shared contract module", () => {
     const contract = read("src/lib/studio-canvas-contract.ts");
     expect(contract).toContain("STUDIO_CANVAS_VISION");
     expect(contract).toContain("STUDIO_CANVAS_FORBIDDEN");
     expect(contract).toContain("STUDIO_CANVAS_REQUIRED");
     expect(WIRELINE_DESIGN_VISION.studioCanvas).toEqual(
       expect.objectContaining({
-        defaultSurface: "chat-plus-canvas",
-        canvasSurface: "spatial-cards",
+        defaultSurface: "setup-test-review",
+        canvasSurface: "focused-panels",
         agentSwitcher: "context-chrome",
         railWidthPx: 236,
-        workspaceDepthParam: "view=workspace",
+        workspaceDepthParam: "section",
         minTouchTargetPx: 44,
       }),
     );

@@ -3,12 +3,14 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 
+// The legacy export name is retained for design-check compatibility. Studio's
+// current interaction model is the focused setup -> test -> review loop.
 export const STUDIO_CANVAS_VISION = {
-  defaultSurface: "chat-plus-canvas",
-  canvasSurface: "spatial-cards",
+  defaultSurface: "setup-test-review",
+  canvasSurface: "focused-panels",
   agentSwitcher: "context-chrome",
   railWidthPx: 236,
-  workspaceDepthParam: "view=workspace",
+  workspaceDepthParam: "section",
   minTouchTargetPx: 44,
 };
 
@@ -19,9 +21,9 @@ export const STUDIO_CANVAS_SURFACES = {
   studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
-  spatialCanvas: "src/components/StudioAgentCanvas.tsx",
   workroom: "src/components/StudioWorkroom.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
+  reviewPanel: "src/components/StudioAgentReviewPanel.tsx",
   overview: "src/pages/OverviewPage.tsx",
   studioHome: "src/pages/AgentStudioHomeClaude.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
@@ -33,85 +35,110 @@ export const STUDIO_CANVAS_SURFACES = {
 export const STUDIO_CANVAS_FORBIDDEN = {
   studioPageShell: [
     { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
-    { id: "agent-tablist", pattern: /role="tablist"/ },
+    { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
   studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
-  canvas: [{ id: "agent-roster-grid", pattern: /Your agents/ }],
-  spatialCanvas: [{ id: "prototype-name", pattern: /\bSarah\b/ }],
-  workspacePanel: [{ id: "fake-badge", pattern: />\s*wired\s*</ }],
+  canvas: [
+    { id: "agent-roster-grid", pattern: /Your agents/ },
+    { id: "retired-spatial-canvas", pattern: /<StudioAgentCanvas/ },
+    { id: "retired-workspace-depth", pattern: /view"\) === "workspace"/ },
+  ],
+  workspacePanel: [
+    { id: "fake-badge", pattern: />\s*wired\s*</ },
+    { id: "embedded-advanced-library", pattern: /<VoiceGallery[\s\S]*embedded/ },
+  ],
 };
 
 export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
-    { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
-    // Retired /agents page redirects into Studio (agent-first IA owns the roster).
-    { id: "agents-redirect", pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/ },
+    { id: "studio-route", pattern: /AgentStudioHomeClaude/ },
+    {
+      id: "agents-redirect",
+      pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/,
+    },
   ],
   studioHome: [
     { id: "dedicated-shell", pattern: /StudioPageShell/ },
     { id: "context-chrome", pattern: /StudioContextChrome/ },
-    { id: "canvas", pattern: /StudioWorkspaceV2/ },
+    { id: "guided-orchestrator", pattern: /StudioWorkspaceV2/ },
+    { id: "post-create-guide", pattern: /PostCreateActivationWizard/ },
   ],
-  studioPageShell: [{ id: "shared-shell", pattern: /WorkspaceShell/ }],
+  studioPageShell: [
+    { id: "shared-shell", pattern: /WorkspaceShell/ },
+    { id: "full-bleed-studio", pattern: /fullBleed/ },
+  ],
   studioShell: [
-    { id: "workspace-navigation", pattern: /Workspace navigation/ },
+    { id: "workspace-navigation", pattern: /aria-label="Workspace navigation"/ },
     { id: "rail-width", pattern: /w-\[236px\]/ },
-    { id: "apps-route", pattern: /OPERATE_NAV/ },
     { id: "route-active-state", pattern: /useLocation/ },
     { id: "nav-source", pattern: /from "\.\.\/constants\/navigation"/ },
     { id: "mobile-more", pattern: /MobileNavMoreSheet/ },
+    { id: "touch-target", pattern: /min-h-\[44px\]|min-h-\[48px\]/ },
+    { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   navigation: [
-    { id: "studio-label", pattern: /label: "Studio"/ },
+    { id: "studio-label", pattern: /label: "AI Employee"/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
+    { id: "connections-label", pattern: /label: "Connections"/ },
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
-    { id: "breadcrumb", pattern: /Studio breadcrumb|Studio context|Assistant breadcrumb/ },
-    { id: "readiness", pattern: /Active|Training/ },
-    { id: "test-call", pattern: /Run test call|Test call/ },
-    { id: "deploy", pattern: /Deploy/ },
+    { id: "employee-context", pattern: /aria-label="AI employee context"/ },
+    { id: "readiness", pattern: /Setup needed|Live/ },
+    { id: "new-employee", pattern: /New employee/ },
+    { id: "page-heading", pattern: /<h1/ },
+    { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   overview: [
-    // Nav carries the "Overview" label; the page itself leads with a
-    // personalized greeting headline.
-    { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    // Agent language only; Assistant was retired by the migration plan.
-    { id: "new-agent", pattern: /New agent|Wire your first agent|Wire one/ },
-    { id: "personal-agents", pattern: /Personal agents/ },
-    { id: "business-agents", pattern: /Business agents/ },
-    { id: "full-roster", pattern: /agents\.map/ },
+    { id: "demand-metric", pattern: /Customer conversations today/ },
+    { id: "demand-readiness", pattern: /DemandReadinessCard/ },
+    { id: "customer-outcomes", pattern: /Customer outcomes/ },
+    { id: "employee-roster", pattern: /AI employees/ },
     { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],
   canvas: [
-    { id: "chat-left", pattern: /<StudioWorkroom/ },
-    { id: "spatial-canvas", pattern: /<StudioAgentCanvas/ },
-    { id: "workspace-depth", pattern: /view"\) === "workspace"/ },
-    { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
+    {
+      id: "guided-sections",
+      pattern: /type WorkspaceSection = "setup" \| "test" \| "review"/,
+    },
+    { id: "setup-panel", pattern: /StudioAgentWorkspacePanel/ },
+    { id: "test-workroom", pattern: /StudioWorkroom/ },
+    { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
+    { id: "accessible-tabs", pattern: /role="tablist"/ },
+    { id: "keyboard-tabs", pattern: /useRovingTabIndex/ },
+    { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
+    { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
     { id: "command-nonce", pattern: /commandNonce/ },
   ],
-  spatialCanvas: [
-    { id: "agent-canvas-label", pattern: /Agent Canvas/ },
-    { id: "real-config", pattern: /agent-config/ },
-    { id: "identity", pattern: /Identity/ },
-    { id: "voice", pattern: /Voice/ },
-    { id: "workflows", pattern: /Workflows & Capabilities/ },
-    { id: "knowledge", pattern: /Knowledge Base/ },
-    { id: "situations", pattern: /Situations/ },
-    { id: "connector-lines", pattern: /border-dashed/ },
-  ],
   workroom: [
-    { id: "composer-dock", pattern: /wl-composer-dock/ },
-    { id: "split-layout", pattern: /split/ },
+    { id: "shared-composer-dock", pattern: /WL_COMPOSER_CLASSES\.composerDock/ },
     { id: "composer-focus", pattern: /focusComposer/ },
+    { id: "customer-test-route", pattern: /\/test\/stream/ },
+    { id: "accessible-log", pattern: /role="log"/ },
   ],
   workspacePanel: [
-    { id: "real-config", pattern: /agent-config/ },
-    { id: "voice-search", pattern: /voice-search/ },
-    { id: "world-connections", pattern: /World Connections/ },
+    { id: "real-config", pattern: /\/api\/agent-config\// },
+    { id: "atomic-essentials", pattern: /\/essentials/ },
+    { id: "customer-job", pattern: /Customer-facing job/ },
+    { id: "simple-voice", pattern: /SimpleVoicePicker/ },
+    { id: "save-and-test", pattern: /Save and test/ },
+    { id: "progressive-disclosure", pattern: /Advanced options/ },
   ],
-  agentPreference: [{ id: "mru-key", pattern: /wireline:studio:last-agent-id/ }],
-  activeAgentHook: [{ id: "url-agent-param", pattern: /params\.get\("agent"\)/ }],
+  reviewPanel: [
+    { id: "browser-readiness", pattern: /lastBrowserTestAt/ },
+    { id: "readiness-question", pattern: /ready for customers/ },
+    { id: "test-action", pattern: /Test conversation/ },
+    { id: "connect-action", pattern: /Connect phone/ },
+  ],
+  agentPreference: [
+    { id: "mru-key", pattern: /wireline:studio:last-agent-id/ },
+    { id: "resolve-helper", pattern: /resolveStudioActiveAgentId/ },
+    { id: "clear-on-logout", pattern: /clearStudioLastAgentId/ },
+  ],
+  activeAgentHook: [
+    { id: "resolve-mru", pattern: /resolveStudioActiveAgentId/ },
+    { id: "url-agent-param", pattern: /params\.get\("agent"\)/ },
+  ],
   authContext: [{ id: "logout-clears-mru", pattern: /clearStudioLastAgentId/ }],
 };
 
@@ -131,14 +158,37 @@ function readSurface(key) {
 export function assertStudioCanvasContract(sources, { mustInclude, mustExclude }) {
   const get = (key) => sources[key] ?? readSurface(key);
   for (const [surfaceKey, rules] of Object.entries(STUDIO_CANVAS_FORBIDDEN)) {
-    for (const rule of rules) mustExclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, rule.id);
+    for (const rule of rules) {
+      mustExclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, rule.id);
+    }
   }
   for (const [surfaceKey, rules] of Object.entries(STUDIO_CANVAS_REQUIRED)) {
-    for (const rule of rules) mustInclude(STUDIO_CANVAS_SURFACES[surfaceKey], get(surfaceKey), rule.pattern, `studio canvas: ${rule.id}`);
+    for (const rule of rules) {
+      mustInclude(
+        STUDIO_CANVAS_SURFACES[surfaceKey],
+        get(surfaceKey),
+        rule.pattern,
+        `studio guided workspace: ${rule.id}`,
+      );
+    }
   }
   for (const path of STUDIO_CANVAS_LINK_SURFACES) {
-    const key = path.includes("OverviewPage") ? "overview" : path.includes("StudioOverview") ? "studioOverview" : "workspacePanel";
-    mustExclude(path, get(key), /mode=workroom/, "legacy workroom mode must not appear in studio links");
+    const key = path.includes("OverviewPage")
+      ? "overview"
+      : path.includes("StudioOverview")
+        ? "studioOverview"
+        : "workspacePanel";
+    mustExclude(
+      path,
+      get(key),
+      /mode=workroom/,
+      "legacy workroom mode must not appear in Studio links",
+    );
   }
-  mustInclude(STUDIO_CANVAS_SURFACES.designVision, get("designVision"), /minTouchTargetPx:\s*44/, "design vision must document Studio touch targets");
+  mustInclude(
+    STUDIO_CANVAS_SURFACES.designVision,
+    get("designVision"),
+    /minTouchTargetPx:\s*44/,
+    "design vision must document Studio touch targets",
+  );
 }

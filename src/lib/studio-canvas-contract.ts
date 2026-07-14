@@ -1,5 +1,10 @@
 import { WIRELINE_DESIGN_VISION } from "./wireline-design-vision";
 
+/**
+ * The export name is retained for compatibility with the design-check tooling.
+ * The current Studio contract is a focused setup -> test -> review workspace,
+ * not the retired spatial canvas prototype.
+ */
 export const STUDIO_CANVAS_VISION = WIRELINE_DESIGN_VISION.studioCanvas;
 
 export const STUDIO_CANVAS_SURFACES = {
@@ -9,9 +14,9 @@ export const STUDIO_CANVAS_SURFACES = {
   studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
-  spatialCanvas: "src/components/StudioAgentCanvas.tsx",
   workroom: "src/components/StudioWorkroom.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
+  reviewPanel: "src/components/StudioAgentReviewPanel.tsx",
   overview: "src/pages/OverviewPage.tsx",
   studioHome: "src/pages/AgentStudioHomeClaude.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
@@ -28,19 +33,23 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
   studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
-  canvas: [{ id: "agent-roster-grid", pattern: /Your agents/ }],
-  spatialCanvas: [{ id: "prototype-name", pattern: /\bSarah\b/ }],
-  workspacePanel: [{ id: "fake-badge", pattern: />\s*wired\s*</ }],
+  canvas: [
+    { id: "agent-roster-grid", pattern: /Your agents/ },
+    { id: "retired-spatial-canvas", pattern: /<StudioAgentCanvas/ },
+    { id: "retired-workspace-depth", pattern: /view"\) === "workspace"/ },
+  ],
+  workspacePanel: [
+    { id: "fake-badge", pattern: />\s*wired\s*</ },
+    { id: "embedded-advanced-library", pattern: /<VoiceGallery[\s\S]*embedded/ },
+  ],
 } as const;
 
 export const STUDIO_CANVAS_LEGACY_LINK_PATTERN = /mode=workroom/;
 
 export const STUDIO_CANVAS_REQUIRED = {
   appRoutes: [
-    { id: "claude-studio-route", pattern: /AgentStudioHomeClaude/ },
-    { id: "studio-route", pattern: /path="\/studio"/ },
-    // Retired /agents directory page redirects into Studio, which owns the
-    // roster under the agent-first IA.
+    { id: "studio-route", pattern: /AgentStudioHomeClaude/ },
+    { id: "authenticated-studio-path", pattern: /path="\/studio"/ },
     {
       id: "agents-redirect",
       pattern: /path="\/agents" element=\{<Navigate to="\/studio" replace \/>\}/,
@@ -49,7 +58,8 @@ export const STUDIO_CANVAS_REQUIRED = {
   studioHome: [
     { id: "dedicated-studio-shell", pattern: /StudioPageShell/ },
     { id: "context-chrome", pattern: /StudioContextChrome/ },
-    { id: "canvas-orchestrator", pattern: /StudioWorkspaceV2/ },
+    { id: "guided-orchestrator", pattern: /StudioWorkspaceV2/ },
+    { id: "post-create-guide", pattern: /PostCreateActivationWizard/ },
   ],
   studioPageShell: [
     { id: "shared-workspace-shell", pattern: /WorkspaceShell/ },
@@ -58,9 +68,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   studioShell: [
     { id: "workspace-navigation", pattern: /aria-label="Workspace navigation"/ },
     { id: "rail-width", pattern: /w-\[236px\]/ },
-    { id: "wordmark", pattern: /Wireline\s*<\/span>/ },
     { id: "route-active-state", pattern: /useLocation/ },
-    { id: "apps-route", pattern: /OPERATE_NAV/ },
     { id: "nav-source", pattern: /from "\.\.\/constants\/navigation"/ },
     { id: "mobile-more", pattern: /MobileNavMoreSheet/ },
     { id: "touch-target", pattern: /min-h-\[44px\]|min-h-\[48px\]/ },
@@ -68,64 +76,57 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   navigation: [
     { id: "studio-route", pattern: /target === "\/studio"/ },
-    { id: "studio-label", pattern: /label: "Studio"/ },
+    { id: "studio-label", pattern: /label: "AI Employee"/ },
+    { id: "connections-label", pattern: /label: "Connections"/ },
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
-    { id: "breadcrumb", pattern: /Studio breadcrumb|Studio context|Assistant breadcrumb/ },
-    { id: "readiness", pattern: /Active|Training/ },
-    { id: "test-call", pattern: /Run test call|Test call/ },
-    { id: "deploy", pattern: /Deploy/ },
+    { id: "employee-context", pattern: /aria-label="AI employee context"/ },
+    { id: "readiness", pattern: /Setup needed|Live/ },
+    { id: "new-employee", pattern: /New employee/ },
+    { id: "page-heading", pattern: /<h1/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   overview: [
-    { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    // Wireline uses "agent" language; Assistant was retired by the migration
-    // plan. The dashboard CTA wires a new agent.
-    { id: "new-agent", pattern: /New agent|Wire your first agent|Wire one/ },
-    { id: "personal-agents", pattern: /Personal agents/ },
-    { id: "business-agents", pattern: /Business agents/ },
-    { id: "all-agents", pattern: /agents\.map/ },
-    { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
+    { id: "demand-metric", pattern: /Customer conversations today/ },
+    { id: "demand-readiness", pattern: /DemandReadinessCard/ },
+    { id: "customer-outcomes", pattern: /Customer outcomes/ },
+    { id: "employee-roster", pattern: /AI employees/ },
+    { id: "studio-target", pattern: /\/studio\?agent=/ },
   ],
   canvas: [
-    { id: "chat-left-workroom", pattern: /<StudioWorkroom/ },
-    { id: "spatial-canvas-default", pattern: /<StudioAgentCanvas/ },
+    {
+      id: "guided-sections",
+      pattern: /type WorkspaceSection = "setup" \| "test" \| "review"/,
+    },
+    { id: "setup-panel", pattern: /StudioAgentWorkspacePanel/ },
+    { id: "test-workroom", pattern: /StudioWorkroom/ },
+    { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
+    { id: "accessible-tabs", pattern: /role="tablist"/ },
+    { id: "keyboard-tabs", pattern: /useRovingTabIndex/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
-    { id: "workspace-depth", pattern: /view"\) === "workspace"/ },
-    { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
-    { id: "canvas-key", pattern: /StudioAgentCanvas[\s\S]*key=\{active\.id\}/ },
-    { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{active\.id\}/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Wire one\./ },
     { id: "command-nonce", pattern: /commandNonce/ },
   ],
-  spatialCanvas: [
-    { id: "real-config-api", pattern: /\/api\/agent-config\// },
-    { id: "agent-canvas-label", pattern: /Agent Canvas/ },
-    { id: "identity-card", pattern: /Identity/ },
-    { id: "voice-card", pattern: /Voice/ },
-    { id: "workflows-card", pattern: /Workflows & Capabilities/ },
-    { id: "knowledge-card", pattern: /Knowledge Base/ },
-    { id: "situations-card", pattern: /Situations/ },
-    { id: "enabled-tools", pattern: /enabledTools/ },
-    { id: "directives", pattern: /directives/ },
-    { id: "connector-lines", pattern: /border-dashed/ },
-    { id: "edit-section", pattern: /onEditSection/ },
-  ],
   workroom: [
-    { id: "composer-dock", pattern: /wl-composer-dock/ },
-    { id: "split-layout", pattern: /layout === "split"|layout="split"/ },
+    { id: "shared-composer-dock", pattern: /WL_COMPOSER_CLASSES\.composerDock/ },
     { id: "composer-focus", pattern: /focusComposer/ },
+    { id: "customer-test-route", pattern: /\/test\/stream/ },
+    { id: "accessible-log", pattern: /role="log"/ },
   ],
   workspacePanel: [
-    { id: "scoped-workspace-copy", pattern: /Everything stays in this workspace/ },
-    { id: "world-connections", pattern: /World Connections/ },
     { id: "real-config-api", pattern: /\/api\/agent-config\// },
-    { id: "voice-search", pattern: /searchInputId="voice-search"/ },
-    { id: "voice-cap", pattern: /<VoiceGallery[\s\S]*embedded/ },
-    { id: "integration-keys", pattern: /key=\{integ\.id\}/ },
-    { id: "integration-status", pattern: /integ\.connection/ },
+    { id: "atomic-essentials", pattern: /\/essentials/ },
+    { id: "customer-job", pattern: /Customer-facing job/ },
+    { id: "simple-voice", pattern: /SimpleVoicePicker/ },
+    { id: "save-and-test", pattern: /Save and test/ },
+    { id: "progressive-disclosure", pattern: /Advanced options/ },
+  ],
+  reviewPanel: [
+    { id: "browser-readiness", pattern: /lastBrowserTestAt/ },
+    { id: "readiness-question", pattern: /ready for customers/ },
+    { id: "test-action", pattern: /Test conversation/ },
+    { id: "connect-action", pattern: /Connect phone/ },
   ],
   agentPreference: [
     { id: "mru-key", pattern: /wireline:studio:last-agent-id/ },

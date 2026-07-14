@@ -26,10 +26,8 @@ export type ServerProductEventInput = {
 
 const SERVER_EMIT_ONCE = new Set<string>();
 
-/** Emit a product event from server workflows (activation, approvals, campaigns). */
-export function emitServerProductEvent(input: ServerProductEventInput): void {
-  if (!isProductEventName(input.event)) return;
-
+function prepareServerProductEvent(input: ServerProductEventInput) {
+  if (!isProductEventName(input.event)) return null;
   const payload = makeProductEvent({
     event: input.event,
     surface: "api",
@@ -56,10 +54,9 @@ export function emitServerProductEvent(input: ServerProductEventInput): void {
     payload,
   });
 
-  // Durable persistence for analytics / activation funnels (best-effort).
-  void drizzle
-    .insert(schema.auditLog)
-    .values({
+  return {
+    payload,
+    record: {
       userId: input.userId,
       action: payload.event,
       eventType: "product.event",
@@ -76,10 +73,33 @@ export function emitServerProductEvent(input: ServerProductEventInput): void {
         ...(payload.metadata || {}),
         full_payload: payload,
       },
-    })
+    },
+  };
+}
+
+/**
+ * Persist a product event before acknowledging a workflow milestone whose UI
+ * depends on that durable row (for example, Studio browser-test readiness).
+ */
+export async function persistServerProductEvent(input: ServerProductEventInput): Promise<boolean> {
+  const prepared = prepareServerProductEvent(input);
+  if (!prepared) return false;
+  await drizzle.insert(schema.auditLog).values(prepared.record);
+  return true;
+}
+
+/** Emit a best-effort product event from server workflows. */
+export function emitServerProductEvent(input: ServerProductEventInput): void {
+  const prepared = prepareServerProductEvent(input);
+  if (!prepared) return;
+
+  // Durable persistence for analytics / activation funnels (best-effort).
+  void drizzle
+    .insert(schema.auditLog)
+    .values(prepared.record)
     .catch((err: unknown) => {
       log.warn("product_event audit persist failed", {
-        event: payload.event,
+        event: prepared.payload.event,
         error: err instanceof Error ? err.message : String(err),
       });
     });

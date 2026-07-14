@@ -91,7 +91,7 @@ describe("product voice cohesion", () => {
     expect(starterPlus?.extra_agent_voice_minutes_monthly).toBe(50);
   });
 
-  it("wires landing, workroom, and extension surfaces to shared voice constants", () => {
+  it("wires landing, Studio, and extension surfaces to shared product primitives", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const workroom = read("src/components/StudioWorkroom.tsx");
     const extension = read("apps/browser-extension/panel/index.html");
@@ -99,7 +99,8 @@ describe("product voice cohesion", () => {
     expect(landing).toContain("MARKETING_VOICE.subline");
     expect(landing).toContain("AGENT_DIRECTION_MODES");
     expect(landing).toContain("HERO_LOOP");
-    expect(workroom).toContain("WORKSPACE_VOICE");
+    expect(workroom).toContain("WL_COMPOSER_CLASSES");
+    expect(workroom).toContain("Browser roleplay only");
     expect(extension).toContain(MARKETING_VOICE.extensionLead);
     expect(extension).toContain('data-action="call"');
     expect(extension).toContain('data-action="text"');
@@ -275,8 +276,8 @@ describe("product voice cohesion", () => {
   it("keeps top-level workspace pages mounted to the current surfaces", () => {
     expect(read("src/pages/TemplatesPage.tsx")).toContain("AgentTemplates");
     expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("CreateAgentDialog");
-    expect(read("src/pages/OverviewPage.tsx")).toContain("Workspace metrics");
-    expect(read("src/pages/OverviewPage.tsx")).toContain("Recent calls");
+    expect(read("src/pages/OverviewPage.tsx")).toContain("Customer demand and outcomes");
+    expect(read("src/pages/OverviewPage.tsx")).toContain("Recent customer conversations");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("CampaignsPanel");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("IntakeKeysManager");
   });

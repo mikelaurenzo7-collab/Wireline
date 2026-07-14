@@ -30,7 +30,11 @@ type StudioMessage = {
 
 type WorkroomMode = "configure" | "test";
 
-const CONFIGURE_PROMPTS = ["Adjust the greeting", "Change the tone", "Add a business rule"] as const;
+const CONFIGURE_PROMPTS = [
+  "Adjust the greeting",
+  "Change the tone",
+  "Add a business rule",
+] as const;
 const TEST_PROMPTS = [
   "What services do you offer?",
   "I want to book an appointment.",
@@ -152,6 +156,7 @@ const StudioWorkroom = forwardRef<
   const [showOutboundDial, setShowOutboundDial] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const pendingMessageRef = useRef<{ id: string; text: string } | null>(null);
   const split = layout === "split";
   const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
 
@@ -176,6 +181,7 @@ const StudioWorkroom = forwardRef<
 
   const loadMessages = useCallback(async () => {
     if (mode === "test") {
+      pendingMessageRef.current = null;
       setMessages([]);
       setLoading(false);
       return;
@@ -184,7 +190,9 @@ const StudioWorkroom = forwardRef<
     setLoading(true);
     setError(null);
     try {
-      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`);
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
+      );
       if (!response.ok) throw new Error("Conversation could not be loaded.");
       const payload = await response.json();
       setMessages(Array.isArray(payload.messages) ? payload.messages : []);
@@ -201,6 +209,7 @@ const StudioWorkroom = forwardRef<
     reset: resetStream,
   } = useStreamingChat(endpoint, {
     onComplete: (payload) => {
+      pendingMessageRef.current = null;
       setMessages((current) => [
         ...current,
         {
@@ -220,6 +229,12 @@ const StudioWorkroom = forwardRef<
       requestAnimationFrame(() => inputRef.current?.focus());
     },
     onError: (message) => {
+      const pending = pendingMessageRef.current;
+      if (pending) {
+        setMessages((current) => current.filter((item) => item.id !== pending.id));
+        setDraft((current) => current || pending.text);
+        pendingMessageRef.current = null;
+      }
       setError(message);
       setSending(false);
       resetStream();
@@ -245,6 +260,7 @@ const StudioWorkroom = forwardRef<
   const submit = useCallback(() => {
     const text = draft.trim();
     if (!text || sending) return;
+    const messageId = `account-${Date.now()}`;
     const history = messages.slice(-12).map((message) => ({
       role: message.role === "Account Holder" ? "customer" : "employee",
       content: message.content,
@@ -252,12 +268,13 @@ const StudioWorkroom = forwardRef<
     setMessages((current) => [
       ...current,
       {
-        id: `account-${Date.now()}`,
+        id: messageId,
         role: "Account Holder",
         content: text,
         createdAt: new Date().toISOString(),
       },
     ]);
+    pendingMessageRef.current = { id: messageId, text };
     setDraft("");
     setError(null);
     setSending(true);
@@ -268,6 +285,7 @@ const StudioWorkroom = forwardRef<
     if (clearing) return;
     if (mode === "test") {
       setMessages([]);
+      pendingMessageRef.current = null;
       setError(null);
       requestAnimationFrame(() => inputRef.current?.focus());
       return;
@@ -277,9 +295,12 @@ const StudioWorkroom = forwardRef<
     setClearing(true);
     setError(null);
     try {
-      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`, {
-        method: "DELETE",
-      });
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!response.ok) throw new Error("Conversation could not be cleared.");
       setMessages([]);
     } catch (reason) {
@@ -301,7 +322,7 @@ const StudioWorkroom = forwardRef<
   const clearButton = (
     <button
       type="button"
-      disabled={!messages.length || clearing}
+      disabled={!messages.length || clearing || sending}
       onClick={() => void clearConversation()}
       className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
       aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
@@ -329,7 +350,12 @@ const StudioWorkroom = forwardRef<
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {mode === "test" && allowOutbound ? (
-              <Button type="button" size="sm" variant="secondary" onClick={() => setShowOutboundDial(true)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowOutboundDial(true)}
+              >
                 <Phone className="size-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">Real call</span>
               </Button>
@@ -352,12 +378,29 @@ const StudioWorkroom = forwardRef<
           className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground"
           role="alert"
         >
-          {error}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span>{error} Your message is back in the composer.</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={!draft.trim() || sending}
+              onClick={submit}
+              className="shrink-0"
+            >
+              Retry
+            </Button>
+          </div>
         </div>
       ) : null}
 
       <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-        <div className="mx-auto h-full w-full max-w-3xl">
+        <div
+          className="mx-auto h-full w-full max-w-3xl"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+        >
           {loading ? (
             <MessageSkeletons />
           ) : messages.length ? (
@@ -379,7 +422,10 @@ const StudioWorkroom = forwardRef<
               {sending ? (
                 <div className="flex max-w-[92%] items-start gap-3">
                   <AgentAvatar agentName={agentName} speaking={streamState.phase === "replying"} />
-                  <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
+                  <div
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground"
+                    role="status"
+                  >
                     <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
                     {workingLabel}…
                   </div>
@@ -390,7 +436,9 @@ const StudioWorkroom = forwardRef<
             <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
               <AgentFace seed={agentName} size={48} title={`${agentName} face`} />
               <h3 className="mt-4 text-lg font-semibold text-foreground">
-                {mode === "test" ? "Start with a real customer question" : "Describe what should change"}
+                {mode === "test"
+                  ? "Start with a real customer question"
+                  : "Describe what should change"}
               </h3>
               <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                 {mode === "test"
@@ -420,6 +468,7 @@ const StudioWorkroom = forwardRef<
                 }
               }}
               rows={2}
+              maxLength={4000}
               disabled={sending}
               placeholder={
                 mode === "test"
@@ -434,11 +483,12 @@ const StudioWorkroom = forwardRef<
                   <button
                     key={prompt}
                     type="button"
+                    disabled={sending}
                     onClick={() => {
                       setDraft(prompt);
                       requestAnimationFrame(() => inputRef.current?.focus());
                     }}
-                    className={WL_COMPOSER_CLASSES.starterChip}
+                    className={`${WL_COMPOSER_CLASSES.starterChip} disabled:cursor-not-allowed disabled:opacity-50`}
                   >
                     {prompt}
                   </button>

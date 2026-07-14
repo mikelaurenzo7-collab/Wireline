@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 275
-**Protected:** 237
+**Routes scanned:** 279
+**Protected:** 241
 **Public (allowlisted):** 38
 **Violations:** 0
 
@@ -69,6 +69,7 @@
 | agent-routes-v2.ts | DELETE | `/api/agent-config/:id/:type/:rowId` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agent-config/:id/assets` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/business` | inline | — | — | Protected |
+| agent-routes-v2.ts | PATCH | `/api/agent-config/:id/essentials` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agent-config/:id/manual` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/runtime` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/voice` | inline | — | — | Protected |
@@ -79,6 +80,8 @@
 | agent-routes-v2.ts | GET | `/api/agents/roles` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agents/voice-models` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/train/extract` | inline | — | — | Protected |
+| agent-test-routes.ts | POST | `/api/agents/:id/test/complete` | inline | — | — | Protected |
+| agent-test-routes.ts | POST | `/api/agents/:id/test/stream` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/apply-change` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/files` | inline | — | — | Protected |
 | agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/messages` | inline | — | — | Protected |
@@ -175,6 +178,7 @@
 | dashboard-routes.ts | GET | `/api/dashboard/benchmarks` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/dashboard/dossiers` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/dashboard/stats` | inline | — | — | Protected |
+| dashboard-routes.ts | GET | `/api/dashboard/today` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/export/:type.csv` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/nav-counts` | inline | — | — | Protected |
 | email-outcome-routes.ts | PATCH | `/api/emails/threads/:id/outcome` | inline | — | — | Protected |

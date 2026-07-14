@@ -101,6 +101,7 @@ export default function LiveVoiceSandbox({
   onAgentAudioDelta,
   onAgentAudioEnd,
   onTestStarted,
+  onTestCompleted,
 }: {
   agentId: string;
   agentName: string;
@@ -109,9 +110,12 @@ export default function LiveVoiceSandbox({
   onAgentAudioEnd?: () => void;
   /** Fires only after a private live voice test has connected successfully. */
   onTestStarted?: () => void;
+  /** Fires after a customer turn receives a response and readiness is durably saved. */
+  onTestCompleted?: () => void;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [error, setError] = useState("");
+  const [completionError, setCompletionError] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const socket = useRef<WebSocket | null>(null);
   const audio = useRef<AudioContext | null>(null);
@@ -133,6 +137,9 @@ export default function LiveVoiceSandbox({
   const assistantTranscriptMode = useRef<"audio" | "text" | null>(null);
   const userLineId = useRef<string | null>(null);
   const reportedStarted = useRef(false);
+  const heardCustomerSpeech = useRef(false);
+  const completionPersisting = useRef(false);
+  const reportedCompleted = useRef(false);
 
   const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
     if (!text) return;
@@ -157,6 +164,7 @@ export default function LiveVoiceSandbox({
 
   const updateUserTranscript = (text: string, itemId?: unknown) => {
     if (!text) return;
+    if (text.trim()) heardCustomerSpeech.current = true;
     const id =
       typeof itemId === "string" && itemId
         ? `user-${itemId}`
@@ -199,7 +207,9 @@ export default function LiveVoiceSandbox({
   const waitForAudio = () =>
     new Promise<void>((resolve) => {
       const context = audio.current;
-      const delay = context ? Math.max(20, (nextAudio.current - context.currentTime) * 1000 + 30) : 20;
+      const delay = context
+        ? Math.max(20, (nextAudio.current - context.currentTime) * 1000 + 30)
+        : 20;
       window.setTimeout(resolve, delay);
     });
 
@@ -376,6 +386,30 @@ export default function LiveVoiceSandbox({
         assistantTranscriptMode.current = null;
         userLineId.current = null;
         onAgentAudioEnd?.();
+        if (
+          heardCustomerSpeech.current &&
+          !reportedCompleted.current &&
+          !completionPersisting.current
+        ) {
+          completionPersisting.current = true;
+          try {
+            const completionResponse = await authFetch(
+              `/api/agents/${encodeURIComponent(agentId)}/test/complete`,
+              { method: "POST" },
+            );
+            if (!completionResponse.ok) throw new Error("Test completion was not saved.");
+            if (connectionGeneration !== generation.current || closedByUser.current) return;
+            reportedCompleted.current = true;
+            setCompletionError("");
+            onTestCompleted?.();
+          } catch {
+            setCompletionError(
+              "The conversation worked, but readiness could not be saved. Ask one more question to retry.",
+            );
+          } finally {
+            completionPersisting.current = false;
+          }
+        }
         if (!pendingTools.current) setState("listening");
       }
       if (type === "response.function_call_arguments.done") {
@@ -450,8 +484,12 @@ export default function LiveVoiceSandbox({
     stop();
     const connectionGeneration = generation.current;
     reportedStarted.current = false;
+    heardCustomerSpeech.current = false;
+    completionPersisting.current = false;
+    reportedCompleted.current = false;
     closedByUser.current = false;
     setError("");
+    setCompletionError("");
     setLines([]);
     conversationId.current = null;
     retry.current = 0;
@@ -595,6 +633,11 @@ export default function LiveVoiceSandbox({
           }
         >
           {error}
+        </StatusNotice>
+      ) : null}
+      {completionError ? (
+        <StatusNotice tone="warning" className="mt-3" title="Test completion not saved">
+          {completionError}
         </StatusNotice>
       ) : null}
     </section>

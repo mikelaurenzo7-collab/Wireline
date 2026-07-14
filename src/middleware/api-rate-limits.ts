@@ -299,6 +299,48 @@ export const agentMutationRateLimit = createRateLimiter({
   max: 120,
 });
 
+/**
+ * Private Studio customer-roleplay generations. Kept separate from the broad
+ * Claude bucket so one user's browser testing cannot consume another user's
+ * model allowance or inherit a bearer-token/IP identity.
+ */
+export const agentTestRateLimit: RateLimitMiddleware = async (req, res, next) => {
+  const userId = (req as Request & { user?: { id?: string } }).user?.id;
+  if (!userId) {
+    next(AppError.unauthorized());
+    return;
+  }
+  const status = distributedLimiterStatus();
+  if (!status.ok) {
+    res.status(503).json({ error: status.reason, code: status.code });
+    return;
+  }
+
+  const opts = {
+    bucket: "api:agent-test",
+    windowMs: 60 * 1000,
+    max: 20,
+    failClosedOnError: true,
+  } as const;
+  try {
+    const result = await rateLimit(userId, opts);
+    res.set("X-RateLimit-Remaining", String(result.remaining));
+    res.set("X-RateLimit-Reset", String(Math.ceil((Date.now() + result.resetMs) / 1000)));
+    if (!result.allowed) {
+      res.set("Retry-After", String(Math.ceil(result.resetMs / 1000)));
+      next(AppError.tooManyRequests("Studio test limit reached. Please try again shortly."));
+      return;
+    }
+    next();
+  } catch (err) {
+    log.error("agent test rate limiter unavailable", { error: getErrorMessage(err), userId });
+    res.status(503).json({
+      error: "Studio testing is temporarily unavailable.",
+      code: "RATE_LIMITER_ERROR",
+    });
+  }
+};
+
 /** Campaign create/update without Claude. */
 export const campaignWriteRateLimit = createRateLimiter({
   bucket: "api:campaigns-write",

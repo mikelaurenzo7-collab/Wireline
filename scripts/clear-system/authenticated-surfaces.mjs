@@ -2,7 +2,7 @@ import { assertStudioCanvasContract } from "../lib/studio-canvas-contract.mjs";
 
 /**
  * Authenticated product surfaces — routing, shell geometry, responsive
- * navigation, account entry, Studio, Training, settings, and companion chrome.
+ * navigation, account entry, Studio, Knowledge, settings, and companion chrome.
  */
 export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const appRoutes = read("src/routes/AppRoutes.tsx");
@@ -16,8 +16,11 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const settingsPage = read("src/pages/SettingsPage.tsx");
   const accountRoutes = read("src/routes/account-routes.ts");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
+  const studioChrome = read("src/components/studio/StudioContextChrome.tsx");
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
+  const studioWorkspacePanel = read("src/components/StudioAgentWorkspacePanel.tsx");
+  const studioReviewPanel = read("src/components/StudioAgentReviewPanel.tsx");
   const studioOverview = read("src/components/StudioOverview.tsx");
   const trainingPage = read("src/pages/KnowledgePage.tsx");
   const knowledgeBase = read("src/components/KnowledgeBaseClaude.tsx");
@@ -50,9 +53,13 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
 
   assertStudioCanvasContract(
     {
-      shell: workspaceShell,
+      studioShell: workspaceShell,
+      navigation,
+      studioChrome,
       canvas: studioWorkspace,
       workroom: studioWorkroom,
+      workspacePanel: studioWorkspacePanel,
+      reviewPanel: studioReviewPanel,
       studioOverview,
       designVision,
     },
@@ -86,8 +93,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/constants/navigation.ts",
     navigation,
-    /href:\s*"\/connections",\s*label:\s*"Wire"/,
-    "Wire must be the customer-facing wiring surface label in navigation (Create -> Train -> Wire -> Run)",
+    /href:\s*"\/connections",[\s\S]*label:\s*"Connections",[\s\S]*shortLabel:\s*"Connect"/,
+    "Connections must remain the plain-language customer-facing integration destination",
   );
   mustExclude(
     "src/components/WorkspaceShell.tsx",
@@ -118,7 +125,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/CreateAgentDialog.tsx",
     createDialog,
     /\/studio\?agent=/,
-    "create flow must hand into the real Studio canvas",
+    "create flow must hand into the guided Studio workspace",
   );
   mustInclude(
     "src/components/AuthPortal.tsx",
@@ -166,8 +173,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/components/StudioWorkspaceV2.tsx",
     studioWorkspace,
-    /StudioAssistantWorkspace/,
-    "old Studio assistant rail must not be active",
+    /StudioAssistantWorkspace|StudioAgentCanvas/,
+    "old Studio assistant rail and dense spatial canvas must not be active",
   );
   mustExclude(
     "src/components/StudioWorkroom.tsx",
@@ -186,13 +193,13 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/KnowledgePage.tsx",
     trainingPage,
     /KnowledgeBaseClaude/,
-    "Training Knowledge must mount the real Knowledge Base",
+    "Knowledge must mount the real Knowledge Base",
   );
   mustInclude(
     "src/pages/KnowledgePage.tsx",
     trainingPage,
     /id: "knowledge"[\s\S]*id: "voice"[\s\S]*id: "flows"[\s\S]*id: "simulator"/,
-    "Training must expose Knowledge, Voice, Flows, and Simulator",
+    "Knowledge must expose Knowledge, Voice, Flows, and Simulator",
   );
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",
@@ -279,6 +286,9 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/pages/BillingSettings.tsx",
     "src/components/ConversationBalanceCard.tsx",
     "src/components/StudioWorkroom.tsx",
+    "src/components/StudioAgentWorkspacePanel.tsx",
+    "src/components/StudioAgentReviewPanel.tsx",
+    "src/components/studio/StudioContextChrome.tsx",
   ]) {
     mustExclude(file, read(file), /Â|â|�/, "authenticated surfaces must not expose mojibake");
   }

@@ -4,7 +4,17 @@ on:
   push:
     branches: [main]
     paths:
+      - src/**
+      - public/**
+      - design-tokens/**
+      - "**/*.css"
+      - index.html
+      - package.json
+      - package-lock.json
       - scripts/capture-prod-visual-qa.mjs
+      - scripts/visual-qa-matrix.mjs
+      - scripts/visual-qa-manifest.mjs
+      - scripts/check-visual-qa-manifest.mjs
       - .github/workflows/production-visual-qa.yml
   workflow_dispatch:
 
@@ -13,13 +23,16 @@ permissions:
 
 jobs:
   capture:
-    name: Capture desktop and laptop production QA
+    name: Gate full production visual QA matrix
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
     env:
       CI: "true"
       WIRELINE_VISUAL_BASE_URL: https://trywireline.com
       WIRELINE_VISUAL_OUTPUT_DIR: artifacts/visual-qa-prod
+      WIRELINE_QA_FOCUS: full
+      WIRELINE_VISUAL_EMAIL: ${{ secrets.WIRELINE_VISUAL_EMAIL }}
+      WIRELINE_VISUAL_PASSWORD: ${{ secrets.WIRELINE_VISUAL_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,11 +52,22 @@ jobs:
       - name: Capture production routes
         run: node scripts/capture-prod-visual-qa.mjs
 
+      - name: Gate complete authenticated manifest
+        if: always()
+        shell: bash
+        run: |
+          MANIFEST=$(find artifacts/visual-qa-prod -name manifest.json -type f -printf '%T@ %p\n' | sort -nr | head -1 | cut -d' ' -f2-)
+          if [ -z "$MANIFEST" ]; then
+            echo "Production visual QA did not write a manifest."
+            exit 1
+          fi
+          node scripts/check-visual-qa-manifest.mjs "$MANIFEST"
+
       - name: Upload visual QA artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: wireline-production-visual-qa
           path: artifacts/visual-qa-prod
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14

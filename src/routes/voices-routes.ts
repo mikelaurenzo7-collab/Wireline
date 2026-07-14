@@ -37,6 +37,7 @@ import {
   type ElevenLabsVoice,
 } from "../lib/elevenlabs-client";
 import {
+  curatedVoicePreviewContentType,
   generateCuratedVoicePreview,
   isCuratedPreviewProvider,
 } from "../lib/voice/voice-preview-service";
@@ -388,8 +389,9 @@ router.get(
         throw AppError.fromHttpStatus(400, "provider and voiceId are required.");
       }
       const audio = await generateCuratedVoicePreview(provider, voiceId);
-      res.setHeader("Content-Type", "audio/mpeg");
-      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.setHeader("Content-Type", curatedVoicePreviewContentType(provider));
+      res.setHeader("Cache-Control", "private, max-age=86400");
+      res.setHeader("X-Content-Type-Options", "nosniff");
       res.send(Buffer.from(audio));
     } catch (e) {
       if (e instanceof AppError) throw e;

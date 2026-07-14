@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { authFetch } from "../lib/api";
+import { formatAgentRoleLabel } from "../lib/product-copy";
 import AgentPresenceLivePreview from "./AgentPresenceLivePreview";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
-import VoiceGallery from "./voice/VoiceGallery";
 
 const PERSONALITIES = [
   { id: "Clear", description: "Direct and easy to understand" },
@@ -26,13 +26,18 @@ type StudioAgentWorkspacePanelProps = {
 };
 
 type AgentSetupResponse = {
+  role?: string | null;
+  job?: string | null;
+  firstMessage?: string | null;
   personality?: string;
   directives?: Array<{ content?: string }>;
 };
 
 function inferPersonality(value: string | undefined) {
   const normalized = value?.toLowerCase() ?? "";
-  return PERSONALITIES.find((option) => normalized.includes(option.id.toLowerCase()))?.id ?? "Clear";
+  return (
+    PERSONALITIES.find((option) => normalized.includes(option.id.toLowerCase()))?.id ?? "Clear"
+  );
 }
 
 function existingGreeting(directives: AgentSetupResponse["directives"]) {
@@ -54,6 +59,7 @@ export default function StudioAgentWorkspacePanel({
     [agentName],
   );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
+  const [setupJob, setSetupJob] = useState(formatAgentRoleLabel(agentRole));
   const [setupGreeting, setSetupGreeting] = useState(defaultGreeting);
   const [setupKnowledge, setSetupKnowledge] = useState("");
   const [loadingSetup, setLoadingSetup] = useState(true);
@@ -73,13 +79,18 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
+        setSetupJob(data.job?.trim() || formatAgentRoleLabel(data.role ?? agentRole));
         setSetupPersonality(inferPersonality(data.personality));
-        setSetupGreeting(existingGreeting(data.directives) || defaultGreeting);
+        setSetupGreeting(
+          data.firstMessage?.trim() || existingGreeting(data.directives) || defaultGreeting,
+        );
       })
       .catch((reason) => {
         if (!cancelled) {
           setSetupGreeting(defaultGreeting);
-          setSetupError(reason instanceof Error ? reason.message : "Current setup could not be loaded.");
+          setSetupError(
+            reason instanceof Error ? reason.message : "Current setup could not be loaded.",
+          );
         }
       })
       .finally(() => {
@@ -88,44 +99,42 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, defaultGreeting]);
+  }, [agentId, agentRole, defaultGreeting]);
 
-  async function saveManual(type: "personality" | "directive", content: string) {
-    const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, content }),
-    });
-    if (!response.ok) {
-      throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
-    }
-  }
-
-  async function applySetup() {
-    if (!agentId) return;
+  async function applySetup(continueToTest = false) {
+    if (!agentId || applyingSetup) return;
     setApplyingSetup(true);
     setSetupError(null);
     setSetupNotice(null);
     try {
+      const jobTrimmed = setupJob.trim();
       const personalityText = `${setupPersonality}. Concise, useful, and business-ready.`;
       const greetingTrimmed = setupGreeting.trim();
       const knowledgeTrimmed = setupKnowledge.trim();
 
-      await saveManual("personality", personalityText);
-      if (greetingTrimmed) {
-        await saveManual("directive", `Opening greeting: ${greetingTrimmed}`);
-      }
-      if (knowledgeTrimmed) {
-        const knowledgeResponse = await authFetch("/api/train/extract", {
-          method: "POST",
+      if (!jobTrimmed) throw new Error("Add the one customer-facing job this employee owns.");
+      if (!greetingTrimmed) throw new Error("Add the greeting customers should hear first.");
+
+      const response = await authFetch(
+        `/api/agent-config/${encodeURIComponent(agentId)}/essentials`,
+        {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
-        });
-        if (!knowledgeResponse.ok) throw new Error("Business information could not be saved.");
-        setSetupKnowledge("");
+          body: JSON.stringify({
+            job: jobTrimmed,
+            personality: personalityText,
+            greeting: greetingTrimmed,
+            knowledge: knowledgeTrimmed || undefined,
+          }),
+        },
+      );
+      if (!response.ok) {
+        throw new Error("Essentials could not be saved together. Nothing changed.");
       }
+      if (knowledgeTrimmed) setSetupKnowledge("");
 
       setSetupNotice("Changes saved. Run a customer test before connecting live traffic.");
+      if (continueToTest) onTestVoiceInChat();
     } catch (reason) {
       setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
     } finally {
@@ -148,13 +157,20 @@ export default function StudioAgentWorkspacePanel({
           </p>
         </header>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="essentials-heading">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="essentials-heading"
+        >
           <div className="mb-5">
-            <h3 id="essentials-heading" className="text-lg font-semibold tracking-tight text-foreground">
+            <h3
+              id="essentials-heading"
+              className="text-lg font-semibold tracking-tight text-foreground"
+            >
               Essentials
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Customers should understand who answered, what this employee can do, and when a person takes over.
+              Customers should understand who answered, what this employee can do, and when a person
+              takes over.
             </p>
           </div>
 
@@ -165,6 +181,21 @@ export default function StudioAgentWorkspacePanel({
             </div>
           ) : (
             <div className="space-y-5">
+              <label className="grid gap-2" htmlFor="setup-job">
+                <span className="text-sm font-semibold text-foreground">Customer-facing job</span>
+                <input
+                  id="setup-job"
+                  value={setupJob}
+                  onChange={(event) => setSetupJob(event.target.value)}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
+                  placeholder="Receptionist who answers missed calls and books appointments"
+                  maxLength={160}
+                />
+                <span className="text-xs text-muted-foreground">
+                  Keep it concrete. One employee should own one clear customer outcome.
+                </span>
+              </label>
+
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -183,7 +214,9 @@ export default function StudioAgentWorkspacePanel({
                         }`}
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                          {selected ? <CheckCircle2 className="size-4 text-primary" aria-hidden="true" /> : null}
+                          {selected ? (
+                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
+                          ) : null}
                           {option.id}
                         </span>
                         <span className="mt-1 block text-xs leading-5 text-muted-foreground">
@@ -201,8 +234,14 @@ export default function StudioAgentWorkspacePanel({
                   id="setup-greeting"
                   value={setupGreeting}
                   onChange={(event) => setSetupGreeting(event.target.value)}
+                  maxLength={500}
                   className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
                 />
+                {setupGreeting.length >= 400 ? (
+                  <span className="text-right text-xs text-muted-foreground">
+                    {setupGreeting.length} / 500
+                  </span>
+                ) : null}
               </label>
 
               <label className="grid gap-2" htmlFor="setup-knowledge">
@@ -214,12 +253,24 @@ export default function StudioAgentWorkspacePanel({
                   id="setup-knowledge"
                   value={setupKnowledge}
                   onChange={(event) => setSetupKnowledge(event.target.value)}
+                  maxLength={4000}
                   className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
                   placeholder="Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
                 />
                 <span className="text-xs text-muted-foreground">
-                  Add only what the first customer workflow needs. More knowledge can come later.
+                  Add only what the first customer workflow needs. More knowledge can come later.{" "}
+                  <Link
+                    to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    Manage full knowledge
+                  </Link>
                 </span>
+                {setupKnowledge.length >= 3200 ? (
+                  <span className="text-right text-xs text-muted-foreground">
+                    {setupKnowledge.length.toLocaleString()} / 4,000
+                  </span>
+                ) : null}
               </label>
 
               {setupNotice ? (
@@ -233,40 +284,70 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
 
-              <Button type="button" onClick={() => void applySetup()} disabled={applyingSetup}>
-                {applyingSetup ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <Save className="size-4" aria-hidden="true" />
-                )}
-                {applyingSetup ? "Saving…" : "Save changes"}
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void applySetup()}
+                  disabled={applyingSetup}
+                  className="justify-center"
+                >
+                  {applyingSetup ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Save className="size-4" aria-hidden="true" />
+                  )}
+                  {applyingSetup ? "Saving…" : "Save changes"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void applySetup(true)}
+                  disabled={applyingSetup}
+                  className="justify-center"
+                >
+                  Save and test
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Button>
+              </div>
             </div>
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="voice-heading">
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="voice-heading"
+        >
           <div className="mb-5">
             <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Phone voice
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Built-in voices are the dependable default. Browser testing checks the response; a real call is required to hear the phone voice.
+              Preview the exact phone voice here, then place one real call for the final end-to-end
+              check.
             </p>
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
 
-        <section className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6" aria-label="Continue setup">
+        <section
+          className="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
+          aria-label="Continue setup"
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-base font-semibold text-foreground">Test before going live</h3>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                Try a realistic customer question. Connect phone, text, email, calendar, or CRM only after the response feels right.
+                Try a realistic customer question. Connect phone, text, email, calendar, or CRM only
+                after the response feels right.
               </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-              <Button type="button" variant="secondary" onClick={onTestVoiceInChat} className="justify-center">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onTestVoiceInChat}
+                className="justify-center"
+              >
                 Test conversation
               </Button>
               <Button asChild className="justify-center">
@@ -279,10 +360,16 @@ export default function StudioAgentWorkspacePanel({
           </div>
         </section>
 
-        <details id="advanced-employee-options" className="group rounded-2xl border border-border bg-card">
+        <details
+          id="advanced-employee-options"
+          className="group rounded-2xl border border-border bg-card"
+        >
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-foreground sm:px-6">
             Advanced options
-            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+            <ChevronDown
+              className="size-4 transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
           </summary>
           <div className="space-y-6 border-t border-border px-5 py-5 sm:px-6">
             <div>
@@ -300,18 +387,18 @@ export default function StudioAgentWorkspacePanel({
               </div>
             </div>
             <div className="border-t border-border pt-6">
-              <h3 className="text-base font-semibold text-foreground">External voice library</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Use this only after configuring an external provider and verifying its runtime key.
+              <h3 className="text-base font-semibold text-foreground">
+                Specialized voice providers
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Built-in phone voices are the dependable default. Open the full library only when a
+                customer workflow needs a custom or external voice.
               </p>
-              <div className="mt-4">
-                <VoiceGallery
-                  agentId={agentId}
-                  agentName={agentName}
-                  embedded
-                  searchInputId="advanced-voice-search"
-                />
-              </div>
+              <Button asChild variant="secondary" className="mt-4">
+                <Link to={`/knowledge?agent=${encodeURIComponent(agentId)}&tab=voice`}>
+                  Open advanced voice library
+                </Link>
+              </Button>
             </div>
           </div>
         </details>

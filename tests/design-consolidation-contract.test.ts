@@ -34,7 +34,6 @@ describe("design consolidation contracts", () => {
   it("migrates hot-path surfaces off studio-card to wl-paper primitives", () => {
     const migrated = [
       "src/pages/OverviewPage.tsx",
-      "src/components/CreateAgentDialog.tsx",
       "src/pages/KnowledgePage.tsx",
       "src/components/voice/VoiceGallery.tsx",
       "src/pages/SettingsPage.tsx",
@@ -45,7 +44,6 @@ describe("design consolidation contracts", () => {
       "src/components/ConversationBalanceCard.tsx",
       "src/components/EmailInbox.tsx",
       "src/pages/BillingSettings.tsx",
-      "src/components/StudioAgentWorkspacePanel.tsx",
       "src/components/StudioAgentCanvas.tsx",
     ];
     for (const file of migrated) {
@@ -53,5 +51,17 @@ describe("design consolidation contracts", () => {
       expect(source).toContain("wl-paper");
       expect(source).not.toContain("studio-card");
     }
+
+    // These are nested application surfaces rather than standalone paper
+    // sheets, but they must still stay off the retired studio-card primitive.
+    const createDialog = read("src/components/CreateAgentDialog.tsx");
+    expect(createDialog).toContain("<DialogContent");
+    expect(createDialog).toContain("max-h-[calc(100dvh-2rem)]");
+    expect(createDialog).not.toContain("studio-card");
+
+    const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
+    expect(studioSetup).toContain("overflow-y-auto bg-background");
+    expect(studioSetup).toContain('aria-labelledby="essentials-heading"');
+    expect(studioSetup).not.toContain("studio-card");
   });
 });

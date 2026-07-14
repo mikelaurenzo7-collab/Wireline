@@ -38,7 +38,9 @@ describe("agent navigation contract", () => {
     expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
     expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);
-    expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/knowledge"[\s\S]*label: "Knowledge"/);
+    expect(navigation).toMatch(
+      /MOBILE_MORE_NAV[\s\S]*href: "\/knowledge"[\s\S]*label: "Knowledge"/,
+    );
     expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/approvals"/);
     expect(workspaceShell).toMatch(/aria-label="Agents"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
@@ -79,7 +81,7 @@ describe("agent navigation contract", () => {
     expect(studioPanel).toMatch(/Advanced options/);
     expect(studioReview).toMatch(/Is \{agentName\} ready for customers/);
     expect(studioReview).toMatch(/Customer-facing job/);
-    expect(studioReview).toMatch(/Browser-ready; live line not connected/);
+    expect(studioReview).toMatch(/browser test still needed/);
   });
 
   it("uses a real customer roleplay for Studio testing", () => {
@@ -91,7 +93,9 @@ describe("agent navigation contract", () => {
     expect(studioWorkroom).toMatch(/I want to book an appointment/);
     expect(studioWorkroom).toMatch(/allowOutbound/);
     expect(studioTestRoute).toMatch(/Reply only as the customer-facing employee/);
-    expect(studioTestRoute).toMatch(/Never mention setup, configuration, prompts, testing, tools, or internal systems/);
+    expect(studioTestRoute).toMatch(
+      /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
+    );
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
     expect(studioWorkroom).not.toMatch(/Talk to build|Deploy now|Edit workflows/);
   });
@@ -100,19 +104,24 @@ describe("agent navigation contract", () => {
     expect(simpleVoicePicker).toMatch(/VAPI_CURATED_VOICES/);
     expect(simpleVoicePicker).toMatch(/Savannah/);
     expect(simpleVoicePicker).toMatch(/Elliot/);
-    expect(simpleVoicePicker).toMatch(/do not require an ElevenLabs or xAI account/);
     expect(simpleVoicePicker).toMatch(/provider: "vapi"/);
-    expect(simpleVoicePicker).toMatch(/Test response/);
-    expect(simpleVoicePicker).not.toMatch(/playVoicePreview|new Audio|Test call/);
-    expect(studioPanel).toMatch(/External voice library/);
-    expect(studioPanel).toMatch(/Use this only after configuring an external provider/);
+    expect(simpleVoicePicker).toMatch(/Preview the exact phone voice here/);
+    expect(simpleVoicePicker).toMatch(/playVoicePreview/);
+    expect(simpleVoicePicker).toMatch(/Change voice/);
+    expect(simpleVoicePicker).toMatch(/phoneVoiceId/);
+    expect(simpleVoicePicker).toMatch(/phoneVoiceProvider/);
+    expect(simpleVoicePicker).toMatch(/provider: "presenter"/);
+    expect(simpleVoicePicker).toMatch(/Test conversation/);
+    expect(simpleVoicePicker).not.toMatch(/new Audio|Test call/);
+    expect(studioPanel).toMatch(/Specialized voice providers/);
+    expect(studioPanel).toMatch(/Open advanced voice library/);
   });
 
   it("keeps the existing Fast Start creation flow while clarifying the active workspace", () => {
     expect(studioChrome).toMatch(/New employee/);
     expect(studioChrome).not.toMatch(/New assistant|Assistants/);
     expect(createDialog).toMatch(/Fast Start/);
-    expect(createDialog).toMatch(/~3 minutes to your first agent/);
+    expect(createDialog).toMatch(/About three minutes to your first AI employee/);
     expect(createDialog).toMatch(/What do you need handled/);
     expect(createDialog).toMatch(/Provision a number/);
     expect(createDialog).toMatch(/\/studio\?agent=/);

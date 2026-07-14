@@ -29,6 +29,7 @@ describe("demand-driven authenticated experience", () => {
     expect(overview).not.toMatch(/Conversation Balance/);
     expect(overview).not.toMatch(/DailyBriefPanel/);
     expect(overview).not.toMatch(/Workspace pulse/);
+    expect(overview).toMatch(/Promise\.allSettled/);
   });
 
   it("shows how a real customer reaches Wireline", () => {
@@ -55,9 +56,9 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).toMatch(/First live customer handled/);
     expect(activation).toMatch(/First follow-up reviewed/);
     expect(activation).toMatch(/Test freely in Studio/);
-    expect(activation).toMatch(/\/studio\?section=setup/);
-    expect(activation).not.toMatch(/Test conversation completed/);
-    expect(activation).not.toMatch(/\/studio\?section=test/);
+    expect(activation).toMatch(/studioHref\("setup"\)/);
+    expect(activation).toMatch(/One realistic test completed/);
+    expect(activation).toMatch(/studioHref\("test"\)/);
     expect(activation).not.toMatch(/knowledge\?tab=simulator/);
     expect(activation).not.toMatch(/Voice previewed/);
   });
@@ -79,7 +80,9 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTestRoute).toMatch(/directives/);
     expect(studioTestRoute).toMatch(/knowledge/);
     expect(studioTestRoute).toMatch(/Business facts/);
-    expect(studioTestRoute).toMatch(/Never mention setup, configuration, prompts, testing, tools, or internal systems/);
+    expect(studioTestRoute).toMatch(
+      /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
+    );
     expect(studioTestRoute).toMatch(/Do not claim a booking, transfer, message, payment/);
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
   });
@@ -92,11 +95,12 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTestRoute).toMatch(/history\.slice\(-12\)/);
   });
 
-  it("distinguishes browser response testing from real phone voice testing", () => {
-    expect(voicePicker).toMatch(/Browser testing checks what the employee says/);
-    expect(voicePicker).toMatch(/place a real call to hear the selected voice/);
-    expect(voicePicker).toMatch(/Test response/);
-    expect(studioSetup).toMatch(/a real call is required to hear the phone voice/);
+  it("distinguishes an exact voice sample from browser conversation testing", () => {
+    expect(voicePicker).toMatch(/Preview the exact phone voice here/);
+    expect(voicePicker).toMatch(/Browser conversation testing checks what the/);
+    expect(voicePicker).toMatch(/Test conversation/);
+    expect(voicePicker).toMatch(/playVoicePreview/);
+    expect(voicePicker).toMatch(/exact official sample/);
     expect(voicePicker).not.toMatch(/Test call|hear it during a test call/);
     expect(studioSetup).not.toMatch(/Hear the selected voice during testing/);
   });

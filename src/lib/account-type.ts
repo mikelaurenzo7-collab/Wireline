@@ -18,13 +18,12 @@ import { NAV_GROUPS, SIDEBAR_NAV_ITEMS, type NavItem } from "../constants/naviga
 export type AccountType = "personal" | "business";
 
 /**
- * Business-only Operate destinations (Approvals / Insights) use the legacy item
- * `section: "Run"` from `toLegacyItem(..., "Run")`. Group labels in NAV_GROUPS
- * are "Workspace" | "Operate" — filter groups by label, items by section.
+ * Business-only Work destinations (Approvals / Activity) use the legacy item
+ * `section: "Run"` from `toLegacyItem(..., "Run")`. Filter every group by item
+ * section so a future group-label rename cannot expose business-only routes.
  *
- * Personal accounts keep Phone, Inbox, and Settings on Operate.
+ * Personal accounts keep Calls, Inbox, and Settings in Work.
  */
-const BUSINESS_ONLY_GROUP_LABELS = new Set<string>(["Operate"]);
 const BUSINESS_ONLY_ITEM_SECTIONS = new Set<string>(["Run"]);
 const PERSONAL_ONLY_GROUPS = new Set<string>(["Personal"]);
 const PERSONAL_OPERATE_PATHS = new Set<string>(["/phone", "/inbox", "/settings"]);
@@ -39,7 +38,7 @@ export function resolveAccountType(planId: string | null | undefined): AccountTy
   return planId === "personal" ? "personal" : "business";
 }
 
-/** True when a nav item's section is a business-only Operate section. */
+/** True when a nav item's section is business-only. */
 export function isBusinessOnlySection(section: string | undefined): boolean {
   return !!section && BUSINESS_ONLY_ITEM_SECTIONS.has(section);
 }
@@ -57,13 +56,12 @@ export function isRouteAvailableForAccount(type: AccountType, path: string): boo
   return PERSONAL_OPERATE_PATHS.has(item.path);
 }
 
-/** NAV_GROUPS filtered for the account mode (Operate kept, business-only items trimmed). */
+/** NAV_GROUPS filtered for the account mode with business-only items trimmed. */
 export function accountNavGroups(type: AccountType): Array<(typeof NAV_GROUPS)[number]> {
   if (type === "business") {
     return NAV_GROUPS.filter((group) => !PERSONAL_ONLY_GROUPS.has(group.label));
   }
   return NAV_GROUPS.map((group) => {
-    if (!BUSINESS_ONLY_GROUP_LABELS.has(group.label)) return group;
     return {
       ...group,
       items: group.items.filter(
