@@ -1,7 +1,9 @@
 # Wireline launch design QA
 
-Date: 2026-07-14  
-Baseline: `f1adccd2c6577fd1b09b1729a3a3a5a2b377263d`  
+Date: 2026-07-14
+
+Baseline: `f1adccd2c6577fd1b09b1729a3a3a5a2b377263d`
+
 Final reviewed candidate: `d5099acd1d907c1ed7a3ed5226a6fb7f1a68f54d`
 
 ## Outcome
