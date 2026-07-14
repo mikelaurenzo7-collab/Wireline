@@ -2,6 +2,16 @@ export const E164_PHONE_PATTERN = /^\+[1-9]\d{1,14}$/;
 export const TWILIO_MESSAGING_SERVICE_PATTERN = /^MG[a-fA-F0-9]{32}$/;
 
 /**
+ * Clone a JSON settings object without converting malformed request bodies
+ * into an empty, valid settings update. Returning undefined lets the canonical
+ * SettingsSchema reject arrays, primitives, and null payloads downstream.
+ */
+export function copyTwilioSettingsRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  return { ...(value as Record<string, unknown>) };
+}
+
+/**
  * Normalize tenant-managed Twilio destinations before they can reach provider
  * APIs or be interpolated into TwiML. Empty form fields are stored as null.
  */
