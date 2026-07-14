@@ -38,6 +38,10 @@ export type NavItem = {
 
 export const MOBILE_MORE_HREF = "__more__" as const;
 
+/**
+ * Primary setup destinations. Knowledge remains available as a contextual deep
+ * link from the employee workspace rather than competing in the main rail.
+ */
 export const WORKSPACE_NAV: ShellNavItem[] = [
   {
     href: "/overview",
@@ -46,22 +50,27 @@ export const WORKSPACE_NAV: ShellNavItem[] = [
     icon: Home,
     matches: ["/overview"],
   },
-  { href: "/studio", label: "Studio", icon: Bot, matches: ["/studio", "/agents"] },
   {
-    href: "/knowledge",
-    label: "Training",
-    shortLabel: "Train",
-    icon: GraduationCap,
-    matches: ["/knowledge", "/training"],
+    href: "/studio",
+    label: "AI Employee",
+    shortLabel: "Employee",
+    icon: Bot,
+    matches: ["/studio", "/agents"],
   },
-  { href: "/connections", label: "Wire", icon: Workflow, matches: ["/connections", "/actions"] },
+  {
+    href: "/connections",
+    label: "Connections",
+    shortLabel: "Connect",
+    icon: Workflow,
+    matches: ["/connections", "/actions"],
+  },
 ];
 
+/** Daily operating destinations. Approvals and training are secondary tools. */
 export const OPERATE_NAV: ShellNavItem[] = [
-  { href: "/phone", label: "Phone", icon: Phone },
   { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
-  { href: "/insights", label: "Insights", icon: BarChart3 },
+  { href: "/phone", label: "Calls", icon: Phone },
+  { href: "/insights", label: "Activity", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
 ];
 
@@ -73,23 +82,35 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
     icon: Home,
     matches: ["/overview"],
   },
-  { href: "/studio", label: "Studio", icon: Bot, matches: ["/studio", "/agents"] },
-  { href: "/phone", label: "Phone", icon: Phone },
+  {
+    href: "/studio",
+    label: "AI Employee",
+    shortLabel: "Employee",
+    icon: Bot,
+    matches: ["/studio", "/agents"],
+  },
   { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/phone", label: "Calls", icon: Phone },
   { href: MOBILE_MORE_HREF, label: "More", icon: MoreHorizontal },
 ];
 
 export const MOBILE_MORE_NAV: ShellNavItem[] = [
   {
+    href: "/connections",
+    label: "Connections",
+    shortLabel: "Connect",
+    icon: Workflow,
+    matches: ["/connections", "/actions"],
+  },
+  {
     href: "/knowledge",
-    label: "Training",
+    label: "Knowledge",
     shortLabel: "Train",
     icon: GraduationCap,
     matches: ["/knowledge", "/training"],
   },
-  { href: "/connections", label: "Wire", icon: Workflow, matches: ["/connections", "/actions"] },
   { href: "/approvals", label: "Approvals", shortLabel: "Approve", icon: CheckSquare },
-  { href: "/insights", label: "Insights", icon: BarChart3 },
+  { href: "/insights", label: "Activity", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings, matches: ["/settings", "/admin"] },
 ];
 
@@ -99,18 +120,17 @@ function toLegacyItem(item: ShellNavItem, section: string): NavItem {
     path: item.href,
     icon: item.icon,
     matches: item.matches,
-    // Settings is shared across personal and business workspaces (legacy sidebar filter).
     section: item.href === "/settings" ? "Workspace" : section,
   };
 }
 
 export const NAV_GROUPS = [
   {
-    label: "Workspace",
+    label: "Set up",
     items: WORKSPACE_NAV.map((item) => toLegacyItem(item, "Workspace")),
   },
   {
-    label: "Operate",
+    label: "Work",
     items: OPERATE_NAV.map((item) => toLegacyItem(item, "Run")),
   },
 ] as const;
@@ -149,7 +169,11 @@ export function isMobileMoreActive(pathname: string) {
 }
 
 export function findNavItemForPath(pathname: string): NavItem | undefined {
-  return SIDEBAR_NAV_ITEMS.find(
+  const allItems = [
+    ...SIDEBAR_NAV_ITEMS,
+    ...MOBILE_MORE_NAV.map((item) => toLegacyItem(item, "More")),
+  ];
+  return allItems.find(
     (item) =>
       pathname === item.path ||
       item.matches?.some((match) => pathname === match || pathname.startsWith(`${match}/`)),
@@ -158,20 +182,20 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 
 export const PAGE_TITLES: Record<string, string> = {
   "/overview": "Overview",
-  "/studio": "Studio",
+  "/studio": "AI Employee",
   "/studio/handoff": "Browser handoff",
   "/templates": "Templates",
-  "/knowledge": "Training",
-  "/connections": "Wire",
+  "/knowledge": "Knowledge",
+  "/connections": "Connections",
   "/connections/salesforce": "Salesforce connection",
-  "/phone": "Phone",
+  "/phone": "Calls",
   "/approvals": "Approvals",
-  "/insights": "Insights",
+  "/insights": "Activity",
   "/inbox": "Inbox",
   "/apps": "Apps",
   "/settings": "Settings",
   "/settings/billing": "Billing settings",
-  "/settings/phone": "Phone settings",
+  "/settings/phone": "Call settings",
   "/settings/team": "Team settings",
   "/settings/customization": "Customization settings",
   "/settings/compliance": "Compliance center",
