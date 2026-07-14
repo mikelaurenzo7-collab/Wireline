@@ -1,21 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import VoiceGallery from "./voice/VoiceGallery";
 import { authFetch } from "../lib/api";
-import {
-  AGENT_TOOL_CATALOG,
-  BUSINESS_TOOL_NAMES,
-  type AgentToolCatalogEntry,
-} from "../lib/agent-capabilities";
-import { WIRELINE_LIVE_VOICES } from "../lib/voice-catalog";
-import {
-  WORKSPACE_INTEGRATION_CATALOG,
-  type WorkspaceIntegration,
-} from "../lib/workspace-integration-catalog";
 import AgentPresenceLivePreview from "./AgentPresenceLivePreview";
+import { StatusNotice } from "./molecules";
+import SimpleVoicePicker from "./voice/SimpleVoicePicker";
+import VoiceGallery from "./voice/VoiceGallery";
 
-const PERSONALITIES = ["Clear", "Warm", "Direct", "Polished"];
+const PERSONALITIES = [
+  { id: "Clear", description: "Direct, concise, and easy to understand" },
+  { id: "Warm", description: "Friendly, patient, and conversational" },
+  { id: "Polished", description: "Professional, measured, and precise" },
+  { id: "Energetic", description: "Upbeat, proactive, and enthusiastic" },
+] as const;
 
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
@@ -26,6 +24,23 @@ type StudioAgentWorkspacePanelProps = {
   className?: string;
 };
 
+type AgentSetupResponse = {
+  personality?: string;
+  directives?: Array<{ content?: string }>;
+  knowledge?: Array<{ content?: string }>;
+};
+
+function inferPersonality(value: string | undefined) {
+  const normalized = value?.toLowerCase() ?? "";
+  return PERSONALITIES.find((option) => normalized.includes(option.id.toLowerCase()))?.id ?? "Clear";
+}
+
+function existingGreeting(directives: AgentSetupResponse["directives"]) {
+  const prefix = "Opening greeting:";
+  const match = directives?.find((directive) => directive.content?.startsWith(prefix));
+  return match?.content?.slice(prefix.length).trim() ?? "";
+}
+
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
@@ -34,27 +49,56 @@ export default function StudioAgentWorkspacePanel({
   onTestVoiceInChat,
   className = "",
 }: StudioAgentWorkspacePanelProps) {
-  const [setupPersonality, setSetupPersonality] = useState("Clear");
-  const [setupGreeting, setSetupGreeting] = useState(
-    `Hello, this is ${agentName || "your agent"}. How can I help?`,
+  const defaultGreeting = useMemo(
+    () => `Hello, this is ${agentName || "your AI employee"}. How can I help?`,
+    [agentName],
   );
+  const [setupPersonality, setSetupPersonality] = useState("Clear");
+  const [setupGreeting, setSetupGreeting] = useState(defaultGreeting);
   const [setupKnowledge, setSetupKnowledge] = useState("");
+  const [loadingSetup, setLoadingSetup] = useState(true);
   const [applyingSetup, setApplyingSetup] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    setSetupGreeting(`Hello, this is ${agentName || "your agent"}. How can I help?`);
-  }, [agentName]);
+    if (!agentId) return;
+    let cancelled = false;
+    setLoadingSetup(true);
+    setSetupError(null);
+    authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Current setup could not be loaded.");
+        return (await response.json()) as AgentSetupResponse;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setSetupPersonality(inferPersonality(data.personality));
+        setSetupGreeting(existingGreeting(data.directives) || defaultGreeting);
+      })
+      .catch((reason) => {
+        if (!cancelled) {
+          setSetupGreeting(defaultGreeting);
+          setSetupError(reason instanceof Error ? reason.message : "Current setup could not be loaded.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSetup(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [agentId, defaultGreeting]);
 
-  async function quickStartVoice() {
-    const voice = WIRELINE_LIVE_VOICES[0];
-    if (!agentId || !voice) return;
-    await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/voice`, {
-      method: "PATCH",
+  async function saveManual(type: "personality" | "directive", content: string) {
+    const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ voiceId: voice.id, provider: voice.provider }),
+      body: JSON.stringify({ type, content }),
     });
+    if (!response.ok) {
+      throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
+    }
   }
 
   async function applySetup() {
@@ -63,290 +107,268 @@ export default function StudioAgentWorkspacePanel({
     setSetupError(null);
     setSetupNotice(null);
     try {
-      const personalityText = `${setupPersonality}. Concise. Useful. Business-ready.`;
-      if (personalityText) {
-        const personalityResponse = await authFetch(
-          `/api/agent-config/${encodeURIComponent(agentId)}/manual`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "personality", content: personalityText }),
-          },
-        );
-        if (!personalityResponse.ok) throw new Error("Personality could not be saved.");
-      }
-
+      const personalityText = `${setupPersonality}. Concise, useful, and business-ready.`;
       const greetingTrimmed = setupGreeting.trim();
-      if (greetingTrimmed) {
-        const greetingResponse = await authFetch(
-          `/api/agent-config/${encodeURIComponent(agentId)}/manual`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "directive",
-              content: `Opening greeting: ${greetingTrimmed}`,
-            }),
-          },
-        );
-        if (!greetingResponse.ok) throw new Error("Greeting could not be saved.");
-      }
-
       const knowledgeTrimmed = setupKnowledge.trim();
+
+      await saveManual("personality", personalityText);
+      if (greetingTrimmed) {
+        await saveManual("directive", `Opening greeting: ${greetingTrimmed}`);
+      }
       if (knowledgeTrimmed) {
         const knowledgeResponse = await authFetch("/api/train/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
         });
-        if (!knowledgeResponse.ok) throw new Error("Knowledge could not be saved.");
+        if (!knowledgeResponse.ok) throw new Error("Business information could not be saved.");
+        setSetupKnowledge("");
       }
 
-      setSetupNotice("Setup saved.");
+      setSetupNotice("Basics saved. Next, choose a voice and run a test call.");
     } catch (reason) {
-      setSetupError(reason instanceof Error ? reason.message : "Setup could not be applied.");
+      setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
     } finally {
       setApplyingSetup(false);
     }
   }
 
-  useEffect(() => {
-    if (window.location.hash !== "#agent-presence") return;
-    const timer = window.setTimeout(() => {
-      document
-        .getElementById("agent-presence")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 120);
-    return () => window.clearTimeout(timer);
-  }, [agentId]);
-
   return (
-    <div className={`min-h-0 flex-1 overflow-y-auto border-t border-border/60 ${className}`}>
-      <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-8 sm:py-8">
-        <h2 className="font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-0.022em] text-foreground">
-          {agentName}
-        </h2>
+    <div className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}>
+      <div className="mx-auto w-full max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
+        <header className="flex flex-col gap-2">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+            Employee setup
+          </p>
+          <h2 className="font-[var(--wireline-font-family-display)] text-3xl font-normal tracking-[-0.03em] text-foreground">
+            Get {agentName} ready to work
+          </h2>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+            Set the basics, choose a dependable phone voice, test the experience, then connect the
+            channels this employee should handle.
+          </p>
+        </header>
 
         <section
-          id="agent-presence"
-          className="wl-paper wl-paper-elevated scroll-mt-6 p-6"
-          aria-labelledby="agent-presence-heading"
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="basics-heading"
         >
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div className="mb-5 flex items-start gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              1
+            </span>
             <div>
-              <h3 id="agent-presence-heading" className="text-lg font-semibold tracking-tight">
-                Agent presence
+              <h3 id="basics-heading" className="text-lg font-semibold tracking-tight">
+                Define the basics
               </h3>
-              <p className="mt-1 max-w-[52ch] text-sm text-muted-foreground">
-                Wireline face is included on every agent. Live video is an optional add-on — enable
-                it here when you want a photoreal on-screen presenter.
+              <p className="mt-1 text-sm text-muted-foreground">
+                Keep this simple. You can refine behavior through normal conversation later.
               </p>
             </div>
           </div>
-          <AgentPresenceLivePreview
-            agentId={agentId}
-            name={agentName}
-            role={agentRole}
-            isBusinessAgent={isBusinessAgent}
-          />
-        </section>
 
-        <div className="wl-paper wl-paper-elevated p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold tracking-tight">Setup</h3>
-            <button
-              type="button"
-              onClick={() => void quickStartVoice()}
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition active:scale-[0.985]"
-            >
-              Quick start
-            </button>
-          </div>
-          <p className="sr-only">Everything stays in this workspace.</p>
-
-          <VoiceGallery
-            agentId={agentId}
-            agentName={agentName}
-            embedded
-            searchInputId="voice-search"
-          />
-          <button
-            type="button"
-            onClick={onTestVoiceInChat}
-            className="mt-3 text-xs font-semibold text-primary hover:underline"
-          >
-            Test in chat
-          </button>
-
-          <div className="mb-4 mt-6">
-            <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-primary">
-              Personality
+          {loadingSetup ? (
+            <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              Loading setup…
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor="setup-personality" className="text-xs">
-                  Personality
-                </label>
-                <select
-                  id="setup-personality"
-                  value={setupPersonality}
-                  onChange={(e) => setSetupPersonality(e.target.value)}
-                  className="w-full mt-1 text-sm border border-border rounded-lg px-3 py-1.5 bg-background"
-                >
-                  {PERSONALITIES.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="setup-greeting" className="text-xs">
-                  Greeting
-                </label>
+          ) : (
+            <div className="space-y-5">
+              <fieldset>
+                <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {PERSONALITIES.map((option) => {
+                    const selected = setupPersonality === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => setSetupPersonality(option.id)}
+                        className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                          selected
+                            ? "border-primary/40 bg-primary/5"
+                            : "border-border bg-background hover:bg-muted/60"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                          {selected ? (
+                            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
+                          ) : null}
+                          {option.id}
+                        </span>
+                        <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                          {option.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <label className="grid gap-2" htmlFor="setup-greeting">
+                <span className="text-sm font-semibold text-foreground">Opening greeting</span>
                 <input
                   id="setup-greeting"
                   value={setupGreeting}
-                  onChange={(e) => setSetupGreeting(e.target.value)}
-                  className="w-full mt-1 text-sm border border-border rounded-lg px-3 py-1.5 bg-background"
+                  onChange={(event) => setSetupGreeting(event.target.value)}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
+                />
+              </label>
+
+              <label className="grid gap-2" htmlFor="setup-knowledge">
+                <span className="text-sm font-semibold text-foreground">
+                  Add essential business information
+                  <span className="ml-2 font-normal text-muted-foreground">Optional</span>
+                </span>
+                <textarea
+                  id="setup-knowledge"
+                  value={setupKnowledge}
+                  onChange={(event) => setSetupKnowledge(event.target.value)}
+                  className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
+                  placeholder="Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Paste plain language. Wireline extracts the useful facts and operating rules.
+                </span>
+              </label>
+
+              {setupNotice ? (
+                <StatusNotice tone="success" title="Setup saved">
+                  {setupNotice}
+                </StatusNotice>
+              ) : null}
+              {setupError ? (
+                <StatusNotice tone="destructive" title="Setup not saved">
+                  {setupError}
+                </StatusNotice>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => void applySetup()}
+                disabled={applyingSetup}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.985] disabled:cursor-wait disabled:opacity-60"
+              >
+                {applyingSetup ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Save className="size-4" aria-hidden="true" />
+                )}
+                {applyingSetup ? "Saving…" : "Save basics"}
+              </button>
+            </div>
+          )}
+        </section>
+
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="voice-heading"
+        >
+          <div className="mb-5 flex items-start gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              2
+            </span>
+            <div>
+              <h3 id="voice-heading" className="text-lg font-semibold tracking-tight">
+                Choose a voice and test it
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Use the built-in phone voices first. External voice providers remain optional.
+              </p>
+            </div>
+          </div>
+          <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
+        </section>
+
+        <section
+          className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+          aria-labelledby="connect-heading"
+        >
+          <div className="mb-5 flex items-start gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              3
+            </span>
+            <div>
+              <h3 id="connect-heading" className="text-lg font-semibold tracking-tight">
+                Connect work channels
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Start with one channel. Add calls, text, email, calendars, and CRM access as needed.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { to: "/settings/phone", title: "Calls & text", detail: "Assign a number and routing" },
+              { to: "/connections", title: "Email & calendar", detail: "Connect the tools you use" },
+              { to: "/inbox", title: "Inbox", detail: "Review conversations and outcomes" },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="group flex min-h-28 flex-col justify-between rounded-xl border border-border bg-background p-4 transition-colors hover:border-primary/35 hover:bg-primary/5"
+              >
+                <PlugZap className="size-5 text-primary" aria-hidden="true" />
+                <span>
+                  <span className="flex items-center justify-between gap-2 text-sm font-semibold text-foreground">
+                    {item.title}
+                    <ArrowRight
+                      className="size-4 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {item.detail}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <details
+          id="advanced-employee-options"
+          className="group rounded-2xl border border-border bg-card"
+        >
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-foreground sm:px-6">
+            Advanced appearance and voice options
+            <ChevronDown
+              className="size-4 transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </summary>
+          <div className="space-y-6 border-t border-border px-5 py-5 sm:px-6">
+            <div>
+              <h3 className="text-base font-semibold">On-screen presence</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Optional. Phone, text, and email work without a video presenter.
+              </p>
+              <div className="mt-4">
+                <AgentPresenceLivePreview
+                  agentId={agentId}
+                  name={agentName}
+                  role={agentRole}
+                  isBusinessAgent={isBusinessAgent}
+                />
+              </div>
+            </div>
+            <div className="border-t border-border pt-6">
+              <h3 className="text-base font-semibold">External voice library</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Use this only after configuring an external provider and verifying its runtime key.
+              </p>
+              <div className="mt-4">
+                <VoiceGallery
+                  agentId={agentId}
+                  agentName={agentName}
+                  embedded
+                  searchInputId="advanced-voice-search"
                 />
               </div>
             </div>
           </div>
-
-          <div className="mb-4">
-            <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-primary">
-              Knowledge
-            </div>
-            <label htmlFor="setup-knowledge" className="sr-only">
-              Seed knowledge
-            </label>
-            <textarea
-              id="setup-knowledge"
-              value={setupKnowledge}
-              onChange={(e) => setSetupKnowledge(e.target.value)}
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background min-h-[50px]"
-              placeholder="Business hours, policies, FAQs…"
-              aria-describedby="knowledge-help"
-            />
-            <div id="knowledge-help" className="sr-only">
-              Provide facts, policies, or context this agent should know.
-            </div>
-          </div>
-
-          {setupError ? (
-            <p className="mb-3 text-sm text-destructive" role="alert">
-              {setupError}
-            </p>
-          ) : null}
-          {setupNotice ? (
-            <p className="mb-3 text-sm text-[var(--wireline-color-status-success)]" role="status">
-              {setupNotice}
-            </p>
-          ) : null}
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => void applySetup()}
-              disabled={applyingSetup}
-              className="px-4 py-2 rounded-xl border border-primary text-primary text-sm font-medium active:scale-[0.985] disabled:opacity-60"
-            >
-              {applyingSetup ? "Saving…" : "Save setup"}
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div>
-            <div className="flex items-baseline justify-between mb-4">
-              <h3 className="text-xl font-semibold tracking-[-0.02em]">World Connections</h3>
-              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                Scoped to agent
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Context providers
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(WORKSPACE_INTEGRATION_CATALOG || []).map((integ: WorkspaceIntegration) => (
-                  <div
-                    key={integ.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm"
-                  >
-                    <span className="font-medium">{integ.label}</span>
-                    <span className="text-[10px] capitalize text-muted-foreground">
-                      {integ.connection}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Tools
-              </p>
-              <div className="wl-paper wl-paper-elevated p-4">
-                <div className="flex flex-wrap gap-2">
-                  {(AGENT_TOOL_CATALOG || [])
-                    .filter(
-                      (t: AgentToolCatalogEntry) =>
-                        !BUSINESS_TOOL_NAMES.has(t.name) || t.group === "crm",
-                    )
-                    .slice(0, 18)
-                    .map((tool: AgentToolCatalogEntry) => (
-                      <span
-                        key={tool.name}
-                        className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
-                      >
-                        {tool.label}
-                      </span>
-                    ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-2 text-[10px] text-muted-foreground">
-              Changes here affect only {agentName}.
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="wl-paper wl-paper-elevated p-5 lg:col-span-1">
-              <div className="mb-3 font-semibold">Brain</div>
-              <div className="space-y-2 text-sm">
-                <div>Memory</div>
-                <div>Knowledge</div>
-                <div>Training</div>
-              </div>
-              <Link
-                to={`/studio?agent=${agentId}`}
-                className="mt-4 inline-block text-xs font-semibold text-primary hover:underline"
-              >
-                Open Studio →
-              </Link>
-            </div>
-
-            <div className="wl-paper wl-paper-elevated p-5">
-              <div className="mb-3 font-semibold">Record</div>
-              <p className="text-sm text-muted-foreground">Call history lives in the chat above.</p>
-            </div>
-
-            <div className="wl-paper wl-paper-elevated p-5">
-              <div className="mb-3 font-semibold">Controls</div>
-              <div className="flex flex-col gap-2 text-sm">
-                <Link to={`/studio?agent=${agentId}`} className="hover:text-primary">
-                  Studio
-                </Link>
-                <Link to="/settings" className="hover:text-primary">
-                  Settings
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        </details>
       </div>
     </div>
   );
