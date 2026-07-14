@@ -12,8 +12,10 @@ describe("demand-driven authenticated experience", () => {
   const overview = read("src/pages/OverviewPage.tsx");
   const activation = read("src/components/ActivationChecklist.tsx");
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
+  const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
   const studioTest = read("src/components/StudioWorkroom.tsx");
   const studioReview = read("src/components/StudioAgentReviewPanel.tsx");
+  const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
 
   it("prioritizes customer demand and outcomes over internal inventory", () => {
     expect(overview).toMatch(/Customer conversations today/);
@@ -66,5 +68,14 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTest).toMatch(/Browser roleplay only/);
     expect(studioReview).toMatch(/Confirm the essentials, run one realistic conversation/);
     expect(studioReview).toMatch(/Connect phone/);
+  });
+
+  it("distinguishes browser response testing from real phone voice testing", () => {
+    expect(voicePicker).toMatch(/Browser testing checks what the employee says/);
+    expect(voicePicker).toMatch(/place a real call to hear the selected voice/);
+    expect(voicePicker).toMatch(/Test response/);
+    expect(studioSetup).toMatch(/a real call is required to hear the phone voice/);
+    expect(voicePicker).not.toMatch(/Test call|hear it during a test call/);
+    expect(studioSetup).not.toMatch(/Hear the selected voice during testing/);
   });
 });
