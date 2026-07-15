@@ -51,25 +51,51 @@ if (isProduction) {
   }
 }
 
-if (isPreview && value("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW") !== "true") {
-  if (value("STRIPE_SECRET_KEY").startsWith("sk_live_")) {
-    failures.push(
-      "STRIPE_SECRET_KEY: live Stripe credentials are blocked in preview; use test mode or set the explicit emergency override",
+if (isPreview) {
+  const allowLiveProviders = value("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW") === "true";
+
+  if (allowLiveProviders) {
+    warnings.push(
+      "Live provider credentials were explicitly enabled in preview. Treat this deployment as production-adjacent and audit every side effect.",
     );
-  }
-  if (value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")) {
-    failures.push(
-      "VITE_STRIPE_PUBLIC_KEY: live Stripe credentials are blocked in preview; use test mode or set the explicit emergency override",
-    );
+  } else {
+    if (value("STRIPE_SECRET_KEY").startsWith("sk_live_")) {
+      warnings.push(
+        "STRIPE_SECRET_KEY: inherited live Stripe credential detected; the preview build and runtime will disable Stripe.",
+      );
+    }
+    if (value("VITE_STRIPE_PUBLIC_KEY").startsWith("pk_live_")) {
+      warnings.push(
+        "VITE_STRIPE_PUBLIC_KEY: inherited live Stripe credential detected; the preview client build will remove it.",
+      );
+    }
+    if (value("STRIPE_WEBHOOK_SECRET")) {
+      warnings.push(
+        "STRIPE_WEBHOOK_SECRET: preview webhook processing will be disabled unless live-provider access is explicitly enabled.",
+      );
+    }
+
+    const appUrl = value("APP_URL");
+    if (/^https:\/\/(www\.)?trywireline\.com\/?$/i.test(appUrl)) {
+      if (value("VERCEL_URL")) {
+        warnings.push(
+          "APP_URL: production origin inherited by preview; the build and runtime will resolve to the Vercel preview origin.",
+        );
+      } else {
+        failures.push(
+          "APP_URL: preview inherited the production origin and VERCEL_URL is unavailable for safe replacement.",
+        );
+      }
+    }
   }
 
-  const appUrl = value("APP_URL");
-  if (/^https:\/\/(www\.)?trywireline\.com\/?$/i.test(appUrl)) {
-    failures.push("APP_URL: preview deployments must not identify themselves as the production origin");
-  }
-
-  if (value("WIRELINE_RUN_MIGRATIONS") === "true") {
-    warnings.push("Preview migrations were explicitly forced; confirm the database is isolated before deploy.");
+  if (
+    value("WIRELINE_RUN_MIGRATIONS") === "true" &&
+    value("WIRELINE_PREVIEW_DATABASE_ISOLATED") !== "true"
+  ) {
+    failures.push(
+      "WIRELINE_RUN_MIGRATIONS: preview migrations require WIRELINE_PREVIEW_DATABASE_ISOLATED=true and a non-production database.",
+    );
   }
 }
 
