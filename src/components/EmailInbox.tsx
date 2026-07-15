@@ -288,16 +288,16 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   if (threads.length === 0) {
     return (
-      <section className={`${frameClass} flex flex-1 flex-col px-5 text-center`}>
+      <section className={`${frameClass} flex flex-1 flex-col items-center justify-center px-5 py-8 text-center`}>
         <EmptyState
-          fill
           framed
           density="compact"
           titleTone="ui"
           withHalo={false}
+          className="w-full max-w-md"
           icon={<Mail className="size-5" />}
           title="Connect your inbox"
-          description="Link Gmail, Outlook, or another inbox from Connections — threads land here after the first sync."
+          description="Connect Gmail or Outlook to see synced threads here."
           action={
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild>
@@ -305,7 +305,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               </Button>
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
+                size="sm"
                 disabled={syncing}
                 onClick={() => void syncInbox()}
               >
