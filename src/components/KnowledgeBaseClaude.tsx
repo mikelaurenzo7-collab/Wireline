@@ -233,7 +233,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             return (
               <div
                 key={directive.id ?? `d-${index}`}
-                className="rounded-[10px] border border-[var(--wireline-color-border-subtle)] px-3.5 py-2.5"
+                className="rounded-[10px] border border-border/70 bg-background/35 px-3.5 py-2.5"
               >
                 <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText
@@ -243,7 +243,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                   {headline}
                 </p>
                 {body ? (
-                  <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
+                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
                     {body}
                   </p>
                 ) : null}
@@ -262,7 +262,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         fileInputRef.current?.click();
       }}
       disabled={uploading || !agentId}
-      className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[8px] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-[36px] w-full shrink-0 items-center justify-center gap-2 rounded-[8px] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       style={{
         background: "var(--wireline-color-action-primary-default)",
         color: "var(--wireline-color-text-onAction)",
@@ -283,14 +283,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         accept=".pdf,.doc,.docx,.txt,.csv,.md,image/*"
       />
 
-      <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-3" aria-label="Knowledge stats">
+      <section className="grid grid-cols-3 gap-2 sm:gap-3.5" aria-label="Knowledge stats">
         {stats.map((stat, index) => (
           <MetricTile
             key={stat.label}
             label={stat.label}
             value={loading ? "—" : stat.value}
             reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
-            className="items-center text-center [&_.wl-metric-tile__value]:text-[2.25rem]"
+            className="wl-metric-tile--compact !min-h-[6.75rem] items-center justify-center text-center [&_.wl-metric-tile__label]:tracking-[0.08em] [&_.wl-metric-tile__value]:text-[1.75rem] sm:[&_.wl-metric-tile__value]:text-[2.25rem]"
           />
         ))}
       </section>
@@ -381,7 +381,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         }}
         className={`relative flex cursor-pointer rounded-[12px] border-2 border-dashed text-center transition-colors ${
           compactUpload
-            ? "min-h-[72px] flex-row items-center justify-start gap-4 px-5 py-4 pr-[9.5rem] text-left"
+            ? "min-h-[72px] flex-col items-stretch justify-start gap-3 px-4 py-4 text-left sm:flex-row sm:items-center sm:gap-4 sm:px-5 sm:pr-[9.5rem]"
             : knowledge.length === 0
               ? "min-h-[96px] flex-col items-center justify-center px-6 py-5"
               : "min-h-[120px] flex-col items-center justify-center px-6 py-8"
@@ -395,7 +395,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           className={`shrink-0 text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "size-4" : "mb-2 size-5"}`}
           aria-hidden="true"
         />
-        <div className={compactUpload ? "min-w-0" : undefined}>
+        <div className={compactUpload ? "min-w-0 flex-1" : undefined}>
           <div className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
             {compactUpload
               ? "Add documents to complement your rules"
@@ -409,7 +409,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         </div>
         <div
           className={
-            compactUpload ? "absolute right-4 top-1/2 -translate-y-1/2" : "absolute right-4 top-4"
+            compactUpload ? "sm:absolute sm:right-4 sm:top-1/2 sm:-translate-y-1/2" : "absolute right-4 top-4"
           }
         >
           {uploadTrigger}
