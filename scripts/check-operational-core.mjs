@@ -78,6 +78,16 @@ requirePattern(
   /delete\(schema\.stripeEvents\)/,
   "Failed Stripe processing must release the claim so Stripe can retry.",
 );
+requirePattern(
+  "src/lib/stripe-helpers.ts",
+  /stripeBlockedInPreview/,
+  "Preview runtimes must refuse inherited live Stripe credentials.",
+);
+requirePattern(
+  "src/lib/stripe-helpers.ts",
+  /delete process\.env\.STRIPE_WEBHOOK_SECRET/,
+  "Preview runtimes must disable live Stripe webhook processing.",
+);
 
 requirePattern(
   "scripts/vercel-build.mjs",
@@ -98,6 +108,26 @@ requirePattern(
   "scripts/vercel-build.mjs",
   /check-deployment-boundaries\.mjs/,
   "Vercel builds must enforce preview and production credential isolation before migrations.",
+);
+requirePattern(
+  "scripts/vercel-build.mjs",
+  /sanitizePreviewEnvironment/,
+  "Vercel preview builds must neutralize inherited production credentials before compilation.",
+);
+requirePattern(
+  "scripts/check-deployment-boundaries.mjs",
+  /WIRELINE_PREVIEW_DATABASE_ISOLATED/,
+  "Forced preview migrations must require an explicitly isolated database.",
+);
+requirePattern(
+  "src/lib/app-url.ts",
+  /VERCEL_ENV !== "preview"/,
+  "Preview links and redirects must resolve against the preview deployment.",
+);
+requirePattern(
+  "src/lib/app-url.ts",
+  /VERCEL_URL/,
+  "Preview origin resolution must use Vercel's deployment hostname.",
 );
 
 requirePattern(
