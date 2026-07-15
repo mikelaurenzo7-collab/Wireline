@@ -94,11 +94,26 @@ requirePattern(
   /isDuplicateV0Project/,
   "Duplicate Vercel projects must never migrate the production database by default.",
 );
+requirePattern(
+  "scripts/vercel-build.mjs",
+  /check-deployment-boundaries\.mjs/,
+  "Vercel builds must enforce preview and production credential isolation before migrations.",
+);
 
 requirePattern(
   "drizzle/migrations/0100_managed_vapi_runtime.sql",
   /CREATE TRIGGER wireline_agents_managed_voice/,
   "Managed voice invariants must be enforced in the database.",
+);
+requirePattern(
+  "drizzle/migrations/0101_operational_core_function_privileges.sql",
+  /REVOKE ALL ON FUNCTION public\.wireline_normalize_managed_voice\(\) FROM PUBLIC/,
+  "Internal trigger functions must not inherit PUBLIC execution privileges.",
+);
+requirePattern(
+  "drizzle/migrations/0101_operational_core_function_privileges.sql",
+  /REVOKE EXECUTE ON FUNCTION public\.wireline_normalize_managed_voice\(\) FROM anon, authenticated/,
+  "Client roles must not directly execute the managed-runtime trigger function.",
 );
 requirePattern(
   "src/lib/vapi-assistant-factory-v2.ts",
