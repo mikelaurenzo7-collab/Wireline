@@ -84,10 +84,12 @@ function ProfileRow({
   icon: Icon,
   label,
   value,
+  wrapValue = false,
 }: {
   icon: typeof UserRound;
   label: string;
   value: string;
+  wrapValue?: boolean;
 }) {
   return (
     <div className="wl-data-row wl-data-row--framed">
@@ -96,7 +98,16 @@ function ProfileRow({
       </span>
       <span className="wl-data-row__main">
         <span className="wl-data-row__detail">{label}</span>
-        <span className="wl-data-row__title" data-wireline-preserve-case>
+        <span
+          className="wl-data-row__title"
+          data-wireline-preserve-case
+          title={value}
+          style={
+            wrapValue
+              ? { whiteSpace: "normal", overflowWrap: "anywhere", textOverflow: "clip" }
+              : undefined
+          }
+        >
           {value}
         </span>
       </span>
@@ -164,7 +175,7 @@ export default function SettingsPage() {
           </div>
           <div className="grid gap-3">
             <ProfileRow icon={UserRound} label="Name" value={displayName} />
-            <ProfileRow icon={Mail} label="Email" value={email || "—"} />
+            <ProfileRow icon={Mail} label="Email" value={email || "—"} wrapValue />
           </div>
         </section>
 
