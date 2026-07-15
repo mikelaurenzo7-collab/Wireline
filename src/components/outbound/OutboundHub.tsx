@@ -49,15 +49,14 @@ export default function OutboundHub({
       <div className="min-h-0 flex-1 overflow-visible">
         {activeView === "dispatch" && (
           <div className="flex min-h-0 flex-col">
-            <div className="border-b border-border px-6 py-5">
+            <div className="border-b border-border px-4 py-4 sm:px-6 sm:py-5">
               <div className="max-w-2xl">
                 <p className="wl-label mb-2 text-brand">Outbound dispatch</p>
-                <h2 className="font-display text-2xl italic leading-tight text-foreground">
-                  Start compliant outbound without leaving Phone.
+                <h2 className="text-xl font-semibold leading-tight text-foreground sm:text-2xl">
+                  Start compliant outbound.
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Place a one-off call, accept leads from forms, or move into campaigns when the
-                  list is ready. Consent checks stay in the path.
+                  Call requested leads, receive form leads, or launch a consent-checked campaign.
                 </p>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -65,17 +64,17 @@ export default function OutboundHub({
                   {
                     icon: Phone,
                     title: "One-off calls",
-                    body: "Dial a requested callback or service follow-up with purpose logged.",
+                    body: "Requested callbacks with purpose logged.",
                   },
                   {
                     icon: KeyRound,
                     title: "Lead intake",
-                    body: "Issue scoped API keys for forms and partner lead sources.",
+                    body: "Scoped keys for forms and partners.",
                   },
                   {
                     icon: ShieldCheck,
                     title: "Consent guardrails",
-                    body: "Marketing calls require express consent; service calls stay separate.",
+                    body: "DNC, consent, and call windows enforced.",
                   },
                 ].map((item) => {
                   const Icon = item.icon;
