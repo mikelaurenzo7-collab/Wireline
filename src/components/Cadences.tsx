@@ -263,16 +263,15 @@ export default function Cadences() {
   }
 
   return (
-    <div className="h-full overflow-y-auto pr-1 space-y-4 pb-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="h-full space-y-4 overflow-y-auto px-4 pb-4 pt-4 sm:px-6">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="wl-label text-brand mb-1">Outbound · Sequences</p>
-          <h3 className="font-display italic text-xl text-foreground leading-none">
+          <h3 className="text-xl font-semibold leading-tight tracking-tight text-foreground">
             Multi-touch cadences
           </h3>
-          <p className="text-[var(--wireline-typography-overline-size)] text-foreground/55 mt-1.5 max-w-xl leading-relaxed">
-            Define a sequence of call → SMS → email steps with delays. Enroll any lead from
-            /pipeline or the API. The job-worker ticks each step automatically.
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Build timed call, SMS, and email follow-up sequences.
           </p>
         </div>
         <ShadButton
@@ -280,7 +279,7 @@ export default function Cadences() {
           variant="editorial"
           disableAnimations
           onClick={() => setShowBuilder(true)}
-          className="touch-press hover:scale-[1.05] rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
+          className="touch-press w-full justify-center rounded-md sm:w-auto"
         >
           <Plus className="w-3.5 h-3.5" />
           Create sequence
@@ -304,7 +303,7 @@ export default function Cadences() {
           className="py-6"
         >
           <div className="w-full max-w-3xl mt-2 text-left">
-            <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-brand mb-3 text-center">
+            <p className="mb-3 text-center text-xs font-semibold text-muted-foreground">
               Start from a template
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

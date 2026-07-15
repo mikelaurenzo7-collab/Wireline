@@ -104,8 +104,7 @@ export default function SimpleVoicePicker({
         <div>
           <h3 className="text-base font-semibold tracking-tight">Choose how live calls sound</h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            These managed voices are included in the Wireline phone runtime. Browser testing checks
-            what the employee says; place a real call to confirm the selected audio.
+            Browser tests the words. Place a real call to verify the selected audio.
           </p>
         </div>
         <button

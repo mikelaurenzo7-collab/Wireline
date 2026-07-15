@@ -86,7 +86,7 @@ describe("agent navigation contract", () => {
     expect(studioWorkroom).toMatch(/type WorkroomMode = "configure" \| "test"/);
     expect(studioWorkroom).toMatch(/\/test\/stream/);
     expect(studioWorkroom).toMatch(/Talk to \$\{agentName\} like a customer/);
-    expect(studioWorkroom).toMatch(/Browser roleplay only/);
+    expect(studioWorkroom).toMatch(/Browser only—no phone call/);
     expect(studioWorkroom).toMatch(/What services do you offer/);
     expect(studioWorkroom).toMatch(/I want to book an appointment/);
     expect(studioWorkroom).toMatch(/allowOutbound/);
@@ -101,10 +101,10 @@ describe("agent navigation contract", () => {
     expect(simpleVoicePicker).toMatch(/Savannah/);
     expect(simpleVoicePicker).toMatch(/Elliot/);
     expect(simpleVoicePicker).toMatch(/provider: "vapi"/);
-    expect(simpleVoicePicker).toMatch(/managed voices are included/);
+    expect(simpleVoicePicker).toMatch(/Browser tests the words/);
     expect(simpleVoicePicker).toMatch(/Test response/);
     expect(simpleVoicePicker).not.toMatch(/ElevenLabs|xAI|VoiceGallery|playVoicePreview|new Audio|Test call/);
-    expect(studioPanel).toMatch(/Wireline manages the voice runtime/);
+    expect(studioPanel).not.toMatch(/Wireline manages the voice runtime/);
     expect(studioPanel).not.toMatch(/External voice library|On-screen appearance/);
     expect(studioReview).toMatch(/Managed phone voice/);
   });

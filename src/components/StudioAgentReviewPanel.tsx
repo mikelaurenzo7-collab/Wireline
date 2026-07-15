@@ -94,9 +94,6 @@ export default function StudioAgentReviewPanel({
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Is {agentName} ready for customers?
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Confirm the essentials, run one realistic conversation, then connect live channels.
-          </p>
         </header>
 
         {error ? (
@@ -137,16 +134,13 @@ export default function StudioAgentReviewPanel({
           title={hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"}
         >
           {hasPhone
-            ? `Customers can reach ${agentName} at ${phoneNumber}. Run a real inbound call before publishing the number broadly.`
-            : "Test the conversation in the browser first. Connect a phone number only when the greeting, answers, and handoff behavior feel right."}
+            ? `${agentName} is live at ${phoneNumber}. Place one inbound test before sharing the number.`
+            : "Test in the browser, then connect a phone line when the greeting and handoff are ready."}
         </StatusNotice>
 
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-label="Next actions">
           <h3 className="text-base font-semibold text-foreground">Next action</h3>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Keep the loop small: edit, test, then go live. Add integrations only when the customer workflow needs them.
-          </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
               <Settings2 className="size-4" aria-hidden="true" />
               Edit setup

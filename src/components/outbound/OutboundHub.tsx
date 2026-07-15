@@ -49,18 +49,17 @@ export default function OutboundHub({
       <div className="min-h-0 flex-1 overflow-visible">
         {activeView === "dispatch" && (
           <div className="flex min-h-0 flex-col">
-            <div className="border-b border-border px-6 py-5">
+            <div className="border-b border-border px-4 py-4 sm:px-6 sm:py-5">
               <div className="max-w-2xl">
                 <p className="wl-label mb-2 text-brand">Outbound dispatch</p>
-                <h2 className="font-display text-2xl italic leading-tight text-foreground">
+                <h2 className="text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
                   Start compliant outbound without leaving Phone.
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Place a one-off call, accept leads from forms, or move into campaigns when the
-                  list is ready. Consent checks stay in the path.
+                  Place one-off calls or route consented leads. Compliance checks stay enforced.
                 </p>
               </div>
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
                 {[
                   {
                     icon: Phone,
@@ -74,7 +73,7 @@ export default function OutboundHub({
                   },
                   {
                     icon: ShieldCheck,
-                    title: "Consent guardrails",
+                    title: "Consent checks",
                     body: "Marketing calls require express consent; service calls stay separate.",
                   },
                 ].map((item) => {
@@ -82,11 +81,13 @@ export default function OutboundHub({
                   return (
                     <div
                       key={item.title}
-                      className="rounded-md border border-border bg-card/60 p-4"
+                      className="min-w-0 rounded-md border border-border bg-card/60 p-3 sm:p-4"
                     >
-                      <Icon className="mb-3 h-4 w-4 text-brand" aria-hidden />
-                      <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
-                      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                      <Icon className="mb-2 h-4 w-4 text-brand sm:mb-3" aria-hidden />
+                      <h3 className="text-xs font-semibold leading-4 text-foreground sm:text-sm">
+                        {item.title}
+                      </h3>
+                      <p className="mt-1.5 hidden text-xs leading-relaxed text-muted-foreground sm:block">
                         {item.body}
                       </p>
                     </div>

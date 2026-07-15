@@ -323,8 +323,8 @@ const StudioWorkroom = forwardRef<
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
               {mode === "test"
-                ? "Type a realistic customer question. This tests the response in the browser and does not place a phone call."
-                : "Describe a change in plain language and review the proposed update."}
+                ? "Browser only—no phone call."
+                : "Describe the change, then review it before it goes live."}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -392,11 +392,11 @@ const StudioWorkroom = forwardRef<
               <h3 className="mt-4 text-lg font-semibold text-foreground">
                 {mode === "test" ? "Start with a real customer question" : "Describe what should change"}
               </h3>
-              <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                {mode === "test"
-                  ? "Try pricing, booking, support, objections, or a request to speak with a person."
-                  : "Use plain language. Wireline will propose the smallest useful update."}
-              </p>
+              {mode === "configure" ? (
+                <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                  Use plain language. Wireline will propose the smallest useful update.
+                </p>
+              ) : null}
             </div>
           )}
         </div>
@@ -457,11 +457,11 @@ const StudioWorkroom = forwardRef<
               </Button>
             </div>
           </div>
-          <p className="mt-2 text-center text-[10px] text-muted-foreground">
-            {mode === "test"
-              ? "Browser roleplay only. Use Real call after a phone line is connected."
-              : "Review proposed changes before using them with customers."}
-          </p>
+          {mode === "configure" ? (
+            <p className="mt-2 text-center text-[10px] text-muted-foreground">
+              Review proposed changes before using them with customers.
+            </p>
+          ) : null}
         </div>
       </div>
 

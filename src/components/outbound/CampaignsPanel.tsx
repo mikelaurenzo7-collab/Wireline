@@ -186,15 +186,32 @@ export default function CampaignsPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className={cn(OPS_CHANNEL_TOOLBAR, "flex items-center justify-between gap-3")}>
-        <p className="text-sm text-muted-foreground">
-          Batch outbound dialing with TCPA guards and call-window enforcement.
+      <div
+        className={cn(
+          OPS_CHANNEL_TOOLBAR,
+          "flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between",
+        )}
+      >
+        <p className="hidden text-sm text-muted-foreground sm:block">
+          TCPA-guarded batch dialing within call windows.
         </p>
-        <div className="flex items-center gap-2 shrink-0">
-          <ShadButton type="button" variant="outline" size="sm" onClick={() => void load()}>
+        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-2 sm:flex sm:shrink-0 sm:items-center">
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void load()}
+            aria-label="Refresh campaigns"
+            title="Refresh campaigns"
+          >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
           </ShadButton>
-          <ShadButton type="button" size="sm" onClick={() => setShowCreate(true)}>
+          <ShadButton
+            type="button"
+            size="sm"
+            className="justify-center"
+            onClick={() => setShowCreate(true)}
+          >
             <Plus className="h-3.5 w-3.5" aria-hidden />
             Create campaign
           </ShadButton>

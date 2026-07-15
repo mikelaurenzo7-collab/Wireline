@@ -137,19 +137,13 @@ export default function StudioAgentWorkspacePanel({
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Give {agentName} one clear job.
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Set the tone, greeting, essential facts, and managed phone voice. Test before adding more tools.
-          </p>
         </header>
 
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="essentials-heading">
-          <div className="mb-5">
+          <div className="mb-4">
             <h3 id="essentials-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Essentials
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Customers should understand who answered, what this employee can do, and when a person takes over.
-            </p>
           </div>
 
           {loadingSetup ? (
@@ -211,9 +205,6 @@ export default function StudioAgentWorkspacePanel({
                   className="min-h-28 w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50"
                   placeholder="Hours, services, pricing, policies, FAQs, and when to hand off to a person…"
                 />
-                <span className="text-xs text-muted-foreground">
-                  Add only what the first customer workflow needs. More knowledge can come later.
-                </span>
               </label>
 
               {setupNotice ? (
@@ -240,13 +231,10 @@ export default function StudioAgentWorkspacePanel({
         </section>
 
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-labelledby="voice-heading">
-          <div className="mb-5">
+          <div className="mb-3">
             <h3 id="voice-heading" className="text-lg font-semibold tracking-tight text-foreground">
               Phone voice
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Wireline manages the voice runtime. Browser testing checks the response; a real call confirms the phone audio.
-            </p>
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
         </section>
@@ -256,7 +244,7 @@ export default function StudioAgentWorkspacePanel({
             <div>
               <h3 className="text-base font-semibold text-foreground">Test before going live</h3>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                Try a realistic customer question. Connect phone, text, email, calendar, or CRM only after the response feels right.
+                Run one realistic customer test before connecting live channels.
               </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">

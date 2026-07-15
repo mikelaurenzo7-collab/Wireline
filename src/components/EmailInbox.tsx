@@ -297,9 +297,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           withHalo={false}
           icon={<Mail className="size-5" />}
           title="Connect your inbox"
-          description="Link Gmail, Outlook, or another inbox from Connections — threads land here after the first sync."
+          description="Connect Gmail or Outlook to sync customer threads."
           action={
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-2">
               <Button asChild>
                 <Link to="/connections">Open Connections</Link>
               </Button>
