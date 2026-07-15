@@ -23,7 +23,7 @@ function AccountCard({
     <button
       onClick={onSwitch}
       className={cn(
-        "relative flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-xl border p-4 text-left transition-all sm:gap-4 sm:p-5",
+        "relative flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-2xl border p-4 text-left transition-all sm:items-center sm:gap-4 sm:p-5",
         isActive
           ? "border-primary bg-primary/[0.03] shadow-sm"
           : "border-border bg-card hover:border-primary/30 hover:bg-primary/[0.01]",
@@ -31,32 +31,32 @@ function AccountCard({
     >
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
           isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
         )}
       >
         <Icon className="h-5 w-5" />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="min-w-0 break-words text-sm font-semibold text-foreground">
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="min-w-0 break-words text-sm font-semibold leading-5 text-foreground">
             {account.label ?? (account.type === "personal" ? "Personal" : "Business")}
           </span>
           {account.isPrimary && (
-            <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
+            <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-md border border-[var(--wireline-color-action-primary-default)]/20 bg-[var(--wireline-color-action-primary-container)] px-2 py-0.5 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-[var(--wireline-color-action-primary-default)]">
               Primary
             </span>
           )}
           {isActive && (
-            <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[var(--wireline-typography-overline-size)] uppercase tracking-wider font-medium text-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)] border border-[var(--wireline-color-action-primary-default)]/20">
-              <Check className="h-2.5 w-2.5" /> Active
+            <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-[var(--wireline-color-action-primary-default)]/20 bg-[var(--wireline-color-action-primary-container)] px-2 py-0.5 text-[var(--wireline-typography-overline-size)] font-medium uppercase tracking-wider text-[var(--wireline-color-action-primary-default)]">
+              <Check className="h-2.5 w-2.5 shrink-0" /> Active
             </span>
           )}
         </div>
-        <p className="mt-1 break-words text-xs text-muted-foreground">
+        <p className="mt-1 max-w-2xl break-words text-xs leading-5 text-muted-foreground">
           {account.type === "personal"
-            ? "A personal agent for everyday calls, scheduling, and follow-up."
-            : "Shared agents with recaps, analytics, and connected accounts."}
+            ? "Personal context for everyday calls, scheduling, and follow-up."
+            : "Shared agents, recaps, analytics, and connected accounts."}
         </p>
       </div>
     </button>
@@ -87,14 +87,26 @@ export function AccountsPanel() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 py-12 justify-center text-muted-foreground">
+      <div className="flex items-center justify-center gap-3 py-12 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" /> Loading accounts…
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-4xl space-y-5 sm:space-y-6">
+      <header className="max-w-2xl">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+          Account profile
+        </p>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+          Keep personal and business work separate.
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Switch the active workspace without mixing agents, recaps, or connected accounts.
+        </p>
+      </header>
+
       <div className="space-y-3">
         {accounts.map((account) => (
           <AccountCard
@@ -107,14 +119,15 @@ export function AccountsPanel() {
       </div>
 
       {(canAddPersonal || canAddBusiness) && (
-        <div>
-          <p className="text-xs text-muted-foreground mb-3">One personal, one business.</p>
-          <div className="flex flex-wrap gap-3">
+        <section className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5">
+          <p className="text-sm font-semibold text-foreground">Add another context</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">One personal, one business.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
             {canAddPersonal && (
               <button
                 onClick={() => handleAdd("personal")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-primary/[0.01] disabled:opacity-50"
               >
                 {creating === "personal" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -128,7 +141,7 @@ export function AccountsPanel() {
               <button
                 onClick={() => handleAdd("business")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-primary/30 hover:bg-primary/[0.01] transition-colors disabled:opacity-50"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-primary/[0.01] disabled:opacity-50"
               >
                 {creating === "business" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -139,7 +152,7 @@ export function AccountsPanel() {
               </button>
             )}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
