@@ -240,8 +240,6 @@ export default function StudioWorkspaceV2() {
             key={active.id}
             agentId={active.id}
             agentName={active.name}
-            agentRole={active.role}
-            isBusinessAgent={active.is_business_agent}
             onTestVoiceInChat={startCustomerTest}
             className="h-full border-t-0"
           />

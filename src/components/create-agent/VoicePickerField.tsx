@@ -17,7 +17,7 @@ export type VoicePickerValue =
 type VoicePickerFieldProps = {
   value: VoicePickerValue;
   onChange: (next: VoicePickerValue) => void;
-  /** Retained for caller compatibility; presenter voices are configured later in Studio. */
+  /** Retained for caller compatibility while presenter experiments remain dormant. */
   suggestedPresenterVoice?: { voiceId: string; name: string } | null;
   className?: string;
 };
@@ -66,7 +66,7 @@ export default function VoicePickerField({
     <div className={`grid gap-4 ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className={WL_APP_CLASSES.wiredEyebrow}>Phone voice</p>
-        <Badge variant="outline">Built in</Badge>
+        <Badge variant="outline">Managed by Wireline</Badge>
       </div>
 
       {recommended ? (
@@ -85,7 +85,7 @@ export default function VoicePickerField({
                 {recommended.name}
               </span>
               <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                Recommended default for dependable phone calls. No ElevenLabs or xAI account needed.
+                Recommended default for dependable phone calls. No separate voice-provider setup is required.
               </span>
             </span>
             <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
@@ -95,8 +95,7 @@ export default function VoicePickerField({
         </button>
       ) : (
         <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-          The built-in phone voice catalog is unavailable. You can choose a voice in Studio after
-          creation.
+          The managed phone voice catalog is temporarily unavailable. You can choose a voice in Studio after creation.
         </p>
       )}
 
@@ -105,7 +104,7 @@ export default function VoicePickerField({
           id="voice-picker-details-toggle"
           className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-semibold text-foreground"
         >
-          Choose another built-in voice
+          Choose another managed voice
           <ChevronDown
             className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
             aria-hidden="true"
@@ -129,8 +128,7 @@ export default function VoicePickerField({
       <div className="flex items-start gap-2 rounded-xl border border-border bg-muted/30 px-3 py-3 text-xs leading-5 text-muted-foreground">
         <PhoneCall className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
         <span>
-          You will hear the selected voice during a test call. External voice libraries and video
-          presenter voices remain optional advanced settings in Studio.
+          Browser testing validates the response. Place a real phone call after setup to confirm the selected voice and call quality.
         </span>
       </div>
     </div>
