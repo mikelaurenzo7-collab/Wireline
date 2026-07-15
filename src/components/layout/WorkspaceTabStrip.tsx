@@ -7,6 +7,8 @@ export type WorkspaceTabItem = {
   label: string;
   /** Accessible name when `label` is abbreviated for narrow viewports. */
   ariaLabel?: string;
+  /** Short visual label used below the small breakpoint. */
+  shortLabel?: string;
   href?: string;
 };
 
@@ -80,7 +82,14 @@ export function WorkspaceTabStrip({
                 aria-current={active ? "page" : undefined}
                 className={tabClassName(active, density)}
               >
-                {tab.label}
+                {tab.shortLabel ? (
+                  <>
+                    <span className="sm:hidden">{tab.shortLabel}</span>
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </>
+                ) : (
+                  tab.label
+                )}
               </Link>
             );
           }
@@ -94,7 +103,14 @@ export function WorkspaceTabStrip({
               onClick={() => onSelect?.(tab.id)}
               className={tabClassName(active, density)}
             >
-              {tab.label}
+              {tab.shortLabel ? (
+                <>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </>
+              ) : (
+                tab.label
+              )}
             </button>
           );
         })}
