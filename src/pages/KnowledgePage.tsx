@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, MessageCircle, WandSparkles } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
@@ -50,13 +51,23 @@ function EmptyKnowledge() {
 
 export default function KnowledgePage() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const { agents, loading } = useAgents();
   const agentId = params.get("agent") || agents[0]?.id || "";
-  const requestedTab = params.get("tab") as KnowledgeTabId | null;
+  const rawRequestedTab = params.get("tab");
+  const requestedTab = rawRequestedTab as KnowledgeTabId | null;
   const activeTab = knowledgeTabs.some((tab) => tab.id === requestedTab)
     ? requestedTab!
     : "knowledge";
   const populated = !loading && agents.length > 0;
+
+  useEffect(() => {
+    if (!rawRequestedTab || !["voice", "flows", "simulator"].includes(rawRequestedTab)) return;
+    const studioParams = new URLSearchParams();
+    if (agentId) studioParams.set("agent", agentId);
+    studioParams.set("section", rawRequestedTab === "simulator" ? "test" : "setup");
+    navigate(`/studio?${studioParams.toString()}`, { replace: true });
+  }, [agentId, navigate, rawRequestedTab]);
 
   function setActiveTab(tab: KnowledgeTabId) {
     setParams(
