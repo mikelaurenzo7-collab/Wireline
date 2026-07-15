@@ -167,7 +167,7 @@ export async function createAgentDraft(
       channel: "voice",
       archetype: ROLE_ARCHETYPES[profile.identity.role],
       voiceId: pickRotatedVoiceId(existingCount),
-      voiceProvider: "openai",
+      voiceProvider: "vapi",
       // A draft records intended actions in its customization profile, but it
       // never receives external tools until the user configures and enables
       // them explicitly in Wireline.
