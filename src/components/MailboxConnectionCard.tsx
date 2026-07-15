@@ -170,7 +170,7 @@ export default function MailboxConnectionCard() {
             Connect an inbox
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Let your agent read threads, follow up, and keep mail and calendar context together.
+            Sync customer email and calendar context.
           </p>
         </div>
         <Mail className="size-5 text-primary" aria-hidden="true" />
