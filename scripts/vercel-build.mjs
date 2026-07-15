@@ -1,7 +1,10 @@
 import { spawnSync } from "node:child_process";
 
 const run = (command, args) => {
-  const result = spawnSync(command, args, { stdio: "inherit", shell: process.platform === "win32" });
+  const result = spawnSync(command, args, {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
   if (result.status !== 0) process.exit(result.status ?? 1);
 };
 
@@ -17,8 +20,12 @@ const projectHint = [
 const isDuplicateV0Project = /(^|[\s.-])v0-project([\s.-]|$)/i.test(projectHint);
 const migrationsForced = process.env.WIRELINE_RUN_MIGRATIONS === "true";
 const migrationsDisabled = process.env.WIRELINE_RUN_MIGRATIONS === "false";
-const shouldMigrate = !migrationsDisabled && (migrationsForced || (environment === "production" && !isDuplicateV0Project));
+const shouldMigrate =
+  !migrationsDisabled &&
+  (migrationsForced || (environment === "production" && !isDuplicateV0Project));
 
+run("node", ["scripts/check-deployment-boundaries.mjs"]);
+run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
 
 if (shouldMigrate) {
