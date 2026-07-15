@@ -1,5 +1,6 @@
+import { PhoneCall } from "lucide-react";
+
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
-import AgentPresencePstnBridge from "./AgentPresencePstnBridge";
 
 export type LiveSignalPresence = {
   id: string;
@@ -24,29 +25,38 @@ export default function LiveFloorPresence({
   const active = signals.filter(isActiveSignal).filter((signal) => signal.agentId);
   if (!active.length) return null;
 
-  const primary = active[0];
-  const agentId = primary.agentId!;
-  const agentName = agentNameForId(agentId);
-
   return (
-    <section className="mb-5 rounded-[12px] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] p-4 sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section
+      className="mb-5 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] p-4 sm:p-5"
+      aria-label="Live customer calls"
+    >
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Live presenter</p>
+          <p className={WL_APP_CLASSES.wiredEyebrow}>Live now</p>
           <p className="mt-2 text-sm font-semibold text-foreground">
-            {primary.customerNumber || "Active caller"}
+            {active.length} customer call{active.length === 1 ? "" : "s"} in progress
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {primary.label || "In progress"} · {agentName}
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Open conversations remain visible here until the call ends and the outcome is recorded.
           </p>
         </div>
-        <AgentPresencePstnBridge
-          vapiCallId={primary.id}
-          agentId={agentId}
-          agentName={agentName}
-          compact
-        />
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-background text-[var(--wireline-color-status-success)]">
+          <PhoneCall className="size-5" aria-hidden="true" />
+        </span>
       </div>
+
+      <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+        {active.slice(0, 4).map((signal) => (
+          <li key={signal.id} className="rounded-lg border border-border/70 bg-background px-3 py-2.5">
+            <p className="truncate text-sm font-semibold text-foreground">
+              {signal.customerNumber || "Active caller"}
+            </p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {agentNameForId(signal.agentId!)} · {signal.label || signal.status || "In progress"}
+            </p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
