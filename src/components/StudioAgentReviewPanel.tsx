@@ -6,7 +6,7 @@ import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { authFetch } from "../lib/api";
 import { formatAgentRoleLabel } from "../lib/product-copy";
-import { providerLabel, resolveVoiceLabel } from "../lib/voice-catalog";
+import { resolveVoiceLabel } from "../lib/voice-catalog";
 
 const GREETING_PREFIX = "Opening greeting:";
 
@@ -81,7 +81,6 @@ export default function StudioAgentReviewPanel({
   }, [agentId]);
 
   const voiceName = resolveVoiceLabel(config?.voice?.voiceId);
-  const voiceProvider = providerLabel(config?.voice?.provider);
   const role = formatAgentRoleLabel(config?.role ?? agentRole ?? null);
   const hasPhone = Boolean(phoneNumber);
 
@@ -122,7 +121,7 @@ export default function StudioAgentReviewPanel({
                 { label: "Customer-facing job", value: role },
                 { label: "Tone", value: toneLabel(config?.personality) },
                 { label: "Opening greeting", value: openingGreeting(config?.directives) },
-                { label: "Phone voice", value: `${voiceName} · ${voiceProvider}` },
+                { label: "Managed phone voice", value: voiceName },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-border bg-background p-4">
                   <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
@@ -145,7 +144,7 @@ export default function StudioAgentReviewPanel({
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" aria-label="Next actions">
           <h3 className="text-base font-semibold text-foreground">Next action</h3>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Keep the loop small: edit, test, then go live. Add advanced providers only after customer use proves the need.
+            Keep the loop small: edit, test, then go live. Add integrations only when the customer workflow needs them.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Button type="button" variant="secondary" onClick={onEdit} className="justify-center">
