@@ -76,7 +76,7 @@ describe("agent navigation contract", () => {
     expect(studioPanel).toMatch(/Essentials/);
     expect(studioPanel).toMatch(/Phone voice/);
     expect(studioPanel).toMatch(/Test before going live/);
-    expect(studioPanel).toMatch(/Advanced options/);
+    expect(studioPanel).not.toMatch(/Advanced options|AgentPresenceLivePreview|VoiceGallery/);
     expect(studioReview).toMatch(/Is \{agentName\} ready for customers/);
     expect(studioReview).toMatch(/Customer-facing job/);
     expect(studioReview).toMatch(/Browser-ready; live line not connected/);
@@ -96,16 +96,17 @@ describe("agent navigation contract", () => {
     expect(studioWorkroom).not.toMatch(/Talk to build|Deploy now|Edit workflows/);
   });
 
-  it("uses dependable built-in phone voices before optional external providers", () => {
+  it("uses one managed phone voice family throughout setup", () => {
     expect(simpleVoicePicker).toMatch(/VAPI_CURATED_VOICES/);
     expect(simpleVoicePicker).toMatch(/Savannah/);
     expect(simpleVoicePicker).toMatch(/Elliot/);
-    expect(simpleVoicePicker).toMatch(/do not require an ElevenLabs or xAI account/);
     expect(simpleVoicePicker).toMatch(/provider: "vapi"/);
+    expect(simpleVoicePicker).toMatch(/managed voices are included/);
     expect(simpleVoicePicker).toMatch(/Test response/);
-    expect(simpleVoicePicker).not.toMatch(/playVoicePreview|new Audio|Test call/);
-    expect(studioPanel).toMatch(/External voice library/);
-    expect(studioPanel).toMatch(/Use this only after configuring an external provider/);
+    expect(simpleVoicePicker).not.toMatch(/ElevenLabs|xAI|VoiceGallery|playVoicePreview|new Audio|Test call/);
+    expect(studioPanel).toMatch(/Wireline manages the voice runtime/);
+    expect(studioPanel).not.toMatch(/External voice library|On-screen appearance/);
+    expect(studioReview).toMatch(/Managed phone voice/);
   });
 
   it("keeps the existing Fast Start creation flow while clarifying the active workspace", () => {
