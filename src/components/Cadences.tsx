@@ -274,16 +274,18 @@ export default function Cadences() {
             Build timed call, SMS, and email follow-up sequences.
           </p>
         </div>
-        <ShadButton
-          type="button"
-          variant="editorial"
-          disableAnimations
-          onClick={() => setShowBuilder(true)}
-          className="touch-press w-full justify-center rounded-md sm:w-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Create sequence
-        </ShadButton>
+        {cadences.length > 0 && !showBuilder ? (
+          <ShadButton
+            type="button"
+            variant="editorial"
+            disableAnimations
+            onClick={() => setShowBuilder(true)}
+            className="touch-press w-full justify-center rounded-md sm:w-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create sequence
+          </ShadButton>
+        ) : null}
       </div>
 
       {!showBuilder && cadences.length === 0 && (

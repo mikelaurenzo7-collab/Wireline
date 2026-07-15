@@ -243,7 +243,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                   {headline}
                 </p>
                 {body ? (
-                  <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
+                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
                     {body}
                   </p>
                 ) : null}
@@ -381,7 +381,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         }}
         className={`relative flex cursor-pointer rounded-[12px] border-2 border-dashed text-center transition-colors ${
           compactUpload
-            ? "min-h-[72px] flex-row items-center justify-start gap-4 px-5 py-4 pr-[9.5rem] text-left"
+            ? "min-h-[72px] flex-col items-stretch justify-center gap-3 px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:px-5"
             : knowledge.length === 0
               ? "min-h-[96px] flex-col items-center justify-center px-6 py-5"
               : "min-h-[120px] flex-col items-center justify-center px-6 py-8"
@@ -395,7 +395,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           className={`shrink-0 text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "size-4" : "mb-2 size-5"}`}
           aria-hidden="true"
         />
-        <div className={compactUpload ? "min-w-0" : undefined}>
+        <div className={compactUpload ? "min-w-0 flex-1" : undefined}>
           <div className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
             {compactUpload
               ? "Add documents to complement your rules"
@@ -409,7 +409,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         </div>
         <div
           className={
-            compactUpload ? "absolute right-4 top-1/2 -translate-y-1/2" : "absolute right-4 top-4"
+            compactUpload
+              ? "shrink-0 [&>button]:w-full sm:[&>button]:w-auto"
+              : "absolute right-4 top-4"
           }
         >
           {uploadTrigger}

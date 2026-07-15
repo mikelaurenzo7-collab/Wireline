@@ -34,8 +34,8 @@ describe("demand-driven authenticated experience", () => {
   it("shows how a real customer reaches Wireline", () => {
     expect(overview).toMatch(/Connect a phone line to start capturing real demand/);
     expect(overview).toMatch(/Put it where customers already call/);
-    expect(overview).toMatch(/Google Business Profile/);
-    expect(overview).toMatch(/missed-call forwarding/);
+    expect(overview).toMatch(/site and business listings/);
+    expect(overview).toMatch(/forward missed calls/);
     expect(overview).toMatch(/Review follow-ups/);
   });
 
@@ -90,7 +90,7 @@ describe("demand-driven authenticated experience", () => {
     expect(studioTest).toMatch(/history: mode === "test" \? history/);
     expect(studioTestRoute).toMatch(/history: z/);
     expect(studioTestRoute).toMatch(/Conversation so far/);
-    expect(studioTestRoute).toMatch(/history\.slice\(-12\)/);
+    expect(studioTestRoute).toMatch(/history\s*\.slice\(-12\)/);
   });
 
   it("distinguishes browser response testing from real phone voice testing", () => {

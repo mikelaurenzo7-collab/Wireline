@@ -195,7 +195,7 @@ export default function CampaignsPanel() {
         <p className="hidden text-sm text-muted-foreground sm:block">
           TCPA-guarded batch dialing within call windows.
         </p>
-        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-2 sm:flex sm:shrink-0 sm:items-center">
+        <div className="flex shrink-0 items-center justify-end gap-2">
           <ShadButton
             type="button"
             variant="outline"
@@ -206,15 +206,17 @@ export default function CampaignsPanel() {
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
           </ShadButton>
-          <ShadButton
-            type="button"
-            size="sm"
-            className="justify-center"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden />
-            Create campaign
-          </ShadButton>
+          {campaigns.length > 0 ? (
+            <ShadButton
+              type="button"
+              size="sm"
+              className="justify-center"
+              onClick={() => setShowCreate(true)}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden />
+              Create campaign
+            </ShadButton>
+          ) : null}
         </div>
       </div>
 

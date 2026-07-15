@@ -197,7 +197,7 @@ export default function StudioWorkspaceV2() {
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <nav className="shrink-0 border-b border-border bg-card/70 px-3 py-3 sm:px-5" aria-label="Studio steps">
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-2" role="tablist" aria-label="Employee setup steps">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-1.5 sm:gap-2" role="tablist" aria-label="Employee setup steps">
           {SECTIONS.map((item, index) => {
             const selected = section === item.id;
             const Icon = item.icon;
@@ -208,7 +208,7 @@ export default function StudioWorkspaceV2() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setSection(item.id)}
-                className={`min-w-0 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                className={`min-w-0 rounded-xl border px-2 py-2.5 text-left transition-colors sm:px-3 ${
                   selected
                     ? "border-primary/35 bg-primary/5 text-foreground"
                     : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -222,7 +222,7 @@ export default function StudioWorkspaceV2() {
                   >
                     {index + 1}
                   </span>
-                  <Icon className={`size-4 shrink-0 ${selected ? "text-primary" : ""}`} aria-hidden="true" />
+                  <Icon className={`hidden size-4 shrink-0 sm:block ${selected ? "text-primary" : ""}`} aria-hidden="true" />
                   <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
                 </span>
                 <span className="mt-1 hidden truncate pl-8 text-[11px] text-muted-foreground md:block">

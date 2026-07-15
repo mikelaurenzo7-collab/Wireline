@@ -94,8 +94,8 @@ export default function PhonePage() {
                 withHalo={false}
                 className="w-full max-w-lg"
                 icon={<CalendarDays className="size-5" aria-hidden />}
-                title="Appointments sync through calendar connections"
-                description="Connect Google Workspace or Microsoft 365 from Connections to let agents book on live calls."
+                title="Connect a calendar"
+                description="Sync Google Workspace or Microsoft 365 so employees can book during live calls."
                 action={
                   <Button asChild>
                     <Link to="/connections">Open Connections</Link>

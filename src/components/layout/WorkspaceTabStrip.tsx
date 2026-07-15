@@ -87,14 +87,17 @@ export function WorkspaceTabStrip({
       >
         {tabs.map((tab) => {
           const active = tab.id === activeId;
-          const accessibleLabel = tab.ariaLabel ?? (tab.shortLabel ? tab.label : undefined);
+          const fullLabel = tab.ariaLabel ?? tab.label;
+          const accessibleLabel = tab.shortLabel
+            ? `${fullLabel} (${tab.shortLabel})`
+            : tab.ariaLabel;
           if (tab.href) {
             return (
               <Link
                 key={tab.id}
                 to={tab.href}
                 aria-label={accessibleLabel}
-                title={accessibleLabel}
+                title={fullLabel}
                 aria-current={active ? "page" : undefined}
                 className={tabClassName(active, density)}
               >
@@ -107,7 +110,7 @@ export function WorkspaceTabStrip({
               key={tab.id}
               type="button"
               aria-label={accessibleLabel}
-              title={accessibleLabel}
+              title={fullLabel}
               aria-current={active ? "page" : undefined}
               onClick={() => onSelect?.(tab.id)}
               className={tabClassName(active, density)}
