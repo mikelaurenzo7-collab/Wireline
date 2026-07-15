@@ -13,13 +13,12 @@ export default function ConnectionsPage() {
       <WorkspacePageFrame mode="standard" className="gap-4">
         <WorkspacePageIntro title="Wire" />
         <section className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-          <p className="text-sm font-semibold text-foreground">Next action: wire a channel</p>
+          <p className="text-sm font-semibold text-foreground">Connect customer channels</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Connect CRM context here, then add or verify a phone line so the first agent can take
-            real calls.
+            Add email, calendar, CRM, or phone only when the workflow needs it.
           </p>
           <Button asChild size="sm" className="mt-3">
-            <Link to="/settings/phone">Open phone setup</Link>
+            <Link to="/settings/phone">Phone settings</Link>
           </Button>
         </section>
         <MailboxConnectionCard />
