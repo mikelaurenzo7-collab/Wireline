@@ -264,27 +264,28 @@ export default function Cadences() {
 
   return (
     <div className="h-full overflow-y-auto pr-1 space-y-4 pb-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="wl-label text-brand mb-1">Outbound · Sequences</p>
           <h3 className="font-display italic text-xl text-foreground leading-none">
             Multi-touch cadences
           </h3>
           <p className="text-[var(--wireline-typography-overline-size)] text-foreground/55 mt-1.5 max-w-xl leading-relaxed">
-            Define a sequence of call → SMS → email steps with delays. Enroll any lead from
-            /pipeline or the API. The job-worker ticks each step automatically.
+            Automate consent-checked call, SMS, and email follow-up.
           </p>
         </div>
-        <ShadButton
-          type="button"
-          variant="editorial"
-          disableAnimations
-          onClick={() => setShowBuilder(true)}
-          className="touch-press hover:scale-[1.05] rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.28em]"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Create sequence
-        </ShadButton>
+        {cadences.length > 0 ? (
+          <ShadButton
+            type="button"
+            variant="editorial"
+            disableAnimations
+            onClick={() => setShowBuilder(true)}
+            className="touch-press rounded-full text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.16em]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create sequence
+          </ShadButton>
+        ) : null}
       </div>
 
       {!showBuilder && cadences.length === 0 && (
@@ -301,11 +302,11 @@ export default function Cadences() {
           ]}
           density="compact"
           withHalo={false}
-          className="py-6"
+          className="py-4"
         >
           <div className="w-full max-w-3xl mt-2 text-left">
-            <p className="text-[var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] text-brand mb-3 text-center">
-              Start from a template
+            <p className="mb-2 text-center text-xs font-semibold text-brand">
+              Or start from a template
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {STARTER_TEMPLATES.map((t) => (
