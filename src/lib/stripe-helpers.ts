@@ -20,13 +20,31 @@ import {
 
 export const STRIPE_API_VERSION = "2026-04-22.dahlia" as Stripe.LatestApiVersion;
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
+const configuredStripeSecret = String(process.env.STRIPE_SECRET_KEY || "").trim();
+const previewAllowsLiveProviders =
+  process.env.WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW === "true";
+const stripeBlockedInPreview =
+  process.env.VERCEL_ENV === "preview" &&
+  configuredStripeSecret.startsWith("sk_live_") &&
+  !previewAllowsLiveProviders;
+
+if (stripeBlockedInPreview) {
+  // Defense in depth: Vercel can inherit production-scoped values into a preview
+  // project configuration. Refuse to expose live billing credentials to preview
+  // routes even when the dashboard is mis-scoped.
+  delete process.env.STRIPE_SECRET_KEY;
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+}
+
+const effectiveStripeSecret = stripeBlockedInPreview ? "" : configuredStripeSecret;
+
+export const stripe = new Stripe(effectiveStripeSecret || "sk_test_placeholder", {
   apiVersion: STRIPE_API_VERSION,
   typescript: true,
 });
 
 export function stripeAvailable(): boolean {
-  return !!process.env.STRIPE_SECRET_KEY;
+  return Boolean(effectiveStripeSecret);
 }
 
 /**
