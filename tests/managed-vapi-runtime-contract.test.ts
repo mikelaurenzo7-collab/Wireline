@@ -10,6 +10,8 @@ describe("managed Vapi runtime policy", () => {
   const factory = read("src/lib/vapi-assistant-factory-v2.ts");
   const draftService = read("src/lib/agent-draft-service.ts");
   const studio = read("src/components/StudioAgentWorkspacePanel.tsx");
+  const knowledge = read("src/pages/KnowledgePage.tsx");
+  const liveFloor = read("src/components/LiveFloorPresence.tsx");
   const carrier = read("src/components/admin/CarrierPanel.tsx");
   const csp = read("src/lib/csp.ts");
   const vercel = read("vercel.json");
@@ -27,9 +29,14 @@ describe("managed Vapi runtime policy", () => {
     expect(draftService).toMatch(/voiceProvider: "vapi"/);
   });
 
-  it("keeps external voice and avatar experiments out of Studio", () => {
+  it("keeps external voice and avatar experiments out of active authenticated pages", () => {
     expect(studio).toMatch(/Wireline manages the voice runtime/);
     expect(studio).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|video presenter|External voice/);
+    expect(knowledge).toMatch(/Business knowledge/);
+    expect(knowledge).toMatch(/Test in Studio/);
+    expect(knowledge).not.toMatch(/VoiceGallery|AgentPresenceVoiceBridge|WirelineLiveVoiceProfile|SimulatorTab/);
+    expect(liveFloor).toMatch(/Live customer calls/);
+    expect(liveFloor).not.toMatch(/AgentPresencePstnBridge|Live presenter/);
   });
 
   it("keeps model and carrier complexity managed instead of user-tuned", () => {
