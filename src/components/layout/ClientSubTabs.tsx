@@ -6,6 +6,10 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 export type ClientSubTab = {
   id: string;
   label: string;
+  /** Short visual label used only on narrow viewports. */
+  shortLabel?: string;
+  /** Full accessible label when the visual label is shortened. */
+  ariaLabel?: string;
   icon?: ComponentType<{ className?: string }>;
 };
 
@@ -96,6 +100,7 @@ export default function ClientSubTabs({
         {tabs.map((tab) => {
           const active = tab.id === activeId;
           const Icon = tab.icon;
+          const fullLabel = tab.ariaLabel ?? tab.label;
           return (
             <ShadButton
               key={tab.id}
@@ -104,16 +109,18 @@ export default function ClientSubTabs({
               variant="ghost"
               disableAnimations
               role="tab"
+              aria-label={fullLabel}
+              title={fullLabel}
               aria-selected={active}
               tabIndex={active ? 0 : -1}
               onClick={() => {
                 if (!active) onChange(tab.id);
               }}
               className={cn(
-                "relative inline-flex h-auto max-w-[11rem] shrink-0 items-center gap-1 overflow-hidden rounded-none text-ellipsis font-medium normal-case tracking-normal transition-colors",
+                "relative inline-flex h-auto max-w-[7.25rem] shrink-0 items-center gap-1 overflow-hidden rounded-none text-ellipsis whitespace-nowrap font-medium normal-case tracking-normal transition-colors sm:max-w-[11rem]",
                 density === "compact"
                   ? "min-h-7 px-1.5 py-0.5 text-[0.6875rem]"
-                  : "min-h-9 gap-1.5 px-2.5 py-1 text-[0.75rem] sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-[var(--wireline-typography-overline-size)]",
+                  : "min-h-9 gap-1.5 px-2 py-1 text-[0.75rem] sm:min-h-10 sm:px-3 sm:py-1.5 sm:text-[var(--wireline-typography-overline-size)]",
                 active ? "app-tab-active" : "text-muted hover:bg-black/4 hover:text-foreground",
               )}
             >
@@ -133,7 +140,16 @@ export default function ClientSubTabs({
                   )}
                 />
               )}
-              <span className="relative z-[1] min-w-0 truncate">{tab.label}</span>
+              {tab.shortLabel ? (
+                <>
+                  <span className="relative z-[1] min-w-0 truncate sm:hidden">{tab.shortLabel}</span>
+                  <span className="relative z-[1] hidden min-w-0 truncate sm:inline">
+                    {tab.label}
+                  </span>
+                </>
+              ) : (
+                <span className="relative z-[1] min-w-0 truncate">{tab.label}</span>
+              )}
             </ShadButton>
           );
         })}
