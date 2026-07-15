@@ -176,12 +176,16 @@ export default function OutcomeLedger({
               {row.direction} · {row.duration_seconds ?? 0}s
             </span>
           </div>
-          <p className="mt-2 text-sm leading-relaxed text-foreground">{summarizeOutcomeRow(row)}</p>
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-foreground sm:line-clamp-2">{summarizeOutcomeRow(row)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
             {row.owner_label ? <span>Owner: {row.owner_label}</span> : null}
             {row.campaign_source ? <span>Source: {row.campaign_source}</span> : null}
-            {row.lead_score != null ? <span>Score: {row.lead_score}</span> : null}
-            {row.compliance_state ? <span>Compliance: {row.compliance_state}</span> : null}
+            {row.lead_score != null && row.lead_score > 0 ? (
+              <span>Score: {row.lead_score}</span>
+            ) : null}
+            {row.compliance_state && row.compliance_state !== "clear" ? (
+              <span>Compliance: {row.compliance_state}</span>
+            ) : null}
             {row.last_action_type ? (
               <span>
                 Last action: {row.last_action_type.replace(/_/g, " ")}

@@ -51,11 +51,16 @@ type CallsResponse = {
 
 type TabId = "floor" | "intel" | "triage" | "analytics";
 
-const tabs: Array<{ id: TabId; label: string }> = [
+const tabs: Array<{
+  id: TabId;
+  label: string;
+  shortLabel?: string;
+  ariaLabel?: string;
+}> = [
   { id: "floor", label: "Floor" },
   { id: "intel", label: "Intel" },
   { id: "triage", label: "Triage" },
-  { id: "analytics", label: "Analytics" },
+  { id: "analytics", label: "Analytics", shortLabel: "Stats", ariaLabel: "Analytics" },
 ];
 
 function formatDuration(seconds: number | null | undefined): string {
@@ -280,16 +285,19 @@ export default function CallLogsClaude() {
           tabs={tabs}
           activeId={activeTab}
           onSelect={(id) => setActiveTab(id as TabId)}
+          density="compact"
           className="mb-0 flex-1 border-b-0 pb-0"
         />
         {/* Server-side export: tenant-scoped, audited, cookie-authenticated. */}
         <a
           href="/api/export/calls.csv"
           download
-          className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40"
+          aria-label="Export calls as CSV"
+          title="Export CSV"
+          className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 sm:min-h-[44px] sm:px-4"
         >
           <Download size={15} aria-hidden="true" />
-          Export CSV
+          <span className="hidden sm:inline">Export CSV</span>
         </a>
       </div>
 

@@ -110,7 +110,7 @@ export default function ActivationChecklist({ className }: { className?: string 
           <h2 className="mt-1 text-base font-semibold text-foreground">
             {completed} of {steps.length} customer-ready steps complete
           </h2>
-          <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+          <p className="mt-1 hidden max-w-2xl text-xs leading-5 text-muted-foreground sm:block">
             Test freely in Studio. This checklist tracks only saved setup, live channels, and real customer outcomes.
           </p>
         </div>
@@ -126,7 +126,7 @@ export default function ActivationChecklist({ className }: { className?: string 
         </button>
       </div>
 
-      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <ol className="grid grid-cols-2 gap-2 lg:grid-cols-3">
         {steps.map((step) => {
           const Icon = step.icon;
           return (
@@ -134,7 +134,7 @@ export default function ActivationChecklist({ className }: { className?: string 
               <Link
                 to={step.href}
                 className={cn(
-                  "flex min-h-[76px] items-start gap-3 rounded-[var(--wireline-radius-md)] border px-3 py-3 text-left wl-focus-ring-halo",
+                  "flex min-h-[60px] items-start gap-2 rounded-[var(--wireline-radius-md)] border px-2.5 py-2.5 text-left wl-focus-ring-halo sm:min-h-[76px] sm:gap-3 sm:px-3 sm:py-3",
                   step.done
                     ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
                     : step.id === next?.id
@@ -152,7 +152,7 @@ export default function ActivationChecklist({ className }: { className?: string 
                 </span>
                 <span className="min-w-0">
                   <span className="block text-xs font-semibold text-foreground">{step.label}</span>
-                  <span className="mt-1 block text-[11px] leading-4 text-muted-foreground">
+                  <span className="mt-1 hidden text-[11px] leading-4 text-muted-foreground sm:block">
                     {step.detail}
                   </span>
                 </span>

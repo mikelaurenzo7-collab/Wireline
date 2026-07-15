@@ -13,9 +13,7 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).toContain("shortLabel?: string");
     expect(tabStrip).toContain('className="sm:hidden"');
     expect(tabStrip).toContain('className="hidden sm:inline"');
-    expect(tabStrip).toContain(
-      "tab.ariaLabel ?? (tab.shortLabel ? tab.label : undefined)",
-    );
+    expect(tabStrip).toContain("`${fullLabel} (${tab.shortLabel})`");
     expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
     expect(tabs).toContain('shortLabel: "Calls"');
@@ -32,7 +30,7 @@ describe("authenticated mobile cleanup", () => {
     expect(knowledge).toContain("wl-metric-tile--compact");
   });
 
-  it("stacks campaign controls and removes technical implementation prose", () => {
+  it("keeps outbound controls concise without duplicating empty-state actions", () => {
     const campaigns = read("src/components/outbound/CampaignsPanel.tsx");
     const cadences = read("src/components/Cadences.tsx");
     const outbound = read("src/components/outbound/OutboundHub.tsx");
@@ -41,12 +39,40 @@ describe("authenticated mobile cleanup", () => {
       "flex flex-col items-stretch gap-2 sm:flex-row",
     );
     expect(campaigns).toContain('aria-label="Refresh campaigns"');
+    expect(campaigns).toContain("campaigns.length > 0 ?");
     expect(cadences).toContain(
       "Build timed call, SMS, and email follow-up sequences.",
     );
     expect(cadences).not.toMatch(/job-worker|\/pipeline/);
-    expect(outbound).toContain("grid grid-cols-3 gap-2");
-    expect(outbound).toContain("hidden text-xs leading-relaxed");
+    expect(cadences).toContain("cadences.length > 0 && !showBuilder");
+    expect(outbound).toMatch(/Consent checks run\s+before every dial/);
+    expect(outbound).not.toContain("grid grid-cols-3 gap-2");
+  });
+
+  it("keeps heavy-user exceptions and phone-width actions in view", () => {
+    const activation = read("src/components/ActivationChecklist.tsx");
+    const outcomes = read("src/components/OutcomeLedger.tsx");
+    const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
+    const knowledgePage = read("src/pages/KnowledgePage.tsx");
+    const connections = read("src/pages/ConnectionsPage.tsx");
+    const mailbox = read("src/components/MailboxConnectionCard.tsx");
+    const callLogs = read("src/components/CallLogsClaude.tsx");
+    const studio = read("src/components/StudioWorkspaceV2.tsx");
+    const phone = read("src/pages/PhonePage.tsx");
+
+    expect(activation).toContain("grid grid-cols-2 gap-2 lg:grid-cols-3");
+    expect(activation).toContain("hidden text-[11px] leading-4");
+    expect(outcomes).toContain("line-clamp-3");
+    expect(outcomes).toContain('row.compliance_state !== "clear"');
+    expect(outcomes).toContain("row.lead_score > 0");
+    expect(knowledge).toContain("sm:[&>button]:w-auto");
+    expect(knowledgePage).toContain('shortLabel: "Knowledge"');
+    expect(connections).not.toContain("Connect a channel");
+    expect(mailbox).not.toContain("Optional next");
+    expect(callLogs).toContain('shortLabel: "Stats"');
+    expect(callLogs).toContain('aria-label="Export calls as CSV"');
+    expect(studio).toContain("hidden size-4 shrink-0 sm:block");
+    expect(phone).toContain('title="Connect a calendar"');
   });
 
   it("keeps guidance once, next to the decision it supports", () => {

@@ -162,16 +162,12 @@ export default function MailboxConnectionCard() {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="wl-eyebrow wl-eyebrow--primary">Optional next</p>
           <h2
             id="mailbox-connections-title"
-            className="mt-1 text-base font-semibold text-foreground"
+            className="text-base font-semibold text-foreground"
           >
-            Connect an inbox
+            Inbox connections
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Sync customer mail and calendar context.
-          </p>
         </div>
         <Mail className="size-5 text-primary" aria-hidden="true" />
       </div>

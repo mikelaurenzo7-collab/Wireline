@@ -13,8 +13,18 @@ import { useAgents } from "../contexts/AgentsContext";
 
 type KnowledgeTabId = "knowledge" | "reports";
 
-const knowledgeTabs: Array<{ id: KnowledgeTabId; label: string }> = [
-  { id: "knowledge", label: "Business knowledge" },
+const knowledgeTabs: Array<{
+  id: KnowledgeTabId;
+  label: string;
+  shortLabel?: string;
+  ariaLabel?: string;
+}> = [
+  {
+    id: "knowledge",
+    label: "Business knowledge",
+    shortLabel: "Knowledge",
+    ariaLabel: "Business knowledge",
+  },
   { id: "reports", label: "Reports" },
 ];
 
