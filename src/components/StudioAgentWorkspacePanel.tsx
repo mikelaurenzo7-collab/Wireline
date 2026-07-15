@@ -183,11 +183,12 @@ export default function StudioAgentWorkspacePanel({
             <div className="space-y-5">
               <label className="grid gap-2" htmlFor="setup-job">
                 <span className="text-sm font-semibold text-foreground">Customer-facing job</span>
-                <input
+                <textarea
                   id="setup-job"
                   value={setupJob}
                   onChange={(event) => setSetupJob(event.target.value)}
-                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary/50"
+                  rows={2}
+                  className="min-h-[72px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2.5 text-sm leading-6 outline-none focus:border-primary/50"
                   placeholder="Receptionist who answers missed calls and books appointments"
                   maxLength={160}
                 />

@@ -14,13 +14,14 @@ const AUTHENTICATED_PAGE_INTROS = [
 ] as const;
 
 describe("authenticated minimal copy contract", () => {
-  it("keeps Wire page chrome on a single WorkspacePageIntro plus the integration map", () => {
+  it("keeps Connections page chrome on one h1 plus the integration map", () => {
     const connectionsPage = read("src/pages/ConnectionsPage.tsx");
     const map = read("src/components/integrations/IntegrationOperatingMap.tsx");
     expect(connectionsPage).toMatch(/IntegrationOperatingMap/);
-    expect(connectionsPage).toMatch(/WorkspacePageIntro[\s\S]*title="Wire"/);
+    expect(connectionsPage).toMatch(/WorkspacePageIntro[\s\S]*title="Connections"/);
     expect(connectionsPage).not.toMatch(/WorkspacePageIntro[\s\S]*description=/);
-    expect(map).toMatch(/Integration map/);
+    expect(map).toMatch(/<h2[\s\S]*Integration map[\s\S]*<\/h2>/);
+    expect(map).not.toContain("<h1");
   });
 
   it("keeps workspace page intros title-first without coaching copy", () => {

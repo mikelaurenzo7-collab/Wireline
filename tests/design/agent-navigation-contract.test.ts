@@ -160,6 +160,10 @@ describe("agent navigation contract", () => {
     expect(trainingPage).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
   });
 
+  it("wraps every settings destination instead of clipping mobile labels", () => {
+    expect(settingsTabs).toMatch(/density="compact"[\s\S]*align="start"[\s\S]*wrap/);
+  });
+
   it("keeps long account and team identifiers inside narrow workspace cards", () => {
     const dataRows = read("src/styles/letterpress-polish.css");
 

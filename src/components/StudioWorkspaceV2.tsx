@@ -241,13 +241,13 @@ export default function StudioWorkspaceV2() {
                 tabIndex={studioTabs.getTabIndex(item.id)}
                 data-roving-tab={item.id}
                 onClick={() => setSection(item.id)}
-                className={`min-w-0 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                className={`min-w-0 rounded-xl border px-2 py-2.5 text-left transition-colors sm:px-3 ${
                   selected
                     ? "border-primary/35 bg-primary/5 text-foreground"
                     : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 sm:gap-2">
                   <span
                     className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
                       selected
@@ -258,10 +258,12 @@ export default function StudioWorkspaceV2() {
                     {index + 1}
                   </span>
                   <Icon
-                    className={`size-4 shrink-0 ${selected ? "text-primary" : ""}`}
+                    className={`hidden size-4 shrink-0 sm:block ${selected ? "text-primary" : ""}`}
                     aria-hidden="true"
                   />
-                  <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
+                  <span className="whitespace-nowrap text-xs font-semibold sm:text-sm">
+                    {item.label}
+                  </span>
                 </span>
                 <span className="mt-1 hidden truncate pl-8 text-[11px] text-muted-foreground md:block">
                   {item.description}

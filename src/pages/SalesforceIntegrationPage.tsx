@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Cloud, ExternalLink, FileText, Loader2, RefreshCcw, Send } from "lucide-react";
 
 import { Badge, Button, Skeleton, Switch } from "../components/atoms";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
@@ -144,6 +144,7 @@ export default function SalesforceIntegrationPage() {
   }, [refreshConnection]);
 
   const isConnected = Boolean(connection?.connected && connection.configured !== false);
+  const checkingConnection = isRefreshing && connection === null && !connectionError;
 
   const updateCallActivityPreference = async (nextValue: boolean) => {
     if (!isConnected || saveState === "saving") return;
@@ -190,8 +191,8 @@ export default function SalesforceIntegrationPage() {
       contentClassName="pt-1 pb-10"
       action={
         <div className="flex items-center gap-2">
-          <Badge variant={isConnected ? "success" : "warning"}>
-            {isConnected ? "Connected" : "Connection required"}
+          <Badge variant={checkingConnection ? "default" : isConnected ? "success" : "warning"}>
+            {checkingConnection ? "Checking" : isConnected ? "Connected" : "Connection required"}
           </Badge>
           <Button
             type="button"
@@ -211,13 +212,18 @@ export default function SalesforceIntegrationPage() {
       }
     >
       <WorkspacePageFrame mode="standard">
+        <WorkspacePageIntro title="Salesforce delivery" />
         {connectionError ? (
           <StatusNotice tone="warning" title="Connection state unavailable">
             {connectionError}
           </StatusNotice>
         ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div
+          className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"
+          aria-busy={checkingConnection}
+          aria-live="polite"
+        >
           <div className="space-y-6">
             <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -225,8 +231,20 @@ export default function SalesforceIntegrationPage() {
                   <Send className="size-5 text-primary" />
                   <h2 className="font-semibold text-foreground">Call activity</h2>
                 </div>
-                <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
-                  {callActivitySyncEnabled && isConnected ? "Active" : "Paused"}
+                <Badge
+                  variant={
+                    checkingConnection
+                      ? "default"
+                      : callActivitySyncEnabled && isConnected
+                        ? "success"
+                        : "warning"
+                  }
+                >
+                  {checkingConnection
+                    ? "Checking"
+                    : callActivitySyncEnabled && isConnected
+                      ? "Active"
+                      : "Paused"}
                 </Badge>
               </div>
 
@@ -239,7 +257,7 @@ export default function SalesforceIntegrationPage() {
                 </label>
                 <Switch
                   id="salesforce-call-activity-sync"
-                  checked={callActivitySyncEnabled}
+                  checked={callActivitySyncEnabled && isConnected}
                   onCheckedChange={(checked) => void updateCallActivityPreference(checked)}
                   disabled={!isConnected || saveState === "saving"}
                   aria-describedby="salesforce-activity-sync-description"

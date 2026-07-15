@@ -11,7 +11,7 @@ export default function ConnectionsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard" className="gap-4">
-        <WorkspacePageIntro title="Wire" />
+        <WorkspacePageIntro title="Connections" />
         <section className="rounded-xl border border-primary/20 bg-primary/5 p-4">
           <p className="text-sm font-semibold text-foreground">Next action: wire a channel</p>
           <p className="mt-1 text-sm text-muted-foreground">

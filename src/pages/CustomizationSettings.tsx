@@ -3,7 +3,7 @@ import { ArrowRight, Mic2, Palette, SlidersHorizontal, Target } from "lucide-rea
 
 import AppearanceSettings from "../components/settings/AppearanceSettings";
 import SettingsTabs from "../components/settings/SettingsTabs";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const customizationLayers = [
@@ -51,6 +51,7 @@ export default function CustomizationSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
+        <WorkspacePageIntro title="Brand" />
         <AppearanceSettings />
 
         <section className="mt-6">

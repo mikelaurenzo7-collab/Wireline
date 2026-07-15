@@ -473,7 +473,9 @@ export default function CreateAgentDialog({
                 </div>
 
                 <label className="mt-5 block">
-                  <span className="sr-only">AI employee brief</span>
+                  <span className="mb-2 block text-xs font-semibold text-foreground">
+                    What should this employee do?
+                  </span>
                   <Textarea
                     ref={briefRef}
                     value={brief}
@@ -490,25 +492,28 @@ export default function CreateAgentDialog({
                   ) : null}
                 </label>
 
-                <div className="mt-4 flex flex-wrap gap-2" aria-label="Quick briefs">
-                  {ROLE_TEMPLATES.slice(0, 4).map((item) => {
-                    const prompt =
-                      activePosture === "business" ? item.businessPrompt : item.personalPrompt;
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => {
-                          setRole(item.value);
-                          setBrief(prompt);
-                        }}
-                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? FAST_START_SELECTED : FAST_START_IDLE}`}
-                        aria-pressed={role === item.value}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground">Quick starts</p>
+                  <div className="flex flex-wrap gap-2" aria-label="Quick starts">
+                    {ROLE_TEMPLATES.slice(0, 4).map((item) => {
+                      const prompt =
+                        activePosture === "business" ? item.businessPrompt : item.personalPrompt;
+                      return (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => {
+                            setRole(item.value);
+                            setBrief(prompt);
+                          }}
+                          className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${role === item.value ? FAST_START_SELECTED : FAST_START_IDLE}`}
+                          aria-pressed={role === item.value}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <label className="mt-6 grid gap-1.5">

@@ -49,7 +49,7 @@ export default function IntegrationOperatingMap() {
       <header className="mb-4 flex flex-col gap-3 border-b border-border pb-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="wl-eyebrow wl-eyebrow--muted mb-2">Wire</p>
-          <h1 className="wl-display-3 text-left text-balance">Integration map</h1>
+          <h2 className="wl-display-3 text-left text-balance">Integration map</h2>
           <p className="mt-2 max-w-prose text-sm text-muted-foreground">
             Every connection your agents can use — live status, capabilities, and routing.
           </p>

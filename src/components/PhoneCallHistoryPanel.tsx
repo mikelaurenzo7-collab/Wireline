@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { History, Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { useAgents } from "../contexts/AgentsContext";
 import CallLogsClaude from "./CallLogsClaude";
 import { EmptyState, Button } from "./atoms";
 import { StatusNotice } from "./molecules";
@@ -17,16 +18,20 @@ type CallsProbeResponse = {
  * instead of letting the heavier console settle into an empty black pane.
  */
 export default function PhoneCallHistoryPanel() {
+  const { agents, loading: agentsLoading } = useAgents();
   const [loading, setLoading] = useState(true);
   const [hasCalls, setHasCalls] = useState<boolean | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const eligibleAgent = agents.find(
+    (agent) => agent.is_business_agent && agent.channel !== "email",
+  );
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setFailed(false);
-    authFetch("/api/calls?limit=1")
+    authFetch("/api/calls?limit=1", { timeoutMs: 12_000 })
       .then((response) => {
         if (!response.ok) throw new Error(`Call history request failed (${response.status})`);
         return response.json();
@@ -49,9 +54,13 @@ export default function PhoneCallHistoryPanel() {
     };
   }, [attempt]);
 
-  if (loading) {
+  if (loading || agentsLoading) {
     return (
-      <div className="flex w-full items-center justify-center px-4 py-10 text-sm text-muted-foreground sm:px-6">
+      <div
+        className="flex w-full items-center justify-center px-4 py-10 text-sm text-muted-foreground sm:px-6"
+        aria-busy="true"
+        aria-live="polite"
+      >
         <span className="inline-flex items-center gap-2">
           <Loader2 className="size-4 animate-spin" aria-hidden />
           Loading call history…
@@ -104,12 +113,43 @@ export default function PhoneCallHistoryPanel() {
         description="Real calls, test calls, summaries, outcomes, and follow-ups will land here once a number is wired."
         action={
           <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-            <Button asChild>
-              <Link to="/studio?create=1">Create first agent</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/settings/phone">Wire a number</Link>
-            </Button>
+            {eligibleAgent ? (
+              <>
+                <Button asChild>
+                  <Link
+                    to={
+                      eligibleAgent.phone_number
+                        ? `/studio?agent=${encodeURIComponent(eligibleAgent.id)}&section=test`
+                        : "/settings/phone"
+                    }
+                  >
+                    {eligibleAgent.phone_number ? "Test employee" : "Wire a number"}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link
+                    to={
+                      eligibleAgent.phone_number
+                        ? `/studio?agent=${encodeURIComponent(eligibleAgent.id)}`
+                        : `/studio?agent=${encodeURIComponent(eligibleAgent.id)}&section=test`
+                    }
+                  >
+                    {eligibleAgent.phone_number ? "Open Studio" : "Test employee"}
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild>
+                  <Link to="/studio?create=1&posture=business">Create phone employee</Link>
+                </Button>
+                {agents.length > 0 ? (
+                  <Button asChild variant="outline">
+                    <Link to="/studio">Open Studio</Link>
+                  </Button>
+                ) : null}
+              </>
+            )}
           </div>
         }
       />

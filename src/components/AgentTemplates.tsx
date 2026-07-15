@@ -606,13 +606,29 @@ export default function AgentTemplates() {
             placeholder="Search templates, roles, channels…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-primary/50 text-foreground placeholder:text-muted/70"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground"
           />
         </div>
 
         <div className="flex items-center justify-between gap-3">
+          <label className="min-w-0 flex-1 sm:hidden">
+            <span className="sr-only">Template category</span>
+            <select
+              value={activeCategory}
+              onChange={(event) =>
+                setActiveCategory(event.target.value as (typeof CATEGORIES)[number])
+              }
+              className="min-h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none focus:border-primary/50"
+            >
+              {CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
           <div
-            className="flex gap-1.5 flex-wrap"
+            className="hidden gap-1.5 sm:flex sm:flex-wrap"
             role="group"
             aria-label="Template category filter"
           >

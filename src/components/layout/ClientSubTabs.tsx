@@ -1,4 +1,4 @@
-import { useCallback, type ComponentType, type KeyboardEvent } from "react";
+import { useCallback, useEffect, type ComponentType, type KeyboardEvent } from "react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -76,6 +76,12 @@ export default function ClientSubTabs({
     [tabs, activeId, focusTab],
   );
 
+  useEffect(() => {
+    document
+      .getElementById(`${domIdPrefix}-tab-${activeId}`)
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeId, domIdPrefix]);
+
   return (
     <div
       role="tablist"
@@ -89,7 +95,7 @@ export default function ClientSubTabs({
     >
       <div
         className={cn(
-          "app-tab-strip wl-subtab-strip flex min-w-0 items-center gap-0.5 wl-panel",
+          "app-tab-strip wl-subtab-strip flex min-w-max items-center gap-0.5 wl-panel",
           density === "compact" ? "border-0 bg-transparent p-0.5 shadow-none" : "p-0.5",
         )}
       >

@@ -125,8 +125,13 @@ export default function Status() {
   useEffect(() => {
     let cancelled = false;
     const fetchHealth = async () => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 8_000);
       try {
-        const res = await fetch("/api/health/public", { headers: { Accept: "application/json" } });
+        const res = await fetch("/api/health/public", {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as PublicHealth;
         if (!cancelled) {
@@ -136,6 +141,7 @@ export default function Status() {
       } catch (_err) {
         if (!cancelled) setError("Status feed temporarily unavailable.");
       } finally {
+        window.clearTimeout(timeoutId);
         if (!cancelled) setLoading(false);
       }
     };
@@ -170,6 +176,8 @@ export default function Status() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="marketing-panel relative mb-6 overflow-hidden p-6 text-center sm:p-8"
             data-testid="status-overall"
+            aria-busy={loading}
+            aria-live="polite"
           >
             <div
               aria-hidden="true"

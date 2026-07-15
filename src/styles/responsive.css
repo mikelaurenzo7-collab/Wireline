@@ -234,3 +234,49 @@
     padding-bottom: 1rem;
   }
 }
+
+/* Short-phone conversion contract: preserve the full product story on taller
+ * phones, while keeping both hero actions reachable in the first 640-700px
+ * viewport used by compact Android and iPhone landscape-height devices. */
+@media (max-width: 639px) and (max-height: 700px) {
+  .marketing-hero:not(.wireline-home-hero) {
+    padding-block: 2rem !important;
+  }
+
+  .marketing-hero:not(.wireline-home-hero) .wl-public-rail {
+    padding-block: 0 !important;
+  }
+
+  .marketing-hero:not(.wireline-home-hero) .marketing-hero__content h1 {
+    max-width: 18ch;
+    font-size: 2rem !important;
+    line-height: 0.96;
+  }
+
+  .marketing-hero:not(.wireline-home-hero) .marketing-hero__description {
+    margin-top: 1rem !important;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .marketing-hero:not(.wireline-home-hero) .marketing-hero__actions {
+    margin-top: 1.25rem !important;
+  }
+}
+
+/* Long industry labels stay legible at 360px instead of silently ellipsizing. */
+@media (max-width: 380px) {
+  .marketing-hero__content .wl-eyebrow--wired {
+    gap: 0.25rem;
+    overflow: visible !important;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  .marketing-hero__content .wl-eyebrow--wired::before,
+  .marketing-hero__content .wl-eyebrow--wired::after {
+    width: 0.5rem;
+  }
+}

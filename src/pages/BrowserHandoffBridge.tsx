@@ -89,6 +89,10 @@ export default function BrowserHandoffBridge() {
         title="Handoff unavailable"
         description={error}
         busy={false}
+        actions={[
+          { href: "/studio", label: "Return to Studio" },
+          { href: "/connections", label: "Open Connections", variant: "secondary" },
+        ]}
       />
     );
   }

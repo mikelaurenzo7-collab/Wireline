@@ -172,7 +172,7 @@ async function settle(page) {
       () => {
         const elements = Array.from(
           document.querySelectorAll(
-            'main[aria-busy="true"], [data-route-loading="true"], [aria-label="Loading workspace"]',
+            '[aria-busy="true"], [data-route-loading="true"], [aria-label="Loading workspace"]',
           ),
         );
         return !elements.some((element) => {

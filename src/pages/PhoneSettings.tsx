@@ -6,7 +6,7 @@ import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import CompanyIdentityPack from "../components/settings/CompanyIdentityPack";
-import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
@@ -101,6 +101,7 @@ export default function PhoneSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-8">
       <WorkspacePageFrame mode="standard">
         <SettingsTabs />
+        <WorkspacePageIntro title="Phone" />
 
         <section className="rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[var(--wireline-elevation-md)] sm:p-7">
           <div className="flex items-start justify-between gap-4">

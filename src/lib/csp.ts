@@ -20,6 +20,8 @@ export const INLINE_STYLE_HASHES = [
   "'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw='",
   // Playwright axe gate — disables transitions/animations before scanning.
   "'sha256-pjBMouHaxzAZFuesw6ZdkjqrWeDPx0aK6XjL/EpYcbk='",
+  // Radix react-remove-scroll — locks the page behind focus-trapped dialogs.
+  "'sha256-nzTgYzXYDNe6BAHiiI7NNlfK8n/auuOAhh2t92YvuXo='",
 ] as const;
 
 export const MARKETING_SCRIPT_SRCS = [

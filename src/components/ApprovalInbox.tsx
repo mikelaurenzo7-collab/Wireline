@@ -46,7 +46,12 @@ export type TriageBucket = {
   counts?: Record<string, number>;
 };
 
-type ApprovalBucket = "pending" | "compliance" | "hot_leads" | "escalations" | "knowledge_gaps";
+export type ApprovalBucket =
+  | "pending"
+  | "compliance"
+  | "hot_leads"
+  | "escalations"
+  | "knowledge_gaps";
 
 const BUCKET_LABELS: Record<ApprovalBucket, string> = {
   pending: "Pending actions",
@@ -93,6 +98,42 @@ function actionIcon(task: FollowUpTaskRow) {
     return <MessageSquare size={16} aria-hidden="true" />;
   }
   return <Sparkles size={16} aria-hidden="true" />;
+}
+
+export function resolveApprovalBucketItems(
+  bucket: ApprovalBucket,
+  triage: TriageBucket | null,
+  tasks: FollowUpTaskRow[],
+): FollowUpTaskRow[] {
+  if (bucket === "pending") {
+    return triage?.pending_tasks?.length ? triage.pending_tasks : tasks;
+  }
+  if (!triage) return [];
+  switch (bucket) {
+    case "compliance":
+      return triage.compliance || [];
+    case "hot_leads":
+      return (triage.hot_leads || []).map((lead) => ({
+        id: String(lead.id),
+        description: typeof lead.summary === "string" ? lead.summary : "Hot lead follow-up",
+        task_type: "hot_lead_review",
+        payload: lead,
+      })) as FollowUpTaskRow[];
+    case "escalations":
+      return (triage.escalations || []).map((row) => ({
+        id: String(row.id),
+        description: typeof row.summary === "string" ? row.summary : "Escalated call",
+        task_type: "escalation_review",
+        payload: row,
+      })) as FollowUpTaskRow[];
+    case "knowledge_gaps":
+      return (triage.knowledge_gaps || []).map((gap) => ({
+        id: String(gap.id),
+        description: typeof gap.lesson === "string" ? gap.lesson : "Knowledge gap",
+        task_type: "knowledge_gap",
+        payload: gap,
+      })) as FollowUpTaskRow[];
+  }
 }
 
 function ApprovalEmptyCard({ title, description }: { title: string; description: string }) {
@@ -306,18 +347,26 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const [tasks, setTasks] = useState<FollowUpTaskRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [triageUnavailable, setTriageUnavailable] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setTriageUnavailable(false);
     try {
-      const [triageRes, tasksRes] = await Promise.all([
-        authFetch("/api/triage"),
-        authFetch("/api/Assistants/tasks?status=pending"),
+      const [triageResult, tasksResult] = await Promise.allSettled([
+        authFetch("/api/triage", { timeoutMs: 12_000 }),
+        authFetch("/api/Assistants/tasks?status=pending", { timeoutMs: 12_000 }),
       ]);
-      const triageBody = triageRes.ok ? await triageRes.json() : null;
-      const tasksBody = tasksRes.ok ? await tasksRes.json() : { tasks: [] };
+      const triageRes = triageResult.status === "fulfilled" ? triageResult.value : null;
+      const tasksRes = tasksResult.status === "fulfilled" ? tasksResult.value : null;
+      if (!triageRes?.ok && !tasksRes?.ok) throw new Error("Approval inbox unavailable.");
+      const triageBody = triageRes?.ok ? await triageRes.json().catch(() => null) : null;
+      const tasksBody = tasksRes?.ok
+        ? await tasksRes.json().catch(() => ({ tasks: [] }))
+        : { tasks: [] };
       setTriage(triageBody);
+      setTriageUnavailable(!triageRes?.ok || !triageBody);
       setTasks(Array.isArray(tasksBody?.tasks) ? tasksBody.tasks : []);
     } catch {
       setError("Could not load approval inbox.");
@@ -330,38 +379,10 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     void load();
   }, [load]);
 
-  const bucketItems = useMemo(() => {
-    if (!triage) return [];
-    switch (bucket) {
-      case "pending":
-        return triage.pending_tasks?.length ? triage.pending_tasks : tasks;
-      case "compliance":
-        return triage.compliance || [];
-      case "hot_leads":
-        return (triage.hot_leads || []).map((lead) => ({
-          id: String(lead.id),
-          description: typeof lead.summary === "string" ? lead.summary : "Hot lead follow-up",
-          task_type: "hot_lead_review",
-          payload: lead,
-        })) as FollowUpTaskRow[];
-      case "escalations":
-        return (triage.escalations || []).map((row) => ({
-          id: String(row.id),
-          description: typeof row.summary === "string" ? row.summary : "Escalated call",
-          task_type: "escalation_review",
-          payload: row,
-        })) as FollowUpTaskRow[];
-      case "knowledge_gaps":
-        return (triage.knowledge_gaps || []).map((gap) => ({
-          id: String(gap.id),
-          description: typeof gap.lesson === "string" ? gap.lesson : "Knowledge gap",
-          task_type: "knowledge_gap",
-          payload: gap,
-        })) as FollowUpTaskRow[];
-      default:
-        return [];
-    }
-  }, [bucket, tasks, triage]);
+  const bucketItems = useMemo(
+    () => resolveApprovalBucketItems(bucket, triage, tasks),
+    [bucket, tasks, triage],
+  );
 
   const actionableTasks = bucketItems.filter(
     (item) => item.task_type !== "hot_lead_review" && item.task_type !== "escalation_review",
@@ -372,14 +393,21 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       key === "pending"
         ? (triage?.counts?.pending_tasks ?? tasks.length)
         : (triage?.counts?.[key] ?? triage?.[key]?.length ?? 0);
+    const unavailable = triageUnavailable && key !== "pending";
     return {
       id: key,
-      label: `${BUCKET_SHORT_LABELS[key]} (${count})`,
+      label: unavailable
+        ? `${BUCKET_SHORT_LABELS[key]} (?)`
+        : `${BUCKET_SHORT_LABELS[key]} (${count})`,
     };
   });
 
   return (
-    <div className={embedded ? "flex min-h-0 flex-1 flex-col gap-4" : "grid gap-4"}>
+    <div
+      className={embedded ? "flex min-h-0 flex-1 flex-col gap-4" : "grid gap-4"}
+      aria-busy={loading}
+      aria-live="polite"
+    >
       <WorkspaceTabStrip
         tabs={approvalTabs}
         activeId={bucket}
@@ -390,13 +418,39 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         className="mb-0 border-b-0 pb-0"
       />
 
+      {!loading && !error && triageUnavailable && bucket === "pending" ? (
+        <div className="flex items-start gap-2 rounded-lg border border-warning/25 bg-warning/5 p-3 text-xs leading-5 text-muted-foreground">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden="true" />
+          Pending actions are shown, but the evidence queues could not be verified. Try again before
+          treating them as clear.
+        </div>
+      ) : null}
+
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           Loading approvals…
         </div>
       ) : error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive"
+        >
+          <p>{error}</p>
+          <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
+            Try again
+          </ShadButton>
+        </div>
+      ) : triageUnavailable && bucket !== "pending" ? (
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-xl border border-warning/25 bg-warning/5 p-4 text-sm text-foreground"
+        >
+          <p>This evidence queue could not be verified. It is not being reported as clear.</p>
+          <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
+            Try again
+          </ShadButton>
+        </div>
       ) : bucket === "pending" || bucket === "compliance" ? (
         actionableTasks.length === 0 ? (
           <ApprovalEmptyCard
