@@ -323,7 +323,7 @@ const StudioWorkroom = forwardRef<
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
               {mode === "test"
-                ? "Type a realistic customer question. This tests the response in the browser and does not place a phone call."
+                ? "Ask a realistic customer question. Browser-only—no call is placed."
                 : "Describe a change in plain language and review the proposed update."}
             </p>
           </div>
