@@ -102,10 +102,9 @@ export default function SimpleVoicePicker({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold tracking-tight">Choose how live calls sound</h3>
+          <h3 className="text-base font-semibold tracking-tight">Choose a voice</h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            These managed voices are included in the Wireline phone runtime. Browser testing checks
-            what the employee says; place a real call to confirm the selected audio.
+            Browser tests the words; a real call confirms the audio.
           </p>
         </div>
         <button
@@ -166,7 +165,7 @@ export default function SimpleVoicePicker({
                   )}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-foreground">
+                  <span className="block text-sm font-semibold leading-5 text-foreground">
                     {voice.name}
                   </span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">
