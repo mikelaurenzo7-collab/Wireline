@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, MessageCircle, WandSparkles } from "lucide-react";
 
-import { Button, EmptyState, NativeSelect } from "../components/atoms";
+import { Button, EmptyState } from "../components/atoms";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/shadcn/Select";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -91,7 +92,7 @@ export default function KnowledgePage() {
             <div>
               <WorkspacePageIntro title="Knowledge" />
               <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Maintain the approved facts employees may use. Configure behavior and run customer tests in Studio.
+                Approved facts, rules, and tone for each AI employee.
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
@@ -115,29 +116,32 @@ export default function KnowledgePage() {
           </div>
 
           {populated && activeTab === "knowledge" ? (
-            <div className="mb-2 flex justify-end sm:-mt-2">
-              <NativeSelect
+            <div className="mb-2 w-full sm:-mt-2 sm:ml-auto sm:max-w-xs">
+              <Select
                 value={agentId}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setParams(
                     (current) => {
                       const updated = new URLSearchParams(current);
-                      updated.set("agent", event.target.value);
+                      updated.set("agent", value);
                       updated.set("tab", activeTab);
                       return updated;
                     },
                     { replace: true },
                   )
                 }
-                aria-label="Choose AI employee"
-                className="w-full min-w-[220px] sm:w-auto"
               >
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </option>
-                ))}
-              </NativeSelect>
+                <SelectTrigger aria-label="Choose AI employee">
+                  <SelectValue placeholder="Choose AI employee" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[min(20rem,55dvh)]">
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : null}
 
