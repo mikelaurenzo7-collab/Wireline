@@ -36,7 +36,7 @@ export default function AppChromeSubTabs({
       role="group"
       aria-label="Page section navigation"
       className={cn(
-        "flex w-full min-w-0 max-w-full shrink-0 items-center gap-1.5 overflow-x-auto tab-strip-scroll max-lg:tab-strip-scroll--fade [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap",
+        "flex w-full min-w-0 max-w-full shrink-0 flex-col items-start gap-1.5 overflow-x-auto tab-strip-scroll max-lg:tab-strip-scroll--fade [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-row sm:items-center md:flex-wrap",
         density === "compact" ? "mb-0" : "",
         className,
       )}
@@ -49,11 +49,11 @@ export default function AppChromeSubTabs({
         layoutIdPrefix={primary.layoutIdPrefix}
         instanceId={`${instanceId}-primary`}
         density={density}
-        className="mb-0 md:mb-0 justify-start lg:justify-start"
+        className="mb-0 justify-start md:mb-0 lg:justify-start"
       />
       {secondary && secondary.tabs.length > 0 && (
         <>
-          <span aria-hidden="true" className="w-px h-5 bg-black/10 shrink-0" />
+          <span aria-hidden="true" className="hidden h-5 w-px shrink-0 bg-black/10 sm:block" />
           <ClientSubTabs
             tabs={secondary.tabs}
             activeId={secondary.activeId}
@@ -62,7 +62,7 @@ export default function AppChromeSubTabs({
             layoutIdPrefix={secondary.layoutIdPrefix}
             instanceId={`${instanceId}-secondary`}
             density={density}
-            className="mb-0 md:mb-0 justify-start lg:justify-start"
+            className="mb-0 justify-start md:mb-0 lg:justify-start"
           />
         </>
       )}
