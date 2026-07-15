@@ -68,8 +68,8 @@ describe("demand-driven authenticated experience", () => {
     expect(studioWorkspace).not.toMatch(/StudioAgentCanvas/);
     expect(studioSetup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|Advanced options/);
     expect(studioTest).toMatch(/\/test\/stream/);
-    expect(studioTest).toMatch(/Browser roleplay only/);
-    expect(studioReview).toMatch(/Confirm the essentials, run one realistic conversation/);
+    expect(studioTest).toMatch(/Browser only—no phone call/);
+    expect(studioReview).toMatch(/Next action/);
     expect(studioReview).toMatch(/Connect phone/);
   });
 
@@ -94,10 +94,10 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("distinguishes browser response testing from real phone voice testing", () => {
-    expect(voicePicker).toMatch(/Browser testing checks/);
-    expect(voicePicker).toMatch(/place a real call to confirm the selected audio/);
+    expect(voicePicker).toMatch(/Browser tests the words/);
+    expect(voicePicker).toMatch(/Place a real call to verify the selected audio/);
     expect(voicePicker).toMatch(/Test response/);
-    expect(studioSetup).toMatch(/a real call confirms the phone audio/);
+    expect(studioSetup).not.toMatch(/Wireline manages the voice runtime/);
     expect(voicePicker).not.toMatch(/Test call|hear it during a test call/);
     expect(studioSetup).not.toMatch(/Hear the selected voice during testing/);
   });

@@ -11,25 +11,21 @@ export default function ConnectionsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-10">
       <WorkspacePageFrame mode="standard" className="gap-4">
-        <WorkspacePageIntro title="Wire" />
+        <WorkspacePageIntro title="Connections" />
         <section className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-          <p className="text-sm font-semibold text-foreground">Next action: wire a channel</p>
+          <p className="text-sm font-semibold text-foreground">Connect a channel</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Connect CRM context here, then add or verify a phone line so the first agent can take
-            real calls.
+            Start with phone, then add the inbox or CRM this employee needs.
           </p>
           <Button asChild size="sm" className="mt-3">
-            <Link to="/settings/phone">Open phone setup</Link>
+            <Link to="/settings/phone">Set up phone</Link>
           </Button>
         </section>
         <MailboxConnectionCard />
         <CrmConnectionCard />
-        <section className="mt-2" aria-labelledby="integration-map-title">
-          <h2 id="integration-map-title" className="mb-3 text-sm font-semibold text-foreground">
-            How your connected stack works
-          </h2>
+        <div className="mt-2">
           <IntegrationOperatingMap />
-        </section>
+        </div>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

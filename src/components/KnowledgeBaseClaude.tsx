@@ -283,14 +283,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         accept=".pdf,.doc,.docx,.txt,.csv,.md,image/*"
       />
 
-      <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-3" aria-label="Knowledge stats">
+      <section className="grid grid-cols-3 gap-2 sm:gap-3.5" aria-label="Knowledge stats">
         {stats.map((stat, index) => (
           <MetricTile
             key={stat.label}
             label={stat.label}
             value={loading ? "—" : stat.value}
             reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
-            className="items-center text-center [&_.wl-metric-tile__value]:text-[2.25rem]"
+            className="wl-metric-tile--compact min-w-0 items-center px-2 text-center [&_.wl-metric-tile__label]:text-[9px] [&_.wl-metric-tile__label]:tracking-[0.08em]"
           />
         ))}
       </section>

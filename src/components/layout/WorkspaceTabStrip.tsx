@@ -7,6 +7,8 @@ export type WorkspaceTabItem = {
   label: string;
   /** Accessible name when `label` is abbreviated for narrow viewports. */
   ariaLabel?: string;
+  /** Short visual label used on narrow viewports. */
+  shortLabel?: string;
   href?: string;
 };
 
@@ -28,6 +30,21 @@ function tabClassName(active: boolean, density: "default" | "compact") {
     active
       ? "bg-primary text-primary-foreground shadow-[var(--wireline-elevation-sm)]"
       : "text-foreground hover:bg-muted",
+  );
+}
+
+function WorkspaceTabLabel({ tab }: { tab: WorkspaceTabItem }) {
+  if (!tab.shortLabel) return tab.label;
+
+  return (
+    <>
+      <span className="sm:hidden" aria-hidden="true">
+        {tab.shortLabel}
+      </span>
+      <span className="hidden sm:inline" aria-hidden="true">
+        {tab.label}
+      </span>
+    </>
   );
 }
 
@@ -70,17 +87,18 @@ export function WorkspaceTabStrip({
       >
         {tabs.map((tab) => {
           const active = tab.id === activeId;
+          const accessibleLabel = tab.ariaLabel ?? (tab.shortLabel ? tab.label : undefined);
           if (tab.href) {
             return (
               <Link
                 key={tab.id}
                 to={tab.href}
-                aria-label={tab.ariaLabel}
-                title={tab.ariaLabel}
+                aria-label={accessibleLabel}
+                title={accessibleLabel}
                 aria-current={active ? "page" : undefined}
                 className={tabClassName(active, density)}
               >
-                {tab.label}
+                <WorkspaceTabLabel tab={tab} />
               </Link>
             );
           }
@@ -88,13 +106,13 @@ export function WorkspaceTabStrip({
             <button
               key={tab.id}
               type="button"
-              aria-label={tab.ariaLabel}
-              title={tab.ariaLabel}
+              aria-label={accessibleLabel}
+              title={accessibleLabel}
               aria-current={active ? "page" : undefined}
               onClick={() => onSelect?.(tab.id)}
               className={tabClassName(active, density)}
             >
-              {tab.label}
+              <WorkspaceTabLabel tab={tab} />
             </button>
           );
         })}

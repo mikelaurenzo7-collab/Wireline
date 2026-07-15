@@ -47,6 +47,19 @@ describe("current-state UI contract", () => {
     expect(apps).not.toContain('action: "TestFlight"');
   });
 
+  it("makes the account-bound MCP apps public without overstating their authority", () => {
+    const developers = read("src/pages/Developers.tsx");
+
+    expect(developers).toContain("Bring Wireline into ChatGPT or Claude.");
+    expect(developers).toContain("https://trywireline.com/mcp");
+    expect(developers).toContain("https://chatgpt.com/plugins");
+    expect(developers).toContain("https://claude.ai/settings/connectors");
+    expect(developers).toContain("one account-bound MCP connector");
+    expect(developers).toContain(
+      "this connector cannot place calls, send messages,\n              provision numbers, or launch an AI employee.",
+    );
+  });
+
   it("keeps public conversion routes on the selected launch plan", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const hero = read("src/components/marketing/MarketingHero.tsx");

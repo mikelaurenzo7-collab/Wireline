@@ -4,7 +4,9 @@ import {
   Copy,
   ExternalLink,
   KeyRound,
+  MessageSquareText,
   ShieldCheck,
+  Sparkles,
   Terminal,
   TerminalSquare,
 } from "lucide-react";
@@ -46,6 +48,25 @@ const ENDPOINTS = [
   { path: "/api/openapi.json", description: "Download the machine-readable API contract." },
 ] as const;
 
+const MCP_CLIENTS = [
+  {
+    title: "ChatGPT",
+    description:
+      "Create and refine a private AI employee draft, then run a private voice simulation before continuing in Wireline.",
+    action: "Open ChatGPT plugins",
+    href: "https://chatgpt.com/plugins",
+    icon: MessageSquareText,
+  },
+  {
+    title: "Claude",
+    description:
+      "Add Wireline as a remote connector to review or shape the same account-bound private drafts from Claude.",
+    action: "Open Claude connectors",
+    href: "https://claude.ai/settings/connectors",
+    icon: Sparkles,
+  },
+] as const;
+
 export default function Developers() {
   const [logs, setLogs] = useState<string[]>([
     "[INFO] Initializing agent connection...",
@@ -81,7 +102,7 @@ export default function Developers() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-16">
       <PageMeta
         title="Developer Portal - Wireline"
-        description="Wireline API documentation - OpenAPI spec, authentication guide, endpoint reference, and Swagger UI integration."
+        description="Wireline developer documentation and secure MCP apps for ChatGPT and Claude - OpenAPI, OAuth, endpoint reference, and account-bound tools."
         path="/developers"
       />
 
@@ -91,8 +112,57 @@ export default function Developers() {
         description="Provision agents, shape approved Training context, trigger live work, and retrieve call outcomes through the same API surface that powers Wireline."
         primaryAction={{ label: "OpenAPI spec", to: openApiUrl }}
         secondaryAction={{ label: "Try in Swagger UI", to: swaggerUrl, tone: "secondary" }}
-        proof={["Bearer authentication", "OpenAPI contract", "Live request feedback"]}
+        proof={["Bearer authentication", "OpenAPI contract", "ChatGPT + Claude MCP"]}
       />
+
+      <section
+        className="border-b border-border bg-card px-5 py-14 sm:px-8 sm:py-20 lg:px-10"
+        aria-labelledby="mcp-apps-heading"
+      >
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="wl-stitch-eyebrow">ChatGPT + Claude</p>
+          <h2 id="mcp-apps-heading" className="wl-stitch-display mt-3 text-balance">
+            Bring Wireline into ChatGPT or Claude.
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+            Use one account-bound MCP connector to draft an AI employee in natural language, test
+            its voice privately, and continue configuration in Wireline when you are ready.
+          </p>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
+              <article
+                key={title}
+                className="wl-stitch-card flex min-h-[15rem] flex-col items-center p-6 text-center"
+              >
+                <span className="grid h-11 w-11 place-items-center rounded-full border border-border bg-background text-primary">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-5 text-xl font-semibold tracking-[-.025em]">{title}</h3>
+                <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                  {description}
+                </p>
+                <Button variant="outline" size="sm" asChild className="mt-auto">
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {action} <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                  </a>
+                </Button>
+              </article>
+            ))}
+          </div>
+
+          <div className="mx-auto mt-6 max-w-3xl rounded-xl border border-border bg-background p-5">
+            <p className="wl-overline text-primary">Secure MCP endpoint</p>
+            <code className="mt-3 block overflow-x-auto font-mono text-sm text-foreground">
+              https://trywireline.com/mcp
+            </code>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              Private-by-default boundary: this connector cannot place calls, send messages,
+              provision numbers, or launch an AI employee.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="border-b border-border px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
         <div className="mx-auto max-w-6xl">

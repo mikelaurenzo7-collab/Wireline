@@ -234,7 +234,7 @@ function DemandReadinessCard({
         eyebrow: "Demand path incomplete",
         title: "Connect a phone line to start capturing real demand.",
         detail:
-          "Use it on your website, Google Business Profile, ads, or as missed-call forwarding from the number customers already know.",
+          "Add it to your site and business listings, or forward missed calls from your current number.",
         primaryHref: "/connections",
         primaryLabel: "Connect phone and channels",
         secondaryHref: testHref,
@@ -244,8 +244,7 @@ function DemandReadinessCard({
       ? {
           eyebrow: "Line ready",
           title: "Your line is live. Put it where customers already call.",
-          detail:
-            "Publish the number on customer-facing profiles or forward unanswered calls to Wireline. Then place one real inbound call and review the outcome.",
+          detail: "Publish the number or forward unanswered calls, then place one real inbound call.",
           primaryHref: "/settings/phone",
           primaryLabel: "Review phone setup",
           secondaryHref: testHref,
@@ -255,8 +254,7 @@ function DemandReadinessCard({
         ? {
             eyebrow: "Action required",
             title: `${pendingFollowUps} customer follow-up${pendingFollowUps === 1 ? " needs" : "s need"} your decision.`,
-            detail:
-              "Review the proposed next steps while the customer context is fresh. Approve, edit, or decline each action before it goes out.",
+            detail: "Approve, edit, or decline each next step while the context is fresh.",
             primaryHref: "/approvals",
             primaryLabel: "Review follow-ups",
             secondaryHref: "/phone?tab=logs",
@@ -268,8 +266,7 @@ function DemandReadinessCard({
               callsCount > 0
                 ? "Wireline is handling conversations and recording what happened."
                 : "No new conversations today. Your customer line is still ready.",
-            detail:
-              "Use customer outcomes—not configuration volume—to decide what to train, connect, or automate next.",
+            detail: "Review customer outcomes to decide what to improve next.",
             primaryHref: "/phone?tab=logs",
             primaryLabel: "Review conversations",
             secondaryHref: setupHref,
@@ -292,9 +289,15 @@ function DemandReadinessCard({
             {state.title}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{state.detail}</p>
-          <p className="mt-3 text-xs text-muted-foreground">
-            {connectionsCount > 0 ? `Connected now: ${connectionsDetail}` : "No live channels connected yet."}
-          </p>
+          {connectionsCount > 0 ? (
+            <p
+              className="mt-3 truncate text-xs font-medium text-muted-foreground"
+              aria-label={`Live connections: ${connectionsDetail}`}
+              title={`Live: ${connectionsDetail}`}
+            >
+              Live: {connectionsDetail}
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
           <Button asChild>
@@ -514,11 +517,6 @@ export default function OverviewPage() {
                   ? "Let's put your first AI employee to work."
                   : `${dayGreeting()}, ${workspaceFirstName(user?.full_name, user?.email)}.`}
               </h1>
-              {!isFirstRun ? (
-                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                  See customer demand, pending decisions, and completed outcomes before changing setup.
-                </p>
-              ) : null}
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {hasAgents ? (
@@ -573,7 +571,7 @@ export default function OverviewPage() {
             />
 
             <section
-              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+              className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
               aria-label="Customer demand and outcomes"
             >
               {loadingDashboard
@@ -590,7 +588,7 @@ export default function OverviewPage() {
                       <Link
                         key={item.label}
                         to={item.href}
-                        className={`wl-metric-tile wl-reveal wl-reveal-${index + 1} group wl-focus-ring-halo`}
+                        className={`wl-metric-tile wl-metric-tile--compact wl-reveal wl-reveal-${index + 1} group wl-focus-ring-halo`}
                         data-tone={item.tone}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -598,7 +596,7 @@ export default function OverviewPage() {
                           <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
                         </div>
                         <div className="wl-metric-tile__value">{item.value}</div>
-                        <p className="wl-metric-tile__detail">{item.detail}</p>
+                        <p className="wl-metric-tile__detail hidden sm:block">{item.detail}</p>
                       </Link>
                     );
                   })}
@@ -615,9 +613,6 @@ export default function OverviewPage() {
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                     Customer outcomes
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    What customers needed, what Wireline completed, and what still requires a decision.
                   </p>
                 </div>
                 <Link to="/approvals" className="text-xs font-semibold text-primary hover:underline">

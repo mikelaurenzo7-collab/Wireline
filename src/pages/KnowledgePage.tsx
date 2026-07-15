@@ -90,9 +90,6 @@ export default function KnowledgePage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <WorkspacePageIntro title="Knowledge" />
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Maintain the approved facts employees may use. Configure behavior and run customer tests in Studio.
-              </p>
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
               <WorkspaceTabStrip

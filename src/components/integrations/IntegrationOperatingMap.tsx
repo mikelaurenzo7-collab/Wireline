@@ -45,14 +45,16 @@ export default function IntegrationOperatingMap() {
   }));
 
   return (
-    <section className="wl-paper wl-paper-elevated px-3 py-4 md:px-5 md:py-5">
+    <section
+      className="wl-paper wl-paper-elevated px-3 py-4 md:px-5 md:py-5"
+      aria-labelledby="integration-map-title"
+    >
       <header className="mb-4 flex flex-col gap-3 border-b border-border pb-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="wl-eyebrow wl-eyebrow--muted mb-2">Wire</p>
-          <h1 className="wl-display-3 text-left text-balance">Integration map</h1>
-          <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-            Every connection your agents can use — live status, capabilities, and routing.
-          </p>
+          <h2 id="integration-map-title" className="wl-display-3 text-left text-balance">
+            Integration map
+          </h2>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:min-w-[24rem]">
           {readinessCounts.map(({ status, count }) => {
