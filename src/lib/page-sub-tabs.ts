@@ -30,6 +30,8 @@ export type AppPageSubTab = {
   label: string;
   /** Accessible name when `label` is abbreviated for narrow viewports. */
   ariaLabel?: string;
+  /** Short visual label used on narrow viewports. */
+  shortLabel?: string;
   icon?: ComponentType<{ className?: string }>;
 };
 
@@ -49,8 +51,8 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     layoutIdPrefix: "phone-section",
     tabs: [
       { id: "logs", label: "History", icon: History },
-      { id: "outbound", label: "Outbound", icon: PhoneOutgoing },
-      { id: "appointments", label: "Appointments", icon: Calendar },
+      { id: "outbound", label: "Outbound", shortLabel: "Out", ariaLabel: "Outbound", icon: PhoneOutgoing },
+      { id: "appointments", label: "Appointments", shortLabel: "Appts", ariaLabel: "Appointments", icon: Calendar },
     ],
   },
   {
@@ -59,10 +61,10 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     ariaLabel: "Insights categories",
     layoutIdPrefix: "insights-group",
     tabs: [
-      { id: "performance", label: "Performance", icon: BarChart3 },
-      { id: "reliability", label: "Reliability", icon: ShieldAlert },
-      { id: "quality", label: "Quality", icon: Star },
-      { id: "revenue", label: "Revenue", icon: Receipt },
+      { id: "performance", label: "Performance", shortLabel: "Perf", ariaLabel: "Performance", icon: BarChart3 },
+      { id: "reliability", label: "Reliability", shortLabel: "Uptime", ariaLabel: "Reliability", icon: ShieldAlert },
+      { id: "quality", label: "Quality", shortLabel: "Quality", ariaLabel: "Quality", icon: Star },
+      { id: "revenue", label: "Revenue", shortLabel: "Rev", ariaLabel: "Revenue", icon: Receipt },
     ],
   },
   {
@@ -73,8 +75,8 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     tabs: [
       { id: "database", label: "Knowledge", icon: Database },
       { id: "voices", label: "Voice", icon: Mic },
-      { id: "pronunciation", label: "Pronunciation", icon: BookOpen },
-      { id: "simulator", label: "Simulator", icon: PlayCircle },
+      { id: "pronunciation", label: "Pronunciation", shortLabel: "Pron.", ariaLabel: "Pronunciation", icon: BookOpen },
+      { id: "simulator", label: "Simulator", shortLabel: "Sim", ariaLabel: "Simulator", icon: PlayCircle },
       { id: "flow", label: "Flow", icon: Workflow },
     ],
   },
@@ -124,23 +126,23 @@ export type AppPageSecondaryTabRoute = {
 export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
   funnel: { id: "funnel", label: "Funnel", icon: TrendingUp },
   goals: { id: "goals", label: "Goals", icon: Target },
-  heatmap: { id: "heatmap", label: "Heatmap", icon: Calendar },
-  leaderboard: { id: "leaderboard", label: "Leaderboard", icon: Trophy },
+  heatmap: { id: "heatmap", label: "Heatmap", shortLabel: "Heat", ariaLabel: "Heatmap", icon: Calendar },
+  leaderboard: { id: "leaderboard", label: "Leaderboard", shortLabel: "Leaders", ariaLabel: "Leaderboard", icon: Trophy },
   failures: { id: "failures", label: "Failures", icon: AlertOctagon },
   latency: { id: "latency", label: "Latency", icon: Gauge },
-  reliability: { id: "reliability", label: "Reliability", icon: ShieldAlert },
-  quality: { id: "quality", label: "Scorecards", icon: Star },
+  reliability: { id: "reliability", label: "Reliability", shortLabel: "Uptime", ariaLabel: "Reliability", icon: ShieldAlert },
+  quality: { id: "quality", label: "Scorecards", shortLabel: "Scores", ariaLabel: "Scorecards", icon: Star },
   learning: { id: "learning", label: "Learning", icon: BookOpen },
-  attribution: { id: "attribution", label: "Attribution", icon: Megaphone },
+  attribution: { id: "attribution", label: "Attribution", shortLabel: "Attrib", ariaLabel: "Attribution", icon: Megaphone },
   topics: { id: "topics", label: "Topics", icon: Layers },
-  spend: { id: "spend", label: "AI Spend", icon: Receipt },
+  spend: { id: "spend", label: "AI Spend", shortLabel: "Spend", ariaLabel: "AI Spend", icon: Receipt },
 };
 
 export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   { id: "dispatch", label: "Dispatch", icon: Zap },
-  { id: "campaigns", label: "Campaigns", icon: Megaphone },
-  { id: "sequences", label: "Sequences", icon: Repeat },
-  { id: "callbacks", label: "Callbacks", icon: CalendarClock },
+  { id: "campaigns", label: "Campaigns", shortLabel: "Camps", ariaLabel: "Campaigns", icon: Megaphone },
+  { id: "sequences", label: "Sequences", shortLabel: "Seq", ariaLabel: "Sequences", icon: Repeat },
+  { id: "callbacks", label: "Callbacks", shortLabel: "Calls", ariaLabel: "Callbacks", icon: CalendarClock },
 ];
 
 export const APP_PAGE_SECONDARY_TAB_ROUTES: AppPageSecondaryTabRoute[] = [
