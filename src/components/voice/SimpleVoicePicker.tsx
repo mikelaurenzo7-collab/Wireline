@@ -95,7 +95,7 @@ export default function SimpleVoicePicker({
     }
   }
 
-  const hasBuiltInPhoneVoice =
+  const hasManagedPhoneVoice =
     selectedProvider === "vapi" && voices.some((voice) => voice.id === selectedVoiceId);
 
   return (
@@ -104,8 +104,8 @@ export default function SimpleVoicePicker({
         <div>
           <h3 className="text-base font-semibold tracking-tight">Choose how live calls sound</h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            These voices run on live phone calls and do not require an ElevenLabs or xAI account.
-            Browser testing checks what the employee says; place a real call to hear the selected voice.
+            These managed voices are included in the Wireline phone runtime. Browser testing checks
+            what the employee says; place a real call to confirm the selected audio.
           </p>
         </div>
         <button
@@ -179,11 +179,11 @@ export default function SimpleVoicePicker({
         </div>
       )}
 
-      {!loading && !hasBuiltInPhoneVoice ? (
-        <p className="rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm text-foreground">
-          The current voice uses an optional external provider. Choose a built-in voice above for the
-          most dependable launch setup.
-        </p>
+      {!loading && !hasManagedPhoneVoice ? (
+        <StatusNotice tone="warning" title="Choose a managed voice">
+          This employee has a legacy voice setting. Select one of the included voices above before
+          placing the next live call.
+        </StatusNotice>
       ) : null}
     </div>
   );
