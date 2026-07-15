@@ -8,7 +8,9 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("managed Vapi runtime policy", () => {
   const roster = read("src/data/voice-roster.ts");
   const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+  const draftService = read("src/lib/agent-draft-service.ts");
   const studio = read("src/components/StudioAgentWorkspacePanel.tsx");
+  const carrier = read("src/components/admin/CarrierPanel.tsx");
   const csp = read("src/lib/csp.ts");
   const vercel = read("vercel.json");
   const migration = read("drizzle/migrations/0100_managed_vapi_runtime.sql");
@@ -22,11 +24,20 @@ describe("managed Vapi runtime policy", () => {
     expect(factory).toMatch(/provider: "vapi" as const/);
     expect(factory).toMatch(/isManagedVapiVoiceId/);
     expect(factory).not.toMatch(/resolveElevenLabsSpeed|pronunciationDictionaryLocators|eleven_flash/);
+    expect(draftService).toMatch(/voiceProvider: "vapi"/);
   });
 
   it("keeps external voice and avatar experiments out of Studio", () => {
     expect(studio).toMatch(/Wireline manages the voice runtime/);
     expect(studio).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|video presenter|External voice/);
+  });
+
+  it("keeps model and carrier complexity managed instead of user-tuned", () => {
+    expect(carrier).toMatch(/Vapi handles the phone conversation runtime/);
+    expect(carrier).toMatch(/OpenAI is the primary call model/);
+    expect(carrier).toMatch(/Gemini is the automatic fallback/);
+    expect(carrier).toMatch(/Twilio supplies phone and messaging infrastructure/);
+    expect(carrier).not.toMatch(/Advanced Cognitive Routing|Custom Model Selection|Model Revision Override/);
   });
 
   it("removes dormant voice vendors from the browser boundary", () => {
