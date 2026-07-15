@@ -23,7 +23,7 @@ type WorkspaceTabStripProps = {
 
 function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
-    "inline-flex shrink-0 items-center justify-center rounded-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
     density === "compact" ? "min-h-8 px-2.5 text-xs" : "min-h-[44px] px-4 text-sm",
     active
       ? "bg-primary text-primary-foreground shadow-[var(--wireline-elevation-sm)]"
@@ -50,7 +50,7 @@ export function WorkspaceTabStrip({
       className={cn(
         "wl-workspace-tabs w-full",
         wrap
-          ? "overflow-visible"
+          ? "overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
           : "overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         compact ? "min-h-8" : "mb-4 min-h-[44px] border-b border-border/70 pb-3",
         className,
@@ -59,12 +59,12 @@ export function WorkspaceTabStrip({
       <div
         className={cn(
           "flex items-center",
-          wrap ? "w-full min-w-0 flex-wrap" : "min-w-max",
+          wrap ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap" : "min-w-max",
           compact ? "gap-1" : "gap-2",
           wrap
             ? align === "start"
               ? "justify-start"
-              : "justify-center"
+              : "lg:justify-center"
             : align === "center" && "mx-auto",
         )}
       >
