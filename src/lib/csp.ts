@@ -35,8 +35,6 @@ export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
     "https://api.openai.com",
-    "https://api.x.ai",
-    "wss://api.x.ai",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",
     "https://accounts.google.com",
@@ -76,7 +74,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
     `connect-src ${connectSrcs}`,
-    "media-src 'self' blob: https://api.elevenlabs.io https://cdn.elevenlabs.io",
+    "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "frame-src 'self' blob:",
     "frame-ancestors 'none'",
