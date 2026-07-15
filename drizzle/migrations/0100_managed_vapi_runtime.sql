@@ -7,6 +7,7 @@
 CREATE OR REPLACE FUNCTION wireline_normalize_managed_voice()
 RETURNS trigger
 LANGUAGE plpgsql
+SET search_path = public
 AS $$
 BEGIN
   NEW.voice_provider := 'vapi';
