@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react";
+import { CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { authFetch } from "../lib/api";
-import AgentPresenceLivePreview from "./AgentPresenceLivePreview";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
-import VoiceGallery from "./voice/VoiceGallery";
 
 const PERSONALITIES = [
   { id: "Clear", description: "Direct and easy to understand" },
@@ -19,8 +17,6 @@ const PERSONALITIES = [
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
-  agentRole?: string | null;
-  isBusinessAgent?: boolean;
   onTestVoiceInChat: () => void;
   className?: string;
 };
@@ -44,8 +40,6 @@ function existingGreeting(directives: AgentSetupResponse["directives"]) {
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
-  agentRole = null,
-  isBusinessAgent = false,
   onTestVoiceInChat,
   className = "",
 }: StudioAgentWorkspacePanelProps) {
@@ -144,7 +138,7 @@ export default function StudioAgentWorkspacePanel({
             Give {agentName} one clear job.
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Set the tone, greeting, essential facts, and phone voice. Test before adding more tools.
+            Set the tone, greeting, essential facts, and managed phone voice. Test before adding more tools.
           </p>
         </header>
 
@@ -251,7 +245,7 @@ export default function StudioAgentWorkspacePanel({
               Phone voice
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Built-in voices are the dependable default. Browser testing checks the response; a real call is required to hear the phone voice.
+              Wireline manages the voice runtime. Browser testing checks the response; a real call confirms the phone audio.
             </p>
           </div>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
@@ -278,43 +272,6 @@ export default function StudioAgentWorkspacePanel({
             </div>
           </div>
         </section>
-
-        <details id="advanced-employee-options" className="group rounded-2xl border border-border bg-card">
-          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold text-foreground sm:px-6">
-            Advanced options
-            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
-          </summary>
-          <div className="space-y-6 border-t border-border px-5 py-5 sm:px-6">
-            <div>
-              <h3 className="text-base font-semibold text-foreground">On-screen appearance</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Optional. Calls, text, and email work without a video presenter.
-              </p>
-              <div className="mt-4">
-                <AgentPresenceLivePreview
-                  agentId={agentId}
-                  name={agentName}
-                  role={agentRole}
-                  isBusinessAgent={isBusinessAgent}
-                />
-              </div>
-            </div>
-            <div className="border-t border-border pt-6">
-              <h3 className="text-base font-semibold text-foreground">External voice library</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Use this only after configuring an external provider and verifying its runtime key.
-              </p>
-              <div className="mt-4">
-                <VoiceGallery
-                  agentId={agentId}
-                  agentName={agentName}
-                  embedded
-                  searchInputId="advanced-voice-search"
-                />
-              </div>
-            </div>
-          </div>
-        </details>
       </div>
     </div>
   );
