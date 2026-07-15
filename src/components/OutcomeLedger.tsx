@@ -176,7 +176,7 @@ export default function OutcomeLedger({
               {row.direction} · {row.duration_seconds ?? 0}s
             </span>
           </div>
-          <p className="mt-2 text-sm leading-relaxed text-foreground">{summarizeOutcomeRow(row)}</p>
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-foreground">{summarizeOutcomeRow(row)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
             {row.owner_label ? <span>Owner: {row.owner_label}</span> : null}
             {row.campaign_source ? <span>Source: {row.campaign_source}</span> : null}
