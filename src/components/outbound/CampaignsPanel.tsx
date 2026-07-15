@@ -5,11 +5,10 @@ import { logFetchError } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
-import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
-import { cn } from "../../lib/utils";
 import {
   SALES_PLAYBOOKS,
   playbookGoalTag,
@@ -186,18 +185,20 @@ export default function CampaignsPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className={cn(OPS_CHANNEL_TOOLBAR, "flex items-center justify-between gap-3")}>
+      <div className="flex flex-col items-stretch gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
-          Batch outbound dialing with TCPA guards and call-window enforcement.
+          Batch calling with consent and call-window checks.
         </p>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center justify-end gap-2">
           <ShadButton type="button" variant="outline" size="sm" onClick={() => void load()}>
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
           </ShadButton>
-          <ShadButton type="button" size="sm" onClick={() => setShowCreate(true)}>
-            <Plus className="h-3.5 w-3.5" aria-hidden />
-            Create campaign
-          </ShadButton>
+          {campaigns.length > 0 ? (
+            <ShadButton type="button" size="sm" onClick={() => setShowCreate(true)}>
+              <Plus className="h-3.5 w-3.5" aria-hidden />
+              Create campaign
+            </ShadButton>
+          ) : null}
         </div>
       </div>
 
