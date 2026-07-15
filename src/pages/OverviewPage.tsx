@@ -256,7 +256,7 @@ function DemandReadinessCard({
             eyebrow: "Action required",
             title: `${pendingFollowUps} customer follow-up${pendingFollowUps === 1 ? " needs" : "s need"} your decision.`,
             detail:
-              "Review the proposed next steps while the customer context is fresh. Approve, edit, or decline each action before it goes out.",
+              "Approve, edit, or decline each queued action before it goes out.",
             primaryHref: "/approvals",
             primaryLabel: "Review follow-ups",
             secondaryHref: "/phone?tab=logs",
@@ -573,7 +573,7 @@ export default function OverviewPage() {
             />
 
             <section
-              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+              className="grid grid-cols-2 gap-3 lg:grid-cols-4"
               aria-label="Customer demand and outcomes"
             >
               {loadingDashboard
@@ -590,7 +590,7 @@ export default function OverviewPage() {
                       <Link
                         key={item.label}
                         to={item.href}
-                        className={`wl-metric-tile wl-reveal wl-reveal-${index + 1} group wl-focus-ring-halo`}
+                        className={`wl-metric-tile wl-metric-tile--compact wl-reveal wl-reveal-${index + 1} group wl-focus-ring-halo`}
                         data-tone={item.tone}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -611,13 +611,10 @@ export default function OverviewPage() {
             ) : null}
 
             <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Customer outcomes">
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                     Customer outcomes
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    What customers needed, what Wireline completed, and what still requires a decision.
                   </p>
                 </div>
                 <Link to="/approvals" className="text-xs font-semibold text-primary hover:underline">
