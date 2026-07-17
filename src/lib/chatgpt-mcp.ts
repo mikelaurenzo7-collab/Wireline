@@ -2,7 +2,6 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { AppError } from "./api-error";
 import { buildWirelineMcpWidgetCss } from "./wireline-mcp-widget-styles";
 
-export const MCP_PROTOCOL_VERSION = "2025-06-18";
 export const CHATGPT_MCP_RESOURCE_URI = "ui://widget/wireline-agent-launch-v1.html";
 export const MCP_SCOPES = ["agents.read", "agents.write", "demo.voice"] as const;
 export type McpScope = (typeof MCP_SCOPES)[number];
