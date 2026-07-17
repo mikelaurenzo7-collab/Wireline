@@ -521,7 +521,6 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     <EmptyState
                       density="compact"
                       title="Message bodies are not stored for this conversation."
-                      description="Summary + controls live here."
                     />
                   )}
                 </div>

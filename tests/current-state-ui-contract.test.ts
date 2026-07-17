@@ -131,7 +131,7 @@ describe("current-state UI contract", () => {
     }
     expect(textarea).toContain("text-base");
     expect(radixSelect).toContain("min-h-11");
-    expect(navigation).toContain('label: "Wire"');
+    expect(navigation).toContain('label: "Connections"');
     expect(navigation).toContain('shortLabel: "Train"');
   });
 

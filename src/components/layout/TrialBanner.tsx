@@ -93,17 +93,17 @@ export default function TrialBanner() {
     );
   } else if (daysLeft === 0) {
     message = (
-      <>Your trial ends today. Upgrade now to keep your agents live — phone number stays.</>
+      <>Your trial ends today. Upgrade now to keep your AI employees live — phone number stays.</>
     );
   } else if (daysLeft === 1) {
     message = (
-      <>Your trial ends tomorrow. Upgrade now to keep your agents live — phone number stays.</>
+      <>Your trial ends tomorrow. Upgrade now to keep your AI employees live — phone number stays.</>
     );
   } else {
     message = (
       <>
-        Trial ends in <strong>{daysLeft} days</strong>. Upgrade now to keep your agents live — phone
-        number stays.
+        Trial ends in <strong>{daysLeft} days</strong>. Upgrade now to keep your AI employees live —
+        phone number stays.
       </>
     );
   }

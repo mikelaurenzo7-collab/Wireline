@@ -40,7 +40,7 @@ describe("agent navigation contract", () => {
     expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);
     expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/knowledge"[\s\S]*label: "Knowledge"/);
     expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/approvals"/);
-    expect(workspaceShell).toMatch(/aria-label="Agents"/);
+    expect(workspaceShell).toMatch(/aria-label="AI employees"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
     expect(workspaceShell).toMatch(/to="\/settings"[\s\S]*aria-label="Account settings"/);
     expect(appRoutes).toMatch(/path="\/agents"[\s\S]*to="\/studio"/);
@@ -104,18 +104,21 @@ describe("agent navigation contract", () => {
     expect(simpleVoicePicker).toMatch(/Browser tests the words/);
     expect(simpleVoicePicker).toMatch(/Test response/);
     expect(simpleVoicePicker).not.toMatch(/ElevenLabs|xAI|VoiceGallery|playVoicePreview|new Audio|Test call/);
-    expect(studioPanel).not.toMatch(/Wireline manages the voice runtime/);
+    expect(studioPanel).toMatch(/<SimpleVoicePicker/);
     expect(studioPanel).not.toMatch(/External voice library|On-screen appearance/);
     expect(studioReview).toMatch(/Managed phone voice/);
   });
 
-  it("keeps the existing Fast Start creation flow while clarifying the active workspace", () => {
+  it("keeps Fast Start focused on one job and managed defaults", () => {
     expect(studioChrome).toMatch(/New employee/);
     expect(studioChrome).not.toMatch(/New assistant|Assistants/);
     expect(createDialog).toMatch(/Fast Start/);
-    expect(createDialog).toMatch(/~3 minutes to your first agent/);
-    expect(createDialog).toMatch(/What do you need handled/);
-    expect(createDialog).toMatch(/Provision a number/);
+    expect(createDialog).toMatch(/AI employee in about a minute/);
+    expect(createDialog).toMatch(/What should this employee handle/);
+    expect(createDialog).toMatch(/Create AI employee/);
+    expect(createDialog).toMatch(/phoneProvisionRequested: false/);
+    expect(createDialog).not.toMatch(/VoicePickerField|CreateAgentCatalogFacePicker/);
+    expect(createDialog).not.toMatch(/Provision a number|video-presenter/);
     expect(createDialog).toMatch(/\/studio\?agent=/);
     expect(createDialog).not.toMatch(/\/training\?agent=|\/knowledge\?agent=/);
     expect(productCopy).toMatch(/Brief it\. Train it once\. Connect calls, texts, and email\./);

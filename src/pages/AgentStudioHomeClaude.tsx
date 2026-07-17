@@ -88,7 +88,7 @@ export default function AgentStudioHomeClaude() {
     if (warning) {
       toast({
         type: "warning",
-        title: "Agent created",
+        title: "AI employee created",
         message: warning,
         duration: 12_000,
       });

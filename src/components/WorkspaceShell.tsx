@@ -193,16 +193,16 @@ function DesktopRail({ pathname }: { pathname: string }) {
       {agents.length ? (
         <div className="shrink-0 pt-3">
           <div className="flex items-center justify-between px-2.5 pb-2">
-            <WiredEyebrow>Agents</WiredEyebrow>
+            <WiredEyebrow>AI employees</WiredEyebrow>
             <Link
               to="/studio?create=1"
-              aria-label="New agent"
+              aria-label="New AI employee"
               className="text-[11px] font-semibold text-primary hover:underline"
             >
               New
             </Link>
           </div>
-          <nav className="grid gap-1 pr-0.5" aria-label="Agents">
+          <nav className="grid gap-1 pr-0.5" aria-label="AI employees">
             {visibleAgents.map((agent) => {
               const active = isNavActive(pathname, "/studio") && resolvedId === agent.id;
               return (
@@ -236,7 +236,7 @@ function DesktopRail({ pathname }: { pathname: string }) {
                 to="/studio"
                 className="mt-0.5 flex min-h-[40px] items-center justify-between rounded-[10px] px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <span>All agents</span>
+                <span>All AI employees</span>
                 <span className="font-mono text-[10px] text-[color:var(--wireline-color-text-tertiary)]">
                   {agents.length}
                 </span>

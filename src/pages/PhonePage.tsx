@@ -15,7 +15,12 @@ import {
 const PHONE_TABS = [
   { id: "logs", label: "History" },
   { id: "outbound", label: "Outbound" },
-  { id: "appointments", label: "Appts" },
+  {
+    id: "appointments",
+    label: "Appointments",
+    shortLabel: "Appts",
+    ariaLabel: "Appointments",
+  },
 ] as const;
 
 export default function PhonePage() {

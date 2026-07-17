@@ -142,7 +142,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
   async function ingest(files: FileList | File[]) {
     if (!agentId) {
-      setError("Pick an agent before adding knowledge.");
+      setError("Choose an AI employee before adding knowledge.");
       return;
     }
     const list = Array.from(files).slice(0, 5);
@@ -257,10 +257,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const uploadTrigger = (
     <button
       type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        fileInputRef.current?.click();
-      }}
+      onClick={() => fileInputRef.current?.click()}
       disabled={uploading || !agentId}
       className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[8px] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
       style={{
@@ -268,7 +265,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         color: "var(--wireline-color-text-onAction)",
       }}
     >
-      {uploading ? <Loader2 className="size-4 animate-spin" /> : <span>+ Add document</span>}
+      {uploading ? (
+        <>
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          Uploading…
+        </>
+      ) : (
+        "Choose files"
+      )}
     </button>
   );
 
@@ -370,16 +374,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        onClick={() => fileInputRef.current?.click()}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            fileInputRef.current?.click();
-          }
-        }}
-        className={`relative flex cursor-pointer rounded-[12px] border-2 border-dashed text-center transition-colors ${
+        className={`flex rounded-[12px] border-2 border-dashed text-center transition-colors ${
           compactUpload
             ? "min-h-[72px] flex-col items-stretch justify-center gap-3 px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:px-5"
             : knowledge.length === 0
@@ -397,9 +392,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         />
         <div className={compactUpload ? "min-w-0 flex-1" : undefined}>
           <div className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
-            {compactUpload
-              ? "Add documents to complement your rules"
-              : "Drop files here or click to upload"}
+            Add documents
           </div>
           <div
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
@@ -411,7 +404,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           className={
             compactUpload
               ? "shrink-0 [&>button]:w-full sm:[&>button]:w-auto"
-              : "absolute right-4 top-4"
+              : "mt-3 shrink-0"
           }
         >
           {uploadTrigger}

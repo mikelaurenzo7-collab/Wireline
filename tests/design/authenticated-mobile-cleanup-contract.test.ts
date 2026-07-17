@@ -13,7 +13,10 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).toContain("shortLabel?: string");
     expect(tabStrip).toContain('className="sm:hidden"');
     expect(tabStrip).toContain('className="hidden sm:inline"');
-    expect(tabStrip).toContain("`${fullLabel} (${tab.shortLabel})`");
+    expect(tabStrip).toContain(
+      "tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined)",
+    );
+    expect(tabStrip).not.toContain("(${tab.shortLabel})");
     expect(tabs).toContain('shortLabel: "Camps"');
     expect(tabs).toContain('shortLabel: "Seq"');
     expect(tabs).toContain('shortLabel: "Calls"');
@@ -22,12 +25,15 @@ describe("authenticated mobile cleanup", () => {
   it("keeps authenticated metrics glanceable instead of stacking full cards", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
+    const phone = read("src/pages/PhonePage.tsx");
 
     expect(overview).toContain("grid grid-cols-2 gap-2");
     expect(overview).toContain("wl-metric-tile--compact");
     expect(overview).toContain("wl-metric-tile__detail hidden sm:block");
     expect(knowledge).toContain("grid grid-cols-3 gap-2");
     expect(knowledge).toContain("wl-metric-tile--compact");
+    expect(phone).toContain('label: "Appointments"');
+    expect(phone).toContain('shortLabel: "Appts"');
   });
 
   it("keeps outbound controls concise without duplicating empty-state actions", () => {
@@ -66,6 +72,9 @@ describe("authenticated mobile cleanup", () => {
     expect(outcomes).toContain('row.compliance_state !== "clear"');
     expect(outcomes).toContain("row.lead_score > 0");
     expect(knowledge).toContain("sm:[&>button]:w-auto");
+    expect(knowledge).toContain('"Choose files"');
+    expect(knowledge).not.toContain('role="button"');
+    expect(knowledge).not.toContain("absolute right-4 top-4");
     expect(knowledgePage).toContain('shortLabel: "Knowledge"');
     expect(connections).not.toContain("Connect a channel");
     expect(mailbox).not.toContain("Optional next");
@@ -92,5 +101,33 @@ describe("authenticated mobile cleanup", () => {
     expect(inbox).toContain(
       "Connect Gmail or Outlook to sync customer threads.",
     );
+    expect(inbox).not.toContain("Summary + controls live here.");
+  });
+
+  it("uses Wireline language and iconography on active work surfaces", () => {
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const callLogs = read("src/components/CallLogsClaude.tsx");
+    const campaigns = read("src/components/outbound/CampaignsPanel.tsx");
+    const callbacks = read("src/components/outbound/CallbacksPanel.tsx");
+    const billing = read("src/components/StripeBillingCard.tsx");
+    const billingSettings = read("src/pages/BillingSettings.tsx");
+    const trialBanner = read("src/components/layout/TrialBanner.tsx");
+    const activationWizard = read(
+      "src/components/onboarding/PostCreateActivationWizard.tsx",
+    );
+
+    expect(shell).toContain("<WiredEyebrow>AI employees</WiredEyebrow>");
+    expect(callLogs).toContain('label: "Employees"');
+    expect(callLogs).toContain('<Zap className="size-4"');
+    expect(callLogs).not.toContain("⚡");
+    expect(callLogs).not.toContain("Create first agent");
+    expect(campaigns).toContain('placeholder="Assign AI employee"');
+    expect(campaigns).toContain('aria-label="Campaign name"');
+    expect(campaigns).toContain('aria-label="Sales playbook"');
+    expect(callbacks).not.toContain("description=");
+    expect(billing).toContain('"employee" : "employees"');
+    expect(billingSettings).toContain("live AI employee");
+    expect(trialBanner).toContain("keep your AI employees live");
+    expect(activationWizard).toContain("connected to this AI employee");
   });
 });
