@@ -18,7 +18,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const createDialog = read("src/components/CreateAgentDialog.tsx");
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
-  const studioOverview = read("src/components/StudioOverview.tsx");
   const trainingPage = read("src/pages/KnowledgePage.tsx");
   const knowledgeBase = read("src/components/KnowledgeBaseClaude.tsx");
   const productCopy = read("src/lib/product-copy.ts");
@@ -53,7 +52,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
       shell: workspaceShell,
       canvas: studioWorkspace,
       workroom: studioWorkroom,
-      studioOverview,
       designVision,
     },
     { mustInclude, mustExclude },
@@ -86,8 +84,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/constants/navigation.ts",
     navigation,
-    /href:\s*"\/connections",\s*label:\s*"Wire"/,
-    "Wire must be the customer-facing wiring surface label in navigation (Create -> Train -> Wire -> Run)",
+    /href:\s*"\/connections",\s*label:\s*"Connections"/,
+    "Connections must be the customer-facing wiring surface label in navigation",
   );
   mustExclude(
     "src/components/WorkspaceShell.tsx",
@@ -175,12 +173,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     /PanelRightOpen|Working context|Detailed view/,
     "Workroom must not reintroduce a competing context rail",
   );
-  mustInclude(
-    "src/components/StudioOverview.tsx",
-    studioOverview,
-    /grid grid-cols-1 gap-2[\s\S]*sm:flex sm:overflow-x-auto/,
-    "mobile Studio agent navigation must stack before carousel behavior",
-  );
 
   mustInclude(
     "src/pages/KnowledgePage.tsx",
@@ -191,8 +183,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/KnowledgePage.tsx",
     trainingPage,
-    /id: "knowledge"[\s\S]*id: "voice"[\s\S]*id: "flows"[\s\S]*id: "simulator"/,
-    "Training must expose Knowledge, Voice, Flows, and Simulator",
+    /id: "knowledge"[\s\S]*id: "reports"/,
+    "Training must expose Business knowledge and Reports under the managed runtime",
   );
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",
@@ -203,7 +195,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",
     knowledgeBase,
-    /Drop files here or click to upload/,
+    /onDrop=\{onDrop\}[\s\S]*Add documents/,
     "Knowledge Base must retain the accessible ingestion drop zone",
   );
 
@@ -271,7 +263,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
 
   for (const file of [
     "src/components/CreateAgentDialog.tsx",
-    "src/components/StudioOverview.tsx",
     "src/components/AuthPortal.tsx",
     "src/components/layout/AppShell.tsx",
     "src/pages/OverviewPage.tsx",

@@ -167,6 +167,26 @@ describe("authenticated agent flow", () => {
     expect(decode).toContain("LIVEAVATAR_PCM_RATE_HZ");
   });
 
+  it("persists the deploy modal's template identity on create", () => {
+    const routes = read("src/routes/agent-routes-v2.ts");
+    const templates = read("src/components/AgentTemplates.tsx");
+    const deployModal = read("src/components/DeployAgentModal.tsx");
+
+    // Quick Deploy promises the picked voice, channel, opening line, and
+    // template personality — the create route must actually store them.
+    expect(routes).toContain("cleanText(req.body?.voice_id, 160)");
+    expect(routes).toContain("isManagedVapiVoiceId(requestedVoiceId)");
+    expect(routes).toContain('voiceProvider: "vapi"');
+    expect(routes).not.toContain('voiceProvider: "11labs"');
+    expect(routes).toContain('req.body?.channel === "email"');
+    expect(routes).toContain("cleanText(req.body?.firstMessage, 500)");
+    expect(routes).toContain("TEMPLATE_OVERLAYS[templateId]");
+    expect(templates).toContain("voice_id: values.voiceId");
+    expect(deployModal).toContain("VAPI_CURATED_VOICES");
+    expect(deployModal).toContain("MANAGED_VOICE_BY_GENDER");
+    expect(deployModal).not.toMatch(/PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/);
+  });
+
   it("defers phone provisioning from Fast Start into the post-create wizard", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");

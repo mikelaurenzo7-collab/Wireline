@@ -100,7 +100,6 @@ for (const path of [
   "src/components/layout/TrialBanner.tsx",
   "src/components/layout/EmailVerifyBanner.tsx",
   "src/components/UsageMeter.tsx",
-  "src/components/DailyBrief.tsx",
   "src/pages/BillingSettings.tsx",
 ]) {
   assertIncludes(

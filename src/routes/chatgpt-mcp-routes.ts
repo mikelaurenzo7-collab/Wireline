@@ -361,7 +361,9 @@ async function issueTokens(input: {
 }) {
   await ensureMcpSchema();
   await revokeMcpAccessTokensForClient(input.userId, input.clientId);
-  pruneExpiredMcpOAuthRows().catch((error) => {
+  // Awaited so the serverless invocation cannot freeze before the deletes
+  // land; failures only warn because issuance must not depend on cleanup.
+  await pruneExpiredMcpOAuthRows().catch((error) => {
     log.warn("MCP OAuth expired-row prune failed", {
       error: error instanceof Error ? error.message : String(error),
     });
