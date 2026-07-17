@@ -1,8 +1,8 @@
 /**
  * ElevenLabs API wrapper — typed helpers for voice library + cloning.
  *
- * Why this lives in its own file: the existing voice catalog
- * (PREMIUM_VOICES in AssistantSettings.tsx) is static + curated.
+ * Why this lives in its own file: the curated managed voice catalog
+ * (VAPI_CURATED_VOICES in src/lib/voice-catalog.ts) is static.
  * ElevenLabs is dynamic: every tenant can clone voices, the library
  * grows, voices get deleted. We hit the live API on demand and merge
  * with the curated list at the route layer.
