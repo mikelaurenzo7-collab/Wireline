@@ -139,10 +139,9 @@ export default function CreateAgentDialog({
     if (creating) return;
     const finalBrief = brief.trim() || defaultBrief(activePosture);
     const finalName = name.trim() || defaultAgentName(activePosture, role);
-    const personalityText =
-      activePosture === "business"
-        ? "Clear. Concise. Useful. Business-ready."
-        : "Clear. Concise. Useful. Personal and discreet.";
+    const personalityText = `Warm. Concise. Useful. ${
+      activePosture === "business" ? "Business-ready." : "Personal and discreet."
+    }`;
     setCreating(true);
     setError("");
     try {
