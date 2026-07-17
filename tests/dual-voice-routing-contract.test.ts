@@ -18,20 +18,21 @@ describe("dual-voice PSTN routing contracts", () => {
     );
   });
 
-  it("never substitutes presenter voice id on the PSTN path", () => {
+  it("clamps every PSTN call to a curated managed Vapi voice", () => {
+    // The managed runtime replaced per-provider PSTN substitution: the factory
+    // accepts only curated Vapi voice ids and falls back to the managed default.
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    const presenterBlock = factory.slice(
-      factory.indexOf('if (voiceProvider === "presenter")'),
-      factory.indexOf("const speech = resolveVapiSpeechPipeline"),
-    );
-    expect(presenterBlock).toContain("configured.phoneVoiceId || pickRotatedVoiceId");
-    expect(presenterBlock).not.toContain("configured.voiceId");
+    expect(factory).toContain("isManagedVapiVoiceId");
+    expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(factory).toContain('provider: "vapi" as const');
+    expect(factory).not.toContain("configured.phoneVoiceId");
+    expect(factory).not.toContain('voiceProvider === "presenter"');
   });
 
-  it("routes Training phone picks through dual-voice PATCH when presenter is active", () => {
-    const gallery = read("src/components/voice/VoiceGallery.tsx");
-    expect(gallery).toContain('applyVoice(voice, "phone")');
-    expect(gallery).toContain("phoneVoiceId");
-    expect(gallery).toContain('provider: "presenter"');
+  it("routes Studio phone picks through the managed voice PATCH", () => {
+    const picker = read("src/components/voice/SimpleVoicePicker.tsx");
+    expect(picker).toContain("/voice");
+    expect(picker).toContain('provider: "vapi"');
+    expect(picker).not.toContain('provider: "presenter"');
   });
 });

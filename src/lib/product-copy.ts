@@ -119,9 +119,13 @@ export const WORKSPACE_VOICE = {
   createHeadline: "Build your best employee.",
   runHeadline: "Your right-hand employee is live.",
   emptyCue: "Brief it. Train it once. Connect calls, texts, and email.",
-  commandPrompts: ["Answer calls", "Text follow-ups", "Send email recaps", "Book appointments"],
-  directAgent: (name?: string | null) =>
-    `Ask anything about ${name?.trim() || "your AI employee"}...`,
+  configurePrompts: ["Adjust the greeting", "Change the tone", "Add a business rule"],
+  testPrompts: [
+    "What services do you offer?",
+    "I want to book an appointment.",
+    "How much does it cost?",
+    "I need to speak with a person.",
+  ],
 } as const;
 
 export const PRODUCT_VERSATILITY = {

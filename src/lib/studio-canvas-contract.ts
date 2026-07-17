@@ -9,9 +9,9 @@ export const STUDIO_CANVAS_SURFACES = {
   studioPageShell: "src/components/studio/StudioPageShell.tsx",
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
-  spatialCanvas: "src/components/StudioAgentCanvas.tsx",
   workroom: "src/components/StudioWorkroom.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
+  reviewPanel: "src/components/StudioAgentReviewPanel.tsx",
   overview: "src/pages/OverviewPage.tsx",
   studioHome: "src/pages/AgentStudioHomeClaude.tsx",
   agentPreference: "src/lib/studio-agent-preference.ts",
@@ -28,9 +28,16 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
   studioChrome: [{ id: "roster-loop", pattern: /agents\.map/ }],
-  canvas: [{ id: "agent-roster-grid", pattern: /Your agents/ }],
-  spatialCanvas: [{ id: "prototype-name", pattern: /\bSarah\b/ }],
-  workspacePanel: [{ id: "fake-badge", pattern: />\s*wired\s*</ }],
+  canvas: [
+    { id: "agent-roster-grid", pattern: /Your agents/ },
+    // The spatial-card prototype was retired with the managed Vapi runtime.
+    { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
+  ],
+  workspacePanel: [
+    { id: "fake-badge", pattern: />\s*wired\s*</ },
+    // External voice/avatar experiments stay out of the managed setup panel.
+    { id: "external-voice", pattern: /VoiceGallery|AgentPresenceLivePreview/ },
+  ],
 } as const;
 
 export const STUDIO_CANVAS_LEGACY_LINK_PATTERN = /mode=workroom/;
@@ -68,50 +75,34 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   navigation: [
     { id: "studio-route", pattern: /target === "\/studio"/ },
-    { id: "studio-label", pattern: /label: "Studio"/ },
+    { id: "studio-label", pattern: /label: "AI Employee"/ },
     { id: "apps-breadcrumb", pattern: /"\/apps": "Apps"/ },
   ],
   studioChrome: [
-    { id: "breadcrumb", pattern: /Studio breadcrumb|Studio context|Assistant breadcrumb/ },
-    { id: "readiness", pattern: /Active|Training/ },
-    { id: "test-call", pattern: /Run test call|Test call/ },
-    { id: "deploy", pattern: /Deploy/ },
+    { id: "context-label", pattern: /aria-label="AI employee context"/ },
+    { id: "readiness", pattern: /Live|Setup needed/ },
+    { id: "create-entry", pattern: /\/studio\?create=1/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
   ],
   overview: [
     { id: "overview-greeting", pattern: /dayGreeting\(\)/ },
-    // Wireline uses "agent" language; Assistant was retired by the migration
-    // plan. The dashboard CTA wires a new agent.
-    { id: "new-agent", pattern: /New agent|Wire your first agent|Wire one/ },
-    { id: "personal-agents", pattern: /Personal agents/ },
-    { id: "business-agents", pattern: /Business agents/ },
+    { id: "first-employee-cta", pattern: /Create your first AI employee/ },
     { id: "all-agents", pattern: /agents\.map/ },
     { id: "studio-link", pattern: /to=\{`\/studio\?agent=\$\{enc\}`\}/ },
   ],
   canvas: [
-    { id: "chat-left-workroom", pattern: /<StudioWorkroom/ },
-    { id: "spatial-canvas-default", pattern: /<StudioAgentCanvas/ },
-    { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
-    { id: "workspace-depth", pattern: /view"\) === "workspace"/ },
+    // Studio is a three-step orchestrator: Set up → Test → Review.
+    { id: "setup-section", pattern: /section === "setup"/ },
+    { id: "test-section", pattern: /section === "test"/ },
+    { id: "review-section", pattern: /section === "review"/ },
     { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
-    { id: "canvas-key", pattern: /StudioAgentCanvas[\s\S]*key=\{active\.id\}/ },
+    { id: "chat-workroom", pattern: /<StudioWorkroom/ },
+    { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
+    { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
     { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{active\.id\}/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Wire one\./ },
+    { id: "empty-state", pattern: /Create your first AI employee/ },
     { id: "command-nonce", pattern: /commandNonce/ },
-  ],
-  spatialCanvas: [
-    { id: "real-config-api", pattern: /\/api\/agent-config\// },
-    { id: "agent-canvas-label", pattern: /Agent Canvas/ },
-    { id: "identity-card", pattern: /Identity/ },
-    { id: "voice-card", pattern: /Voice/ },
-    { id: "workflows-card", pattern: /Workflows & Capabilities/ },
-    { id: "knowledge-card", pattern: /Knowledge Base/ },
-    { id: "situations-card", pattern: /Situations/ },
-    { id: "enabled-tools", pattern: /enabledTools/ },
-    { id: "directives", pattern: /directives/ },
-    { id: "connector-lines", pattern: /border-dashed/ },
-    { id: "edit-section", pattern: /onEditSection/ },
   ],
   workroom: [
     { id: "composer-dock", pattern: /wl-composer-dock/ },
@@ -119,13 +110,14 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "composer-focus", pattern: /focusComposer/ },
   ],
   workspacePanel: [
-    { id: "scoped-workspace-copy", pattern: /Everything stays in this workspace/ },
-    { id: "world-connections", pattern: /World Connections/ },
     { id: "real-config-api", pattern: /\/api\/agent-config\// },
-    { id: "voice-search", pattern: /searchInputId="voice-search"/ },
-    { id: "voice-cap", pattern: /<VoiceGallery[\s\S]*embedded/ },
-    { id: "integration-keys", pattern: /key=\{integ\.id\}/ },
-    { id: "integration-status", pattern: /integ\.connection/ },
+    { id: "managed-voice-picker", pattern: /SimpleVoicePicker/ },
+    { id: "voice-heading", pattern: /Phone voice/ },
+    { id: "test-in-chat", pattern: /onTestVoiceInChat/ },
+  ],
+  reviewPanel: [
+    { id: "go-live-review", pattern: /onTest|onEdit/ },
+    { id: "phone-readiness", pattern: /phoneNumber/ },
   ],
   agentPreference: [
     { id: "mru-key", pattern: /wireline:studio:last-agent-id/ },
@@ -141,6 +133,5 @@ export const STUDIO_CANVAS_REQUIRED = {
 
 export const STUDIO_CANVAS_LINK_SURFACES = [
   "src/pages/OverviewPage.tsx",
-  "src/components/StudioOverview.tsx",
   STUDIO_CANVAS_SURFACES.workspacePanel,
 ] as const;

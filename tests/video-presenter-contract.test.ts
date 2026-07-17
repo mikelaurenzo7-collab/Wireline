@@ -120,10 +120,7 @@ describe("video presenter integration", () => {
     expect(source("src/components/StripeBillingCard.tsx")).toContain("live-video-checkout");
   });
 
-  it("wires Studio canvas wired kickers and copper caps", () => {
-    const canvas = source("src/components/StudioAgentCanvas.tsx");
-    expect(canvas).toContain("WiredEyebrow");
-    expect(canvas).toContain("wl-canvas-card");
+  it("keeps agent readiness staging wired for launch checks", () => {
     const readiness = source("src/components/fleet-settings/AgentReadinessStage.tsx");
     expect(readiness).toContain("launch checks complete");
   });

@@ -25,16 +25,23 @@ describe("managed Vapi runtime policy", () => {
     expect(roster).not.toMatch(/ElevenLabs|pNInz6obpgDQGcFmaJgB|21m00Tcm4TlvDq8ikWAM/);
     expect(factory).toMatch(/provider: "vapi" as const/);
     expect(factory).toMatch(/isManagedVapiVoiceId/);
-    expect(factory).not.toMatch(/resolveElevenLabsSpeed|pronunciationDictionaryLocators|eleven_flash/);
+    expect(factory).not.toMatch(
+      /resolveElevenLabsSpeed|pronunciationDictionaryLocators|eleven_flash/,
+    );
     expect(draftService).toMatch(/voiceProvider: "vapi"/);
   });
 
   it("keeps external voice and avatar experiments out of active authenticated pages", () => {
-    expect(studio).toMatch(/Wireline manages the voice runtime/);
-    expect(studio).not.toMatch(/AgentPresenceLivePreview|VoiceGallery|video presenter|External voice/);
+    expect(studio).toMatch(/Phone voice/);
+    expect(studio).toMatch(/SimpleVoicePicker/);
+    expect(studio).not.toMatch(
+      /AgentPresenceLivePreview|VoiceGallery|video presenter|External voice/,
+    );
     expect(knowledge).toMatch(/Business knowledge/);
     expect(knowledge).toMatch(/Test in Studio/);
-    expect(knowledge).not.toMatch(/VoiceGallery|AgentPresenceVoiceBridge|WirelineLiveVoiceProfile|SimulatorTab/);
+    expect(knowledge).not.toMatch(
+      /VoiceGallery|AgentPresenceVoiceBridge|WirelineLiveVoiceProfile|SimulatorTab/,
+    );
     expect(liveFloor).toMatch(/Live customer calls/);
     expect(liveFloor).not.toMatch(/AgentPresencePstnBridge|Live presenter/);
   });
@@ -44,7 +51,9 @@ describe("managed Vapi runtime policy", () => {
     expect(carrier).toMatch(/OpenAI is the primary call model/);
     expect(carrier).toMatch(/Gemini is the automatic fallback/);
     expect(carrier).toMatch(/Twilio supplies phone and messaging infrastructure/);
-    expect(carrier).not.toMatch(/Advanced Cognitive Routing|Custom Model Selection|Model Revision Override/);
+    expect(carrier).not.toMatch(
+      /Advanced Cognitive Routing|Custom Model Selection|Model Revision Override/,
+    );
   });
 
   it("removes dormant voice vendors from the browser boundary", () => {

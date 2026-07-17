@@ -44,14 +44,18 @@ describe("authenticated agent flow", () => {
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
   });
 
-  it("mounts insights and daily brief on active workspace routes", () => {
+  it("mounts insights and outcome review on active workspace routes", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
     const overview = read("src/pages/OverviewPage.tsx");
     const nav = read("src/constants/navigation.ts");
 
     expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
     expect(nav).toMatch(/href:\s*["']\/insights["']/);
-    expect(overview).toContain("DailyBriefPanel");
+    // The daily-brief panel was retired with the demand-driven Overview;
+    // outcomes surface through the ledger and follow-up review paths instead.
+    expect(overview).not.toContain("DailyBriefPanel");
+    expect(overview).toContain("OutcomeLedger");
+    expect(overview).toContain('to="/approvals"');
   });
 
   it("gives first-time users real mailbox connection actions", () => {
@@ -189,19 +193,21 @@ describe("authenticated agent flow", () => {
     expect(voices).toContain('"/api/voices/:id/preview"');
   });
 
-  it("routes presenter PSTN through dual phone voice columns", () => {
+  it("routes every PSTN call through the managed Vapi voice runtime", () => {
     const schema = read("src/db/schema.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     const routes = read("src/routes/agent-routes-v2.ts");
     const createDialog = read("src/components/CreateAgentDialog.tsx");
 
+    // Dual phone-voice columns remain persisted for continuity, but the live
+    // factory clamps every call to a curated managed Vapi voice.
     expect(schema).toContain("phoneVoiceId");
     expect(schema).toContain("phoneVoiceProvider");
-    expect(factory).toContain("configured.phoneVoiceProvider");
-    expect(factory).toContain("configured.phoneVoiceId");
+    expect(factory).toContain("isManagedVapiVoiceId");
+    expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(factory).not.toContain("configured.phoneVoiceProvider");
     expect(routes).toContain("phoneVoiceId");
     expect(createDialog).toContain("phoneVoiceId");
-    expect(createDialog).toContain("defaultPresenterPhoneVoicePayload");
   });
 
   it("surfaces custom presence consent FTUX for business agents", () => {
