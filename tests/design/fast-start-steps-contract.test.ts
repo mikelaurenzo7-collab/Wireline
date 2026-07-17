@@ -7,17 +7,23 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("Fast Start step flow contract", () => {
   const createDialog = read("src/components/CreateAgentDialog.tsx");
 
-  it("splits create into brief and voice steps with gated submit", () => {
-    expect(createDialog).toContain("useState<1 | 2>(1)");
-    expect(createDialog).toContain("Step 1 · Brief and name");
-    expect(createDialog).toContain("Step 2 · Optional details");
-    expect(createDialog).toContain("step === 1");
-    expect(createDialog).toContain("continueToVoice");
-    expect(createDialog).toContain("Create agent");
-    expect(createDialog).toContain("if (step === 1 || creating) return");
-    expect(createDialog).toContain("What do you need handled?");
-    expect(createDialog).toContain("Ready to create");
-    expect(createDialog).toMatch(/Create now,\s*or personalize any detail below\./);
-    expect(createDialog).not.toMatch(/Step 1 · Brief, voice, and face/);
+  it("keeps create on a single brief-first screen", () => {
+    expect(createDialog).toContain("What should this employee handle?");
+    expect(createDialog).toContain("One sentence is enough.");
+    expect(createDialog).toContain('aria-label="Employee type"');
+    expect(createDialog).toContain('aria-label="Quick briefs"');
+    expect(createDialog).toContain("Create AI employee");
+    expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(createDialog).not.toContain("useState<1 | 2>(1)");
+    expect(createDialog).not.toMatch(/Step [12] ·/);
+    expect(createDialog).not.toContain("continueToVoice");
+  });
+
+  it("hands off into Studio with the post-create wizard payload", () => {
+    expect(createDialog).toContain("stashPostCreateWizard(wizardPayload)");
+    expect(createDialog).toContain("onCreated?.(wizardPayload)");
+    expect(createDialog).toMatch(
+      /navigate\(`\/studio\?agent=\$\{encodeURIComponent\(body\.id\)\}`/,
+    );
   });
 });

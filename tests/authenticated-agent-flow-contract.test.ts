@@ -81,9 +81,12 @@ describe("authenticated agent flow", () => {
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("Fast Start");
-    expect(createDialog).toContain("~3 minutes to your first agent");
-    expect(createDialog).toContain("VoicePickerField");
-    expect(createDialog).toContain("CreateAgentCatalogFacePicker");
+    expect(createDialog).toContain("AI employee in about a minute");
+    // Fast Start is a single brief-first screen; voice, phone, and testing
+    // are deliberately deferred into Studio.
+    expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(createDialog).not.toContain("VoicePickerField");
+    expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build your best employee."');
     expect(productCopy).toContain(
       'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
@@ -104,9 +107,8 @@ describe("authenticated agent flow", () => {
 
     expect(createDialog).toContain("Revenue Desk");
     expect(createDialog).toContain("Support Desk");
-    expect(createDialog).toContain("Sales, support, scheduling, overflow");
+    expect(createDialog).toContain("Sales, support, and scheduling");
     expect(createDialog).toContain("Qualify inbound demand, answer support questions");
-    expect(createDialog).toContain("Provision a number");
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 
@@ -165,13 +167,14 @@ describe("authenticated agent flow", () => {
     expect(decode).toContain("LIVEAVATAR_PCM_RATE_HZ");
   });
 
-  it("provisions on Fast Start when the user opts in", () => {
+  it("defers phone provisioning from Fast Start into the post-create wizard", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
 
-    expect(createDialog).toContain('"/api/phone-numbers/provision"');
-    expect(createDialog).toContain("phoneProvisioned");
-    expect(createDialog).not.toContain("deferPhoneProvision");
+    expect(createDialog).not.toContain('"/api/phone-numbers/provision"');
+    expect(createDialog).toContain("phoneProvisioned: false");
+    expect(wizard).toContain('"/api/phone-numbers/provision"');
     expect(createFlow).toContain("phoneProvisioned");
   });
 
@@ -197,7 +200,6 @@ describe("authenticated agent flow", () => {
     const schema = read("src/db/schema.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     const routes = read("src/routes/agent-routes-v2.ts");
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
 
     // Dual phone-voice columns remain persisted for continuity, but the live
     // factory clamps every call to a curated managed Vapi voice.
@@ -207,7 +209,6 @@ describe("authenticated agent flow", () => {
     expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
     expect(factory).not.toContain("configured.phoneVoiceProvider");
     expect(routes).toContain("phoneVoiceId");
-    expect(createDialog).toContain("phoneVoiceId");
   });
 
   it("surfaces custom presence consent FTUX for business agents", () => {
