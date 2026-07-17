@@ -52,7 +52,7 @@ export default function EmailVerifyBanner() {
       // double-fires from React StrictMode double-render in dev.
       success(
         "Email verified — trial started",
-        "14 days · 1 agent · 25 outbound calls included. Pick a template to deploy your first agent.",
+        "14 days · 1 AI employee · 25 outbound calls included. Pick a template to create your first one.",
       );
       // Strip the query param so refreshing the page doesn't re-fire
       // the toast. History API replace keeps scroll + state intact.

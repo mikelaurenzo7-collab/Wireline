@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import { cn } from "../lib/utils";
 import { usePresenceSignals } from "../hooks/usePresenceSignals";
-import { Download, Phone } from "lucide-react";
+import { Download, Phone, Zap } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { emitProductEventOnce } from "../lib/product-event-client";
@@ -177,7 +177,7 @@ export default function CallLogsClaude() {
   const agentNameForId = useCallback(
     (agentId: string) => {
       const match = calls.find((call) => call.agent_id === agentId);
-      return match?.agent_name || "Agent";
+      return match?.agent_name || "AI employee";
     },
     [calls],
   );
@@ -235,7 +235,7 @@ export default function CallLogsClaude() {
   const kpis = [
     { label: "Today", value: today.length, accent: "default" as const },
     { label: "Pending", value: intel.length, accent: "default" as const },
-    { label: "Fleet", value: fleet, accent: "default" as const },
+    { label: "Employees", value: fleet, accent: "default" as const },
     { label: "Escalations", value: escalations.length, accent: "warning" as const },
   ];
 
@@ -358,7 +358,7 @@ function FloorTab({
         action={
           <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
             <Button asChild size="sm">
-              <Link to="/studio?create=1">Create first agent</Link>
+              <Link to="/studio?create=1">Create AI employee</Link>
             </Button>
             <Button type="button" variant="secondary" size="sm" onClick={onOutboundCall}>
               Place outbound call
@@ -396,7 +396,7 @@ function FloorTab({
               seed={call.agent_name || call.agent_id || "agent"}
               size={40}
               speaking={isLive(call)}
-              title={call.agent_name ? `${call.agent_name} on call` : "Agent on call"}
+              title={call.agent_name ? `${call.agent_name} on call` : "AI employee on call"}
               className="shrink-0"
             />
             <div className="min-w-0 flex-1">
@@ -490,14 +490,14 @@ function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
               }}
               aria-hidden="true"
             >
-              ⚡
+              <Zap className="size-4" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-[var(--wireline-color-text-primary)]">
                 {call.intent_label || call.summary || "Follow up requested"}
               </div>
               <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                {call.agent_name || "Agent"} · {formatTime(call.created_at)}
+                {call.agent_name || "AI employee"} · {formatTime(call.created_at)}
               </div>
             </div>
             <span
@@ -573,7 +573,7 @@ function TriageTab({ items, loading }: { items: Call[]; loading: boolean }) {
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">
               <span className="text-[var(--wireline-color-text-tertiary)]">
-                {call.agent_name || "Agent"}
+                {call.agent_name || "AI employee"}
               </span>
             </div>
           </li>

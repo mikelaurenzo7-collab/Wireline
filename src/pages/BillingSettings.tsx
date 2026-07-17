@@ -180,8 +180,8 @@ export default function BillingSettings() {
                   </div>
                   <p className="mt-3 max-w-[72ch] text-sm leading-6 text-muted-foreground">
                     {paidPlan
-                      ? `${plan.max_agents} live agent${plan.max_agents === 1 ? "" : "s"}, up to ${plan.included_phone_numbers} on-demand production number${plan.included_phone_numbers === 1 ? "" : "s"}, and ${plan.voice_minutes_monthly.toLocaleString()} pooled live-call minutes each month. Lead Hunt and connected email workflows are available; variable SMS, enrichment, and extra voice usage draw from prepaid balance.`
-                      : "Build, train, and privately simulate one draft agent. Choose a paid plan before provisioning a production number or running paid provider actions."}
+                      ? `${plan.max_agents} live AI employee${plan.max_agents === 1 ? "" : "s"}, up to ${plan.included_phone_numbers} on-demand production number${plan.included_phone_numbers === 1 ? "" : "s"}, and ${plan.voice_minutes_monthly.toLocaleString()} pooled live-call minutes each month. Lead Hunt and connected email workflows are available; variable SMS, enrichment, and extra voice usage draw from prepaid balance.`
+                      : "Build, train, and privately simulate one draft AI employee. Choose a paid plan before provisioning a production number or running paid provider actions."}
                   </p>
                 </>
               )}

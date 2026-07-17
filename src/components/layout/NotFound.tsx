@@ -130,7 +130,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
             <NotFoundCard
               to="/agents"
               icon={Bot}
-              label="Agents"
+              label="AI Employees"
               hint="Manage roster"
               accent={BRAND.colors.primary}
             />

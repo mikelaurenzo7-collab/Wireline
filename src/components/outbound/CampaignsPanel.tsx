@@ -233,11 +233,16 @@ export default function CampaignsPanel() {
         <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Create campaign</h3>
-            <button type="button" onClick={() => setShowCreate(false)} aria-label="Close">
-              <X className="h-4 w-4" />
+            <button
+              type="button"
+              onClick={() => setShowCreate(false)}
+              aria-label="Close campaign form"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
           <Input
+            aria-label="Campaign name"
             placeholder="Campaign name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -246,7 +251,7 @@ export default function CampaignsPanel() {
             value={playbookId}
             onValueChange={(value) => setPlaybookId(value as SalesPlaybookId)}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Sales playbook">
               <SelectValue placeholder="Sales playbook" />
             </SelectTrigger>
             <SelectContent>
@@ -261,6 +266,7 @@ export default function CampaignsPanel() {
             {SALES_PLAYBOOKS.find((playbook) => playbook.id === playbookId)?.objective}
           </p>
           <Input
+            aria-label="Campaign notes"
             placeholder="Notes (optional)"
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
@@ -269,11 +275,11 @@ export default function CampaignsPanel() {
             value={agentId || "__none__"}
             onValueChange={(v) => setAgentId(v === "__none__" ? "" : v)}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Assign agent" />
+            <SelectTrigger aria-label="Assign AI employee">
+              <SelectValue placeholder="Assign AI employee" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">No agent assigned</SelectItem>
+              <SelectItem value="__none__">No AI employee assigned</SelectItem>
               {agents.map((a) => (
                 <SelectItem key={a.id} value={a.id}>
                   {a.name}

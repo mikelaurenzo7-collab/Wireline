@@ -63,7 +63,6 @@ export default function CallbacksPanel() {
           className="w-full max-w-lg"
           icon={CalendarClock}
           title={OPS_CHANNEL_EMPTY.callbacks.title}
-          description="Callbacks appear when agents or callers schedule follow-up dials."
           actions={[...OPS_CHANNEL_EMPTY.callbacks.actions]}
         />
       </div>

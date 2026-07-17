@@ -88,9 +88,8 @@ export function WorkspaceTabStrip({
         {tabs.map((tab) => {
           const active = tab.id === activeId;
           const fullLabel = tab.ariaLabel ?? tab.label;
-          const accessibleLabel = tab.shortLabel
-            ? `${fullLabel} (${tab.shortLabel})`
-            : tab.ariaLabel;
+          const accessibleLabel =
+            tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined);
           if (tab.href) {
             return (
               <Link

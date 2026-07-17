@@ -101,14 +101,14 @@ export default function PhoneCallHistoryPanel() {
         className="w-full max-w-lg"
         icon={<History className="size-5" aria-hidden />}
         title="No call history yet"
-        description="Real calls, test calls, summaries, outcomes, and follow-ups will land here once a number is wired."
+        description="Calls, summaries, outcomes, and follow-ups appear here after you connect a phone number."
         action={
           <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
             <Button asChild>
-              <Link to="/studio?create=1">Create first agent</Link>
+              <Link to="/studio?create=1">Create AI employee</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link to="/settings/phone">Wire a number</Link>
+              <Link to="/settings/phone">Connect phone</Link>
             </Button>
           </div>
         }
