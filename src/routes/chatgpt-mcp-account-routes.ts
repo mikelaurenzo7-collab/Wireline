@@ -1,5 +1,4 @@
 import express, { type Request, type Response } from "express";
-import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { type AgentCustomizationInput, assertDraftConfirmation } from "../lib/agent-customization";
@@ -9,12 +8,7 @@ import {
   updateAgentDraft,
   type AgentDraftPrincipal,
 } from "../lib/agent-draft-service";
-import {
-  CHATGPT_MCP_RESOURCE_URI,
-  MCP_PROTOCOL_VERSION,
-  MCP_SCOPES,
-  type McpScope,
-} from "../lib/chatgpt-mcp";
+import { CHATGPT_MCP_RESOURCE_URI, MCP_SCOPES, type McpScope } from "../lib/chatgpt-mcp";
 import {
   CHATGPT_ACCOUNT_WIDGET_URI,
   buildAccountBoundWidgetHtml,
@@ -26,6 +20,11 @@ import {
   isMcpResourceBound,
   mcpIssuer,
 } from "../lib/mcp-oauth-security";
+import {
+  applyMcpTransportHeaders,
+  isMcpNotificationMethod,
+  mcpToolErrorResult,
+} from "../lib/mcp-transport";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { rateLimit } from "../lib/rate-limit";
 import { createOpenAIRealtimeClientSecret } from "../lib/voice/openai-realtime-service";
@@ -379,16 +378,12 @@ router.post("/mcp", async (req, res) => {
     });
     return null;
   });
-  res.setHeader("MCP-Protocol-Version", MCP_PROTOCOL_VERSION);
-  res.setHeader(
-    "Mcp-Session-Id",
-    req.get("mcp-session-id") || randomBytes(16).toString("base64url"),
-  );
+  const negotiatedVersion = applyMcpTransportHeaders(req, res, method, params);
 
   try {
     if (method === "initialize") {
       return jsonRpc(res, id, {
-        protocolVersion: MCP_PROTOCOL_VERSION,
+        protocolVersion: negotiatedVersion,
         capabilities: {
           tools: { listChanged: false },
           resources: { subscribe: false, listChanged: false },
@@ -398,7 +393,8 @@ router.post("/mcp", async (req, res) => {
           "Wireline requires a connected Wireline account. Use it to create and refine a real private agent draft in the user’s workspace. Before a create or update operation, summarize identity, goal, rules, knowledge, action boundaries, and escalation policy; only write after the user explicitly confirms. Private voice simulations are tool-free. Never claim an agent is live, has a number, or completed an external action unless Wireline confirms it.",
       });
     }
-    if (method === "notifications/initialized") return res.status(202).end();
+    if (method === "ping") return jsonRpc(res, id, {});
+    if (isMcpNotificationMethod(method)) return res.status(202).end();
     if (method === "tools/list") return jsonRpc(res, id, { tools: toolDefinitions() });
     if (method === "resources/list")
       return jsonRpc(res, id, {
@@ -556,8 +552,12 @@ router.post("/mcp", async (req, res) => {
         _meta: { "mcp/www_authenticate": [challenge] },
       });
     }
-    if (error instanceof AppError)
+    if (error instanceof AppError) {
+      // Tool-execution failures surface as isError results so the model can
+      // read the message and correct course; protocol failures stay errors.
+      if (method === "tools/call") return jsonRpc(res, id, mcpToolErrorResult(error.message));
       return jsonRpcError(res, id, -32000, error.message, error.status);
+    }
     log.error("ChatGPT account-bound MCP request failed", {
       method,
       error: error instanceof Error ? error.message : String(error),

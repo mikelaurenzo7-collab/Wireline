@@ -43,6 +43,19 @@ export async function revokeMcpAccessTokensForClient(
   `);
 }
 
+/**
+ * Delete expired OAuth rows so codes, access tokens, and refresh tokens do
+ * not accumulate forever. Called opportunistically on token issuance; the
+ * expires_at indexes keep each sweep cheap.
+ */
+export async function pruneExpiredMcpOAuthRows(): Promise<void> {
+  await Promise.all([
+    drizzle.execute(sql`DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()`),
+    drizzle.execute(sql`DELETE FROM wireline_mcp_access_tokens WHERE expires_at < now()`),
+    drizzle.execute(sql`DELETE FROM wireline_mcp_refresh_tokens WHERE expires_at < now()`),
+  ]);
+}
+
 export async function backfillMcpOAuthResourceBindings(resource: string): Promise<number> {
   const results = await Promise.all([
     drizzle.execute(

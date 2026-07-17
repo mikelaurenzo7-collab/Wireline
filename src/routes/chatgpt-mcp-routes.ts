@@ -13,7 +13,6 @@ import {
   createDemoSpec,
   decodeDemoToken,
   encodeDemoToken,
-  MCP_PROTOCOL_VERSION,
   MCP_SCOPES,
   type McpScope,
 } from "../lib/chatgpt-mcp";
@@ -36,8 +35,14 @@ import {
   isMcpResourceBound,
   mcpIssuer,
   mcpResourceUrl,
+  pruneExpiredMcpOAuthRows,
   revokeMcpAccessTokensForClient,
 } from "../lib/mcp-oauth-security";
+import {
+  applyMcpTransportHeaders,
+  isMcpNotificationMethod,
+  mcpToolErrorResult,
+} from "../lib/mcp-transport";
 import { rateLimit } from "../lib/rate-limit";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-context";
 import { getSessionTokenFromRequest } from "../lib/session-cookie";
@@ -355,6 +360,13 @@ async function issueTokens(input: {
 }) {
   await ensureMcpSchema();
   await revokeMcpAccessTokensForClient(input.userId, input.clientId);
+  // Awaited so the serverless invocation cannot freeze before the deletes
+  // land; failures only warn because issuance must not depend on cleanup.
+  await pruneExpiredMcpOAuthRows().catch((error) => {
+    log.warn("MCP OAuth expired-row prune failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
   const accessToken = `wlmcp_${publicId()}`;
   const refreshToken = `wlmcp_r_${publicId()}`;
   const accessExpiresAt = new Date(Date.now() + ACCESS_TOKEN_TTL_MS);
@@ -824,12 +836,11 @@ router.post("/mcp", async (req, res) => {
   const params =
     body?.params && typeof body.params === "object" ? (body.params as Record<string, unknown>) : {};
   const principal = await mcpPrincipal(req).catch(() => null);
-  res.setHeader("MCP-Protocol-Version", MCP_PROTOCOL_VERSION);
-  res.setHeader("Mcp-Session-Id", req.get("mcp-session-id") || publicId());
+  const negotiatedVersion = applyMcpTransportHeaders(req, res, method, params);
   try {
     if (method === "initialize")
       return jsonRpc(res, id, {
-        protocolVersion: MCP_PROTOCOL_VERSION,
+        protocolVersion: negotiatedVersion,
         capabilities: {
           tools: { listChanged: false },
           resources: { subscribe: false, listChanged: false },
@@ -838,7 +849,8 @@ router.post("/mcp", async (req, res) => {
         instructions:
           "Use Wireline to create a private voice-agent preview first. Guests can explore and try live voice from the preview card. Require a connected Wireline account plus explicit confirmation before saving an agent draft. Never claim an agent is live, has a number, or can place calls unless Wireline confirms it.",
       });
-    if (method === "notifications/initialized") return res.status(202).end();
+    if (method === "ping") return jsonRpc(res, id, {});
+    if (isMcpNotificationMethod(method)) return res.status(202).end();
     if (method === "tools/list") return jsonRpc(res, id, { tools: toolDefinitions() });
     if (method === "resources/list")
       return jsonRpc(res, id, {
@@ -995,8 +1007,12 @@ router.post("/mcp", async (req, res) => {
       });
     }
     const appError = error instanceof AppError ? error : null;
-    if (appError)
+    if (appError) {
+      // Tool-execution failures surface as isError results so the model can
+      // read the message and correct course; protocol failures stay errors.
+      if (method === "tools/call") return jsonRpc(res, id, mcpToolErrorResult(appError.message));
       return jsonRpcError(res, id, -32000, appError.message, appError.statusCode || 400);
+    }
     log.error("ChatGPT MCP request failed", {
       method,
       error: error instanceof Error ? error.message : String(error),

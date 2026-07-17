@@ -9,8 +9,10 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
-import { pickRotatedVoiceId } from "../data/voice-roster";
+import { isManagedVapiVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
+import { composeAgentPersonality, TEMPLATE_OVERLAYS } from "../lib/template-overlays";
+import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import {
   getDefaultAgentTools,
   isAgentToolName,
@@ -261,6 +263,24 @@ router.post(
     const role = canonicalizeAgentRoleForCreate(rawRole);
     const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
+    // Quick Deploy sends a curated pick as voice_id; anything outside the
+    // managed roster falls back to rotation so the runtime stays managed.
+    const requestedVoiceId = cleanText(req.body?.voice_id, 160);
+    // Template deploys carry the template's channel, opening line, and
+    // personality overlay; plain Fast Start creates keep the defaults.
+    const channel = req.body?.channel === "email" ? "email" : "voice";
+    const firstMessage =
+      cleanText(req.body?.firstMessage, 500) || `Hi, this is ${name}. How can I help?`;
+    const templateId = cleanText(req.body?.templateId, 80);
+    // Stack role methodology + template overlay and substitute business
+    // tokens; the factory consumes the stored personality verbatim.
+    const templatePersonality =
+      templateId && TEMPLATE_OVERLAYS[templateId]
+        ? composeAgentPersonality({
+            rolePersonality: ROLE_PERSONALITY_TEMPLATES[role] || "",
+            templateId,
+          })
+        : null;
 
     const id = `agent-${randomUUID()}`;
     const enabledTools = getDefaultAgentTools();
@@ -309,22 +329,34 @@ router.post(
         userId: req.user.id,
         name,
         role,
-        channel: "voice",
+        channel,
         archetype: resolveAgentRoleArchetype(role),
-        voiceId: pickRotatedVoiceId(existing),
-        voiceProvider: "11labs",
+        voiceId: isManagedVapiVoiceId(requestedVoiceId)
+          ? requestedVoiceId
+          : pickRotatedVoiceId(existing),
+        voiceProvider: "vapi",
         enabledTools,
-        firstMessage: `Hi, this is ${name}. How can I help?`,
+        firstMessage,
         isBusinessAgent,
         ...videoPresenter,
       });
+
+      if (templatePersonality) {
+        await tx
+          .insert(schema.personality)
+          .values({ agentId: id, userId: req.user.id, content: templatePersonality })
+          .onConflictDoUpdate({
+            target: schema.personality.agentId,
+            set: { userId: req.user.id, content: templatePersonality },
+          });
+      }
     });
 
     res.status(201).json({
       id,
       name,
       role,
-      channel: "voice",
+      channel,
       enabledTools,
       is_business_agent: isBusinessAgent,
     });

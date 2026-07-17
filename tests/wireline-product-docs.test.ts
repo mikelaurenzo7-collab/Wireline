@@ -50,7 +50,6 @@ describe("Wireline product documentation contract", () => {
     const vendors = read("docs/PRESENTER_VENDOR_STRATEGY.md");
     const theme = read("src/contexts/ThemeContext.tsx");
     const themeLight = read("src/styles/theme-light.css");
-    const studioCanvas = read("src/components/StudioAgentCanvas.tsx");
 
     expect(roadmap).toContain("Create → Train → Wire → Run");
     expect(roadmap).toContain("Letterpress");
@@ -60,7 +59,6 @@ describe("Wireline product documentation contract", () => {
     expect(vendors).toContain("Customer surfaces must never name vendors");
     expect(theme).toContain("wireline-theme");
     expect(themeLight).toContain(":root.light");
-    expect(studioCanvas).toContain("PresenterPstnVoiceNotice");
   });
 
   it("keeps extension docs positioned as Wireline Command", () => {

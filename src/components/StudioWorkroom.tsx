@@ -14,6 +14,7 @@ import AgentFace from "./AgentFace";
 import OutboundDialDialog from "./OutboundDialDialog";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
+import { WORKSPACE_VOICE } from "../lib/product-copy";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 
 type StudioMessage = {
@@ -30,13 +31,8 @@ type StudioMessage = {
 
 type WorkroomMode = "configure" | "test";
 
-const CONFIGURE_PROMPTS = ["Adjust the greeting", "Change the tone", "Add a business rule"] as const;
-const TEST_PROMPTS = [
-  "What services do you offer?",
-  "I want to book an appointment.",
-  "How much does it cost?",
-  "I need to speak with a person.",
-] as const;
+const CONFIGURE_PROMPTS = WORKSPACE_VOICE.configurePrompts;
+const TEST_PROMPTS = WORKSPACE_VOICE.testPrompts;
 
 function proposalCount(message: StudioMessage) {
   return (
@@ -184,7 +180,9 @@ const StudioWorkroom = forwardRef<
     setLoading(true);
     setError(null);
     try {
-      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`);
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
+      );
       if (!response.ok) throw new Error("Conversation could not be loaded.");
       const payload = await response.json();
       setMessages(Array.isArray(payload.messages) ? payload.messages : []);
@@ -277,9 +275,12 @@ const StudioWorkroom = forwardRef<
     setClearing(true);
     setError(null);
     try {
-      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/workspace/messages`, {
-        method: "DELETE",
-      });
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!response.ok) throw new Error("Conversation could not be cleared.");
       setMessages([]);
     } catch (reason) {
@@ -329,7 +330,12 @@ const StudioWorkroom = forwardRef<
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {mode === "test" && allowOutbound ? (
-              <Button type="button" size="sm" variant="secondary" onClick={() => setShowOutboundDial(true)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowOutboundDial(true)}
+              >
                 <Phone className="size-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">Real call</span>
               </Button>
@@ -390,7 +396,9 @@ const StudioWorkroom = forwardRef<
             <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
               <AgentFace seed={agentName} size={48} title={`${agentName} face`} />
               <h3 className="mt-4 text-lg font-semibold text-foreground">
-                {mode === "test" ? "Start with a real customer question" : "Describe what should change"}
+                {mode === "test"
+                  ? "Start with a real customer question"
+                  : "Describe what should change"}
               </h3>
               {mode === "configure" ? (
                 <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">

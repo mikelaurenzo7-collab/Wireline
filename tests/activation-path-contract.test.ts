@@ -21,21 +21,23 @@ describe("activation path contract", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     expect(overview).toContain("ActivationChecklist");
     expect(overview).toContain("FirstRunLaunchpad");
-    expect(overview).toContain("One clear path to your first live call.");
-    expect(overview).toContain("No integrations required to create or browser-test it.");
+    expect(overview).toContain("Put one customer-facing job to work today.");
+    expect(overview).toContain("Create your first AI employee");
     expect(overview).toContain("degraded && !hasAgents");
     expect(overview).toContain("WorkspaceRecovery");
   });
 
-  it("aligns activation checklist with fleet setup progress (6 steps, live call gate)", () => {
+  it("aligns activation checklist with fleet setup progress (live call gate)", () => {
     const checklist = read("src/components/ActivationChecklist.tsx");
     const progress = read("src/lib/fleet-setup-progress.ts");
     expect(progress).toContain("FLEET_SETUP_STEP_COUNT = 6");
+    expect(checklist).toContain('id: "job"');
+    expect(checklist).toContain('id: "facts"');
+    expect(checklist).toContain('id: "line"');
     expect(checklist).toContain('id: "live"');
-    expect(checklist).toContain('id: "test"');
-    expect(checklist).toContain('id: "approve"');
+    expect(checklist).toContain('id: "review"');
     expect(checklist).toContain('href: "/approvals"');
-    expect(checklist).toContain("No training required for a quick browser preview");
+    expect(checklist).toContain("First live customer handled");
   });
 
   it("keeps post-create setup honest and focused", () => {

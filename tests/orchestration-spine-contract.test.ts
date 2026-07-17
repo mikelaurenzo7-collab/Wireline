@@ -29,14 +29,16 @@ describe("orchestration spine contract", () => {
     expect(read("src/server/register-api-routes.ts")).toContain('app.use("/api/jobs"');
   });
 
-  it("composes Studio as the canvas orchestrator across workspace surfaces", () => {
+  it("composes Studio as the orchestrator across workspace surfaces", () => {
     const contract = read("src/lib/studio-canvas-contract.ts");
     const studioHome = read("src/pages/AgentStudioHomeClaude.tsx");
+    const canvas = read("src/components/StudioWorkspaceV2.tsx");
 
     expect(contract).toContain("canvas-orchestrator");
     expect(studioHome).toContain("StudioWorkspaceV2");
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("StudioAgentCanvas");
-    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain("StudioAgentWorkspacePanel");
+    expect(canvas).toContain("StudioAgentWorkspacePanel");
+    expect(canvas).toContain("StudioWorkroom");
+    expect(canvas).toContain("StudioAgentReviewPanel");
   });
 
   it("preserves activation handoff from Fast Start through post-create wizard", () => {

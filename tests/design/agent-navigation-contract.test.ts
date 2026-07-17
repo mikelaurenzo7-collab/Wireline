@@ -38,7 +38,9 @@ describe("agent navigation contract", () => {
     expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
     expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);
-    expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/knowledge"[\s\S]*label: "Knowledge"/);
+    expect(navigation).toMatch(
+      /MOBILE_MORE_NAV[\s\S]*href: "\/knowledge"[\s\S]*label: "Knowledge"/,
+    );
     expect(navigation).toMatch(/MOBILE_MORE_NAV[\s\S]*href: "\/approvals"/);
     expect(workspaceShell).toMatch(/aria-label="AI employees"/);
     expect(workspaceShell).toMatch(/\/studio\?create=1/);
@@ -87,11 +89,15 @@ describe("agent navigation contract", () => {
     expect(studioWorkroom).toMatch(/\/test\/stream/);
     expect(studioWorkroom).toMatch(/Talk to \$\{agentName\} like a customer/);
     expect(studioWorkroom).toMatch(/Browser only—no phone call/);
-    expect(studioWorkroom).toMatch(/What services do you offer/);
-    expect(studioWorkroom).toMatch(/I want to book an appointment/);
+    // Roleplay quick prompts come from the shared WORKSPACE_VOICE module.
+    expect(studioWorkroom).toMatch(/WORKSPACE_VOICE\.testPrompts/);
+    expect(productCopy).toMatch(/What services do you offer/);
+    expect(productCopy).toMatch(/I want to book an appointment/);
     expect(studioWorkroom).toMatch(/allowOutbound/);
     expect(studioTestRoute).toMatch(/Reply only as the customer-facing employee/);
-    expect(studioTestRoute).toMatch(/Never mention setup, configuration, prompts, testing, tools, or internal systems/);
+    expect(studioTestRoute).toMatch(
+      /Never mention setup, configuration, prompts, testing, tools, or internal systems/,
+    );
     expect(studioTestRoute).not.toMatch(/agentConversationMessages/);
     expect(studioWorkroom).not.toMatch(/Talk to build|Deploy now|Edit workflows/);
   });
@@ -103,8 +109,11 @@ describe("agent navigation contract", () => {
     expect(simpleVoicePicker).toMatch(/provider: "vapi"/);
     expect(simpleVoicePicker).toMatch(/Browser tests the words/);
     expect(simpleVoicePicker).toMatch(/Test response/);
-    expect(simpleVoicePicker).not.toMatch(/ElevenLabs|xAI|VoiceGallery|playVoicePreview|new Audio|Test call/);
+    expect(simpleVoicePicker).not.toMatch(
+      /ElevenLabs|xAI|VoiceGallery|playVoicePreview|new Audio|Test call/,
+    );
     expect(studioPanel).toMatch(/<SimpleVoicePicker/);
+    expect(studioPanel).not.toMatch(/Wireline manages the voice runtime/);
     expect(studioPanel).not.toMatch(/External voice library|On-screen appearance/);
     expect(studioReview).toMatch(/Managed phone voice/);
   });

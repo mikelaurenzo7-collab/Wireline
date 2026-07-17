@@ -6,6 +6,7 @@ export type VoiceOption = {
   provider: VoiceProvider;
   preview_url?: string | null;
   owned_by_user?: boolean;
+  gender?: "female" | "male";
 };
 
 /** Wireline Live voices — low-latency realtime speech (xAI Grok). */
@@ -22,23 +23,29 @@ export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
  * Curated for reception and sales calls.
  */
 export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
-  { id: "Elliot", name: "Elliot — Steady & Professional", provider: "vapi" },
-  { id: "Savannah", name: "Savannah — Warm & Confident", provider: "vapi" },
-  { id: "Rohan", name: "Rohan — Bright & Energetic", provider: "vapi" },
-  { id: "Emma", name: "Emma — Warm & Conversational", provider: "vapi" },
-  { id: "Clara", name: "Clara — Warm & Professional", provider: "vapi" },
-  { id: "Nico", name: "Nico — Casual & Natural", provider: "vapi" },
-  { id: "Kai", name: "Kai — Friendly & Relaxed", provider: "vapi" },
-  { id: "Sagar", name: "Sagar — Steady & Professional", provider: "vapi" },
-  { id: "Godfrey", name: "Godfrey — Young & Energetic", provider: "vapi" },
-  { id: "Neil", name: "Neil — Clear & Professional", provider: "vapi" },
-  { id: "Layla", name: "Layla — Warm & Cheerful", provider: "vapi" },
-  { id: "Sid", name: "Sid — Smooth & Deep", provider: "vapi" },
-  { id: "Naina", name: "Naina — Calm & Professional", provider: "vapi" },
+  { id: "Elliot", name: "Elliot — Steady & Professional", provider: "vapi", gender: "male" },
+  { id: "Savannah", name: "Savannah — Warm & Confident", provider: "vapi", gender: "female" },
+  { id: "Rohan", name: "Rohan — Bright & Energetic", provider: "vapi", gender: "male" },
+  { id: "Emma", name: "Emma — Warm & Conversational", provider: "vapi", gender: "female" },
+  { id: "Clara", name: "Clara — Warm & Professional", provider: "vapi", gender: "female" },
+  { id: "Nico", name: "Nico — Casual & Natural", provider: "vapi", gender: "male" },
+  { id: "Kai", name: "Kai — Friendly & Relaxed", provider: "vapi", gender: "male" },
+  { id: "Sagar", name: "Sagar — Steady & Professional", provider: "vapi", gender: "male" },
+  { id: "Godfrey", name: "Godfrey — Young & Energetic", provider: "vapi", gender: "male" },
+  { id: "Neil", name: "Neil — Clear & Professional", provider: "vapi", gender: "male" },
+  { id: "Layla", name: "Layla — Warm & Cheerful", provider: "vapi", gender: "female" },
+  { id: "Sid", name: "Sid — Smooth & Deep", provider: "vapi", gender: "male" },
+  { id: "Naina", name: "Naina — Calm & Professional", provider: "vapi", gender: "female" },
 ] as const;
 
 /** Default PSTN voice when presenter lip-sync is the Studio voice. */
 export const DEFAULT_PRESENTER_PHONE_VOICE = VAPI_CURATED_VOICES[0];
+
+/** Managed default per gender for quick-deploy surfaces. */
+export const MANAGED_VOICE_BY_GENDER = {
+  female: "Savannah",
+  male: "Elliot",
+} as const;
 
 const VAPI_V2_VOICE_IDS = new Set(
   VAPI_CURATED_VOICES.filter((voice) => voice.id !== "Rohan").map((voice) => voice.id),

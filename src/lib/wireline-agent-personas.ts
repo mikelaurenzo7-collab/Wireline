@@ -31,7 +31,7 @@ export interface WirelinePersona {
   name: string;
   /** Role label for routing + logs. */
   role: string;
-  /** ElevenLabs voice ID — picked from PREMIUM_VOICES in AssistantSettings. */
+  /** Provider voice ID; the live factory clamps PSTN calls to managed Vapi voices. */
   voiceId: string;
   /** First sentence the agent speaks when the call connects. */
   firstMessage: string;

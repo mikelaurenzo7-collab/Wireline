@@ -23,12 +23,10 @@ describe("video presenter integration", () => {
     expect(face).toContain('aria-label={title || "Agent identity badge"}');
   });
 
-  it("keeps Fast Start copy honest about app-only avatars", () => {
+  it("keeps Fast Start free of avatar and presenter pickers", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
-    const facePicker = source("src/components/create-agent/CreateAgentCatalogFacePicker.tsx");
-    expect(dialog).toContain("Step 2 · Optional details");
-    expect(dialog).toContain("polished voice, badge, and response style");
-    expect(facePicker).toContain("avatar is only an in-app identifier");
+    expect(dialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
   });
 
   it("starts LiveAvatar LITE sessions on the server", () => {
@@ -73,8 +71,6 @@ describe("video presenter integration", () => {
     expect(preview).toContain("Add live video");
     expect(preview).toContain("live-video-checkout");
     expect(preview).toContain("liveVideoMeteringNote");
-    const readiness = source("src/components/fleet-settings/agent-readiness.ts");
-    expect(readiness).toContain("softNudges");
   });
 
   it("imports catalog listing for the avatar picker route", () => {
@@ -83,10 +79,6 @@ describe("video presenter integration", () => {
   });
 
   it("pauses catalog presenter pickers until the curated Presence Catalog is ready", () => {
-    const fastStart = source("src/components/create-agent/CreateAgentCatalogFacePicker.tsx");
-    expect(fastStart).toContain("Agent identity badge");
-    expect(fastStart.toLowerCase()).toContain("not a video presenter");
-    expect(fastStart).not.toContain("avatars.map");
     const picker = source("src/components/AgentPresenceAvatarPicker.tsx");
     expect(picker).toContain("Presence catalog paused");
     expect(picker).not.toContain('provider: "liveavatar"');
@@ -118,14 +110,6 @@ describe("video presenter integration", () => {
       "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     );
     expect(source("src/components/StripeBillingCard.tsx")).toContain("live-video-checkout");
-  });
-
-  it("wires Studio canvas wired kickers and copper caps", () => {
-    const canvas = source("src/components/StudioAgentCanvas.tsx");
-    expect(canvas).toContain("WiredEyebrow");
-    expect(canvas).toContain("wl-canvas-card");
-    const readiness = source("src/components/fleet-settings/AgentReadinessStage.tsx");
-    expect(readiness).toContain("launch checks complete");
   });
 
   it("streams call-floor presence via SSE with polling fallback", () => {

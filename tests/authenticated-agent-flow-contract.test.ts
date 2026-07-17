@@ -44,14 +44,18 @@ describe("authenticated agent flow", () => {
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
   });
 
-  it("mounts insights and daily brief on active workspace routes", () => {
+  it("mounts insights and outcome review on active workspace routes", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
     const overview = read("src/pages/OverviewPage.tsx");
     const nav = read("src/constants/navigation.ts");
 
     expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
     expect(nav).toMatch(/href:\s*["']\/insights["']/);
-    expect(overview).toContain("DailyBriefPanel");
+    // The daily-brief panel was retired with the demand-driven Overview;
+    // outcomes surface through the ledger and follow-up review paths instead.
+    expect(overview).not.toContain("DailyBriefPanel");
+    expect(overview).toContain("OutcomeLedger");
+    expect(overview).toContain('to="/approvals"');
   });
 
   it("gives first-time users real mailbox connection actions", () => {
@@ -77,9 +81,12 @@ describe("authenticated agent flow", () => {
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("Fast Start");
-    expect(createDialog).toContain("~3 minutes to your first agent");
-    expect(createDialog).toContain("VoicePickerField");
-    expect(createDialog).toContain("CreateAgentCatalogFacePicker");
+    expect(createDialog).toContain("AI employee in about a minute");
+    // Fast Start is a single brief-first screen; voice, phone, and testing
+    // are deliberately deferred into Studio.
+    expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
+    expect(createDialog).not.toContain("VoicePickerField");
+    expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build your best employee."');
     expect(productCopy).toContain(
       'emptyCue: "Brief it. Train it once. Connect calls, texts, and email."',
@@ -100,9 +107,8 @@ describe("authenticated agent flow", () => {
 
     expect(createDialog).toContain("Revenue Desk");
     expect(createDialog).toContain("Support Desk");
-    expect(createDialog).toContain("Sales, support, scheduling, overflow");
+    expect(createDialog).toContain("Sales, support, and scheduling");
     expect(createDialog).toContain("Qualify inbound demand, answer support questions");
-    expect(createDialog).toContain("Provision a number");
     expect(createDialog).not.toContain("Handle pharmacy calls");
   });
 
@@ -161,13 +167,37 @@ describe("authenticated agent flow", () => {
     expect(decode).toContain("LIVEAVATAR_PCM_RATE_HZ");
   });
 
-  it("provisions on Fast Start when the user opts in", () => {
+  it("persists the deploy modal's template identity on create", () => {
+    const routes = read("src/routes/agent-routes-v2.ts");
+    const templates = read("src/components/AgentTemplates.tsx");
+    const deployModal = read("src/components/DeployAgentModal.tsx");
+
+    // Quick Deploy promises the picked voice, channel, opening line, and
+    // template personality — the create route must actually store them.
+    expect(routes).toContain("cleanText(req.body?.voice_id, 160)");
+    expect(routes).toContain("isManagedVapiVoiceId(requestedVoiceId)");
+    expect(routes).toContain('voiceProvider: "vapi"');
+    expect(routes).not.toContain('voiceProvider: "11labs"');
+    expect(routes).toContain('req.body?.channel === "email"');
+    expect(routes).toContain("cleanText(req.body?.firstMessage, 500)");
+    // Template personalities stack role methodology + overlay and substitute
+    // business tokens; the factory consumes the stored personality verbatim.
+    expect(routes).toContain("composeAgentPersonality");
+    expect(routes).toContain("TEMPLATE_OVERLAYS[templateId]");
+    expect(templates).toContain("voice_id: values.voiceId");
+    expect(deployModal).toContain("VAPI_CURATED_VOICES");
+    expect(deployModal).toContain("MANAGED_VOICE_BY_GENDER");
+    expect(deployModal).not.toMatch(/PREMIUM_VOICES|\/api\/voices\/|VoicePreviewButton/);
+  });
+
+  it("defers phone provisioning from Fast Start into the post-create wizard", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
 
-    expect(createDialog).toContain('"/api/phone-numbers/provision"');
-    expect(createDialog).toContain("phoneProvisioned");
-    expect(createDialog).not.toContain("deferPhoneProvision");
+    expect(createDialog).not.toContain('"/api/phone-numbers/provision"');
+    expect(createDialog).toContain("phoneProvisioned: false");
+    expect(wizard).toContain('"/api/phone-numbers/provision"');
     expect(createFlow).toContain("phoneProvisioned");
   });
 
@@ -189,19 +219,19 @@ describe("authenticated agent flow", () => {
     expect(voices).toContain('"/api/voices/:id/preview"');
   });
 
-  it("routes presenter PSTN through dual phone voice columns", () => {
+  it("routes every PSTN call through the managed Vapi voice runtime", () => {
     const schema = read("src/db/schema.ts");
     const factory = read("src/lib/vapi-assistant-factory-v2.ts");
     const routes = read("src/routes/agent-routes-v2.ts");
-    const createDialog = read("src/components/CreateAgentDialog.tsx");
 
+    // Dual phone-voice columns remain persisted for continuity, but the live
+    // factory clamps every call to a curated managed Vapi voice.
     expect(schema).toContain("phoneVoiceId");
     expect(schema).toContain("phoneVoiceProvider");
-    expect(factory).toContain("configured.phoneVoiceProvider");
-    expect(factory).toContain("configured.phoneVoiceId");
+    expect(factory).toContain("isManagedVapiVoiceId");
+    expect(factory).toContain("DEFAULT_MANAGED_VOICE_ID");
+    expect(factory).not.toContain("configured.phoneVoiceProvider");
     expect(routes).toContain("phoneVoiceId");
-    expect(createDialog).toContain("phoneVoiceId");
-    expect(createDialog).toContain("defaultPresenterPhoneVoicePayload");
   });
 
   it("surfaces custom presence consent FTUX for business agents", () => {

@@ -1,99 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
+import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./fleet/helpers";
-import { providerLabel } from "../lib/voice-catalog";
+import { MANAGED_VOICE_BY_GENDER, VAPI_CURATED_VOICES, providerLabel } from "../lib/voice-catalog";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-
-/**
- * Inline voice preview button. Owned clones use the tenant-scoped endpoint;
- * provider-premade voices use the authenticated catalog endpoint.
- */
-export function VoicePreviewButton({
-  voiceId,
-  voiceName,
-  ownedByUser = false,
-}: {
-  voiceId: string;
-  voiceName: string;
-  ownedByUser?: boolean;
-}) {
-  const [playing, setPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    // When the parent swaps voiceId, kill any in-flight playback so
-    // we don't have two voices overlapping.
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    setPlaying(false);
-    return () => {
-      audioRef.current?.pause();
-      if (audioRef.current) audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    };
-  }, [ownedByUser, voiceId]);
-
-  async function toggle() {
-    if (playing) {
-      audioRef.current?.pause();
-      if (audioRef.current) audioRef.current.currentTime = 0;
-      audioRef.current = null;
-      setPlaying(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const suffix = ownedByUser ? "owned-preview" : "preview";
-      const audio = new Audio(`/api/voices/${encodeURIComponent(voiceId)}/${suffix}`);
-      audio.onended = () => setPlaying(false);
-      audio.onerror = () => {
-        setPlaying(false);
-        setLoading(false);
-      };
-      audioRef.current = audio;
-      await audio.play();
-      setPlaying(true);
-      if (typeof window !== "undefined" && (window as any).plausible) {
-        (window as any).plausible("DeployModalVoicePreviewClick", {
-          props: { voice: voiceName },
-        });
-      }
-    } catch {
-      setPlaying(false);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <ShadButton
-      type="button"
-      variant="link"
-      disableAnimations
-      onClick={toggle}
-      disabled={loading}
-      className="inline-flex items-center gap-1.5 h-auto p-0 wl-label text-brand"
-    >
-      {loading ? (
-        <Loader2 className="w-3 h-3 animate-spin" />
-      ) : playing ? (
-        <Pause className="w-3 h-3" />
-      ) : (
-        <Play className="w-3 h-3" />
-      )}
-      {playing ? "Stop preview" : "Hear this voice"}
-    </ShadButton>
-  );
-}
 
 export type DeployTemplate = {
   id: string;
@@ -136,7 +49,7 @@ interface DeployAgentModalProps {
  *
  * Everything else (role personality, template overlay, business variable
  * substitution, capabilities) is handled server-side at /api/agents POST.
- * Account Holders can further refine in /agents → Personality / Capabilities.
+ * Account Holders can further refine in Studio → Set up after deploy.
  */
 export default function DeployAgentModal({
   open,
@@ -147,54 +60,12 @@ export default function DeployAgentModal({
 }: DeployAgentModalProps) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<Gender>("female");
-  const [voiceId, setVoiceId] = useState<string>(DEFAULT_VOICE_BY_GENDER.female);
+  const [voiceId, setVoiceId] = useState<string>(MANAGED_VOICE_BY_GENDER.female);
   const [showVoiceList, setShowVoiceList] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  // Cloned voices fetched from /api/voices on mount. Hooks must
-  // declare before any conditional return — the `if (!template) return`
-  // below is conditional so this state has to land here.
-  const [clonedVoices, setClonedVoices] = useState<
-    Array<{
-      id: string;
-      provider: string;
-      name: string;
-      gender: string;
-      ownedByUser: true;
-    }>
-  >([]);
 
   // Pin the page underneath while the deploy modal is open.
   useBodyScrollLock(open);
-
-  // Fetch tenant's cloned voices once when the modal mounts.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { authFetch } = await import("../lib/api");
-        const r = await authFetch("/api/voices");
-        if (!r.ok) return;
-        const data = await r.json();
-        const owned = (data.voices || [])
-          .filter((v: any) => v.owned_by_user)
-          .map((v: any) => ({
-            id: v.voice_id,
-            provider: "11labs",
-            name: `${v.name} (your clone)`,
-            // Cloned voices don't carry gender metadata — surface in
-            // both buckets so they're always reachable from the picker.
-            gender: "neutral",
-            ownedByUser: true as const,
-          }));
-        if (!cancelled) setClonedVoices(owned);
-      } catch {
-        /* graceful fallback — picker still works with PREMIUM_VOICES only */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Reset state whenever a new template is selected, autofocus the name field.
   useEffect(() => {
@@ -202,7 +73,7 @@ export default function DeployAgentModal({
     setName(template.name);
     const initialGender: Gender = template.defaultGender ?? "female";
     setGender(initialGender);
-    setVoiceId(DEFAULT_VOICE_BY_GENDER[initialGender]);
+    setVoiceId(MANAGED_VOICE_BY_GENDER[initialGender]);
     setShowVoiceList(false);
     // Defer focus until the modal animation is past the initial frame
     setTimeout(() => nameInputRef.current?.select(), 80);
@@ -213,7 +84,7 @@ export default function DeployAgentModal({
   // user doesn't have to also click into the voice picker.
   const handleGenderChange = (g: Gender) => {
     setGender(g);
-    setVoiceId(DEFAULT_VOICE_BY_GENDER[g]);
+    setVoiceId(MANAGED_VOICE_BY_GENDER[g]);
     setShowVoiceList(false);
   };
 
@@ -231,8 +102,10 @@ export default function DeployAgentModal({
 
   const isEmail = template.channel === "email";
 
-  const allVoices = [...clonedVoices, ...PREMIUM_VOICES];
-  const voicesForGender = allVoices.filter((v) => v.gender === gender || v.gender === "neutral");
+  // Curated managed voices only — every deploy lands on the phone runtime
+  // Wireline actually operates, so the picked voice is the live voice.
+  const allVoices = VAPI_CURATED_VOICES;
+  const voicesForGender = allVoices.filter((v) => v.gender === gender);
   const selectedVoice = allVoices.find((v) => v.id === voiceId);
   const trimmedName = name.trim();
   const canSubmit = trimmedName.length > 0 && trimmedName.length <= 80 && !deploying;
@@ -321,7 +194,7 @@ export default function DeployAgentModal({
                     className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[var(--wireline-typography-body-size)] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
                   <p className="wl-micro-meta">
-                    What callers and your team will see. You can change this any time in /agents.
+                    What callers and your team will see. You can change this any time in Studio.
                   </p>
                 </div>
 
@@ -348,8 +221,8 @@ export default function DeployAgentModal({
                         label="Female"
                         sublabel={
                           allVoices
-                            .find((v) => v.id === DEFAULT_VOICE_BY_GENDER.female)
-                            ?.name.split(" (")[0] || "Female default"
+                            .find((v) => v.id === MANAGED_VOICE_BY_GENDER.female)
+                            ?.name.split(" —")[0] || "Female default"
                         }
                         icon={User2}
                         onClick={() => handleGenderChange("female")}
@@ -359,8 +232,8 @@ export default function DeployAgentModal({
                         label="Male"
                         sublabel={
                           allVoices
-                            .find((v) => v.id === DEFAULT_VOICE_BY_GENDER.male)
-                            ?.name.split(" (")[0] || "Male default"
+                            .find((v) => v.id === MANAGED_VOICE_BY_GENDER.male)
+                            ?.name.split(" —")[0] || "Male default"
                         }
                         icon={Users2}
                         onClick={() => handleGenderChange("male")}
@@ -410,27 +283,16 @@ export default function DeployAgentModal({
                         <p className="wl-micro-meta">
                           Picked: <span className="text-foreground/75">{selectedVoice.name}</span>
                         </p>
-                        {/* Real per-voice audio preview via the
-                            ElevenLabs-backed /api/voices/:id/preview
-                            route. Plays a public preview MP3 directly
-                            in the browser. Falls back gracefully if the
-                            voice has no preview (the audio's onerror
-                            handler logs + the button stays clickable). */}
-                        <VoicePreviewButton
-                          voiceId={selectedVoice.id}
-                          voiceName={selectedVoice.name}
-                          ownedByUser={
-                            "ownedByUser" in selectedVoice && selectedVoice.ownedByUser === true
-                          }
-                        />
+                        <p className="wl-micro-meta">
+                          Included with your line. Hear it on a Studio test right after deploy.
+                        </p>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[var(--wireline-typography-caption-size)] text-foreground/65">
                     Email agent - no voice picker. The agent's writing tone is configured in{" "}
-                    <span className="text-foreground/80">{"/agents -> Personality"}</span> after
-                    deploy.
+                    <span className="text-foreground/80">Studio</span> after deploy.
                   </div>
                 )}
               </div>

@@ -9,33 +9,23 @@ function read(path: string) {
 }
 
 describe("Fast Start native voice contract", () => {
-  const voicePicker = read("src/components/create-agent/VoicePickerField.tsx");
   const createDialog = read("src/components/CreateAgentDialog.tsx");
-
-  it("resolves the legacy auto state before interaction to a built-in phone voice", () => {
-    expect(voicePicker).toMatch(/useLayoutEffect/);
-    expect(voicePicker).toMatch(/const RECOMMENDED_VOICE_ID = "Savannah"/);
-    expect(voicePicker).toMatch(/value\.mode !== "auto"/);
-    expect(voicePicker).toMatch(/provider: "vapi"/);
-    expect(voicePicker).toMatch(/No ElevenLabs or xAI account needed/);
-    expect(voicePicker).toMatch(/Choose another built-in voice/);
-  });
+  const voicePicker = read("src/components/voice/SimpleVoicePicker.tsx");
+  const factory = read("src/lib/vapi-assistant-factory-v2.ts");
 
   it("keeps external provider complexity out of Fast Start", () => {
-    expect(voicePicker).not.toMatch(/authFetch\("\/api\/voices"\)/);
-    expect(voicePicker).not.toMatch(/playVoicePreview/);
-    expect(voicePicker).toMatch(
-      /External voice libraries and video[\s\S]*optional advanced settings in Studio/,
-    );
+    expect(createDialog).not.toMatch(/authFetch\("\/api\/voices"\)/);
+    expect(createDialog).not.toMatch(/playVoicePreview|ElevenLabs|xAI/);
+    expect(createDialog).not.toMatch(/VoicePickerField|VoiceGallery/);
+    expect(createDialog).toContain("Voice, phone, and testing come next in Studio.");
   });
 
-  it("preserves Fast Start keyboard focus and existing voice persistence", () => {
-    expect(voicePicker).toMatch(/id="voice-picker-details-toggle"/);
-    expect(createDialog).toMatch(/voice\.mode === "custom"/);
-    expect(createDialog).toMatch(
-      /\/agent-config\/\$\{encodeURIComponent\(body\.id\)\}\/voice/,
-    );
-    expect(createDialog).toMatch(/voiceId: voice\.voiceId/);
-    expect(createDialog).toMatch(/provider: voice\.provider/);
+  it("resolves every new employee to a managed phone voice", () => {
+    // Studio's managed picker writes curated Vapi voices; the live factory
+    // clamps anything else to the managed default before a call is placed.
+    expect(voicePicker).toMatch(/VAPI_CURATED_VOICES/);
+    expect(voicePicker).toMatch(/provider: "vapi"/);
+    expect(factory).toMatch(/isManagedVapiVoiceId/);
+    expect(factory).toMatch(/DEFAULT_MANAGED_VOICE_ID/);
   });
 });

@@ -32,7 +32,7 @@ if (!schema.includes('voiceLlmProvider: text("voice_llm_provider").default("open
 if (!schema.includes('voiceLlmModel: text("voice_llm_model").default("gpt-4o")')) fail("Drizzle settings schema does not default managed voice model to GPT-4o");
 if (!adminSettings.includes("VAPI_TENANT_DEFAULT_PROVIDER") || !adminSettings.includes("VAPI_TENANT_DEFAULT_MODEL")) fail("Admin settings fallback does not use managed OpenAI voice defaults");
 if (adminSettings.includes('"anthropic"') || adminSettings.includes('"claude-sonnet-4-6"')) fail("Admin settings still contains legacy Claude voice defaults");
-if (!carrierPanel.includes("OpenAI GPT-4o") || !carrierPanel.includes("VAPI_TENANT_DEFAULT_MODEL")) fail("carrier cognitive routing does not expose the OpenAI default");
+if (!carrierPanel.includes("OpenAI is the primary call model") || !carrierPanel.includes("Gemini is the automatic fallback")) fail("carrier cognitive routing does not expose the OpenAI default");
 if (carrierPanel.includes("Claude Sonnet") || carrierPanel.includes("Anthropic voice disruptions") || carrierPanel.includes('v: "anthropic"')) fail("carrier cognitive routing still presents Claude as the managed default");
 if (prodEnvCheck.includes("ANTHROPIC_API_KEY")) fail("production env check still asks for Anthropic");
 if (!prodEnvCheck.includes("Direct OpenAI fallback and OpenAI Realtime sessions")) fail("production env check does not name the OpenAI runtime dependency");

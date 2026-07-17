@@ -13,16 +13,10 @@ describe("voice catalog", () => {
     expect(catalog).toContain('"presenter"');
     expect(catalog).toContain("voicePreviewUrl");
     expect(catalog).not.toContain("speechSynthesis");
-    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain("/api/voices");
-    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
-      "if (!catalogOpen || catalogLoaded) return",
-    );
-    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
-      "Choose a specific voice",
-    );
-    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
-      "Presenter voice (video)",
-    );
+    // Studio voice choice runs on the curated managed catalog with no
+    // external provider fetches in the picker itself.
+    expect(read("src/components/voice/SimpleVoicePicker.tsx")).toContain("VAPI_CURATED_VOICES");
+    expect(read("src/components/voice/SimpleVoicePicker.tsx")).not.toContain('"/api/voices"');
     expect(read("src/routes/voices-routes.ts")).toContain("providers:");
     expect(read("src/routes/voices-routes.ts")).toContain("presenterVoices");
     expect(read("src/routes/voices-routes.ts")).toContain("/api/voices/curated/preview");
@@ -31,9 +25,6 @@ describe("voice catalog", () => {
     );
     expect(read("src/lib/voice/voice-preview-service.ts")).not.toContain("XAI_TO_ELEVENLABS");
     expect(read("src/lib/voice-catalog.ts")).not.toMatch(/id: "(Kylie|Lily|Hana|Neha|Cole)"/);
-    expect(read("src/components/create-agent/VoicePickerField.tsx")).toContain(
-      "Hear in phone test",
-    );
     expect(read("src/lib/voice/pcm-resample.ts")).toContain("VAPI_LISTEN_PCM_RATE_HZ");
     expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("consumeCreateWarning");
   });
@@ -48,14 +39,6 @@ describe("voice catalog", () => {
     expect(liveAvatarService).toContain("process.env.LIVEAVATAR_API_KEY?.trim() || null");
     expect(liveAvatarService).not.toContain("process.env.HEYGEN_API_KEY");
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
-    // The face picker is intentionally minimal while the presenter catalog is paused; it still
-    // wires matched-voice resolution through the MatchedPresenterVoice callback API.
-    expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
-      "MatchedPresenterVoice",
-    );
-    expect(read("src/components/create-agent/CreateAgentCatalogFacePicker.tsx")).toContain(
-      "onMatchedVoiceChange",
-    );
     expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
   });
 });
