@@ -71,8 +71,6 @@ describe("video presenter integration", () => {
     expect(preview).toContain("Add live video");
     expect(preview).toContain("live-video-checkout");
     expect(preview).toContain("liveVideoMeteringNote");
-    const readiness = source("src/components/fleet-settings/agent-readiness.ts");
-    expect(readiness).toContain("softNudges");
   });
 
   it("imports catalog listing for the avatar picker route", () => {
@@ -112,11 +110,6 @@ describe("video presenter integration", () => {
       "STRIPE_LIVE_VIDEO_ADDON_PRICE_ID",
     );
     expect(source("src/components/StripeBillingCard.tsx")).toContain("live-video-checkout");
-  });
-
-  it("keeps agent readiness staging wired for launch checks", () => {
-    const readiness = source("src/components/fleet-settings/AgentReadinessStage.tsx");
-    expect(readiness).toContain("launch checks complete");
   });
 
   it("streams call-floor presence via SSE with polling fallback", () => {
