@@ -180,6 +180,9 @@ describe("authenticated agent flow", () => {
     expect(routes).not.toContain('voiceProvider: "11labs"');
     expect(routes).toContain('req.body?.channel === "email"');
     expect(routes).toContain("cleanText(req.body?.firstMessage, 500)");
+    // Template personalities stack role methodology + overlay and substitute
+    // business tokens; the factory consumes the stored personality verbatim.
+    expect(routes).toContain("composeAgentPersonality");
     expect(routes).toContain("TEMPLATE_OVERLAYS[templateId]");
     expect(templates).toContain("voice_id: values.voiceId");
     expect(deployModal).toContain("VAPI_CURATED_VOICES");

@@ -21,10 +21,9 @@ import {
   mcpIssuer,
 } from "../lib/mcp-oauth-security";
 import {
+  applyMcpTransportHeaders,
   isMcpNotificationMethod,
-  mcpSessionIdForResponse,
   mcpToolErrorResult,
-  negotiateMcpProtocolVersion,
 } from "../lib/mcp-transport";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { rateLimit } from "../lib/rate-limit";
@@ -379,11 +378,7 @@ router.post("/mcp", async (req, res) => {
     });
     return null;
   });
-  const negotiatedVersion = negotiateMcpProtocolVersion(
-    method === "initialize" ? params.protocolVersion : req.get("mcp-protocol-version"),
-  );
-  res.setHeader("MCP-Protocol-Version", negotiatedVersion);
-  res.setHeader("Mcp-Session-Id", mcpSessionIdForResponse(req));
+  const negotiatedVersion = applyMcpTransportHeaders(req, res, method, params);
 
   try {
     if (method === "initialize") {

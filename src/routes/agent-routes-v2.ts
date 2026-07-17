@@ -11,7 +11,8 @@ import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
 import { isManagedVapiVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
-import { TEMPLATE_OVERLAYS } from "../lib/template-overlays";
+import { composeAgentPersonality, TEMPLATE_OVERLAYS } from "../lib/template-overlays";
+import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import {
   getDefaultAgentTools,
   isAgentToolName,
@@ -271,7 +272,15 @@ router.post(
     const firstMessage =
       cleanText(req.body?.firstMessage, 500) || `Hi, this is ${name}. How can I help?`;
     const templateId = cleanText(req.body?.templateId, 80);
-    const templateOverlay = templateId ? TEMPLATE_OVERLAYS[templateId] : undefined;
+    // Stack role methodology + template overlay and substitute business
+    // tokens; the factory consumes the stored personality verbatim.
+    const templatePersonality =
+      templateId && TEMPLATE_OVERLAYS[templateId]
+        ? composeAgentPersonality({
+            rolePersonality: ROLE_PERSONALITY_TEMPLATES[role] || "",
+            templateId,
+          })
+        : null;
 
     const id = `agent-${randomUUID()}`;
     const enabledTools = getDefaultAgentTools();
@@ -332,13 +341,13 @@ router.post(
         ...videoPresenter,
       });
 
-      if (templateOverlay) {
+      if (templatePersonality) {
         await tx
           .insert(schema.personality)
-          .values({ agentId: id, userId: req.user.id, content: templateOverlay })
+          .values({ agentId: id, userId: req.user.id, content: templatePersonality })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
-            set: { userId: req.user.id, content: templateOverlay },
+            set: { userId: req.user.id, content: templatePersonality },
           });
       }
     });

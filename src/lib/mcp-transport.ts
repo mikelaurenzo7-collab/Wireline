@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 
 /**
  * Shared MCP Streamable-HTTP transport hardening for Wireline's MCP routers.
@@ -44,6 +44,26 @@ export function mcpSessionIdForResponse(req: Request): string {
   const requested = req.get("mcp-session-id");
   if (requested && /^[!-~]{1,128}$/.test(requested)) return requested;
   return randomBytes(24).toString("base64url");
+}
+
+/**
+ * Stamp the negotiated protocol version and session id on the response and
+ * return the negotiated revision for the initialize result. Initialize
+ * negotiates from the request params; every later request echoes the
+ * client's MCP-Protocol-Version header when supported.
+ */
+export function applyMcpTransportHeaders(
+  req: Request,
+  res: Response,
+  method: string,
+  params: Record<string, unknown>,
+): string {
+  const negotiated = negotiateMcpProtocolVersion(
+    method === "initialize" ? params.protocolVersion : req.get("mcp-protocol-version"),
+  );
+  res.setHeader("MCP-Protocol-Version", negotiated);
+  res.setHeader("Mcp-Session-Id", mcpSessionIdForResponse(req));
+  return negotiated;
 }
 
 /**

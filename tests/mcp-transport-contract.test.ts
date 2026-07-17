@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Request } from "express";
 
+import type { Response } from "express";
+
 import {
+  applyMcpTransportHeaders,
   isMcpNotificationMethod,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
   mcpSessionIdForResponse,
@@ -46,6 +49,28 @@ describe("mcp transport contract", () => {
     expect(mcpSessionIdForResponse(requestWithSessionId("x".repeat(300)))).toHaveLength(32);
   });
 
+  it("stamps negotiated transport headers from one shared helper", () => {
+    const headers: Record<string, string> = {};
+    const requestHeaders: Record<string, string | undefined> = {
+      "mcp-protocol-version": "2025-03-26",
+      "mcp-session-id": "session-1",
+    };
+    const req = { get: (name: string) => requestHeaders[name.toLowerCase()] } as never;
+    const res = {
+      setHeader: (name: string, value: string) => {
+        headers[name] = value;
+      },
+    } as unknown as Response;
+
+    expect(
+      applyMcpTransportHeaders(req, res, "initialize", { protocolVersion: "2024-11-05" }),
+    ).toBe("2024-11-05");
+    expect(headers["MCP-Protocol-Version"]).toBe("2024-11-05");
+    expect(headers["Mcp-Session-Id"]).toBe("session-1");
+    expect(applyMcpTransportHeaders(req, res, "tools/call", {})).toBe("2025-03-26");
+    expect(headers["MCP-Protocol-Version"]).toBe("2025-03-26");
+  });
+
   it("shapes tool-execution failures as isError results", () => {
     expect(mcpToolErrorResult("Confirm the draft first.")).toEqual({
       content: [{ type: "text", text: "Confirm the draft first." }],
@@ -59,10 +84,9 @@ describe("mcp transport contract", () => {
       "src/routes/chatgpt-mcp-account-routes.ts",
     ]) {
       const source = read(path);
-      expect(source, path).toContain("negotiateMcpProtocolVersion");
+      expect(source, path).toContain("applyMcpTransportHeaders");
       expect(source, path).toContain('method === "ping"');
       expect(source, path).toContain("isMcpNotificationMethod");
-      expect(source, path).toContain("mcpSessionIdForResponse");
       expect(source, path).toContain("mcpToolErrorResult");
     }
     const oauthRoutes = read("src/routes/chatgpt-mcp-routes.ts");
