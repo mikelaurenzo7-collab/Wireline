@@ -9,12 +9,12 @@ if (file("google-services.json").exists()) {
 
 android {
     namespace = "com.wireline.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.wireline.app"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
 
