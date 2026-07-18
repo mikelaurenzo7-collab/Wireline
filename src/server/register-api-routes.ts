@@ -9,6 +9,7 @@ import qaRouter from "../routes/qa-routes";
 import qaV2Router from "../routes/qa-routes-v2";
 import vapiRouter from "../routes/vapi-v2";
 import healthRouter from "../routes/health-routes";
+import aiStatusRouter from "../routes/ai-status-routes";
 import openaiRealtimeRouter from "../routes/openai-realtime-routes";
 import grokVoiceRouter from "../routes/grok-voice-routes";
 import voicesRouter from "../routes/voices-routes";
@@ -75,6 +76,7 @@ import adminSeedDemoRouter from "../routes/admin-seed-demo-routes";
  */
 export function registerApiRoutes(app: Express): void {
   app.use("/api/health", healthRouter);
+  app.use(aiStatusRouter);
   app.use(openaiRealtimeRouter);
   app.use(grokVoiceRouter);
   app.use(videoPresenterRouter);

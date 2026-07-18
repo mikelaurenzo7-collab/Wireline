@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 /**
  * Recipe modal shell — picks up `recipe`, mounts the matching form,
- * polls Anthropic availability, and provides the close affordance.
+ * polls the managed OpenAI reasoning runtime, and provides the close affordance.
  *
- * Was inlined inside ClaudeRecipes.tsx; lifted into its own module
- * so the per-form code can live next to the form file it relates to.
+ * The recipe forms live beside the workflow they implement so this shell stays
+ * focused on availability, agent selection, and modal lifecycle.
  */
 
 import { useEffect, useState } from "react";
@@ -57,34 +57,44 @@ export function RecipeModal({
   }, [onClose]);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const [statusRes, agentsRes] = await Promise.all([
-          authFetch("/api/claude/status"),
+          authFetch("/api/ai/status"),
           authFetch("/api/agents"),
         ]);
-        // Only flip `available = false` on an actual 200 that explicitly
-        // reports `available: false`. A 401 means the user's token hasn't
-        // landed yet (or expired) — that's NOT an AI outage and we
-        // shouldn't scare the user with a red "Wireline AI unavailable"
-        // banner. Stay in the loading null-state and let the next render
-        // retry once auth catches up.
+        if (cancelled) return;
+
+        // The dedicated contract is lightweight, authenticated, and explicitly
+        // identifies OpenAI as the managed primary. The previous
+        // /api/claude/status endpoint never existed and disabled every recipe.
         if (statusRes.ok) {
-          const s = await statusRes.json();
-          setAvailable(!!s.available);
+          const status = (await statusRes.json()) as {
+            available?: boolean;
+            primary_provider?: string;
+          };
+          setAvailable(status.available === true && status.primary_provider === "openai");
         } else if (statusRes.status === 401) {
+          // Session startup is not an AI outage. Leave the neutral loading state.
           setAvailable(null);
         } else {
           setAvailable(false);
         }
-        const a = await agentsRes.json();
-        setAgents(
-          (a.agents ?? []).map((x: any) => ({ id: x.id, name: x.name, archetype: x.archetype })),
-        );
+
+        if (agentsRes.ok) {
+          const a = await agentsRes.json();
+          setAgents(
+            (a.agents ?? []).map((x: any) => ({ id: x.id, name: x.name, archetype: x.archetype })),
+          );
+        }
       } catch {
-        setAvailable(null);
+        if (!cancelled) setAvailable(null);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
