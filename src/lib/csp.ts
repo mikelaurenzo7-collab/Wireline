@@ -1,20 +1,18 @@
 import { randomBytes } from "node:crypto";
 
 // Hashes for the inline <script> blocks in index.html: theme bootstrap,
-// Plausible stub, prod-gated Meta Pixel, and the JSON-LD structured data.
-// (Stale hashes for superseded JSON-LD copy were removed so the allowlist
-// stays minimal.)
+// Plausible stub, and JSON-LD structured data. Advertising measurement lives in
+// a same-origin external loader so it can remain off until explicit consent.
 export const INLINE_SCRIPT_HASHES = [
   "'sha256-3Z3f8c52musA1bws65NjZG2DaDDUbBisRU8i4FLei1w='",
   "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
-  "'sha256-wlyqsbOPnONv6AM5ziYNY+cA6vvH4mU1oRX7hBcx9HQ='",
   "'sha256-Sgtkva0aoGBbIVz0IEvpLrdSvwJevIdCBSRF85pZ3LI='",
 ] as const;
 
 /**
- * Static style block injected by the active marketing analytics scripts
- * (stable hash observed across viewports and runs). Allowlisting the exact
- * hash keeps style-src-elem strict while silencing the recurring CSP violation.
+ * Static style block injected by the marketing analytics scripts (stable
+ * hash observed across viewports and runs). Allowlisting the exact hash
+ * keeps style-src-elem strict while silencing the recurring CSP violation.
  */
 export const INLINE_STYLE_HASHES = [
   "'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw='",
