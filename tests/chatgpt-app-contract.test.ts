@@ -6,7 +6,6 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 const oauthRouteSource = read("src/routes/chatgpt-mcp-routes.ts");
 const accountRouteSource = read("src/routes/chatgpt-mcp-account-routes.ts");
-const mcpEntrypointSource = read("src/entrypoints/chatgpt-mcp-api.ts");
 const profileSource = read("src/lib/agent-customization.ts");
 const draftServiceSource = read("src/lib/agent-draft-service.ts");
 const rolloutDocs = read("docs/CHATGPT_APP.md");
@@ -65,8 +64,12 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(accountRouteSource).toContain('toolChoice: "none"');
     expect(accountRouteSource).toContain("tools: []");
     expect(accountRouteSource).toContain("chatgpt-private-simulation");
-    expect(mcpEntrypointSource).toContain('name === "start_private_voice_simulation"');
-    expect(mcpEntrypointSource).toContain("readOnlyHint: false");
+    const simulationDescriptor = accountRouteSource.slice(
+      accountRouteSource.indexOf('name: "start_private_voice_simulation"'),
+      accountRouteSource.indexOf('name: "list_wireline_agents"'),
+    );
+    expect(simulationDescriptor).toContain("readOnlyHint: false");
+    expect(simulationDescriptor).not.toContain("readOnlyHint: true");
     expect(submission.tools.start_private_voice_simulation.annotations).toEqual({
       readOnlyHint: false,
       openWorldHint: false,
