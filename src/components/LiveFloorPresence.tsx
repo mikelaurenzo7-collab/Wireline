@@ -37,7 +37,7 @@ export default function LiveFloorPresence({
             {active.length} customer call{active.length === 1 ? "" : "s"} in progress
           </p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Open conversations remain visible here until the call ends and the outcome is recorded.
+            Live until each call ends and its outcome is recorded.
           </p>
         </div>
         <span className="grid size-10 shrink-0 place-items-center rounded-full bg-background text-[var(--wireline-color-status-success)]">
@@ -47,7 +47,10 @@ export default function LiveFloorPresence({
 
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">
         {active.slice(0, 4).map((signal) => (
-          <li key={signal.id} className="rounded-lg border border-border/70 bg-background px-3 py-2.5">
+          <li
+            key={signal.id}
+            className="rounded-lg border border-border/70 bg-background px-3 py-2.5"
+          >
             <p className="truncate text-sm font-semibold text-foreground">
               {signal.customerNumber || "Active caller"}
             </p>

@@ -158,8 +158,8 @@ function FirstRunLaunchpad() {
             Put one customer-facing job to work today.
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-            Do not configure everything. Give one AI employee a clear job, test it, then connect the
-            phone, text, email, calendar, or CRM channels that job actually needs.
+            Give one AI employee a clear job, test it, then connect only the channels that job
+            needs.
           </p>
           <Button asChild className="mt-5 w-full justify-center sm:w-auto">
             <Link to="/studio?create=1">
@@ -205,8 +205,7 @@ function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
   return (
     <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
       <StatusNotice tone="warning" title="Your workspace is reconnecting">
-        Wireline could not verify your AI employee roster, so no empty-state claims or create
-        actions are shown yet. Your existing employees and customer data are unchanged.
+        We could not load your AI employee roster. Your employees and customer data are unchanged.
       </StatusNotice>
       <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
         Retry workspace

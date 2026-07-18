@@ -125,7 +125,7 @@ const FAQ = [
   ],
   [
     "Why keep live usage prepaid?",
-    "Calls and messages carry real carrier and AI costs, so flat usage promises usually hide a cap or risk a runaway bill. Wireline takes the founder-friendly route: one subscription unlocks every channel, included capacity gets you live, and additional provider usage stays prepaid and visible.",
+    "Calls and messages carry real carrier and AI costs. One subscription unlocks every channel, included capacity gets you live, and extra provider usage stays prepaid and visible.",
   ],
   [
     "What is the Scale plan?",
@@ -373,9 +373,8 @@ export default function Pricing() {
                 One employee. No channel seat tax. Clear usage costs.
               </h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">
-                Wireline does not charge three employee subscriptions just because one employee uses
-                voice, SMS, and email. It protects customer budgets at the actual cost boundaries:
-                numbers, calls, message segments, delivery infrastructure, enrichment, and data.
+                One employee can call, text, and email under a single subscription. Costs track the
+                real boundaries: numbers, calls, message segments, delivery, enrichment, and data.
               </p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -401,8 +400,8 @@ export default function Pricing() {
                 Predictable enough for owners. Flexible enough to grow.
               </h2>
               <p className="mt-4 text-base leading-7 text-muted-foreground">
-                Subscription revenue funds the product and employee capacity. Prepaid balance funds
-                variable provider work, keeping the offer clear without surprise overages.
+                Your subscription funds employee capacity. Prepaid balance funds variable provider
+                work.
               </p>
             </div>
             <div className="mx-auto mt-10 max-w-3xl space-y-3">

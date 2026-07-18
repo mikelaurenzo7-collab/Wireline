@@ -471,7 +471,7 @@ function IntelTab({ items, loading }: { items: Call[]; loading: boolean }) {
   return (
     <>
       <div
-        className="mb-4 wl-eyebrow "
+        className="mb-4 inline-flex items-center gap-2 wl-eyebrow wl-eyebrow--wired wl-eyebrow--wired--app"
         style={{ color: "var(--wireline-color-action-primary-default)" }}
       >
         Action Feed
