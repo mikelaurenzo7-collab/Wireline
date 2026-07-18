@@ -34,7 +34,9 @@ Android follows Wireline Letterpress (Aurora palette) while remaining Material-n
 
 ## Build
 
-Open the `android/` folder in Android Studio and let it sync the Gradle project. The project targets API 35.
+Open the `android/` folder in Android Studio and let it sync the Gradle project. The project compiles against and targets API 36.
+
+Google Play requires new apps and app updates to target Android 16 (API 36) beginning August 31, 2026. Keep `compileSdk` and `targetSdk` at 36 or newer for release builds.
 
 Before a real-device build:
 
