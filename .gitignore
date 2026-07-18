@@ -138,3 +138,6 @@ official-assets/
 wireline-*-screenshots.zip
 wireline-*-assets*.zip
 
+
+# Local sandbox-only vitest override (esbuild dep-scan workaround); not for CI
+vitest.sandbox.config.ts
