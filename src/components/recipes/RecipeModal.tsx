@@ -61,21 +61,22 @@ export function RecipeModal({
     (async () => {
       try {
         const [statusRes, agentsRes] = await Promise.all([
-          authFetch("/api/health/public"),
+          authFetch("/api/ai/status"),
           authFetch("/api/agents"),
         ]);
         if (cancelled) return;
 
-        // Use the real managed OpenAI reasoning probe. The previous
-        // /api/claude/status endpoint never existed and made recipes appear
-        // unavailable whenever the modal opened.
+        // The dedicated contract is lightweight, authenticated, and explicitly
+        // identifies OpenAI as the managed primary. The previous
+        // /api/claude/status endpoint never existed and disabled every recipe.
         if (statusRes.ok) {
           const status = (await statusRes.json()) as {
-            components?: { reasoning?: string };
+            available?: boolean;
+            primary_provider?: string;
           };
-          setAvailable(status.components?.reasoning === "operational");
-        } else if (statusRes.status === 429) {
-          // A throttled health probe is not evidence of an AI outage.
+          setAvailable(status.available === true && status.primary_provider === "openai");
+        } else if (statusRes.status === 401) {
+          // Session startup is not an AI outage. Leave the neutral loading state.
           setAvailable(null);
         } else {
           setAvailable(false);
