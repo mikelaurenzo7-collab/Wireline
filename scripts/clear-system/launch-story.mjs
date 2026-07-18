@@ -48,14 +48,20 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"Wireline - AI employees"/,
-    "install metadata must use AI-employee positioning",
+    /"name"\s*:\s*"Wireline - Your next AI employee"/,
+    "install metadata must use the canonical single-employee positioning",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /included numbers that call, book appointments, revive leads/,
-    "install metadata must explain the operating value",
+    /One trained AI employee handles customer conversations across voice, SMS, and email/,
+    "install metadata must explain the multichannel operating value",
+  );
+  mustExclude(
+    "public/site.webmanifest",
+    manifest,
+    /included numbers/,
+    "install metadata must not imply every tier includes a production number",
   );
 
   mustInclude(
