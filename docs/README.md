@@ -7,7 +7,7 @@ Wireline's durable documentation follows the active product model. The customer-
 | Area | Source | Purpose |
 | --- | --- | --- |
 | Overview | `src/pages/OverviewPage.tsx` | Calm command center for agents, calls, connections, Conversation Balance, and next actions. |
-| Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
+| Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` | Short intake for name, role, voice, personality, and starting brief. |
 | Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx`, `src/components/PhoneAgentBlueprint.tsx` | Deep configuration for sources, documents, behavior, voice, policies, evaluation, memory, and guided call-plan readiness. |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` | Numbers, integrations, routing, connected tools, approvals, billing, and launch controls. |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` | Chat-first execution for calls, texts, follow-up, approvals, handoff, and review. |
