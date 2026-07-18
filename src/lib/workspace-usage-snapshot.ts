@@ -15,6 +15,8 @@ import {
 } from "./plan-entitlements";
 import { quotaTracker } from "./server-context";
 
+const INTERNAL_AI_TOKEN_DIMENSION = "claude_tokens_daily" as const;
+
 export interface WorkspaceUsageSnapshot {
   plan_id: string | null;
   plan_name: string | null;
@@ -38,9 +40,9 @@ export interface WorkspaceUsageSnapshot {
   ai_spend_limit_usd: number;
   ai_spend_pct: number;
   ai_spend_hard_cap: boolean;
-  claude_tokens_used_today: number;
-  claude_tokens_daily_limit: number;
-  claude_tokens_pct: number;
+  ai_tokens_used_today: number;
+  ai_tokens_daily_limit: number;
+  ai_tokens_pct: number;
   openrouter_allowed: boolean;
   /** Primary ring value — worst of voice vs AI spend (what burns margin fastest). */
   usage_pct: number;
@@ -59,7 +61,7 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     getVoiceUsageSnapshot(userId),
     getBudgetSnapshot(userId),
     quotaTracker.getProfile(userId),
-    quotaTracker.getUsage(userId, "claude_tokens_daily"),
+    quotaTracker.getUsage(userId, INTERNAL_AI_TOKEN_DIMENSION),
     getCreditBalanceUsd(userId),
   ]);
   const plan = planById(voice.plan_id);
@@ -74,7 +76,9 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     aiHardCap = true;
   }
 
-  const tokenLimit = profile.claude_tokens_daily;
+  // The persisted quota dimension keeps its historical key for compatibility;
+  // every product/API response exposes this as managed AI usage.
+  const tokenLimit = profile[INTERNAL_AI_TOKEN_DIMENSION];
 
   const voicePct = pct(voice.voice_minutes_used, voice.voice_minutes_included);
   const aiPct = pct(aiSpend, aiLimit);
@@ -109,9 +113,9 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     ai_spend_limit_usd: aiLimit,
     ai_spend_pct: aiPct,
     ai_spend_hard_cap: aiHardCap,
-    claude_tokens_used_today: tokenUsed,
-    claude_tokens_daily_limit: tokenLimit,
-    claude_tokens_pct: tokenPct,
+    ai_tokens_used_today: tokenUsed,
+    ai_tokens_daily_limit: tokenLimit,
+    ai_tokens_pct: tokenPct,
     openrouter_allowed: openRouterAllowedForPlanId(voice.plan_id),
     usage_pct: Math.max(voicePct, aiPct),
     voice_minutes_cap: voice.voice_minutes_included,
