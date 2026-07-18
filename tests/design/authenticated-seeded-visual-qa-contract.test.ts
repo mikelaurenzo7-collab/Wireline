@@ -36,6 +36,6 @@ describe("authenticated seeded-state visual QA contract", () => {
   it("removes the decorative ledger treatment from authenticated task surfaces", () => {
     const css = read("src/styles/workspace-polish.css");
     expect(css).toMatch(/\.wl-workspace-shell::before\s*\{[\s\S]*content: none;/);
-    expect(css).toContain("Reserve color for state and action");
+    expect(css).toContain("reserve color for state and action");
   });
 });
