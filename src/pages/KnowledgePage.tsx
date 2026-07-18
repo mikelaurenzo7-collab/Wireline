@@ -6,7 +6,7 @@ import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
-import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
+import KnowledgeBase from "../components/KnowledgeBase";
 import ReportingPreferences from "../components/training/ReportingPreferences";
 import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
 import { useAgents } from "../contexts/AgentsContext";
@@ -148,7 +148,7 @@ export default function KnowledgePage() {
             </div>
           ) : null}
 
-          {activeTab === "knowledge" ? <KnowledgeBaseClaude agentId={agentId} /> : null}
+          {activeTab === "knowledge" ? <KnowledgeBase agentId={agentId} /> : null}
           {activeTab === "reports" ? (
             <div className="space-y-5">
               <ReportingPreferences />
