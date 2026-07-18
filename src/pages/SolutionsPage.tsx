@@ -17,64 +17,43 @@ import MarketingHero from "../components/marketing/MarketingHero";
 const SOLUTIONS = {
   sales: {
     eyebrow: "Sales conversations",
-    title: "Every qualified lead gets a next step.",
+    title: "Every good lead gets a next step.",
     description:
-      "Build custom voice agents that qualify leads on calls, email, and text using your exact knowledge and sales process.",
+      "Give one trained employee your offer, qualification rules, calendar, and follow-up. It calls, texts, and emails until the next step is booked or clearly logged.",
     icon: PhoneOutgoing,
-    primary: { href: "/signup?posture=business", label: "Create a sales agent" },
+    primary: { href: "/signup?posture=business", label: "Create a sales employee" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
-      ["A lead reaches out", "Custom voice agent answers on phone, email or text."],
-      [
-        "It qualifies using your playbook",
-        "Specialized knowledge, your voice, your exact criteria.",
-      ],
-      ["Clear next step delivered", "Booked. Handed off. Or logged exactly as configured."],
+      ["A lead reaches out", "One employee responds on the channel the lead already chose."],
+      ["It qualifies by your rules", "Your offer, criteria, objections, and escalation path guide the conversation."],
+      ["The next step is clear", "Booked, handed off, or logged with the full context attached."],
     ],
     capabilities: [
-      [
-        "Custom voice on every call",
-        "Agents trained on your scripts, tone, and qualification criteria.",
-      ],
-      [
-        "Multi-channel follow-up",
-        "Voice agents that continue the conversation via email and text.",
-      ],
-      [
-        "Your calendar, your availability",
-        "Book real appointments without double-booking or overpromising.",
-      ],
+      ["Your offer in every call", "Use your positioning, tone, qualification rules, and approved claims."],
+      ["Follow-up across channels", "Continue by SMS or email without restarting the conversation."],
+      ["Calendar-aware booking", "Offer real availability and write the confirmed next step back to the record."],
     ],
-    proof: "Your team spends time with qualified people. Not a pile of unanswered inquiries.",
+    proof: "More qualified conversations move forward. Your team spends time where judgment closes the deal.",
   },
   support: {
     eyebrow: "Customer coverage",
-    title: "A front desk that is ready when customers are.",
+    title: "A front desk that answers before demand goes cold.",
     description:
-      "Deploy custom voice agents that handle inbound calls, texts, and email with your policies, knowledge, and escalation paths.",
+      "Give one trained employee your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
     icon: Headphones,
-    primary: { href: "/signup?posture=business", label: "Create a front desk agent" },
+    primary: { href: "/signup?posture=business", label: "Create a front desk employee" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
-      ["A customer reaches out", "Custom voice agent picks up on call, text or email."],
-      [
-        "Understands with your knowledge",
-        "Trained on your policies, services, and escalation paths.",
-      ],
-      [
-        "Resolves or hands off perfectly",
-        "Complete context passed to the right person every time.",
-      ],
+      ["A customer reaches out", "One employee answers on call, text, or email with the same identity."],
+      ["It uses your business truth", "Policies, services, availability, and escalation rules stay consistent."],
+      ["It resolves or hands off cleanly", "The right person receives the request with context already attached."],
     ],
     capabilities: [
-      ["Custom voice front desk", "Agents that carry your tone, policies, and service knowledge."],
-      [
-        "Seamless booking & updates",
-        "Voice agents that schedule and confirm across email and text.",
-      ],
-      ["Built for your business", "Each agent customized with your voice, playbook, and tools."],
+      ["Your voice and playbook", "Carry your tone, policies, service knowledge, and approved answers."],
+      ["Booking that closes the loop", "Schedule, confirm, and continue the conversation across email and text."],
+      ["Escalation with context", "Route exceptions with the customer, history, and requested outcome intact."],
     ],
-    proof: "Customers get a useful answer sooner. Your team only joins when its judgment matters.",
+    proof: "Customers get an answer sooner. Your team joins only when its judgment matters.",
   },
 } as const;
 
@@ -99,25 +78,23 @@ export default function SolutionsPage() {
         description={page.description}
         primaryAction={{ to: page.primary.href, label: page.primary.label }}
         secondaryAction={{ to: page.secondary.href, label: page.secondary.label, tone: "secondary" }}
-        proof={page.sequence.map(([title]) => title)}
         visual={
           <div className="text-center">
             <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">Live preview</p>
-            <h2 className="mt-4 font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-normal leading-[.98] tracking-[-.045em] text-foreground">
-              Hear this lane before you build it.
+            <h2 className="mx-auto mt-4 max-w-[20ch] font-[var(--wireline-font-family-display)] text-[clamp(2rem,3.2vw,3.2rem)] font-semibold leading-[1] tracking-[-.04em] text-foreground">
+              Hear the lane before you build it.
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">
-              Preview the call lane, then build it with your voice, playbook, and handoff rules when
-              ready.
+            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-7 text-muted-foreground">
+              Preview the conversation, then add your voice, business truth, and handoff rules.
             </p>
             <div className="mt-7 rounded-[16px] border border-border bg-background/70 p-4">
-              <BrowserCallWidget agentName={key === "sales" ? "Sales Agent" : "Front Desk"} />
+              <BrowserCallWidget agentName={key === "sales" ? "Sales Employee" : "Front Desk"} />
             </div>
           </div>
         }
       />
 
-      <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section className="wl-public-rail mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="wl-marketing-center mx-auto max-w-2xl">
           <p className="wl-overline text-primary">One clear operating flow</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
@@ -125,16 +102,16 @@ export default function SolutionsPage() {
           </h2>
         </div>
         <ol className="mt-10 grid gap-4 lg:grid-cols-3">
-          {page.sequence.map(([title], index) => (
+          {page.sequence.map(([title, copy], index) => (
             <li key={title} className="wl-stitch-card relative p-6 text-center sm:p-7">
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[var(--wireline-typography-caption-size)] font-semibold text-primary">
                 0{index + 1}
               </span>
-              <h3 className="wl-section-title mt-5 text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
+              <h3 className="wl-section-title mx-auto mt-5 max-w-[16ch] text-[clamp(1.15rem,1rem+.45vw,1.35rem)]">
                 {title}
               </h3>
-              <p className="mt-3 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
-                {page.sequence[index][1]}
+              <p className="mx-auto mt-3 max-w-[34ch] text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                {copy}
               </p>
             </li>
           ))}
@@ -142,15 +119,14 @@ export default function SolutionsPage() {
       </section>
 
       <section className="border-y border-border bg-card px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="wl-measure mx-auto">
+        <div className="wl-public-rail mx-auto">
           <div className="wl-marketing-center mx-auto max-w-3xl">
             <p className="wl-overline">Built for useful business work</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              The capabilities that make a conversation operational.
+              The capabilities that make the conversation operational.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-              Start with a focused assignment. Expand into the next channel, connected account, or
-              workflow only when it makes the outcome better.
+              Start focused. Add another channel or connected tool only when it improves the outcome.
             </p>
           </div>
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
@@ -159,10 +135,10 @@ export default function SolutionsPage() {
                 index
               ] as LucideIcon;
               return (
-                <article key={title} className="wl-stitch-card bg-background p-5 text-center">
-                  <CapabilityIcon size={18} className="mx-auto text-primary" />
-                  <h3 className="wl-card-title mt-4">{title}</h3>
-                  <p className="mt-2 text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
+                <article key={title} className="wl-stitch-card bg-background p-5 text-center sm:p-6">
+                  <CapabilityIcon size={18} className="mx-auto text-primary" aria-hidden="true" />
+                  <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">{title}</h3>
+                  <p className="mx-auto mt-2 max-w-[34ch] text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">
                     {copy}
                   </p>
                 </article>
@@ -172,11 +148,11 @@ export default function SolutionsPage() {
         </div>
       </section>
 
-      <section className="wl-measure mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section className="wl-public-rail mx-auto px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="wl-stitch-card wl-stitch-card-tinted wl-marketing-center grid justify-items-center gap-6 p-6 sm:p-8">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 text-primary">
-              <CircleDot size={16} />
+              <CircleDot size={16} aria-hidden="true" />
               <span className="wl-overline text-primary">The Wireline difference</span>
             </div>
             <p className="mt-4 text-[clamp(1.35rem,1.1rem+1vw,1.85rem)] font-semibold leading-[1.15] tracking-[-.035em] text-foreground">
@@ -185,9 +161,9 @@ export default function SolutionsPage() {
           </div>
           <Link
             to={page.primary.href}
-            className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[var(--wireline-typography-caption-size)] font-semibold uppercase tracking-[.05em]"
+            className="marketing-btn-primary min-h-12 shrink-0 px-6 text-[var(--wireline-typography-caption-size)] font-semibold"
           >
-            Build your agent <ArrowRight size={15} />
+            Build this employee <ArrowRight size={15} aria-hidden="true" />
           </Link>
         </div>
       </section>
