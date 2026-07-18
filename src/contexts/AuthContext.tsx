@@ -1,6 +1,14 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { useLocation } from "react-router-dom";
-import { AUTH_SESSION_EXPIRED_EVENT } from "../lib/api";
+import { AUTH_SESSION_EXPIRED_EVENT, refreshSessionIfNeeded } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 import { isSessionOptionalPublicPath } from "../lib/public-routes";
 import { clearStudioLastAgentId } from "../lib/studio-agent-preference";
@@ -37,6 +45,11 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const SESSION_PROBE_MS = 8_000;
+// Rotate the session cookie well within the 2h window while the tab is active,
+// so a user working outside the streaming-chat surface isn't logged out
+// mid-task. Throttled so rapid tab switches don't refresh repeatedly.
+const SESSION_REFRESH_INTERVAL_MS = 25 * 60_000;
+const SESSION_REFRESH_THROTTLE_MS = 5 * 60_000;
 
 async function fetchSessionUser(): Promise<User | null> {
   const controller = new AbortController();
@@ -135,6 +148,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
     return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
+
+  // Keep an actively-used session alive. The refresh endpoint re-validates the
+  // session before rotating, so an already-expired one still falls through to
+  // the normal sign-out path rather than being silently extended.
+  const lastRefreshRef = useRef(0);
+  useEffect(() => {
+    if (!user) return;
+    const maybeRefresh = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastRefreshRef.current < SESSION_REFRESH_THROTTLE_MS) return;
+      lastRefreshRef.current = now;
+      void refreshSessionIfNeeded();
+    };
+    const interval = window.setInterval(maybeRefresh, SESSION_REFRESH_INTERVAL_MS);
+    document.addEventListener("visibilitychange", maybeRefresh);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", maybeRefresh);
+    };
+  }, [user]);
 
   const signIn = useCallback((newSession: Session) => {
     localStorage.removeItem(LEGACY_STORAGE_KEY);

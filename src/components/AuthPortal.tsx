@@ -137,11 +137,12 @@ function OAuthSignInButtons({
           j = {};
         }
       } else {
-        const bodySnippet = (await res.text().catch(() => "")).slice(0, 120);
+        // Drain the body but never surface it — a non-JSON response is usually
+        // a proxy/CDN HTML error page, and echoing it leaks infra internals
+        // onto the sign-in card. Show a clean, actionable message instead.
+        await res.text().catch(() => "");
         throw new Error(
-          `Sign-in service returned ${res.status} ${res.statusText || ""}. ${
-            bodySnippet ? `Details: ${bodySnippet}` : "The server may be misconfigured."
-          }`.trim(),
+          `Sign-in is temporarily unavailable (HTTP ${res.status}). Try again, or use email below.`,
         );
       }
       if (!res.ok) {
