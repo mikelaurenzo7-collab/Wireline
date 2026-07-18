@@ -21,9 +21,12 @@ export default function ConnectionsPage() {
         />
         <MailboxConnectionCard />
         <CrmConnectionCard />
-        <div className="mt-2">
-          <IntegrationOperatingMap />
-        </div>
+        <details data-wireline-integration-map>
+          <summary>Integration capabilities</summary>
+          <div className="p-3 sm:p-4">
+            <IntegrationOperatingMap />
+          </div>
+        </details>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

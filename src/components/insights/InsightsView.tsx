@@ -86,6 +86,7 @@ export default function InsightsView() {
       options={DAY_OPTIONS.map((d) => ({ value: String(d), label: `${d}d` }))}
       value={String(days)}
       onChange={(v) => setDays(Number(v) as (typeof DAY_OPTIONS)[number])}
+      variant="soft"
     />
   );
 

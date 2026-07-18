@@ -1,4 +1,4 @@
-/* Shared workspace polish. Keep this compact and system-level. */
+/* Shared authenticated workspace polish. Keep this system-level and route-aware. */
 .wl-workspace-content-inner {
   max-width: min(1520px, calc(100vw - clamp(1rem, 3vw, 5rem)));
 }
@@ -19,7 +19,9 @@
   border-color: color-mix(in srgb, var(--wireline-color-border-default) 86%, transparent);
 }
 
-.wl-workspace-page :where(.wl-paper, .wl-paper-elevated, .studio-card) > :where(.wl-eyebrow, .wl-overline):first-child {
+.wl-workspace-page
+  :where(.wl-paper, .wl-paper-elevated, .studio-card)
+  > :where(.wl-eyebrow, .wl-overline):first-child {
   margin-bottom: 1rem;
 }
 
@@ -57,6 +59,89 @@
     var(--wireline-color-canvas-default)
   );
   border-color: color-mix(in srgb, var(--wireline-color-border-default) 76%, transparent);
+}
+
+/* The authenticated product is a calm operating surface, not a decorative ledger.
+ * Remove global ruling and repeated card caps; reserve color for state and action. */
+.wl-workspace-shell::before {
+  display: none;
+  content: none;
+}
+
+.wl-workspace-content
+  :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-agent-card, .wl-metric-tile)::before,
+.wl-overview :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-metric-tile)::before,
+.wl-operate-surface :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-metric-tile)::before,
+.wl-inbox-route :where(.wl-paper, .wl-paper-elevated, .studio-card)::before {
+  display: none;
+  content: none;
+}
+
+.wl-workspace-page :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-panel-elevated) {
+  border-radius: 14px;
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 94%,
+    var(--wireline-color-canvas-default)
+  );
+  box-shadow: none;
+}
+
+.wl-workspace-page :where(.wl-paper, .wl-paper-elevated, .studio-card):hover {
+  border-color: color-mix(in srgb, var(--wireline-color-border-strong) 72%, transparent);
+}
+
+/* Remove display fringing and keep product titles crisp at every scale. */
+.wl-workspace-shell
+  :where(.wl-display-2, .wl-display-3, .wl-display-4, .wl-workspace-page-intro h1, .wl-operate-surface h1) {
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+  font-synthesis: none;
+}
+
+.wl-workspace-page-intro {
+  min-height: 2.5rem;
+}
+
+.wl-workspace-page-intro .wl-display-3,
+.wl-operate-surface > header .wl-display-3 {
+  font-size: clamp(1.75rem, 1.55rem + 0.8vw, 2.25rem);
+  line-height: 1;
+}
+
+/* Tabs locate the user without competing with the page's primary action. */
+.wl-workspace-shell .wl-workspace-tabs [data-active="true"] {
+  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 14%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-action-primary-default);
+  box-shadow: none;
+}
+
+.wl-workspace-shell .wl-workspace-tabs [data-active="false"] {
+  color: var(--wireline-color-text-secondary);
+}
+
+/* Empty product surfaces should feel intentional, not like unused black canvas. */
+.wl-inbox-route .wl-empty-state,
+.wl-operate-surface .wl-empty-state {
+  max-width: 36rem;
+  margin-inline: auto;
+}
+
+.wl-inbox-route .wl-channel-inbox-grid {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
+  border-radius: 14px;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 72%,
+    var(--wireline-color-canvas-default)
+  );
 }
 
 /* The desktop rail must remain usable on short laptops and browser windows.

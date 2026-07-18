@@ -25,11 +25,11 @@ type WorkspaceTabStripProps = {
 
 function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
-    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40",
     density === "compact" ? "min-h-8 px-2.5 text-xs" : "min-h-[44px] px-4 text-sm",
     active
-      ? "bg-primary text-primary-foreground shadow-[var(--wireline-elevation-sm)]"
-      : "text-foreground hover:bg-muted",
+      ? "border-primary/30 bg-primary/15 text-primary shadow-none"
+      : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 }
 
@@ -48,7 +48,7 @@ function WorkspaceTabLabel({ tab }: { tab: WorkspaceTabItem }) {
   );
 }
 
-/** Centered workspace tab strip — settings, inbox, training, and operate surfaces. */
+/** Shared workspace tab strip — settings, inbox, studio, and operate surfaces. */
 export function WorkspaceTabStrip({
   tabs,
   activeId,
@@ -64,6 +64,8 @@ export function WorkspaceTabStrip({
   return (
     <nav
       aria-label={ariaLabel}
+      data-density={density}
+      data-align={align}
       className={cn(
         "wl-workspace-tabs w-full",
         wrap
@@ -98,6 +100,7 @@ export function WorkspaceTabStrip({
                 aria-label={accessibleLabel}
                 title={fullLabel}
                 aria-current={active ? "page" : undefined}
+                data-active={active ? "true" : "false"}
                 className={tabClassName(active, density)}
               >
                 <WorkspaceTabLabel tab={tab} />
@@ -111,6 +114,7 @@ export function WorkspaceTabStrip({
               aria-label={accessibleLabel}
               title={fullLabel}
               aria-current={active ? "page" : undefined}
+              data-active={active ? "true" : "false"}
               onClick={() => onSelect?.(tab.id)}
               className={tabClassName(active, density)}
             >
