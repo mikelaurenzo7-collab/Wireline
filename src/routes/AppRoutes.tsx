@@ -4,7 +4,7 @@ import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
 
-const AgentStudioHome = lazy(() => import("../pages/AgentStudioHomeClaude"));
+const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
 const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
