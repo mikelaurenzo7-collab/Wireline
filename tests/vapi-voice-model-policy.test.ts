@@ -33,7 +33,7 @@ describe("managed PSTN voice model policy", () => {
   });
 
   it("passes an explicit Grok OpenRouter override through unchanged", () => {
-    const model = "x-ai/grok-4.3";
+    const model = "x-ai/grok-4.5";
     const selection = resolveVapiVoiceModelSelection({ provider: "openrouter", model });
     expect(selection).toEqual({ provider: "openrouter", model, userSelected: true });
   });

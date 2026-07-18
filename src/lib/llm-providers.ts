@@ -1,6 +1,6 @@
 export const LLM_PROVIDERS = {
-  default: "xai-grok-4-heavy",
-  options: ["xai-grok-4-heavy", "openai-gpt-4o", "eleven-voice-enhanced"],
+  default: "xai-grok-4.5",
+  options: ["xai-grok-4.5", "openai-gpt-4o", "eleven-voice-enhanced"],
   grokKeyConfigured: Boolean(process.env.XAI_API_KEY),
   voiceProviders: ["wireline-live", "elevenlabs"] as const,
 } as const;

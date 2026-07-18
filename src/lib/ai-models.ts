@@ -140,13 +140,22 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
   },
   {
     provider: "openrouter",
-    model: "x-ai/grok-4.3",
+    model: "x-ai/grok-4.5",
+    label: "Grok 4.5",
+    speed: "balanced",
+    envKey: "OPENROUTER_API_KEY",
+    latencyWarning: true,
+    note: "xAI Grok 4.5 — witty, current, and reasoning-strong call handling. Managed calls keep GPT-4o as an automatic fallback.",
+  },
+  {
+    provider: "openrouter",
+    model: "x-ai/grok-4.5",
     label: "OpenRouter — choose a model",
     speed: "balanced",
     envKey: "OPENROUTER_API_KEY",
     latencyWarning: true,
     acceptsCustomModelId: true,
-    note: "Advanced override. Wireline forwards the exact provider/model ID (e.g. x-ai/grok-4.3 enables distinctive Grok strengths when needed).",
+    note: "Advanced override. Wireline forwards the exact provider/model ID (e.g. x-ai/grok-4.5 enables distinctive Grok strengths when needed).",
   },
 ] as const;
 
