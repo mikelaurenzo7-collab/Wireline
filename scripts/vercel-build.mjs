@@ -67,6 +67,7 @@ function sanitizePreviewEnvironment() {
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
 sanitizePreviewEnvironment();
 run("node", ["scripts/check-operational-core.mjs"]);
+run("node", ["scripts/check-provider-neutral-ui.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
 
 if (shouldMigrate) {
