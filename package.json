@@ -37,7 +37,7 @@
     "design:contract": "npm run design:check",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
-    "runtime:policy:check": "node scripts/check-openai-runtime-policy.mjs",
+    "runtime:policy:check": "node scripts/check-runtime-policy.mjs",
     "stripe:setup": "node scripts/setup-stripe-catalog.mjs",
     "stripe:audit-live": "node scripts/run-stripe-audit-from-vercel.mjs",
     "stripe:deactivate-retired-defaults": "node scripts/run-stripe-deactivate-retired-defaults.mjs",

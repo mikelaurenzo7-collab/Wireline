@@ -357,7 +357,7 @@ router.post(
     // full URL because it fetches the media file itself. Falls back to the
     // canonical prod host when APP_URL isn't set (e.g. on a fresh deploy
     // before env was populated). If the asset doesn't exist on this
-    // deploy (i.e. owner hasn't curled generate-brand-sounds yet), Twilio
+    // deploy (i.e. owner has not curled /api/admin/elevenlabs/sound-effect yet), Twilio
     // will skip it gracefully and continue to the next verb — no caller
     // disruption.
     const appBaseUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");

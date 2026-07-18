@@ -290,7 +290,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:
-      "Your personal AI calls the debt collector, books the dentist, disputes the cable bill, schedules the appointment, and handles the conversation you've been avoiding for three weeks. You text it what you need; it dials, talks, and reports back.",
+      "Your personal AI calls the debt collector, books the dentist, disputes the cable bill, and handles the conversation you've been avoiding for weeks.",
     pains: [
       {
         icon: Clock,
@@ -321,7 +321,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Wire personal agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
-      "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your Wireline workspace before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
+      "Your agent only does what you authorize. Every call is recorded and transcribed in your workspace, and you can take over or hang up at any time.",
     faqs: [
       {
         q: "Is it actually legal for an AI to make calls on my behalf?",
@@ -329,7 +329,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can it really negotiate debt? Won't the collector just hang up on a robot?",
-        a: "Wireline can call with your authorized offer, ask whether the collector can review it, and request written terms if they are available. Settlement outcomes are not guaranteed, creditors and collectors set their own policies, and this is not legal or financial advice. If a caller refuses to engage, the agent logs that and follows your escalation instructions.",
+        a: "Wireline calls with your authorized offer, asks whether the collector can review it, and requests written terms when available. If a caller refuses to engage, it logs that and follows your escalation instructions. Outcomes aren't guaranteed, and this isn't legal or financial advice.",
       },
       {
         q: "What about voicemail / hold music / phone trees? Doesn't that break it?",
@@ -337,7 +337,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from just having a friend or family member call for me?",
-        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Your plan includes guaranteed live-voice minutes, with Conversation Balance covering anything beyond that. Privacy: nobody in your life needs to know you avoid these calls.",
+        a: "It's available 24/7, never gets tired or annoyed, and records and summarizes calls where lawful so you can review exactly what happened — and nobody in your life needs to know you avoid these calls.",
       },
       {
         q: "What can't it do?",

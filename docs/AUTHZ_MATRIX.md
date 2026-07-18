@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 275
-**Protected:** 237
+**Routes scanned:** 282
+**Protected:** 244
 **Public (allowlisted):** 38
 **Violations:** 0
 
@@ -42,7 +42,7 @@
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
 | `POST /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
-| `GET /openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
+| `GET /api/openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
 | `POST /api/twilio-webhook/message-status` | Twilio signature validation + rate limit |
@@ -62,6 +62,11 @@
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/primary` | inline | — | — | Protected |
 | activation-routes.ts | GET | `/api/activation/status` | inline | — | — | Protected |
+| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/dialogue` | inline | platform_admin | — | Protected |
+| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/music` | inline | platform_admin | — | Protected |
+| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/sound-effect` | inline | platform_admin | — | Protected |
+| admin-elevenlabs-routes.ts | GET | `/api/admin/elevenlabs/status` | inline | platform_admin | — | Protected |
+| admin-elevenlabs-routes.ts | POST | `/api/admin/elevenlabs/transcribe` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | DELETE | `/api/admin/demo-data` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | POST | `/api/admin/seed-demo-account` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | POST | `/api/admin/seed-founder-Assistants` | inline | platform_admin | — | Protected |
@@ -89,6 +94,7 @@
 | agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/overview` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/run-action` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
+| ai-status-routes.ts | GET | `/api/ai/status` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/events` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/recent` | inline | — | — | Protected |
 | audit-routes.ts | GET | `/api/audit/summary` | inline | — | — | Protected |
@@ -111,6 +117,7 @@
 | auth-routes.ts | POST | `/api/auth/signup` | — | — | yes | Public (allowlisted) |
 | auth-routes.ts | POST | `/api/auth/signup-intent` | inline | — | yes | Protected |
 | auth-routes.ts | GET | `/api/auth/verify-email/:token` | — | — | yes | Public (allowlisted) |
+| billing-portal-readiness-routes.ts | POST | `/api/billing/portal` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | platform_admin | — | Protected |
 | billing-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
@@ -258,7 +265,7 @@
 | mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
-| openapi-routes.ts | GET | `/openapi.json` | — | — | yes | Public (allowlisted) |
+| openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |
 | outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound` | inline | — | — | Protected |
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |

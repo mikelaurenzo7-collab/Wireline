@@ -4,9 +4,12 @@ import { randomBytes } from "node:crypto";
 // Plausible stub, and JSON-LD structured data. Advertising measurement lives in
 // a same-origin external loader so it can remain off until explicit consent.
 export const INLINE_SCRIPT_HASHES = [
+  // Theme-init boot script.
   "'sha256-3Z3f8c52musA1bws65NjZG2DaDDUbBisRU8i4FLei1w='",
+  // Plausible analytics stub.
   "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
-  "'sha256-Sgtkva0aoGBbIVz0IEvpLrdSvwJevIdCBSRF85pZ3LI='",
+  // schema.org JSON-LD structured-data block (non-executable).
+  "'sha256-2CeqyV3zA6ZMpVmB4HrPXKhAe1s1SccoYditH6KMhJE='",
 ] as const;
 
 /**
@@ -28,6 +31,10 @@ export const MARKETING_SCRIPT_SRCS = [
 export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
+    // xAI Grok: server mints the realtime client secret; the browser opens the
+    // live-voice WebSocket directly to wss://api.x.ai.
+    "https://api.x.ai",
+    "wss://api.x.ai",
     "https://api.openai.com",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",

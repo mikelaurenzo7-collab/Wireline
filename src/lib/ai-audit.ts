@@ -4,7 +4,7 @@ import { DEFAULT_MODEL, MODEL_PRICING, OPENAI_MODELS } from "./ai-models";
 
 export interface RuntimeCallMeta {
   model: string;
-  provider: "openai" | "openrouter" | "google";
+  provider: "xai" | "openai" | "openrouter" | "google";
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
@@ -109,12 +109,25 @@ function push(record: RuntimeCallMeta) {
 function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (/^gpt-/i.test(model)) return "openai";
   if (model.toLowerCase().includes("gemini")) return "google";
+  // provider/model form (e.g. "x-ai/grok-4.5") routes through OpenRouter; a bare
+  // grok id (e.g. "grok-4.5") is the direct xAI runtime and is priced via
+  // MODEL_PRICING, not the OpenRouter estimator.
+  if (model.includes("/")) return "openrouter";
+  if (/grok/i.test(model)) return "xai";
   return "openrouter";
 }
-export function recordUsage(model: string, response: { usage?: any }, latencyMs: number) {
+export function recordUsage(
+  model: string,
+  response: { model?: string; usage?: any },
+  latencyMs: number,
+) {
+  // Attribute cost to the model that actually served the turn. On provider
+  // failover the runtime returns a different model than requested, so pricing
+  // and provider attribution must follow the response, not the request.
+  const served = typeof response.model === "string" && response.model ? response.model : model;
   push({
-    model,
-    provider: providerFor(model),
+    model: served,
+    provider: providerFor(served),
     input_tokens: response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
     output_tokens: response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
     cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,

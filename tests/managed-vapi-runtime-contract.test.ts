@@ -56,11 +56,16 @@ describe("managed Vapi runtime policy", () => {
     );
   });
 
-  it("removes dormant voice vendors from the browser boundary", () => {
+  it("keeps server-only voice vendors out of the browser boundary", () => {
     for (const source of [csp, vercel]) {
       expect(source).toMatch(/api\.openai\.com/);
       expect(source).toMatch(/api\.vapi\.ai/);
-      expect(source).not.toMatch(/api\.x\.ai|api\.elevenlabs\.io|cdn\.elevenlabs\.io/);
+      // Grok live-voice runs a browser WebSocket to wss://api.x.ai, so the xAI
+      // host is a first-class browser boundary.
+      expect(source).toMatch(/api\.x\.ai/);
+      // ElevenLabs is invoked server-side only; it must never be reachable from
+      // the browser.
+      expect(source).not.toMatch(/api\.elevenlabs\.io|cdn\.elevenlabs\.io/);
     }
   });
 

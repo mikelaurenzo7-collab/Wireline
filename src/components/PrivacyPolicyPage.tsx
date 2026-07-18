@@ -103,34 +103,44 @@ export default function PrivacyPolicyPage() {
             "Optional advertising measurement stays off unless you allow it.",
             "Agent configurations and conversations are not used to train third-party AI models.",
           ].map((item) => (
-            <div key={item} className="rounded-md border border-border bg-background/45 p-4 text-center">
+            <div
+              key={item}
+              className="rounded-md border border-border bg-background/45 p-4 text-center"
+            >
               <p className="text-sm leading-6 text-foreground">{item}</p>
             </div>
           ))}
         </div>
 
-        <div className="mb-10 rounded-md border border-brand/20 bg-brand/5 p-5" id="privacy-choices">
+        <div
+          className="mb-10 rounded-md border border-brand/20 bg-brand/5 p-5"
+          id="privacy-choices"
+        >
           <div className="flex items-start gap-3">
             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand/10">
               <Cookie className="h-4 w-4 text-brand" />
             </div>
             <div className="min-w-0 flex-1 space-y-3">
               <div>
-                <h2 className="text-sm font-semibold text-foreground">Advertising measurement choice</h2>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Advertising measurement choice
+                </h2>
                 <p className="mt-1 text-sm leading-6 text-foreground/75">
                   Plausible product analytics remains separate and does not use advertising cookies.
-                  Meta advertising measurement loads only when you choose <strong>Allow measurement</strong>.
+                  Meta advertising measurement loads only when you choose{" "}
+                  <strong>Allow measurement</strong>.
                 </p>
               </div>
 
               {privacySignalEnabled ? (
                 <p className="text-sm leading-6 text-muted-foreground" aria-live="polite">
-                  Global Privacy Control is active in your browser. Advertising measurement is off and
-                  cannot be enabled while that signal remains active.
+                  Global Privacy Control is active in your browser. Advertising measurement is off
+                  and cannot be enabled while that signal remains active.
                 </p>
               ) : (
                 <p className="text-sm leading-6 text-muted-foreground" aria-live="polite">
-                  Current choice: <strong>{measurementConsent === "granted" ? "Allowed" : "Off"}</strong>
+                  Current choice:{" "}
+                  <strong>{measurementConsent === "granted" ? "Allowed" : "Off"}</strong>
                 </p>
               )}
 
@@ -162,8 +172,8 @@ export default function PrivacyPolicyPage() {
           <Section title="1. Who We Are">
             <p>
               <strong>Wireline</strong> ("we", "our", or "us") operates an AI employee platform for
-              business conversations across voice, SMS, and email. Questions about this policy can be
-              sent to <strong>support@trywireline.com</strong>.
+              business conversations across voice, SMS, and email. Questions about this policy can
+              be sent to <strong>support@trywireline.com</strong>.
             </p>
           </Section>
 
@@ -178,150 +188,176 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               <strong>Conversation data</strong> — Phone numbers, message addresses, recordings,
-              transcripts, summaries, message content, and operational metadata needed to provide the
-              calling, texting, and email service you configure.
+              transcripts, summaries, message content, and operational metadata needed to provide
+              the calling, texting, and email service you configure.
             </p>
             <p>
-              <strong>Usage and billing data</strong> — Feature usage, AI-model consumption, plan and
-              balance records, and Stripe billing information. We do not store full payment-card numbers.
+              <strong>Usage and billing data</strong> — Feature usage, AI-model consumption, plan
+              and balance records, and Stripe billing information. We do not store full payment-card
+              numbers.
             </p>
             <p>
-              <strong>Log and diagnostic data</strong> — Server logs, security events, error reports,
-              and performance metrics used to secure, operate, and improve the service.
+              <strong>Log and diagnostic data</strong> — Server logs, security events, error
+              reports, and performance metrics used to secure, operate, and improve the service.
             </p>
             <p>
-              <strong>Website measurement data</strong> — Plausible provides aggregate product analytics
-              such as page, referrer, browser, device, and approximate country information without
-              advertising cookies. If you explicitly allow advertising measurement, Meta may also receive
-              limited browser/device identifiers, IP address, page and referrer URLs, and conversion events
-              for campaign attribution. We do not send agent content, call recordings, transcripts,
-              customer contact lists, email or SMS bodies, or payment-card data to Meta Pixel.
+              <strong>Website measurement data</strong> — Plausible provides aggregate product
+              analytics such as page, referrer, browser, device, and approximate country information
+              without advertising cookies. If you explicitly allow advertising measurement, Meta may
+              also receive limited browser/device identifiers, IP address, page and referrer URLs,
+              and conversion events for campaign attribution. We do not send agent content, call
+              recordings, transcripts, customer contact lists, email or SMS bodies, or payment-card
+              data to Meta Pixel.
             </p>
           </Section>
 
           <Section title="3. How We Use Data">
             <p>
-              We use data to provide and secure Wireline; process AI requests through OpenAI with Google
-              Gemini as a managed fallback; route calls and messages; execute connected workflows; provide
-              support; prevent fraud and abuse; bill through Stripe; and understand aggregate product
-              performance.
+              We use data to provide and secure Wireline; process AI requests through xAI's Grok
+              with OpenAI and Google Gemini as managed fallbacks; route calls and messages; execute
+              connected workflows; provide support; prevent fraud and abuse; bill through Stripe;
+              and understand aggregate product performance.
             </p>
             <p>
-              Optional Meta measurement is used only after your explicit choice to attribute marketing
-              campaigns and measure website conversions. It is not required to create an account or use
-              Wireline, and you can turn it off at any time using the controls on this page.
+              Optional Meta measurement is used only after your explicit choice to attribute
+              marketing campaigns and measure website conversions. It is not required to create an
+              account or use Wireline, and you can turn it off at any time using the controls on
+              this page.
             </p>
             <p>
-              We do not use customer agent configurations, recordings, transcripts, or message content to
-              train third-party AI models.
+              We do not use customer agent configurations, recordings, transcripts, or message
+              content to train third-party AI models.
             </p>
           </Section>
 
           <Section title="4. Third-Party Sub-Processors and Measurement Providers">
             <p>We rely on the following providers for defined service functions:</p>
             <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li><strong>Postgres hosting</strong> — Database storage and backup infrastructure</li>
-              <li><strong>Voice and communications infrastructure</strong> — Call, SMS, and voice processing</li>
-              <li><strong>OpenAI</strong> — Primary AI-model inference and managed realtime sessions</li>
-              <li><strong>Google Gemini</strong> — Managed fallback AI inference</li>
-              <li><strong>Stripe</strong> — Payment processing, billing, and tax calculation</li>
-              <li><strong>Vercel</strong> — Hosting, functions, and edge delivery</li>
-              <li><strong>Plausible</strong> — Privacy-oriented aggregate website analytics</li>
               <li>
-                <strong>Meta</strong> — Optional advertising measurement and campaign attribution, only
-                after explicit consent and subject to Global Privacy Control
+                <strong>Postgres hosting</strong> — Database storage and backup infrastructure
               </li>
               <li>
-                <strong>Have I Been Pwned Pwned Passwords</strong> — Compromised-password screening using
-                a k-anonymous partial hash prefix
+                <strong>Voice and communications infrastructure</strong> — Call, SMS, and voice
+                processing
+              </li>
+              <li>
+                <strong>xAI</strong> — Primary AI-model inference (Grok)
+              </li>
+              <li>
+                <strong>OpenAI</strong> — Managed fallback AI inference and realtime sessions
+              </li>
+              <li>
+                <strong>Google Gemini</strong> — Managed fallback AI inference
+              </li>
+              <li>
+                <strong>Stripe</strong> — Payment processing, billing, and tax calculation
+              </li>
+              <li>
+                <strong>Vercel</strong> — Hosting, functions, and edge delivery
+              </li>
+              <li>
+                <strong>Plausible</strong> — Privacy-oriented aggregate website analytics
+              </li>
+              <li>
+                <strong>Meta</strong> — Optional advertising measurement and campaign attribution,
+                only after explicit consent and subject to Global Privacy Control
+              </li>
+              <li>
+                <strong>Have I Been Pwned Pwned Passwords</strong> — Compromised-password screening
+                using a k-anonymous partial hash prefix
               </li>
             </ul>
           </Section>
 
           <Section title="5. Data Retention and Security">
             <p>
-              Operational records are retained while your account is active and as needed to provide the
-              service, resolve disputes, prevent abuse, and meet legal obligations. Account deletion starts
-              a documented deletion process; associated personal data is erased within 30 days except for
-              records we must retain by law or security records that have been de-identified.
+              Operational records are retained while your account is active and as needed to provide
+              the service, resolve disputes, prevent abuse, and meet legal obligations. Account
+              deletion starts a documented deletion process; associated personal data is erased
+              within 30 days except for records we must retain by law or security records that have
+              been de-identified.
             </p>
             <p>
-              We use access controls, encryption in transit, restricted secrets, tenant isolation, audit
-              logging, and database row-level security. No system is perfectly secure, but we continuously
-              review and improve these safeguards.
+              We use access controls, encryption in transit, restricted secrets, tenant isolation,
+              audit logging, and database row-level security. No system is perfectly secure, but we
+              continuously review and improve these safeguards.
             </p>
           </Section>
 
           <Section title="6. International Privacy Rights">
             <p>
-              Depending on where you live, you may have rights to access, correct, delete, restrict or
-              object to processing, withdraw consent, and receive a portable copy of personal data. To
-              exercise a right, use Delete Account in Settings or contact
-              <strong> support@trywireline.com</strong>. Where processing relies on consent, withdrawing
-              consent does not affect processing completed before withdrawal.
+              Depending on where you live, you may have rights to access, correct, delete, restrict
+              or object to processing, withdraw consent, and receive a portable copy of personal
+              data. To exercise a right, use Delete Account in Settings or contact
+              <strong> support@trywireline.com</strong>. Where processing relies on consent,
+              withdrawing consent does not affect processing completed before withdrawal.
             </p>
           </Section>
 
           <Section id="ccpa" title="7. California Privacy Rights (CCPA / CPRA)">
             <p>
               We do not sell personal information for money. California law may treat disclosure of
-              limited website event and device data to an advertising platform for cross-context campaign
-              measurement as "sharing," even when no money changes hands. Meta measurement remains off
-              unless you affirmatively allow it.
+              limited website event and device data to an advertising platform for cross-context
+              campaign measurement as "sharing," even when no money changes hands. Meta measurement
+              remains off unless you affirmatively allow it.
             </p>
             <p>
-              Select <strong>Keep measurement off</strong>, close the privacy notice, or enable Global
-              Privacy Control to opt out. You may return to the controls above at any time. We will not
-              discriminate against you for exercising a privacy right.
+              Select <strong>Keep measurement off</strong>, close the privacy notice, or enable
+              Global Privacy Control to opt out. You may return to the controls above at any time.
+              We will not discriminate against you for exercising a privacy right.
             </p>
             <p>
-              California residents may also request access, correction, deletion, or information about
-              categories of data collected and disclosed by contacting
-              <strong> support@trywireline.com</strong>. We respond to verified requests within the period
-              required by applicable law.
+              California residents may also request access, correction, deletion, or information
+              about categories of data collected and disclosed by contacting
+              <strong> support@trywireline.com</strong>. We respond to verified requests within the
+              period required by applicable law.
             </p>
           </Section>
 
           <Section title="8. Cookies, Local Storage, and Analytics">
             <p>
-              Wireline uses first-party session cookies and local storage necessary for authentication,
-              security, preferences, and remembering your privacy choice. Plausible aggregate analytics is
-              separate from advertising measurement and does not use advertising cookies.
+              Wireline uses first-party session cookies and local storage necessary for
+              authentication, security, preferences, and remembering your privacy choice. Plausible
+              aggregate analytics is separate from advertising measurement and does not use
+              advertising cookies.
             </p>
             <p>
-              Meta Pixel is optional and remains off until you choose <strong>Allow measurement</strong>.
-              Global Privacy Control overrides an allow choice. Turning measurement off replaces Wireline's
-              browser-side measurement function with a no-op so future Wireline-triggered Meta events stop;
-              a request already in flight before revocation may still complete.
+              Meta Pixel is optional and remains off until you choose{" "}
+              <strong>Allow measurement</strong>. Global Privacy Control overrides an allow choice.
+              Turning measurement off replaces Wireline's browser-side measurement function with a
+              no-op so future Wireline-triggered Meta events stop;{" "}
+              {"a request already in flight before revocation may still complete"}.
             </p>
           </Section>
 
           <Section title="9. Children's Privacy">
             <p>
-              Wireline is not directed to children under 13, and we do not knowingly collect personal
-              information from children. Contact us if you believe a child supplied information so we can
-              investigate and delete it.
+              Wireline is not directed to children under 13, and we do not knowingly collect
+              personal information from children. Contact us if you believe a child supplied
+              information so we can investigate and delete it.
             </p>
           </Section>
 
           <Section title="10. Healthcare Data (HIPAA)">
             <p>
-              <strong>Wireline is not HIPAA-certified at this time.</strong> Do not use Wireline to process
-              or transmit Protected Health Information unless and until a written Business Associate
-              Agreement and an explicitly supported HIPAA configuration are in place.
+              <strong>Wireline is not HIPAA-certified at this time.</strong> Do not use Wireline to
+              process or transmit Protected Health Information unless and until a written Business
+              Associate Agreement and an explicitly supported HIPAA configuration are in place.
             </p>
           </Section>
 
           <Section title="11. Changes to This Policy">
             <p>
-              We will post material changes on this page with a revised date and provide additional notice
-              where required. Material changes to consent-based measurement will not convert an existing
-              off choice into an allow choice.
+              We will post material changes on this page with a revised date and provide additional
+              notice where required. Material changes to consent-based measurement will not convert
+              an existing off choice into an allow choice.
             </p>
           </Section>
 
           <Section title="12. Contact">
-            <p>Privacy questions or requests: <strong>support@trywireline.com</strong></p>
+            <p>
+              Privacy questions or requests: <strong>support@trywireline.com</strong>
+            </p>
           </Section>
         </div>
 

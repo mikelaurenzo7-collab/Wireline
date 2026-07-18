@@ -35,12 +35,17 @@ function LegalLayout({
           </div>
           <h1 className="marketing-hero-title text-2xl sm:text-3xl">{title}</h1>
         </div>
-        <p className="mb-10 text-center text-eyebrow !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>
+        <p className="mb-10 text-center text-eyebrow !text-[0.625rem]">
+          Last updated: {LAST_UPDATED}
+        </p>
 
         {summary?.length ? (
           <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label={`${title} summary`}>
             {summary.map((item) => (
-              <div key={item} className="rounded-md border border-border bg-background/45 p-4 text-center">
+              <div
+                key={item}
+                className="rounded-md border border-border bg-background/45 p-4 text-center"
+              >
                 <p className="text-sm leading-6 text-foreground">{item}</p>
               </div>
             ))}
@@ -113,7 +118,7 @@ export function PrivacyPolicy() {
     >
       <PageMeta
         title="Privacy Policy"
-        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, OpenAI, Google Gemini, Stripe, Vercel, and breached-password screening. Last updated July 6, 2026."
+        description="Wireline's privacy policy — how we collect, use, and protect your data. Sub-processors include Postgres hosting, xAI, OpenAI, Google Gemini, Stripe, Vercel, and breached-password screening. Last updated July 6, 2026."
         path="/privacy"
       />
 
@@ -157,10 +162,10 @@ export function PrivacyPolicy() {
       <Section title="3. How We Use Your Data">
         <p>
           We use collected data to: provide and operate the Wireline platform; process AI requests
-          via OpenAI's API with Google Gemini as a managed fallback; route and log voice calls via
-          our voice network; send scheduled email briefs via your linked Gmail/Outlook account;
-          screen new and reset passwords against known-compromised password data using a partial
-          hash prefix; and bill you via Stripe.
+          via xAI's Grok API with OpenAI and Google Gemini as managed fallbacks; route and log voice
+          calls via our voice network; send scheduled email briefs via your linked Gmail/Outlook
+          account; screen new and reset passwords against known-compromised password data using a
+          partial hash prefix; and bill you via Stripe.
         </p>
         <p>
           We do <strong>not</strong> sell or share your personal information with third parties for
@@ -179,10 +184,14 @@ export function PrivacyPolicy() {
             <strong>Voice AI Infrastructure</strong> — Real-time voice processing and call routing
           </li>
           <li>
-            <strong>OpenAI</strong> (openai.com) — AI model inference
+            <strong>xAI</strong> (x.ai) — Primary AI model inference (Grok)
           </li>
           <li>
-            <strong>Google Gemini</strong> (google.com) — AI model fallback inference
+            <strong>OpenAI</strong> (openai.com) — Managed fallback AI inference and realtime
+            sessions
+          </li>
+          <li>
+            <strong>Google Gemini</strong> (google.com) — Managed fallback AI inference
           </li>
           <li>
             <strong>Stripe</strong> (stripe.com) — Payment processing and billing

@@ -31,7 +31,7 @@ Use the identifiers from the already-approved Developer Mode app when creating t
 
 ## What the app does inside ChatGPT
 
-Wireline requires a connected account. A user can use normal language to create or refine one AI employee for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing agents, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in Wireline.
+Wireline requires a connected account. A user can use normal language to create or refine one AI employee — for example a sales and support phone agent — for personal call delegation, sales, support, scheduling, front-desk, or call-center work in their private workspace. The agent profile can include its business identity, goal, tone, operating rules, prohibited topics, intended actions, escalation policy, and Training summary. The user can run a short private, tool-free voice simulation for the saved draft, list existing agents, inspect privacy-minimized aggregate workspace activity and channel connection state, and continue full configuration in Wireline.
 
 ## Why ChatGPT is essential
 

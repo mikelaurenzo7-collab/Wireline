@@ -39,7 +39,9 @@ for (const { line } of appUseLines) {
   const mount = match[1].slice(1, -1);
   duplicateMounts.set(mount, (duplicateMounts.get(mount) || 0) + 1);
 }
-const allowedDuplicateMounts = new Set(["/api/qa"]);
+// "/api" is a deliberate shared prefix: several feature routers (billing,
+// OpenAPI, and others) define their own sub-paths and mount under it.
+const allowedDuplicateMounts = new Set(["/api/qa", "/api"]);
 for (const [mount, count] of duplicateMounts) {
   if (count > 1 && !allowedDuplicateMounts.has(mount)) {
     problems.push(`Duplicate explicit route mount ${mount} appears ${count} times without an allowlist entry.`);

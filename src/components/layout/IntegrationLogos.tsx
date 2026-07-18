@@ -225,6 +225,23 @@ const ALL_LOGOS: Record<string, LogoDef> = {
     ),
   },
   // Cloud & AI partners:
+  xai: {
+    name: "xAI",
+    svg: (
+      <svg viewBox="0 0 48 24" aria-label="xAI" width="100%" height="100%">
+        <text
+          x="2"
+          y="16"
+          fontFamily="Inter, Arial, sans-serif"
+          fontSize="13"
+          fontWeight="650"
+          letterSpacing="0"
+        >
+          xAI
+        </text>
+      </svg>
+    ),
+  },
   openai: {
     name: "OpenAI",
     svg: (
@@ -305,6 +322,7 @@ const INTEGRATES_WITH: LogoDef[] = [
 ];
 
 const POWERED_BY: LogoDef[] = [
+  ALL_LOGOS.xai,
   ALL_LOGOS.openai,
   ALL_LOGOS.gemini,
   ALL_LOGOS.elevenlabs,

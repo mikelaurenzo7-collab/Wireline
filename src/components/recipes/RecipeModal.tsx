@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 /**
  * Recipe modal shell — picks up `recipe`, mounts the matching form,
- * polls the managed OpenAI reasoning runtime, and provides the close affordance.
+ * polls the managed xAI Grok reasoning runtime, and provides the close affordance.
  *
  * The recipe forms live beside the workflow they implement so this shell stays
  * focused on availability, agent selection, and modal lifecycle.
@@ -76,7 +76,7 @@ export function RecipeModal({
         if (cancelled) return;
 
         // The dedicated contract is lightweight, authenticated, and explicitly
-        // identifies OpenAI as the managed primary. Wait for AuthContext before
+        // identifies xAI Grok as the managed primary. Wait for AuthContext before
         // calling it so a session-hydration race cannot strand every form in a
         // permanently disabled neutral state.
         if (statusRes.ok) {
@@ -84,7 +84,7 @@ export function RecipeModal({
             available?: boolean;
             primary_provider?: string;
           };
-          setAvailable(status.available === true && status.primary_provider === "openai");
+          setAvailable(status.available === true && status.primary_provider === "xai");
         } else if (statusRes.status === 401) {
           // A genuinely expired session is still distinct from an AI outage.
           setAvailable(null);

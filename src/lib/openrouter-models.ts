@@ -25,12 +25,12 @@ export interface OpenRouterModelOption {
 /** Hand-picked models that map well to Director workloads. */
 export const CURATED_OPENROUTER_MODELS: OpenRouterModelOption[] = [
   {
-    id: "x-ai/grok-4.3",
-    label: "Grok 4.3",
+    id: "x-ai/grok-4.5",
+    label: "Grok 4.5",
     description: "Wireline default for general assistant turns",
     category: "wireline_recommended",
-    inputPerMillion: 1.25,
-    outputPerMillion: 2.5,
+    inputPerMillion: 3,
+    outputPerMillion: 15,
   },
   {
     id: "google/gemini-3.5-flash",

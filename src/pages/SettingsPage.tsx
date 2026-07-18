@@ -41,7 +41,7 @@ function DangerZone() {
             Delete account
           </p>
           <p className="mt-2 max-w-[48ch] text-sm leading-6 text-muted-foreground">
-            Permanent deletion requires typed confirmation so destructive work never feels casual.
+            Permanently delete your account and all workspace data. Requires typed confirmation.
           </p>
         </div>
         <Trash2 className="hidden size-5 shrink-0 text-[var(--wireline-color-status-error)] sm:block" />

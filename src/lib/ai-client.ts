@@ -1,13 +1,21 @@
-/* Provider-neutral structured runtime adapter. AI Gateway is preferred;
- * direct OpenAI and Gemini provide ordered continuity fallbacks. */
+/* Provider-neutral structured runtime adapter. Grok 4.5 through the direct xAI
+ * API is the managed primary; direct OpenAI and Gemini provide ordered
+ * continuity fallbacks, and the Vercel AI Gateway is a final last-resort. */
 import { log } from "./server-logger";
-import { GEMINI_STRUCTURED_FALLBACK_MODEL, OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
+import {
+  GEMINI_STRUCTURED_FALLBACK_MODEL,
+  OPENAI_STRUCTURED_PRIMARY_MODEL,
+  STRUCTURED_PRIMARY_MODEL,
+  XAI_STRUCTURED_PRIMARY_MODEL,
+} from "./ai-models";
 import {
   AI_GATEWAY_BASE_URL,
   gatewayHeaders,
   gatewayModelId,
   isAIGatewayConfigured,
 } from "./ai-gateway";
+
+const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
 export type RuntimeTextBlock = { type: "text"; text: string; citations?: null };
 export type RuntimeToolUseBlock = {
@@ -65,7 +73,7 @@ export type RuntimeClient = {
   };
 };
 
-type RuntimeProviderName = "AI Gateway" | "OpenAI" | "Gemini";
+type RuntimeProviderName = "xAI" | "OpenAI" | "Gemini" | "AI Gateway";
 type RuntimeProvider = {
   name: RuntimeProviderName;
   call: (body: RuntimeRequest, options?: RuntimeRequestOptions) => Promise<RuntimeMessage>;
@@ -254,6 +262,26 @@ async function callResponsesEndpoint(args: {
       });
 }
 
+async function callXAI(
+  body: RuntimeRequest,
+  options?: RuntimeRequestOptions,
+): Promise<RuntimeMessage> {
+  const apiKey = process.env.XAI_API_KEY;
+  if (!apiKey) throw new Error("XAI_API_KEY not configured");
+  const requested = String(body.model || "").trim();
+  // Only forward xAI-native (grok*) model ids directly; otherwise use the
+  // managed Grok primary so an OpenAI/Gemini id never leaks to xAI.
+  const model = /grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL;
+  return callResponsesEndpoint({
+    endpoint: XAI_RESPONSES_URL,
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    model,
+    body,
+    options,
+    provider: "xAI",
+  });
+}
+
 async function callGateway(
   body: RuntimeRequest,
   options?: RuntimeRequestOptions,
@@ -262,7 +290,7 @@ async function callGateway(
   return callResponsesEndpoint({
     endpoint: `${AI_GATEWAY_BASE_URL}/responses`,
     headers: gatewayHeaders(),
-    model: gatewayModelId(String(body.model || OPENAI_STRUCTURED_PRIMARY_MODEL)),
+    model: gatewayModelId(String(body.model || STRUCTURED_PRIMARY_MODEL)),
     body,
     options,
     provider: "AI Gateway",
@@ -390,16 +418,19 @@ class RuntimeCircuitBreaker {
   }
 }
 
+const xaiCircuitBreaker = new RuntimeCircuitBreaker("xAI");
 const gatewayCircuitBreaker = new RuntimeCircuitBreaker("AI Gateway");
 const openAICircuitBreaker = new RuntimeCircuitBreaker("OpenAI");
 
 function configuredProviders(): RuntimeProvider[] {
   const providers: RuntimeProvider[] = [];
-  if (isAIGatewayConfigured())
-    providers.push({ name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker });
+  if (process.env.XAI_API_KEY)
+    providers.push({ name: "xAI", call: callXAI, breaker: xaiCircuitBreaker });
   if (process.env.OPENAI_API_KEY)
     providers.push({ name: "OpenAI", call: callOpenAI, breaker: openAICircuitBreaker });
   if (process.env.GEMINI_API_KEY) providers.push({ name: "Gemini", call: callGemini });
+  if (isAIGatewayConfigured())
+    providers.push({ name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker });
   return providers;
 }
 
@@ -411,17 +442,17 @@ function nextAvailableProvider(
 }
 
 function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): string {
-  if (from === "AI Gateway" && to === "OpenAI")
-    return "AI Gateway request failed; trying direct OpenAI fallback";
-  if (from === "OpenAI" && to === "Gemini")
-    return "OpenAI request failed; trying Gemini fallback";
+  if (from === "xAI" && to === "OpenAI") return "xAI request failed; trying direct OpenAI fallback";
+  if (from === "OpenAI" && to === "Gemini") return "OpenAI request failed; trying Gemini fallback";
+  if (from === "Gemini" && to === "AI Gateway")
+    return "Gemini request failed; trying AI Gateway fallback";
   return `${from} request failed; trying ${to} fallback`;
 }
 
 export class RuntimeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable. Configure AI Gateway, OpenAI, or Gemini.");
+    super("AI runtime is unavailable. Configure xAI, OpenAI, Gemini, or the AI Gateway.");
     this.name = "RuntimeUnavailableError";
   }
 }
@@ -501,5 +532,8 @@ export function getRuntimeClient(): RuntimeClient {
 
 export const isRuntimeAvailable = () =>
   Boolean(
-    process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY,
+    process.env.XAI_API_KEY ||
+    process.env.OPENAI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    isAIGatewayConfigured(),
   );
