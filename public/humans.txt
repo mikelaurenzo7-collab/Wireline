@@ -1,7 +1,7 @@
 /* humans.txt — the people behind Wireline */
 
 /* TEAM */
-  Founder & Engineer: Michael Laurenzo
+  Team: Wireline
   Site: https://trywireline.com
   Twitter: @wirelineapp
 
@@ -16,4 +16,4 @@
   Components:       React 19, Vite, TypeScript, TailwindCSS, motion/react
   Hosting:          Vercel
   Analytics:        Plausible (privacy-first, no cookies)
-  Last update:      2026/05
+  Last update:      2026/07
