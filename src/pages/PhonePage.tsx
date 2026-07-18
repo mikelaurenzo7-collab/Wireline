@@ -71,7 +71,7 @@ export default function PhonePage() {
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
       <WorkspacePageFrame mode="operate" className="flex min-h-0 flex-1 flex-col gap-0 pb-0">
         <WorkspaceOperateIntro
-          title="Phone"
+          title="Calls"
           tabs={
             <WorkspaceTabStrip
               tabs={[...PHONE_TABS]}

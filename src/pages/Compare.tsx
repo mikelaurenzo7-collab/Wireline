@@ -155,7 +155,7 @@ export default function Compare() {
             </h2>
           </div>
           <Link
-            to="/signup?mode=personal"
+            to="/signup?plan=personal"
             className="marketing-btn-primary min-h-12 px-6 text-[var(--wireline-typography-body-size)] font-semibold"
           >
             Wire agent <ArrowRight className="h-4 w-4" />
