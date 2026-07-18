@@ -11,6 +11,7 @@ const index = read("index.html");
 const loader = read("public/marketing-measurement.js");
 const notice = read("src/components/CookieConsent.tsx");
 const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
+const app = read("src/App.tsx");
 const footer = read("src/components/marketing/MarketingFooter.tsx");
 const csp = read("src/lib/csp.ts");
 const vercelSource = read("vercel.json");
@@ -68,6 +69,18 @@ assert(
   loader.includes('window.fbq("track", "PageView")'),
   "measurement loader must preserve post-consent campaign attribution.",
 );
+assert(
+  loader.includes("window.__wirelineMarketingMeasurementEnabled = false"),
+  "measurement revocation must update the runtime state.",
+);
+assert(
+  loader.includes("window.fbq = noop") && loader.includes("window._fbq = noop"),
+  "measurement revocation must stop future Wireline-triggered Meta events.",
+);
+assert(
+  loader.includes('event.detail === "granted"') && loader.includes("disableMarketingMeasurement();"),
+  "measurement consent events must support both grant and revocation.",
+);
 
 assert(notice.includes(consentKey), "privacy notice must write the canonical consent key.");
 assert(notice.includes(consentEvent), "privacy notice must dispatch the canonical consent event.");
@@ -100,16 +113,45 @@ assert(
   !notice.includes("no ad or cross-site tracking"),
   "privacy notice must not make the old claim while optional measurement exists.",
 );
+
 assert(
-  privacyPage.includes("Keep measurement off") &&
-    privacyPage.includes("Allow measurement") &&
-    privacyPage.includes(consentEvent),
+  app.includes('const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicyPage"));'),
+  "the public /privacy route must use the consent-aware privacy policy.",
+);
+assert(
+  app.includes('<Route path="/privacy" element={<PrivacyPolicy />} />'),
+  "the public privacy route must remain registered.",
+);
+assert(privacyPage.includes(consentKey), "privacy center must persist the canonical consent key.");
+assert(privacyPage.includes(consentEvent), "privacy center must dispatch the canonical consent event.");
+assert(
+  privacyPage.includes("Keep measurement off") && privacyPage.includes("Allow measurement"),
   "privacy policy must disclose and control optional advertising measurement.",
 );
 assert(
   privacyPage.includes("Global Privacy Control") &&
     privacyPage.includes("We do not sell personal information."),
-  "privacy policy must disclose the privacy signal and California sharing posture.",
+  "privacy policy must disclose the privacy signal and no-sale posture.",
+);
+assert(
+  privacyPage.includes("Plausible") && privacyPage.includes("Meta"),
+  "privacy policy must identify both aggregate analytics and optional advertising measurement providers.",
+);
+assert(
+  privacyPage.includes("California law may treat disclosure") && privacyPage.includes('as "sharing,"'),
+  "privacy policy must disclose the potential CCPA/CPRA sharing classification.",
+);
+assert(
+  privacyPage.includes("We do not sell personal information for money"),
+  "privacy policy must distinguish sale from optional advertising measurement.",
+);
+assert(
+  privacyPage.includes("a request already in flight before revocation may still complete"),
+  "privacy policy must accurately bound client-side revocation behavior.",
+);
+assert(
+  !privacyPage.includes("We do not use advertising, analytics, or cross-site tracking cookies"),
+  "public privacy policy must not retain the obsolete no-analytics claim.",
 );
 
 assert(!csp.includes(removedInlineMetaHash), "CSP source must not retain the removed inline Meta hash.");
