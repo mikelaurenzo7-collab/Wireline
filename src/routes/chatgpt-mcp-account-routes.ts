@@ -299,7 +299,7 @@ function toolDefinitions() {
         required: ["status", "agent_id"],
         additionalProperties: false,
       },
-      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+      annotations: { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
       securitySchemes: [{ type: "oauth2", scopes: ["demo.voice"] }],
       _meta: toolMeta([{ type: "oauth2", scopes: ["demo.voice"] }], ["app"]),
     },

@@ -12,9 +12,9 @@ export const INLINE_SCRIPT_HASHES = [
 ] as const;
 
 /**
- * Static style block injected by the marketing analytics scripts (stable
- * hash observed across viewports and runs). Allowlisting the exact hash
- * keeps style-src-elem strict while silencing the recurring CSP violation.
+ * Static style block injected by the active marketing analytics scripts
+ * (stable hash observed across viewports and runs). Allowlisting the exact
+ * hash keeps style-src-elem strict while silencing the recurring CSP violation.
  */
 export const INLINE_STYLE_HASHES = [
   "'sha256-kS5q06SqzKw4+AgkwljKbDIdqmQe8JBaaTtJoNArRJw='",
@@ -25,10 +25,6 @@ export const INLINE_STYLE_HASHES = [
 export const MARKETING_SCRIPT_SRCS = [
   "https://plausible.io",
   "https://connect.facebook.net",
-  "https://www.googletagmanager.com",
-  "https://*.googletagmanager.com",
-  "https://www.google-analytics.com",
-  "https://*.google-analytics.com",
 ] as const;
 
 export function buildConnectSrcs(isDev: boolean = false): string {
@@ -46,10 +42,6 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://plausible.io",
     "https://connect.facebook.net",
     "https://www.facebook.com",
-    "https://www.googletagmanager.com",
-    "https://*.google-analytics.com",
-    "https://*.analytics.google.com",
-    "https://stats.g.doubleclick.net",
   ];
   if (isDev) base.push("ws://localhost:*", "http://localhost:*", "ws://127.0.0.1:*");
   return base.join(" ");
