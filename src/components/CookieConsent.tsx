@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -10,6 +10,7 @@ import { isAuthPortalPath } from "../lib/public-routes";
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
+const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 type MeasurementConsent = "granted" | "denied";
 
@@ -22,9 +23,9 @@ function globalPrivacyControlEnabled(): boolean {
   return (navigator as PrivacyAwareNavigator).globalPrivacyControl === true;
 }
 
-function hasAcknowledgedNotice(): boolean {
+function noticeAcknowledged(): boolean {
   try {
-    return Boolean(localStorage.getItem(NOTICE_STORAGE_KEY));
+    return localStorage.getItem(NOTICE_STORAGE_KEY) !== null;
   } catch {
     // Hardened/private contexts may block storage entirely. Keep the notice
     // available while the measurement loader independently defaults to off.
@@ -39,7 +40,7 @@ export default function CookieConsent() {
   const privacySignalEnabled = globalPrivacyControlEnabled();
 
   useEffect(() => {
-    if (hasAcknowledgedNotice()) return;
+    if (noticeAcknowledged()) return;
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -66,27 +67,36 @@ export default function CookieConsent() {
     };
   }, []);
 
+  useEffect(() => {
+    const openPrivacyChoices = () => setVisible(true);
+    window.addEventListener(OPEN_PRIVACY_CHOICES_EVENT, openPrivacyChoices);
+    return () => window.removeEventListener(OPEN_PRIVACY_CHOICES_EVENT, openPrivacyChoices);
+  }, []);
+
   const onAuthRoute = isAuthPortalPath(location.pathname);
   const clearMarketingSticky = !hasSession && isMarketingStickyCtaRoute(location.pathname);
 
-  const saveChoice = (choice: MeasurementConsent) => {
-    const effectiveChoice = privacySignalEnabled ? "denied" : choice;
-    try {
-      localStorage.setItem(NOTICE_STORAGE_KEY, "acknowledged");
-      localStorage.setItem(MEASUREMENT_STORAGE_KEY, effectiveChoice);
-    } catch {
-      // Storage can be unavailable in hardened/private browser contexts. The
-      // measurement loader defaults to off when it cannot read an explicit grant.
-    }
-    window.dispatchEvent(
-      new CustomEvent(MEASUREMENT_CONSENT_EVENT, {
-        detail: effectiveChoice,
-      }),
-    );
-    setVisible(false);
-  };
+  const saveChoice = useCallback(
+    (choice: MeasurementConsent) => {
+      const effectiveChoice = privacySignalEnabled ? "denied" : choice;
+      try {
+        localStorage.setItem(NOTICE_STORAGE_KEY, "acknowledged");
+        localStorage.setItem(MEASUREMENT_STORAGE_KEY, effectiveChoice);
+      } catch {
+        // Storage can be unavailable in hardened/private browser contexts. The
+        // measurement loader defaults to off when it cannot read an explicit grant.
+      }
+      window.dispatchEvent(
+        new CustomEvent(MEASUREMENT_CONSENT_EVENT, {
+          detail: effectiveChoice,
+        }),
+      );
+      setVisible(false);
+    },
+    [privacySignalEnabled],
+  );
 
-  const dismiss = () => saveChoice("denied");
+  const dismiss = useCallback(() => saveChoice("denied"), [saveChoice]);
 
   // Escape chooses the privacy-preserving default and dismisses the notice.
   useEffect(() => {
@@ -96,7 +106,7 @@ export default function CookieConsent() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [visible, privacySignalEnabled]);
+  }, [dismiss, visible]);
 
   return (
     <AnimatePresence>
@@ -125,7 +135,7 @@ export default function CookieConsent() {
             <div className="flex-1 min-w-0 space-y-2.5">
               <p className="text-[var(--wireline-typography-caption-size)] leading-relaxed text-foreground/80">
                 Essential storage and privacy-friendly product analytics help Wireline operate.
-                Optional advertising measurement stays off unless you allow it. {" "}
+                Optional advertising measurement stays off unless you allow it.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
