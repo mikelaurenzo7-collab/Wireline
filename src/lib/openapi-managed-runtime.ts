@@ -6,6 +6,8 @@ function asRecord(value: unknown): JsonRecord {
     : {};
 }
 
+const healthSchemaRef = { $ref: "#/components/schemas/HealthResponse" };
+
 /**
  * Keep the partner-facing OpenAPI document aligned with the active managed
  * runtime and the response bodies the production routes actually emit.
@@ -16,7 +18,10 @@ function asRecord(value: unknown): JsonRecord {
  * storage aliases are retired gradually.
  */
 export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
-  const root = asRecord(document);
+  // getOpenApiSpec reuses module-level path/schema objects. Clone before
+  // normalization so one request or test cannot mutate future raw documents.
+  const normalized = JSON.parse(JSON.stringify(document)) as T;
+  const root = asRecord(normalized);
   const components = asRecord(root.components);
   const schemas = asRecord(components.schemas);
   const paths = asRecord(root.paths);
@@ -31,9 +36,44 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
     additionalProperties: false,
   };
 
-  const dailyBrief = asRecord(schemas.DailyBrief);
-  dailyBrief.description =
-    "OpenAI-authored daily brief comparing yesterday with the seven-day baseline.";
+  schemas.DailyBrief = {
+    type: "object",
+    description: "OpenAI-authored daily brief comparing yesterday with the seven-day baseline.",
+    required: ["brief", "stats_yesterday", "week_delta", "generated_at"],
+    properties: {
+      brief: {
+        type: "object",
+        required: ["headline", "mood", "highlights", "concerns", "action_items"],
+        properties: {
+          headline: { type: "string" },
+          mood: {
+            type: "string",
+            enum: ["positive", "neutral", "concerning", "green", "yellow", "red"],
+          },
+          key_metrics_takeaway: { type: "string" },
+          highlights: { type: "array", items: { type: "string" } },
+          concerns: { type: "array", items: { type: "string" } },
+          action_items: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["description", "urgency"],
+              properties: {
+                description: { type: "string" },
+                urgency: { type: "string", enum: ["high", "medium", "low"] },
+              },
+              additionalProperties: false,
+            },
+          },
+        },
+        additionalProperties: true,
+      },
+      stats_yesterday: { type: "object", additionalProperties: true },
+      week_delta: { type: "object", additionalProperties: true },
+      generated_at: { type: "string", format: "date-time" },
+    },
+    additionalProperties: false,
+  };
 
   schemas.QuotaUsage = {
     type: "object",
@@ -83,9 +123,22 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
     additionalProperties: false,
   };
 
+  const healthPath = asRecord(paths["/api/health"]);
+  const healthGet = asRecord(healthPath.get);
+  healthGet.description =
+    "Public database-backed liveness probe. Returns the same stable envelope for healthy and degraded states.";
+  const healthResponses = asRecord(healthGet.responses);
+  healthResponses["503"] = {
+    description: "Database probe failed.",
+    content: { "application/json": { schema: healthSchemaRef } },
+  };
+  healthGet.responses = healthResponses;
+
   const dailyBriefPath = asRecord(paths["/api/insights/daily-brief"]);
   const dailyBriefGet = asRecord(dailyBriefPath.get);
   dailyBriefGet.summary = "OpenAI-authored daily operating brief";
+  dailyBriefGet.description =
+    "Generates a concise OpenAI-authored operating brief from the tenant's measured activity and seven-day baseline.";
 
   for (const pathItem of Object.values(paths)) {
     const item = asRecord(pathItem);
@@ -105,5 +158,5 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
   components.schemas = schemas;
   root.components = components;
   root.paths = paths;
-  return document;
+  return normalized;
 }
