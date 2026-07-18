@@ -772,7 +772,7 @@ export default function OverviewPage() {
                       }
                       action={
                         <Button asChild size="sm">
-                          <Link to={hasLiveLine ? primaryTestHref : "/connections"}>
+                          <Link to={hasLiveLine ? primaryTestHref : "/settings/phone"}>
                             {hasLiveLine ? "Run test conversation" : "Connect phone"}
                           </Link>
                         </Button>
