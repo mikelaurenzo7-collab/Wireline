@@ -2,6 +2,14 @@
  * Keep these route-aware: the shared primitives remain reusable, while dense
  * founder workspaces and true first-run states each get intentional rhythm. */
 
+/* Keep authenticated cards crisp and quiet even though system-hardening loads
+ * later in the CSS stack. Higher route specificity intentionally wins. */
+.wl-workspace-shell .wl-workspace-page :where(.wl-paper, .wl-paper-elevated, .studio-card, .wl-panel-elevated) {
+  border-radius: 14px;
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
+  box-shadow: none;
+}
+
 /* Shortcut letters were visually indistinguishable from status/count metadata.
  * Search keeps its familiar command hint; route shortcuts remain available via
  * the command palette rather than cluttering every rail row. */
@@ -11,6 +19,39 @@
 
 .wl-workspace-shell .wl-rail-link {
   font-size: 12.5px;
+}
+
+/* Selection should orient, not flood the rail with a saturated block. */
+.wl-workspace-shell .wl-rail-link[aria-current="page"] {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 14%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-action-primary-default);
+  box-shadow: inset 2px 0 0 var(--wireline-color-action-primary-default);
+}
+
+.wl-workspace-shell .wl-rail-link[aria-current="page"]:hover {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 18%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-workspace-shell .wl-rail-link[aria-current="page"] svg {
+  color: currentColor;
+}
+
+.wl-workspace-shell .wl-rail-agent-link[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 8%,
+    var(--wireline-color-surface-default)
+  );
 }
 
 /* Overview: preserve a welcoming hero without letting it dominate the first
@@ -36,6 +77,17 @@
   display: none !important;
 }
 
+.wl-overview
+  [aria-label="Customer readiness checklist"]
+  ol
+  a[class*="feedback-success-surface"] {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-status-success) 5%,
+    var(--wireline-color-surface-default)
+  ) !important;
+}
+
 @media (min-width: 900px) {
   .wl-overview [aria-label="Customer readiness checklist"] ol {
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -47,8 +99,22 @@
   display: none;
 }
 
+.wl-overview section[aria-label="Personal AI employees"] .grid > a:not(:last-child),
+.wl-overview section[aria-label="Business AI employees"] .grid > a:not(:last-child) {
+  border-color: var(--wireline-color-border-default) !important;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 94%,
+    var(--wireline-color-canvas-default)
+  ) !important;
+}
+
 .wl-overview section[aria-label="Customer outcomes"] article {
   padding: 0.75rem 0.9rem;
+}
+
+.wl-overview section[aria-label="Customer outcomes"] article:nth-of-type(n + 4) {
+  display: none;
 }
 
 .wl-overview section[aria-label="Customer outcomes"] article > p {
@@ -76,6 +142,27 @@
 
 [data-wireline-route="/settings"] .wl-workspace-page > section:first-of-type > div:first-child {
   margin-bottom: 1rem;
+}
+
+/* Insights: keep filters secondary to the data and reduce the wide-screen
+ * visual weight of the toolbar and segmented controls. */
+[data-wireline-route="/insights"] .app-segment-strip [aria-pressed="true"] {
+  border: 1px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 12%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-action-primary-default);
+  box-shadow: none;
+}
+
+[data-wireline-route="/insights"] .wl-panel-elevated {
+  box-shadow: none;
+}
+
+[data-wireline-route="/insights"] .scroll-viewport > .relative.rounded-xl {
+  border-radius: 14px;
 }
 
 /* Phone: retain the instrument-grade console but reduce stacked chrome and
@@ -144,6 +231,11 @@
 
 [data-wireline-route="/connections"] .wl-workspace-page > section.wl-paper article button {
   margin-top: 0.75rem;
+}
+
+[data-wireline-route="/connections"] .wl-workspace-page > .space-y-4 > .grid > div {
+  border-radius: 12px;
+  padding: 0.9rem;
 }
 
 [data-wireline-route="/connections"] details[data-wireline-integration-map] {
