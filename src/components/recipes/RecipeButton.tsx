@@ -3,7 +3,7 @@
  * Inline button that opens a recipe modal pre-filled with context.
  *
  * Usage:
- *   <ClaudeRecipeButton recipe="brief" agentId="..." />
+ *   <RecipeButton recipe="brief" agentId="..." />
  */
 
 import { useState } from "react";
@@ -14,7 +14,7 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 import { RECIPE_META, type Recipe } from "./types";
 import { RecipeModal } from "./RecipeModal";
 
-export function ClaudeRecipeButton({
+export function RecipeButton({
   recipe,
   agentId,
   threadId,
