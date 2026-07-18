@@ -23,7 +23,7 @@ Historic workspace URLs should redirect into the active agent workflow rather th
 | Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
 | Session boundary | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx` |
 | Overview | `src/pages/OverviewPage.tsx` |
-| Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` |
+| Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
 | Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx` |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
@@ -64,9 +64,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 ## Runtime services
 
 - **Auth and authorization:** session middleware plus user-scoped ownership checks.
-- **Launch readiness API:** `GET /api/health/launch-readiness` is gated by
-  `requireMonitorToken` (`HEALTH_MONITOR_TOKEN` / `CRON_SECRET`), not tenant session
-  auth; it exposes scorecard capability levels for ops monitors.
+- **Launch readiness API:** the launch-readiness health endpoint is protected by a server-owned monitor credential rather than tenant session authentication; it exposes capability levels for operational monitors.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`.
 - **Billing:** Stripe-backed entitlements, plan catalog, Conversation Balance, checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice:**
@@ -90,8 +88,7 @@ Runtime execution reads the saved agent profile, selected model/voice posture, c
 - Provider credentials are environment variables or server-side secrets.
 - Billing, webhooks, account deletion, provider callbacks, and connected-tool writes are server-owned workflows.
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
-- Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent
-  gates before PSTN spend (`src/lib/federal-dnc-service.ts`, `src/lib/tcpa-consent.ts`).
+- Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent gates before PSTN spend.
 - CSP policy checks, authorization checks, product-doc checks, and functional tests remain in the full verification path.
 - Supabase leaked-password protection must be enabled before public launch if it remains disabled in project settings.
 

@@ -274,7 +274,7 @@ describe("product voice cohesion", () => {
 
   it("keeps top-level workspace pages mounted to the current surfaces", () => {
     expect(read("src/pages/TemplatesPage.tsx")).toContain("AgentTemplates");
-    expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("CreateAgentDialog");
+    expect(read("src/pages/AgentStudioHome.tsx")).toContain("CreateAgentDialog");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Customer demand and outcomes");
     expect(read("src/pages/OverviewPage.tsx")).toContain("Recent customer conversations");
     expect(read("src/components/outbound/OutboundHub.tsx")).toContain("CampaignsPanel");

@@ -17,7 +17,7 @@ import type { PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import PostCreateActivationWizard from "../components/onboarding/PostCreateActivationWizard";
 import { authFetch } from "../lib/api";
 
-export default function AgentStudioHomeClaude() {
+export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
   const { loading } = useAgents();
   const { toast } = useToast();

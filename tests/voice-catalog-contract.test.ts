@@ -26,7 +26,7 @@ describe("voice catalog", () => {
     expect(read("src/lib/voice/voice-preview-service.ts")).not.toContain("XAI_TO_ELEVENLABS");
     expect(read("src/lib/voice-catalog.ts")).not.toMatch(/id: "(Kylie|Lily|Hana|Neha|Cole)"/);
     expect(read("src/lib/voice/pcm-resample.ts")).toContain("VAPI_LISTEN_PCM_RATE_HZ");
-    expect(read("src/pages/AgentStudioHomeClaude.tsx")).toContain("consumeCreateWarning");
+    expect(read("src/pages/AgentStudioHome.tsx")).toContain("consumeCreateWarning");
   });
 
   it("wires HeyGen presenter voices and matched-face resolution", () => {
