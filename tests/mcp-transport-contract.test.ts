@@ -9,6 +9,7 @@ import {
   applyMcpTransportHeaders,
   isMcpNotificationMethod,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
+  mcpOAuthChallenge,
   mcpSessionIdForResponse,
   mcpToolErrorResult,
   negotiateMcpProtocolVersion,
@@ -75,6 +76,25 @@ describe("mcp transport contract", () => {
     expect(mcpToolErrorResult("Confirm the draft first.")).toEqual({
       content: [{ type: "text", text: "Confirm the draft first." }],
       isError: true,
+    });
+  });
+
+  it("keeps OAuth challenge metadata complete and private to the tool result", () => {
+    const challenge = mcpOAuthChallenge(
+      "https://trywireline.com/.well-known/oauth-protected-resource",
+      "agents.write",
+    );
+    expect(challenge).toContain('error="insufficient_scope"');
+    expect(challenge).toContain('error_description="Connect a Wireline account to continue."');
+    expect(challenge).toContain('scope="agents.write"');
+    expect(
+      mcpToolErrorResult("Connect a Wireline account to continue.", {
+        "mcp/www_authenticate": [challenge],
+      }),
+    ).toEqual({
+      content: [{ type: "text", text: "Connect a Wireline account to continue." }],
+      isError: true,
+      _meta: { "mcp/www_authenticate": [challenge] },
     });
   });
 

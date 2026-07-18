@@ -66,15 +66,44 @@ export function applyMcpTransportHeaders(
   return negotiated;
 }
 
+function quotedChallengeValue(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/**
+ * Build the OAuth challenge ChatGPT uses to open account linking. Current Apps
+ * SDK clients require both `error` and `error_description`; keeping the shape
+ * here prevents the HTTP header and tool-result metadata from drifting apart.
+ */
+export function mcpOAuthChallenge(
+  resourceMetadataUrl: string,
+  requiredScope: string,
+  description = "Connect a Wireline account to continue.",
+): string {
+  return [
+    `Bearer resource_metadata="${quotedChallengeValue(resourceMetadataUrl)}"`,
+    'error="insufficient_scope"',
+    `error_description="${quotedChallengeValue(description)}"`,
+    `scope="${quotedChallengeValue(requiredScope)}"`,
+  ].join(", ");
+}
+
 /**
  * Tool-execution failures are reported inside a successful JSON-RPC result
  * with `isError: true` so the model can read the message and self-correct.
- * Protocol failures (unknown method, unknown tool, auth challenges) stay
- * JSON-RPC errors.
+ * Protocol failures (unknown method or unknown tool) stay JSON-RPC errors.
  */
-export function mcpToolErrorResult(message: string): {
+export function mcpToolErrorResult(
+  message: string,
+  meta?: Record<string, unknown>,
+): {
   content: Array<{ type: "text"; text: string }>;
   isError: true;
+  _meta?: Record<string, unknown>;
 } {
-  return { content: [{ type: "text", text: message }], isError: true };
+  return {
+    content: [{ type: "text", text: message }],
+    isError: true,
+    ...(meta ? { _meta: meta } : {}),
+  };
 }

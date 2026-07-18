@@ -6,7 +6,6 @@ import Foundation
 actor WirelineAPI {
     static let shared = WirelineAPI()
 
-    private var baseURL: URL { WirelineConfig.baseURL }
     private var refreshInFlight: Task<String, Error>?
 
     enum APIError: Error {
@@ -37,7 +36,11 @@ actor WirelineAPI {
     }
 
     func recentCalls(limit: Int = 20) async throws -> RecentCallsResponse {
-        try await get("/api/mobile/calls/recent?limit=\(limit)")
+        let boundedLimit = min(max(limit, 1), 100)
+        return try await get(
+            "/api/mobile/calls/recent",
+            queryItems: [URLQueryItem(name: "limit", value: String(boundedLimit))]
+        )
     }
 
     func wallet() async throws -> WalletResponse {
@@ -126,8 +129,9 @@ actor WirelineAPI {
     }
 
     func signOutSession() async {
-        guard let token = KeychainStore.loadToken() else { return }
-        var req = URLRequest(url: baseURL.appendingPathComponent("/api/auth/signout"))
+        guard let token = KeychainStore.loadToken(),
+              let url = try? WirelineConfig.endpoint(path: "/api/auth/signout") else { return }
+        var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         _ = try? await URLSession.shared.data(for: req)
@@ -141,17 +145,27 @@ actor WirelineAPI {
 
     // MARK: - Plumbing
 
-    private func makeRequest(path: String, method: String) throws -> URLRequest {
+    private func makeRequest(
+        path: String,
+        method: String,
+        queryItems: [URLQueryItem] = []
+    ) throws -> URLRequest {
         guard let token = KeychainStore.loadToken() else { throw APIError.notAuthenticated }
-        var req = URLRequest(url: baseURL.appendingPathComponent(path))
+        let url = try WirelineConfig.endpoint(path: path, queryItems: queryItems)
+        var req = URLRequest(url: url)
         req.httpMethod = method
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         return req
     }
 
-    private func get<T: Decodable>(_ path: String) async throws -> T {
-        let data = try await send(makeRequest(path: path, method: "GET"))
+    private func get<T: Decodable>(
+        _ path: String,
+        queryItems: [URLQueryItem] = []
+    ) async throws -> T {
+        let data = try await send(
+            makeRequest(path: path, method: "GET", queryItems: queryItems)
+        )
         do { return try JSONDecoder().decode(T.self, from: data) }
         catch { throw APIError.decoding(error) }
     }
