@@ -13,7 +13,8 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 const MANAGED_PORTAL_METADATA_KEY = "wireline_managed";
-const MANAGED_PORTAL_IDEMPOTENCY_KEY = "wireline-managed-customer-portal-v1";
+const MANAGED_PORTAL_IDEMPOTENCY_KEY =
+  `wireline-managed-customer-portal-${FOUNDER_CATALOG_VERSION}`;
 
 type PortalProduct = {
   product: string;
@@ -22,20 +23,20 @@ type PortalProduct = {
 
 let portalConfigurationPromise: Promise<string> | null = null;
 
-function managedMonthlyPriceIds(): string[] {
-  return [
-    ...new Set(
-      STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false)
-        .map((plan) => process.env[plan.priceIdEnv]?.trim() || plan.fallbackPriceId || "")
-        .filter(Boolean),
-    ),
-  ];
+function managedPriceIds(): string[] {
+  const ids = STRIPE_PLANS.filter(
+    (plan) => plan.price_usd_monthly > 0 && plan.public !== false,
+  ).flatMap((plan) => [
+    process.env[plan.priceIdEnv]?.trim() || plan.fallbackPriceId || "",
+    process.env[plan.annualPriceIdEnv]?.trim() || plan.fallbackAnnualPriceId || "",
+  ]);
+  return [...new Set(ids.filter(Boolean))];
 }
 
 async function managedPortalProducts(): Promise<PortalProduct[]> {
   const byProduct = new Map<string, string[]>();
 
-  for (const priceId of managedMonthlyPriceIds()) {
+  for (const priceId of managedPriceIds()) {
     try {
       const price = await stripe.prices.retrieve(priceId);
       if (!price.active || price.type !== "recurring") continue;
@@ -58,7 +59,9 @@ async function managedPortalProducts(): Promise<PortalProduct[]> {
 async function createManagedPortalConfiguration(baseUrl: string): Promise<string> {
   const existing = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
   const managed = existing.data.find(
-    (configuration) => configuration.metadata?.[MANAGED_PORTAL_METADATA_KEY] === "true",
+    (configuration) =>
+      configuration.metadata?.[MANAGED_PORTAL_METADATA_KEY] === "true" &&
+      configuration.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION,
   );
   if (managed) return managed.id;
 
