@@ -40,10 +40,18 @@ export default function WirelineMark({
     >
       {signal && (
         <defs>
-          <linearGradient id={gradientId} x1="14" y1="18" x2="122" y2="78" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="var(--wireline-color-action-secondary-default, #C7CCD6)" />
-            <stop offset="0.28" stopColor="var(--wireline-color-action-primary-default, #A78BFA)" />
-            <stop offset="0.58" stopColor="#6D28D9" />
+          <linearGradient
+            id={gradientId}
+            x1="14"
+            y1="18"
+            x2="122"
+            y2="78"
+            gradientUnits="userSpaceOnUse"
+            colorInterpolation="sRGB"
+          >
+            <stop offset="0" stopColor="#8B5CF6" />
+            <stop offset="0.34" stopColor="#A78BFA" />
+            <stop offset="0.7" stopColor="#7C3AED" />
             <stop offset="1" stopColor="#C084FC" />
           </linearGradient>
         </defs>

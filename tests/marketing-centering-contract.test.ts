@@ -17,6 +17,24 @@ describe("marketing centering contract", () => {
     expect(claritySystem).not.toContain("left-aligned reading rail");
   });
 
+  it("loads the public QA layer last and keeps centered labels on the shared axis", () => {
+    const marketingBundle = read("src/styles/wireline-marketing-surfaces.css");
+    const publicPolish = read("src/styles/public-marketing-polish.css");
+
+    expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/public-marketing-polish\.css";$/);
+    expect(publicPolish).toContain(":where(.text-center, .wl-marketing-center)");
+    expect(publicPolish).toContain("text-align: center");
+    expect(publicPolish).toContain(".marketing-footer-rail");
+  });
+
+  it("keeps the public signal mark violet from the first terminal", () => {
+    const mark = read("src/components/brand/WirelineMark.tsx");
+
+    expect(mark).not.toContain("#C7CCD6");
+    expect(mark).not.toContain("action-secondary-default");
+    expect(mark).toContain('<stop offset="0" stopColor="#8B5CF6" />');
+  });
+
   it("lets scroll marketing pages grow before rendering the footer", () => {
     const frame = read("src/components/layout/MarketingPageFrame.tsx");
 
@@ -41,7 +59,7 @@ describe("marketing centering contract", () => {
     expect(blog).toContain("structuredData");
     expect(blog).toContain("FAQPage");
     expect(blog).toContain("BreadcrumbList");
-    expect(blog).toContain('structuredData={structuredData}');
+    expect(blog).toContain("structuredData={structuredData}");
   });
 
   it("keeps primary public marketing surfaces centered", () => {
