@@ -100,9 +100,9 @@ export interface WorkspaceUsageResponse {
   ai_spend_limit_usd: number;
   ai_spend_pct: number;
   ai_spend_hard_cap?: boolean;
-  claude_tokens_used_today?: number;
-  claude_tokens_daily_limit?: number;
-  claude_tokens_pct?: number;
+  ai_tokens_used_today?: number;
+  ai_tokens_daily_limit?: number;
+  ai_tokens_pct?: number;
   openrouter_allowed?: boolean;
   usage_pct: number;
   voice_minutes_cap?: number;
