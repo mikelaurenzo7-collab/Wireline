@@ -20,7 +20,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | --- | --- |
 | Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
 | Overview | `src/pages/OverviewPage.tsx` |
-| Create | `src/pages/AgentStudioHomeClaude.tsx`, `src/components/CreateAgentDialog.tsx` |
+| Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
 | Train | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeWorkspace.tsx`, `src/components/AgentAssetUpload.tsx` |
 | Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
