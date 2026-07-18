@@ -19,6 +19,16 @@ type AnalyticsWindow = Window & {
   plausible?: (event: string, data?: Record<string, unknown>) => void;
 };
 
+function callStartErrorMessage(reason: unknown): string {
+  if (reason instanceof DOMException && reason.name === "NotAllowedError") {
+    return "Microphone access is required to start the voice demo.";
+  }
+  if (reason instanceof DOMException && reason.name === "NotFoundError") {
+    return "No microphone was found on this device.";
+  }
+  return "Could not start the voice demo. Try again.";
+}
+
 export default function BrowserCallWidget({
   agentName,
   tintColor: _tintColor,
@@ -82,7 +92,7 @@ export default function BrowserCallWidget({
 
     instance.on("error", (reason: unknown) => {
       console.error("[wireline:webrtc] voice bridge error:", reason);
-      setError(reason instanceof Error ? reason.message : "Voice connection failed.");
+      setError("Voice connection failed. Try again.");
       setConnecting(false);
       setCallActive(false);
       setVolume(0);
@@ -108,21 +118,20 @@ export default function BrowserCallWidget({
         setConnecting(false);
         return;
       }
-      const response = await fetch(`/api/public/assistant/${agentName}`);
+      const response = await fetch(
+        `/api/public/assistant/${encodeURIComponent(agentName)}`,
+      );
       if (!response.ok) throw new Error("Could not load the demo agent.");
       const assistantPayload = await response.json();
 
       if (navigator.mediaDevices?.getUserMedia) {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        for (const track of permissionStream.getTracks()) track.stop();
       }
-      instance.start(assistantPayload);
+      await instance.start(assistantPayload);
     } catch (reason: unknown) {
       console.error("[wireline:webrtc] Call start failed:", reason);
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Could not access your microphone or start the demo.",
-      );
+      setError(callStartErrorMessage(reason));
       setConnecting(false);
     }
   };
