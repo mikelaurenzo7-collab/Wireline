@@ -33,4 +33,21 @@ for (const [path, source] of [
     fail(`${path} does not forbid the former provider-bound route`);
 }
 
+const dependentSources = [
+  "ARCHITECTURE.md",
+  "CODEBASE_HEALTH.md",
+  "docs/README.md",
+  "tests/authenticated-agent-flow-contract.test.ts",
+  "tests/browser-extension-contract.test.ts",
+  "tests/orchestration-spine-contract.test.ts",
+  "tests/product-voice-contract.test.ts",
+  "tests/voice-catalog-contract.test.ts",
+];
+
+for (const path of dependentSources) {
+  const source = read(path);
+  if (!source.includes(canonicalPath)) fail(`${path} does not reference ${canonicalPath}`);
+  if (source.includes(legacyPath)) fail(`${path} still references ${legacyPath}`);
+}
+
 if (!process.exitCode) console.log("Provider-neutral Studio check passed.");
