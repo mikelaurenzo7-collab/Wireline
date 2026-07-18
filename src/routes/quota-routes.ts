@@ -10,6 +10,13 @@ import { PLAN_DEFAULTS, validateOverride } from "../lib/tenant-quotas";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+const INTERNAL_AI_TOKEN_DIMENSION = "claude_tokens_daily" as const;
+const PUBLIC_AI_TOKEN_DIMENSION = "ai_tokens_daily" as const;
+
+function publicQuotaProfile(profile: Awaited<ReturnType<typeof quotaTracker.getProfile>>["profile"]) {
+  const { claude_tokens_daily, ...rest } = profile;
+  return { ai_tokens_daily: claude_tokens_daily, ...rest };
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PER-TENANT QUOTA MANAGEMENT ENDPOINTS
@@ -24,19 +31,24 @@ router.get(
     try {
       const userId = req.user.id as string;
       const { plan, profile } = await quotaTracker.getProfile(userId);
-      const dimensions = [
-        "claude_tokens_daily",
+      const internalDimensions = [
+        INTERNAL_AI_TOKEN_DIMENSION,
         "voice_minutes_daily",
         "concurrent_dials",
         "knowledge_rows",
         "intake_rpm",
       ] as const;
-      const usageArr = await Promise.all(dimensions.map((d) => quotaTracker.getUsage(userId, d)));
-      const usage: Record<string, number> = {};
-      dimensions.forEach((d, i) => {
-        usage[d] = usageArr[i];
-      });
-      res.json({ plan, limits: profile, usage });
+      const usageValues = await Promise.all(
+        internalDimensions.map((dimension) => quotaTracker.getUsage(userId, dimension)),
+      );
+      const usage = {
+        [PUBLIC_AI_TOKEN_DIMENSION]: usageValues[0],
+        voice_minutes_daily: usageValues[1],
+        concurrent_dials: usageValues[2],
+        knowledge_rows: usageValues[3],
+        intake_rpm: usageValues[4],
+      };
+      res.json({ plan, limits: publicQuotaProfile(profile), usage });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("GET /api/quotas failed", { error: getErrorMessage(err) });
@@ -47,7 +59,11 @@ router.get(
 
 /** GET /api/quotas/plans — public plan comparison table. */
 router.get("/plans", quotaRateLimit, (_req: Request, res: Response) => {
-  res.json({ plans: PLAN_DEFAULTS });
+  res.json({
+    plans: Object.fromEntries(
+      Object.entries(PLAN_DEFAULTS).map(([plan, profile]) => [plan, publicQuotaProfile(profile)]),
+    ),
+  });
 });
 
 /**
@@ -55,10 +71,9 @@ router.get("/plans", quotaRateLimit, (_req: Request, res: Response) => {
  *
  * Authorization: platform-admin only. Quotas are the platform's vendor-cost
  * and abuse ceilings, so raising them is a platform operation — not a tenant
- * self-service action. Tenant RBAC can't gate this: every self-serve signup
- * resolves to the `owner` role (no team-membership row), so an "owner"
- * permission check would let any tenant lift its own caps. The accept/deny
- * audit trail lives in `wireline_audit_log`.
+ * self-service action. The public API accepts `ai_tokens_daily`; the existing
+ * database key remains an internal compatibility detail until a dedicated data
+ * migration can retire it safely.
  */
 router.put(
   "/override",
@@ -67,12 +82,21 @@ router.put(
   quotaRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validation = validateOverride(req.body);
+      const requestedDimension = req.body?.dimension;
+      const validation = validateOverride({
+        ...req.body,
+        dimension:
+          requestedDimension === PUBLIC_AI_TOKEN_DIMENSION
+            ? INTERNAL_AI_TOKEN_DIMENSION
+            : requestedDimension,
+      });
       if (!validation.ok) {
         throw AppError.badRequest((validation as { ok: false; error: string }).error);
       }
       const { dimension, enabled } = validation.value;
       const value = BigInt(validation.value.value);
+      const publicDimension =
+        dimension === INTERNAL_AI_TOKEN_DIMENSION ? PUBLIC_AI_TOKEN_DIMENSION : dimension;
 
       await drizzle
         .insert(schema.quotaLimits)
@@ -93,16 +117,20 @@ router.put(
         });
 
       quotaTracker.invalidate(req.user.id);
-      // Audit the accepted override — SOC 2 CC8.1 change-management evidence.
       void auditLogger
         .logQuotaOverride("set", {
           userId: req.user.id,
           targetUserId: req.user.id,
-          changes: { dimension, value, enabled },
+          changes: {
+            dimension: publicDimension,
+            internal_dimension: dimension,
+            value,
+            enabled,
+          },
           ip: req.ip,
         })
         .catch(() => {});
-      res.json({ success: true, dimension, value, enabled });
+      res.json({ success: true, dimension: publicDimension, value, enabled });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("PUT /api/quotas/override failed", { error: getErrorMessage(err) });
