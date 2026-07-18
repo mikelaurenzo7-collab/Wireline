@@ -1,16 +1,10 @@
 /**
- * Claude Recipes — barrel.
+ * Recipe UI barrel.
  *
- * The original 2,862-line monolith was sliced into a `recipes/`
- * folder. This file stays at the original import path so every
- * `import { ClaudeRecipeButton } from "./ClaudeRecipes"` (or
- * `RecipeModal`, or `Recipe`) keeps working with zero migration.
- *
- * If you're touching a recipe form, edit the file under
- * `src/components/recipes/forms/*` directly — this file should
- * never grow logic again.
+ * Recipe forms live under `src/components/recipes/forms/*`; this file keeps
+ * the public component imports compact and provider-neutral.
  */
 
-export { ClaudeRecipeButton } from "./recipes/ClaudeRecipeButton";
+export { RecipeButton } from "./recipes/RecipeButton";
 export { RecipeModal } from "./recipes/RecipeModal";
 export type { Recipe } from "./recipes/types";
