@@ -31,11 +31,25 @@
     }
   }
 
+  function revokeMetaPixelConsent() {
+    if (!window.__wirelineMetaPixelLoaded || typeof window.fbq !== "function") return;
+    window.fbq("consent", "revoke");
+  }
+
   function loadMetaPixel() {
     if (!isProductionHost()) return;
-    if (globalPrivacyControlEnabled()) return;
-    if (readConsent() !== "granted") return;
-    if (window.__wirelineMetaPixelLoaded) return;
+    if (globalPrivacyControlEnabled()) {
+      revokeMetaPixelConsent();
+      return;
+    }
+    if (readConsent() !== "granted") {
+      revokeMetaPixelConsent();
+      return;
+    }
+    if (window.__wirelineMetaPixelLoaded) {
+      window.fbq("consent", "grant");
+      return;
+    }
 
     window.__wirelineMetaPixelLoaded = true;
 
@@ -56,12 +70,15 @@
     firstScript.parentNode.insertBefore(script, firstScript);
 
     window.fbq("init", META_PIXEL_ID);
+    window.fbq("consent", "grant");
     window.fbq("track", "PageView");
   }
 
   installSafeStubs();
   window.addEventListener(CONSENT_EVENT, function (event) {
-    if (event && event.detail === "granted") loadMetaPixel();
+    if (!event) return;
+    if (event.detail === "granted") loadMetaPixel();
+    if (event.detail === "denied") revokeMetaPixelConsent();
   });
   loadMetaPixel();
 })();
