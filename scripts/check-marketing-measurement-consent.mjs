@@ -10,6 +10,7 @@ const assert = (condition, message) => {
 const index = read("index.html");
 const loader = read("public/marketing-measurement.js");
 const notice = read("src/components/CookieConsent.tsx");
+const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
 const footer = read("src/components/marketing/MarketingFooter.tsx");
 const csp = read("src/lib/csp.ts");
 const vercelSource = read("vercel.json");
@@ -23,7 +24,7 @@ try {
 
 const consentKey = "wireline_marketing_measurement_consent";
 const consentEvent = "wireline:marketing-measurement-consent";
-const openChoicesEvent = "wireline:open-privacy-choices";
+const privacyChoicesEvent = "wireline:open-privacy-choices";
 const removedInlineMetaHash = "sha256-wlyqsbOPnONv6AM5ziYNY+cA6vvH4mU1oRX7hBcx9HQ=";
 const retiredAnalyticsHosts = [
   "googletagmanager.com",
@@ -56,13 +57,23 @@ assert(
   "measurement loader must honor Global Privacy Control.",
 );
 assert(
+  loader.includes('client("consent", "revoke")'),
+  "measurement loader must revoke Meta consent when a visitor opts out.",
+);
+assert(
+  loader.includes('window.fbq("consent", "grant")'),
+  "measurement loader must grant Meta consent only after an explicit choice.",
+);
+assert(
   loader.includes('window.fbq("track", "PageView")'),
   "measurement loader must preserve post-consent campaign attribution.",
 );
 
 assert(notice.includes(consentKey), "privacy notice must write the canonical consent key.");
 assert(notice.includes(consentEvent), "privacy notice must dispatch the canonical consent event.");
-assert(notice.includes(openChoicesEvent), "privacy notice must support reopening saved choices.");
+assert(notice.includes(privacyChoicesEvent), "privacy notice must support reopening saved choices.");
+assert(footer.includes(privacyChoicesEvent), "public footer must expose the privacy choice control.");
+assert(footer.includes("Privacy choices"), "public footer must label the privacy choice control.");
 assert(notice.includes("Essential only"), "privacy notice must offer a privacy-preserving choice.");
 assert(notice.includes("Allow measurement"), "privacy notice must offer explicit opt-in.");
 assert(
@@ -89,8 +100,17 @@ assert(
   !notice.includes("no ad or cross-site tracking"),
   "privacy notice must not make the old claim while optional measurement exists.",
 );
-assert(footer.includes(openChoicesEvent), "marketing footer must dispatch the canonical privacy-choice event.");
-assert(footer.includes("Privacy choices"), "marketing footer must expose a persistent privacy-choice control.");
+assert(
+  privacyPage.includes("Keep measurement off") &&
+    privacyPage.includes("Allow measurement") &&
+    privacyPage.includes(consentEvent),
+  "privacy policy must disclose and control optional advertising measurement.",
+);
+assert(
+  privacyPage.includes("Global Privacy Control") &&
+    privacyPage.includes("We do not sell personal information."),
+  "privacy policy must disclose the privacy signal and California sharing posture.",
+);
 
 assert(!csp.includes(removedInlineMetaHash), "CSP source must not retain the removed inline Meta hash.");
 assert(
