@@ -236,8 +236,15 @@ export interface AuthSessionExpiredDetail {
   source: string;
 }
 
+/**
+ * True only for authentication failures that mean the session is gone and the
+ * user must sign in again. That is 401 exclusively — the auth middleware
+ * returns 401 for every missing/expired/invalid-token case. 403 is
+ * authorization (insufficient role, past-due billing, CSRF origin), which must
+ * surface as an inline denial in the calling UI, not force a full sign-out.
+ */
 export function isAuthHttpStatus(status: number): boolean {
-  return status === 401 || status === 403;
+  return status === 401;
 }
 
 export const AUTH_SESSION_EXPIRED_MESSAGE = "Your session expired — sign in again to continue.";
