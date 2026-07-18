@@ -84,6 +84,17 @@
   text-align: center;
 }
 
+/* Wired eyebrows carry flanking wire strands (::before/::after). The blanket
+   block + full-width rule above left-packs those strands so the label reads as
+   left-aligned above centered content. Keep the wired variant a shrink-wrapped
+   centered flex so the strands sit symmetrically around the label and the whole
+   unit centers on the same axis as the heading below it. */
+.marketing-surface :where(.text-center, .wl-marketing-center) > .wl-eyebrow--wired {
+  display: inline-flex;
+  width: auto;
+  justify-content: center;
+}
+
 .marketing-surface :where(.text-center, .wl-marketing-center)
   > :where(.wl-public-section-heading, .wl-stitch-display, .wl-display-2, h1, h2) {
   margin-inline: auto;
