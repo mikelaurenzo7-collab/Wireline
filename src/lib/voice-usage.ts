@@ -50,7 +50,10 @@ export function billableVoiceMinutes(durationSeconds: number): number {
   return Math.max(1, Math.ceil(safeSeconds / 60));
 }
 
-function includedVoiceMinutes(planId: string | null | undefined, extraAgents: number | null | undefined): {
+export function includedVoiceMinutes(
+  planId: string | null | undefined,
+  extraAgents: number | null | undefined,
+): {
   plan: ReturnType<typeof planById>;
   included: number;
 } {

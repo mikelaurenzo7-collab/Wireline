@@ -9,6 +9,7 @@
 import { and, eq } from "drizzle-orm";
 import { getCreditBalanceUsd } from "./credit-wallet";
 import { planById } from "./plan-catalog";
+import { includedVoiceMinutes } from "./voice-usage";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 
@@ -34,7 +35,7 @@ function monthlyPeriodKey(now: Date = new Date()): string {
 }
 
 export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalletSnapshot> {
-  const [[sub], [usage], balanceRaw] = await Promise.all([
+  const [[sub], [usage], [settingsRow], balanceRaw] = await Promise.all([
     drizzle
       .select({ plan: schema.subscriptions.plan, status: schema.subscriptions.status })
       .from(schema.subscriptions)
@@ -51,16 +52,24 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
         ),
       )
       .limit(1),
+    drizzle
+      .select({ extraAgents: schema.settings.extraAgents })
+      .from(schema.settings)
+      .where(eq(schema.settings.userId, userId))
+      .limit(1),
     getCreditBalanceUsd(userId),
   ]);
 
   const plan = planById(sub?.plan ?? "personal");
   const planId = plan?.id ?? null;
-  const activeSubscription =
-    !!sub?.plan && (sub.status === "active" || sub.status === "trialing");
+  const activeSubscription = !!sub?.plan && (sub.status === "active" || sub.status === "trialing");
   const liveVoiceEnabled = activeSubscription && planId !== "personal";
   const minuteRate = plan?.overage_per_min_usd ?? 0.2;
-  const includedMinutes = Math.max(0, plan?.voice_minutes_monthly ?? 0);
+  // Include the extra-agent add-on minutes the customer paid for — the usage
+  // accounting (voice-usage.ts) already counts them, so the pre-call gate must
+  // match or a customer with extra agents is blocked between their base and
+  // paid-for minutes when balance is zero.
+  const includedMinutes = includedVoiceMinutes(sub?.plan, settingsRow?.extraAgents).included;
   const includedUsed = Number(usage?.used ?? 0);
   const includedRemaining = Math.max(0, includedMinutes - includedUsed);
   const balance = Math.round(balanceRaw * 100) / 100;
