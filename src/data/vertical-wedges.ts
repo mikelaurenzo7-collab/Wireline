@@ -321,7 +321,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Wire personal agent", href: signupHrefForWedge("personal") },
     secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
-      "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your dashboard before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
+      "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your Wireline workspace before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
     faqs: [
       {
         q: "Is it actually legal for an AI to make calls on my behalf?",
