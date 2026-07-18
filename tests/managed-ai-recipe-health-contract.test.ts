@@ -20,9 +20,13 @@ describe("managed AI recipe availability", () => {
     expect(registry).toContain("app.use(aiStatusRouter)");
   });
 
-  it("keeps session startup and modal teardown separate from runtime outages", () => {
+  it("waits for authenticated session hydration and preserves modal teardown safety", () => {
+    expect(modal).toContain('import { useAuth } from "../../contexts/AuthContext"');
+    expect(modal).toContain("const authenticatedUserId = user?.id ?? null");
+    expect(modal).toContain("if (authLoading || !authenticatedUserId)");
     expect(modal).toContain("statusRes.status === 401");
     expect(modal).toContain("if (cancelled) return");
     expect(modal).toContain("cancelled = true");
+    expect(modal).toContain("[authLoading, authenticatedUserId]");
   });
 });

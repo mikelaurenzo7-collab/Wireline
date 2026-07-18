@@ -64,6 +64,8 @@ The app intentionally stays thin. The server owns:
 
 See `src/routes/mobile-routes.ts`, `src/lib/mobile-push.ts`, and `src/lib/fcm-push.ts` for backend behavior.
 
-## Grok realtime voice
+## Managed realtime voice
 
-Native apps support authenticated Grok realtime voice sessions for live tests with role-tuned, distinctive personalities. Production voice remains on the approved production voice provider until the product and compliance posture justify a change. See `docs/GROK_LIVE_VOICE.md` and `grok-voice-config.ts`.
+Authenticated live tests use Wireline's managed OpenAI Realtime session contract. The backend creates a short-lived client secret, applies the selected agent's server-owned instructions and bounded tools, and keeps `OPENAI_API_KEY` out of the app. Production PSTN calls remain on the approved telephony path; the native client never selects or configures a provider directly.
+
+Legacy xAI/Grok routes and configuration are compatibility-only while older clients are retired. They are not the default native or web runtime. See `src/lib/voice/openai-realtime-service.ts`, `src/routes/openai-realtime-routes.ts`, and `docs/GROK_LIVE_VOICE.md` for the migration boundary.
