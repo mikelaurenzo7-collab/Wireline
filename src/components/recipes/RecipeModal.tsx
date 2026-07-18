@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Brain, X } from "lucide-react";
 import { authFetch } from "../../lib/api";
+import { useAuth } from "../../contexts/AuthContext";
 import WidgetBoundary from "../WidgetBoundary";
 import { NoKeyInline } from "./shared";
 import { RECIPE_META, type AgentLite, type Recipe } from "./types";
@@ -47,6 +48,8 @@ export function RecipeModal({
   const meta = RECIPE_META[recipe];
   const [agents, setAgents] = useState<AgentLite[]>([]);
   const [available, setAvailable] = useState<boolean | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const authenticatedUserId = user?.id ?? null;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -57,6 +60,12 @@ export function RecipeModal({
   }, [onClose]);
 
   useEffect(() => {
+    if (authLoading || !authenticatedUserId) {
+      setAvailable(null);
+      setAgents([]);
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -67,8 +76,9 @@ export function RecipeModal({
         if (cancelled) return;
 
         // The dedicated contract is lightweight, authenticated, and explicitly
-        // identifies OpenAI as the managed primary. The previous
-        // /api/claude/status endpoint never existed and disabled every recipe.
+        // identifies OpenAI as the managed primary. Wait for AuthContext before
+        // calling it so a session-hydration race cannot strand every form in a
+        // permanently disabled neutral state.
         if (statusRes.ok) {
           const status = (await statusRes.json()) as {
             available?: boolean;
@@ -76,7 +86,7 @@ export function RecipeModal({
           };
           setAvailable(status.available === true && status.primary_provider === "openai");
         } else if (statusRes.status === 401) {
-          // Session startup is not an AI outage. Leave the neutral loading state.
+          // A genuinely expired session is still distinct from an AI outage.
           setAvailable(null);
         } else {
           setAvailable(false);
@@ -95,7 +105,7 @@ export function RecipeModal({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authLoading, authenticatedUserId]);
 
   return (
     <motion.div

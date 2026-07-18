@@ -55,6 +55,12 @@ function text(value: unknown, max = 2048): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+function isoDateOrEmpty(value: Date | string | null | undefined): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
 function parseScopes(value: string): McpScope[] {
   const known = new Set<string>(MCP_SCOPES);
   return [...new Set(value.split(/\s+/).filter((scope): scope is McpScope => known.has(scope)))];
@@ -142,6 +148,41 @@ const draftOutputSchema = {
     "business_name",
     "primary_goal",
     "lifecycle",
+    "open_in_wireline_url",
+  ],
+  additionalProperties: false,
+};
+
+const workspaceSummaryOutputSchema = {
+  type: "object",
+  properties: {
+    agent_count: { type: "integer" },
+    assigned_phone_number_count: { type: "integer" },
+    calls_last_30_days: { type: "integer" },
+    text_threads_last_30_days: { type: "integer" },
+    email_threads_last_30_days: { type: "integer" },
+    unread_text_count: { type: "integer" },
+    unread_email_count: { type: "integer" },
+    activated: { type: "boolean" },
+    subscription_status: { type: "string" },
+    texting_configured: { type: "boolean" },
+    email_connected: { type: "boolean" },
+    latest_activity_at: { type: "string" },
+    open_in_wireline_url: { type: "string" },
+  },
+  required: [
+    "agent_count",
+    "assigned_phone_number_count",
+    "calls_last_30_days",
+    "text_threads_last_30_days",
+    "email_threads_last_30_days",
+    "unread_text_count",
+    "unread_email_count",
+    "activated",
+    "subscription_status",
+    "texting_configured",
+    "email_connected",
+    "latest_activity_at",
     "open_in_wireline_url",
   ],
   additionalProperties: false,
@@ -334,6 +375,17 @@ function toolDefinitions() {
       securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
       _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
     },
+    {
+      name: "get_wireline_workspace_summary",
+      title: "Get Wireline workspace summary",
+      description:
+        "Returns aggregate operational status for the connected Wireline workspace: agents, assigned phone numbers, recent call/text/email activity, unread counts, channel connection state, activation, and subscription status. It never returns customer identities, message bodies, transcripts, recordings, credentials, or provider secrets.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      outputSchema: workspaceSummaryOutputSchema,
+      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+      securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
+      _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
+    },
   ];
 }
 
@@ -345,7 +397,7 @@ function resourceMeta(req: Request) {
       csp: { connectDomains: ["https://api.openai.com"], resourceDomains: [] },
     },
     "openai/widgetDescription":
-      "Shows a connected Wireline agent draft, private voice simulation, and a secure path to continue configuration in Wireline.",
+      "Shows a connected Wireline agent draft, private voice simulation, aggregate workspace status, and a secure path to continue configuration in Wireline.",
   };
 }
 
@@ -388,9 +440,9 @@ router.post("/mcp", async (req, res) => {
           tools: { listChanged: false },
           resources: { subscribe: false, listChanged: false },
         },
-        serverInfo: { name: "wireline-chatgpt", version: "2.1.0" },
+        serverInfo: { name: "wireline-chatgpt", version: "2.2.0" },
         instructions:
-          "Wireline requires a connected Wireline account. Use it to create and refine a real private agent draft in the user’s workspace. Before a create or update operation, summarize identity, goal, rules, knowledge, action boundaries, and escalation policy; only write after the user explicitly confirms. Private voice simulations are tool-free. Never claim an agent is live, has a number, or completed an external action unless Wireline confirms it.",
+          "Wireline requires a connected Wireline account. Use it to create and refine a real private agent draft, list agents, and inspect aggregate operational status in the user’s workspace. Before a create or update operation, summarize identity, goal, rules, knowledge, action boundaries, and escalation policy; only write after the user explicitly confirms. Private voice simulations are tool-free. Never claim an agent is live, has a number, or completed an external action unless Wireline confirms it.",
       });
     }
     if (method === "ping") return jsonRpc(res, id, {});
@@ -539,6 +591,81 @@ router.post("/mcp", async (req, res) => {
         ],
         structuredContent: { agents },
         _meta: { agents },
+      });
+    }
+
+    if (name === "get_wireline_workspace_summary") {
+      const authed = requireScope(principal, "agents.read");
+      const summary = await tenantStore.run(authed.userId, async () => {
+        const result = (await drizzle.execute(sql`
+          SELECT
+            (SELECT count(*)::int FROM wireline_agents WHERE user_id = ${authed.userId}::uuid) AS agent_count,
+            (SELECT count(*)::int FROM wireline_phone_numbers WHERE user_id = ${authed.userId}::uuid) AS assigned_phone_number_count,
+            (SELECT count(*)::int FROM wireline_call_logs WHERE user_id = ${authed.userId}::uuid AND created_at >= now() - interval '30 days') AS calls_last_30_days,
+            (SELECT count(*)::int FROM wireline_sms_threads WHERE user_id = ${authed.userId}::uuid AND last_message_at >= now() - interval '30 days') AS text_threads_last_30_days,
+            (SELECT count(*)::int FROM wireline_email_threads WHERE user_id = ${authed.userId}::uuid AND last_message_at >= now() - interval '30 days') AS email_threads_last_30_days,
+            (SELECT coalesce(sum(unread_count), 0)::int FROM wireline_sms_threads WHERE user_id = ${authed.userId}::uuid) AS unread_text_count,
+            (SELECT count(*)::int FROM wireline_email_threads WHERE user_id = ${authed.userId}::uuid AND read = false) AS unread_email_count,
+            coalesce((SELECT activated_at IS NOT NULL FROM wireline_settings WHERE user_id = ${authed.userId}::uuid LIMIT 1), false) AS activated,
+            coalesce((SELECT subscription_status FROM wireline_settings WHERE user_id = ${authed.userId}::uuid LIMIT 1), 'inactive') AS subscription_status,
+            coalesce((SELECT twilio_messaging_enabled FROM wireline_settings WHERE user_id = ${authed.userId}::uuid LIMIT 1), false) AS texting_configured,
+            EXISTS (SELECT 1 FROM wireline_email_accounts WHERE user_id = ${authed.userId}::uuid) AS email_connected,
+            (
+              SELECT max(activity_at)
+              FROM (
+                SELECT max(created_at) AS activity_at FROM wireline_call_logs WHERE user_id = ${authed.userId}::uuid
+                UNION ALL
+                SELECT max(last_message_at) AS activity_at FROM wireline_sms_threads WHERE user_id = ${authed.userId}::uuid
+                UNION ALL
+                SELECT max(last_message_at) AS activity_at FROM wireline_email_threads WHERE user_id = ${authed.userId}::uuid
+              ) recent_activity
+            ) AS latest_activity_at
+        `)) as unknown as {
+          rows?: Array<{
+            agent_count: number | string;
+            assigned_phone_number_count: number | string;
+            calls_last_30_days: number | string;
+            text_threads_last_30_days: number | string;
+            email_threads_last_30_days: number | string;
+            unread_text_count: number | string;
+            unread_email_count: number | string;
+            activated: boolean;
+            subscription_status: string | null;
+            texting_configured: boolean;
+            email_connected: boolean;
+            latest_activity_at: Date | string | null;
+          }>;
+        };
+        const row = result.rows?.[0];
+        return {
+          agent_count: Number(row?.agent_count ?? 0),
+          assigned_phone_number_count: Number(row?.assigned_phone_number_count ?? 0),
+          calls_last_30_days: Number(row?.calls_last_30_days ?? 0),
+          text_threads_last_30_days: Number(row?.text_threads_last_30_days ?? 0),
+          email_threads_last_30_days: Number(row?.email_threads_last_30_days ?? 0),
+          unread_text_count: Number(row?.unread_text_count ?? 0),
+          unread_email_count: Number(row?.unread_email_count ?? 0),
+          activated: row?.activated === true,
+          subscription_status: text(row?.subscription_status, 80) || "inactive",
+          texting_configured: row?.texting_configured === true,
+          email_connected: row?.email_connected === true,
+          latest_activity_at: isoDateOrEmpty(row?.latest_activity_at),
+          open_in_wireline_url: `${issuer(req)}/overview`,
+        };
+      });
+      const recentTotal =
+        summary.calls_last_30_days +
+        summary.text_threads_last_30_days +
+        summary.email_threads_last_30_days;
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: `Wireline workspace: ${summary.agent_count} agent${summary.agent_count === 1 ? "" : "s"}, ${summary.assigned_phone_number_count} assigned number${summary.assigned_phone_number_count === 1 ? "" : "s"}, and ${recentTotal} call, text, or email thread${recentTotal === 1 ? "" : "s"} in the last 30 days.`,
+          },
+        ],
+        structuredContent: summary,
+        _meta: { open_in_wireline_url: summary.open_in_wireline_url },
       });
     }
 
