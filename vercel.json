@@ -103,7 +103,7 @@
       "destination": "/legal/data-deletion.html"
     },
     {
-      "source": "/((?!api/|assets/|legal/|.+\.[A-Za-z0-9]+$).*)",
+      "source": "/((?!api/|assets/|legal/|.+\\.[A-Za-z0-9]+$).*)",
       "destination": "/index.html"
     }
   ],
