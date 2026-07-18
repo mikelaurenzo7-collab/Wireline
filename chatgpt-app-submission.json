@@ -3,8 +3,8 @@
   "schema_version": 1,
   "app_info": {
     "display_name": "Wireline",
-    "subtitle": "Build phone agents",
-    "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI phone-agent drafts from ChatGPT. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
+    "subtitle": "Build and inspect AI employees",
+    "description": "Wireline lets a connected user create, refine, review, and privately simulate unlaunched AI employee drafts from ChatGPT, then inspect privacy-minimized aggregate workspace status across calling, texting, and email. The app keeps phone numbers, real calls, messaging, integrations, billing, and launch inside Wireline so every external action remains separately configured and confirmed.",
     "category": "BUSINESS",
     "logo_url": "https://trywireline.com/wireline-chatgpt-app-icon.svg",
     "website_url": "https://trywireline.com",
@@ -78,6 +78,18 @@
         "open_world_justification": "Does not write to public internet state or any external third-party system.",
         "destructive_justification": "Does not delete, overwrite, revoke access, launch agents, or perform an irreversible action."
       }
+    },
+    "get_wireline_workspace_summary": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads aggregate tenant-scoped counts and connection states for the connected Wireline workspace without returning customer identities, message bodies, transcripts, recordings, or credentials.",
+        "open_world_justification": "Reads only private Wireline account state and does not contact customers, publish data, or mutate any external system.",
+        "destructive_justification": "Does not change agents, billing, phone numbers, communications, integrations, credentials, or launch state."
+      }
     }
   },
   "test_cases": [
@@ -120,6 +132,14 @@
       "tools_triggered": "list_wireline_agents",
       "expected_output": "Returns the connected user's agents and drafts with enough detail to choose the next action.",
       "expected_output_url": null
+    },
+    {
+      "description": "Inspect aggregate workspace operations without exposing customer content.",
+      "user_prompt": "Give me a Wireline workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_wireline_workspace_summary",
+      "expected_output": "Returns tenant-scoped aggregate counts, activation and subscription status, channel connection state, and a Wireline link without customer identities, message bodies, transcripts, recordings, or secrets.",
+      "expected_output_url": null
     }
   ],
   "negative_test_cases": [
@@ -128,7 +148,7 @@
       "user_prompt": "Write a cold email for my plumbing company.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "The app should not be invoked because the request is not about creating or managing a Wireline phone-agent draft.",
+      "expected_output": "The app should not be invoked because the request is not about creating, managing, or inspecting a Wireline agent or workspace.",
       "expected_output_url": null
     },
     {
