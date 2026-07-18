@@ -76,7 +76,12 @@ export function PageMeta({
     : DEFAULT_TITLE;
   const resolvedDescription = description || DEFAULT_DESCRIPTION;
   const canonicalUrl = path ? `${SITE_URL}${path}` : undefined;
-  const ogImage = image || DEFAULT_OG_IMAGE;
+  // Social scrapers require an absolute og:image — absolutize any relative path.
+  const ogImage = image
+    ? /^https?:\/\//i.test(image)
+      ? image
+      : `${SITE_URL}${image.startsWith("/") ? "" : "/"}${image}`
+    : DEFAULT_OG_IMAGE;
 
   useEffect(() => {
     document.title = fullTitle;

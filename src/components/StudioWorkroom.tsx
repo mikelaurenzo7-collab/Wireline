@@ -335,6 +335,7 @@ const StudioWorkroom = forwardRef<
                 size="sm"
                 variant="secondary"
                 onClick={() => setShowOutboundDial(true)}
+                aria-label="Start a real call"
               >
                 <Phone className="size-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">Real call</span>
@@ -362,7 +363,15 @@ const StudioWorkroom = forwardRef<
         </div>
       ) : null}
 
-      <section ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+      <section
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
+        role="log"
+        aria-label="Conversation"
+        aria-live="polite"
+        aria-relevant="additions text"
+        tabIndex={0}
+      >
         <div className="mx-auto h-full w-full max-w-3xl">
           {loading ? (
             <MessageSkeletons />
@@ -459,6 +468,7 @@ const StudioWorkroom = forwardRef<
                 onClick={submit}
                 className="transition-all active:scale-[0.985]"
                 aria-busy={sending}
+                aria-label={sending ? "Sending" : "Send"}
               >
                 {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
                 <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>

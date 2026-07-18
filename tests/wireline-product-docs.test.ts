@@ -108,16 +108,23 @@ describe("Wireline product documentation contract", () => {
   it("keeps authenticated workspace routes out of crawler policy and public sitemap", () => {
     const robots = read("public/robots.txt");
     const sitemap = read("public/sitemap.xml");
+    // Real authenticated surfaces from src/routes/AppRoutes.tsx — kept in sync
+    // with the router so crawler policy never drifts from the actual app.
     const privateRoutes = [
       "/admin",
       "/agents",
       "/overview",
       "/studio",
-      "/training",
-      "/actions",
       "/settings",
       "/inbox",
       "/knowledge",
+      "/templates",
+      "/connections",
+      "/phone",
+      "/insights",
+      "/approvals",
+      "/apps",
+      "/call-logs",
     ];
 
     for (const route of privateRoutes) {

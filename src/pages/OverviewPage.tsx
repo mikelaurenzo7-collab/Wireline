@@ -126,7 +126,8 @@ function FirstRunLaunchpad() {
   const steps = [
     {
       title: "Choose one real job",
-      detail: "Start with missed calls, appointment booking, lead qualification, or customer support.",
+      detail:
+        "Start with missed calls, appointment booking, lead qualification, or customer support.",
       icon: Bot,
     },
     {
@@ -136,7 +137,8 @@ function FirstRunLaunchpad() {
     },
     {
       title: "Review the first outcome",
-      detail: "See what the customer needed, what Wireline completed, and what needs your approval.",
+      detail:
+        "See what the customer needed, what Wireline completed, and what needs your approval.",
       icon: Sparkles,
     },
   ];
@@ -149,7 +151,10 @@ function FirstRunLaunchpad() {
       <div className="grid gap-7 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-center">
         <div>
           <p className="wl-eyebrow wl-eyebrow--primary">Start with demand</p>
-          <h2 id="first-run-title" className="mt-2 text-xl font-semibold text-foreground sm:text-2xl">
+          <h2
+            id="first-run-title"
+            className="mt-2 text-xl font-semibold text-foreground sm:text-2xl"
+          >
             Put one customer-facing job to work today.
           </h2>
           <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
@@ -200,8 +205,8 @@ function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
   return (
     <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
       <StatusNotice tone="warning" title="Your workspace is reconnecting">
-        Wireline could not verify your AI employee roster, so no empty-state claims or create actions
-        are shown yet. Your existing employees and customer data are unchanged.
+        Wireline could not verify your AI employee roster, so no empty-state claims or create
+        actions are shown yet. Your existing employees and customer data are unchanged.
       </StatusNotice>
       <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
         Retry workspace
@@ -244,7 +249,8 @@ function DemandReadinessCard({
       ? {
           eyebrow: "Line ready",
           title: "Your line is live. Put it where customers already call.",
-          detail: "Publish the number or forward unanswered calls, then place one real inbound call.",
+          detail:
+            "Publish the number or forward unanswered calls, then place one real inbound call.",
           primaryHref: "/settings/phone",
           primaryLabel: "Review phone setup",
           secondaryHref: testHref,
@@ -274,7 +280,10 @@ function DemandReadinessCard({
           };
 
   return (
-    <section className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-6" aria-label="Demand readiness">
+    <section
+      className="wl-paper wl-paper-elevated overflow-hidden p-5 sm:p-6"
+      aria-label="Demand readiness"
+    >
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 max-w-3xl">
           <div className="flex items-center gap-2">
@@ -409,12 +418,14 @@ export default function OverviewPage() {
   const [pendingFollowUps, setPendingFollowUps] = useState(0);
   const [recentCalls, setRecentCalls] = useState<CallLog[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [statsUnavailable, setStatsUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadDashboard() {
       setLoadingDashboard(true);
+      setStatsUnavailable(false);
       try {
         const [statsRes, crmRes, calendarRes, navCountsRes] = await Promise.all([
           authFetch("/api/dashboard/stats"),
@@ -441,8 +452,14 @@ export default function OverviewPage() {
             const outbound = todayLogs.filter((log) => log.direction === "outbound").length;
             setCallsDetail(`${inbound} inbound · ${outbound} outbound`);
           } else {
-            setCallsDetail(logs.length > 0 ? "No new calls today" : "Waiting for first conversation");
+            setCallsDetail(
+              logs.length > 0 ? "No new calls today" : "Waiting for first conversation",
+            );
           }
+        } else {
+          // Don't present initial zeros as real business data when the metrics
+          // API fails — flag it so the UI can say the numbers aren't current.
+          setStatsUnavailable(true);
         }
 
         if (navCountsRes.ok) {
@@ -477,7 +494,10 @@ export default function OverviewPage() {
           allConnections.length ? allConnections.join(" · ") : "Connect tools in Connections",
         );
       } catch {
-        if (!cancelled) setConnectionsDetail("Connect tools in Connections");
+        if (!cancelled) {
+          setConnectionsDetail("Connect tools in Connections");
+          setStatsUnavailable(true);
+        }
       } finally {
         if (!cancelled) setLoadingDashboard(false);
       }
@@ -538,7 +558,11 @@ export default function OverviewPage() {
                       Start a call
                     </Button>
                   ) : (
-                    <Button asChild variant="secondary" className="shrink-0 justify-center sm:min-w-[154px]">
+                    <Button
+                      asChild
+                      variant="secondary"
+                      className="shrink-0 justify-center sm:min-w-[154px]"
+                    >
                       <Link to={primaryTestHref}>
                         <Play aria-hidden="true" size={15} />
                         Test employee
@@ -608,14 +632,27 @@ export default function OverviewPage() {
               </StatusNotice>
             ) : null}
 
-            <section className="wl-paper wl-paper-elevated p-5 sm:p-6" aria-label="Customer outcomes">
+            {statsUnavailable && !loadingDashboard ? (
+              <StatusNotice tone="warning" title="Live metrics unavailable">
+                We couldn&apos;t load your latest calls, appointments, and leads. Refresh to try
+                again — the numbers above may not be current.
+              </StatusNotice>
+            ) : null}
+
+            <section
+              className="wl-paper wl-paper-elevated p-5 sm:p-6"
+              aria-label="Customer outcomes"
+            >
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                     Customer outcomes
                   </p>
                 </div>
-                <Link to="/approvals" className="text-xs font-semibold text-primary hover:underline">
+                <Link
+                  to="/approvals"
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
                   Review follow-ups →
                 </Link>
               </div>
@@ -725,7 +762,9 @@ export default function OverviewPage() {
                       density="compact"
                       titleTone="ui"
                       icon={<Phone aria-hidden="true" />}
-                      title={hasLiveLine ? "No customer calls yet" : "Connect a line to receive calls"}
+                      title={
+                        hasLiveLine ? "No customer calls yet" : "Connect a line to receive calls"
+                      }
                       description={
                         hasLiveLine
                           ? "Place one real inbound call, then review the outcome here."
@@ -733,7 +772,7 @@ export default function OverviewPage() {
                       }
                       action={
                         <Button asChild size="sm">
-                          <Link to={hasLiveLine ? primaryTestHref : "/connections"}>
+                          <Link to={hasLiveLine ? primaryTestHref : "/settings/phone"}>
                             {hasLiveLine ? "Run test conversation" : "Connect phone"}
                           </Link>
                         </Button>

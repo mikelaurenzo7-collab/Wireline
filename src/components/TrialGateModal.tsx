@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Wallet } from "lucide-react";
+import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Wallet, Mail, Check } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
@@ -51,7 +51,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "EMAIL_UNVERIFIED":
       return {
         title: "Verify your email first",
-        body: "We sent you a link from Wireline. Click it to unlock paid activation and agent deployment. Check your inbox and spam folder; you can resend from the banner at the top.",
+        body: "We sent you a link from Wireline. Click it to unlock paid activation and agent deployment. Check your inbox and spam folder, or resend the link below.",
       };
     case "TRIAL_LIMIT_HIT":
       return {
@@ -76,10 +76,13 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
   }
 }
 
+type ResendOutcome = "idle" | "pending" | "sent" | "no-transport" | "error";
+
 export default function TrialGateModal() {
   const [detail, setDetail] = useState<TrialGateBlockDetail | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resend, setResend] = useState<ResendOutcome>("idle");
 
   useBodyScrollLock(detail !== null);
 
@@ -89,6 +92,7 @@ export default function TrialGateModal() {
       if (!customEvent.detail) return;
       setDetail(customEvent.detail);
       setError(null);
+      setResend("idle");
     };
     window.addEventListener(TRIAL_GATE_EVENT, onBlock);
     return () => window.removeEventListener(TRIAL_GATE_EVENT, onBlock);
@@ -176,6 +180,21 @@ export default function TrialGateModal() {
     }
   }
 
+  async function resendVerification() {
+    setResend("pending");
+    try {
+      const response = await authFetch("/api/auth/resend-verification", { method: "POST" });
+      const data = (await safeJson<{ ok?: boolean; sent?: boolean; reason?: string }>(
+        response,
+      )) as { ok?: boolean; sent?: boolean; reason?: string } | null;
+      if (data?.ok && data.sent) setResend("sent");
+      else if (data?.reason === "transport_unavailable") setResend("no-transport");
+      else setResend("error");
+    } catch {
+      setResend("error");
+    }
+  }
+
   async function topUpPersonalBalance(amountUsd: number) {
     setPending(`balance-${amountUsd}`);
     setError(null);
@@ -255,6 +274,52 @@ export default function TrialGateModal() {
             </div>
 
             <div className="px-6 pb-6 sm:px-8">
+              {detail.code === "EMAIL_UNVERIFIED" && (
+                <div className="flex flex-col items-start gap-3">
+                  <ShadButton
+                    type="button"
+                    disableAnimations
+                    onClick={resendVerification}
+                    disabled={resend === "pending" || resend === "sent"}
+                    className="h-11 rounded-md px-5"
+                  >
+                    {resend === "pending" ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Sending
+                      </span>
+                    ) : resend === "sent" ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Check className="h-4 w-4" />
+                        Verification email sent
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Mail className="h-4 w-4" />
+                        Resend verification email
+                      </span>
+                    )}
+                  </ShadButton>
+                  {resend === "sent" && (
+                    <p className="text-xs leading-relaxed text-foreground/65">
+                      Sent — check your inbox and spam folder for a link from Wireline.
+                    </p>
+                  )}
+                  {resend === "no-transport" && (
+                    <p className="flex items-start gap-1.5 text-xs leading-relaxed text-amber-600">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      Mail is temporarily unavailable. Try again in a few minutes — your account
+                      isn&apos;t affected.
+                    </p>
+                  )}
+                  {resend === "error" && (
+                    <p className="flex items-start gap-1.5 text-xs leading-relaxed text-rose-600">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      Couldn&apos;t send the email. Refresh and try again, or contact support.
+                    </p>
+                  )}
+                </div>
+              )}
               {checkoutAllowed && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {showPersonalTopUp && (

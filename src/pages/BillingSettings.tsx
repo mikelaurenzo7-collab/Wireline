@@ -109,7 +109,9 @@ export default function BillingSettings() {
 
   async function addBalance(amountUsd: number) {
     if (!paidPlan) {
-      setActionError("Choose Starter, Starter Plus, Pro, or Business before adding Conversation Balance.");
+      setActionError(
+        "Choose Starter, Starter Plus, Pro, or Business before adding Conversation Balance.",
+      );
       return;
     }
     setTopUpBusy(amountUsd);
@@ -135,7 +137,8 @@ export default function BillingSettings() {
     try {
       const response = await authFetch("/api/billing/portal", { method: "POST" });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.url) throw new Error(data?.error || "Could not open billing portal.");
+      if (!response.ok || !data?.url)
+        throw new Error(data?.error || "Could not open billing portal.");
       window.location.href = data.url;
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Could not open billing portal.");
@@ -226,7 +229,8 @@ export default function BillingSettings() {
                   Conversation Balance
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Prepaid funding for additional voice, SMS segments, provider-backed enrichment, and other variable channel work.
+                  Prepaid funding for additional voice, SMS segments, provider-backed enrichment,
+                  and other variable channel work.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
@@ -239,7 +243,9 @@ export default function BillingSettings() {
               </div>
             ) : (
               <>
-                <p className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}>
+                <p
+                  className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}
+                >
                   {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -254,7 +260,8 @@ export default function BillingSettings() {
                   <div className="mt-5 flex flex-wrap gap-2">
                     {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
                       const minutes =
-                        balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ?? 0;
+                        balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ??
+                        0;
                       return (
                         <Button
                           key={amount}
@@ -265,7 +272,11 @@ export default function BillingSettings() {
                           onClick={() => void addBalance(amount)}
                           disabled={topUpBusy !== null}
                           className="gap-1.5"
-                          title={minutes > 0 ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate` : undefined}
+                          title={
+                            minutes > 0
+                              ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate`
+                              : undefined
+                          }
                         >
                           {topUpBusy === amount ? (
                             <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -298,10 +309,12 @@ export default function BillingSettings() {
             ) : hasSubscription ? (
               <>
                 <p className="mt-6 font-[var(--wireline-font-family-display)] text-3xl leading-none tracking-[-0.04em] text-foreground">
-                  Renews {formatDate(subscription?.current_period_end)}
+                  {subscription?.cancel_at_period_end ? "Ends " : "Renews "}
+                  {formatDate(subscription?.current_period_end)}
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Stripe is the source of truth for your renewal amount, billing interval, payment method, invoices, cancellation, discounts, and tax details.
+                  Stripe is the source of truth for your renewal amount, billing interval, payment
+                  method, invoices, cancellation, discounts, and tax details.
                 </p>
                 <Button
                   type="button"
@@ -322,7 +335,8 @@ export default function BillingSettings() {
                   No recurring invoice
                 </p>
                 <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Free Builder creates no production telephony or recurring subscription cost. Activate only when an agent is trained and ready for live work.
+                  Free Builder creates no production telephony or recurring subscription cost.
+                  Activate only when an agent is trained and ready for live work.
                 </p>
                 <Button asChild variant="outline" size="sm" className="mt-5 self-start">
                   <Link to="/pricing">View Founder Early Access plans</Link>

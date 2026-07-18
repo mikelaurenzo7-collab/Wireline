@@ -215,6 +215,9 @@ describe("authenticated agent flow", () => {
     expect(voices).toContain("curatedPreviewRateLimiter");
     expect(voices).toContain("voicePreviewUserRateLimiter");
     expect(voices).toContain("fetchTrustedPreview");
+    // Trusted hosts can serve real audio with text/plain headers (GCS), so
+    // previews must be validated by payload magic bytes, not headers alone.
+    expect(voices).toContain("sniffAudioContentType");
     expect(voices).toContain('"/api/voices/curated/preview"');
     expect(voices).toContain('"/api/voices/:id/preview"');
   });

@@ -96,7 +96,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can it actually dispatch me on an emergency?",
-        a: "Yes. Configure on call rotations and the agent triages by urgency keyword. Water. Smoke. Sparks. No heat. Pages you via SMS or call. Schedules a same day arrival window. Texts the customer the ETA. Optional auto add to the Jobber or ServiceTitan calendar.",
+        a: "Yes. Configure on call rotations and the agent triages by urgency keyword. Water. Smoke. Sparks. No heat. Pages you via SMS or call. Schedules a same day arrival window on your connected Google or Outlook calendar. Texts the customer the ETA. Direct Jobber and ServiceTitan sync is on the roadmap.",
       },
       {
         q: "How much does it cost vs. an answering service?",
@@ -147,7 +147,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Is Wireline HIPAA-compliant?",
-        a: "Wireline runs healthcare style intake flows today. TCPA disclosure logging. Opt out enforcement. And no PHI in transcripts by default. Use Enterprise onboarding for workflows that require a signed BAA. We are honest. Do not claim certified until certified.",
+        a: "Wireline runs healthcare style intake flows today. TCPA disclosure logging. Opt out enforcement. And no PHI in transcripts by default. Use Enterprise onboarding for workflows that require a signed BAA — we won't claim HIPAA certification before it's in place.",
       },
       {
         q: "Can it actually book to my existing schedule?",
@@ -265,7 +265,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will it know my listings?",
-        a: "Yes. Connect your MLS feed or paste listing URLs into the agent's knowledge base. The agent answers price, beds/baths, square footage, neighborhood basics from real data — and pivots to scheduling a showing when the caller shows real interest.",
+        a: "Yes. Paste listing URLs or details into the agent's knowledge base and it answers price, beds/baths, square footage, and neighborhood basics from that source — then pivots to scheduling a showing when the caller shows real interest. Direct MLS feed sync is on the roadmap.",
       },
       {
         q: "Does it work for a single agent or full brokerage?",
@@ -314,7 +314,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview:
-      "Hi, this is Alex calling on behalf of Michael Laurenzo regarding account ending in 4421. Michael authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
+      "Hi, this is Alex calling on behalf of [Your Name] regarding account ending in 0000. [Your Name] authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
     statValue: "Yours",
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
@@ -447,7 +447,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will it integrate with Resy / OpenTable / Tock?",
-        a: 'Yes - connects via the platform API to read availability and write reservations. Caller hears "I have 7pm or 8:15pm - which works?" using your real floor map, not an estimate. Core integrations are available on Starter Plus and above; custom reservation policy is available on Business.',
+        a: 'Today the agent books against your connected Google or Outlook calendar — caller hears "I have 7pm or 8:15pm, which works?" from real availability, and the reservation writes straight back. Direct Resy, OpenTable, and Tock sync is on the roadmap; tell us which one you use and we\'ll prioritize it.',
       },
       {
         q: "Can it handle dietary restrictions + allergens correctly?",

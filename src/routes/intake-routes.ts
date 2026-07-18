@@ -264,7 +264,10 @@ async function processIntakeLead(
         };
       }
     }
-    return { ok: false, error: error.message || "DB insert failed", code: "INSERT_FAILED" };
+    // Keep the raw driver/constraint text in server logs only — never echo it
+    // to the public intake caller.
+    log.error("intake lead insert failed", { error: error?.message || String(error) });
+    return { ok: false, error: "Could not store the lead. Try again.", code: "INSERT_FAILED" };
   }
 
   runInBackground("lead.received webhook dispatch", () =>
@@ -409,7 +412,10 @@ router.post("/lead", async (req: Request, res: Response) => {
       }
       return res.json(result);
     }
-    const status = result.code === "MISSING_NUMBER" ? 400 : 500;
+    // Validation failures are client errors (400), not 5xx — a 500 makes
+    // integrators' retry logic hammer permanently-invalid payloads.
+    const clientErrorCodes = ["MISSING_NUMBER", "INVALID_NUMBER"];
+    const status = clientErrorCodes.includes(result.code ?? "") ? 400 : 500;
     return res.status(status).json({ error: result.error, code: result.code });
   } catch (e: any) {
     if (e instanceof AppError) throw e;

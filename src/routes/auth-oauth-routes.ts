@@ -1,4 +1,5 @@
 import { AppError } from "../lib/api-error";
+import { decodeJwtClaims, resolveMicrosoftVerifiedEmail } from "../lib/oauth-email-trust";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
  * Wireline native sign-in OAuth (Google / Microsoft / Yahoo).
@@ -419,6 +420,18 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
         await bridgeRedirect(baseUrl, {} as any, "", "Google did not return an email address."),
       );
     }
+    // Never attach to an account on an unverified email — Google marks
+    // unverified addresses explicitly, and account linking is email-keyed.
+    if (userInfo.data.verified_email === false) {
+      return res.redirect(
+        await bridgeRedirect(
+          baseUrl,
+          {} as any,
+          "",
+          "Your Google email isn't verified yet. Verify it with Google, then sign in again.",
+        ),
+      );
+    }
     const user = await findOrCreateUserByEmail(email, name);
     scheduleFounderBootstrap(user.id, user.email);
     return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
@@ -491,7 +504,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
       const body = await tokenRes.text();
       throw new Error(`token exchange failed (${tokenRes.status}): ${body.slice(0, 200)}`);
     }
-    const tokenJson = (await tokenRes.json()) as { access_token?: string };
+    const tokenJson = (await tokenRes.json()) as { access_token?: string; id_token?: string };
     if (!tokenJson.access_token) throw new Error("no access_token in Microsoft response");
 
     const meRes = await fetch("https://graph.microsoft.com/v1.0/me", {
@@ -503,11 +516,28 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
       userPrincipalName?: string;
       displayName?: string;
     };
-    const email = me.mail || me.userPrincipalName;
-    const name = me.displayName || null;
+    // nOAuth guard: Graph `mail` is an unverified, admin-settable proxy
+    // address. Only attach to an account when the id_token proves the caller
+    // owns the email (personal MSA tenant or xms_edov); otherwise refuse so a
+    // spoofed `mail` can never take over a pre-existing Wireline account.
+    const claims = decodeJwtClaims(tokenJson.id_token);
+    const email = resolveMicrosoftVerifiedEmail(claims, {
+      mail: me.mail,
+      userPrincipalName: me.userPrincipalName,
+    });
+    const name = me.displayName || (typeof claims?.name === "string" ? claims.name : null) || null;
     if (!email) {
+      log.warn("auth oauth microsoft: unverified email rejected", {
+        tid: typeof claims?.tid === "string" ? claims.tid : null,
+        hasEdov: claims?.xms_edov === true || claims?.xms_edov === "true",
+      });
       return res.redirect(
-        await bridgeRedirect(baseUrl, {} as any, "", "Microsoft did not return an email address."),
+        await bridgeRedirect(
+          baseUrl,
+          {} as any,
+          "",
+          "For your security, sign in with the method you used to create your Wireline account. Microsoft couldn't verify ownership of this email.",
+        ),
       );
     }
     const user = await findOrCreateUserByEmail(email, name);

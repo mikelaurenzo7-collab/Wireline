@@ -71,6 +71,9 @@ validateStartupEnv();
 
 export const app = express();
 
+// Don't advertise the framework — trims a low-value fingerprinting signal.
+app.disable("x-powered-by");
+
 if (IS_PROD) app.set("trust proxy", 1);
 
 const origins = (process.env.CORS_ORIGINS || "")

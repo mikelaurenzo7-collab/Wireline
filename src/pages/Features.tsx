@@ -164,7 +164,9 @@ export default function Features() {
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-overline text-primary">Build → Train → Launch → Improve</p>
-              <h2 className="wl-public-section-heading mt-3">One operating loop across every channel.</h2>
+              <h2 className="wl-public-section-heading mt-3">
+                One operating loop across every channel.
+              </h2>
             </div>
             <div className="grid overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
               {OPERATING_LOOP.map(({ step, title, body }, index) => (
@@ -190,7 +192,7 @@ export default function Features() {
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="wl-overline text-primary">Core product</p>
               <h2 className="wl-public-section-heading mt-3">
-                The controls that make conversation work reliable.
+                The controls that make conversation work reliably.
               </h2>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -210,8 +212,8 @@ export default function Features() {
                 Connect tools only when they improve the outcome.
               </h2>
               <p className="wl-public-copy mx-auto mt-5">
-                Every connection shows what the employee can access, its current status, and the most
-                recent useful result.
+                Every connection shows what the employee can access, its current status, and the
+                most recent useful result.
               </p>
             </div>
             <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -291,7 +293,11 @@ function FeatureCard({
 }) {
   return (
     <article className="wl-stitch-card group flex min-h-[12rem] flex-col items-center rounded-xl p-6 text-center transition-all hover:-translate-y-px hover:shadow-sm sm:p-7">
-      <Icon size={22} className="text-primary transition group-hover:scale-110" aria-hidden="true" />
+      <Icon
+        size={22}
+        className="text-primary transition group-hover:scale-110"
+        aria-hidden="true"
+      />
       <h3 className="wl-section-title mx-auto mt-5 max-w-[16ch]">{title}</h3>
       <p className="mx-auto mt-4 max-w-[34ch] text-sm leading-6 text-muted-foreground">{body}</p>
     </article>

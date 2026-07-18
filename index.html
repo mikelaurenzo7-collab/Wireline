@@ -18,6 +18,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="stylesheet" href="/app-shell.css" />
 
+    <!-- Fonts load in parallel with the app bundle. Previously imported via a
+         CSS @import inside the bundled stylesheet, which forced a serial
+         download chain (bundle CSS → Google Fonts CSS → font files). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&display=swap"
+    />
+
     <meta name="format-detection" content="telephone=no" />
     <meta name="format-detection" content="email=no" />
     <meta name="format-detection" content="date=no" />
@@ -87,16 +97,13 @@
           })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
           fbq("init", "1683492795830248");
           fbq("track", "PageView");
-          (function (w, d, s, l, i) {
-            w[l] = w[l] || [];
-            w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-            var f = d.getElementsByTagName(s)[0],
-              j = d.createElement(s),
-              dl = l != "dataLayer" ? "&l=" + l : "";
-            j.async = true;
-            j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-            f.parentNode.insertBefore(j, f);
-          })(window, document, "script", "dataLayer", "GTM-K2M2L84B");
+          // Google Tag Manager (GTM-K2M2L84B) was removed: the container returns
+          // 404, so the loader only fired a failed request on every consented
+          // page load and managed no live tags. Plausible and the Meta Pixel
+          // provide analytics independently. A no-op dataLayer keeps any
+          // dataLayer.push() calls safe; restore a published container id here
+          // to re-enable GTM.
+          window.dataLayer = window.dataLayer || { push: function () {} };
         } else {
           window.fbq = function () {};
           window.dataLayer = { push: function () {} };

@@ -51,7 +51,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
       label: "Phone number connected",
       detail: "Give customers a live path to reach the employee by call or text.",
       done: p.numbers > 0,
-      href: "/connections",
+      href: "/settings/phone",
       icon: Cable,
     },
     {
@@ -111,7 +111,8 @@ export default function ActivationChecklist({ className }: { className?: string 
             {completed} of {steps.length} customer-ready steps complete
           </h2>
           <p className="mt-1 hidden max-w-2xl text-xs leading-5 text-muted-foreground sm:block">
-            Test freely in Studio. This checklist tracks only saved setup, live channels, and real customer outcomes.
+            Test freely in Studio. This checklist tracks only saved setup, live channels, and real
+            customer outcomes.
           </p>
         </div>
         <button
