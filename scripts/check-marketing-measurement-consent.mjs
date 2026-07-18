@@ -63,6 +63,22 @@ assert(notice.includes(consentEvent), "privacy notice must dispatch the canonica
 assert(notice.includes("Essential only"), "privacy notice must offer a privacy-preserving choice.");
 assert(notice.includes("Allow measurement"), "privacy notice must offer explicit opt-in.");
 assert(
+  notice.includes("function hasAcknowledgedNotice(): boolean"),
+  "privacy notice must isolate the stored-choice lookup behind a fail-safe helper.",
+);
+assert(
+  notice.includes("return Boolean(localStorage.getItem(NOTICE_STORAGE_KEY))"),
+  "privacy notice must read acknowledgement through the guarded helper.",
+);
+assert(
+  notice.includes("Hardened/private contexts may block storage entirely"),
+  "privacy notice must document its storage-unavailable fail-safe.",
+);
+assert(
+  !notice.includes("if (localStorage.getItem(NOTICE_STORAGE_KEY)) return;"),
+  "privacy notice must not perform an unguarded initial storage read.",
+);
+assert(
   !notice.includes("no ad or cross-site tracking"),
   "privacy notice must not make the old claim while optional measurement exists.",
 );
