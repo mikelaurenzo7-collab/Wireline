@@ -90,6 +90,12 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                 .set({ liveVideoAddonEnabled: true, updatedAt: new Date() })
                 .where(eq(schema.settings.userId, userId));
             }
+            // The live-video add-on is a standalone subscription that shares the
+            // customer with the plan subscription. Syncing it here would upsert
+            // the single user-keyed plan row to plan=null and reset maxAgents to
+            // 1 — silently downgrading a paying Pro/Business customer. Skip sync,
+            // mirroring the guard in the customer.subscription.* handler below.
+            break;
           }
           const subId =
             typeof session.subscription === "string"

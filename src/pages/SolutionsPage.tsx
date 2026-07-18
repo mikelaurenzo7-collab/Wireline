@@ -25,15 +25,28 @@ const SOLUTIONS = {
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
       ["A lead reaches out", "One employee responds on the channel the lead already chose."],
-      ["It qualifies by your rules", "Your offer, criteria, objections, and escalation path guide the conversation."],
+      [
+        "It qualifies by your rules",
+        "Your offer, criteria, objections, and escalation path guide the conversation.",
+      ],
       ["The next step is clear", "Booked, handed off, or logged with the full context attached."],
     ],
     capabilities: [
-      ["Your offer in every call", "Use your positioning, tone, qualification rules, and approved claims."],
-      ["Follow-up across channels", "Continue by SMS or email without restarting the conversation."],
-      ["Calendar-aware booking", "Offer real availability and write the confirmed next step back to the record."],
+      [
+        "Your offer in every call",
+        "Use your positioning, tone, qualification rules, and approved claims.",
+      ],
+      [
+        "Follow-up across channels",
+        "Continue by SMS or email without restarting the conversation.",
+      ],
+      [
+        "Calendar-aware booking",
+        "Offer real availability and write the confirmed next step back to the record.",
+      ],
     ],
-    proof: "More qualified conversations move forward. Your team spends time where judgment closes the deal.",
+    proof:
+      "More qualified conversations move forward. Your team spends time where judgment closes the deal.",
   },
   support: {
     eyebrow: "Customer coverage",
@@ -44,14 +57,32 @@ const SOLUTIONS = {
     primary: { href: "/signup?posture=business", label: "Create a front desk employee" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
-      ["A customer reaches out", "One employee answers on call, text, or email with the same identity."],
-      ["It uses your business truth", "Policies, services, availability, and escalation rules stay consistent."],
-      ["It resolves or hands off cleanly", "The right person receives the request with context already attached."],
+      [
+        "A customer reaches out",
+        "One employee answers on call, text, or email with the same identity.",
+      ],
+      [
+        "It uses your business truth",
+        "Policies, services, availability, and escalation rules stay consistent.",
+      ],
+      [
+        "It resolves or hands off cleanly",
+        "The right person receives the request with context already attached.",
+      ],
     ],
     capabilities: [
-      ["Your voice and playbook", "Carry your tone, policies, service knowledge, and approved answers."],
-      ["Booking that closes the loop", "Schedule, confirm, and continue the conversation across email and text."],
-      ["Escalation with context", "Route exceptions with the customer, history, and requested outcome intact."],
+      [
+        "Your voice and playbook",
+        "Carry your tone, policies, service knowledge, and approved answers.",
+      ],
+      [
+        "Booking that closes the loop",
+        "Schedule, confirm, and continue the conversation across email and text.",
+      ],
+      [
+        "Escalation with context",
+        "Route exceptions with the customer, history, and requested outcome intact.",
+      ],
     ],
     proof: "Customers get an answer sooner. Your team joins only when its judgment matters.",
   },
@@ -77,7 +108,11 @@ export default function SolutionsPage() {
         title={page.title}
         description={page.description}
         primaryAction={{ to: page.primary.href, label: page.primary.label }}
-        secondaryAction={{ to: page.secondary.href, label: page.secondary.label, tone: "secondary" }}
+        secondaryAction={{
+          to: page.secondary.href,
+          label: page.secondary.label,
+          tone: "secondary",
+        }}
         visual={
           <div className="text-center">
             <p className="wl-eyebrow wl-eyebrow--no-rule text-primary">Live preview</p>
@@ -88,7 +123,7 @@ export default function SolutionsPage() {
               Preview the conversation, then add your voice, business truth, and handoff rules.
             </p>
             <div className="mt-7 rounded-[16px] border border-border bg-background/70 p-4">
-              <BrowserCallWidget agentName={key === "sales" ? "Sales Employee" : "Front Desk"} />
+              <BrowserCallWidget agentName={key === "sales" ? "Jake" : "Jordan"} />
             </div>
           </div>
         }
@@ -126,7 +161,8 @@ export default function SolutionsPage() {
               The capabilities that make the conversation operational.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-[var(--wireline-typography-body-size)] leading-7 text-muted-foreground">
-              Start focused. Add another channel or connected tool only when it improves the outcome.
+              Start focused. Add another channel or connected tool only when it improves the
+              outcome.
             </p>
           </div>
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
@@ -135,7 +171,10 @@ export default function SolutionsPage() {
                 index
               ] as LucideIcon;
               return (
-                <article key={title} className="wl-stitch-card bg-background p-5 text-center sm:p-6">
+                <article
+                  key={title}
+                  className="wl-stitch-card bg-background p-5 text-center sm:p-6"
+                >
                   <CapabilityIcon size={18} className="mx-auto text-primary" aria-hidden="true" />
                   <h3 className="wl-card-title mx-auto mt-4 max-w-[18ch]">{title}</h3>
                   <p className="mx-auto mt-2 max-w-[34ch] text-[var(--wireline-typography-caption-size)] leading-6 text-muted-foreground">

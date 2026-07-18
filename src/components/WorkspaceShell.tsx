@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 
 import MobileBrowserUtilities from "./MobileBrowserUtilities";
 import ActivationNudge from "./ActivationNudge";
+import EmailVerifyBanner from "./layout/EmailVerifyBanner";
 import SkipToContentLink from "./layout/SkipToContentLink";
 import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import { useAuth } from "../contexts/AuthContext";
@@ -373,6 +374,9 @@ export default function WorkspaceShell({
               <div className="absolute bottom-0 left-0 right-0 border-b border-border/50" />
             </div>
           ) : null}
+          <div className="mx-3 sm:mx-6">
+            <EmailVerifyBanner />
+          </div>
           <ActivationNudge className="mx-3 sm:mx-6" />
           <div
             className={`wl-workspace-content min-h-0 flex-1 overflow-y-auto overscroll-contain ${contentClassName}`}
