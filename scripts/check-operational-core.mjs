@@ -150,10 +150,15 @@ requirePattern(
   /provider:\s*"vapi" as const/,
   "The active phone runtime must remain on the managed Vapi provider.",
 );
+requirePattern(
+  "src/lib/csp.ts",
+  /api\.x\.ai/,
+  "Grok live voice runs a browser WebSocket to api.x.ai and must be an allowed browser boundary.",
+);
 forbidPattern(
   "src/lib/csp.ts",
-  /api\.x\.ai|api\.elevenlabs\.io|cdn\.elevenlabs\.io/,
-  "Dormant voice vendors must not regain browser network access.",
+  /api\.elevenlabs\.io|cdn\.elevenlabs\.io/,
+  "ElevenLabs is server-side only and must not regain browser network access.",
 );
 
 if (failures.length) {
