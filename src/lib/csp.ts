@@ -31,6 +31,10 @@ export const MARKETING_SCRIPT_SRCS = [
 export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
+    // xAI Grok: server mints the realtime client secret; the browser opens the
+    // live-voice WebSocket directly to wss://api.x.ai.
+    "https://api.x.ai",
+    "wss://api.x.ai",
     "https://api.openai.com",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",

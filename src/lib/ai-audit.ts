@@ -116,10 +116,18 @@ function providerFor(model: string): RuntimeCallMeta["provider"] {
   if (/grok/i.test(model)) return "xai";
   return "openrouter";
 }
-export function recordUsage(model: string, response: { usage?: any }, latencyMs: number) {
+export function recordUsage(
+  model: string,
+  response: { model?: string; usage?: any },
+  latencyMs: number,
+) {
+  // Attribute cost to the model that actually served the turn. On provider
+  // failover the runtime returns a different model than requested, so pricing
+  // and provider attribution must follow the response, not the request.
+  const served = typeof response.model === "string" && response.model ? response.model : model;
   push({
-    model,
-    provider: providerFor(model),
+    model: served,
+    provider: providerFor(served),
     input_tokens: response.usage?.input_tokens ?? response.usage?.prompt_tokens ?? 0,
     output_tokens: response.usage?.output_tokens ?? response.usage?.completion_tokens ?? 0,
     cache_read_tokens: response.usage?.cache_read_input_tokens ?? 0,

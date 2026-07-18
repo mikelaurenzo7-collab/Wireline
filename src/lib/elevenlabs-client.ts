@@ -369,7 +369,7 @@ export async function deletePronunciationDictionary(dictionaryId: string): Promi
  * `generateSample` and concatenating manually.
  *
  * Used by the marketing landing-page demo audio: Mike curls the
- * owner-gated `/api/admin/generate-dialogue-sample` endpoint to refresh
+ * owner-gated `/api/admin/elevenlabs/dialogue` endpoint to refresh
  * the embedded sample whenever we change voices or scripts.
  *
  * Docs: https://elevenlabs.io/docs/eleven-api/guides/cookbooks/text-to-dialogue
@@ -407,7 +407,7 @@ export async function composeDialogue(args: {
  * "soft warm ambient lounge piano" or "two-note ascending chime").
  * Powers the brand audio library under /public/sounds/: hold music,
  * transfer chime, end-call sting, notification bell. Mike refreshes
- * the set via the owner-gated `/api/admin/generate-brand-sounds`
+ * the set via the owner-gated `/api/admin/elevenlabs/sound-effect`
  * endpoint so the platform owns its sonic identity rather than
  * leaning on generic stock cues.
  *

@@ -535,5 +535,5 @@ export const isRuntimeAvailable = () =>
     process.env.XAI_API_KEY ||
     process.env.OPENAI_API_KEY ||
     process.env.GEMINI_API_KEY ||
-    process.env.AI_GATEWAY_API_KEY,
+    isAIGatewayConfigured(),
   );
