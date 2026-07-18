@@ -15,7 +15,7 @@ const firefoxManifest = JSON.parse(read("apps/browser-extension/manifest.firefox
   unknown
 >;
 const serviceWorker = read("apps/browser-extension/background/service-worker.js");
-const studioSource = read("src/pages/AgentStudioHomeClaude.tsx");
+const studioSource = read("src/pages/AgentStudioHome.tsx");
 const contextSource = read("src/lib/browser-command-context.ts");
 
 describe("Wireline Command extension contract", () => {
