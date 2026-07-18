@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import WirelineMark from "../brand/WirelineMark";
 
+const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
+
 const PRODUCT_LINKS = [
   { to: "/for/personal", label: "Personal" },
   { to: "/solutions/sales", label: "Business" },
@@ -101,6 +103,13 @@ export default function MarketingFooter({
                 {link.label}
               </Link>
             ))}
+            <button
+              type="button"
+              className="transition-colors hover:text-foreground"
+              onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
+            >
+              Privacy choices
+            </button>
           </nav>
         </div>
       </div>

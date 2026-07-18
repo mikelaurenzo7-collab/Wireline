@@ -27,9 +27,7 @@ const SupportPage = lazy(() =>
 const ContactPage = lazy(() =>
   import("./components/ContactPage").then((module) => ({ default: module.ContactPage })),
 );
-const PrivacyPolicy = lazy(() =>
-  import("./components/LegalPage").then((module) => ({ default: module.PrivacyPolicy })),
-);
+const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicyPage"));
 const TermsOfService = lazy(() =>
   import("./components/LegalPage").then((module) => ({ default: module.TermsOfService })),
 );
