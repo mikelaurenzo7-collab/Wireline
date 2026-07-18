@@ -4,6 +4,7 @@
 
 import express, { Request, Response, NextFunction } from "express";
 import { AppError } from "../lib/api-error";
+import { normalizeOpenApiForManagedRuntime } from "../lib/openapi-managed-runtime";
 import { getOpenApiSpec } from "../lib/openapi-spec";
 
 const router = express.Router();
@@ -51,7 +52,7 @@ function resolveServerUrl(req: Request): string | undefined {
 }
 
 router.get("/openapi.json", specRateLimiter, (req: Request, res: Response) => {
-  const spec = getOpenApiSpec(resolveServerUrl(req));
+  const spec = normalizeOpenApiForManagedRuntime(getOpenApiSpec(resolveServerUrl(req)));
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600, stale-while-revalidate=3600");
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.json(spec);
