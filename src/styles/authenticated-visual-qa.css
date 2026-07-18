@@ -1,0 +1,205 @@
+/* Authenticated visual QA refinements derived from seeded production states.
+ * Keep these route-aware: the shared primitives remain reusable, while dense
+ * founder workspaces and true first-run states each get intentional rhythm. */
+
+/* Shortcut letters were visually indistinguishable from status/count metadata.
+ * Search keeps its familiar command hint; route shortcuts remain available via
+ * the command palette rather than cluttering every rail row. */
+.wl-workspace-shell .wl-rail-link kbd {
+  display: none;
+}
+
+.wl-workspace-shell .wl-rail-link {
+  font-size: 12.5px;
+}
+
+/* Overview: preserve a welcoming hero without letting it dominate the first
+ * operational decision. Dense founder accounts should summarize, not scroll
+ * through the entire roster. */
+.wl-overview-greeting .wl-display-2 {
+  max-width: 18ch;
+  font-size: clamp(2.25rem, 1.8rem + 2vw, 3.65rem);
+  line-height: 0.98;
+}
+
+.wl-overview-greeting::after {
+  width: min(5rem, 32%);
+  margin: 0.9rem auto 0;
+}
+
+.wl-overview [aria-label="Customer readiness checklist"] ol a {
+  min-height: 3.25rem;
+  align-items: center;
+}
+
+.wl-overview [aria-label="Customer readiness checklist"] ol a .mt-1 {
+  display: none !important;
+}
+
+@media (min-width: 900px) {
+  .wl-overview [aria-label="Customer readiness checklist"] ol {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.wl-overview section[aria-label="Personal AI employees"] .grid > :nth-child(n + 7):not(:last-child),
+.wl-overview section[aria-label="Business AI employees"] .grid > :nth-child(n + 7):not(:last-child) {
+  display: none;
+}
+
+.wl-overview section[aria-label="Customer outcomes"] article {
+  padding: 0.75rem 0.9rem;
+}
+
+.wl-overview section[aria-label="Customer outcomes"] article > p {
+  margin-top: 0.45rem;
+  line-height: 1.45;
+}
+
+.wl-overview section[aria-label="Customer outcomes"] article > div:last-child {
+  margin-top: 0.45rem;
+}
+
+/* Settings: the identity screen is a utility surface. Keep the tabs and rows
+ * prominent, while removing release-note-style coaching from the first card. */
+[data-wireline-route="/settings"] .wl-workspace-page {
+  gap: 1rem;
+}
+
+[data-wireline-route="/settings"] .wl-workspace-page > section.wl-paper {
+  padding: 1.25rem;
+}
+
+[data-wireline-route="/settings"] .wl-workspace-page > section:first-of-type h1 + p {
+  display: none;
+}
+
+[data-wireline-route="/settings"] .wl-workspace-page > section:first-of-type > div:first-child {
+  margin-bottom: 1rem;
+}
+
+/* Phone: retain the instrument-grade console but reduce stacked chrome and
+ * keep seeded call history scannable at laptop height. */
+[data-wireline-route="/phone"] [aria-label="Call ops metrics"] .wl-metric-tile {
+  padding: 0.7rem 0.9rem;
+}
+
+[data-wireline-route="/phone"] [aria-label="Call ops metrics"] .wl-metric-tile__value {
+  font-size: 1.5rem;
+}
+
+[data-wireline-route="/phone"] .wl-operate-surface ul > li.wl-paper {
+  gap: 0.8rem;
+  padding: 0.75rem 1rem;
+}
+
+[data-wireline-route="/phone"] .wl-operate-surface > div:last-of-type {
+  scrollbar-gutter: stable;
+}
+
+/* Inbox: an empty channel is one state, not an empty list beside an empty
+ * detail pane. Modern supported browsers collapse the split grid whenever the
+ * list owns the only empty state. */
+.wl-inbox-route
+  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state) {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 24rem;
+}
+
+.wl-inbox-route
+  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
+  > section:last-child {
+  display: none;
+}
+
+.wl-inbox-route
+  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
+  > section:first-child {
+  border: 0;
+  border-radius: 0;
+}
+
+.wl-inbox-route
+  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
+  > section:first-child
+  > div:first-child {
+  display: none;
+}
+
+.wl-inbox-route
+  .wl-channel-inbox-grid:has(> section:first-child .wl-empty-state)
+  > section:first-child
+  > div:last-child {
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  padding: 2rem;
+}
+
+/* Connections: connection cards are actions, not marketing tiles. Tighten the
+ * provider grid and keep long capability inventories subordinate. */
+[data-wireline-route="/connections"] .wl-workspace-page > section.wl-paper article {
+  padding: 0.9rem;
+}
+
+[data-wireline-route="/connections"] .wl-workspace-page > section.wl-paper article button {
+  margin-top: 0.75rem;
+}
+
+[data-wireline-route="/connections"] details[data-wireline-integration-map] {
+  border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
+  border-radius: 14px;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 88%,
+    var(--wireline-color-canvas-default)
+  );
+}
+
+[data-wireline-route="/connections"] details[data-wireline-integration-map] > summary {
+  display: flex;
+  min-height: 3.5rem;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+[data-wireline-route="/connections"] details[data-wireline-integration-map] > summary::-webkit-details-marker {
+  display: none;
+}
+
+[data-wireline-route="/connections"] details[data-wireline-integration-map] > summary::after {
+  content: "+";
+  color: var(--wireline-color-text-secondary);
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+[data-wireline-route="/connections"] details[data-wireline-integration-map][open] > summary::after {
+  content: "−";
+}
+
+[data-wireline-route="/connections"] details[data-wireline-integration-map][open] > summary {
+  border-bottom: 1px solid var(--wireline-color-border-default);
+}
+
+@media (max-width: 639px) {
+  .wl-overview-greeting .wl-display-2 {
+    max-width: 14ch;
+    font-size: clamp(2rem, 10vw, 2.75rem);
+  }
+
+  .wl-overview [aria-label="Customer readiness checklist"] ol {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wl-overview [aria-label="Customer readiness checklist"] ol a {
+    min-height: 3rem;
+  }
+}
