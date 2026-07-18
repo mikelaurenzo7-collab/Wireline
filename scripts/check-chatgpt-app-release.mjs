@@ -23,6 +23,10 @@ const expectedAnnotations = new Map([
     { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
   ],
   ["list_wireline_agents", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
+  [
+    "get_wireline_workspace_summary",
+    { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+  ],
 ]);
 
 function assert(condition, message) {
