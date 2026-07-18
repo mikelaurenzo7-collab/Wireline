@@ -34,6 +34,8 @@
   }
 
   function disableMarketingMeasurement() {
+    var client = window.__wirelineMetaPixelClient;
+    if (typeof client === "function") client("consent", "revoke");
     window.__wirelineMarketingMeasurementEnabled = false;
     window.fbq = noop;
     window._fbq = noop;
@@ -48,6 +50,7 @@
     window.fbq = client;
     window._fbq = client;
     window.__wirelineMarketingMeasurementEnabled = true;
+    client("consent", "grant");
     client("track", "PageView");
     return true;
   }
@@ -86,6 +89,7 @@
     firstScript.parentNode.insertBefore(script, firstScript);
 
     window.fbq("init", META_PIXEL_ID);
+    window.fbq("consent", "grant");
     window.fbq("track", "PageView");
   }
 
