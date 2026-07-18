@@ -77,7 +77,7 @@ describe("authenticated agent flow", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const productCopy = read("src/lib/product-copy.ts");
     const mobileUtilities = read("src/components/MobileBrowserUtilities.tsx");
-    const studioHome = read("src/pages/AgentStudioHomeClaude.tsx");
+    const studioHome = read("src/pages/AgentStudioHome.tsx");
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("Fast Start");
@@ -130,7 +130,7 @@ describe("authenticated agent flow", () => {
 
   it("launches post-create Train → Channels → Wire → Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
-    const studioHome = read("src/pages/AgentStudioHomeClaude.tsx");
+    const studioHome = read("src/pages/AgentStudioHome.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
