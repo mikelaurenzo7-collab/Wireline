@@ -1,5 +1,5 @@
 /* Provider-neutral structured runtime adapter. AI Gateway is preferred;
- * direct OpenAI and Gemini remain continuity fallbacks during migration. */
+ * direct OpenAI and Gemini provide ordered continuity fallbacks. */
 import { log } from "./server-logger";
 import { GEMINI_STRUCTURED_FALLBACK_MODEL, OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 import {
@@ -63,6 +63,13 @@ export type RuntimeClient = {
       finalMessage(): Promise<RuntimeMessage>;
     };
   };
+};
+
+type RuntimeProviderName = "AI Gateway" | "OpenAI" | "Gemini";
+type RuntimeProvider = {
+  name: RuntimeProviderName;
+  call: (body: RuntimeRequest, options?: RuntimeRequestOptions) => Promise<RuntimeMessage>;
+  breaker?: RuntimeCircuitBreaker;
 };
 
 let client: RuntimeClient | null = null;
@@ -150,14 +157,28 @@ function extractResponsesText(payload: Record<string, unknown>): string {
   return chunks.join("\n").trim();
 }
 
+function isAbortError(error: unknown, signal?: AbortSignal): boolean {
+  if (signal?.aborted) return true;
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function assertNotAborted(signal?: AbortSignal) {
+  if (!signal?.aborted) return;
+  if (signal.reason instanceof Error) throw signal.reason;
+  const error = new Error("AI request aborted");
+  error.name = "AbortError";
+  throw error;
+}
+
 async function callResponsesEndpoint(args: {
   endpoint: string;
   headers: Record<string, string>;
   model: string;
   body: RuntimeRequest;
   options?: RuntimeRequestOptions;
-  provider: string;
+  provider: RuntimeProviderName;
 }): Promise<RuntimeMessage> {
+  assertNotAborted(args.options?.signal);
   const tool = structuredOutputTool(args.body);
   const started = Date.now();
   const response = await fetch(args.endpoint, {
@@ -187,10 +208,15 @@ async function callResponsesEndpoint(args: {
     }),
   });
 
-  if (!response.ok)
-    throw new Error(
-      `${args.provider} Responses request failed (${response.status}): ${(await response.text()).slice(0, 500)}`,
-    );
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 500);
+    log.warn("[ai-runtime] provider request rejected", {
+      provider: args.provider,
+      status: response.status,
+      detail,
+    });
+    throw new Error(`${args.provider} Responses request failed (${response.status})`);
+  }
 
   const payload = (await response.json()) as Record<string, unknown>;
   const text = extractResponsesText(payload);
@@ -261,7 +287,11 @@ async function callOpenAI(
   });
 }
 
-async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
+async function callGemini(
+  body: RuntimeRequest,
+  options?: RuntimeRequestOptions,
+): Promise<RuntimeMessage> {
+  assertNotAborted(options?.signal);
   const { GoogleGenerativeAI } = await import("@google/generative-ai");
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
@@ -283,6 +313,7 @@ async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
         `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`;
   }
   const result = await model.generateContent({ contents, generationConfig });
+  assertNotAborted(options?.signal);
   const text = result.response.text();
   const inputTokens = result.response.usageMetadata?.promptTokenCount || 0;
   const outputTokens = result.response.usageMetadata?.candidatesTokenCount || 0;
@@ -311,12 +342,14 @@ async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
       });
 }
 
-class PrimaryRuntimeCircuitBreaker {
+class RuntimeCircuitBreaker {
   private state: "CLOSED" | "OPEN" | "HALF_OPEN" = "CLOSED";
   private failureCount = 0;
   private lastStateChange = Date.now();
   private readonly failureThreshold = 3;
   private readonly cooldownPeriodMs = 30_000;
+
+  constructor(private readonly provider: RuntimeProviderName) {}
 
   isOpen(): boolean {
     const now = Date.now();
@@ -337,7 +370,8 @@ class PrimaryRuntimeCircuitBreaker {
 
   recordFailure(error: unknown) {
     this.failureCount++;
-    log.warn("[ai-circuit-breaker] primary failure recorded", {
+    log.warn("[ai-circuit-breaker] provider failure recorded", {
+      provider: this.provider,
       failureCount: this.failureCount,
       error: errorMessage(error),
     });
@@ -356,38 +390,80 @@ class PrimaryRuntimeCircuitBreaker {
   }
 }
 
-const circuitBreaker = new PrimaryRuntimeCircuitBreaker();
+const gatewayCircuitBreaker = new RuntimeCircuitBreaker("AI Gateway");
+const openAICircuitBreaker = new RuntimeCircuitBreaker("OpenAI");
+
+function configuredProviders(): RuntimeProvider[] {
+  const providers: RuntimeProvider[] = [];
+  if (isAIGatewayConfigured())
+    providers.push({ name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker });
+  if (process.env.OPENAI_API_KEY)
+    providers.push({ name: "OpenAI", call: callOpenAI, breaker: openAICircuitBreaker });
+  if (process.env.GEMINI_API_KEY) providers.push({ name: "Gemini", call: callGemini });
+  return providers;
+}
+
+function nextAvailableProvider(
+  providers: RuntimeProvider[],
+  currentIndex: number,
+): RuntimeProvider | undefined {
+  return providers.slice(currentIndex + 1).find((provider) => !provider.breaker?.isOpen());
+}
+
+function fallbackMessage(from: RuntimeProviderName, to: RuntimeProviderName): string {
+  if (from === "AI Gateway" && to === "OpenAI")
+    return "AI Gateway request failed; trying direct OpenAI fallback";
+  if (from === "OpenAI" && to === "Gemini")
+    return "OpenAI request failed; trying Gemini fallback";
+  return `${from} request failed; trying ${to} fallback`;
+}
+
+export class RuntimeUnavailableError extends Error {
+  status = 503;
+  constructor() {
+    super("AI runtime is unavailable. Configure AI Gateway, OpenAI, or Gemini.");
+    this.name = "RuntimeUnavailableError";
+  }
+}
 
 async function createWithFallbacks(
   body: RuntimeRequest,
   options?: RuntimeRequestOptions,
 ): Promise<RuntimeMessage> {
-  const primary = isAIGatewayConfigured() ? callGateway : callOpenAI;
-  const primaryName = isAIGatewayConfigured() ? "AI Gateway" : "OpenAI";
+  assertNotAborted(options?.signal);
+  const providers = configuredProviders();
+  if (!providers.length) throw new RuntimeUnavailableError();
 
-  if (!circuitBreaker.isOpen()) {
-    try {
-      const response = await primary(body, options);
-      circuitBreaker.recordSuccess();
-      return response;
-    } catch (primaryError) {
-      circuitBreaker.recordFailure(primaryError);
-      const fallbackMessage =
-        primaryName === "OpenAI"
-          ? "OpenAI request failed; trying Gemini fallback"
-          : `${primaryName} request failed; trying Gemini fallback`;
-      log.warn(`[ai-runtime] ${fallbackMessage}`, {
-        error: errorMessage(primaryError),
-        breakerState: circuitBreaker.getState(),
+  let lastError: unknown = null;
+  for (let index = 0; index < providers.length; index++) {
+    const provider = providers[index];
+    if (provider.breaker?.isOpen()) {
+      log.info("[ai-runtime] provider circuit breaker open; skipping provider", {
+        provider: provider.name,
+        breakerState: provider.breaker.getState(),
       });
+      continue;
     }
-  } else {
-    log.info(
-      `[ai-runtime] primary circuit breaker is ${circuitBreaker.getState()}; using Gemini fallback`,
-    );
+
+    try {
+      const response = await provider.call(body, options);
+      provider.breaker?.recordSuccess();
+      return response;
+    } catch (error) {
+      if (isAbortError(error, options?.signal)) throw error;
+      provider.breaker?.recordFailure(error);
+      lastError = error;
+      const next = nextAvailableProvider(providers, index);
+      if (next)
+        log.warn(`[ai-runtime] ${fallbackMessage(provider.name, next.name)}`, {
+          error: errorMessage(error),
+          breakerState: provider.breaker?.getState() || "NONE",
+        });
+    }
   }
 
-  return callGemini(body);
+  if (lastError instanceof Error) throw lastError;
+  throw new RuntimeUnavailableError();
 }
 
 function fallbackStream(promise: Promise<RuntimeMessage>) {
@@ -421,14 +497,6 @@ export function getRuntimeClient(): RuntimeClient {
       },
     };
   return client;
-}
-
-export class RuntimeUnavailableError extends Error {
-  status = 503;
-  constructor() {
-    super("AI runtime is unavailable. Configure AI Gateway, OpenAI, or Gemini.");
-    this.name = "RuntimeUnavailableError";
-  }
 }
 
 export const isRuntimeAvailable = () =>
