@@ -1,9 +1,14 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   parseSignupIntent,
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
 } from "../src/lib/signup-intent";
+
+const root = process.cwd();
+const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("signup intent contract", () => {
   it("keeps retired pricing aliases aligned with the current public launch catalog", () => {
@@ -43,5 +48,23 @@ describe("signup intent contract", () => {
   it("lets vertical intent choose the plan when the URL did not specify one", () => {
     expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=sales"))).toBe("business");
     expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=home-services"))).toBe("team");
+  });
+
+  it("captures paid landing attribution before an internal CTA can drop query parameters", () => {
+    expect(
+      parseSignupIntent(
+        "?utm_source=chatgpt&utm_medium=cpc&utm_campaign=wireline_launch_2026_07",
+      ),
+    ).toMatchObject({
+      utmSource: "chatgpt",
+      utmMedium: "cpc",
+      utmCampaign: "wireline_launch_2026_07",
+    });
+
+    const main = read("src/main.tsx");
+    expect(main).toContain(
+      'import { captureSignupIntentFromLocation } from "./lib/signup-intent";',
+    );
+    expect(main).toContain("captureSignupIntentFromLocation();");
   });
 });
