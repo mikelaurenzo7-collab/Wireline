@@ -26,7 +26,8 @@ The current product doctrine is simple. The customer-facing product loop is **Cr
 - **Web / API**: React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, Vercel-capable server bundle.
 - **Design**: The Wireline Letterpress design system — Letterpress tokens, brand colors, generated platform tokens, and `src/styles/design-system.css` as the visual source of truth.
 - **Browser**: Manifest V3 command surface with Chromium and Firefox manifest overlays.
-- **Voice / realtime**: Twilio, Vapi, OpenAI/Gemini fallback paths, xAI Grok realtime test paths, and provider-specific server guards.
+- **Managed runtime**: xAI Grok 4.5 primary (direct xAI Responses API) with OpenAI, Gemini, and the Vercel AI Gateway as ordered fallbacks (`src/lib/ai-client.ts`).
+- **Voice / realtime**: Twilio, Vapi, and the xAI Grok realtime voice contract as the active live-voice path, with OpenAI Realtime as an ordered fallback and provider-specific server guards.
 - **Video**: HeyGen/LiveAvatar SDK-backed presenter infrastructure wrapped behind Wireline-owned copy and consent states.
 - **Mobile**: Native Kotlin/Compose and SwiftUI.
 
