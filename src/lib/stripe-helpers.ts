@@ -78,7 +78,8 @@ function basePlanByStripePrice(price: Stripe.Price | null | undefined): StripePl
   const lookupKey = price.lookup_key?.trim() || null;
   if (lookupKey) {
     const lookupMatch = STRIPE_PLANS.find(
-      (plan) => planLookupKey(plan, "month") === lookupKey || planLookupKey(plan, "year") === lookupKey,
+      (plan) =>
+        planLookupKey(plan, "month") === lookupKey || planLookupKey(plan, "year") === lookupKey,
     );
     if (lookupMatch) return lookupMatch;
   }
@@ -128,12 +129,40 @@ function subscriptionBillingInterval(sub: Stripe.Subscription): SubscriptionBill
 }
 
 /**
+ * Read the current billing period from a subscription across Stripe API
+ * versions. Stripe's Basil release moved `current_period_start`/`_end` off the
+ * Subscription object onto its items; the pinned runtime version is post-Basil,
+ * so the fields live on `items.data[]` at runtime even though the SDK's types
+ * (pre-Basil) still declare them on the subscription. Read items first, fall
+ * back to the legacy top-level fields.
+ */
+type StripePeriodFields = {
+  current_period_start?: number | null;
+  current_period_end?: number | null;
+};
+
+function subscriptionPeriod(sub: Stripe.Subscription): {
+  start: number | null;
+  end: number | null;
+} {
+  const item = sub.items?.data?.[0] as (Stripe.SubscriptionItem & StripePeriodFields) | undefined;
+  const legacy = sub as Stripe.Subscription & StripePeriodFields;
+  return {
+    start: item?.current_period_start ?? legacy.current_period_start ?? null,
+    end: item?.current_period_end ?? legacy.current_period_end ?? null,
+  };
+}
+
+/**
  * Stable period reference for the included Runtime Allowance ledger grant.
  * Stripe can replay subscription webhooks; the ledger's idempotency key ensures
  * one grant per subscription billing period even when sync runs repeatedly.
+ * The period start must advance each cycle so renewals re-grant the allowance —
+ * billing_cycle_anchor is constant for the subscription's life and is only a
+ * last-resort fallback.
  */
 function subscriptionPeriodReference(sub: Stripe.Subscription): string {
-  const periodStart = sub.current_period_start || sub.billing_cycle_anchor || sub.created;
+  const periodStart = subscriptionPeriod(sub).start || sub.billing_cycle_anchor || sub.created;
   return `${sub.id}:${periodStart}`;
 }
 
@@ -169,8 +198,9 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
         ? "past_due"
         : "canceled";
 
-  const currentPeriodEndIso = sub.current_period_end
-    ? new Date(sub.current_period_end * 1000).toISOString()
+  const currentPeriodEndUnix = subscriptionPeriod(sub).end;
+  const currentPeriodEndIso = currentPeriodEndUnix
+    ? new Date(currentPeriodEndUnix * 1000).toISOString()
     : null;
 
   await drizzle

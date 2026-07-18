@@ -121,7 +121,7 @@ const FAQ = [
   ],
   [
     "What happens when included voice minutes run out?",
-    "New live work uses prepaid Conversation Balance. Wireline does not silently add a postpaid metered line item. Add balance, enable auto-refill, wait for renewal, or upgrade.",
+    "New live work uses prepaid Conversation Balance. Wireline does not silently add a postpaid metered line item. Add balance, wait for renewal, or upgrade.",
   ],
   [
     "Why keep live usage prepaid?",

@@ -78,15 +78,18 @@ router.post(
         .limit(1);
 
       const plan = planById(subscription?.plan);
+      // Every paid plan can top up. `personal` is the free Builder tier; the
+      // `enterprise` id is the self-serve $149 Business plan, which must be
+      // allowed (it exhausts its 650 included minutes like any paid plan).
       const activePaidPlan =
         !!plan &&
-        !["personal", "enterprise"].includes(plan.id) &&
+        plan.id !== "personal" &&
         ["active", "trialing"].includes(subscription?.status || "");
       if (!activePaidPlan) {
         return res.status(402).json({
           code: "LIVE_PLAN_REQUIRED",
           error:
-            "Choose Starter, Team, or Business before adding Conversation Balance. Paid plans include live-call minutes first.",
+            "Choose Starter, Starter Plus, Pro, or Business before adding Conversation Balance. Paid plans include live-call minutes first.",
           recovery_path: "/settings/billing",
         });
       }
