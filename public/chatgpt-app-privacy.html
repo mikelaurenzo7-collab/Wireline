@@ -14,14 +14,14 @@
     <p>This notice explains the data practices specific to the Wireline app used inside ChatGPT. It supplements the <a href="/privacy">Wireline Privacy Policy</a>.</p>
 
     <section class="card">
-      <strong>Account-bound product:</strong> the Wireline ChatGPT App requires a Wireline account. It creates and refines private, unlaunched agent drafts in the connected workspace, and can run a short private voice simulation of those drafts. It does not place calls, send messages, purchase or connect phone numbers, access call recordings, or launch an agent from ChatGPT.
+      <strong>Account-bound product:</strong> the Wireline ChatGPT App requires a Wireline account. It creates and refines private, unlaunched agent drafts in the connected workspace, can run a short private voice simulation of those drafts, and can return a privacy-minimized aggregate workspace summary. It does not place calls, send messages, purchase or connect phone numbers, access call recordings or transcripts, or launch an agent from ChatGPT.
     </section>
 
     <h2>Information used to create an agent</h2>
     <p>When a connected user creates or updates an agent draft, Wireline processes the agent name, business or brand, intended role, goal, voice and tone preferences, operating rules, knowledge summary, intended actions, prohibited topics, and escalation preferences supplied in the ChatGPT conversation. This information becomes part of the user’s private Wireline workspace draft and may be edited or deleted in Wireline.</p>
 
     <h2>Information returned to ChatGPT</h2>
-    <p>To fulfill a user’s request, Wireline may return the connected user’s agent draft identifier, agent name, role, business name, primary goal, tone, operating rules, prohibited topics, allowed actions, escalation policy, knowledge summary, draft lifecycle, and a link to open the draft in Wireline. Agent-list results may include agent identifiers, names, roles, and channels. A private simulation credential is provided only to the ChatGPT widget in protected metadata and is not included in the model-visible conversation.</p>
+    <p>To fulfill a user’s request, Wireline may return the connected user’s agent draft identifier, agent name, role, business name, primary goal, tone, operating rules, prohibited topics, allowed actions, escalation policy, knowledge summary, draft lifecycle, and a link to open the draft in Wireline. Agent-list results may include agent identifiers, names, roles, and channels. An aggregate workspace summary may include counts of agents and assigned numbers, recent call/text/email thread counts, unread counts, channel connection state, activation state, subscription status, last-activity time, and a Wireline link. The summary does not include customer identities, phone numbers, email addresses, message bodies, transcripts, recordings, provider credentials, or secrets. A private simulation credential is provided only to the ChatGPT widget in protected metadata and is not included in the model-visible conversation.</p>
 
     <h2>Private voice simulation</h2>
     <p>If a connected user selects <strong>Try private voice</strong>, the app requests microphone access through the ChatGPT widget surface and creates a short-lived, tool-free realtime simulation for that saved draft. The simulation cannot access business systems or complete an external action. Audio processing for this optional feature is performed through OpenAI services. Do not use the simulation to provide sensitive personal information, payment-card data, health information, or confidential customer records.</p>
@@ -30,15 +30,15 @@
     <p>Wireline uses OAuth to connect the user’s ChatGPT session to their private Wireline account. Wireline uses the connection only for the scopes shown during consent. OAuth authorization codes and bearer credentials are stored only as cryptographic hashes, are time-limited, and are bound to the Wireline MCP resource.</p>
 
     <h2>How data is used</h2>
-    <p>We use app data to provide requested agent drafting, private simulation, account-linking, security, and abuse prevention. We do not sell or share personal information for cross-context behavioral advertising. We do not use account-bound agent-draft inputs or private simulation audio to train Wireline models.</p>
+    <p>We use app data to provide requested agent drafting, private simulation, aggregate workspace visibility, account-linking, security, and abuse prevention. We do not sell or share personal information for cross-context behavioral advertising. We do not use account-bound agent-draft inputs or private simulation audio to train Wireline models.</p>
 
     <h2>Retention and controls</h2>
-    <p>Agent drafts become part of the connected Wireline account and may be edited or deleted in Wireline. The general retention, access, deletion, and regional privacy-rights processes are described in the <a href="/privacy">Wireline Privacy Policy</a>.</p>
+    <p>Agent drafts become part of the connected Wireline account and may be edited or deleted in Wireline. Aggregate workspace summaries are generated from current account state when requested and are not stored as a separate ChatGPT App record by Wireline. The general retention, access, deletion, and regional privacy-rights processes are described in the <a href="/privacy">Wireline Privacy Policy</a>.</p>
 
     <h2>Contact</h2>
     <p>Questions or privacy requests: <a href="mailto:support@trywireline.com">support@trywireline.com</a>.</p>
 
-    <p><small>Last updated: July 10, 2026</small></p>
+    <p><small>Last updated: July 18, 2026</small></p>
   </main>
 </body>
 </html>

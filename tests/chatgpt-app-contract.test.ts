@@ -52,6 +52,7 @@ describe("Wireline ChatGPT App production contract", () => {
     expect(accountRouteSource).toContain('name: "get_agent_draft"');
     expect(accountRouteSource).toContain('name: "update_agent_draft"');
     expect(accountRouteSource).toContain('name: "start_private_voice_simulation"');
+    expect(accountRouteSource).toContain('name: "get_wireline_workspace_summary"');
     expect(accountRouteSource).toContain(
       'securitySchemes: [{ type: "oauth2", scopes: ["agents.write"] }]',
     );
@@ -75,6 +76,20 @@ describe("Wireline ChatGPT App production contract", () => {
       openWorldHint: false,
       destructiveHint: false,
     });
+  });
+
+  it("exposes only aggregate, tenant-scoped workspace status", () => {
+    expect(accountRouteSource).toContain('name: "get_wireline_workspace_summary"');
+    expect(accountRouteSource).toContain("calls_last_30_days");
+    expect(accountRouteSource).toContain("text_threads_last_30_days");
+    expect(accountRouteSource).toContain("email_threads_last_30_days");
+    expect(accountRouteSource).toContain("unread_text_count");
+    expect(accountRouteSource).toContain("unread_email_count");
+    expect(accountRouteSource).toContain("tenantStore.run(authed.userId");
+    expect(accountRouteSource).toContain("never returns customer identities");
+    expect(accountRouteSource).not.toContain("SELECT transcript");
+    expect(accountRouteSource).not.toContain("SELECT recording_url");
+    expect(accountRouteSource).not.toContain("SELECT customer_number");
   });
 
   it("requires explicit confirmation before a private draft is created or changed", () => {
@@ -111,6 +126,7 @@ describe("Wireline ChatGPT App production contract", () => {
       "update_agent_draft",
       "start_private_voice_simulation",
       "list_wireline_agents",
+      "get_wireline_workspace_summary",
     ]);
     for (const tool of Object.values(submission.tools)) {
       expect(typeof tool.annotations.readOnlyHint).toBe("boolean");
@@ -121,6 +137,7 @@ describe("Wireline ChatGPT App production contract", () => {
 
   it("discloses model-visible and widget-only returned data", () => {
     expect(privacyNotice).toContain("Information returned to ChatGPT");
+    expect(privacyNotice).toContain("aggregate workspace summary");
     expect(privacyNotice).toContain("protected metadata");
     expect(privacyNotice).toContain("not included in the model-visible conversation");
   });
