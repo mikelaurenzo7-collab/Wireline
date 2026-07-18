@@ -31,7 +31,7 @@ describe("orchestration spine contract", () => {
 
   it("composes Studio as the orchestrator across workspace surfaces", () => {
     const contract = read("src/lib/studio-canvas-contract.ts");
-    const studioHome = read("src/pages/AgentStudioHomeClaude.tsx");
+    const studioHome = read("src/pages/AgentStudioHome.tsx");
     const canvas = read("src/components/StudioWorkspaceV2.tsx");
 
     expect(contract).toContain("canvas-orchestrator");
