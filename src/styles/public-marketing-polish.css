@@ -1,0 +1,278 @@
+/*
+ * Public marketing visual QA pass
+ *
+ * This file intentionally sits last in the marketing bundle. It normalizes the
+ * shared hero, section, card, CTA, and footer rhythm without creating another
+ * page-specific design language.
+ */
+
+.marketing-surface {
+  --wl-public-section-space: clamp(3.75rem, 6.5vw, 6rem);
+  --wl-public-section-space-tight: clamp(3rem, 5vw, 4.5rem);
+}
+
+.marketing-surface main {
+  scroll-padding-top: 5rem;
+}
+
+.marketing-surface main > section[id] {
+  scroll-margin-top: 5rem;
+}
+
+/* Shared hero: one centered scale across Solutions, Features, Pricing, Demos,
+   and the landing page. */
+.marketing-surface .marketing-hero {
+  display: grid;
+  min-height: clamp(32rem, 66svh, 44rem);
+  align-items: center;
+  padding-block: clamp(4.75rem, 8vw, 7rem);
+}
+
+.marketing-surface .marketing-hero__content {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.marketing-surface .marketing-hero__title {
+  max-width: 18ch;
+  margin-inline: auto;
+  font-size: clamp(2.75rem, 5.15vw, 4.9rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 0.94;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.marketing-surface .wireline-home-hero .marketing-hero__title {
+  max-width: 15ch;
+  font-size: clamp(3rem, 6vw, 5.6rem);
+}
+
+.marketing-surface .marketing-hero__description {
+  max-width: 47rem;
+  margin-top: 1.5rem;
+  font-size: clamp(1rem, 0.94rem + 0.32vw, 1.2rem);
+  line-height: 1.62;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.marketing-surface .marketing-hero__actions {
+  margin-top: 2rem;
+  gap: 0.65rem;
+}
+
+.marketing-surface .marketing-hero__actions > a {
+  min-height: 3rem;
+  border-radius: 0.7rem;
+  padding-inline: 1.35rem;
+}
+
+.marketing-surface .marketing-hero__content > ul {
+  margin-top: 1.4rem;
+}
+
+/* Centering contract: mono labels and headings must share the same visual axis
+   whenever a section explicitly opts into centered marketing content. */
+.marketing-surface :where(.text-center, .wl-marketing-center)
+  > :where(.wl-overline, .wl-stitch-label, .wl-stitch-eyebrow, .wl-eyebrow) {
+  display: block;
+  width: 100%;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.marketing-surface :where(.text-center, .wl-marketing-center)
+  > :where(.wl-public-section-heading, .wl-stitch-display, .wl-display-2, h1, h2) {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.marketing-surface .wl-public-section-heading,
+.marketing-surface .wl-stitch-display {
+  max-width: 20ch;
+  font-size: clamp(2rem, 1.55rem + 2.25vw, 3.55rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.marketing-surface .wl-public-copy,
+.marketing-surface .wl-marketing-center > p:not(.wl-overline):not(.wl-stitch-label):not(.wl-eyebrow) {
+  max-width: 44rem;
+  font-size: clamp(0.96rem, 0.92rem + 0.2vw, 1.08rem);
+  line-height: 1.62;
+  text-wrap: pretty;
+}
+
+/* Quiet, consistent card language. */
+.marketing-surface :where(.wl-stitch-card, .wl-paper) {
+  border-radius: 1.05rem;
+}
+
+.marketing-surface .wl-stitch-card {
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 92%, transparent);
+  box-shadow: none;
+}
+
+.marketing-surface .wl-stitch-card:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 26%,
+    var(--wireline-color-border-default)
+  );
+}
+
+/* Pricing: keep the comparison complete, but remove the wall-of-text feeling. */
+.wl-pricing-page #plans,
+.wl-pricing-page main > section:not(.marketing-hero) {
+  padding-block: var(--wl-public-section-space);
+}
+
+.wl-pricing-page #plans > .wl-public-rail {
+  max-width: 78rem;
+}
+
+.wl-pricing-page #plans article {
+  border-radius: 1.25rem;
+  padding: clamp(1.35rem, 1.05rem + 0.8vw, 1.8rem);
+}
+
+.wl-pricing-page #plans article > p,
+.wl-pricing-page #plans article > div > p {
+  max-width: 34ch;
+  margin-inline: auto;
+}
+
+.wl-pricing-page #plans article ul {
+  max-width: 31ch;
+}
+
+.wl-pricing-page #plans article li {
+  line-height: 1.45;
+}
+
+.wl-pricing-page #plans article a {
+  border-radius: 0.75rem;
+}
+
+.wl-pricing-page main > section:nth-last-child(3) article p {
+  max-width: 32ch;
+  margin-inline: auto;
+}
+
+/* The final pricing CTA should feel like the rest of the product, not an
+   unrelated white billboard. */
+.wl-pricing-page main > section:last-child > div {
+  border-radius: 1.35rem;
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-pricing-page main > section:last-child > div :where(h2, p) {
+  color: var(--wireline-color-text-primary) !important;
+}
+
+.wl-pricing-page main > section:last-child > div p {
+  color: var(--wireline-color-text-secondary) !important;
+}
+
+.wl-pricing-page main > section:last-child > div a {
+  background: var(--wireline-color-action-primary-default);
+  color: var(--wireline-color-canvas-default);
+}
+
+/* Demos: make the journey read as one story and keep the closing CTA compact. */
+.marketing-surface #demo-lines,
+.marketing-surface #demo-lines + section {
+  padding-block: var(--wl-public-section-space-tight);
+}
+
+.marketing-surface #demo-lines .wl-stitch-card {
+  min-height: 11.25rem;
+}
+
+.marketing-surface #demo-lines + section .wl-stitch-card-brand {
+  padding-block: clamp(2rem, 4vw, 3rem);
+}
+
+/* Footer: align with the public rail and stop the bottom of every page from
+   becoming a second sitemap. */
+.marketing-footer-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: clamp(2rem, 7vw, 6rem);
+}
+
+.marketing-footer-brand {
+  max-width: 28rem;
+}
+
+.marketing-footer-navs {
+  align-items: start;
+}
+
+.marketing-footer-nav a,
+.marketing-footer-legal a {
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  .marketing-surface .marketing-hero {
+    min-height: auto;
+  }
+
+  .marketing-footer-rail {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .marketing-footer-navs {
+    max-width: 30rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .marketing-surface .marketing-hero {
+    padding-block: 3.25rem 3.75rem;
+  }
+
+  .marketing-surface .marketing-hero__title,
+  .marketing-surface .wireline-home-hero .marketing-hero__title {
+    max-width: 14ch;
+    font-size: clamp(2.35rem, 11.5vw, 3.35rem) !important;
+    line-height: 0.96;
+  }
+
+  .marketing-surface .marketing-hero__description {
+    margin-top: 1.15rem;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .marketing-surface .wl-public-section-heading,
+  .marketing-surface .wl-stitch-display {
+    max-width: 15ch;
+    font-size: clamp(1.85rem, 8.4vw, 2.45rem);
+    line-height: 1.02;
+  }
+
+  .marketing-footer-navs {
+    width: 100%;
+    gap: 1.5rem;
+  }
+
+  .marketing-footer-nav {
+    display: flex !important;
+    grid-template-columns: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-surface .wl-stitch-card:hover {
+    transform: none;
+  }
+}
