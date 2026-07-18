@@ -25,7 +25,13 @@ const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
 if (packageJson.includes('"@anthropic-ai/sdk"')) fail("Anthropic SDK remains in the install manifest");
 if (client.includes("@anthropic-ai/sdk") || client.includes("api.anthropic.com")) fail("managed runtime references Anthropic");
 if (!client.includes("https://api.openai.com/v1/responses")) fail("managed runtime is not using OpenAI Responses");
+if (!client.includes("AI Gateway request failed; trying direct OpenAI fallback")) fail("AI Gateway does not fall back through direct OpenAI");
 if (!client.includes("OpenAI request failed; trying Gemini fallback")) fail("OpenAI-to-Gemini fallback order is missing");
+const gatewayPosition = client.indexOf('providers.push({ name: "AI Gateway"');
+const openAIPosition = client.indexOf('providers.push({ name: "OpenAI"');
+const geminiPosition = client.indexOf('providers.push({ name: "Gemini"');
+if (gatewayPosition < 0 || openAIPosition < 0 || geminiPosition < 0 || !(gatewayPosition < openAIPosition && openAIPosition < geminiPosition)) fail("managed runtime provider chain is not Gateway -> OpenAI -> Gemini");
+if (!client.includes("if (isAbortError(error, options?.signal)) throw error")) fail("aborted AI requests can still cascade into fallback providers");
 if (!models.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"')) fail("managed voice default is not OpenAI");
 if (!models.includes("VAPI_DEFAULT_FALLBACK_MODELS")) fail("managed voice does not carry Gemini fallback models");
 if (!schema.includes('voiceLlmProvider: text("voice_llm_provider").default("openai")')) fail("Drizzle settings schema does not default managed voice to OpenAI");
