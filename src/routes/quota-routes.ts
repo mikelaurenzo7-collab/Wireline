@@ -94,7 +94,8 @@ router.put(
         throw AppError.badRequest((validation as { ok: false; error: string }).error);
       }
       const { dimension, enabled } = validation.value;
-      const value = BigInt(validation.value.value);
+      const numericValue = validation.value.value;
+      const databaseValue = BigInt(numericValue);
       const publicDimension =
         dimension === INTERNAL_AI_TOKEN_DIMENSION ? PUBLIC_AI_TOKEN_DIMENSION : dimension;
 
@@ -103,14 +104,14 @@ router.put(
         .values({
           userId: req.user.id,
           dimension,
-          value,
+          value: databaseValue,
           enabled: enabled ?? true,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: [schema.quotaLimits.userId, schema.quotaLimits.dimension],
           set: {
-            value,
+            value: databaseValue,
             enabled: enabled ?? true,
             updatedAt: new Date(),
           },
@@ -124,13 +125,13 @@ router.put(
           changes: {
             dimension: publicDimension,
             internal_dimension: dimension,
-            value,
+            value: numericValue,
             enabled,
           },
           ip: req.ip,
         })
         .catch(() => {});
-      res.json({ success: true, dimension: publicDimension, value, enabled });
+      res.json({ success: true, dimension: publicDimension, value: numericValue, enabled });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("PUT /api/quotas/override failed", { error: getErrorMessage(err) });
