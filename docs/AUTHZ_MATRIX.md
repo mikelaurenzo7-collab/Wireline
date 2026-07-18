@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 276
-**Protected:** 238
+**Routes scanned:** 275
+**Protected:** 237
 **Public (allowlisted):** 38
 **Violations:** 0
 
@@ -113,7 +113,6 @@
 | auth-routes.ts | GET | `/api/auth/verify-email/:token` | — | — | yes | Public (allowlisted) |
 | billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | platform_admin | — | Protected |
 | billing-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
-| billing-routes.ts | POST | `/api/billing/credit-checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/live-video-checkout` | inline | — | — | Protected |
@@ -279,7 +278,7 @@
 | qa-routes-v2.ts | POST | `/api/qa/score/:callId` | inline | — | — | Protected |
 | qa-routes-v2.ts | GET | `/api/qa/stats` | inline | — | — | Protected |
 | quota-routes.ts | GET | `/api/quotas` | inline | — | — | Protected |
-| quota-routes.ts | PUT | `/api/quotas/override` | inline | permission | — | Protected |
+| quota-routes.ts | PUT | `/api/quotas/override` | inline | platform_admin | — | Protected |
 | quota-routes.ts | GET | `/api/quotas/plans` | — | — | yes | Public (allowlisted) |
 | settings-routes.ts | POST | `/api/account/cancel-deletion` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/export` | inline | — | — | Protected |

@@ -165,10 +165,36 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         const pi = await stripe.paymentIntents.retrieve(piId);
         if (pi.metadata?.purpose === "credit_topup") {
           const userId = pi.metadata.wireline_user_id;
-          const refundedUsd = (charge.amount_refunded ?? 0) / 100;
-          if (userId && refundedUsd > 0) {
+          // Reverse each refund keyed on its OWN id. charge.amount_refunded is
+          // Stripe's cumulative total, so keying the ledger entry on charge.id
+          // would let the (user, ref) unique index drop every refund after the
+          // first — leaving later partial/full refunds spendable as balance.
+          const refunds = charge.refunds?.data ?? [];
+          const reversible = refunds.filter(
+            (r) => (!r.status || r.status === "succeeded") && (r.amount ?? 0) > 0,
+          );
+          if (userId && reversible.length) {
             await tenantStore.run(userId, async () => {
-              await reverseCredit(userId, refundedUsd, "web_topup_refund", {
+              for (const refund of reversible) {
+                await reverseCredit(userId, (refund.amount ?? 0) / 100, "web_topup_refund", {
+                  type: "stripe_refund",
+                  id: refund.id,
+                  entryKind: "refund",
+                  source: "stripe",
+                  provider: "stripe",
+                  providerEventId: event.id,
+                  providerObjectId: refund.id,
+                  customerReason: "Conversation Balance refund",
+                  metadata: { payment_intent_id: piId, charge_id: charge.id },
+                });
+              }
+            });
+          } else if (userId && (charge.amount_refunded ?? 0) > 0) {
+            // Fallback when the event omits the refunds list: reverse the
+            // cumulative amount keyed on charge.id (idempotent for the common
+            // single-refund case).
+            await tenantStore.run(userId, async () => {
+              await reverseCredit(userId, (charge.amount_refunded ?? 0) / 100, "web_topup_refund", {
                 type: "stripe_refund",
                 id: charge.id,
                 entryKind: "refund",
@@ -799,109 +825,6 @@ router.post(
     } catch (e: any) {
       log.error("Checkout creation failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Checkout failed");
-    }
-  },
-);
-
-// Prepaid credit top-up — a one-time Stripe payment on the WEB. Credits absorb
-// voice overage (see credit-wallet + voice-usage). Deliberately web-only: the
-// iOS app stays read-only on billing to remain clear of Apple's IAP rules.
-const CREDIT_MIN_USD = 5;
-const CREDIT_MAX_USD = 1000;
-
-router.post(
-  "/billing/credit-checkout",
-  authenticateUser,
-  enforceLaunchHardGate,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
-      const amountUsd = Math.round(Number(req.body?.amount_usd));
-      if (
-        !Number.isInteger(amountUsd) ||
-        amountUsd < CREDIT_MIN_USD ||
-        amountUsd > CREDIT_MAX_USD
-      ) {
-        return res.status(400).json({
-          code: "INVALID_AMOUNT",
-          error: `amount_usd must be a whole number between ${CREDIT_MIN_USD} and ${CREDIT_MAX_USD}.`,
-        });
-      }
-
-      // Reuse (or lazily create) the tenant's Stripe customer.
-      const [existing] = await drizzle
-        .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
-        .from(schema.subscriptions)
-        .where(eq(schema.subscriptions.userId, req.user.id))
-        .limit(1);
-      let customerId = existing?.stripeCustomerId || null;
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: req.user.email,
-          metadata: { wireline_user_id: req.user.id },
-        });
-        customerId = customer.id;
-        await drizzle
-          .insert(schema.subscriptions)
-          .values({ userId: req.user.id, stripeCustomerId: customerId, updatedAt: new Date() })
-          .onConflictDoUpdate({
-            target: schema.subscriptions.userId,
-            set: { stripeCustomerId: customerId, updatedAt: new Date() },
-          });
-      }
-
-      const appUrl = resolveCanonicalAppUrl();
-      if ("error" in appUrl) {
-        return res
-          .status(503)
-          .json({ error: "Billing is unavailable: APP_URL is not configured." });
-      }
-      const base = appUrl.url;
-      const creditMeta = {
-        wireline_user_id: req.user.id,
-        purpose: "credit_topup",
-        credit_usd: String(amountUsd),
-      };
-
-      const session = await stripe.checkout.sessions.create({
-        mode: "payment",
-        customer: customerId,
-        line_items: [
-          {
-            quantity: 1,
-            price_data: {
-              currency: "usd",
-              unit_amount: amountUsd * 100,
-              product_data: {
-                name: "Wireline call credits",
-                description: `$${amountUsd} prepaid credit applied to voice usage`,
-              },
-            },
-          },
-        ],
-        success_url: `${base}/admin?credits=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${base}/admin?credits=canceled`,
-        // Mirror metadata onto the PaymentIntent too, for dashboard traceability.
-        payment_intent_data: { metadata: creditMeta },
-        metadata: creditMeta,
-      });
-      res.json({ url: session.url });
-      void auditLogger
-        .logBilling("checkout_started", {
-          userId: req.user.id,
-          customerId,
-          amountCents: amountUsd * 100,
-          ip: req.ip,
-        })
-        .catch((err) =>
-          log.warn("billing audit log failed", {
-            event: "credit_checkout_started",
-            error: getErrorMessage(err),
-          }),
-        );
-    } catch (e: any) {
-      log.error("Credit checkout creation failed", { error: getErrorMessage(e) });
-      throw AppError.fromHttpStatus(500, "Credit checkout failed");
     }
   },
 );

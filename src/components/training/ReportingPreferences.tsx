@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Button, NativeSelect } from "../atoms";
 import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
+import { REPORT_PREFERENCES_SAVED_EVENT } from "./RecentCallArtifactRequests";
 
 type ArtifactFormat = "pdf" | "docx" | "pptx" | "xlsx";
 type Destination = "google_drive" | "onedrive";
@@ -38,10 +39,22 @@ type ResponsePayload = {
 };
 
 const FORMATS: Array<{ value: ArtifactFormat; label: string; detail: string }> = [
-  { value: "pdf", label: "PDF report", detail: "Polished, fixed-layout client or operating report" },
+  {
+    value: "pdf",
+    label: "PDF report",
+    detail: "Polished, fixed-layout client or operating report",
+  },
   { value: "docx", label: "Word document", detail: "Editable proposal, recap, or report" },
-  { value: "xlsx", label: "Excel workbook", detail: "Structured analysis, call data, and action plan" },
-  { value: "pptx", label: "PowerPoint presentation", detail: "Branded executive or client-facing deck" },
+  {
+    value: "xlsx",
+    label: "Excel workbook",
+    detail: "Structured analysis, call data, and action plan",
+  },
+  {
+    value: "pptx",
+    label: "PowerPoint presentation",
+    detail: "Branded executive or client-facing deck",
+  },
 ];
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -50,7 +63,10 @@ function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
 
-function utcScheduleToLocal(utcTime: string, utcWeekday: number): { time: string; weekday: number } {
+function utcScheduleToLocal(
+  utcTime: string,
+  utcWeekday: number,
+): { time: string; weekday: number } {
   const [hour, minute] = utcTime.split(":").map(Number);
   const now = new Date();
   const date = new Date(now);
@@ -63,7 +79,10 @@ function utcScheduleToLocal(utcTime: string, utcWeekday: number): { time: string
   };
 }
 
-function localScheduleToUtc(localTime: string, localWeekday: number): { time: string; weekday: number } {
+function localScheduleToUtc(
+  localTime: string,
+  localWeekday: number,
+): { time: string; weekday: number } {
   const [hour, minute] = localTime.split(":").map(Number);
   const now = new Date();
   const date = new Date(now);
@@ -116,7 +135,8 @@ export default function ReportingPreferences() {
         setLocalTime(local.time);
         setLocalWeekday(local.weekday);
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : "Could not load report settings.");
+        if (active)
+          setError(cause instanceof Error ? cause.message : "Could not load report settings.");
       } finally {
         if (active) setLoading(false);
       }
@@ -166,6 +186,11 @@ export default function ReportingPreferences() {
       setConnections(data.connections);
       setNextReportAt(data.next_scheduled_report_at || null);
       setMessage("Report preferences saved.");
+      // Notify the sibling artifact-requests panel immediately instead of
+      // relying on a background poll.
+      window.dispatchEvent(
+        new CustomEvent(REPORT_PREFERENCES_SAVED_EVENT, { detail: data.preferences }),
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not save report settings.");
     } finally {
@@ -174,7 +199,12 @@ export default function ReportingPreferences() {
   }
 
   if (loading) {
-    return <div className="wl-paper wl-paper-elevated min-h-[320px] animate-pulse" aria-label="Loading report settings" />;
+    return (
+      <div
+        className="wl-paper wl-paper-elevated min-h-[320px] animate-pulse"
+        aria-label="Loading report settings"
+      />
+    );
   }
 
   if (!preferences || !connections) {

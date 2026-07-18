@@ -1,9 +1,8 @@
-import { useSearchParams, Link } from "react-router-dom";
-import { CalendarDays } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
 import OutboundHub from "../components/outbound/OutboundHub";
-import { EmptyState, Button } from "../components/atoms";
+import AppointmentsPanel from "../components/AppointmentsPanel";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import {
@@ -90,25 +89,7 @@ export default function PhonePage() {
           {primaryTab === "outbound" && (
             <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
           )}
-          {primaryTab === "appointments" && (
-            <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
-              <EmptyState
-                framed
-                density="compact"
-                titleTone="ui"
-                withHalo={false}
-                className="w-full max-w-lg"
-                icon={<CalendarDays className="size-5" aria-hidden />}
-                title="Connect a calendar"
-                description="Sync Google Workspace or Microsoft 365 so employees can book during live calls."
-                action={
-                  <Button asChild>
-                    <Link to="/connections">Open Connections</Link>
-                  </Button>
-                }
-              />
-            </div>
-          )}
+          {primaryTab === "appointments" && <AppointmentsPanel />}
         </div>
       </WorkspacePageFrame>
     </WorkspaceShell>

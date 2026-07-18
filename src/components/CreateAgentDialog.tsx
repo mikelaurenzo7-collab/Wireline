@@ -6,7 +6,12 @@ import { Button, Input, Textarea } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
-import { stashPostCreateWizard, type PostCreateWizardPayload } from "../lib/wireline-create-flow";
+import {
+  stashCreateWarning,
+  stashPostCreateWizard,
+  type PostCreateWizardPayload,
+} from "../lib/wireline-create-flow";
+import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
 import { emitProductEvent } from "../lib/product-event-client";
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
@@ -94,6 +99,8 @@ export default function CreateAgentDialog({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const briefRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLFormElement>(null);
+  useModalFocusTrap(dialogRef, { onEscape: close });
   const activePosture: Posture = posture;
 
   useEffect(() => {
@@ -124,10 +131,8 @@ export default function CreateAgentDialog({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLFormElement>) {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      close();
-    }
+    // Escape is handled globally by useModalFocusTrap so it works regardless of
+    // where focus sits; this handler owns the submit shortcut only.
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !creating) {
       event.preventDefault();
       event.currentTarget.requestSubmit();
@@ -163,41 +168,58 @@ export default function CreateAgentDialog({
         return;
       }
 
-      await authFetch(`/api/agent-config/${encodeURIComponent(body.id)}/manual`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "personality",
-          content: personalityText,
-        }),
-      });
+      // The agent now exists. Applying the personality + brief is best-effort:
+      // if either call fails, keep the created agent and surface a truthful
+      // warning instead of letting the outer catch misreport "could not be
+      // created" (which would prompt a duplicate retry).
+      let trainingApplied = true;
+      try {
+        const manualRes = await authFetch(
+          `/api/agent-config/${encodeURIComponent(body.id)}/manual`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "personality", content: personalityText }),
+          },
+        );
+        if (!manualRes.ok) trainingApplied = false;
 
-      await authFetch("/api/train/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agentId: body.id,
-          message: [
-            `Role: ${role}.`,
-            `Posture: ${activePosture}.`,
-            `Personality: ${personalityText}`,
-            `First brief: ${finalBrief}`,
-          ].join("\n"),
-        }),
-      });
+        const extractRes = await authFetch("/api/train/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agentId: body.id,
+            message: [
+              `Role: ${role}.`,
+              `Posture: ${activePosture}.`,
+              `Personality: ${personalityText}`,
+              `First brief: ${finalBrief}`,
+            ].join("\n"),
+          }),
+        });
+        if (!extractRes.ok) trainingApplied = false;
+      } catch {
+        trainingApplied = false;
+      }
 
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
-      emitProductEvent({
-        event: "training_asset_added",
-        agentId: body.id,
-        metadata: { source: "fast_start_brief", role, posture: activePosture },
-      });
-      emitProductEvent({
-        event: "launch_readiness_reached",
-        agentId: body.id,
-        metadata: { source: "fast_start_brief", has_training: true },
-      });
+      if (trainingApplied) {
+        emitProductEvent({
+          event: "training_asset_added",
+          agentId: body.id,
+          metadata: { source: "fast_start_brief", role, posture: activePosture },
+        });
+        emitProductEvent({
+          event: "launch_readiness_reached",
+          agentId: body.id,
+          metadata: { source: "fast_start_brief", has_training: true },
+        });
+      } else {
+        stashCreateWarning(
+          `${finalName} was created, but the starting brief didn't fully apply. Add it from Set up.`,
+        );
+      }
       emitProductEvent({
         event: "agent_created",
         agentId: body.id,
@@ -245,6 +267,7 @@ export default function CreateAgentDialog({
       role="presentation"
     >
       <form
+        ref={dialogRef}
         onSubmit={create}
         onKeyDown={onKeyDown}
         className="wl-paper wl-paper-elevated my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden p-0 shadow-2xl"

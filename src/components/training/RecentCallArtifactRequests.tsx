@@ -119,14 +119,14 @@ export default function RecentCallArtifactRequests() {
       if (detail) setPreferences(detail);
       else refreshPreferences();
     };
+    // Preferences update via the REPORT_PREFERENCES_SAVED_EVENT dispatched on
+    // save — no background polling needed.
     window.addEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
-    const preferencesRefreshTimer = window.setInterval(refreshPreferences, 5_000);
 
     const timers = polling.current;
     return () => {
       active = false;
       window.removeEventListener(REPORT_PREFERENCES_SAVED_EVENT, onPreferencesSaved);
-      window.clearInterval(preferencesRefreshTimer);
       for (const timer of timers.values()) window.clearTimeout(timer);
       timers.clear();
     };

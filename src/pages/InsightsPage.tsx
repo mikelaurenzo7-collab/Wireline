@@ -7,7 +7,7 @@ export default function InsightsPage() {
   return (
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
       <WorkspacePageFrame mode="operate" className="flex min-h-0 flex-1 flex-col gap-0 pb-6">
-        <WorkspaceOperateIntro title="Insights" tabs={<AppChromeSubTabs density="compact" />} />
+        <WorkspaceOperateIntro title="Activity" tabs={<AppChromeSubTabs density="compact" />} />
         <div className="flex min-h-0 flex-1 flex-col">
           <InsightsView />
         </div>

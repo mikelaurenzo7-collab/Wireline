@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Cable, Loader2, MessageSquare, Phone, Sparkles, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 
 import RoleplaySandbox from "../RoleplaySandbox";
 import { Button } from "../atoms";
@@ -203,8 +204,12 @@ export default function PostCreateActivationWizard({
     };
   }, [hasLine, phoneNumber, payload.agentName]);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocusTrap(dialogRef, { onEscape: dismiss });
+
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-[var(--wireline-z-modal,80)] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"

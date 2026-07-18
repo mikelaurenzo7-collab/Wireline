@@ -117,8 +117,8 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "insights",
-    label: "Insights",
-    description: "Performance, quality, and revenue across agents.",
+    label: "Activity",
+    description: "Insights on performance, quality, and revenue across agents.",
     icon: BarChart3,
     href: "/insights",
     category: "Workspace",

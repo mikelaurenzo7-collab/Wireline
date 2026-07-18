@@ -51,7 +51,7 @@ const MODE_DETAILS: Record<AgentMode, ModeDetail> = {
     ctaPath: "/signup?plan=starter&mode=inbound",
   },
   hybrid: {
-    eyebrow: "Right-hand operator",
+    eyebrow: "Right-hand employee",
     title: "The employee who does the follow-through.",
     lead: "When sales, service, callbacks, email, SMS, scheduling, recovery, and CRM updates belong in one workflow, Wireline owns the busywork and shows you the result.",
     bestFor: ["Sales desk", "Collections desk", "Appointment desk"],
@@ -157,7 +157,9 @@ export default function WireAgentLanding() {
         <section className="border-b border-border px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
           <div className="wl-public-rail">
             <div className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="wl-eyebrow wl-eyebrow--wired text-primary">One employee · every channel</p>
+              <p className="wl-eyebrow wl-eyebrow--wired text-primary">
+                One employee · every channel
+              </p>
               <h2 className="wl-display-2 mt-4">Train it once. Put it to work everywhere.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
                 Voice is the front door. SMS and email keep the conversation moving. The same
@@ -168,9 +170,18 @@ export default function WireAgentLanding() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 ["Voice", "Answers and places calls, qualifies, books, transfers, and recaps."],
-                ["Text / SMS", "Confirms, nurtures, reminds, recovers, and escalates under consent rules."],
-                ["Email", "Reads, drafts, sends approved replies, follows up, and records the result."],
-                ["One operating record", "Every channel shares context, coaching, spend controls, and proof."],
+                [
+                  "Text / SMS",
+                  "Confirms, nurtures, reminds, recovers, and escalates under consent rules.",
+                ],
+                [
+                  "Email",
+                  "Reads, drafts, sends approved replies, follows up, and records the result.",
+                ],
+                [
+                  "One operating record",
+                  "Every channel shares context, coaching, spend controls, and proof.",
+                ],
               ].map(([title, body]) => (
                 <article key={title} className="wl-paper rounded-[16px] p-6 text-center">
                   <h3 className="wl-display-4">{title}</h3>
@@ -223,8 +234,8 @@ export default function WireAgentLanding() {
                 Choose the outcome. Your employee handles the conversation.
               </h2>
               <p className="mx-auto mt-4 max-w-[46rem] text-[16px] leading-[1.6] text-muted-foreground">
-                Start with sales, service, or all-purpose follow-through. Voice, SMS, email, handoff,
-                memory, and proof remain one system. {AGENT_NUMBER_PROMISE}
+                Start with sales, service, or all-purpose follow-through. Voice, SMS, email,
+                handoff, memory, and proof remain one system. {AGENT_NUMBER_PROMISE}
               </p>
               <div
                 className="wl-segmented mx-auto mt-7 flex w-fit max-w-full"
@@ -306,9 +317,9 @@ export default function WireAgentLanding() {
               <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
               <h2 className="wl-display-2 mt-4">Build free. Activate live work from $9.</h2>
               <p className="mt-4 text-[16px] leading-[1.6] text-muted-foreground">
-                Free Builder lets you create and train privately. Every paid plan includes live voice
-                capacity and a Wireline number at no extra line fee, with SMS and email available to
-                the same employee under visible usage controls.
+                Free Builder lets you create and train privately. Every paid plan includes live
+                voice capacity and a Wireline number at no extra line fee, with SMS and email
+                available to the same employee under visible usage controls.
               </p>
             </div>
             <div className="mx-auto grid max-w-[960px] gap-5 sm:grid-cols-3">
@@ -362,9 +373,7 @@ export default function WireAgentLanding() {
                 }}
               />
               <div className="relative">
-                <h2 className="wl-display-2 mx-auto max-w-[18ch]">
-                  Build your AI Voice Employee.
-                </h2>
+                <h2 className="wl-display-2 mx-auto max-w-[18ch]">Build your AI Voice Employee.</h2>
                 <p className="marketing-ink-panel__soft mx-auto mt-4 max-w-[580px] text-[16px] leading-[1.6]">
                   Train it free. Activate a paid plan to claim the included Wireline number, connect
                   SMS and email, and see the outcome after the first real customer conversation.

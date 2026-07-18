@@ -46,9 +46,12 @@
   --wireline-color-overlay-scrim: rgba(23, 20, 38, 0.42);
   --wireline-color-overlay-vignette: rgba(23, 20, 38, 0.12);
 
-  --wireline-color-status-success: #1f9d63;
-  --wireline-color-status-warning: #b4790a;
-  --wireline-color-status-error: #c23b4d;
+  /* Darkened so status text clears WCAG AA (4.5:1) on both the near-white
+     canvas and the tinted feedback surfaces below. The prior values were
+     3.1-4.4:1 as small text; hues are preserved. */
+  --wireline-color-status-success: #127548;
+  --wireline-color-status-warning: #8a5c07;
+  --wireline-color-status-error: #b83648;
   --wireline-color-status-info: #46577a;
   --wireline-color-status-neutral: #6b6678;
 

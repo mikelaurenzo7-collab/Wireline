@@ -13,13 +13,14 @@ export default function LandingPage() {
     captureDemoSourceFromLocation();
   }, []);
 
+  // Reuse the canonical SoftwareApplication @id declared in index.html's
+  // JSON-LD @graph so crawlers merge this into that single entity instead of
+  // seeing two conflicting SoftwareApplication nodes. This runtime node only
+  // contributes the plan OfferCatalog the static graph doesn't carry.
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Wireline",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web, iOS, Android, Chrome, Opera",
-    description: PUBLIC_DESCRIPTION,
+    "@id": "https://trywireline.com/#software",
     offers: {
       "@type": "OfferCatalog",
       name: "Wireline AI employee plans",
