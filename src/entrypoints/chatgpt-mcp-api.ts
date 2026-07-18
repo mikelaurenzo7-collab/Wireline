@@ -64,7 +64,6 @@ app.use((req, res, next) => {
           message,
         );
         res.setHeader("WWW-Authenticate", challenge);
-        res.status(200);
         return sendJson({
           jsonrpc: "2.0",
           id: envelope.id ?? null,
