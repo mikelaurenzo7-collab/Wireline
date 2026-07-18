@@ -40,6 +40,7 @@ import {
   generateCuratedVoicePreview,
   isCuratedPreviewProvider,
 } from "../lib/voice/voice-preview-service";
+import { sniffAudioContentType } from "../lib/voice/audio-sniff";
 import {
   getPresenterVoice,
   listPresenterVoices,
@@ -154,16 +155,21 @@ async function fetchTrustedPreview(
   if (!upstream.ok) {
     throw AppError.fromHttpStatus(503, "Voice preview is temporarily unavailable.");
   }
-  const contentType = upstream.headers.get("content-type") || "audio/mpeg";
-  if (!contentType.toLowerCase().startsWith("audio/")) {
-    throw AppError.fromHttpStatus(502, "Voice preview returned invalid media.");
-  }
   const declaredLength = Number(upstream.headers.get("content-length") || 0);
   if (declaredLength > MAX_PREVIEW_AUDIO_BYTES) {
     throw AppError.fromHttpStatus(502, "Voice preview is too large.");
   }
   const bytes = Buffer.from(await upstream.arrayBuffer());
   if (!bytes.length || bytes.length > MAX_PREVIEW_AUDIO_BYTES) {
+    throw AppError.fromHttpStatus(502, "Voice preview returned invalid media.");
+  }
+  // Trusted hosts can mislabel audio (GCS serves ElevenLabs samples as
+  // text/plain), so the payload's magic bytes are the arbiter, not the header.
+  const declaredType = (upstream.headers.get("content-type") || "").toLowerCase().split(";")[0];
+  const contentType = declaredType?.startsWith("audio/")
+    ? declaredType
+    : sniffAudioContentType(bytes);
+  if (!contentType) {
     throw AppError.fromHttpStatus(502, "Voice preview returned invalid media.");
   }
   return { bytes, contentType };
