@@ -296,11 +296,6 @@ export default function Pricing() {
                       </span>
                     </div>
                     <p
-                      className={`mt-2 text-xs ${featured ? "text-background/70" : "text-muted-foreground"}`}
-                    >
-                      ${plan.price_usd_annual}/year · two months free
-                    </p>
-                    <p
                       className={`mt-4 text-sm leading-6 ${featured ? "text-background/75" : "text-muted-foreground"}`}
                     >
                       {detail}

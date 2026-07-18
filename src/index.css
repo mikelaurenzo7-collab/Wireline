@@ -1,4 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&display=swap");
+/* Google Fonts are loaded via <link> in index.html (preconnect + stylesheet)
+   so they download in parallel with the app bundle instead of chaining behind
+   this stylesheet's @import. */
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 

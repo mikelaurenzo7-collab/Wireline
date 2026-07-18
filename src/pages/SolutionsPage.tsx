@@ -21,7 +21,7 @@ const SOLUTIONS = {
     description:
       "Give one trained employee your offer, qualification rules, calendar, and follow-up. It calls, texts, and emails until the next step is booked or clearly logged.",
     icon: PhoneOutgoing,
-    primary: { href: "/signup?posture=business", label: "Create a sales employee" },
+    primary: { href: "/signup?wedge=sales", label: "Create a sales employee" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
       ["A lead reaches out", "One employee responds on the channel the lead already chose."],
@@ -54,7 +54,7 @@ const SOLUTIONS = {
     description:
       "Give one trained employee your policies, calendar, and handoff rules. It answers calls, texts, and email, then resolves or routes the next step.",
     icon: Headphones,
-    primary: { href: "/signup?posture=business", label: "Create a front desk employee" },
+    primary: { href: "/signup?plan=business", label: "Create a front desk employee" },
     secondary: { href: "/showcase", label: "Hear a demo" },
     sequence: [
       [
